@@ -1,18 +1,491 @@
 [
   {
+    "id": "shops-review-pharmacy-floor-0",
+    "seed": "shops-review",
+    "building": {
+      "id": "building-2",
+      "kind": "shop",
+      "footprint": [{ "x": 2, "z": 53, "w": 8, "d": 7 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-16",
+              "floorIndex": 0,
+              "rect": { "x": 4, "z": 53, "w": 6, "d": 7 },
+              "layoutRole": "arrival",
+              "kind": "pharmacy"
+            },
+            {
+              "id": "room-17",
+              "floorIndex": 0,
+              "rect": { "x": 2, "z": 53, "w": 2, "d": 3 },
+              "layoutRole": "service",
+              "kind": "office"
+            },
+            {
+              "id": "room-18",
+              "floorIndex": 0,
+              "rect": { "x": 2, "z": 56, "w": 2, "d": 4 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-19",
+              "floorIndex": 1,
+              "rect": { "x": 4, "z": 53, "w": 6, "d": 7 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-20",
+              "floorIndex": 1,
+              "rect": { "x": 2, "z": 53, "w": 2, "d": 3 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            },
+            {
+              "id": "room-21",
+              "floorIndex": 1,
+              "rect": { "x": 2, "z": 56, "w": 2, "d": 4 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 9, "y": 2, "z": 56 }, "side": "e" }],
+      "connectorIds": ["stairs-6", "stairs-7", "ladder-1"],
+      "interiorStyle": "pharmacy"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 0,
+      "zoom": 73.48469228349546,
+      "target": { "x": 6, "y": 2.05, "z": 56.5 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-490",
+        "kind": "pharmacy-shelf",
+        "tile": { "x": 4, "y": 2, "z": 53 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-491",
+        "kind": "pharmacy-shelf",
+        "tile": { "x": 5, "y": 2, "z": 53 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-492",
+        "kind": "pharmacy-shelf",
+        "tile": { "x": 6, "y": 2, "z": 53 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-493",
+        "kind": "checkout",
+        "tile": { "x": 7, "y": 2, "z": 56 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-494",
+        "kind": "pharmacy-shelf",
+        "tile": { "x": 8, "y": 2, "z": 54 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-495",
+        "kind": "pharmacy-shelf",
+        "tile": { "x": 8, "y": 2, "z": 55 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-496",
+        "kind": "pharmacy-shelf",
+        "tile": { "x": 8, "y": 2, "z": 57 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-497",
+        "kind": "pharmacy-shelf",
+        "tile": { "x": 8, "y": 2, "z": 58 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-498",
+        "kind": "refrigerator",
+        "tile": { "x": 9, "y": 2, "z": 59 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-499",
+        "kind": "sofa",
+        "tile": { "x": 4, "y": 2, "z": 55 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-500",
+        "kind": "desk-computer",
+        "tile": { "x": 3, "y": 2, "z": 55 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-501",
+        "kind": "shelving",
+        "tile": { "x": 2, "y": 2, "z": 56 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-502",
+        "kind": "shelving",
+        "tile": { "x": 3, "y": 2, "z": 56 },
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": "shops-review-electronics-floor-0",
+    "seed": "shops-review",
+    "building": {
+      "id": "building-8",
+      "kind": "shop",
+      "footprint": [{ "x": 45, "z": 2, "w": 9, "d": 7 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-66",
+              "floorIndex": 0,
+              "rect": { "x": 45, "z": 2, "w": 7, "d": 7 },
+              "layoutRole": "arrival",
+              "kind": "electronics"
+            },
+            {
+              "id": "room-67",
+              "floorIndex": 0,
+              "rect": { "x": 52, "z": 2, "w": 2, "d": 4 },
+              "layoutRole": "service",
+              "kind": "workshop"
+            },
+            {
+              "id": "room-68",
+              "floorIndex": 0,
+              "rect": { "x": 52, "z": 6, "w": 2, "d": 3 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-69",
+              "floorIndex": 1,
+              "rect": { "x": 45, "z": 2, "w": 7, "d": 7 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-70",
+              "floorIndex": 1,
+              "rect": { "x": 52, "z": 2, "w": 2, "d": 4 },
+              "layoutRole": "service",
+              "kind": "workshop"
+            },
+            {
+              "id": "room-71",
+              "floorIndex": 1,
+              "rect": { "x": 52, "z": 6, "w": 2, "d": 3 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 45, "y": 2, "z": 5 }, "side": "w" }],
+      "connectorIds": ["stairs-22", "stairs-23", "ladder-6"],
+      "interiorStyle": "electronics"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 0,
+      "zoom": 68.89189901577699,
+      "target": { "x": 49.5, "y": 2.05, "z": 5.5 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-649",
+        "kind": "electronics-display",
+        "tile": { "x": 46, "y": 2, "z": 3 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-650",
+        "kind": "electronics-display",
+        "tile": { "x": 48, "y": 2, "z": 3 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-651",
+        "kind": "electronics-display",
+        "tile": { "x": 48, "y": 2, "z": 6 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-652",
+        "kind": "checkout",
+        "tile": { "x": 47, "y": 2, "z": 5 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-653",
+        "kind": "electronics-display",
+        "tile": { "x": 51, "y": 2, "z": 8 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-654",
+        "kind": "electronics-display",
+        "tile": { "x": 51, "y": 2, "z": 6 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-655",
+        "kind": "electronics-display",
+        "tile": { "x": 51, "y": 2, "z": 5 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-656",
+        "kind": "electronics-display",
+        "tile": { "x": 51, "y": 2, "z": 4 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-657",
+        "kind": "retail-shelf",
+        "tile": { "x": 51, "y": 2, "z": 2 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-658",
+        "kind": "workbench",
+        "tile": { "x": 52, "y": 2, "z": 5 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-659",
+        "kind": "workbench",
+        "tile": { "x": 53, "y": 2, "z": 5 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-660",
+        "kind": "crate",
+        "tile": { "x": 52, "y": 2, "z": 6 },
+        "rotation": 3
+      }
+    ]
+  },
+  {
     "id": "interiors-second-shop-floor-0",
     "seed": "interiors-second",
     "building": {
-      "id": "building-1",
+      "id": "building-3",
       "kind": "shop",
-      "footprint": [
+      "footprint": [{ "x": 3, "z": 56, "w": 8, "d": 9 }],
+      "groundLevel": 2,
+      "floors": [
         {
-          "x": 28,
-          "z": 55,
-          "w": 8,
-          "d": 10
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-28",
+              "floorIndex": 0,
+              "rect": { "x": 6, "z": 56, "w": 5, "d": 9 },
+              "layoutRole": "arrival",
+              "kind": "bookshop"
+            },
+            {
+              "id": "room-29",
+              "floorIndex": 0,
+              "rect": { "x": 3, "z": 56, "w": 3, "d": 5 },
+              "layoutRole": "service",
+              "kind": "storage"
+            },
+            {
+              "id": "room-30",
+              "floorIndex": 0,
+              "rect": { "x": 3, "z": 61, "w": 3, "d": 4 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-31",
+              "floorIndex": 1,
+              "rect": { "x": 6, "z": 56, "w": 5, "d": 9 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-32",
+              "floorIndex": 1,
+              "rect": { "x": 3, "z": 56, "w": 3, "d": 5 },
+              "layoutRole": "service",
+              "kind": "storage"
+            },
+            {
+              "id": "room-33",
+              "floorIndex": 1,
+              "rect": { "x": 3, "z": 61, "w": 3, "d": 4 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            }
+          ]
         }
       ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 10, "y": 2, "z": 60 }, "side": "e" }],
+      "connectorIds": ["stairs-10", "stairs-11", "ladder-1"],
+      "interiorStyle": "bookshop"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 0,
+      "zoom": 64.83943436779012,
+      "target": { "x": 7, "y": 2.05, "z": 60.5 },
+      "bounds": { "x": 0, "z": 0, "w": 72, "d": 72 },
+      "zoomRange": { "min": 11.981531570105389, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-437",
+        "kind": "bookcase",
+        "tile": { "x": 6, "y": 2, "z": 56 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-438",
+        "kind": "bookcase",
+        "tile": { "x": 6, "y": 2, "z": 58 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-439",
+        "kind": "bookcase",
+        "tile": { "x": 6, "y": 2, "z": 59 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-440",
+        "kind": "checkout",
+        "tile": { "x": 8, "y": 2, "z": 60 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-441",
+        "kind": "cafe-table",
+        "tile": { "x": 8, "y": 2, "z": 59 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-442",
+        "kind": "bookcase",
+        "tile": { "x": 7, "y": 2, "z": 61 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-443",
+        "kind": "bookcase",
+        "tile": { "x": 7, "y": 2, "z": 63 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-444",
+        "kind": "sofa",
+        "tile": { "x": 8, "y": 2, "z": 56 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-445",
+        "kind": "sofa",
+        "tile": { "x": 10, "y": 2, "z": 56 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-446",
+        "kind": "planter",
+        "tile": { "x": 10, "y": 2, "z": 64 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-447",
+        "kind": "shelving",
+        "tile": { "x": 3, "y": 2, "z": 56 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-448",
+        "kind": "shelving",
+        "tile": { "x": 4, "y": 2, "z": 56 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-449",
+        "kind": "shelving",
+        "tile": { "x": 5, "y": 2, "z": 56 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-450",
+        "kind": "kitchen-counter",
+        "tile": { "x": 3, "y": 2, "z": 61 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-451",
+        "kind": "dining-table",
+        "tile": { "x": 4, "y": 2, "z": 63 },
+        "rotation": 3
+      }
+    ]
+  },
+  {
+    "id": "interiors-second-tower-floor-1",
+    "seed": "interiors-second",
+    "building": {
+      "id": "building-1",
+      "kind": "tower",
+      "footprint": [{ "x": 28, "z": 55, "w": 8, "d": 9 }],
       "groundLevel": 2,
       "floors": [
         {
@@ -22,46 +495,24 @@
             {
               "id": "room-1",
               "floorIndex": 0,
-              "rect": {
-                "x": 28,
-                "z": 55,
-                "w": 4,
-                "d": 4
-              },
-              "kind": "retail"
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
+              "kind": "reception"
             },
             {
               "id": "room-2",
               "floorIndex": 0,
-              "rect": {
-                "x": 32,
-                "z": 55,
-                "w": 4,
-                "d": 4
-              },
-              "kind": "storage"
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
+              "kind": "office"
             },
             {
               "id": "room-3",
               "floorIndex": 0,
-              "rect": {
-                "x": 28,
-                "z": 59,
-                "w": 4,
-                "d": 6
-              },
-              "kind": "retail"
-            },
-            {
-              "id": "room-4",
-              "floorIndex": 0,
-              "rect": {
-                "x": 32,
-                "z": 59,
-                "w": 4,
-                "d": 6
-              },
-              "kind": "retail"
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
+              "kind": "meeting"
             }
           ]
         },
@@ -70,426 +521,26 @@
           "y": 4,
           "rooms": [
             {
+              "id": "room-4",
+              "floorIndex": 1,
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
               "id": "room-5",
               "floorIndex": 1,
-              "rect": {
-                "x": 28,
-                "z": 55,
-                "w": 4,
-                "d": 6
-              },
-              "kind": "break-room"
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
+              "kind": "office"
             },
             {
               "id": "room-6",
               "floorIndex": 1,
-              "rect": {
-                "x": 32,
-                "z": 55,
-                "w": 4,
-                "d": 6
-              },
-              "kind": "office"
-            },
-            {
-              "id": "room-7",
-              "floorIndex": 1,
-              "rect": {
-                "x": 28,
-                "z": 61,
-                "w": 4,
-                "d": 4
-              },
-              "kind": "storage"
-            },
-            {
-              "id": "room-8",
-              "floorIndex": 1,
-              "rect": {
-                "x": 32,
-                "z": 61,
-                "w": 4,
-                "d": 4
-              },
-              "kind": "storage"
-            }
-          ]
-        }
-      ],
-      "roof": {
-        "kind": "flat",
-        "walkable": true
-      },
-      "entrances": [
-        {
-          "tile": {
-            "x": 35,
-            "y": 2,
-            "z": 60
-          },
-          "side": "e"
-        }
-      ],
-      "connectorIds": ["stairs-1", "stairs-2", "ladder-1"]
-    },
-    "floorIndex": 0,
-    "camera": {
-      "yawIndex": 0,
-      "zoom": 61.23724356957969,
-      "target": {
-        "x": 32,
-        "y": 2.05,
-        "z": 60
-      },
-      "bounds": {
-        "x": 0,
-        "z": 0,
-        "w": 72,
-        "d": 72
-      },
-      "zoomRange": {
-        "min": 11.981531570105389,
-        "max": 192
-      }
-    },
-    "props": [
-      {
-        "id": "prop-304",
-        "kind": "checkout",
-        "tile": {
-          "x": 29,
-          "y": 2,
-          "z": 56
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-305",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 30,
-          "y": 2,
-          "z": 57
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-306",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 28,
-          "y": 2,
-          "z": 55
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-308",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 28,
-          "y": 2,
-          "z": 58
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-309",
-        "kind": "shelving",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 58
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-310",
-        "kind": "shelving",
-        "tile": {
-          "x": 34,
-          "y": 2,
-          "z": 58
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-311",
-        "kind": "shelving",
-        "tile": {
-          "x": 33,
-          "y": 2,
-          "z": 58
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-312",
-        "kind": "shelving",
-        "tile": {
-          "x": 32,
-          "y": 2,
-          "z": 58
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-313",
-        "kind": "checkout",
-        "tile": {
-          "x": 30,
-          "y": 2,
-          "z": 62
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-314",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 30,
-          "y": 2,
-          "z": 60
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-315",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 31,
-          "y": 2,
-          "z": 59
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-316",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 31,
-          "y": 2,
-          "z": 63
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-317",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 31,
-          "y": 2,
-          "z": 64
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-318",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 28,
-          "y": 2,
-          "z": 59
-        },
-        "rotation": 0
-      },
-      {
-        "id": "prop-319",
-        "kind": "checkout",
-        "tile": {
-          "x": 33,
-          "y": 2,
-          "z": 62
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-320",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 64
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-321",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 63
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-322",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 62
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-323",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 61
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-324",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 59
-        },
-        "rotation": 1
-      }
-    ]
-  },
-  {
-    "id": "interiors-second-tower-floor-1",
-    "seed": "interiors-second",
-    "building": {
-      "id": "building-6",
-      "kind": "tower",
-      "footprint": [
-        {
-          "x": 29,
-          "z": 21,
-          "w": 7,
-          "d": 8
-        }
-      ],
-      "groundLevel": 2,
-      "floors": [
-        {
-          "index": 0,
-          "y": 2,
-          "rooms": [
-            {
-              "id": "room-51",
-              "floorIndex": 0,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-52",
-              "floorIndex": 0,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-53",
-              "floorIndex": 0,
-              "rect": {
-                "x": 29,
-                "z": 25,
-                "w": 3,
-                "d": 4
-              },
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
               "kind": "meeting"
-            },
-            {
-              "id": "room-54",
-              "floorIndex": 0,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "reception"
-            },
-            {
-              "id": "room-55",
-              "floorIndex": 0,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "office"
-            }
-          ]
-        },
-        {
-          "index": 1,
-          "y": 4,
-          "rooms": [
-            {
-              "id": "room-56",
-              "floorIndex": 1,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-57",
-              "floorIndex": 1,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "office"
-            },
-            {
-              "id": "room-58",
-              "floorIndex": 1,
-              "rect": {
-                "x": 29,
-                "z": 24,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-59",
-              "floorIndex": 1,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "meeting"
-            },
-            {
-              "id": "room-60",
-              "floorIndex": 1,
-              "rect": {
-                "x": 33,
-                "z": 25,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "office"
             }
           ]
         },
@@ -498,58 +549,25 @@
           "y": 6,
           "rooms": [
             {
-              "id": "room-61",
+              "id": "room-7",
               "floorIndex": 2,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-62",
-              "floorIndex": 2,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
               "kind": "office"
             },
             {
-              "id": "room-63",
+              "id": "room-8",
               "floorIndex": 2,
-              "rect": {
-                "x": 29,
-                "z": 24,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-64",
-              "floorIndex": 2,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
               "kind": "office"
             },
             {
-              "id": "room-65",
+              "id": "room-9",
               "floorIndex": 2,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
               "kind": "meeting"
             }
           ]
@@ -559,266 +577,132 @@
           "y": 8,
           "rooms": [
             {
-              "id": "room-66",
+              "id": "room-10",
               "floorIndex": 3,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-67",
-              "floorIndex": 3,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 4
-              },
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
               "kind": "office"
             },
             {
-              "id": "room-68",
+              "id": "room-11",
               "floorIndex": 3,
-              "rect": {
-                "x": 29,
-                "z": 25,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-69",
-              "floorIndex": 3,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
               "kind": "office"
             },
             {
-              "id": "room-70",
+              "id": "room-12",
               "floorIndex": 3,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "meeting"
-            }
-          ]
-        },
-        {
-          "index": 4,
-          "y": 10,
-          "rooms": [
-            {
-              "id": "room-71",
-              "floorIndex": 4,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-72",
-              "floorIndex": 4,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "office"
-            },
-            {
-              "id": "room-73",
-              "floorIndex": 4,
-              "rect": {
-                "x": 29,
-                "z": 24,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-74",
-              "floorIndex": 4,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "office"
-            },
-            {
-              "id": "room-75",
-              "floorIndex": 4,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
               "kind": "meeting"
             }
           ]
         }
       ],
-      "roof": {
-        "kind": "flat",
-        "walkable": true
-      },
-      "entrances": [
-        {
-          "tile": {
-            "x": 35,
-            "y": 2,
-            "z": 25
-          },
-          "side": "e"
-        }
-      ],
-      "connectorIds": [
-        "stairs-19",
-        "stairs-20",
-        "stairs-22",
-        "stairs-23",
-        "stairs-24"
-      ]
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 35, "y": 2, "z": 59 }, "side": "e" }],
+      "connectorIds": ["stairs-1", "stairs-2", "stairs-3", "stairs-4"]
     },
     "floorIndex": 1,
     "camera": {
       "yawIndex": 0,
-      "zoom": 73.4846922834952,
-      "target": {
-        "x": 32.5,
-        "y": 3.55,
-        "z": 25
-      },
-      "bounds": {
-        "x": 0,
-        "z": 0,
-        "w": 72,
-        "d": 72
-      },
-      "zoomRange": {
-        "min": 11.981531570105389,
-        "max": 192
-      }
+      "zoom": 64.83943436779025,
+      "target": { "x": 32, "y": 3.55, "z": 59.5 },
+      "bounds": { "x": 0, "z": 0, "w": 72, "d": 72 },
+      "zoomRange": { "min": 11.981531570105389, "max": 192 }
     },
     "props": [
       {
-        "id": "prop-474",
+        "id": "prop-315",
         "kind": "desk-computer",
-        "tile": {
-          "x": 30,
-          "y": 4,
-          "z": 22
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-475",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 29,
-          "y": 4,
-          "z": 23
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-476",
-        "kind": "kitchen-counter",
-        "tile": {
-          "x": 29,
-          "y": 4,
-          "z": 28
-        },
+        "tile": { "x": 33, "y": 4, "z": 59 },
         "rotation": 3
       },
       {
-        "id": "prop-477",
-        "kind": "dining-table",
-        "tile": {
-          "x": 30,
-          "y": 4,
-          "z": 26
-        },
+        "id": "prop-316",
+        "kind": "desk-computer",
+        "tile": { "x": 33, "y": 4, "z": 57 },
         "rotation": 3
       },
       {
-        "id": "prop-478",
-        "kind": "sofa",
-        "tile": {
-          "x": 29,
-          "y": 4,
-          "z": 24
-        },
-        "rotation": 0
+        "id": "prop-317",
+        "kind": "desk-computer",
+        "tile": { "x": 33, "y": 4, "z": 55 },
+        "rotation": 3
       },
       {
-        "id": "prop-479",
-        "kind": "meeting-table",
-        "tile": {
-          "x": 34,
-          "y": 4,
-          "z": 22
-        },
-        "rotation": 0
+        "id": "prop-318",
+        "kind": "desk-computer",
+        "tile": { "x": 35, "y": 4, "z": 63 },
+        "rotation": 1
       },
       {
-        "id": "prop-480",
+        "id": "prop-319",
+        "kind": "desk-computer",
+        "tile": { "x": 35, "y": 4, "z": 61 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-320",
+        "kind": "desk-computer",
+        "tile": { "x": 28, "y": 4, "z": 60 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-321",
+        "kind": "desk-computer",
+        "tile": { "x": 28, "y": 4, "z": 62 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-322",
+        "kind": "desk-computer",
+        "tile": { "x": 33, "y": 4, "z": 63 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-323",
+        "kind": "desk-computer",
+        "tile": { "x": 31, "y": 4, "z": 63 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-324",
         "kind": "filing-cabinet",
-        "tile": {
-          "x": 35,
-          "y": 4,
-          "z": 24
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-481",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 33,
-          "y": 4,
-          "z": 28
-        },
+        "tile": { "x": 28, "y": 4, "z": 61 },
         "rotation": 3
       },
       {
-        "id": "prop-482",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 33,
-          "y": 4,
-          "z": 25
-        },
+        "id": "prop-325",
+        "kind": "filing-cabinet",
+        "tile": { "x": 28, "y": 4, "z": 63 },
         "rotation": 3
       },
       {
-        "id": "prop-483",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 35,
-          "y": 4,
-          "z": 25
-        },
+        "id": "prop-326",
+        "kind": "meeting-table",
+        "tile": { "x": 31, "y": 4, "z": 57 },
         "rotation": 1
+      },
+      {
+        "id": "prop-327",
+        "kind": "filing-cabinet",
+        "tile": { "x": 28, "y": 4, "z": 55 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-328",
+        "kind": "filing-cabinet",
+        "tile": { "x": 28, "y": 4, "z": 56 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-329",
+        "kind": "planter",
+        "tile": { "x": 28, "y": 4, "z": 59 },
+        "rotation": 2
       }
     ]
   },
@@ -826,16 +710,9 @@
     "id": "interiors-second-tower-floor-0",
     "seed": "interiors-second",
     "building": {
-      "id": "building-6",
+      "id": "building-1",
       "kind": "tower",
-      "footprint": [
-        {
-          "x": 29,
-          "z": 21,
-          "w": 7,
-          "d": 8
-        }
-      ],
+      "footprint": [{ "x": 28, "z": 55, "w": 8, "d": 9 }],
       "groundLevel": 2,
       "floors": [
         {
@@ -843,59 +720,26 @@
           "y": 2,
           "rooms": [
             {
-              "id": "room-51",
+              "id": "room-1",
               "floorIndex": 0,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-52",
-              "floorIndex": 0,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-53",
-              "floorIndex": 0,
-              "rect": {
-                "x": 29,
-                "z": 25,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "meeting"
-            },
-            {
-              "id": "room-54",
-              "floorIndex": 0,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
               "kind": "reception"
             },
             {
-              "id": "room-55",
+              "id": "room-2",
               "floorIndex": 0,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
               "kind": "office"
+            },
+            {
+              "id": "room-3",
+              "floorIndex": 0,
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
+              "kind": "meeting"
             }
           ]
         },
@@ -904,59 +748,26 @@
           "y": 4,
           "rooms": [
             {
-              "id": "room-56",
+              "id": "room-4",
               "floorIndex": 1,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-57",
-              "floorIndex": 1,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
               "kind": "office"
             },
             {
-              "id": "room-58",
+              "id": "room-5",
               "floorIndex": 1,
-              "rect": {
-                "x": 29,
-                "z": 24,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "break-room"
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
+              "kind": "office"
             },
             {
-              "id": "room-59",
+              "id": "room-6",
               "floorIndex": 1,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 4
-              },
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
               "kind": "meeting"
-            },
-            {
-              "id": "room-60",
-              "floorIndex": 1,
-              "rect": {
-                "x": 33,
-                "z": 25,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "office"
             }
           ]
         },
@@ -965,58 +776,25 @@
           "y": 6,
           "rooms": [
             {
-              "id": "room-61",
+              "id": "room-7",
               "floorIndex": 2,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-62",
-              "floorIndex": 2,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
               "kind": "office"
             },
             {
-              "id": "room-63",
+              "id": "room-8",
               "floorIndex": 2,
-              "rect": {
-                "x": 29,
-                "z": 24,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-64",
-              "floorIndex": 2,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
               "kind": "office"
             },
             {
-              "id": "room-65",
+              "id": "room-9",
               "floorIndex": 2,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
               "kind": "meeting"
             }
           ]
@@ -1026,701 +804,120 @@
           "y": 8,
           "rooms": [
             {
-              "id": "room-66",
+              "id": "room-10",
               "floorIndex": 3,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-67",
-              "floorIndex": 3,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 4
-              },
+              "rect": { "x": 33, "z": 55, "w": 3, "d": 5 },
+              "layoutRole": "arrival",
               "kind": "office"
             },
             {
-              "id": "room-68",
+              "id": "room-11",
               "floorIndex": 3,
-              "rect": {
-                "x": 29,
-                "z": 25,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-69",
-              "floorIndex": 3,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
+              "rect": { "x": 28, "z": 60, "w": 8, "d": 4 },
+              "layoutRole": "main",
+              "layoutSlot": "workfloor",
               "kind": "office"
             },
             {
-              "id": "room-70",
+              "id": "room-12",
               "floorIndex": 3,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "meeting"
-            }
-          ]
-        },
-        {
-          "index": 4,
-          "y": 10,
-          "rooms": [
-            {
-              "id": "room-71",
-              "floorIndex": 4,
-              "rect": {
-                "x": 32,
-                "z": 21,
-                "w": 1,
-                "d": 8
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-72",
-              "floorIndex": 4,
-              "rect": {
-                "x": 29,
-                "z": 21,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "office"
-            },
-            {
-              "id": "room-73",
-              "floorIndex": 4,
-              "rect": {
-                "x": 29,
-                "z": 24,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "break-room"
-            },
-            {
-              "id": "room-74",
-              "floorIndex": 4,
-              "rect": {
-                "x": 33,
-                "z": 21,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "office"
-            },
-            {
-              "id": "room-75",
-              "floorIndex": 4,
-              "rect": {
-                "x": 33,
-                "z": 26,
-                "w": 3,
-                "d": 3
-              },
+              "rect": { "x": 28, "z": 55, "w": 5, "d": 5 },
+              "layoutRole": "service",
               "kind": "meeting"
             }
           ]
         }
       ],
-      "roof": {
-        "kind": "flat",
-        "walkable": true
-      },
-      "entrances": [
-        {
-          "tile": {
-            "x": 35,
-            "y": 2,
-            "z": 25
-          },
-          "side": "e"
-        }
-      ],
-      "connectorIds": [
-        "stairs-19",
-        "stairs-20",
-        "stairs-22",
-        "stairs-23",
-        "stairs-24"
-      ]
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 35, "y": 2, "z": 59 }, "side": "e" }],
+      "connectorIds": ["stairs-1", "stairs-2", "stairs-3", "stairs-4"]
     },
     "floorIndex": 0,
     "camera": {
       "yawIndex": 1,
-      "zoom": 73.48469228349491,
-      "target": {
-        "x": 32.5,
-        "y": 2.05,
-        "z": 25
-      },
-      "bounds": {
-        "x": 0,
-        "z": 0,
-        "w": 72,
-        "d": 72
-      },
-      "zoomRange": {
-        "min": 11.981531570105389,
-        "max": 192
-      }
+      "zoom": 64.83943436778962,
+      "target": { "x": 32, "y": 2.05, "z": 59.5 },
+      "bounds": { "x": 0, "z": 0, "w": 72, "d": 72 },
+      "zoomRange": { "min": 11.981531570105389, "max": 192 }
     },
     "props": [
       {
-        "id": "prop-465",
-        "kind": "kitchen-counter",
-        "tile": {
-          "x": 29,
-          "y": 2,
-          "z": 21
-        },
+        "id": "prop-300",
+        "kind": "desk-computer",
+        "tile": { "x": 33, "y": 2, "z": 55 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-301",
+        "kind": "sofa",
+        "tile": { "x": 33, "y": 2, "z": 59 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-302",
+        "kind": "sofa",
+        "tile": { "x": 33, "y": 2, "z": 57 },
         "rotation": 3
       },
       {
-        "id": "prop-466",
-        "kind": "dining-table",
-        "tile": {
-          "x": 30,
-          "y": 2,
-          "z": 23
-        },
-        "rotation": 3
+        "id": "prop-303",
+        "kind": "desk-computer",
+        "tile": { "x": 29, "y": 2, "z": 62 },
+        "rotation": 2
       },
       {
-        "id": "prop-467",
-        "kind": "meeting-table",
-        "tile": {
-          "x": 30,
-          "y": 2,
-          "z": 26
-        },
-        "rotation": 1
+        "id": "prop-304",
+        "kind": "desk-computer",
+        "tile": { "x": 31, "y": 2, "z": 62 },
+        "rotation": 2
       },
       {
-        "id": "prop-468",
+        "id": "prop-305",
+        "kind": "desk-computer",
+        "tile": { "x": 33, "y": 2, "z": 62 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-306",
+        "kind": "desk-computer",
+        "tile": { "x": 35, "y": 2, "z": 63 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-307",
         "kind": "filing-cabinet",
-        "tile": {
-          "x": 29,
-          "y": 2,
-          "z": 25
-        },
+        "tile": { "x": 28, "y": 2, "z": 60 },
         "rotation": 3
       },
       {
-        "id": "prop-469",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 33,
-          "y": 2,
-          "z": 25
-        },
+        "id": "prop-308",
+        "kind": "filing-cabinet",
+        "tile": { "x": 28, "y": 2, "z": 61 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-311",
+        "kind": "meeting-table",
+        "tile": { "x": 30, "y": 2, "z": 57 },
         "rotation": 2
       },
       {
-        "id": "prop-470",
-        "kind": "sofa",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 21
-        },
+        "id": "prop-312",
+        "kind": "filing-cabinet",
+        "tile": { "x": 28, "y": 2, "z": 55 },
         "rotation": 0
       },
       {
-        "id": "prop-471",
-        "kind": "sofa",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 24
-        },
-        "rotation": 1
+        "id": "prop-313",
+        "kind": "filing-cabinet",
+        "tile": { "x": 29, "y": 2, "z": 55 },
+        "rotation": 0
       },
       {
-        "id": "prop-472",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 34,
-          "y": 2,
-          "z": 28
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-473",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 35,
-          "y": 2,
-          "z": 26
-        },
-        "rotation": 1
-      }
-    ]
-  },
-  {
-    "id": "interiors-review-apartment-floor-1",
-    "seed": "interiors-review",
-    "building": {
-      "id": "building-10",
-      "kind": "apartment",
-      "footprint": [
-        {
-          "x": 55,
-          "z": 50,
-          "w": 8,
-          "d": 11
-        }
-      ],
-      "groundLevel": 2,
-      "floors": [
-        {
-          "index": 0,
-          "y": 2,
-          "rooms": [
-            {
-              "id": "room-101",
-              "floorIndex": 0,
-              "rect": {
-                "x": 58,
-                "z": 50,
-                "w": 2,
-                "d": 11
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-102",
-              "floorIndex": 0,
-              "rect": {
-                "x": 55,
-                "z": 50,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "kitchen"
-            },
-            {
-              "id": "room-103",
-              "floorIndex": 0,
-              "rect": {
-                "x": 55,
-                "z": 54,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "kitchen"
-            },
-            {
-              "id": "room-104",
-              "floorIndex": 0,
-              "rect": {
-                "x": 55,
-                "z": 57,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "bedroom"
-            },
-            {
-              "id": "room-105",
-              "floorIndex": 0,
-              "rect": {
-                "x": 60,
-                "z": 50,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "bedroom"
-            },
-            {
-              "id": "room-106",
-              "floorIndex": 0,
-              "rect": {
-                "x": 60,
-                "z": 55,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "living-room"
-            },
-            {
-              "id": "room-107",
-              "floorIndex": 0,
-              "rect": {
-                "x": 60,
-                "z": 58,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "bathroom"
-            }
-          ]
-        },
-        {
-          "index": 1,
-          "y": 4,
-          "rooms": [
-            {
-              "id": "room-108",
-              "floorIndex": 1,
-              "rect": {
-                "x": 58,
-                "z": 50,
-                "w": 2,
-                "d": 11
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-109",
-              "floorIndex": 1,
-              "rect": {
-                "x": 55,
-                "z": 50,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "living-room"
-            },
-            {
-              "id": "room-110",
-              "floorIndex": 1,
-              "rect": {
-                "x": 55,
-                "z": 55,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "kitchen"
-            },
-            {
-              "id": "room-111",
-              "floorIndex": 1,
-              "rect": {
-                "x": 55,
-                "z": 58,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "kitchen"
-            },
-            {
-              "id": "room-112",
-              "floorIndex": 1,
-              "rect": {
-                "x": 60,
-                "z": 50,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "bedroom"
-            },
-            {
-              "id": "room-113",
-              "floorIndex": 1,
-              "rect": {
-                "x": 60,
-                "z": 55,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "living-room"
-            },
-            {
-              "id": "room-114",
-              "floorIndex": 1,
-              "rect": {
-                "x": 60,
-                "z": 58,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "bathroom"
-            }
-          ]
-        },
-        {
-          "index": 2,
-          "y": 6,
-          "rooms": [
-            {
-              "id": "room-115",
-              "floorIndex": 2,
-              "rect": {
-                "x": 58,
-                "z": 50,
-                "w": 2,
-                "d": 11
-              },
-              "kind": "corridor"
-            },
-            {
-              "id": "room-116",
-              "floorIndex": 2,
-              "rect": {
-                "x": 55,
-                "z": 50,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "kitchen"
-            },
-            {
-              "id": "room-117",
-              "floorIndex": 2,
-              "rect": {
-                "x": 55,
-                "z": 54,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "kitchen"
-            },
-            {
-              "id": "room-118",
-              "floorIndex": 2,
-              "rect": {
-                "x": 55,
-                "z": 57,
-                "w": 3,
-                "d": 4
-              },
-              "kind": "living-room"
-            },
-            {
-              "id": "room-119",
-              "floorIndex": 2,
-              "rect": {
-                "x": 60,
-                "z": 50,
-                "w": 3,
-                "d": 5
-              },
-              "kind": "bedroom"
-            },
-            {
-              "id": "room-120",
-              "floorIndex": 2,
-              "rect": {
-                "x": 60,
-                "z": 55,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "living-room"
-            },
-            {
-              "id": "room-121",
-              "floorIndex": 2,
-              "rect": {
-                "x": 60,
-                "z": 58,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "bathroom"
-            }
-          ]
-        }
-      ],
-      "roof": {
-        "kind": "flat",
-        "walkable": true
-      },
-      "entrances": [
-        {
-          "tile": {
-            "x": 62,
-            "y": 2,
-            "z": 55
-          },
-          "side": "e"
-        }
-      ],
-      "connectorIds": ["stairs-25", "stairs-26", "stairs-27"]
-    },
-    "floorIndex": 1,
-    "camera": {
-      "yawIndex": 1,
-      "zoom": 58.01423075012756,
-      "target": {
-        "x": 59,
-        "y": 3.55,
-        "z": 55.5
-      },
-      "bounds": {
-        "x": 0,
-        "z": 0,
-        "w": 72,
-        "d": 72
-      },
-      "zoomRange": {
-        "min": 11.981531570105389,
-        "max": 192
-      }
-    },
-    "props": [
-      {
-        "id": "prop-522",
+        "id": "prop-314",
         "kind": "planter",
-        "tile": {
-          "x": 58,
-          "y": 4,
-          "z": 50
-        },
-        "rotation": 0
-      },
-      {
-        "id": "prop-523",
-        "kind": "sofa",
-        "tile": {
-          "x": 57,
-          "y": 4,
-          "z": 54
-        },
+        "tile": { "x": 32, "y": 2, "z": 55 },
         "rotation": 1
-      },
-      {
-        "id": "prop-524",
-        "kind": "sofa",
-        "tile": {
-          "x": 57,
-          "y": 4,
-          "z": 53
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-525",
-        "kind": "table",
-        "tile": {
-          "x": 56,
-          "y": 4,
-          "z": 52
-        },
-        "rotation": 0
-      },
-      {
-        "id": "prop-526",
-        "kind": "kitchen-counter",
-        "tile": {
-          "x": 57,
-          "y": 4,
-          "z": 57
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-527",
-        "kind": "refrigerator",
-        "tile": {
-          "x": 55,
-          "y": 4,
-          "z": 57
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-528",
-        "kind": "kitchen-counter",
-        "tile": {
-          "x": 55,
-          "y": 4,
-          "z": 58
-        },
-        "rotation": 0
-      },
-      {
-        "id": "prop-529",
-        "kind": "refrigerator",
-        "tile": {
-          "x": 55,
-          "y": 4,
-          "z": 60
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-530",
-        "kind": "bed",
-        "tile": {
-          "x": 62,
-          "y": 4,
-          "z": 50
-        },
-        "rotation": 0
-      },
-      {
-        "id": "prop-531",
-        "kind": "wardrobe",
-        "tile": {
-          "x": 62,
-          "y": 4,
-          "z": 54
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-532",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 60,
-          "y": 4,
-          "z": 50
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-533",
-        "kind": "sofa",
-        "tile": {
-          "x": 60,
-          "y": 4,
-          "z": 56
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-534",
-        "kind": "bathroom-vanity",
-        "tile": {
-          "x": 60,
-          "y": 4,
-          "z": 59
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-535",
-        "kind": "toilet",
-        "tile": {
-          "x": 62,
-          "y": 4,
-          "z": 58
-        },
-        "rotation": 0
       }
     ]
   },
@@ -1730,14 +927,7 @@
     "building": {
       "id": "building-2",
       "kind": "warehouse",
-      "footprint": [
-        {
-          "x": 17,
-          "z": 45,
-          "w": 15,
-          "d": 10
-        }
-      ],
+      "footprint": [{ "x": 17, "z": 45, "w": 15, "d": 10 }],
       "groundLevel": 4,
       "floors": [
         {
@@ -1745,326 +935,186 @@
           "y": 4,
           "rooms": [
             {
-              "id": "room-2",
+              "id": "room-5",
               "floorIndex": 0,
-              "rect": {
-                "x": 17,
-                "z": 45,
-                "w": 7,
-                "d": 10
-              },
+              "rect": { "x": 17, "z": 45, "w": 12, "d": 10 },
+              "layoutRole": "arrival",
               "kind": "storage"
             },
             {
-              "id": "room-3",
+              "id": "room-6",
               "floorIndex": 0,
-              "rect": {
-                "x": 24,
-                "z": 45,
-                "w": 8,
-                "d": 10
-              },
+              "rect": { "x": 29, "z": 45, "w": 3, "d": 4 },
+              "layoutRole": "main",
               "kind": "workshop"
+            },
+            {
+              "id": "room-7",
+              "floorIndex": 0,
+              "rect": { "x": 29, "z": 49, "w": 3, "d": 3 },
+              "layoutRole": "service",
+              "kind": "storage"
+            },
+            {
+              "id": "room-8",
+              "floorIndex": 0,
+              "rect": { "x": 29, "z": 52, "w": 3, "d": 3 },
+              "layoutRole": "service",
+              "kind": "office"
             }
           ]
         }
       ],
-      "roof": {
-        "kind": "flat",
-        "walkable": true
-      },
-      "entrances": [
-        {
-          "tile": {
-            "x": 17,
-            "y": 4,
-            "z": 50
-          },
-          "side": "w"
-        }
-      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 17, "y": 4, "z": 50 }, "side": "w" }],
       "connectorIds": ["stairs-2", "ladder-2"]
     },
     "floorIndex": 0,
     "camera": {
       "yawIndex": 0,
       "zoom": 44.090815370097374,
-      "target": {
-        "x": 24.5,
-        "y": 3.55,
-        "z": 50
-      },
-      "bounds": {
-        "x": 0,
-        "z": 0,
-        "w": 72,
-        "d": 72
-      },
-      "zoomRange": {
-        "min": 11.981531570105389,
-        "max": 192
-      }
+      "target": { "x": 24.5, "y": 3.55, "z": 50 },
+      "bounds": { "x": 0, "z": 0, "w": 72, "d": 72 },
+      "zoomRange": { "min": 11.981531570105389, "max": 192 }
     },
     "props": [
       {
-        "id": "prop-335",
+        "id": "prop-345",
         "kind": "shelving",
-        "tile": {
-          "x": 22,
-          "y": 4,
-          "z": 46
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-336",
-        "kind": "shelving",
-        "tile": {
-          "x": 22,
-          "y": 4,
-          "z": 48
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-337",
-        "kind": "shelving",
-        "tile": {
-          "x": 22,
-          "y": 4,
-          "z": 49
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-338",
-        "kind": "shelving",
-        "tile": {
-          "x": 22,
-          "y": 4,
-          "z": 50
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-339",
-        "kind": "shelving",
-        "tile": {
-          "x": 22,
-          "y": 4,
-          "z": 51
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-340",
-        "kind": "shelving",
-        "tile": {
-          "x": 22,
-          "y": 4,
-          "z": 52
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-341",
-        "kind": "shelving",
-        "tile": {
-          "x": 22,
-          "y": 4,
-          "z": 53
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-342",
-        "kind": "shelving",
-        "tile": {
-          "x": 19,
-          "y": 4,
-          "z": 46
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-343",
-        "kind": "shelving",
-        "tile": {
-          "x": 19,
-          "y": 4,
-          "z": 47
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-344",
-        "kind": "crate",
-        "tile": {
-          "x": 23,
-          "y": 4,
-          "z": 45
-        },
-        "rotation": 0
+        "tile": { "x": 18, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-346",
-        "kind": "crate",
-        "tile": {
-          "x": 20,
-          "y": 4,
-          "z": 45
-        },
-        "rotation": 0
+        "kind": "shelving",
+        "tile": { "x": 19, "y": 4, "z": 53 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-347",
+        "kind": "shelving",
+        "tile": { "x": 20, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-348",
-        "kind": "crate",
-        "tile": {
-          "x": 17,
-          "y": 4,
-          "z": 45
-        },
-        "rotation": 0
+        "kind": "shelving",
+        "tile": { "x": 21, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-349",
-        "kind": "crate",
-        "tile": {
-          "x": 17,
-          "y": 4,
-          "z": 54
-        },
-        "rotation": 3
+        "kind": "shelving",
+        "tile": { "x": 22, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-350",
         "kind": "shelving",
-        "tile": {
-          "x": 17,
-          "y": 4,
-          "z": 47
-        },
-        "rotation": 3
+        "tile": { "x": 23, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-351",
         "kind": "shelving",
-        "tile": {
-          "x": 17,
-          "y": 4,
-          "z": 51
-        },
-        "rotation": 3
+        "tile": { "x": 24, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-352",
         "kind": "shelving",
-        "tile": {
-          "x": 17,
-          "y": 4,
-          "z": 52
-        },
-        "rotation": 3
+        "tile": { "x": 25, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-353",
-        "kind": "workbench",
-        "tile": {
-          "x": 24,
-          "y": 4,
-          "z": 54
-        },
-        "rotation": 3
+        "kind": "shelving",
+        "tile": { "x": 26, "y": 4, "z": 53 },
+        "rotation": 2
       },
       {
         "id": "prop-354",
-        "kind": "workbench",
-        "tile": {
-          "x": 24,
-          "y": 4,
-          "z": 53
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-355",
-        "kind": "workbench",
-        "tile": {
-          "x": 24,
-          "y": 4,
-          "z": 52
-        },
+        "kind": "crate",
+        "tile": { "x": 17, "y": 4, "z": 54 },
         "rotation": 3
       },
       {
         "id": "prop-356",
-        "kind": "shelving",
-        "tile": {
-          "x": 31,
-          "y": 4,
-          "z": 54
-        },
-        "rotation": 1
+        "kind": "crate",
+        "tile": { "x": 17, "y": 4, "z": 51 },
+        "rotation": 3
       },
       {
         "id": "prop-357",
-        "kind": "shelving",
-        "tile": {
-          "x": 31,
-          "y": 4,
-          "z": 53
-        },
-        "rotation": 1
+        "kind": "crate",
+        "tile": { "x": 17, "y": 4, "z": 49 },
+        "rotation": 3
       },
       {
         "id": "prop-358",
-        "kind": "shelving",
-        "tile": {
-          "x": 31,
-          "y": 4,
-          "z": 52
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-359",
         "kind": "crate",
-        "tile": {
-          "x": 25,
-          "y": 4,
-          "z": 46
-        },
+        "tile": { "x": 17, "y": 4, "z": 48 },
         "rotation": 3
       },
       {
         "id": "prop-360",
-        "kind": "crate",
-        "tile": {
-          "x": 25,
-          "y": 4,
-          "z": 48
-        },
-        "rotation": 3
+        "kind": "shelving",
+        "tile": { "x": 28, "y": 4, "z": 54 },
+        "rotation": 2
       },
       {
         "id": "prop-361",
-        "kind": "crate",
-        "tile": {
-          "x": 25,
-          "y": 4,
-          "z": 49
-        },
-        "rotation": 3
+        "kind": "shelving",
+        "tile": { "x": 28, "y": 4, "z": 45 },
+        "rotation": 0
       },
       {
         "id": "prop-362",
+        "kind": "shelving",
+        "tile": { "x": 27, "y": 4, "z": 45 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-363",
+        "kind": "workbench",
+        "tile": { "x": 31, "y": 4, "z": 45 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-364",
+        "kind": "workbench",
+        "tile": { "x": 31, "y": 4, "z": 46 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-365",
+        "kind": "workbench",
+        "tile": { "x": 31, "y": 4, "z": 47 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-366",
         "kind": "crate",
-        "tile": {
-          "x": 25,
-          "y": 4,
-          "z": 50
-        },
-        "rotation": 3
+        "tile": { "x": 31, "y": 4, "z": 49 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-367",
+        "kind": "crate",
+        "tile": { "x": 30, "y": 4, "z": 49 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-368",
+        "kind": "desk-computer",
+        "tile": { "x": 31, "y": 4, "z": 54 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-369",
+        "kind": "desk-computer",
+        "tile": { "x": 29, "y": 4, "z": 54 },
+        "rotation": 2
       }
     ]
   },
@@ -2072,16 +1122,9 @@
     "id": "interiors-review-shop-floor-0",
     "seed": "interiors-review",
     "building": {
-      "id": "building-5",
+      "id": "building-13",
       "kind": "shop",
-      "footprint": [
-        {
-          "x": 56,
-          "z": 76,
-          "w": 7,
-          "d": 9
-        }
-      ],
+      "footprint": [{ "x": 51, "z": 32, "w": 9, "d": 8 }],
       "groundLevel": 2,
       "floors": [
         {
@@ -2089,26 +1132,25 @@
           "y": 2,
           "rooms": [
             {
-              "id": "room-37",
+              "id": "room-115",
               "floorIndex": 0,
-              "rect": {
-                "x": 56,
-                "z": 76,
-                "w": 7,
-                "d": 4
-              },
+              "rect": { "x": 51, "z": 34, "w": 9, "d": 6 },
+              "layoutRole": "arrival",
+              "kind": "bookshop"
+            },
+            {
+              "id": "room-116",
+              "floorIndex": 0,
+              "rect": { "x": 51, "z": 32, "w": 5, "d": 2 },
+              "layoutRole": "service",
               "kind": "storage"
             },
             {
-              "id": "room-38",
+              "id": "room-117",
               "floorIndex": 0,
-              "rect": {
-                "x": 56,
-                "z": 80,
-                "w": 7,
-                "d": 5
-              },
-              "kind": "retail"
+              "rect": { "x": 56, "z": 32, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "break-room"
             }
           ]
         },
@@ -2117,215 +1159,927 @@
           "y": 4,
           "rooms": [
             {
-              "id": "room-39",
+              "id": "room-118",
               "floorIndex": 1,
-              "rect": {
-                "x": 56,
-                "z": 76,
-                "w": 7,
-                "d": 4
-              },
+              "rect": { "x": 51, "z": 34, "w": 9, "d": 6 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-119",
+              "floorIndex": 1,
+              "rect": { "x": 51, "z": 32, "w": 5, "d": 2 },
+              "layoutRole": "service",
               "kind": "storage"
             },
             {
-              "id": "room-40",
+              "id": "room-120",
               "floorIndex": 1,
-              "rect": {
-                "x": 56,
-                "z": 80,
-                "w": 7,
-                "d": 5
-              },
-              "kind": "office"
+              "rect": { "x": 56, "z": 32, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "break-room"
             }
           ]
         }
       ],
-      "roof": {
-        "kind": "flat",
-        "walkable": true
-      },
-      "entrances": [
-        {
-          "tile": {
-            "x": 62,
-            "y": 2,
-            "z": 80
-          },
-          "side": "e"
-        }
-      ],
-      "connectorIds": ["stairs-9", "stairs-10", "ladder-1"]
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 55, "y": 2, "z": 39 }, "side": "s" }],
+      "connectorIds": ["stairs-38", "stairs-39", "ladder-7"],
+      "interiorStyle": "bookshop"
     },
     "floorIndex": 0,
     "camera": {
       "yawIndex": 1,
-      "zoom": 68.89189901577646,
-      "target": {
-        "x": 59.5,
-        "y": 2.05,
-        "z": 80.5
-      },
-      "bounds": {
-        "x": 0,
-        "z": 0,
-        "w": 96,
-        "d": 96
-      },
-      "zoomRange": {
-        "min": 8.986148677579042,
-        "max": 192
-      }
+      "zoom": 64.83943436779059,
+      "target": { "x": 55.5, "y": 2.05, "z": 36 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
     },
     "props": [
       {
-        "id": "prop-606",
-        "kind": "shelving",
-        "tile": {
-          "x": 57,
-          "y": 2,
-          "z": 77
-        },
-        "rotation": 0
+        "id": "prop-820",
+        "kind": "bookcase",
+        "tile": { "x": 59, "y": 2, "z": 39 },
+        "rotation": 1
       },
       {
-        "id": "prop-607",
-        "kind": "shelving",
-        "tile": {
-          "x": 58,
-          "y": 2,
-          "z": 77
-        },
-        "rotation": 0
+        "id": "prop-821",
+        "kind": "bookcase",
+        "tile": { "x": 59, "y": 2, "z": 37 },
+        "rotation": 1
       },
       {
-        "id": "prop-608",
-        "kind": "shelving",
-        "tile": {
-          "x": 59,
-          "y": 2,
-          "z": 77
-        },
-        "rotation": 0
+        "id": "prop-822",
+        "kind": "bookcase",
+        "tile": { "x": 59, "y": 2, "z": 36 },
+        "rotation": 1
       },
       {
-        "id": "prop-609",
-        "kind": "shelving",
-        "tile": {
-          "x": 60,
-          "y": 2,
-          "z": 77
-        },
-        "rotation": 0
-      },
-      {
-        "id": "prop-610",
-        "kind": "shelving",
-        "tile": {
-          "x": 61,
-          "y": 2,
-          "z": 77
-        },
-        "rotation": 0
-      },
-      {
-        "id": "prop-611",
-        "kind": "crate",
-        "tile": {
-          "x": 56,
-          "y": 2,
-          "z": 76
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-613",
-        "kind": "crate",
-        "tile": {
-          "x": 56,
-          "y": 2,
-          "z": 79
-        },
-        "rotation": 3
-      },
-      {
-        "id": "prop-614",
+        "id": "prop-823",
         "kind": "checkout",
-        "tile": {
-          "x": 61,
-          "y": 2,
-          "z": 81
-        },
+        "tile": { "x": 55, "y": 2, "z": 37 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-824",
+        "kind": "cafe-table",
+        "tile": { "x": 56, "y": 2, "z": 37 },
         "rotation": 2
       },
       {
-        "id": "prop-615",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 57,
-          "y": 2,
-          "z": 81
-        },
+        "id": "prop-825",
+        "kind": "bookcase",
+        "tile": { "x": 52, "y": 2, "z": 35 },
         "rotation": 0
       },
       {
-        "id": "prop-616",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 58,
-          "y": 2,
-          "z": 81
-        },
+        "id": "prop-826",
+        "kind": "bookcase",
+        "tile": { "x": 54, "y": 2, "z": 35 },
         "rotation": 0
       },
       {
-        "id": "prop-617",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 59,
-          "y": 2,
-          "z": 81
-        },
+        "id": "prop-827",
+        "kind": "bookcase",
+        "tile": { "x": 55, "y": 2, "z": 35 },
         "rotation": 0
       },
       {
-        "id": "prop-618",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 60,
-          "y": 2,
-          "z": 81
-        },
+        "id": "prop-828",
+        "kind": "bookcase",
+        "tile": { "x": 56, "y": 2, "z": 35 },
         "rotation": 0
       },
+      {
+        "id": "prop-829",
+        "kind": "bookcase",
+        "tile": { "x": 58, "y": 2, "z": 35 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-831",
+        "kind": "sofa",
+        "tile": { "x": 51, "y": 2, "z": 39 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-832",
+        "kind": "sofa",
+        "tile": { "x": 52, "y": 2, "z": 39 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-833",
+        "kind": "planter",
+        "tile": { "x": 51, "y": 2, "z": 34 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-834",
+        "kind": "shelving",
+        "tile": { "x": 51, "y": 2, "z": 33 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-835",
+        "kind": "shelving",
+        "tile": { "x": 51, "y": 2, "z": 32 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-836",
+        "kind": "kitchen-counter",
+        "tile": { "x": 56, "y": 2, "z": 32 },
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": "shops-review-grocery-floor-0",
+    "seed": "shops-review",
+    "building": {
+      "id": "building-6",
+      "kind": "shop",
+      "footprint": [{ "x": 29, "z": 83, "w": 7, "d": 9 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-54",
+              "floorIndex": 0,
+              "rect": { "x": 29, "z": 85, "w": 7, "d": 7 },
+              "layoutRole": "arrival",
+              "kind": "grocery"
+            },
+            {
+              "id": "room-55",
+              "floorIndex": 0,
+              "rect": { "x": 29, "z": 83, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            },
+            {
+              "id": "room-56",
+              "floorIndex": 0,
+              "rect": { "x": 32, "z": 83, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-57",
+              "floorIndex": 1,
+              "rect": { "x": 29, "z": 85, "w": 7, "d": 7 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-58",
+              "floorIndex": 1,
+              "rect": { "x": 29, "z": 83, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            },
+            {
+              "id": "room-59",
+              "floorIndex": 1,
+              "rect": { "x": 32, "z": 83, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 32, "y": 2, "z": 91 }, "side": "s" }],
+      "connectorIds": ["stairs-18", "stairs-19", "ladder-4"],
+      "interiorStyle": "grocery"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 0,
+      "zoom": 68.89189901577714,
+      "target": { "x": 32.5, "y": 2.05, "z": 87.5 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-590",
+        "kind": "produce-bin",
+        "tile": { "x": 30, "y": 2, "z": 90 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-591",
+        "kind": "produce-bin",
+        "tile": { "x": 31, "y": 2, "z": 90 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-592",
+        "kind": "chilled-display",
+        "tile": { "x": 35, "y": 2, "z": 91 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-593",
+        "kind": "chilled-display",
+        "tile": { "x": 34, "y": 2, "z": 91 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-594",
+        "kind": "checkout",
+        "tile": { "x": 32, "y": 2, "z": 89 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-595",
+        "kind": "retail-shelf",
+        "tile": { "x": 31, "y": 2, "z": 86 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-596",
+        "kind": "retail-shelf",
+        "tile": { "x": 32, "y": 2, "z": 86 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-597",
+        "kind": "retail-shelf",
+        "tile": { "x": 34, "y": 2, "z": 86 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-598",
+        "kind": "retail-shelf",
+        "tile": { "x": 33, "y": 2, "z": 89 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-599",
+        "kind": "retail-shelf",
+        "tile": { "x": 34, "y": 2, "z": 89 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-600",
+        "kind": "produce-bin",
+        "tile": { "x": 29, "y": 2, "z": 91 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-602",
+        "kind": "produce-bin",
+        "tile": { "x": 29, "y": 2, "z": 88 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-603",
+        "kind": "kitchen-counter",
+        "tile": { "x": 29, "y": 2, "z": 83 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-604",
+        "kind": "crate",
+        "tile": { "x": 35, "y": 2, "z": 84 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-605",
+        "kind": "crate",
+        "tile": { "x": 35, "y": 2, "z": 83 },
+        "rotation": 1
+      }
+    ]
+  },
+  {
+    "id": "shops-review-bakery-cafe-floor-0",
+    "seed": "shops-review",
+    "building": {
+      "id": "building-9",
+      "kind": "shop",
+      "footprint": [{ "x": 45, "z": 55, "w": 6, "d": 8 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-72",
+              "floorIndex": 0,
+              "rect": { "x": 45, "z": 55, "w": 4, "d": 8 },
+              "layoutRole": "arrival",
+              "kind": "bakery-cafe"
+            },
+            {
+              "id": "room-73",
+              "floorIndex": 0,
+              "rect": { "x": 49, "z": 55, "w": 2, "d": 5 },
+              "layoutRole": "service",
+              "kind": "kitchen"
+            },
+            {
+              "id": "room-74",
+              "floorIndex": 0,
+              "rect": { "x": 49, "z": 60, "w": 2, "d": 3 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-75",
+              "floorIndex": 1,
+              "rect": { "x": 45, "z": 55, "w": 4, "d": 8 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-76",
+              "floorIndex": 1,
+              "rect": { "x": 49, "z": 55, "w": 2, "d": 5 },
+              "layoutRole": "service",
+              "kind": "kitchen"
+            },
+            {
+              "id": "room-77",
+              "floorIndex": 1,
+              "rect": { "x": 49, "z": 60, "w": 2, "d": 3 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 45, "y": 2, "z": 59 }, "side": "w" }],
+      "connectorIds": ["stairs-24", "stairs-25", "ladder-7"],
+      "interiorStyle": "bakery-cafe"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 2,
+      "zoom": 78.73359887517354,
+      "target": { "x": 48, "y": 2.05, "z": 59 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-674",
+        "kind": "coffee-counter",
+        "tile": { "x": 45, "y": 2, "z": 62 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-675",
+        "kind": "bakery-case",
+        "tile": { "x": 47, "y": 2, "z": 60 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-676",
+        "kind": "cafe-table",
+        "tile": { "x": 46, "y": 2, "z": 57 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-677",
+        "kind": "cafe-table",
+        "tile": { "x": 46, "y": 2, "z": 61 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-678",
+        "kind": "cafe-table",
+        "tile": { "x": 47, "y": 2, "z": 56 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-679",
+        "kind": "cafe-table",
+        "tile": { "x": 48, "y": 2, "z": 55 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-680",
+        "kind": "kitchen-counter",
+        "tile": { "x": 50, "y": 2, "z": 55 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-682",
+        "kind": "refrigerator",
+        "tile": { "x": 49, "y": 2, "z": 57 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-683",
+        "kind": "dining-table",
+        "tile": { "x": 49, "y": 2, "z": 59 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-684",
+        "kind": "crate",
+        "tile": { "x": 49, "y": 2, "z": 60 },
+        "rotation": 3
+      }
+    ]
+  },
+  {
+    "id": "shops-review-clothing-floor-0",
+    "seed": "shops-review",
+    "building": {
+      "id": "building-7",
+      "kind": "shop",
+      "footprint": [{ "x": 71, "z": 58, "w": 12, "d": 7 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-60",
+              "floorIndex": 0,
+              "rect": { "x": 71, "z": 60, "w": 12, "d": 5 },
+              "layoutRole": "arrival",
+              "kind": "clothing"
+            },
+            {
+              "id": "room-61",
+              "floorIndex": 0,
+              "rect": { "x": 71, "z": 58, "w": 9, "d": 2 },
+              "layoutRole": "service",
+              "kind": "storage"
+            },
+            {
+              "id": "room-62",
+              "floorIndex": 0,
+              "rect": { "x": 80, "z": 58, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "kind": "office"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-63",
+              "floorIndex": 1,
+              "rect": { "x": 71, "z": 60, "w": 12, "d": 5 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-64",
+              "floorIndex": 1,
+              "rect": { "x": 71, "z": 58, "w": 9, "d": 2 },
+              "layoutRole": "service",
+              "kind": "storage"
+            },
+            {
+              "id": "room-65",
+              "floorIndex": 1,
+              "rect": { "x": 80, "z": 58, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 77, "y": 2, "z": 64 }, "side": "s" }],
+      "connectorIds": ["stairs-20", "stairs-21", "ladder-5"],
+      "interiorStyle": "clothing"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 2,
+      "zoom": 58.014230750128114,
+      "target": { "x": 77, "y": 2.05, "z": 61.5 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
+    },
+    "props": [
       {
         "id": "prop-619",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 56,
-          "y": 2,
-          "z": 84
-        },
+        "kind": "clothing-rack",
+        "tile": { "x": 72, "y": 2, "z": 63 },
         "rotation": 2
       },
       {
         "id": "prop-620",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 57,
-          "y": 2,
-          "z": 84
-        },
+        "kind": "clothing-rack",
+        "tile": { "x": 76, "y": 2, "z": 63 },
         "rotation": 2
       },
       {
         "id": "prop-621",
-        "kind": "retail-shelf",
-        "tile": {
-          "x": 58,
+        "kind": "clothing-rack",
+        "tile": { "x": 78, "y": 2, "z": 63 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-622",
+        "kind": "checkout",
+        "tile": { "x": 77, "y": 2, "z": 62 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-623",
+        "kind": "clothing-rack",
+        "tile": { "x": 71, "y": 2, "z": 64 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-625",
+        "kind": "clothing-rack",
+        "tile": { "x": 75, "y": 2, "z": 64 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-627",
+        "kind": "clothing-rack",
+        "tile": { "x": 80, "y": 2, "z": 64 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-628",
+        "kind": "clothing-rack",
+        "tile": { "x": 81, "y": 2, "z": 64 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-631",
+        "kind": "sofa",
+        "tile": { "x": 82, "y": 2, "z": 64 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-632",
+        "kind": "planter",
+        "tile": { "x": 82, "y": 2, "z": 60 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-633",
+        "kind": "planter",
+        "tile": { "x": 71, "y": 2, "z": 60 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-634",
+        "kind": "crate",
+        "tile": { "x": 71, "y": 2, "z": 59 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-635",
+        "kind": "crate",
+        "tile": { "x": 71, "y": 2, "z": 58 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-636",
+        "kind": "crate",
+        "tile": { "x": 79, "y": 2, "z": 59 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-637",
+        "kind": "crate",
+        "tile": { "x": 78, "y": 2, "z": 59 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-638",
+        "kind": "desk-computer",
+        "tile": { "x": 80, "y": 2, "z": 58 },
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": "shops-review-hardware-floor-0",
+    "seed": "shops-review",
+    "building": {
+      "id": "building-4",
+      "kind": "shop",
+      "footprint": [{ "x": 24, "z": 45, "w": 8, "d": 7 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
           "y": 2,
-          "z": 84
+          "rooms": [
+            {
+              "id": "room-28",
+              "floorIndex": 0,
+              "rect": { "x": 24, "z": 45, "w": 8, "d": 5 },
+              "layoutRole": "arrival",
+              "kind": "hardware"
+            },
+            {
+              "id": "room-29",
+              "floorIndex": 0,
+              "rect": { "x": 24, "z": 50, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "kind": "storage"
+            },
+            {
+              "id": "room-30",
+              "floorIndex": 0,
+              "rect": { "x": 27, "z": 50, "w": 5, "d": 2 },
+              "layoutRole": "service",
+              "kind": "workshop"
+            }
+          ]
         },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-31",
+              "floorIndex": 1,
+              "rect": { "x": 24, "z": 45, "w": 8, "d": 5 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-32",
+              "floorIndex": 1,
+              "rect": { "x": 24, "z": 50, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            },
+            {
+              "id": "room-33",
+              "floorIndex": 1,
+              "rect": { "x": 27, "z": 50, "w": 5, "d": 2 },
+              "layoutRole": "service",
+              "kind": "workshop"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 28, "y": 2, "z": 45 }, "side": "n" }],
+      "connectorIds": ["stairs-10", "stairs-11", "ladder-3"],
+      "interiorStyle": "hardware"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 2,
+      "zoom": 73.48469228349529,
+      "target": { "x": 28, "y": 2.05, "z": 48.5 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-534",
+        "kind": "hardware-shelf",
+        "tile": { "x": 24, "y": 2, "z": 49 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-535",
+        "kind": "hardware-shelf",
+        "tile": { "x": 24, "y": 2, "z": 48 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-536",
+        "kind": "hardware-shelf",
+        "tile": { "x": 24, "y": 2, "z": 47 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-537",
+        "kind": "workbench",
+        "tile": { "x": 31, "y": 2, "z": 49 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-538",
+        "kind": "checkout",
+        "tile": { "x": 26, "y": 2, "z": 48 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-539",
+        "kind": "hardware-shelf",
+        "tile": { "x": 27, "y": 2, "z": 48 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-540",
+        "kind": "hardware-shelf",
+        "tile": { "x": 28, "y": 2, "z": 48 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-541",
+        "kind": "hardware-shelf",
+        "tile": { "x": 29, "y": 2, "z": 48 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-542",
+        "kind": "crate",
+        "tile": { "x": 24, "y": 2, "z": 46 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-543",
+        "kind": "crate",
+        "tile": { "x": 24, "y": 2, "z": 45 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-544",
+        "kind": "crate",
+        "tile": { "x": 26, "y": 2, "z": 51 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-545",
+        "kind": "workbench",
+        "tile": { "x": 31, "y": 2, "z": 51 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-546",
+        "kind": "workbench",
+        "tile": { "x": 31, "y": 2, "z": 50 },
+        "rotation": 1
+      }
+    ]
+  },
+  {
+    "id": "shops-review-bookshop-floor-0",
+    "seed": "shops-review",
+    "building": {
+      "id": "building-20",
+      "kind": "shop",
+      "footprint": [{ "x": 49, "z": 18, "w": 7, "d": 7 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-179",
+              "floorIndex": 0,
+              "rect": { "x": 49, "z": 18, "w": 7, "d": 4 },
+              "layoutRole": "arrival",
+              "kind": "bookshop"
+            },
+            {
+              "id": "room-180",
+              "floorIndex": 0,
+              "rect": { "x": 49, "z": 22, "w": 3, "d": 3 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            },
+            {
+              "id": "room-181",
+              "floorIndex": 0,
+              "rect": { "x": 52, "z": 22, "w": 4, "d": 3 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-182",
+              "floorIndex": 1,
+              "rect": { "x": 49, "z": 18, "w": 7, "d": 4 },
+              "layoutRole": "arrival",
+              "kind": "office"
+            },
+            {
+              "id": "room-183",
+              "floorIndex": 1,
+              "rect": { "x": 49, "z": 22, "w": 3, "d": 3 },
+              "layoutRole": "service",
+              "kind": "break-room"
+            },
+            {
+              "id": "room-184",
+              "floorIndex": 1,
+              "rect": { "x": 52, "z": 22, "w": 4, "d": 3 },
+              "layoutRole": "service",
+              "kind": "storage"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 52, "y": 2, "z": 18 }, "side": "n" }],
+      "connectorIds": ["stairs-56", "stairs-57", "ladder-12"],
+      "interiorStyle": "bookshop"
+    },
+    "floorIndex": 0,
+    "camera": {
+      "yawIndex": 2,
+      "zoom": 78.73359887517387,
+      "target": { "x": 52.5, "y": 2.05, "z": 21.5 },
+      "bounds": { "x": 0, "z": 0, "w": 96, "d": 96 },
+      "zoomRange": { "min": 8.986148677579042, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-994",
+        "kind": "bookcase",
+        "tile": { "x": 55, "y": 2, "z": 21 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-995",
+        "kind": "bookcase",
+        "tile": { "x": 53, "y": 2, "z": 21 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-996",
+        "kind": "bookcase",
+        "tile": { "x": 52, "y": 2, "z": 21 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-997",
+        "kind": "checkout",
+        "tile": { "x": 51, "y": 2, "z": 19 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-998",
+        "kind": "cafe-table",
+        "tile": { "x": 53, "y": 2, "z": 19 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-999",
+        "kind": "sofa",
+        "tile": { "x": 55, "y": 2, "z": 19 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-1000",
+        "kind": "sofa",
+        "tile": { "x": 55, "y": 2, "z": 18 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-1001",
+        "kind": "kitchen-counter",
+        "tile": { "x": 49, "y": 2, "z": 24 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-1002",
+        "kind": "shelving",
+        "tile": { "x": 53, "y": 2, "z": 23 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-1003",
+        "kind": "crate",
+        "tile": { "x": 55, "y": 2, "z": 24 },
+        "rotation": 2
+      },
+      {
+        "id": "prop-1004",
+        "kind": "crate",
+        "tile": { "x": 54, "y": 2, "z": 24 },
         "rotation": 2
       }
     ]
@@ -2334,16 +2088,9 @@
     "id": "interiors-review-house-floor-0",
     "seed": "interiors-review",
     "building": {
-      "id": "building-1",
+      "id": "building-2",
       "kind": "house",
-      "footprint": [
-        {
-          "x": 4,
-          "z": 25,
-          "w": 8,
-          "d": 7
-        }
-      ],
+      "footprint": [{ "x": 27, "z": 32, "w": 7, "d": 8 }],
       "groundLevel": 2,
       "floors": [
         {
@@ -2351,59 +2098,40 @@
           "y": 2,
           "rooms": [
             {
-              "id": "room-1",
+              "id": "room-7",
               "floorIndex": 0,
-              "rect": {
-                "x": 4,
-                "z": 28,
-                "w": 8,
-                "d": 1
-              },
-              "kind": "corridor"
+              "rect": { "x": 27, "z": 37, "w": 4, "d": 3 },
+              "layoutRole": "arrival",
+              "kind": "living-room"
             },
             {
-              "id": "room-2",
+              "id": "room-8",
               "floorIndex": 0,
-              "rect": {
-                "x": 4,
-                "z": 25,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "bathroom"
-            },
-            {
-              "id": "room-3",
-              "floorIndex": 0,
-              "rect": {
-                "x": 7,
-                "z": 25,
-                "w": 5,
-                "d": 3
-              },
-              "kind": "bedroom"
-            },
-            {
-              "id": "room-4",
-              "floorIndex": 0,
-              "rect": {
-                "x": 4,
-                "z": 29,
-                "w": 4,
-                "d": 3
-              },
+              "rect": { "x": 31, "z": 37, "w": 3, "d": 3 },
+              "layoutRole": "service",
+              "layoutSlot": "kitchen",
               "kind": "kitchen"
             },
             {
-              "id": "room-5",
+              "id": "room-9",
               "floorIndex": 0,
-              "rect": {
-                "x": 8,
-                "z": 29,
-                "w": 4,
-                "d": 3
-              },
-              "kind": "living-room"
+              "rect": { "x": 30, "z": 32, "w": 1, "d": 5 },
+              "kind": "corridor"
+            },
+            {
+              "id": "room-10",
+              "floorIndex": 0,
+              "rect": { "x": 27, "z": 32, "w": 3, "d": 5 },
+              "layoutRole": "main",
+              "layoutSlot": "bedroom",
+              "kind": "bedroom"
+            },
+            {
+              "id": "room-11",
+              "floorIndex": 0,
+              "rect": { "x": 31, "z": 32, "w": 3, "d": 5 },
+              "layoutRole": "service",
+              "kind": "bathroom"
             }
           ]
         },
@@ -2412,199 +2140,369 @@
           "y": 4,
           "rooms": [
             {
-              "id": "room-6",
+              "id": "room-12",
               "floorIndex": 1,
-              "rect": {
-                "x": 4,
-                "z": 28,
-                "w": 8,
-                "d": 1
-              },
+              "rect": { "x": 27, "z": 37, "w": 4, "d": 3 },
+              "layoutRole": "arrival",
+              "kind": "bedroom"
+            },
+            {
+              "id": "room-13",
+              "floorIndex": 1,
+              "rect": { "x": 31, "z": 37, "w": 3, "d": 3 },
+              "layoutRole": "service",
+              "layoutSlot": "kitchen",
+              "kind": "bedroom"
+            },
+            {
+              "id": "room-14",
+              "floorIndex": 1,
+              "rect": { "x": 30, "z": 32, "w": 1, "d": 5 },
               "kind": "corridor"
             },
             {
-              "id": "room-7",
+              "id": "room-15",
               "floorIndex": 1,
-              "rect": {
-                "x": 4,
-                "z": 25,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "office"
-            },
-            {
-              "id": "room-8",
-              "floorIndex": 1,
-              "rect": {
-                "x": 7,
-                "z": 25,
-                "w": 5,
-                "d": 3
-              },
+              "rect": { "x": 27, "z": 32, "w": 3, "d": 5 },
+              "layoutRole": "main",
+              "layoutSlot": "bedroom",
               "kind": "bedroom"
             },
             {
-              "id": "room-9",
+              "id": "room-16",
               "floorIndex": 1,
-              "rect": {
-                "x": 4,
-                "z": 29,
-                "w": 3,
-                "d": 3
-              },
-              "kind": "bedroom"
-            },
-            {
-              "id": "room-10",
-              "floorIndex": 1,
-              "rect": {
-                "x": 7,
-                "z": 29,
-                "w": 5,
-                "d": 3
-              },
+              "rect": { "x": 31, "z": 32, "w": 3, "d": 5 },
+              "layoutRole": "service",
               "kind": "bathroom"
             }
           ]
         }
       ],
-      "roof": {
-        "kind": "pitched",
-        "walkable": false
-      },
-      "entrances": [
-        {
-          "tile": {
-            "x": 11,
-            "y": 2,
-            "z": 28
-          },
-          "side": "e"
-        }
-      ],
-      "connectorIds": ["stairs-1"]
+      "roof": { "kind": "pitched", "walkable": false },
+      "entrances": [{ "tile": { "x": 30, "y": 2, "z": 39 }, "side": "s" }],
+      "connectorIds": ["stairs-5"]
     },
     "floorIndex": 0,
     "camera": {
       "yawIndex": 2,
-      "zoom": 73.48469228349543,
-      "target": {
-        "x": 8,
-        "y": 2.05,
-        "z": 28.5
-      },
-      "bounds": {
-        "x": 0,
-        "z": 0,
-        "w": 72,
-        "d": 72
-      },
-      "zoomRange": {
-        "min": 11.981531570105389,
-        "max": 192
-      }
+      "zoom": 73.48469228349516,
+      "target": { "x": 30.5, "y": 2.05, "z": 36 },
+      "bounds": { "x": 0, "z": 0, "w": 72, "d": 72 },
+      "zoomRange": { "min": 11.981531570105389, "max": 192 }
     },
     "props": [
       {
-        "id": "prop-287",
-        "kind": "bathroom-vanity",
-        "tile": {
-          "x": 4,
-          "y": 2,
-          "z": 25
-        },
+        "id": "prop-304",
+        "kind": "sofa",
+        "tile": { "x": 29, "y": 2, "z": 37 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-305",
+        "kind": "dining-table",
+        "tile": { "x": 28, "y": 2, "z": 38 },
         "rotation": 3
       },
       {
-        "id": "prop-288",
-        "kind": "toilet",
-        "tile": {
-          "x": 6,
-          "y": 2,
-          "z": 25
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-289",
-        "kind": "bed",
-        "tile": {
-          "x": 7,
-          "y": 2,
-          "z": 27
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-290",
-        "kind": "wardrobe",
-        "tile": {
-          "x": 11,
-          "y": 2,
-          "z": 25
-        },
-        "rotation": 1
-      },
-      {
-        "id": "prop-291",
-        "kind": "desk-computer",
-        "tile": {
-          "x": 11,
-          "y": 2,
-          "z": 27
-        },
-        "rotation": 2
-      },
-      {
-        "id": "prop-292",
+        "id": "prop-306",
         "kind": "kitchen-counter",
-        "tile": {
-          "x": 4,
-          "y": 2,
-          "z": 31
-        },
+        "tile": { "x": 33, "y": 2, "z": 37 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-307",
+        "kind": "refrigerator",
+        "tile": { "x": 31, "y": 2, "z": 37 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-309",
+        "kind": "dining-table",
+        "tile": { "x": 33, "y": 2, "z": 39 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-310",
+        "kind": "bed",
+        "tile": { "x": 27, "y": 2, "z": 32 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-311",
+        "kind": "wardrobe",
+        "tile": { "x": 29, "y": 2, "z": 32 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-312",
+        "kind": "desk-computer",
+        "tile": { "x": 29, "y": 2, "z": 36 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-313",
+        "kind": "bathroom-vanity",
+        "tile": { "x": 32, "y": 2, "z": 36 },
         "rotation": 2
       },
       {
-        "id": "prop-293",
+        "id": "prop-314",
+        "kind": "toilet",
+        "tile": { "x": 31, "y": 2, "z": 32 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-315",
+        "kind": "planter",
+        "tile": { "x": 33, "y": 2, "z": 32 },
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": "interiors-review-apartment-floor-1",
+    "seed": "interiors-review",
+    "building": {
+      "id": "building-3",
+      "kind": "apartment",
+      "footprint": [{ "x": 44, "z": 28, "w": 7, "d": 6 }],
+      "groundLevel": 2,
+      "floors": [
+        {
+          "index": 0,
+          "y": 2,
+          "rooms": [
+            {
+              "id": "room-17",
+              "floorIndex": 0,
+              "rect": { "x": 44, "z": 30, "w": 3, "d": 4 },
+              "layoutRole": "arrival",
+              "kind": "living-room"
+            },
+            {
+              "id": "room-18",
+              "floorIndex": 0,
+              "rect": { "x": 44, "z": 28, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "layoutSlot": "kitchen",
+              "kind": "kitchen"
+            },
+            {
+              "id": "room-19",
+              "floorIndex": 0,
+              "rect": { "x": 47, "z": 30, "w": 4, "d": 1 },
+              "kind": "corridor"
+            },
+            {
+              "id": "room-20",
+              "floorIndex": 0,
+              "rect": { "x": 47, "z": 28, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "bathroom"
+            },
+            {
+              "id": "room-21",
+              "floorIndex": 0,
+              "rect": { "x": 47, "z": 31, "w": 4, "d": 3 },
+              "layoutRole": "main",
+              "layoutSlot": "bedroom",
+              "kind": "bedroom"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "y": 4,
+          "rooms": [
+            {
+              "id": "room-22",
+              "floorIndex": 1,
+              "rect": { "x": 44, "z": 30, "w": 3, "d": 4 },
+              "layoutRole": "arrival",
+              "kind": "living-room"
+            },
+            {
+              "id": "room-23",
+              "floorIndex": 1,
+              "rect": { "x": 44, "z": 28, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "layoutSlot": "kitchen",
+              "kind": "kitchen"
+            },
+            {
+              "id": "room-24",
+              "floorIndex": 1,
+              "rect": { "x": 47, "z": 30, "w": 4, "d": 1 },
+              "kind": "corridor"
+            },
+            {
+              "id": "room-25",
+              "floorIndex": 1,
+              "rect": { "x": 47, "z": 28, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "bathroom"
+            },
+            {
+              "id": "room-26",
+              "floorIndex": 1,
+              "rect": { "x": 47, "z": 31, "w": 4, "d": 3 },
+              "layoutRole": "main",
+              "layoutSlot": "bedroom",
+              "kind": "bedroom"
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "y": 6,
+          "rooms": [
+            {
+              "id": "room-27",
+              "floorIndex": 2,
+              "rect": { "x": 44, "z": 30, "w": 3, "d": 4 },
+              "layoutRole": "arrival",
+              "kind": "living-room"
+            },
+            {
+              "id": "room-28",
+              "floorIndex": 2,
+              "rect": { "x": 44, "z": 28, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "layoutSlot": "kitchen",
+              "kind": "kitchen"
+            },
+            {
+              "id": "room-29",
+              "floorIndex": 2,
+              "rect": { "x": 47, "z": 30, "w": 4, "d": 1 },
+              "kind": "corridor"
+            },
+            {
+              "id": "room-30",
+              "floorIndex": 2,
+              "rect": { "x": 47, "z": 28, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "bathroom"
+            },
+            {
+              "id": "room-31",
+              "floorIndex": 2,
+              "rect": { "x": 47, "z": 31, "w": 4, "d": 3 },
+              "layoutRole": "main",
+              "layoutSlot": "bedroom",
+              "kind": "bedroom"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "y": 8,
+          "rooms": [
+            {
+              "id": "room-32",
+              "floorIndex": 3,
+              "rect": { "x": 44, "z": 30, "w": 3, "d": 4 },
+              "layoutRole": "arrival",
+              "kind": "living-room"
+            },
+            {
+              "id": "room-33",
+              "floorIndex": 3,
+              "rect": { "x": 44, "z": 28, "w": 3, "d": 2 },
+              "layoutRole": "service",
+              "layoutSlot": "kitchen",
+              "kind": "kitchen"
+            },
+            {
+              "id": "room-34",
+              "floorIndex": 3,
+              "rect": { "x": 47, "z": 30, "w": 4, "d": 1 },
+              "kind": "corridor"
+            },
+            {
+              "id": "room-35",
+              "floorIndex": 3,
+              "rect": { "x": 47, "z": 28, "w": 4, "d": 2 },
+              "layoutRole": "service",
+              "kind": "bathroom"
+            },
+            {
+              "id": "room-36",
+              "floorIndex": 3,
+              "rect": { "x": 47, "z": 31, "w": 4, "d": 3 },
+              "layoutRole": "main",
+              "layoutSlot": "bedroom",
+              "kind": "bedroom"
+            }
+          ]
+        }
+      ],
+      "roof": { "kind": "flat", "walkable": true },
+      "entrances": [{ "tile": { "x": 44, "y": 2, "z": 31 }, "side": "w" }],
+      "connectorIds": ["stairs-7", "stairs-8", "stairs-9", "stairs-10"]
+    },
+    "floorIndex": 1,
+    "camera": {
+      "yawIndex": 1,
+      "zoom": 84.7900295578787,
+      "target": { "x": 47.5, "y": 3.55, "z": 31 },
+      "bounds": { "x": 0, "z": 0, "w": 72, "d": 72 },
+      "zoomRange": { "min": 11.981531570105389, "max": 192 }
+    },
+    "props": [
+      {
+        "id": "prop-337",
+        "kind": "sofa",
+        "tile": { "x": 46, "y": 4, "z": 33 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-338",
+        "kind": "sofa",
+        "tile": { "x": 46, "y": 4, "z": 32 },
+        "rotation": 1
+      },
+      {
+        "id": "prop-339",
+        "kind": "kitchen-counter",
+        "tile": { "x": 44, "y": 4, "z": 28 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-340",
         "kind": "refrigerator",
-        "tile": {
-          "x": 7,
-          "y": 2,
-          "z": 31
-        },
+        "tile": { "x": 46, "y": 4, "z": 28 },
+        "rotation": 0
+      },
+      {
+        "id": "prop-341",
+        "kind": "bathroom-vanity",
+        "tile": { "x": 50, "y": 4, "z": 29 },
         "rotation": 1
       },
       {
-        "id": "prop-294",
-        "kind": "dining-table",
-        "tile": {
-          "x": 5,
-          "y": 2,
-          "z": 30
-        },
+        "id": "prop-342",
+        "kind": "toilet",
+        "tile": { "x": 50, "y": 4, "z": 28 },
         "rotation": 1
       },
       {
-        "id": "prop-295",
-        "kind": "sofa",
-        "tile": {
-          "x": 11,
-          "y": 2,
-          "z": 31
-        },
-        "rotation": 1
+        "id": "prop-343",
+        "kind": "bed",
+        "tile": { "x": 47, "y": 4, "z": 33 },
+        "rotation": 3
       },
       {
-        "id": "prop-296",
-        "kind": "sofa",
-        "tile": {
-          "x": 11,
-          "y": 2,
-          "z": 30
-        },
-        "rotation": 1
+        "id": "prop-344",
+        "kind": "wardrobe",
+        "tile": { "x": 47, "y": 4, "z": 32 },
+        "rotation": 3
+      },
+      {
+        "id": "prop-345",
+        "kind": "desk-computer",
+        "tile": { "x": 49, "y": 4, "z": 31 },
+        "rotation": 0
       }
     ]
   }

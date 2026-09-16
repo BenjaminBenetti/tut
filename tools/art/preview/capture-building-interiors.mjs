@@ -3,6 +3,7 @@ import { chromium } from "@playwright/test";
 import { createServer } from "vite";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import captureConfig from "./capture-vite.config.mjs";
+import { format } from "prettier";
 
 const out = "docs/design/diagnostics/building-interiors";
 mkdirSync(out, { recursive: true });
@@ -71,7 +72,14 @@ try {
     });
   });
   let loadedMap;
-  for (const [seed, settlement, size, kind, floorIndex, yaw] of [
+  for (const [seed, settlement, size, kind, floorIndex, yaw, style] of [
+    ["shops-review", "city", "large", "shop", 0, 0, "grocery"],
+    ["shops-review", "city", "large", "shop", 0, 2, "bakery-cafe"],
+    ["shops-review", "city", "large", "shop", 0, 0, "pharmacy"],
+    ["shops-review", "city", "large", "shop", 0, 2, "clothing"],
+    ["shops-review", "city", "large", "shop", 0, 0, "electronics"],
+    ["shops-review", "city", "large", "shop", 0, 2, "hardware"],
+    ["shops-review", "city", "large", "shop", 0, 2, "bookshop"],
     ["interiors-second", "city", "medium", "shop", 0, 0],
     ["interiors-second", "city", "medium", "tower", 1, 0],
     ["interiors-second", "city", "medium", "tower", 0, 1],
@@ -80,7 +88,12 @@ try {
     ["warehouse-review", "rural", "medium", "warehouse", 0, 0],
     ["interiors-review", "city", "large", "shop", 0, 1],
   ]) {
-    if (requestedKinds.size && !requestedKinds.has(kind)) continue;
+    if (
+      requestedKinds.size &&
+      !requestedKinds.has(kind) &&
+      !requestedKinds.has(style)
+    )
+      continue;
     const query = new URLSearchParams({
       seed,
       biome: "temperate",
@@ -98,10 +111,13 @@ try {
       .locator('body[data-models-ready="true"][data-preview-ready="true"]')
       .waitFor({ timeout: 120000 });
     const info = await page.evaluate(
-      async ({ kind, floorIndex, yaw }) => {
+      async ({ kind, floorIndex, yaw, style }) => {
         const map = window.__interiorMap;
         const candidates = map.buildings.filter(
-          (b) => b.kind === kind && b.floors[floorIndex],
+          (b) =>
+            b.kind === kind &&
+            b.floors[floorIndex] &&
+            (style === undefined || b.interiorStyle === style),
         );
         // Pick a well-sized generated example, never a hand-arranged furniture scene.
         candidates.sort(
@@ -158,9 +174,9 @@ try {
           ),
         };
       },
-      { kind, floorIndex, yaw },
+      { kind, floorIndex, yaw, style },
     );
-    const id = `${seed}-${kind}-floor-${floorIndex}`;
+    const id = `${seed}-${style ?? kind}-floor-${floorIndex}`;
     await page
       .locator("#map-viewport")
       .screenshot({ path: `${out}/${id}.png`, timeout: 120000 });
@@ -172,7 +188,7 @@ try {
   if (errors.length) throw new Error(errors.join("\n"));
   writeFileSync(
     `${out}/captures.json`,
-    JSON.stringify(records, null, 2) + "\n",
+    await format(JSON.stringify(records), { parser: "json" }),
   );
 } finally {
   await browser.close();

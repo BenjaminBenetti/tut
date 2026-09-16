@@ -26,6 +26,33 @@ const browser = await chromium.launch({
   ],
 });
 
+/**
+ * Lays captioned screenshots out in one row on a plain dark page and
+ * screenshots that page, so a comparison sheet needs no image tooling.
+ */
+async function captureSheet(shots, path) {
+  const sheet = await browser.newPage({
+    viewport: { width: 8 + shots.length * 568, height: 528 },
+  });
+  const figures = shots
+    .map(
+      ({ caption, src }) =>
+        `<figure><figcaption>${caption}</figcaption><img src="${src}"></figure>`,
+    )
+    .join("");
+  await sheet.setContent(
+    `<style>
+      body { margin: 0; background: #0b0d12; display: flex; gap: 8px;
+             font: 18px system-ui, sans-serif; color: #d8dbe0; }
+      figure { margin: 0; }
+      figcaption { height: 28px; line-height: 28px; text-align: center; }
+      img { display: block; width: 560px; height: 500px; }
+    </style>${figures}`,
+  );
+  await sheet.screenshot({ path, animations: "disabled" });
+  await sheet.close();
+}
+
 /** Waits for two frames after fonts, then moves the pointer off the map. */
 async function settle(page) {
   await page.evaluate(async () => {
@@ -82,6 +109,28 @@ try {
     path: `${output}/overworld-settlement-models-close.png`,
     animations: "disabled",
   });
+
+  // 1c. Three regional styles side by side on one sheet: Tokyo, New York,
+  //     Cairo (#1155). Each is clipped from the map, then the three clips
+  //     are laid out with captions on a plain page and shot once more.
+  const styleShots = [];
+  for (const [city, caption] of [
+    ["tokyo", "Tokyo (east-asian)"],
+    ["new-york", "New York (north-american)"],
+    ["cairo", "Cairo (middle-eastern)"],
+  ]) {
+    await page.evaluate((id) => globalThis.__tut__.focusCity(id, 220), city);
+    await settle(page);
+    const clip = await page.screenshot({
+      animations: "disabled",
+      clip: { x: 160, y: 130, width: 560, height: 500 },
+    });
+    styleShots.push({
+      caption,
+      src: `data:image/png;base64,${clip.toString("base64")}`,
+    });
+  }
+  await captureSheet(styleShots, `${output}/overworld-settlement-styles.png`);
 
   // 2. Tokyo with a clearance mission on offer: the egg overlay.
   //    Also three installations in East Asia, the battery offline.

@@ -421,12 +421,15 @@ const TURN_CAP = Number(process.env.SIM_TURN_CAP ?? "15");
  * break. It sits outside `pnpm test` for exactly this reason.
  *
  * Set well above the 49s an idle machine takes, because the same sweep
- * took 114s on this machine while a build ran alongside it. The budget
- * is here to catch a rules change that makes the simulation
- * fundamentally slower, not to fail whenever CI is busy; a 6x margin
- * still catches that and does not flake under load.
+ * took 114s on this machine while a build ran alongside it, and GitHub's
+ * runners take about 300s for the same 60 seeds (300.7s, 301.0s and
+ * 307.3s on three runs in September 2026, which is what moved this from
+ * 300s to 420s, #1162). The budget is here to catch a rules change that
+ * makes the simulation fundamentally slower, not to fail whenever CI is
+ * busy; a 40% margin over the runner still catches that and does not
+ * flake on runner speed.
  */
-const BUDGET_MS = 300_000 * Math.max(1, TURN_CAP / 15);
+const BUDGET_MS = 420_000 * Math.max(1, TURN_CAP / 15);
 
 /**
  * How many of the 60 seeds must reach a win or a loss inside `TURN_CAP`.

@@ -20,6 +20,7 @@ import { loadOverworldAssets } from "../../graphics/service/overworld-asset-load
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { SceneService } from "../../graphics/service/scene-service";
+import { SettlementDisplayLook } from "../../graphics/service/settlement-display-look";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
@@ -310,13 +311,16 @@ async function composeScene(
   // The settlements, egg overlays and installations are GLBs (#1155),
   // loaded through the same manifest-backed loader the tactical scene
   // uses, so a missing file falls back to a placeholder box and a
-  // warning rather than an empty map.
+  // warning rather than an empty map. The settlements are dressed for
+  // the WarGames display as they load: dark bodies, cyan edges.
+  const displayLook = new SettlementDisplayLook();
   const assets = await loadOverworldAssets({
     models: new GltfModelLoader({
       manifest: MODEL_MANIFEST,
       baseUrl: import.meta.env.BASE_URL,
       fallback: new PlaceholderModelFactory(),
       logger: console,
+      dresser: displayLook,
     }),
   });
 
@@ -392,8 +396,13 @@ async function composeScene(
     camera: rig,
     content: mapScene.root,
     // The map's installations idle every frame (#1155): dishes turn,
-    // barrels traverse, the dispersal sprays.
-    updatables: [cameraInput, mapScene.animator],
+    // barrels traverse, the dispersal sprays; the settlement edges
+    // follow the zoom.
+    updatables: [
+      cameraInput,
+      mapScene.animator,
+      displayLook.followZoom(() => rig.getState().zoom),
+    ],
   });
 
   cameraInput.attach(viewport);

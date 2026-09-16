@@ -35,6 +35,18 @@ export function settlementEggsModelId(
   return `overworld.settlement-eggs.${style}.${scale}`;
 }
 
+/** Prefix shared by every settlement model; the egg overlays' prefix differs after "settlement". */
+const SETTLEMENT_ID_PREFIX = "overworld.settlement.";
+
+/**
+ * True for a settlement model (any style, any scale) and false for an
+ * egg overlay or anything else, so a policy over the settlements can
+ * pick them out of the loader's traffic (#1155).
+ */
+export function isSettlementModelId(id: ModelAssetId): boolean {
+  return id.startsWith(SETTLEMENT_ID_PREFIX);
+}
+
 /** Every settlement model and egg overlay, style-major then scale. */
 export const SETTLEMENT_MODEL_IDS: readonly ModelAssetId[] =
   SETTLEMENT_STYLE_IDS.flatMap((style) =>

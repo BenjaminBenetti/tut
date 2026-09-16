@@ -110,6 +110,27 @@ try {
     animations: "disabled",
   });
 
+  // 1d. London hovered at the same zoom: its name sits south of it, over
+  //     Paris, and must draw on top of Paris's skyline (#1155).
+  await page.evaluate(() => globalThis.__tut__.focusCity("paris", 160));
+  await settle(page);
+  const london = await page.evaluate(() =>
+    globalThis.__tut__.cityScreenPosition("london"),
+  );
+  assert.ok(london, "London must project on screen");
+  await page.mouse.move(london.x, london.y);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  await page.screenshot({
+    path: `${output}/overworld-city-label.png`,
+    animations: "disabled",
+  });
+  await page.mouse.move(0, 0);
+
   // 1c. Three regional styles side by side on one sheet: Tokyo, New York,
   //     Cairo (#1155). Each is clipped from the map, then the three clips
   //     are laid out with captions on a plain page and shot once more.

@@ -88,6 +88,7 @@ export interface OverworldScreenDeps {
  *   [Roster] / [Main menu] ──► router.navigate
  *   [Resume mission]     ──► router.navigate("tactical")   while one is live
  *   mission row          ──► selection.selectMission(id, cityId)
+ *   [Show all]           ──► selection.selectRegion(undefined)
  *   city row             ──► selection.select(cityId)
  *   map pick             ──► cityPicks.onCityPicked ──► wheel.open at the marker
  *   wheel mission entry  ──► selection.selectMission(id, cityId)
@@ -165,6 +166,9 @@ export class OverworldScreen implements Screen {
       {
         onSelectMission: (missionId, cityId) => {
           this.deps.selection.selectMission(missionId, cityId);
+        },
+        onShowAll: () => {
+          this.deps.selection.selectRegion(undefined);
         },
       },
     );

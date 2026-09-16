@@ -35,7 +35,7 @@ describe("MissionListView", () => {
   it("shows the empty state until missions exist", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
-      { onSelectMission: vi.fn() },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
     );
     view.mount(root);
     view.update(campaignOnDay(4, []), NONE);
@@ -48,7 +48,7 @@ describe("MissionListView", () => {
   it("renders one row per mission, soonest expiry first, with the columns filled", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
-      { onSelectMission: vi.fn() },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
     );
     view.mount(root);
     view.update(
@@ -83,7 +83,7 @@ describe("MissionListView", () => {
     const onSelectMission = vi.fn();
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
-      { onSelectMission },
+      { onSelectMission, onShowAll: vi.fn() },
     );
     view.mount(root);
     const state = campaignOnDay(4, [missionAt("mission-1", "cairo", 6)]);
@@ -100,7 +100,7 @@ describe("MissionListView", () => {
   it("reuses rows across updates and drops missions that vanished", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
-      { onSelectMission: vi.fn() },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
     );
     view.mount(root);
     const a = missionAt("mission-1", "cairo", 6);
@@ -116,7 +116,7 @@ describe("MissionListView", () => {
   it("shows every mission under 'Missions · all' when no region is selected (#1154)", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
-      { onSelectMission: vi.fn() },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
     );
     view.mount(root);
     view.update(
@@ -135,7 +135,7 @@ describe("MissionListView", () => {
   it("filters to the selected region and names it in the heading (#1154)", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
-      { onSelectMission: vi.fn() },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
     );
     view.mount(root);
     const state = campaignOnDay(4, [
@@ -176,11 +176,34 @@ describe("MissionListView", () => {
     expect(empty?.textContent).toBe("No missions on offer. Advance the day.");
   });
 
+  it("offers Show all only while a region narrows the list, and reports it", () => {
+    const onShowAll = vi.fn();
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn(), onShowAll },
+    );
+    view.mount(root);
+    const state = campaignOnDay(4, [missionAt("mission-1", "cairo", 6)]);
+    const showAll = root.querySelector<HTMLButtonElement>(
+      '[data-action="show-all-missions"]',
+    );
+    view.update(state, NONE);
+    expect(showAll?.hidden).toBe(true);
+    view.update(state, {
+      regionId: "east-asia",
+      cityId: undefined,
+      missionId: undefined,
+    });
+    expect(showAll?.hidden).toBe(false);
+    showAll?.click();
+    expect(onShowAll).toHaveBeenCalledTimes(1);
+  });
+
   it("unmount removes the section and stops reporting clicks", () => {
     const onSelectMission = vi.fn();
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
-      { onSelectMission },
+      { onSelectMission, onShowAll: vi.fn() },
     );
     view.mount(root);
     view.update(campaignOnDay(4, [missionAt("mission-1", "cairo", 6)]), NONE);

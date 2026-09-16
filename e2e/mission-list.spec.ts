@@ -60,7 +60,8 @@ test("a mission appears, opens a briefing, routes to deployment, auto-resolves a
     /\+\d+ infestation/,
   );
   await expect(body).toHaveAttribute("data-selected-city", cityId ?? "");
-  await expect(page.locator("#selected-city")).not.toHaveText("—");
+  await expect(body).toHaveAttribute("data-selected-region", /.+/);
+  await expect(page.locator("#selected-region")).not.toHaveText("—");
 
   const dayBefore = Number(
     await page.locator('#top-bar [data-field="day"]').textContent(),

@@ -41,8 +41,10 @@ test("selecting a city and building a battery charges credits and lists it", asy
     (id) => (globalThis as HookGlobal).__tut__?.selectCity(id),
     city.id,
   );
-  await expect(page.locator("#selected-city")).toHaveText(city.name);
-  await expect(page.locator('#city-panel [data-field="region"]')).toHaveText(
+  await expect(
+    page.locator('#region-panel [data-city-id][aria-current="true"]'),
+  ).toContainText(city.name);
+  await expect(page.locator("#selected-region")).toHaveText(
     EARTH_MAP.regions.find((r) => r.id === city.regionId)?.name ?? "",
   );
 

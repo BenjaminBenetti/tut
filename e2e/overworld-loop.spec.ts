@@ -98,7 +98,10 @@ test("plays the overworld loop end to end without console errors", async ({
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tut__?.selectCity("auckland"),
   );
-  await expect(page.locator("#selected-city")).toHaveText("Auckland");
+  await expect(page.locator("#selected-region")).toHaveText("Oceania");
+  await expect(
+    page.locator('#region-panel [data-city-id][aria-current="true"]'),
+  ).toContainText("Auckland");
   const sensor = page.locator(
     '[data-action="build-deployable"][data-type-id="sensor-array"]',
   );
@@ -109,6 +112,14 @@ test("plays the overworld loop end to end without console errors", async ({
   );
   await expect(credits).toHaveText(
     `¢${(afterStipend - 800).toLocaleString("en-US")}`,
+  );
+
+  // Missions are listed for the selected region (#1154); Show all widens
+  // the list again so the loop below finds the first mission wherever
+  // it lands.
+  await page.locator('[data-action="show-all-missions"]').click();
+  await expect(page.locator('[data-field="missions-heading"]')).toHaveText(
+    "Missions · all",
   );
 
   // Advance until a mission is on offer.

@@ -78,6 +78,8 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 
 - **Development tools** (#1136): `import.meta.env.DEV` is read in exactly one place, `app/service/app-bootstrap.ts`, and enters the composition as a plain `devTools: boolean`. `composeGame` → `composeTactical` turn it into the `PlaceUnit` handler's `enabled` switch and, when on, a `DevTools { placeable }` catalogue the tactical screen hands the HUD; when off the screen receives nothing and builds no dev-only DOM. The handler is registered in every build and refuses with `TacticalError { kind: "debug-disabled" }` outside a dev one, so the same command in a production save replays to a typed refusal rather than to a unit. Nothing below `app/` reads the environment.
 
+- **Overworld selection is region-first** (#1154): `OverworldSelectionState` holds `{ regionId, cityId, missionId }`. Picking a city sets its region through an injected resolver; `selectRegion(undefined)` clears all three. The Situation column shows the *region* (`RegionPanelView`: biome, worst and mean infestation, one row per city) and the mission list narrows to it with a "Show all" way back. A city itself opens the `RadialMenuView` as a city wheel (`ui/service/city-wheel.ts` builds it: infestation at the hub over `name · population`, the city's missions and a Region entry on the ring). The map reports pointer picks over a `CityPickSource` separate from the selection, so a mission row never pops a wheel; the screen re-anchors the open wheel every animation frame from `cityScreenPosition`, the way the tactical HUD follows its unit (ADR 0007).
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

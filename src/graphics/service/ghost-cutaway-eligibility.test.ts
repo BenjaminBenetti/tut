@@ -27,6 +27,19 @@ describe("takesGhostCutaway", () => {
     expect(takesGhostCutaway("building.stairs")).toBe(false);
   });
 
+  it("keeps every roof solid, so a roof never opens a window onto a solid floor (#1143)", () => {
+    for (const id of [
+      SURFACE_MODELS[SurfaceIds.ROOF],
+      PITCHED_ROOF_MODEL,
+      HIPPED_ROOF_MODEL,
+      "building.roof",
+      "building.roof-pitched",
+      "building.roof-hipped",
+    ]) {
+      expect(takesGhostCutaway(id), id).toBe(false);
+    }
+  });
+
   it("ghosts every wall model in every family", () => {
     const walls = [
       ...Object.values(WALL_MODELS).flatMap((family) => Object.values(family)),
@@ -35,11 +48,8 @@ describe("takesGhostCutaway", () => {
     for (const id of walls) expect(takesGhostCutaway(id), id).toBe(true);
   });
 
-  it("ghosts roofs, parapets, ladders and rooftop props, which the storey cut removes", () => {
+  it("ghosts parapets, ladders and rooftop props, which stand between the camera and a unit on the roof", () => {
     for (const id of [
-      SURFACE_MODELS[SurfaceIds.ROOF],
-      PITCHED_ROOF_MODEL,
-      HIPPED_ROOF_MODEL,
       "building.roof-parapet",
       "building.viaduct-parapet",
       LADDER_CONNECTOR_MODEL,

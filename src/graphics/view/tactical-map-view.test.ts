@@ -517,7 +517,7 @@ describe("TacticalMapView.loadModels", () => {
     prototype.geometry.dispose();
   });
 
-  it("leaves floor slabs and stairs solid while walls and roofs take the cutaway (#1143)", async () => {
+  it("leaves floor slabs, stairs and roofs solid while walls take the cutaway (#1143)", async () => {
     const b = new FixtureMapBuilder(2, 1, 3).fillGround();
     b.tile({ x: 0, y: 1, z: 0 }, SurfaceIds.FLOOR, { buildingId: "b" });
     b.tile({ x: 1, y: 1, z: 0 }, SurfaceIds.STAIRS, { buildingId: "b" });
@@ -541,7 +541,7 @@ describe("TacticalMapView.loadModels", () => {
     expect(materialName("tiles-model:building.stairs:")).not.toContain(
       "ghosted",
     );
-    expect(materialName("tiles-model:building.roof:")).toContain("ghosted");
+    expect(materialName("tiles-model:building.roof:")).not.toContain("ghosted");
     expect(materialName("walls-model:")).toContain("ghosted");
     view.dispose();
     prototype.material.dispose();

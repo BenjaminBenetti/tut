@@ -3,6 +3,7 @@ import {
   BoxGeometry,
   CylinderGeometry,
   Group,
+  HemisphereLight,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -89,13 +90,36 @@ const MARKER_SEGMENTS = 12;
 
 /**
  * Halo and selection ring radii relative to half the settlement
- * footprint: the halo hugs the model, the ring sits just outside it,
- * and both stay clear of a neighbouring settlement half a unit away.
+ * footprint: the halo is a thin line hugging the model's pad, the ring
+ * a thin line just outside it, each over a wider faint glow band, and
+ * all of it stays clear of a neighbouring settlement half a unit away.
+ *
+ * ```
+ *   pad ─┤ glow ├─ halo ─┤   ring glow   ├─ ring
+ *   1.0  1.02  1.10 1.17 1.30   1.40 1.47  1.58
+ * ```
  */
-const HALO_INNER_SCALE = 1.08;
-const HALO_OUTER_SCALE = 1.3;
-const RING_INNER_SCALE = 1.42;
-const RING_OUTER_SCALE = 1.66;
+const HALO_INNER_SCALE = 1.1;
+const HALO_OUTER_SCALE = 1.17;
+const HALO_GLOW_INNER_SCALE = 1.02;
+const HALO_GLOW_OUTER_SCALE = 1.3;
+const RING_INNER_SCALE = 1.4;
+const RING_OUTER_SCALE = 1.47;
+const RING_GLOW_INNER_SCALE = 1.3;
+const RING_GLOW_OUTER_SCALE = 1.58;
+
+/** Segments round a halo or ring: enough that it is a circle, not a polygon, at the closest zoom. */
+const RING_SEGMENTS = MARKER_SEGMENTS * 4;
+
+/**
+ * The map's own fill light: a cool sky from `ui-info` over the near-black
+ * ground, so settlement roofs pick up the map's cyan and their unlit
+ * faces fall toward the ground rather than to flat grey. Lives under the
+ * map root, so the tactical scene never sees it.
+ */
+const SKY_FILL_COLOUR = 0x7fd1ff;
+const GROUND_FILL_COLOUR = 0x0b0d12;
+const SKY_FILL_INTENSITY = 0.7;
 
 // ===========================================
 // Builder
@@ -164,17 +188,13 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     this.root = new Group();
     this.root.name = "overworld-map";
     const half = config.settlementFootprint / 2;
+    const band = (inner: number, outer: number): RingGeometry =>
+      new RingGeometry(half * inner, half * outer, RING_SEGMENTS);
     this.markerGeometry = {
-      halo: new RingGeometry(
-        half * HALO_INNER_SCALE,
-        half * HALO_OUTER_SCALE,
-        MARKER_SEGMENTS * 2,
-      ),
-      ring: new RingGeometry(
-        half * RING_INNER_SCALE,
-        half * RING_OUTER_SCALE,
-        MARKER_SEGMENTS * 2,
-      ),
+      halo: band(HALO_INNER_SCALE, HALO_OUTER_SCALE),
+      haloGlow: band(HALO_GLOW_INNER_SCALE, HALO_GLOW_OUTER_SCALE),
+      ring: band(RING_INNER_SCALE, RING_OUTER_SCALE),
+      ringGlow: band(RING_GLOW_INNER_SCALE, RING_GLOW_OUTER_SCALE),
       pick: new CylinderGeometry(
         half,
         half,
@@ -218,6 +238,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     this.clear();
     this.slab = this.createSlab();
     this.root.add(this.slab);
+    this.root.add(this.createSkyFill());
     this.wireframe = new EarthWireframe(this.landPolygons, this.config);
     this.root.add(this.wireframe.object);
     for (const region of map.regions) {
@@ -304,7 +325,9 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   dispose(): void {
     this.clear();
     this.markerGeometry.halo.dispose();
+    this.markerGeometry.haloGlow.dispose();
     this.markerGeometry.ring.dispose();
+    this.markerGeometry.ringGlow.dispose();
     this.markerGeometry.pick.dispose();
     this.markerGeometry.standIn.dispose();
     this.installationStyle.standIn.dispose();
@@ -443,6 +466,17 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     const centre = this.centre;
     slab.position.set(centre.x, -this.config.oceanHeight / 2, centre.z);
     return slab;
+  }
+
+  /** The map's cool hemisphere fill; see `SKY_FILL_COLOUR`. */
+  private createSkyFill(): HemisphereLight {
+    const fill = new HemisphereLight(
+      SKY_FILL_COLOUR,
+      GROUND_FILL_COLOUR,
+      SKY_FILL_INTENSITY,
+    );
+    fill.name = "map-sky-fill";
+    return fill;
   }
 
   /** Pushes hovered and selected state onto every marker and the region outline. */

@@ -1,5 +1,12 @@
 import type { BufferGeometry, Object3D, Texture } from "three";
-import { Group, Mesh, MeshBasicMaterial, Sprite, SpriteMaterial } from "three";
+import {
+  AdditiveBlending,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  Sprite,
+  SpriteMaterial,
+} from "three";
 
 import type { Vec3 } from "../../core/model/grid";
 import type { City, CityId } from "../../overworld/model/city";
@@ -32,11 +39,23 @@ export const SELECTION_COLOUR = 0xf08a24;
 /** How much a hovered settlement grows. */
 const HOVER_SCALE = 1.15;
 
-/** Opacity of the infestation halo around a settlement; the ramp colour carries the reading. */
-const HALO_OPACITY = 0.6;
+/** Opacity of the thin infestation ring around a settlement; the ramp colour carries the reading. */
+const HALO_OPACITY = 0.85;
 
-/** Opacity of the halo while hovered: solid accent, so the hover is unmistakable. */
+/** Opacity of the ring while hovered: solid accent, so the hover is unmistakable. */
 const HALO_HOVER_OPACITY = 1;
+
+/**
+ * Opacity of the soft glow band each ring casts on the ground around
+ * it. Glows blend additively, so on the near-black map they read as
+ * light rather than as a painted disc; hovering brightens the halo's.
+ */
+const GLOW_OPACITY = 0.16;
+const GLOW_HOVER_OPACITY = 0.34;
+const RING_GLOW_OPACITY = 0.22;
+
+/** Opacity of the selection ring's thin core. */
+const RING_OPACITY = 0.95;
 
 /** Height the halo floats above the marker base so it never z-fights the ground lines. */
 const HALO_LIFT = 0.004;
@@ -44,7 +63,8 @@ const HALO_LIFT = 0.004;
 /** Height the ring floats above the halo. */
 const RING_LIFT = 0.008;
 
-/** Halos draw before the models inside them; rings after the halos. */
+/** Glows draw first, then the thin halo, then the selection ring, all before the models inside them. */
+const GLOW_RENDER_ORDER = 0;
 const HALO_RENDER_ORDER = 1;
 const RING_RENDER_ORDER = 2;
 
@@ -77,10 +97,14 @@ const PLACEHOLDER_PREFIX = "placeholder:";
 
 /** Geometries shared by every marker; the scene builder owns and disposes them. */
 export interface CityMarkerGeometry {
-  /** Flat ring around the settlement, tinted by infestation. */
+  /** Thin flat ring around the settlement, tinted by infestation. */
   readonly halo: BufferGeometry;
-  /** Flat ring shown around a selected settlement. */
+  /** Wider, fainter band under the halo: its glow on the ground. */
+  readonly haloGlow: BufferGeometry;
+  /** Thin flat ring shown around a selected settlement. */
   readonly ring: BufferGeometry;
+  /** Wider, fainter band under the selection ring: its glow. */
+  readonly ringGlow: BufferGeometry;
   /** Invisible solid the pointer raycasts against, the settlement's footprint tall enough to hit. */
   readonly pick: BufferGeometry;
   /** Block drawn instead of a model when there is no loader. */
@@ -121,10 +145,10 @@ export interface CityMarkerLookReport {
  * truth; `setInfestation` and `setMission` are how state reaches it.
  *
  * ```
- *       ╭───────╮         ring, visible only when selected
- *       │ ╭───╮ │         halo: infestation ramp, or the accent while hovered
- *       │ │▟█▙│ │         settlement GLB (+ egg overlay while on offer)
- *       │ ╰───╯ │
+ *       ╭───────╮         ring, visible only when selected; thin, with a soft glow
+ *       │ ╭───╮ │         halo: thin ring in the infestation ramp, or the accent
+ *       │ │▟█▙│ │           while hovered, over a faint additive glow
+ *       │ ╰───╯ │         settlement GLB (+ egg overlay while on offer)
  *       ╰───────╯
  *          name           label, south, while hovered or selected
  * ```
@@ -147,8 +171,11 @@ export class CityMarker {
   private readonly visual: Group;
   private readonly halo: Mesh;
   private readonly haloMaterial: MeshBasicMaterial;
+  private readonly haloGlowMaterial: MeshBasicMaterial;
   private readonly ring: Mesh;
+  private readonly ringGlow: Mesh;
   private readonly ringMaterial: MeshBasicMaterial;
+  private readonly ringGlowMaterial: MeshBasicMaterial;
   private readonly standInMaterial: MeshBasicMaterial | undefined;
   private readonly label: Sprite | undefined;
   private readonly labelMaterial: SpriteMaterial | undefined;
@@ -193,26 +220,51 @@ export class CityMarker {
       opacity: HALO_OPACITY,
       depthWrite: false,
     });
-    this.halo = new Mesh(look.geometry.halo, this.haloMaterial);
-    this.halo.name = `city-halo-${city.id}`;
-    this.halo.rotation.x = -Math.PI / 2;
-    this.halo.position.y = HALO_LIFT;
-    this.halo.renderOrder = HALO_RENDER_ORDER;
+    this.halo = flatRing(
+      look.geometry.halo,
+      this.haloMaterial,
+      `city-halo-${city.id}`,
+      HALO_LIFT,
+      HALO_RENDER_ORDER,
+    );
     this.object.add(this.halo);
+    this.haloGlowMaterial = glowMaterial(GLOW_OPACITY);
+    this.object.add(
+      flatRing(
+        look.geometry.haloGlow,
+        this.haloGlowMaterial,
+        `city-halo-glow-${city.id}`,
+        HALO_LIFT,
+        GLOW_RENDER_ORDER,
+      ),
+    );
 
     this.ringMaterial = new MeshBasicMaterial({
       color: SELECTION_COLOUR,
       transparent: true,
-      opacity: 0.95,
+      opacity: RING_OPACITY,
       depthWrite: false,
     });
-    this.ring = new Mesh(look.geometry.ring, this.ringMaterial);
-    this.ring.name = `city-ring-${city.id}`;
-    this.ring.rotation.x = -Math.PI / 2;
-    this.ring.position.y = RING_LIFT;
-    this.ring.renderOrder = RING_RENDER_ORDER;
+    this.ring = flatRing(
+      look.geometry.ring,
+      this.ringMaterial,
+      `city-ring-${city.id}`,
+      RING_LIFT,
+      RING_RENDER_ORDER,
+    );
     this.ring.visible = false;
     this.object.add(this.ring);
+    this.ringGlowMaterial = glowMaterial(RING_GLOW_OPACITY);
+    this.ringGlowMaterial.color.setHex(SELECTION_COLOUR);
+    this.ringGlow = flatRing(
+      look.geometry.ringGlow,
+      this.ringGlowMaterial,
+      `city-ring-glow-${city.id}`,
+      RING_LIFT,
+      GLOW_RENDER_ORDER,
+    );
+    this.ringGlow.visible = false;
+    this.object.add(this.ringGlow);
 
     const pick = new Mesh(look.geometry.pick);
     pick.name = `city-body-${city.id}`;
@@ -294,6 +346,7 @@ export class CityMarker {
   setSelected(selected: boolean): void {
     this.selected = selected;
     this.ring.visible = selected;
+    this.ringGlow.visible = selected;
     this.refreshLabel();
   }
 
@@ -354,7 +407,9 @@ export class CityMarker {
   dispose(): void {
     this.disposed = true;
     this.haloMaterial.dispose();
+    this.haloGlowMaterial.dispose();
     this.ringMaterial.dispose();
+    this.ringGlowMaterial.dispose();
     this.standInMaterial?.dispose();
     this.labelMaterial?.dispose();
     this.visual.clear();
@@ -402,20 +457,53 @@ export class CityMarker {
     }
   }
 
-  /** Pushes the hover or infestation colour onto the halo. */
+  /** Pushes the hover or infestation colour onto the halo and its glow. */
   private applyTint(): void {
-    this.haloMaterial.color.setHex(
-      this.hovered ? HOVER_COLOUR : this.infestationHex,
-    );
+    const hex = this.hovered ? HOVER_COLOUR : this.infestationHex;
+    this.haloMaterial.color.setHex(hex);
     this.haloMaterial.opacity = this.hovered
       ? HALO_HOVER_OPACITY
       : HALO_OPACITY;
+    this.haloGlowMaterial.color.setHex(hex);
+    this.haloGlowMaterial.opacity = this.hovered
+      ? GLOW_HOVER_OPACITY
+      : GLOW_OPACITY;
   }
 }
 
 // ===========================================
 // Helpers
 // ===========================================
+
+/** A ring mesh laid flat on the ground plane, lifted and ordered as given. */
+function flatRing(
+  geometry: BufferGeometry,
+  material: MeshBasicMaterial,
+  name: string,
+  lift: number,
+  renderOrder: number,
+): Mesh {
+  const mesh = new Mesh(geometry, material);
+  mesh.name = name;
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = lift;
+  mesh.renderOrder = renderOrder;
+  return mesh;
+}
+
+/**
+ * The material a glow band is drawn with: additive, so it lightens the
+ * ground under it the way light does rather than painting a disc over
+ * the map's lines.
+ */
+function glowMaterial(opacity: number): MeshBasicMaterial {
+  return new MeshBasicMaterial({
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    blending: AdditiveBlending,
+  });
+}
 
 /** True for the box the loader's fallback factory hands out when a GLB failed. */
 function isPlaceholder(model: Object3D): boolean {

@@ -1,5 +1,6 @@
-import type { Object3D } from "three";
+import type { MeshBasicMaterial, Object3D } from "three";
 import {
+  AdditiveBlending,
   BoxGeometry,
   CylinderGeometry,
   Group,
@@ -51,8 +52,10 @@ function stop(index: number): number {
 /** The shared geometry a builder would own. */
 function geometry() {
   return {
-    halo: new RingGeometry(0.33, 0.42, 24),
-    ring: new RingGeometry(0.4, 0.48, 24),
+    halo: new RingGeometry(0.33, 0.35, 24),
+    haloGlow: new RingGeometry(0.31, 0.39, 24),
+    ring: new RingGeometry(0.42, 0.44, 24),
+    ringGlow: new RingGeometry(0.39, 0.47, 24),
     pick: new CylinderGeometry(0.3, 0.3, 0.4, 12),
     standIn: new BoxGeometry(0.6, CITY_STAND_IN_HEIGHT, 0.6),
   };
@@ -203,14 +206,29 @@ describe("CityMarker (stand-in, no loader)", () => {
     expect(named(marker, "city-visual-london")?.scale.x).toBe(1);
   });
 
-  it("shows the ring only while selected", () => {
+  it("shows the ring and its glow only while selected", () => {
     const marker = makeMarker();
     const ring = named(marker, "city-ring-london");
+    const glow = named(marker, "city-ring-glow-london");
     expect(ring?.visible).toBe(false);
+    expect(glow?.visible).toBe(false);
     marker.setSelected(true);
     expect(ring?.visible).toBe(true);
+    expect(glow?.visible).toBe(true);
     marker.setSelected(false);
     expect(ring?.visible).toBe(false);
+    expect(glow?.visible).toBe(false);
+  });
+
+  it("tints the halo's glow with the halo, additively", () => {
+    const marker = makeMarker();
+    marker.setInfestation(100);
+    const glow = named(marker, "city-halo-glow-london") as Mesh;
+    const material = glow.material as MeshBasicMaterial;
+    expect(material.blending).toBe(AdditiveBlending);
+    expect(material.color.getHex()).toBe(stop(3));
+    marker.setHovered(true);
+    expect(material.color.getHex()).toBe(HOVER_COLOUR);
   });
 
   it("reports its city's own position as the pick point (#420)", () => {

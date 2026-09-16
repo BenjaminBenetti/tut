@@ -23,6 +23,7 @@ import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
+import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
 import { iconHref } from "../../ui/data/icon-manifest";
@@ -33,6 +34,7 @@ import type { OverworldSelection } from "../../ui/model/overworld-selection";
 import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import { TacticalScreen } from "../../ui/screen/tactical-screen";
+import { CityPickChannel } from "../../ui/service/city-pick-channel";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { DomMechPreviewHost } from "./mech-preview-host";
@@ -90,7 +92,6 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 
   const viewport = createMapViewport(doc, appRoot);
   const mapViewport = new DomMapViewportHost(viewport, appRoot);
-  const selection = new OverworldSelectionState();
   const debug = import.meta.env.DEV
     ? parseDebugOptions(window.location.search)
     : undefined;
@@ -119,6 +120,16 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     // the composition made of it rather than the environment.
     devTools: import.meta.env.DEV,
   });
+  // Region-first selection (#1154): a city's region is looked up on the
+  // running campaign's map, so a custom or migrated map answers for
+  // itself rather than the shipped data.
+  const selection = new OverworldSelectionState((cityId) => {
+    const state = game.session.state;
+    return state ? findCity(state.overworld.map, cityId)?.regionId : undefined;
+  });
+  // The map reports pointer picks here and the overworld screen opens
+  // the city wheel on them; the projector arrives with the scene.
+  const cityPicks = new CityPickChannel();
 
   const router: DomScreenRouter = new DomScreenRouter(
     uiRoot,
@@ -166,6 +177,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
               DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
             ),
             mapViewport,
+            cityPicks,
           }),
       ],
       [
@@ -250,6 +262,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     viewport,
     window,
     selection,
+    cityPicks,
     mapSync,
     (id) => startMissionForTests(id, game, router),
   );
@@ -270,8 +283,11 @@ export async function bootstrapApp(doc: Document): Promise<void> {
  * The overworld map scene from #160: loads the marker glyphs, builds
  * the wireframe Earth scene (#1144), the isometric rig at minimum zoom, camera
  * input and city picking, all mounted into the given `#map-viewport`. A
- * selected city is mirrored to `body[data-selected-city]` and pushed into
- * `selection`, which the overworld panels render. The scene attaches to
+ * picked city is pushed into `selection`, which the overworld panels
+ * render, and reported through `cityPicks` so the screen can open the
+ * city wheel on it (#1154); the selection's city and region are mirrored
+ * to `body[data-selected-city]` and `body[data-selected-region]`. The
+ * scene attaches to
  * `mapSync` so every campaign store's state retints and badges the
  * markers (#302). In dev builds the `window.__tut__` hooks let
  * end-to-end tests select cities and read marker looks without pointer
@@ -282,6 +298,7 @@ async function composeScene(
   viewport: HTMLElement,
   window: Window,
   selection: OverworldSelection,
+  cityPicks: CityPickChannel,
   mapSync: MapSceneSync,
   startMission: (missionId: string) => string | undefined,
 ): Promise<SceneService> {
@@ -312,21 +329,34 @@ async function composeScene(
   // No rotation on the strategic map: north stays up (#420).
   const cameraInput = new CameraInputController(rig, { rotate: false });
   const picking = new PickingController(cityPickerAdapter(mapScene), rig, {
+    // A pick (pointer, or the test hook) selects the city and its
+    // region, then tells the screen so the city wheel opens on it. The
+    // order matters: a different city closes the old wheel through the
+    // selection first, so the new one is not dismissed by its own pick.
     onSelected: (cityId) => {
       selection.select(cityId);
+      cityPicks.emit(cityId);
     },
   });
+  cityPicks.useProjector((cityId) => picking.screenPositionOf(cityId));
   // The selection is the truth for both directions: a map click lands
-  // in it above, and a mission chosen in the side panel highlights its
-  // city here. The identity checks stop the two from echoing.
-  selection.subscribe(({ cityId }) => {
+  // in it above, and a mission or city row chosen in the side panel
+  // highlights its city here. The scene is told directly rather than
+  // through `picking.select`, which would report a pick and open the
+  // wheel over a click that happened in a list.
+  selection.subscribe(({ cityId, regionId }) => {
+    if (regionId === undefined) {
+      delete doc.body.dataset.selectedRegion;
+    } else {
+      doc.body.dataset.selectedRegion = regionId;
+    }
     if (cityId === undefined) {
       delete doc.body.dataset.selectedCity;
-      return;
+    } else {
+      doc.body.dataset.selectedCity = cityId;
     }
-    doc.body.dataset.selectedCity = cityId;
     if (mapScene.getSelected() !== cityId) {
-      picking.select(cityId);
+      mapScene.setSelected(cityId);
     }
   });
   const scene = new SceneService(viewport, {

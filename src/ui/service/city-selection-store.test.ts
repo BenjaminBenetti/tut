@@ -9,7 +9,7 @@ describe("CitySelectionStore (former name of OverworldSelectionState)", () => {
   });
 
   it("records selections and notifies on changes, clearing with undefined", () => {
-    const store = new CitySelectionStore();
+    const store = new CitySelectionStore(() => undefined);
     const listener =
       vi.fn<(selection: { cityId: string | undefined }) => void>();
     store.subscribe(listener);
@@ -25,7 +25,7 @@ describe("CitySelectionStore (former name of OverworldSelectionState)", () => {
   });
 
   it("stops notifying after unsubscribe", () => {
-    const store = new CitySelectionStore();
+    const store = new CitySelectionStore(() => undefined);
     const listener = vi.fn();
     const off = store.subscribe(listener);
     off();

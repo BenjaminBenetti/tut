@@ -17,6 +17,7 @@ const CITY: City = {
   regionId: "western-europe",
   infestation: 0,
   scale: "city",
+  population: 1_000_000,
   neighbourIds: [],
   layout: { x: 0.5, y: 0.2 },
 };

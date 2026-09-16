@@ -166,7 +166,7 @@ describe("DeploymentScreen", () => {
     autoResolve = false,
   ) => {
     const { router, navigate } = fakeRouter();
-    const selection = new OverworldSelectionState();
+    const selection = new OverworldSelectionState(() => undefined);
     if (missionId !== undefined) {
       selection.selectMission(missionId, "cairo");
     }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EarthMapSpec } from "../model/earth-map-spec";
-import { buildEarthMap } from "./earth-map-builder";
+import { buildEarthMap, DEFAULT_CITY_POPULATION } from "./earth-map-builder";
 
 // ===========================================
 // Fixture
@@ -157,6 +157,33 @@ describe("buildEarthMap", () => {
         ],
       }),
     ).toThrow(/declared twice/);
+  });
+
+  it("defaults population to a mid-sized city and rejects a broken one (#1154)", () => {
+    const withPopulation = (population?: number): EarthMapSpec => ({
+      regions: [
+        {
+          ...SPEC.regions[1]!,
+          cities: [
+            {
+              id: C,
+              name: "C",
+              layout: { x: 0, y: 0 },
+              ...(population === undefined ? {} : { population }),
+            },
+          ],
+        },
+      ],
+      links: [],
+    });
+    expect(buildEarthMap(withPopulation()).cities[0]?.population).toBe(
+      DEFAULT_CITY_POPULATION,
+    );
+    expect(buildEarthMap(withPopulation(26_000)).cities[0]?.population).toBe(
+      26_000,
+    );
+    expect(() => buildEarthMap(withPopulation(-1))).toThrow(/population/);
+    expect(() => buildEarthMap(withPopulation(1.5))).toThrow(/population/);
   });
 
   it("rejects infestation outside the integer range 0..100", () => {

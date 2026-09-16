@@ -1,8 +1,18 @@
-import type { EarthMap } from "../../overworld/model/earth-map";
+import type { City } from "../../overworld/model/city";
+import type { Region } from "../../overworld/model/region";
+
+/** A city as v19 saved it: `population` arrived at v24 (#1154) and is filled by that step. */
+export type V19City = Omit<City, "population">;
+
+/** The v19 map shape: today's regions, cities without their v24 population. */
+export interface WorldBiomesSnapshot {
+  readonly regions: readonly Region[];
+  readonly cities: readonly V19City[];
+}
 
 /** Frozen v19 geography. Never edit: old saves must migrate identically after future content updates. */
 // prettier-ignore
-export const WORLD_BIOMES_SNAPSHOT: EarthMap = {
+export const WORLD_BIOMES_SNAPSHOT: WorldBiomesSnapshot = {
   regions: [
     {"id":"north-america-west","name":"North America West","biome":"coastal","cityIds":["vancouver","san-francisco","los-angeles"],"neighbourRegionIds":["boreal-north-america","north-america-east","east-asia","latin-america"],"layout":{"x":0.16316666666666665,"y":0.2757407407407407}},
     {"id":"north-america-east","name":"North America East","biome":"temperate","cityIds":["toronto","chicago","new-york"],"neighbourRegionIds":["boreal-north-america","north-america-west","latin-america","arctic-north-atlantic","western-europe"],"layout":{"x":0.2768333333333333,"y":0.2662222222222222}},

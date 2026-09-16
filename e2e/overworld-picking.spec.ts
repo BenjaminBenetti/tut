@@ -65,10 +65,15 @@ function isClickable(
 /**
  * Every city in the shipped Earth map is pickable with a real pointer
  * click at its projected marker position, and the selection is mirrored
- * to `body[data-selected-city]` and the panel's `#selected-city` label.
- * Cities whose marker is clipped by the map cell or hidden under a panel
- * are skipped, but the test insists that almost all of them were actually
- * exercised so a layout change cannot hollow it out silently.
+ * to `body[data-selected-city]`, `body[data-selected-region]` and the
+ * region panel's current city row (#1154). Cities whose marker is
+ * clipped by the map cell or hidden under a panel are skipped, but the
+ * test insists that almost all of them were actually exercised so a
+ * layout change cannot hollow it out silently.
+ *
+ * A pick opens the city wheel over the map, and a neighbour's marker can
+ * sit under one of its entries, so the wheel is dismissed with Escape
+ * before the next click.
  */
 test("every city marker picks itself with a pointer click", async ({
   page,
@@ -120,10 +125,20 @@ test("every city marker picks itself with a pointer click", async ({
     }
     await page.mouse.click(position.x, position.y);
     const selected = await page.getAttribute("body", "data-selected-city");
-    const label = await page.locator("#selected-city").textContent();
-    if (selected !== city.id || label !== city.name) {
-      misses.push(`${city.id}: selected=${selected ?? "none"} label=${label}`);
+    const region = await page.getAttribute("body", "data-selected-region");
+    const label = await page
+      .locator('#region-panel [data-city-id][aria-current="true"]')
+      .textContent();
+    if (
+      selected !== city.id ||
+      region !== city.regionId ||
+      !label?.includes(city.name)
+    ) {
+      misses.push(
+        `${city.id}: selected=${selected ?? "none"} region=${region ?? "none"} label=${label ?? "none"}`,
+      );
     }
+    await page.keyboard.press("Escape");
   }
 
   expect(misses).toEqual([]);

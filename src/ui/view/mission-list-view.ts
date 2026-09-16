@@ -1,7 +1,11 @@
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { CityId } from "../../overworld/model/city";
 import type { Mission, MissionId } from "../../overworld/model/mission";
-import { findCity } from "../../overworld/service/earth-map-query-service";
+import type { RegionId } from "../../overworld/model/region";
+import {
+  findCity,
+  findRegion,
+} from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
 import type { IconId } from "../data/icon-manifest";
@@ -17,6 +21,8 @@ import { formatCredits, formatWhole } from "../service/format";
 export interface MissionListViewHandlers {
   /** The player clicked a mission row. */
   readonly onSelectMission: (missionId: MissionId, cityId: CityId) => void;
+  /** The player asked for every mission rather than the selected region's (#1154). */
+  readonly onShowAll: () => void;
 }
 
 /** What the list needs to name things. */
@@ -34,8 +40,12 @@ export interface MissionListViewDeps {
  * are keyed by mission id and reused across updates, so a tick that
  * changes nothing touches nothing.
  *
+ * With a region selected the list holds that region's missions and the
+ * heading names it; with none it holds every mission and says so
+ * (#1154).
+ *
  * ```
- *   ┌ MISSIONS ────────────────────────────────────┐
+ *   ┌ MISSIONS · SUB-SAHARAN AFRICA ───────────────┐
  *   │ ▮ Cairo       Infestation clearance   D3  ¢900  4 d │
  *   │   Lagos       Infestation clearance   D5  ¢1,500 2 d │
  *   └──────────────────────────────────────────────┘
@@ -49,10 +59,13 @@ export class MissionListView {
   private readonly deps: MissionListViewDeps;
   private readonly handlers: MissionListViewHandlers;
   private root: HTMLElement | undefined;
+  private heading: HTMLElement | undefined;
+  private showAll: HTMLButtonElement | undefined;
   private list: HTMLElement | undefined;
   private empty: HTMLElement | undefined;
   private readonly rows = new Map<MissionId, HTMLElement>();
   private onClick: ((event: Event) => void) | undefined;
+  private onShowAll: (() => void) | undefined;
 
   // ===========================================
   // Constructor
@@ -78,8 +91,20 @@ export class MissionListView {
     section.className = "tut-missions";
     section.dataset.role = "missions";
 
+    const header = doc.createElement("div");
+    header.className = "tut-missions__header";
     const title = doc.createElement("h3");
-    title.textContent = "Missions";
+    title.dataset.field = "missions-heading";
+    title.textContent = "Missions · all";
+    // The way back to every mission once a region has narrowed the
+    // list: nothing on the map clears a selection, so the list offers it.
+    const showAll = doc.createElement("button");
+    showAll.type = "button";
+    showAll.className = "tut-btn tut-missions__show-all";
+    showAll.dataset.action = "show-all-missions";
+    showAll.textContent = "Show all";
+    showAll.hidden = true;
+    header.append(title, showAll);
 
     const list = doc.createElement("ul");
     list.className = "tut-list tut-missions__list";
@@ -90,7 +115,7 @@ export class MissionListView {
     empty.dataset.role = "no-missions";
     empty.textContent = "No missions on offer. Advance the day.";
 
-    section.append(title, list, empty);
+    section.append(header, list, empty);
     parent.appendChild(section);
 
     this.onClick = (event: Event): void => {
@@ -106,13 +131,23 @@ export class MissionListView {
       }
     };
     list.addEventListener("click", this.onClick);
+    this.onShowAll = (): void => {
+      this.handlers.onShowAll();
+    };
+    showAll.addEventListener("click", this.onShowAll);
 
     this.root = section;
+    this.heading = title;
+    this.showAll = showAll;
     this.list = list;
     this.empty = empty;
   }
 
-  /** Syncs the rows to the missions on offer and highlights the selection. */
+  /**
+   * Syncs the rows to the missions on offer — those in the selected
+   * region, or all of them when no region is selected — and highlights
+   * the selection.
+   */
   update(
     state: GameState | undefined,
     selection: OverworldSelectionSnapshot,
@@ -121,7 +156,13 @@ export class MissionListView {
       return;
     }
     const doc = this.list.ownerDocument;
-    const missions = state ? sortByExpiry(state.overworld.missions) : [];
+    const region =
+      state && selection.regionId !== undefined
+        ? findRegion(state.overworld.map, selection.regionId)
+        : undefined;
+    const missions = state
+      ? sortByExpiry(missionsInRegion(state, region?.id))
+      : [];
     const keep = new Set<MissionId>();
 
     for (const mission of missions) {
@@ -142,19 +183,39 @@ export class MissionListView {
       }
     }
     this.empty.hidden = missions.length > 0;
+    const heading = `Missions · ${region ? region.name : "all"}`;
+    if (this.heading && this.heading.textContent !== heading) {
+      this.heading.textContent = heading;
+    }
+    if (this.showAll) {
+      this.showAll.hidden = region === undefined;
+    }
+    const emptyText =
+      region && state && state.overworld.missions.length > 0
+        ? `No missions in ${region.name}.`
+        : "No missions on offer. Advance the day.";
+    if (this.empty.textContent !== emptyText) {
+      this.empty.textContent = emptyText;
+    }
   }
 
-  /** Removes the section and its listener. */
+  /** Removes the section and its listeners. */
   unmount(): void {
     if (this.list && this.onClick) {
       this.list.removeEventListener("click", this.onClick);
     }
+    if (this.showAll && this.onShowAll) {
+      this.showAll.removeEventListener("click", this.onShowAll);
+    }
     this.root?.remove();
     this.root = undefined;
+    this.heading = undefined;
+    this.showAll = undefined;
     this.list = undefined;
     this.empty = undefined;
     this.rows.clear();
     this.onClick = undefined;
+    this.onShowAll = undefined;
   }
 
   // ===========================================
@@ -247,8 +308,23 @@ const TYPE_ICONS: Readonly<Record<MissionTypeId, IconId>> = {
 };
 
 // ===========================================
-// Sorting
+// Filtering and sorting
 // ===========================================
+
+/** The missions on offer in `regionId`, or every mission when it is undefined. */
+export function missionsInRegion(
+  state: GameState,
+  regionId: RegionId | undefined,
+): Mission[] {
+  const missions = state.overworld.missions;
+  if (regionId === undefined) {
+    return [...missions];
+  }
+  return missions.filter(
+    (mission) =>
+      findCity(state.overworld.map, mission.cityId)?.regionId === regionId,
+  );
+}
 
 /** Soonest expiry first; ties by creation day, then id, so the order is stable. */
 export function sortByExpiry(missions: readonly Mission[]): Mission[] {

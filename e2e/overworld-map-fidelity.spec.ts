@@ -41,11 +41,16 @@ interface ScreenFit {
   readonly scaleY: number;
 }
 
-/** One coastal city and where its nearest drawn coast vertex projects to. */
+/**
+ * One coastal city, where its nearest drawn coast vertex projects to, and
+ * where the coast is probed for a pixel: the nearest vertex clear of
+ * every settlement model.
+ */
 interface CoastProbe {
   readonly id: string;
   readonly marker: Point;
   readonly coast: Point;
+  readonly visible: Point;
   readonly coastDistancePx: number;
 }
 
@@ -202,27 +207,58 @@ function toScreen(fit: ScreenFit, layout: { x: number; y: number }): Point {
   };
 }
 
+/** A pair of drawn coast vertices for one city, in layout space. */
+interface CoastVertices {
+  /** The ring vertex closest to the city: how far its marker is from the coast. */
+  readonly nearest: { x: number; y: number };
+  /** The closest ring vertex no settlement model covers: where a coast pixel can be seen. */
+  readonly clear: { x: number; y: number };
+}
+
 /**
- * The drawn coast vertex nearest a city, in layout space. Every ring
- * vertex lies on a drawn segment, so a coast pixel must be there.
+ * The drawn coast vertices a city is measured against. Every ring
+ * vertex lies on a drawn segment, so a coast pixel must be there, but
+ * since #1155 every city stands as an opaque settlement model inside a
+ * halo, so the vertex nearest a coastal city is usually under a model.
+ * The pixel probe therefore reads the closest vertex that is at least a
+ * `settlementFootprint` from every city.
  */
-function nearestCoastVertex(cityId: string): { x: number; y: number } {
+function coastVertices(cityId: string): CoastVertices {
   const config = OVERWORLD_SCENE_CONFIG;
   const world = layoutToWorld(layoutOf(cityId), config);
-  let best = { x: 0, z: 0 };
-  let bestDistance = Number.POSITIVE_INFINITY;
+  const cities = EARTH_MAP.cities.map((city) =>
+    layoutToWorld(city.layout, config),
+  );
+  const covered = (vertex: { x: number; z: number }): boolean =>
+    cities.some(
+      (city) =>
+        Math.hypot(vertex.x - city.x, vertex.z - city.z) <
+        config.settlementFootprint,
+    );
+  let nearest = { x: 0, z: 0 };
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  let clear = { x: 0, z: 0 };
+  let clearDistance = Number.POSITIVE_INFINITY;
   for (const polygon of projectCoastlines(EARTH_COASTLINES, config)) {
     for (const ring of [polygon.outer, ...polygon.holes]) {
       for (const vertex of ring) {
         const distance = Math.hypot(vertex.x - world.x, vertex.z - world.z);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          best = vertex;
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearest = vertex;
+        }
+        if (distance < clearDistance && !covered(vertex)) {
+          clearDistance = distance;
+          clear = vertex;
         }
       }
     }
   }
-  return { x: best.x / config.mapWidth, y: best.z / config.mapDepth };
+  const toLayout = (vertex: { x: number; z: number }) => ({
+    x: vertex.x / config.mapWidth,
+    y: vertex.z / config.mapDepth,
+  });
+  return { nearest: toLayout(nearest), clear: toLayout(clear) };
 }
 
 // ===========================================
@@ -234,11 +270,12 @@ function nearestCoastVertex(cityId: string): { x: number; y: number } {
  * same projection the markers use (#1144), so a coastal city's marker
  * must stand on a drawn coast: the coast vertex nearest the city
  * projects to within a few pixels of the marker, and the screenshot
- * shows a coastline-coloured pixel there.
+ * shows a coastline-coloured pixel at the nearest coast vertex that no
+ * settlement model covers (#1155).
  *
  * ```
  *   city layout ──▶ nearest ring vertex ──▶ screen (fitted from markers)
- *                                              └─▶ cyan pixel in a 9×9 window?
+ *              └──▶ nearest clear vertex ──▶ screen ──▶ cyan pixel in a 9×9 window?
  * ```
  *
  * Two controls keep the measurement honest: the whole plate must draw
@@ -273,14 +310,17 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
     if (!marker) {
       throw new Error(`${id} did not project`);
     }
-    const coast = toScreen(fit, nearestCoastVertex(id));
-    if (hidden(coast)) {
+    const vertices = coastVertices(id);
+    const coast = toScreen(fit, vertices.nearest);
+    const visible = toScreen(fit, vertices.clear);
+    if (hidden(coast) || hidden(visible)) {
       continue;
     }
     probes.push({
       id,
       marker,
       coast,
+      visible,
       coastDistancePx: Math.hypot(coast.x - marker.x, coast.y - marker.y),
     });
   }
@@ -372,7 +412,7 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
       return {
         coastPixels,
         missingCoast: probes
-          .filter((probe) => !coastNear(probe.coast))
+          .filter((probe) => !coastNear(probe.visible))
           .map((probe) => probe.id),
         litOcean,
       };

@@ -441,7 +441,7 @@ AFRICAN = Style(
     house_bodies=("env-rust", "env-dirt", "env-sand"),
     house_roofs=("bug-chitin-tan", "bug-chitin-light"),
     block_roof="tin",
-    block_bodies=("env-concrete", "tdf-orange", "env-water-shallow", "env-plaster-warm", "env-sidewalk"),
+    block_bodies=("env-concrete", "tdf-orange-dim", "env-water-shallow", "env-plaster-warm", "env-sidewalk"),
     block_roofs=("env-rust", "env-metal", "env-rust"),
     tower="box",
     tower_bodies=("env-glass", "env-concrete", "env-plaster-warm"),
@@ -501,7 +501,7 @@ SOUTH_ASIAN = Style(
     house_bodies=("env-plaster-warm", "env-sidewalk", "env-snow", "env-sand"),
     house_roofs=("env-plaster-warm", "env-sidewalk"),
     block_roof="flat",
-    block_bodies=("env-plaster-warm", "env-sand", "env-glass", "tdf-orange", "env-sidewalk", "env-water-shallow"),
+    block_bodies=("env-plaster-warm", "env-sand", "env-glass", "tdf-orange-dim", "env-sidewalk", "env-water-shallow"),
     block_roofs=("env-plaster-warm", "env-concrete"),
     tower="slender",
     tower_bodies=("env-plaster-warm", "env-glass", "env-sidewalk"),
@@ -535,7 +535,7 @@ def ea_landmark(style: Style, layout: Layout) -> tuple[float, float, float]:
             pyramid(f"keep_roof{i}", (b.x, b.y, z), 0.08 * shrink + 0.03, 0.08 * shrink + 0.03, 0.02, "tdf-grey-dark", top=0.45 if i < 2 else 0.0)
             z += 0.02 if i < 2 else 0.02
         return (b.x, b.y, z)
-    tip = lattice_tower("lattice", b.x, b.y, 0.46, 0.13, "tdf-orange", bands=("tdf-orange", "env-snow", "tdf-orange"))
+    tip = lattice_tower("lattice", b.x, b.y, 0.46, 0.13, "tdf-orange-dim", bands=("tdf-orange-dim", "env-snow", "tdf-orange-dim"))
     return (b.x, b.y, tip)
 
 

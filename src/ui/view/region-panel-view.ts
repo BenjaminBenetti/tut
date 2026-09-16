@@ -111,7 +111,7 @@ export class RegionPanelView {
     const empty = doc.createElement("p");
     empty.className = "tut-dim";
     empty.dataset.role = "no-region";
-    empty.textContent = "Select a city on the map.";
+    empty.textContent = "Select a region on the map.";
 
     const body = doc.createElement("div");
     body.className = "tut-stack";

@@ -7,6 +7,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
+  Plane,
   Raycaster,
   RingGeometry,
   Vector2,
@@ -22,6 +23,7 @@ import { citiesInRegion } from "../../overworld/service/earth-map-query-service"
 import { DEPLOYABLE_ANIMATIONS } from "../data/deployable-animations";
 import { EARTH_COASTLINES } from "../data/earth-coastlines";
 import type { CityPicker } from "../model/city-picker";
+import type { RegionPicker } from "../model/region-picker";
 import type { EarthCoastlines } from "../model/earth-coastlines";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { MapSceneState } from "../model/map-scene-state";
@@ -44,13 +46,14 @@ import { INSTALLATION_STAND_IN_HEIGHT } from "../view/installation-marker";
 import { RegionInstallations } from "../view/region-installations";
 import { RegionTerritories } from "../view/region-territories";
 import { partitionClaimableLand } from "./claimable-land";
-import type { GroundPolygon } from "./coastline-projection";
+import type { GroundPoint, GroundPolygon } from "./coastline-projection";
 import { projectCoastlines } from "./coastline-projection";
 import { coastlineSegments } from "./coastline-segments";
 import { createFalloffTexture } from "./falloff-texture";
+import { isOnLand } from "./land-query";
 import { layoutToWorld, mapCentre } from "./overworld-layout";
-import type { TerritorySeed } from "./region-territory-service";
-import { computeTerritories } from "./region-territory-service";
+import type { TerritoryCell, TerritorySeed } from "./region-territory-service";
+import { cellAt, computeTerritories } from "./region-territory-service";
 
 // ===========================================
 // Types
@@ -78,6 +81,9 @@ const GROUND_COLOUR = 0x0b0d12;
 
 /** `BoxGeometry` material slot for the +y face (order: +x, −x, +y, −y, +z, −z). */
 const BOX_TOP_FACE = 2;
+
+/** The map plane, `y = 0`, that a region pick raycasts against. */
+const GROUND_PLANE = new Plane(new Vector3(0, 1, 0), 0);
 
 /**
  * Radial segments for halos, rings and pick solids. Deliberately not a
@@ -140,10 +146,13 @@ const SKY_FILL_INTENSITY = 0.7;
  *   update(state)  ─▶  markers retinted and egg-cued, installations synced, territories retinted
  *   animator       ─▶  tick every frame: installations idle
  *   pickCity()     ─▶  raycast against marker pick solids
+ *   pickRegion()   ─▶  raycast the ground, then the cell the point falls in, on claimable land
  *   dispose()      ─▶  everything released, `root` emptied
  * ```
  */
-export class OverworldSceneBuilder implements CityPicker, MapStateView {
+export class OverworldSceneBuilder
+  implements CityPicker, RegionPicker, MapStateView
+{
   // ===========================================
   // Fields
   // ===========================================
@@ -169,8 +178,13 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   private wireframe: EarthWireframe | undefined;
   private territories: RegionTerritories | undefined;
   private installations: RegionInstallations | undefined;
+  /** The Voronoi partition the territories were built from; a region pick looks its cell up here. */
+  private cells: readonly TerritoryCell[] = [];
   private hovered: CityId | undefined;
   private selected: CityId | undefined;
+  /** A region picked by its land (#1155), with no city; a selected city's region is derived instead. */
+  private hoveredRegion: RegionId | undefined;
+  private selectedRegion: RegionId | undefined;
 
   // ===========================================
   // Constructor
@@ -404,6 +418,53 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     return this.selected;
   }
 
+  // ===========================================
+  // RegionPicker
+  // ===========================================
+
+  /**
+   * Raycasts the ground plane from a normalised device coordinate and
+   * answers the region whose Voronoi cell the point falls in, provided
+   * the point is on claimable land (#1155). Off the map, over the sea
+   * or over the polar land no region claims, nothing is picked, so a
+   * click there clears the selection rather than picking a neighbour.
+   */
+  pickRegion(ndc: Vec2, camera: Camera): RegionId | undefined {
+    const ground = this.groundPointAt(ndc, camera);
+    if (
+      !ground ||
+      ground.x < 0 ||
+      ground.x > this.config.mapWidth ||
+      ground.z < 0 ||
+      ground.z > this.config.mapDepth ||
+      !isOnLand(ground, this.claimableLand)
+    ) {
+      return undefined;
+    }
+    return cellAt(ground, this.cells)?.regionId;
+  }
+
+  /** Outlines one region as hovered, or none. */
+  setHoveredRegion(regionId: RegionId | undefined): void {
+    this.hoveredRegion = regionId;
+    this.applyHighlights();
+  }
+
+  /** Marks one region as selected on its own, or none. */
+  setSelectedRegion(regionId: RegionId | undefined): void {
+    this.selectedRegion = regionId;
+    this.applyHighlights();
+  }
+
+  /** The region selected on its own, if any; a selected city's region is not reported here. */
+  getSelectedRegion(): RegionId | undefined {
+    return this.selectedRegion;
+  }
+
+  // ===========================================
+  // Positions
+  // ===========================================
+
   /** A world point on a city's marker, or `undefined` for an unknown city. */
   markerWorldPosition(cityId: CityId): Vec3 | undefined {
     const marker = this.markers.get(cityId);
@@ -436,6 +497,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       width: this.config.mapWidth,
       depth: this.config.mapDepth,
     });
+    this.cells = cells;
     return new RegionTerritories({
       cells,
       land: this.claimableLand,
@@ -485,17 +547,37 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     return fill;
   }
 
-  /** Pushes hovered and selected state onto every marker and the region outline. */
+  /**
+   * Pushes hovered and selected state onto every marker and the region
+   * outlines. A region lit on its own wins; otherwise the hovered or
+   * selected city lights its own region.
+   */
   private applyHighlights(): void {
     for (const [cityId, marker] of this.markers) {
       marker.setHovered(cityId === this.hovered);
       marker.setSelected(cityId === this.selected);
     }
-    const active =
-      this.selected === undefined
-        ? undefined
-        : this.regionOfCity.get(this.selected);
-    this.territories?.setSelected(active);
+    this.territories?.setSelected(
+      this.selectedRegion ?? this.regionOfCityOrNone(this.selected),
+    );
+    this.territories?.setHovered(
+      this.hoveredRegion ?? this.regionOfCityOrNone(this.hovered),
+    );
+  }
+
+  /** The region a city belongs to, or `undefined` for no city or an unknown one. */
+  private regionOfCityOrNone(cityId: CityId | undefined): RegionId | undefined {
+    return cityId === undefined ? undefined : this.regionOfCity.get(cityId);
+  }
+
+  /**
+   * Where a normalised device coordinate meets the ground plane, or
+   * `undefined` when the ray never does.
+   */
+  private groundPointAt(ndc: Vec2, camera: Camera): GroundPoint | undefined {
+    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
+    const hit = this.raycaster.ray.intersectPlane(GROUND_PLANE, new Vector3());
+    return hit ? { x: hit.x, z: hit.z } : undefined;
   }
 
   /**
@@ -543,6 +625,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     this.markers.clear();
     this.targetToCity.clear();
     this.regionOfCity.clear();
+    this.cells = [];
     this.slab = undefined;
     this.wireframe = undefined;
     this.territories = undefined;

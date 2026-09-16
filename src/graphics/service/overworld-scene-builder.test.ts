@@ -21,7 +21,9 @@ import type { MapSceneState } from "../model/map-scene-state";
 import type { ModelLoader } from "../model/model-loader";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
 import { INFESTATION_RAMP } from "../view/city-marker";
+import { projectEquirectangular } from "../../overworld/service/map-projection";
 import { OrthographicCameraRig } from "./orthographic-camera-rig";
+import { layoutToWorld } from "./overworld-layout";
 import { OverworldSceneBuilder } from "./overworld-scene-builder";
 
 function rampStop(index: number): number {
@@ -420,6 +422,61 @@ describe("OverworldSceneBuilder", () => {
       const ndc = new Vector3(world.x, world.y, world.z).project(rig.camera);
       expect(builder.pickCity({ x: ndc.x, y: ndc.y }, rig.camera)).toBe(cityId);
     }
+  });
+
+  it("picks a region by its land through the real camera, and nothing at sea, on polar land or off the map (#1155)", () => {
+    const builder = new OverworldSceneBuilder();
+    builder.build(EARTH_MAP);
+    const rig = makeCamera(builder);
+    const ndcOf = (lon: number, lat: number): { x: number; y: number } => {
+      const world = layoutToWorld(projectEquirectangular(lat, lon), OVERWORLD_SCENE_CONFIG);
+      const ndc = new Vector3(world.x, 0, world.z).project(rig.camera);
+      return { x: ndc.x, y: ndc.y };
+    };
+    // Inland points, well away from any settlement.
+    expect(builder.pickRegion(ndcOf(108, 33), rig.camera)).toBe("east-asia");
+    expect(builder.pickRegion(ndcOf(-115, 40), rig.camera)).toBe(
+      "north-america-west",
+    );
+    // Mid-Pacific, mid-Atlantic, Antarctica, and beyond the plane.
+    expect(builder.pickRegion(ndcOf(-150, 0), rig.camera)).toBeUndefined();
+    expect(builder.pickRegion(ndcOf(-30, 30), rig.camera)).toBeUndefined();
+    expect(builder.pickRegion(ndcOf(0, -85), rig.camera)).toBeUndefined();
+    expect(builder.pickRegion({ x: -0.999, y: 0.999 }, rig.camera)).toBeUndefined();
+  });
+
+  it("lights a region selected on its own, and its hover, without a city (#1155)", () => {
+    const builder = new OverworldSceneBuilder();
+    builder.build(EARTH_MAP);
+    const outline = outlineOf(builder);
+    const hover = builder.root.getObjectByName("territory-hover") as LineSegments;
+
+    builder.setSelectedRegion("east-asia");
+    expect(builder.getSelectedRegion()).toBe("east-asia");
+    expect(builder.getSelected()).toBeUndefined();
+    expect(builder.regionTerritories()?.selectedRegion()).toBe("east-asia");
+    expect(outline.visible).toBe(true);
+
+    builder.setHoveredRegion("oceania");
+    expect(builder.regionTerritories()?.hoveredRegion()).toBe("oceania");
+    expect(hover.visible).toBe(true);
+    // Hovering a city lights its region the same way.
+    builder.setHoveredRegion(undefined);
+    builder.setHovered("london");
+    expect(builder.regionTerritories()?.hoveredRegion()).toBe(
+      "western-europe",
+    );
+
+    // A city selection wins over the bare region only when the bare one is cleared.
+    builder.setSelected("london");
+    expect(builder.regionTerritories()?.selectedRegion()).toBe("east-asia");
+    builder.setSelectedRegion(undefined);
+    expect(builder.regionTerritories()?.selectedRegion()).toBe(
+      "western-europe",
+    );
+    builder.setSelected(undefined);
+    expect(builder.regionTerritories()?.selectedRegion()).toBeUndefined();
+    expect(outline.visible).toBe(false);
   });
 
   it("returns undefined when nothing is under the point", () => {

@@ -4,6 +4,9 @@ import { Vector3 } from "three";
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CityId } from "../../overworld/model/city";
 import type { CityPicker } from "../model/city-picker";
+import type { OverworldPick } from "../model/overworld-pick";
+import { cityPick, regionPick, samePick } from "../model/overworld-pick";
+import type { RegionPicker } from "../model/region-picker";
 import type { SceneCamera } from "../model/scene-camera";
 import { ndcToPointer, pointerToNdc } from "../service/pointer-ndc";
 
@@ -30,6 +33,12 @@ export interface Picker<TId> {
   setSelected(id: TId | undefined): void;
   /** A world point on the thing, or undefined when unknown. */
   worldPosition(id: TId): Vec3 | undefined;
+  /**
+   * Whether two ids name the same thing, for ids that are not plain
+   * values. Hover is re-applied only when this says the thing changed;
+   * pickers that leave it out are compared with `===`.
+   */
+  sameId?(a: TId, b: TId): boolean;
 }
 
 /** Callbacks the controller reports through. */
@@ -48,6 +57,12 @@ export interface PickingOptions<TId> {
    * Hover still highlights, so the pointer is not dead, only the press.
    */
   readonly isLocked?: () => boolean;
+  /**
+   * When given, a click that lands on nothing reports here (#1155):
+   * the overworld clears its selection on a click at sea. Scenes that
+   * omit it ignore such clicks, as they always have.
+   */
+  readonly onMissed?: () => void;
 }
 
 // ===========================================
@@ -77,7 +92,8 @@ export const PICKING_TUNING = {
  * ```
  *   pointermove ──▶ pick ──▶ picker.setHovered
  *   pointerdown ──▶ remember press
- *   pointerup   ──▶ moved ≤ slop? pick ─┬─ right button + onInvoked ──▶ onInvoked
+ *   pointerup   ──▶ moved ≤ slop? pick ─┬─ nothing there ──▶ onMissed
+ *                                       ├─ right button + onInvoked ──▶ onInvoked
  *                                       └─ otherwise ──▶ select ──▶ onSelected
  * ```
  */
@@ -211,6 +227,7 @@ export class PickingController<TId> {
     }
     const id = this.pickAt(event);
     if (id === undefined) {
+      this.options.onMissed?.();
       return;
     }
     const invoke = this.options.onInvoked;
@@ -244,11 +261,19 @@ export class PickingController<TId> {
 
   /** Pushes a hover change to the picker only when it actually changed. */
   private setHovered(id: TId | undefined): void {
-    if (id === this.hovered) {
+    if (this.isSameId(id, this.hovered)) {
       return;
     }
     this.hovered = id;
     this.picker.setHovered(id);
+  }
+
+  /** Whether two optional ids name the same thing, through the picker's own comparison when it has one. */
+  private isSameId(a: TId | undefined, b: TId | undefined): boolean {
+    if (a === undefined || b === undefined) {
+      return a === b;
+    }
+    return this.picker.sameId ? this.picker.sameId(a, b) : a === b;
   }
 }
 
@@ -267,6 +292,49 @@ export function cityPickerAdapter(picker: CityPicker): Picker<CityId> {
       picker.setSelected(id);
     },
     worldPosition: (id) => picker.markerWorldPosition(id),
+  };
+}
+
+/**
+ * Adapts the overworld scene's city and region pickers into one
+ * `Picker` over `OverworldPick` (#1155): a settlement under the pointer
+ * wins, the land of a region is picked otherwise, and the sea is a
+ * miss. Hover and selection are pushed to both halves of the scene,
+ * clearing the half the pick is not.
+ *
+ * ```
+ *   pick ──▶ pickCity ──hit──▶ { city }
+ *              └─miss──▶ pickRegion ──hit──▶ { region }
+ *                            └─miss──▶ undefined
+ * ```
+ */
+export function overworldPickerAdapter(
+  picker: CityPicker & RegionPicker,
+): Picker<OverworldPick> {
+  return {
+    pick: (ndc, camera) => {
+      const cityId = picker.pickCity(ndc, camera);
+      if (cityId !== undefined) {
+        return cityPick(cityId);
+      }
+      const regionId = picker.pickRegion(ndc, camera);
+      return regionId === undefined ? undefined : regionPick(regionId);
+    },
+    setHovered: (pick) => {
+      picker.setHovered(pick?.kind === "city" ? pick.cityId : undefined);
+      picker.setHoveredRegion(
+        pick?.kind === "region" ? pick.regionId : undefined,
+      );
+    },
+    setSelected: (pick) => {
+      picker.setSelected(pick?.kind === "city" ? pick.cityId : undefined);
+      picker.setSelectedRegion(
+        pick?.kind === "region" ? pick.regionId : undefined,
+      );
+    },
+    worldPosition: (pick) =>
+      pick.kind === "city" ? picker.markerWorldPosition(pick.cityId) : undefined,
+    sameId: samePick,
   };
 }
 

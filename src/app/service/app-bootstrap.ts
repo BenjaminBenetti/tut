@@ -4,9 +4,10 @@ import "../../ui/style/screens.css";
 import { randomSeed } from "../../core/service/random-seed";
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
 import {
-  cityPickerAdapter,
+  overworldPickerAdapter,
   PickingController,
 } from "../../graphics/controller/picking-controller";
+import { cityPick } from "../../graphics/model/overworld-pick";
 import {
   CAMERA_ZOOM,
   STRATEGIC_PROJECTION,
@@ -283,13 +284,14 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 /**
  * The overworld map scene from #160: preloads the settlement and
  * installation models (#1155), builds the wireframe Earth scene
- * (#1144), the top-down rig at minimum zoom, camera input and city
- * picking, all mounted into the given `#map-viewport`. A
- * picked city is pushed into `selection`, which the overworld panels
- * render, and reported through `cityPicks` so the screen can open the
- * city wheel on it (#1154); the selection's city and region are mirrored
- * to `body[data-selected-city]` and `body[data-selected-region]`. The
- * scene attaches to
+ * (#1144), the top-down rig at minimum zoom, camera input and picking,
+ * all mounted into the given `#map-viewport`. A picked city is pushed
+ * into `selection`, which the overworld panels render, and reported
+ * through `cityPicks` so the screen can open the city wheel on it
+ * (#1154); a click on a region's bare land selects the region alone,
+ * and one at sea clears the selection (#1155). The selection's city and
+ * region are mirrored to `body[data-selected-city]` and
+ * `body[data-selected-region]`. The scene attaches to
  * `mapSync` so every campaign store's state retints the settlements,
  * adds their egg cues and places the installations (#302, #1155). In
  * dev builds the `window.__tut__` hooks let end-to-end tests select
@@ -339,22 +341,34 @@ async function composeScene(
   });
   // No rotation on the strategic map: north stays up (#420).
   const cameraInput = new CameraInputController(rig, { rotate: false });
-  const picking = new PickingController(cityPickerAdapter(mapScene), rig, {
-    // A pick (pointer, or the test hook) selects the city and its
+  const picking = new PickingController(overworldPickerAdapter(mapScene), rig, {
+    // A city pick (pointer, or the test hook) selects the city and its
     // region, then tells the screen so the city wheel opens on it. The
     // order matters: a different city closes the old wheel through the
     // selection first, so the new one is not dismissed by its own pick.
-    onSelected: (cityId) => {
-      selection.select(cityId);
-      cityPicks.emit(cityId);
+    // A pick on a region's land selects the region alone, no wheel.
+    onSelected: (pick) => {
+      if (pick.kind === "city") {
+        selection.select(pick.cityId);
+        cityPicks.emit(pick.cityId);
+        return;
+      }
+      selection.selectRegion(pick.regionId);
+    },
+    // A click at sea, or off the map, picks nothing and clears.
+    onMissed: () => {
+      selection.selectRegion(undefined);
     },
   });
-  cityPicks.useProjector((cityId) => picking.screenPositionOf(cityId));
+  cityPicks.useProjector((cityId) =>
+    picking.screenPositionOf(cityPick(cityId)),
+  );
   // The selection is the truth for both directions: a map click lands
   // in it above, and a mission or city row chosen in the side panel
   // highlights its city here. The scene is told directly rather than
   // through `picking.select`, which would report a pick and open the
-  // wheel over a click that happened in a list.
+  // wheel over a click that happened in a list. A region selected with
+  // no city is lit on its own; with a city, the city's region is.
   selection.subscribe(({ cityId, regionId }) => {
     if (regionId === undefined) {
       delete doc.body.dataset.selectedRegion;
@@ -368,6 +382,10 @@ async function composeScene(
     }
     if (mapScene.getSelected() !== cityId) {
       mapScene.setSelected(cityId);
+    }
+    const bareRegion = cityId === undefined ? regionId : undefined;
+    if (mapScene.getSelectedRegion() !== bareRegion) {
+      mapScene.setSelectedRegion(bareRegion);
     }
   });
   const scene = new SceneService(viewport, {
@@ -383,9 +401,10 @@ async function composeScene(
   if (import.meta.env.DEV) {
     const hooks: TutTestHooks = {
       selectCity: (cityId) => {
-        picking.select(cityId);
+        picking.select(cityPick(cityId));
       },
-      cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
+      cityScreenPosition: (cityId) =>
+        picking.screenPositionOf(cityPick(cityId)),
       cityMarkerLook: (cityId) => mapScene.markerLook(cityId),
       focusCity: (cityId, zoom) => {
         const world = mapScene.markerWorldPosition(cityId);

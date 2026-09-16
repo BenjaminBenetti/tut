@@ -100,7 +100,7 @@ export class DeployablesView {
     const empty = doc.createElement("p");
     empty.className = "tut-dim";
     empty.dataset.role = "no-region";
-    empty.textContent = "Select a city to manage its region.";
+    empty.textContent = "Select a region to manage its installations.";
 
     const list = doc.createElement("ul");
     list.className = "tut-list";

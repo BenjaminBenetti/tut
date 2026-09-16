@@ -130,11 +130,7 @@
           "side": "e"
         }
       ],
-      "connectorIds": [
-        "stairs-1",
-        "stairs-2",
-        "ladder-1"
-      ]
+      "connectorIds": ["stairs-1", "stairs-2", "ladder-1"]
     },
     "floorIndex": 0,
     "camera": {
@@ -1563,11 +1559,7 @@
           "side": "e"
         }
       ],
-      "connectorIds": [
-        "stairs-25",
-        "stairs-26",
-        "stairs-27"
-      ]
+      "connectorIds": ["stairs-25", "stairs-26", "stairs-27"]
     },
     "floorIndex": 1,
     "camera": {
@@ -1791,10 +1783,7 @@
           "side": "w"
         }
       ],
-      "connectorIds": [
-        "stairs-2",
-        "ladder-2"
-      ]
+      "connectorIds": ["stairs-2", "ladder-2"]
     },
     "floorIndex": 0,
     "camera": {
@@ -2166,11 +2155,7 @@
           "side": "e"
         }
       ],
-      "connectorIds": [
-        "stairs-9",
-        "stairs-10",
-        "ladder-1"
-      ]
+      "connectorIds": ["stairs-9", "stairs-10", "ladder-1"]
     },
     "floorIndex": 0,
     "camera": {
@@ -2498,9 +2483,7 @@
           "side": "e"
         }
       ],
-      "connectorIds": [
-        "stairs-1"
-      ]
+      "connectorIds": ["stairs-1"]
     },
     "floorIndex": 0,
     "camera": {

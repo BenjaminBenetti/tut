@@ -132,8 +132,14 @@ describe("DeployablesView", () => {
     const builds = root.querySelectorAll('[data-action="build-deployable"]');
     expect(builds).toHaveLength(DEPLOYABLE_TYPE_IDS.length);
     expect(buildButton("defensive-battery")?.textContent).toBe(
-      "Build Defensive battery · ¢1,500 · 1/2",
+      "Defensive battery · ¢1,500 · 1/2",
     );
+    const heading = root.querySelector('[data-role="build-heading"]');
+    expect(heading?.textContent).toBe("Build");
+    expect(heading?.className).toBe("tut-label");
+    expect(
+      root.querySelector('[data-role="build-options"]')?.firstElementChild,
+    ).toBe(heading);
   });
 
   it("disables Build when capped or unaffordable, with the reason in the title", () => {

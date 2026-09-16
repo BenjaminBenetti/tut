@@ -30,16 +30,19 @@ export interface DeployablesViewHandlers {
 
 /**
  * The selected region's installations (GDD §5.6): what is built, with
- * its status and upkeep and a Decommission button, then one Build button
- * per type showing cost, upkeep and how many of the cap are used. Build
- * is disabled when the treasury cannot cover the cost or the region is
- * at the type's cap; the reason is in the button's title.
+ * its status and upkeep and a Decommission button, then under a Build
+ * heading one button per type showing cost, upkeep and how many of the
+ * cap are used (#1151). A button is disabled when the treasury cannot
+ * cover the cost or the region is at the type's cap; the reason is in
+ * the button's title.
  *
  * ```
  *   DEPLOYABLES · North America East
  *   ├ Defensive battery   online   ¢50/day   [Decommission]
  *   ├ Sensor array        offline  ¢20/day   [Decommission]
- *   [Build Defensive battery ¢1,500 · 1/2]  [Build Repellent … ¢1,000 · 0/1]  …
+ *   BUILD
+ *   [Defensive battery · ¢1,500 · 1/2]
+ *   [Repellent dispersal · ¢1,000 · 0/1]  …
  * ```
  *
  * The lists are rebuilt on every update (they are a handful of rows);
@@ -57,6 +60,7 @@ export class DeployablesView {
   private region: HTMLElement | undefined;
   private list: HTMLElement | undefined;
   private builds: HTMLElement | undefined;
+  private buildHeading: HTMLElement | undefined;
   private empty: HTMLElement | undefined;
   private regionId: RegionId | undefined;
   private dispose: (() => void) | undefined;
@@ -103,10 +107,16 @@ export class DeployablesView {
     list.dataset.role = "deployable-list";
     list.hidden = true;
 
+    const buildHeading = doc.createElement("div");
+    buildHeading.className = "tut-label";
+    buildHeading.dataset.role = "build-heading";
+    buildHeading.textContent = "Build";
+
     const builds = doc.createElement("div");
     builds.className = "tut-stack tut-deployables__build";
     builds.dataset.role = "build-options";
     builds.hidden = true;
+    builds.appendChild(buildHeading);
 
     section.append(title, region, empty, list, builds);
     parent.appendChild(section);
@@ -123,6 +133,7 @@ export class DeployablesView {
     this.region = region;
     this.list = list;
     this.builds = builds;
+    this.buildHeading = buildHeading;
     this.empty = empty;
   }
 
@@ -166,6 +177,7 @@ export class DeployablesView {
     this.region = undefined;
     this.list = undefined;
     this.builds = undefined;
+    this.buildHeading = undefined;
     this.empty = undefined;
     this.regionId = undefined;
   }
@@ -212,13 +224,17 @@ export class DeployablesView {
     }
   }
 
-  /** One Build button per catalogue type, disabled with a reason when it cannot be built. */
+  /**
+   * The Build heading and one button per catalogue type, disabled with a
+   * reason when it cannot be built. The button names the type; the
+   * heading carries the verb, so it is not repeated on every row.
+   */
   private renderBuilds(held: readonly Deployable[], credits: number): void {
-    if (!this.builds) {
+    if (!this.builds || !this.buildHeading) {
       return;
     }
     const doc = this.builds.ownerDocument;
-    this.builds.replaceChildren();
+    this.builds.replaceChildren(this.buildHeading);
     for (const type of this.catalogue.listDeployableTypes()) {
       const count = held.filter((d) => d.typeId === type.id).length;
       const button = doc.createElement("button");
@@ -226,7 +242,7 @@ export class DeployablesView {
       button.className = "tut-btn";
       button.dataset.action = "build-deployable";
       button.dataset.typeId = type.id;
-      button.textContent = `Build ${type.name} · ${formatCredits(type.buildCost)} · ${String(count)}/${String(type.maxPerRegion)}`;
+      button.textContent = `${type.name} · ${formatCredits(type.buildCost)} · ${String(count)}/${String(type.maxPerRegion)}`;
       const reason = this.buildBlocker(type, count, credits);
       button.disabled = reason !== undefined;
       button.title =

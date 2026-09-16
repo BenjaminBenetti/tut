@@ -84,7 +84,7 @@
   inset: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  grid-template-columns: minmax(0, 1fr) min(320px, 40vw);
+  grid-template-columns: minmax(0, 1fr) min(400px, 36vw);
   grid-template-areas:
     "bar bar"
     "map side";
@@ -106,12 +106,26 @@
   overflow: hidden;
 }
 
+/*
+ * The side column is wide enough for the longest build row at 1280 px
+ * (#1151) and never scrolls sideways: the panel clips on x and scrolls
+ * on y, and everything inside it may shrink below its content width so
+ * a long button wraps instead of pushing the panel wider.
+ */
 .tut-overworld__side {
   grid-area: side;
   align-self: start;
   margin: var(--space-4);
+  min-width: 0;
   max-height: calc(100% - 2 * var(--space-4));
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.tut-overworld__side > *,
+.tut-overworld__side .tut-stack > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tut-topbar__status {
@@ -204,7 +218,13 @@
 }
 
 .tut-deployables__build .tut-btn {
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
+  padding-block: var(--space-2);
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* ===========================================

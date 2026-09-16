@@ -13,8 +13,11 @@ export interface RampStop {
 
 /**
  * Infestation ramp from the Art Director (#74): `ui-ok` (clean) through
- * `ui-bug` (infested) and `ui-warn` to `ui-danger` (overrun), evenly
- * spaced.
+ * `ui-bug` (infested) and `ui-warn` to a hot red (overrun), evenly
+ * spaced. The top stop was `ui-danger` (`#E0453C`) until #1151; on a
+ * region fill drawn at the territories' opacity that read muted next to
+ * the yellow below it, so the ramp now ends on `#FF2A1E`, a more
+ * saturated red that still lands on `ui-danger`'s hue.
  *
  * It lives on its own because two things now read infestation on the
  * strategic map: a city's marker (#74) and its region's wash (#440).
@@ -24,7 +27,7 @@ export const INFESTATION_RAMP: readonly RampStop[] = [
   { at: 0, hex: 0x7ccb5a },
   { at: 1 / 3, hex: 0x9cff3d },
   { at: 2 / 3, hex: 0xf0c63c },
-  { at: 1, hex: 0xe0453c },
+  { at: 1, hex: 0xff2a1e },
 ];
 
 // ===========================================

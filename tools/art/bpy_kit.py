@@ -78,9 +78,14 @@ PALETTE = {
     "env-tuart-bark": "#AAA58F",
     "env-limestone": "#BDB69A",
     "env-grass-tree-trunk": "#393C32",
+    "env-window-lit": "#FFD08A",
 }
 
-EMISSIVE = {"tdf-visor", "bug-bio-green", "bug-bio-magenta"}
+EMISSIVE = {"tdf-visor", "bug-bio-green", "bug-bio-magenta", "env-window-lit"}
+
+#: Emission strength per emissive token; anything not listed glows at 3.0.
+#: Lit windows are a warm pinprick on the night map, not a beacon.
+EMISSIVE_STRENGTH = {"env-window-lit": 1.5}
 METAL = {"tdf-grey-dark", "tdf-grey-mid", "tdf-grey-light", "env-metal", "env-rust"}
 
 
@@ -123,7 +128,7 @@ def material(token: str) -> bpy.types.Material:
     bsdf.inputs["Metallic"].default_value = 0.0
     if token in EMISSIVE:
         bsdf.inputs["Emission Color"].default_value = colour
-        bsdf.inputs["Emission Strength"].default_value = 3.0
+        bsdf.inputs["Emission Strength"].default_value = EMISSIVE_STRENGTH.get(token, 3.0)
     return mat
 
 

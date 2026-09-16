@@ -2451,11 +2451,11 @@
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.21,
+    "height": 0.2,
     "sockets": [],
     "quality": "final",
-    "triangles": 224,
-    "bytes": 27596
+    "triangles": 808,
+    "bytes": 67456
   },
   {
     "id": "overworld.settlement-eggs.rural",
@@ -2465,11 +2465,11 @@
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.13,
+    "height": 0.12,
     "sockets": [],
     "quality": "final",
-    "triangles": 436,
-    "bytes": 41336
+    "triangles": 474,
+    "bytes": 30336
   },
   {
     "id": "overworld.settlement.town",
@@ -2479,11 +2479,11 @@
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.28,
+    "height": 0.24,
     "sockets": [],
     "quality": "final",
-    "triangles": 216,
-    "bytes": 28592
+    "triangles": 1124,
+    "bytes": 89436
   },
   {
     "id": "overworld.settlement-eggs.town",
@@ -2493,11 +2493,11 @@
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.25,
+    "height": 0.22,
     "sockets": [],
     "quality": "final",
-    "triangles": 542,
-    "bytes": 53148
+    "triangles": 550,
+    "bytes": 36624
   },
   {
     "id": "overworld.settlement.city",
@@ -2507,11 +2507,11 @@
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.35,
+    "height": 0.45,
     "sockets": [],
     "quality": "final",
-    "triangles": 408,
-    "bytes": 53464
+    "triangles": 2168,
+    "bytes": 160224
   },
   {
     "id": "overworld.settlement-eggs.city",
@@ -2521,10 +2521,10 @@
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.28,
+    "height": 0.37,
     "sockets": [],
     "quality": "final",
-    "triangles": 798,
-    "bytes": 77960
+    "triangles": 836,
+    "bytes": 52996
   }
 ]

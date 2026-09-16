@@ -174,6 +174,10 @@ brick and rendered masonry. Eligible non-walkable house roofs also vary
 between gabled and hipped forms elsewhere; walkable flat roofs keep their
 existing geometry. The original roof remains one of the generated choices.
 
+The strategic map's settlement models light their windows with
+`env-window-lit #FFD08A`, emissive at 1.5: warm pinpricks on the night map,
+not a beacon. It is a model token only; no tile, unit or UI element uses it.
+
 Perth woodland uses `env-sclerophyll-leaf #66765B` and
 `env-sclerophyll-leaf-light #849077`, `env-tuart-bark #AAA58F`,
 `env-grass-tree-trunk #393C32` and `env-limestone #BDB69A`.

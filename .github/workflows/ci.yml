@@ -36,7 +36,7 @@ jobs:
     name: sim · mission sweep
     runs-on: ubuntu-latest
     # 60 seeded missions played through the real rules: ~1 min here, and
-    # the sweep asserts its own 300 s budget from the inside, so this cap
+    # the sweep asserts its own 420 s budget from the inside, so this cap
     # only catches a hang.
     timeout-minutes: 15
     steps:

@@ -110,7 +110,7 @@ export const GHOST_BODY_SAMPLES = 11;
  * alone open a window the shape of the unit's silhouette, which showed
  * the unit and nothing it could walk to; the ring opens the cone
  * around it, so the tiles beside the unit and the near walls read
- * through the roof while the far walls stay solid.
+ * through the walls in front while the far walls stay solid.
  *
  * ```
  *            14
@@ -398,12 +398,13 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
  * Three rules still hold from the earlier cutaways: the floor a unit
  * stands on never fades (#1118: only fragments above the feet are
  * tested), the wall behind the unit never fades (it is farther than
- * every sample), and the edge is soft. Since #1143 floor slabs and
- * stairs are not handed this material at all
+ * every sample), and the edge is soft. Since #1143 floor slabs, stairs
+ * and roofs are not handed this material at all
  * (`ghost-cutaway-eligibility`): the storey a unit is climbing to used
- * to fade over its reachable tiles, and the storey cut already lets the
- * player remove a floor by hand. The feet test stays for roofs, which a
- * unit can also stand on.
+ * to fade over its reachable tiles, a roof over a solid floor opened a
+ * window onto nothing, and the storey cut already lets the player
+ * remove a slab by hand. The feet test stays for the walls and
+ * parapets around a unit standing on a roof.
  *
  * Working in view space rather than screen space is exact here because
  * the game draws through one orthographic camera (ADR 0004 §3, ADR 0005):

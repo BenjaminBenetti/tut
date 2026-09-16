@@ -35,8 +35,25 @@ const BRACKET_HOVER_OPACITY = 0.4;
 /** Height the brackets float above the marker base so they never z-fight the ground lines. */
 const BRACKET_LIFT = 0.006;
 
-/** Brackets draw before the model inside them. */
-const BRACKET_RENDER_ORDER = 1;
+/**
+ * Draw order of the hover and selection cues. Both ignore the depth
+ * buffer, so a taller neighbour can never hide them behind its
+ * skyline, and both draw after everything else so the order among
+ * them is fixed: brackets under the label. The highest order anywhere
+ * else in the graphics tree is the radar marks at 20 (tactical); on
+ * the strategic map nothing exceeds the puffs at 8, and the models
+ * themselves draw at 0.
+ *
+ * ```
+ *   100  label      depthTest off
+ *    90  brackets   depthTest off
+ *     8  puffs
+ *     1  territories
+ *     0  models, fill
+ * ```
+ */
+export const BRACKET_RENDER_ORDER = 90;
+export const LABEL_RENDER_ORDER = 100;
 
 /**
  * Label height in world units, and how far south of the settlement its
@@ -48,9 +65,6 @@ const LABEL_OFFSET_SOUTH = 1.05;
 
 /** Height the label floats at so it never z-fights the brackets. */
 const LABEL_LIFT = 0.02;
-
-/** Labels draw above everything else on the map. */
-const LABEL_RENDER_ORDER = 4;
 
 /** Stand-in block drawn without a model loader: a settlement-sized slab in `env-concrete`. */
 const STAND_IN_COLOUR = 0x8e8a82;
@@ -125,6 +139,9 @@ export interface CityMarkerLookReport {
  *          name          label, south, while hovered or selected
  * ```
  *
+ * Brackets and label ignore the depth buffer and draw after every
+ * other object, so a neighbouring skyline never hides them.
+ *
  * Models arrive asynchronously through the loader; the pick solid and
  * brackets exist from construction so picking and highlights never
  * wait on a fetch. A load that lands after `dispose` is dropped.
@@ -191,6 +208,7 @@ export class CityMarker {
       color: SELECTION_COLOUR,
       transparent: true,
       opacity: BRACKET_OPACITY,
+      depthTest: false,
       depthWrite: false,
     });
     this.brackets = new Mesh(look.geometry.brackets, this.bracketMaterial);
@@ -236,9 +254,13 @@ export class CityMarker {
 
     const labelTexture = look.text?.textTexture(city.name);
     if (labelTexture) {
+      // The name is a cue, not a thing in the scene: it ignores depth
+      // so the city south of the hovered one cannot stand in front of
+      // it, and draws last (#1155).
       const material = new SpriteMaterial({
         map: labelTexture,
         transparent: true,
+        depthTest: false,
         depthWrite: false,
       });
       const sprite = new Sprite(material);

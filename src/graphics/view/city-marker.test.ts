@@ -1,4 +1,4 @@
-import type { MeshBasicMaterial, Object3D } from "three";
+import type { MeshBasicMaterial, Object3D, Sprite } from "three";
 import { BoxGeometry, CylinderGeometry, Group, Mesh, Texture } from "three";
 import { describe, expect, it } from "vitest";
 
@@ -9,8 +9,10 @@ import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
 import type { SettlementStyleSource } from "../model/settlement-style";
 import { settlementVariation } from "../service/settlement-variation";
 import {
+  BRACKET_RENDER_ORDER,
   CITY_STAND_IN_HEIGHT,
   CityMarker,
+  LABEL_RENDER_ORDER,
   SELECTION_COLOUR,
 } from "./city-marker";
 import { cornerBracketGeometry } from "./corner-bracket-geometry";
@@ -331,6 +333,26 @@ describe("CityMarker name label (#439)", () => {
     expect(marker.labelVisible()).toBe(true);
     marker.setSelected(false);
     expect(marker.labelVisible()).toBe(false);
+  });
+
+  it("draws the name and the brackets over every neighbour: no depth test, drawn last, label above brackets (#1155)", () => {
+    const marker = makeMarker(CITY, undefined, {
+      textTexture: () => new Texture(),
+    });
+    const label = named(marker, "city-label-london") as Sprite;
+    const brackets = named(marker, "city-brackets-london") as Mesh;
+    const labelMaterial = label.material;
+    const bracketMaterial = brackets.material as MeshBasicMaterial;
+    expect(labelMaterial.depthTest).toBe(false);
+    expect(labelMaterial.depthWrite).toBe(false);
+    expect(bracketMaterial.depthTest).toBe(false);
+    expect(bracketMaterial.depthWrite).toBe(false);
+    expect(label.renderOrder).toBe(LABEL_RENDER_ORDER);
+    expect(brackets.renderOrder).toBe(BRACKET_RENDER_ORDER);
+    expect(LABEL_RENDER_ORDER).toBeGreaterThan(BRACKET_RENDER_ORDER);
+    // Above the highest order any other map object uses (the puffs at 8)
+    // and the radar marks in the tactical scene (20).
+    expect(BRACKET_RENDER_ORDER).toBeGreaterThan(20);
   });
 
   it("draws no label at all without a text source, as in the headless sim", () => {

@@ -1,3 +1,4 @@
+import type { TextureSource } from "../model/texture-source";
 import type { UnitMotion } from "../model/unit-motion";
 import type { LayerFocus } from "../model/layer-focus";
 import type { Camera, Object3D } from "three";
@@ -53,6 +54,8 @@ export interface TacticalSceneBuilderOptions {
   readonly map: TacticalMap;
   /** Loads map art, spawners and, through `unitModels`' default, unit models. */
   readonly models: ModelLoader;
+  /** Cached sign artwork; optional for geometry-only scenes. */
+  readonly textures?: TextureSource;
   /**
    * Resolves a unit template to its object; a mech is assembled from
    * its loadout (#1115). Defaults to `LoadoutUnitModelSource` over
@@ -200,6 +203,7 @@ export class TacticalSceneBuilder
     // the fog first (ADR 0006 §2.4).
     this.mapView = new TacticalMapView(options.map, this.ghostUniforms, {
       objectiveMarkers: false,
+      textures: options.textures,
     });
     this.unitsGroup = new Group();
     this.unitsGroup.name = "units";

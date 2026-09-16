@@ -1,3 +1,9 @@
+import type { BusinessSignAppearance } from "../model/business-sign-appearance";
+import type { TextureSource } from "../model/texture-source";
+import {
+  BusinessSignModelFactory,
+  businessSignKey,
+} from "../service/business-sign-model-factory";
 import type { InteriorFloorAppearance } from "../model/interior-floor-style";
 import { InteriorFloorModelFactory } from "../service/interior-floor-model-factory";
 import { interiorFloorKey } from "../service/interior-floor-resolver";
@@ -315,6 +321,8 @@ export interface TacticalMapViewOptions {
    * fog of war.
    */
   readonly objectiveMarkers?: boolean;
+  /** Shared optional artwork source; absent in geometry-only previews and tests. */
+  readonly textures?: TextureSource;
 }
 
 /**
@@ -331,6 +339,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly ghostUniforms: GhostUniforms | undefined;
   /** Whether objective hook tiles get a marker; off in a mission, on in the preview. */
   private readonly objectiveMarkers: boolean;
+  private readonly textures: TextureSource | undefined;
+  private businessSignFactory: BusinessSignModelFactory | undefined;
   /** The map as built. Geometry is never rebuilt; demolition collapses instances instead (#1121). */
   private readonly map: TacticalMap;
   private readonly surfaceColours: Readonly<Record<string, number>>;
@@ -397,6 +407,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     };
     this.ghostUniforms = ghostUniforms;
     this.objectiveMarkers = options.objectiveMarkers ?? true;
+    this.textures = options.textures;
     this.index = new TileIndex(map);
     this.root = new Group();
     this.root.name = "tactical-map";
@@ -558,6 +569,13 @@ export class TacticalMapView implements Disposable, TilePicker {
       return;
     }
     this.modelled = true;
+    if (this.textures) {
+      this.businessSignFactory = new BusinessSignModelFactory(
+        models,
+        this.textures,
+      );
+      this.disposables.push(this.businessSignFactory);
+    }
     const placements = resolveMapModels(this.map, this.index);
     await models.preload(mapModelIds(placements));
     await this.naturalMaterials.prepare(models);
@@ -616,6 +634,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         slopeTile?: Tile;
         road?: RoadAppearance;
         interiorFloor?: InteriorFloorAppearance;
+        businessSign?: BusinessSignAppearance;
         ramp?: RampAppearance;
         ladder?: LadderAppearance;
         roof?: PitchedRoofAppearance;
@@ -629,6 +648,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       const slopeTile = tile?.slope === undefined ? undefined : tile;
       const road = placement.road;
       const interiorFloor = placement.interiorFloor;
+      const businessSign = placement.businessSign;
       const ramp = placement.ramp;
       const ladder = placement.ladder;
       const roof = placement.roof;
@@ -636,7 +656,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         placement.terrain && tile
           ? { appearance: placement.terrain, tile }
           : undefined;
-      const key = `${placement.modelId}:${String(placement.level)}${interiorFloor ? `:floor:${interiorFloorKey(interiorFloor)}` : ""}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${ladder ? `:ladder:${ladder.finish}` : ""}${roof ? `:roof:${pitchedRoofKey(roof)}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
+      const key = `${placement.modelId}:${String(placement.level)}${businessSign ? `:sign:${businessSignKey(businessSign)}` : ""}${interiorFloor ? `:floor:${interiorFloorKey(interiorFloor)}` : ""}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${ladder ? `:ladder:${ladder.finish}` : ""}${roof ? `:roof:${pitchedRoofKey(roof)}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
       const owners = placement.occupiedTiles?.map((tile) =>
@@ -654,6 +674,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           slopeTile,
           road,
           interiorFloor,
+          businessSign,
           ramp,
           ladder,
           roof,
@@ -669,33 +690,36 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
     }
     for (const [key, batch] of batches) {
-      const prototype = batch.interiorFloor
-        ? await this.interiorFloorPrototype(batch.interiorFloor, models)
-        : batch.roof
-          ? await this.roofPrototype(batch.roof, models)
-          : batch.ladder
-            ? await this.ladderPrototype(batch.ladder.finish, models)
-            : batch.ramp
-              ? await this.parameterisedPrototype(
-                  "ramp",
-                  batch.ramp.surface,
-                  models,
-                )
-              : batch.terrain
-                ? await this.terrainPrototype(
-                    batch.terrain.appearance,
-                    batch.terrain.tile,
-                    models,
-                  )
-                : batch.road
-                  ? await this.roadPrototype(batch.road, models)
-                  : batch.slopeTile
-                    ? await this.parameterisedPrototype(
-                        batch.slopeTile.slope!.kind,
-                        batch.slopeTile.surface,
+      const prototype =
+        batch.businessSign && this.businessSignFactory
+          ? await this.businessSignFactory.create(batch.businessSign)
+          : batch.interiorFloor
+            ? await this.interiorFloorPrototype(batch.interiorFloor, models)
+            : batch.roof
+              ? await this.roofPrototype(batch.roof, models)
+              : batch.ladder
+                ? await this.ladderPrototype(batch.ladder.finish, models)
+                : batch.ramp
+                  ? await this.parameterisedPrototype(
+                      "ramp",
+                      batch.ramp.surface,
+                      models,
+                    )
+                  : batch.terrain
+                    ? await this.terrainPrototype(
+                        batch.terrain.appearance,
+                        batch.terrain.tile,
                         models,
                       )
-                    : await models.load(batch.modelId);
+                    : batch.road
+                      ? await this.roadPrototype(batch.road, models)
+                      : batch.slopeTile
+                        ? await this.parameterisedPrototype(
+                            batch.slopeTile.slope!.kind,
+                            batch.slopeTile.surface,
+                            models,
+                          )
+                        : await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
         // Walls are what stands between the camera and a unit, so they

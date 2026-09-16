@@ -1,4 +1,5 @@
 import type { InteriorFloorAppearance } from "../model/interior-floor-style";
+import type { BusinessSignAppearance } from "../model/business-sign-appearance";
 import { resolveInteriorFloors } from "./interior-floor-resolver";
 import type { MapPartId } from "../model/map-part";
 import { propPart, wallPart } from "../model/map-part";
@@ -78,6 +79,8 @@ export interface ModelPlacement {
   readonly road?: RoadAppearance;
   /** Room finish applied to the authored floor, shared by every tile in that room. */
   readonly interiorFloor?: InteriorFloorAppearance;
+  /** Authored fascia name selected per building; compact icon modules keep their original print. */
+  readonly businessSign?: BusinessSignAppearance;
   /** A diagonal plane or adjacent surface fitted to its shared corner heights. */
   readonly terrain?: TerrainSlopeAppearance;
   /** A full-tile ramp borrows its lower support's surface and retires that slab. */

@@ -1,3 +1,5 @@
+import { TEXTURE_MANIFEST } from "./graphics/data/texture-manifest";
+import { ManifestTextureLoader } from "./graphics/service/manifest-texture-loader";
 import "./ui/style/theme.css";
 
 import { isPlaceProfileId } from "./content/model/place-profile-id";
@@ -171,6 +173,11 @@ async function main(): Promise<void> {
     fallback: new PlaceholderModelFactory(),
     logger: console,
   });
+  const textures = new ManifestTextureLoader({
+    manifest: TEXTURE_MANIFEST,
+    baseUrl: import.meta.env.BASE_URL,
+    logger: console,
+  });
   // `?units=1` drops a few sample units on the map (#337's smoke test).
   const showUnits =
     new URLSearchParams(window.location.search).get("units") === "1";
@@ -208,7 +215,7 @@ async function main(): Promise<void> {
       input?.detach();
       hud?.unmount();
       view?.dispose();
-      const builder = new TacticalSceneBuilder({ map, models });
+      const builder = new TacticalSceneBuilder({ map, models, textures });
       view = builder;
       content.add(builder.root);
       rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });

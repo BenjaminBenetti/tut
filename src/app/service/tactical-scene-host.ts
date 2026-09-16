@@ -1,3 +1,6 @@
+import { TEXTURE_MANIFEST } from "../../graphics/data/texture-manifest";
+import type { TextureSource } from "../../graphics/model/texture-source";
+import { ManifestTextureLoader } from "../../graphics/service/manifest-texture-loader";
 import { Group } from "three";
 
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
@@ -64,6 +67,8 @@ export interface DomTacticalSceneHostDeps {
   readonly baseUrl?: string;
   /** Loads VFX sprites; the app passes the manifest loader, tests a stub. */
   readonly sprites?: SpriteSource;
+  /** Cached business-name artwork; tests can inject an in-memory source. */
+  readonly textures?: TextureSource;
   /** Collapses every animation to its end state at once; the tactical specs turn it on. */
   readonly instantAnimations?: boolean;
 }
@@ -118,6 +123,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   private readonly deps: DomTacticalSceneHostDeps;
   private readonly models: ModelLoader;
   private readonly sprites: SpriteSource;
+  private readonly textures: TextureSource;
   private attached: AttachedScene | undefined;
   /** Whether the player's map input is held (#1130); applied to every scene attached. */
   private inputLocked = false;
@@ -135,6 +141,13 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
         manifest: MODEL_MANIFEST,
         baseUrl: deps.baseUrl ?? "/",
         fallback: new PlaceholderModelFactory(),
+        logger: console,
+      });
+    this.textures =
+      deps.textures ??
+      new ManifestTextureLoader({
+        manifest: TEXTURE_MANIFEST,
+        baseUrl: deps.baseUrl ?? "/",
         logger: console,
       });
     this.sprites =
@@ -160,6 +173,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     const builder = new TacticalSceneBuilder({
       map: mission.map,
       models: this.models,
+      textures: this.textures,
       // A mech is drawn from the parts its loadout names (#1115).
       unitModels: new LoadoutUnitModelSource({ models: this.models }),
     });

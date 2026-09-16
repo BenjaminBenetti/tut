@@ -19,6 +19,7 @@ import { resolveBuildingFrontages } from "./building-frontage-resolver";
 import { TacticalMapView } from "../view/tactical-map-view";
 import { createGhostUniforms } from "./ghost-cutaway";
 import { wallPart } from "../model/map-part";
+import { BUSINESS_NAMES } from "../data/business-names";
 
 /** A real perimeter, two floors, roof and central door, with room outside all four sides. */
 function fixture(
@@ -403,7 +404,13 @@ describe("business identity frontages", () => {
       const before = JSON.stringify(map);
       const result = resolve(map);
       expect(result.map((placement) => placement.modelId)).toEqual([modelId]);
+      const sign = result[0]!.businessSign!;
+      expect(sign.kind).toBe(identity);
+      expect(Number.isInteger(sign.nameIndex)).toBe(true);
+      expect(sign.nameIndex).toBeGreaterThanOrEqual(0);
+      expect(sign.nameIndex).toBeLessThan(BUSINESS_NAMES[sign.kind].length);
       expect(resolve(map)).toEqual(result);
+      expect(resolve(JSON.parse(before) as TacticalMap)).toEqual(result);
       const door = map.buildings[0]!.entrances[0]!.tile;
       expect(result[0]!.part).toBe(
         wallPart(new TileIndex(map).keyOf(door), "s"),
@@ -416,6 +423,7 @@ describe("business identity frontages", () => {
   );
 
   it("keeps generic shop styling for absent or unknown interior identities", () => {
+    expect(resolve(fixture("shop"))[0]!.businessSign).toBeUndefined();
     for (const identity of [
       "future-business",
       "constructor",
@@ -478,6 +486,7 @@ describe("business identity frontages", () => {
       expect(resolve(next).map((placement) => placement.modelId)).toEqual([
         `building.business-${expected}-compact`,
       ]);
+      expect(resolve(next)[0]!.businessSign).toBeUndefined();
       const blocked = {
         ...next,
         connectors: next.connectors.map((connector) => ({
@@ -489,6 +498,27 @@ describe("business identity frontages", () => {
       expect(resolve(blocked)).toEqual([]);
     },
   );
+
+  it("shares one business name across every entrance of a building", () => {
+    const map = fixture("shop", "s", "bookshop");
+    const rearDoor = { x: 5, y: 2, z: 3 };
+    const bothEntrances: TacticalMap = {
+      ...map,
+      buildings: map.buildings.map((building) => ({
+        ...building,
+        entrances: [...building.entrances, { tile: rearDoor, side: "n" }],
+      })),
+      tiles: map.tiles.map((tile) =>
+        tile.x === rearDoor.x && tile.y === rearDoor.y && tile.z === rearDoor.z
+          ? { ...tile, walls: { ...tile.walls, n: "door" } }
+          : tile,
+      ),
+    };
+    const signs = resolve(bothEntrances);
+    expect(signs).toHaveLength(2);
+    expect(signs[0]!.businessSign).toEqual(signs[1]!.businessSign);
+    expect(signs[0]!.businessSign).toEqual(resolve(map)[0]!.businessSign);
+  });
 
   it("uses the compact identity at a corner and does not overlap adjacent entrance canopies", () => {
     const map = fixture("shop", "s", "electronics");

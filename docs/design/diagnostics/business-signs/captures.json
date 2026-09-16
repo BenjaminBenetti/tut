@@ -70,6 +70,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Full Of Beans",
     "camera": {
       "yawIndex": 0,
       "zoom": 68.89189901577686,
@@ -241,6 +242,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Rise And Dine",
     "camera": {
       "yawIndex": 1,
       "zoom": 78.7335988751743,
@@ -382,6 +384,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Good Measure",
     "camera": {
       "yawIndex": 3,
       "zoom": 73.48469228349545,
@@ -541,6 +544,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Seams Like Yesterday",
     "camera": {
       "yawIndex": 0,
       "zoom": 58.01423075012813,
@@ -718,6 +722,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Pixels & Pieces",
     "camera": {
       "yawIndex": 1,
       "zoom": 68.89189901577696,
@@ -871,6 +876,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Bench Mates",
     "camera": {
       "yawIndex": 2,
       "zoom": 73.48469228349529,
@@ -1030,6 +1036,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Notes From The Shelf",
     "camera": {
       "yawIndex": 2,
       "zoom": 78.73359887517353,
@@ -1234,6 +1241,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Bright Spark House",
     "camera": {
       "yawIndex": 0,
       "zoom": 64.83943436778998,
@@ -1372,6 +1380,7 @@
     },
     "floorIndex": 0,
     "exteriors": true,
+    "businessName": "Ready Set Stow",
     "camera": {
       "yawIndex": 1,
       "zoom": 44.09081537009727,

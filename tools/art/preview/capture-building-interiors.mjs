@@ -195,11 +195,23 @@ try {
         await new Promise((resolve) =>
           requestAnimationFrame(() => requestAnimationFrame(resolve)),
         );
+        let businessName;
+        if (exteriors) {
+          const { resolveBusinessSigns } =
+            await import("/src/graphics/service/business-sign-selection.ts");
+          const { BUSINESS_NAMES } =
+            await import("/src/graphics/data/business-names.ts");
+          const sign = resolveBusinessSigns(map.buildings, map.recipe.seed).get(
+            building.id,
+          );
+          businessName = sign && BUSINESS_NAMES[sign.kind][sign.nameIndex];
+        }
         return {
           seed: map.recipe.seed,
           building,
           floorIndex,
           exteriors,
+          businessName,
           camera: rig.getState(),
           props: map.props.filter(
             (p) =>

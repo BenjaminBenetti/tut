@@ -1,0 +1,343 @@
+{
+  "schemaVersion": 1,
+  "source": "src/graphics/data/business-names.json",
+  "sourceSha256": "5e72e8a7cde1e02e0bf97acfeddd4c5480bc427be1217a949f2411080f2f3cb9",
+  "nameOrderHashEncoding": "SHA256 of UTF-8 JSON.stringify(names)",
+  "layout": {
+    "pageWidth": 1024,
+    "pageHeight": 1024,
+    "stripWidth": 1024,
+    "stripHeight": 96,
+    "rowStride": 102,
+    "topInset": 3,
+    "namesPerPage": 10,
+    "pagesPerType": 5,
+    "texelInset": 0.5
+  },
+  "types": {
+    "grocery": {
+      "nameCount": 50,
+      "nameOrderSha256": "1b9b8d5c23a352ec586563ce809c594bf40494c3008f975bb47c071a1c4573b8",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/grocery-0.png",
+          "firstNameIndex": 0,
+          "sha256": "1c165c158685cd9cfe1a14808989a5159404e01370454347b4953cad85fc9d85"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/grocery-1.png",
+          "firstNameIndex": 10,
+          "sha256": "b8d3129f555aac789294b6abf40cf74015e6f9c09ac5eb71b31e1de5f44be9d9"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/grocery-2.png",
+          "firstNameIndex": 20,
+          "sha256": "ad5a376a2d2d670fdf1ac33807e8f9ebbe96458b4bf8bb071e0d5bb8f5fc858f"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/grocery-3.png",
+          "firstNameIndex": 30,
+          "sha256": "960565337a2d55f66245e2f9e3f5aaaedc0bf8aa6d2b6304cb40fd0824205095"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/grocery-4.png",
+          "firstNameIndex": 40,
+          "sha256": "3d58b9956091c984219785207aa33bdf60d5b69a68945ff9fe36036e955c2849"
+        }
+      ]
+    },
+    "bakery-cafe": {
+      "nameCount": 50,
+      "nameOrderSha256": "8f826edfb689965186303e254d0c7a2bfcc918b776e335c337b7d8ad0252e0ca",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/bakery-cafe-0.png",
+          "firstNameIndex": 0,
+          "sha256": "105de5979d51003b14963486ff94c15a999c98517c5590817049b831b9705a34"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/bakery-cafe-1.png",
+          "firstNameIndex": 10,
+          "sha256": "2e1853a0888c4363684a5b984fd75679e213806c1d0973c1c70b745fbc65fece"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/bakery-cafe-2.png",
+          "firstNameIndex": 20,
+          "sha256": "c133897f448839b5f45c246993b38e4616785616c53b9d802ec14f3a8c14c22a"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/bakery-cafe-3.png",
+          "firstNameIndex": 30,
+          "sha256": "7c28a1b7bd352b74e34641c533d3dae7a04e69d8420770da51c241f350dfdcee"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/bakery-cafe-4.png",
+          "firstNameIndex": 40,
+          "sha256": "eeb44b839852ff4db0af66acf01d57b63efb567f55ae550e3e70134295587c56"
+        }
+      ]
+    },
+    "pharmacy": {
+      "nameCount": 50,
+      "nameOrderSha256": "3eca23b56a68233bf3112668c6e756fb03160ad603dce0f20afbb9122b618683",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/pharmacy-0.png",
+          "firstNameIndex": 0,
+          "sha256": "cc655167684e8b494be9f459473484c3c36c6c6e36c74403242f886b2622c9c6"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/pharmacy-1.png",
+          "firstNameIndex": 10,
+          "sha256": "bbf91e9e690ec06eb425291c90359feadcdbafefe6b7a93bf4c69d1d2688f81b"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/pharmacy-2.png",
+          "firstNameIndex": 20,
+          "sha256": "d81c76718c6a47b63aed869c3a0440208ba331e069efae61026bc2393f4d8bbf"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/pharmacy-3.png",
+          "firstNameIndex": 30,
+          "sha256": "6c5326be6adcd40313c43c4d061d668c691ffc38e2a9d01ad56be019508a5175"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/pharmacy-4.png",
+          "firstNameIndex": 40,
+          "sha256": "64c44303aab045fa3c437ccd9eb64450013bb97804a7618297b6057c32655aba"
+        }
+      ]
+    },
+    "bookshop": {
+      "nameCount": 50,
+      "nameOrderSha256": "5ed4cfedcfae5da49aad11dde0ad59593f38dc33e7d126c01f0ef062b5ec80f5",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/bookshop-0.png",
+          "firstNameIndex": 0,
+          "sha256": "820c0e1cee24011e9bdcc5b0736cb26766ea9ebaa8e5dc2bf29fedc689605415"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/bookshop-1.png",
+          "firstNameIndex": 10,
+          "sha256": "92e6fe6d14f385fc2797bef7c18c03aeaf8f8fc56097e20b70c77b6c6bb668fd"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/bookshop-2.png",
+          "firstNameIndex": 20,
+          "sha256": "c0b00e466c1497d6882995f36404f03416dba8265a77b37774cd61c4fb48d999"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/bookshop-3.png",
+          "firstNameIndex": 30,
+          "sha256": "e9819224d97bd1c295558839d44643abc0e9735033455c2779aed026d711d89a"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/bookshop-4.png",
+          "firstNameIndex": 40,
+          "sha256": "4c378f8e0ec608bbae09e3fd32ba6cf4aee2b3cebf2e548ad316520a6abf6d3c"
+        }
+      ]
+    },
+    "clothing": {
+      "nameCount": 50,
+      "nameOrderSha256": "e6df74f0b774e0760321bc0395ed673e4b0af35fd20bc60a1a5971050a19d462",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/clothing-0.png",
+          "firstNameIndex": 0,
+          "sha256": "3d5e405b2980fdb7bd1e4cc32437e667963d18fd0c854b3bfe9ee267c599979a"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/clothing-1.png",
+          "firstNameIndex": 10,
+          "sha256": "62f47616bafed88d44e97b2496cdb3f6ed6da1b3cbd9e93f6567155fde643ff4"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/clothing-2.png",
+          "firstNameIndex": 20,
+          "sha256": "8e3b7c70a68f05496b8c4efbe7df4bc6ce8f4cc25609393f68ccc73993a43af4"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/clothing-3.png",
+          "firstNameIndex": 30,
+          "sha256": "d91bdd47d8c25840d594feac74a1e6f398fcb8f16ef6a6bdbe443f3877507ecf"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/clothing-4.png",
+          "firstNameIndex": 40,
+          "sha256": "84e574583eea98df9c410022cc09a3e8a4d71a4de7de55185387acc91707a0a0"
+        }
+      ]
+    },
+    "electronics": {
+      "nameCount": 50,
+      "nameOrderSha256": "fcf5f6d57faf8229a7e8e1eddd427cf9c35484f217b97eb5fdfdd0933d12e261",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/electronics-0.png",
+          "firstNameIndex": 0,
+          "sha256": "d7f632c13f584cdf42cb5d339b72f8950900dc8b5b13b93d20b589c69a995e29"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/electronics-1.png",
+          "firstNameIndex": 10,
+          "sha256": "c1eda7bf83b99fb3856b288f945473d2fc1c2a7e5d269ef78f216ac12de6b2cf"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/electronics-2.png",
+          "firstNameIndex": 20,
+          "sha256": "cef71838048e6ef6fe7fc54b362319e3698409e065a34d89654e3dd5fd4bf35e"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/electronics-3.png",
+          "firstNameIndex": 30,
+          "sha256": "0e3aec056d198bea8ffd62f75b2d1977fcfb2e682bbc2ffb192b905d15072b14"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/electronics-4.png",
+          "firstNameIndex": 40,
+          "sha256": "ec360c2e21a023ee7450be85a0d459efe95146d6ed6455e955614de1fea8ee42"
+        }
+      ]
+    },
+    "hardware": {
+      "nameCount": 50,
+      "nameOrderSha256": "dea60d7b06f79813b0b3960d2ed56cd156ee7ad781d54c0dbdad7441764c6ec2",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/hardware-0.png",
+          "firstNameIndex": 0,
+          "sha256": "2fbaa59cfead5a8a36c0659aa01a7772567cb579393cb9ff3ab3d82c343db16d"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/hardware-1.png",
+          "firstNameIndex": 10,
+          "sha256": "1866eb9741ada494811cebee46e013e3ebd7d678277f100d1da2d65285bfd325"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/hardware-2.png",
+          "firstNameIndex": 20,
+          "sha256": "51b5aee2ff1f67b2d9338322ab0ac4aeafff104a70d733e0ba61b050ac3603b4"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/hardware-3.png",
+          "firstNameIndex": 30,
+          "sha256": "99c4464b6f0a732b5ba05c1d9cc31656e792a6dec07c31f44b464f5477a4a79c"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/hardware-4.png",
+          "firstNameIndex": 40,
+          "sha256": "3f6bb7ce3232541d672109ab793842e10c4d5828f83cd11642b8a744a86b43be"
+        }
+      ]
+    },
+    "offices": {
+      "nameCount": 50,
+      "nameOrderSha256": "e62f1ec8940308007503f05e90589a1fbca6fe39b5d8dab29b429c462fc30d8c",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/offices-0.png",
+          "firstNameIndex": 0,
+          "sha256": "733543e952605e82a3950bd2f44ac7c2c0caeba4235ffa4ec9e9f4e1fbe2300d"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/offices-1.png",
+          "firstNameIndex": 10,
+          "sha256": "7ed3dccc14eb497268e85aeb484a488319abd2ad9b0894bd94ea6a904c4fa7e9"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/offices-2.png",
+          "firstNameIndex": 20,
+          "sha256": "b6f688fad84bd9fb566a8027193c82ea9ad850b54a9fc207f96c3ff62ee9c43d"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/offices-3.png",
+          "firstNameIndex": 30,
+          "sha256": "5e10d1e2539d57f0435def0af9faf1454e7806afae9b21a51cbdc3952fd1ca79"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/offices-4.png",
+          "firstNameIndex": 40,
+          "sha256": "f252bb8633a7f9a96da10796929cb117e7e5c73a658f7e4f13826384e8385086"
+        }
+      ]
+    },
+    "depot": {
+      "nameCount": 50,
+      "nameOrderSha256": "924c25dcb3825c888b48e6da0efbe1c702648933febd93bdcd683a5404f71d72",
+      "pages": [
+        {
+          "page": 0,
+          "path": "assets/textures/business-signs/names/depot-0.png",
+          "firstNameIndex": 0,
+          "sha256": "68ca171be419941df6d282d3dcc3523cf5c3070a4074a75cda93cd65f184768f"
+        },
+        {
+          "page": 1,
+          "path": "assets/textures/business-signs/names/depot-1.png",
+          "firstNameIndex": 10,
+          "sha256": "17072c2349db3c791714de4fbd9da2adda54d10e15929f68e46f7b743051901c"
+        },
+        {
+          "page": 2,
+          "path": "assets/textures/business-signs/names/depot-2.png",
+          "firstNameIndex": 20,
+          "sha256": "5e0b7bca36f8cfe0860f4639874214ee084dd0cbd2f8d7475b05638b800d2083"
+        },
+        {
+          "page": 3,
+          "path": "assets/textures/business-signs/names/depot-3.png",
+          "firstNameIndex": 30,
+          "sha256": "3f3f1d17cf5366f4589098b25c8446496e858cdf1ca88933bbbeef0dca4b8acc"
+        },
+        {
+          "page": 4,
+          "path": "assets/textures/business-signs/names/depot-4.png",
+          "firstNameIndex": 40,
+          "sha256": "6ac88daa3e96223de433dd7b891aec839193d70bb4e718d278b9e57c165e4ca1"
+        }
+      ]
+    }
+  }
+}

@@ -19,6 +19,7 @@ import type { BuildingFrontageModule } from "../model/building-frontage-style";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { tileTop } from "../view/tactical-map-view";
 import type { ModelPlacement } from "./map-model-resolver";
+import { resolveBusinessSigns } from "./business-sign-selection";
 import { propTiles } from "../../mapgen/service/prop-footprint";
 import {
   propAppearanceScale,
@@ -54,6 +55,7 @@ export function resolveBuildingFrontages(
 ): readonly ModelPlacement[] {
   const result: ModelPlacement[] = [];
   const occupied: MountBounds[] = [];
+  const businessSigns = resolveBusinessSigns(map.buildings, map.recipe.seed);
   const ladders = map.connectors.filter((c) => c.kind === "ladder");
   const propTops = new Map<string, number>();
   for (const prop of map.props) {
@@ -152,7 +154,13 @@ export function resolveBuildingFrontages(
     ): boolean {
       if (!clearMount(building, tile, side, module, index, ladders, propTops))
         return false;
-      const placement = mount(module, tile, side);
+      const businessSign = module.businessKind
+        ? businessSigns.get(building.id)
+        : undefined;
+      const placement = {
+        ...mount(module, tile, side),
+        ...(businessSign ? { businessSign } : {}),
+      };
       const bounds = mountBounds(module, placement, side);
       if (occupied.some((other) => overlaps(bounds, other))) return false;
       occupied.push(bounds);

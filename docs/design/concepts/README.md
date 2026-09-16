@@ -32,6 +32,7 @@ Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 | [overworld-settlement-southeast-asian](overworld-settlement-southeast-asian.md) | Southeast Asian: stilt houses and stupa, tiered temple, twin towers with a sky bridge (#1155) | §4.3, §6 |
 | [overworld-settlement-latin-american](overworld-settlement-latin-american.md) | Latin American: coloured hillside cubes, colonial churches, summit monument (#1155) | §4.3, §6 |
 | [overworld-settlement-oceanian](overworld-settlement-oceanian.md) | Australian and New Zealand: veranda houses and windmill pump, tin-roof sprawl, needle tower and sail shells (#1155) | §4.3, §6 |
+| [overworld-settlement-wargames](overworld-settlement-wargames.md) | The settlement clusters restyled to belong to the wireframe map: dark navy masses, cyan wire edges, dim window points, one orange beacon, eggs russet and magenta; drives the renderer-side display look (#1155) | §4.4, §4.1, §4.2 |
 
 Recipe and environment notes: `docs/design/art-tooling.md` §1. Prompt skeleton: `docs/design/style-guide.md` §10.
 

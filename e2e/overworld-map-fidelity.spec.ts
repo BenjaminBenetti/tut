@@ -258,6 +258,15 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
   if (!cell) {
     throw new Error("The overworld has no #map-viewport");
   }
+  // The map cell ends where the Situation panel's column begins, so a
+  // coast that projects past it is clipped, not drawn: this is a check
+  // of where the coast is drawn, not of the panel's width (#1151), so
+  // those cities are left out rather than failed.
+  const hidden = (point: Point): boolean =>
+    point.x + PROBE_RADIUS_PX > cell.x + cell.width ||
+    point.x - PROBE_RADIUS_PX < cell.x ||
+    point.y + PROBE_RADIUS_PX > cell.y + cell.height ||
+    point.y - PROBE_RADIUS_PX < cell.y;
   const probes: CoastProbe[] = [];
   for (const id of COASTAL_SAMPLE) {
     const marker = anchors[id];
@@ -265,6 +274,9 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
       throw new Error(`${id} did not project`);
     }
     const coast = toScreen(fit, nearestCoastVertex(id));
+    if (hidden(coast)) {
+      continue;
+    }
     probes.push({
       id,
       marker,

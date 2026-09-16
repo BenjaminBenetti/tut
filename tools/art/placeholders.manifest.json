@@ -1762,5 +1762,229 @@
     "quality": "final",
     "triangles": 15640,
     "bytes": 419844
+  },
+  {
+    "id": "prop.planter",
+    "category": "props",
+    "path": "assets/models/props/prop-planter.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.78,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 168,
+    "bytes": 20464
+  },
+  {
+    "id": "prop.checkout",
+    "category": "props",
+    "path": "assets/models/props/prop-checkout.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.73,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 240,
+    "bytes": 24844
+  },
+  {
+    "id": "prop.sofa",
+    "category": "props",
+    "path": "assets/models/props/prop-sofa.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.44,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 30876
+  },
+  {
+    "id": "prop.bed",
+    "category": "props",
+    "path": "assets/models/props/prop-bed.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 252,
+    "bytes": 28528
+  },
+  {
+    "id": "prop.kitchen-counter",
+    "category": "props",
+    "path": "assets/models/props/prop-kitchen-counter.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.59,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 35516
+  },
+  {
+    "id": "prop.dining-table",
+    "category": "props",
+    "path": "assets/models/props/prop-dining-table.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.46,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 35244
+  },
+  {
+    "id": "prop.bathroom-vanity",
+    "category": "props",
+    "path": "assets/models/props/prop-bathroom-vanity.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.92,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 204,
+    "bytes": 27124
+  },
+  {
+    "id": "prop.desk-computer",
+    "category": "props",
+    "path": "assets/models/props/prop-desk-computer.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.72,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 26200
+  },
+  {
+    "id": "prop.meeting-table",
+    "category": "props",
+    "path": "assets/models/props/prop-meeting-table.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.52,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 276,
+    "bytes": 24252
+  },
+  {
+    "id": "prop.workbench",
+    "category": "props",
+    "path": "assets/models/props/prop-workbench.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.89,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 27504
+  },
+  {
+    "id": "prop.retail-shelf",
+    "category": "props",
+    "path": "assets/models/props/prop-retail-shelf.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.02,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 276,
+    "bytes": 25540
+  },
+  {
+    "id": "prop.filing-cabinet",
+    "category": "props",
+    "path": "assets/models/props/prop-filing-cabinet.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.02,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 276,
+    "bytes": 22832
+  },
+  {
+    "id": "prop.wardrobe",
+    "category": "props",
+    "path": "assets/models/props/prop-wardrobe.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 224,
+    "bytes": 19396
+  },
+  {
+    "id": "prop.bookcase",
+    "category": "props",
+    "path": "assets/models/props/prop-bookcase.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.04,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 26468
+  },
+  {
+    "id": "prop.refrigerator",
+    "category": "props",
+    "path": "assets/models/props/prop-refrigerator.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.04,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 228,
+    "bytes": 25388
+  },
+  {
+    "id": "prop.toilet",
+    "category": "props",
+    "path": "assets/models/props/prop-toilet.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.52,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 228,
+    "bytes": 18900
   }
 ]

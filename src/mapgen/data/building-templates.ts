@@ -1,5 +1,6 @@
 import type { BuildingTemplate } from "../model/building-template";
 import type { KnownBuildingKindId } from "./building-kind-ids";
+import { BUILDING_ROOM_PROGRAMS } from "./building-room-programs";
 
 // ===========================================
 // Building templates
@@ -33,7 +34,11 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: false,
     windowDensity: 0.3,
     scales: ["rural", "town", "city"],
-    interior: { roomSize: { min: 3, max: 5 }, corridorWidth: 1 },
+    interior: {
+      roomSize: { min: 3, max: 5 },
+      corridorWidth: 1,
+      roomPrograms: BUILDING_ROOM_PROGRAMS.house,
+    },
   },
   shop: {
     id: "shop",
@@ -45,7 +50,11 @@ export const BUILDING_TEMPLATES: Readonly<
     windowDensity: 0.3,
     scales: ["town", "city"],
     // A shop is its floor and the rooms behind it; no corridor.
-    interior: { roomSize: { min: 4, max: 7 }, corridorWidth: 0 },
+    interior: {
+      roomSize: { min: 4, max: 7 },
+      corridorWidth: 0,
+      roomPrograms: BUILDING_ROOM_PROGRAMS.shop,
+    },
   },
   warehouse: {
     id: "warehouse",
@@ -57,7 +66,11 @@ export const BUILDING_TEMPLATES: Readonly<
     windowDensity: 0.15,
     scales: ["rural", "town", "city"],
     // Bays, not rooms: wide and open, cover comes from the shelving.
-    interior: { roomSize: { min: 6, max: 10 }, corridorWidth: 0 },
+    interior: {
+      roomSize: { min: 6, max: 10 },
+      corridorWidth: 0,
+      roomPrograms: BUILDING_ROOM_PROGRAMS.warehouse,
+    },
   },
   apartment: {
     id: "apartment",
@@ -68,7 +81,11 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: true,
     windowDensity: 0.3,
     scales: ["town", "city"],
-    interior: { roomSize: { min: 3, max: 5 }, corridorWidth: 2 },
+    interior: {
+      roomSize: { min: 3, max: 5 },
+      corridorWidth: 2,
+      roomPrograms: BUILDING_ROOM_PROGRAMS.apartment,
+    },
   },
   tower: {
     id: "tower",
@@ -79,6 +96,10 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: true,
     windowDensity: 0.6,
     scales: ["town", "city"],
-    interior: { roomSize: { min: 3, max: 5 }, corridorWidth: 2 },
+    interior: {
+      roomSize: { min: 3, max: 5 },
+      corridorWidth: 2,
+      roomPrograms: BUILDING_ROOM_PROGRAMS.tower,
+    },
   },
 };

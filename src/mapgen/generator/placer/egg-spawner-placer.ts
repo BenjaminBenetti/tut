@@ -148,10 +148,15 @@ export class EggSpawnerPlacer implements HookPlacer {
       // rather than hiding it somewhere unbeatable.
       // A roomy, shootable outdoor candidate still outranks a cramped
       // indoor preference: reserving a dropship exposed that fallback (#911).
+      // Preserve the first objective's distance budget for the outdoor
+      // fallback too. Furniture can close every nearby indoor firing
+      // line without making distant outdoor ground the next best choice.
       const pick =
         ordered.find((c) => roomy(c) && shootable(c)) ??
-        remaining.find((c) => !c.interior && roomy(c) && shootable(c)) ??
+        reachable0.find((c) => !c.interior && roomy(c) && shootable(c)) ??
         ordered.find(shootable) ??
+        reachable0.find((c) => !c.interior && shootable(c)) ??
+        remaining.find((c) => !c.interior && roomy(c) && shootable(c)) ??
         remaining.find((c) => !c.interior && shootable(c)) ??
         ordered.find(roomy) ??
         ordered[0];

@@ -433,7 +433,7 @@ describe("resolveMapModels — props", () => {
     const b = field();
     const kinds = Object.values(PropKindIds);
     kinds.forEach((kind, i) => {
-      b.prop(kind, at(i % 8, Math.floor(i / 8) + 4));
+      b.prop(kind, at(i % 8, Math.floor(i / 8)));
     });
     const { props } = resolveMapModels(b.build());
     expect(props).toHaveLength(kinds.length);

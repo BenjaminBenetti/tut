@@ -3,9 +3,8 @@ import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
-import { RoomKindIds } from "../data/room-kind-ids";
 import { SurfaceIds } from "../data/surfaces";
-import type { Building, Floor, Room } from "../model/building";
+import type { Building, Floor } from "../model/building";
 import type { BuildingTemplate } from "../model/building-template";
 import { CONNECTOR_RULES, type Connector } from "../model/connector";
 import type { DiagnosticSink } from "../model/diagnostics";
@@ -22,6 +21,7 @@ import {
   planFloor,
 } from "./interior/room-partitioner";
 import { placeStairs } from "./interior/stair-placer";
+import { assignRoomPurposes } from "./interior/room-programmer";
 
 // ===========================================
 // Constants
@@ -196,37 +196,18 @@ function withRooms(
     footprint,
     plan,
     rng.fork(`rooms-${floor.index}`),
-  ).map((room): Room => ({
-    ...room,
-    kind: roomKind(room, floor, entrance, template),
-  }));
-  return { ...floor, rooms };
-}
-
-/**
- * Warehouses are storage throughout; elsewhere the entrance room is the
- * hall (a corridor the door opens into included), a corridor keeps its
- * kind, a shop's other ground-floor rooms are storage, the rest are rooms.
- */
-function roomKind(
-  room: Room,
-  floor: Floor,
-  entrance: TileCoord,
-  template: BuildingTemplate,
-): string {
-  if (template.id === "warehouse") {
-    return RoomKindIds.STORAGE;
-  }
-  const groundFloor = floor.y === entrance.y;
-  if (groundFloor && rectContains(room.rect, entrance.x, entrance.z)) {
-    return RoomKindIds.HALL;
-  }
-  if (room.kind !== undefined) {
-    return room.kind;
-  }
-  return groundFloor && template.id === "shop"
-    ? RoomKindIds.STORAGE
-    : RoomKindIds.ROOM;
+  );
+  const groundFloor = floor.index === 0;
+  return {
+    ...floor,
+    rooms: assignRoomPurposes(
+      rooms,
+      template.interior.roomPrograms?.[groundFloor ? "ground" : "upper"],
+      entrance,
+      groundFloor,
+      rng.fork(`purposes-${floor.index}`),
+    ),
+  };
 }
 
 /** Adds walkable roof tiles over the whole footprint. */

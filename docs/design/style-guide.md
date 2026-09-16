@@ -187,6 +187,13 @@ and footprints are listed in [the urban life kit](kits/urban-life-kit.md).
 
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
 
+Interior floor finishes use subdued material pairs: timber `#8B7050 / #967B5B`
+with `#68543E` seams, carpet `#65746A / #727B80` with `#59665E` weave,
+ceramic `#C3BEB0 / #B7C0BC` with `#96988D` grout, and concrete
+`#8E8A82 / #96928A` with `#7D7A72` joints. They are shared room finishes,
+not gameplay markings. Furniture reuses the existing environment tokens;
+see [the interior kit](kits/building-interiors.md).
+
 ### 4.4 UI
 
 | Token | Hex | Use |

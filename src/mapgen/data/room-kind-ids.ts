@@ -15,6 +15,16 @@ export const RoomKindIds = {
   STORAGE: "storage",
   /** A corridor that rooms open onto and stairs land in (#829). */
   CORRIDOR: "corridor",
+  RETAIL: "retail",
+  OFFICE: "office",
+  RECEPTION: "reception",
+  MEETING: "meeting",
+  BREAK_ROOM: "break-room",
+  LIVING_ROOM: "living-room",
+  BEDROOM: "bedroom",
+  KITCHEN: "kitchen",
+  BATHROOM: "bathroom",
+  WORKSHOP: "workshop",
 } as const;
 
 /** One of the shipped room kind ids. */

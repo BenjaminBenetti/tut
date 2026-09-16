@@ -1,11 +1,25 @@
 import { hashSeed } from "../../core/service/seed-hash";
+import type { Direction } from "../../core/model/direction";
+import { stepGridPos } from "../../core/service/grid-math";
+import type { KnownPropKindId } from "../../mapgen/data/props";
+import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { Prop } from "../../mapgen/model/prop";
+import type { Tile } from "../../mapgen/model/tile";
 import { ENVIRONMENT_DETAIL_STYLE } from "../data/environment-detail-style";
+import { INTERIOR_FURNITURE_STYLE } from "../data/interior-furniture-style";
 import { PROP_MODEL_VARIANTS } from "../data/prop-model-variants";
 import { propModel } from "../data/map-model-table";
 import type { PropModelVariant } from "../model/prop-model-variant";
 import type { Rotation } from "../../mapgen/model/prop";
 import { propTiles } from "../../mapgen/service/prop-footprint";
+
+/** The GLB's -Z back after the renderer applies a clockwise quarter turn. */
+const FURNITURE_BACK: Readonly<Record<Rotation, Direction>> = {
+  0: "n",
+  1: "e",
+  2: "s",
+  3: "w",
+};
 
 /** Chooses compatible art by seed and position, then aligns it with its recorded rotation. */
 export function propModelVariation(
@@ -26,6 +40,36 @@ export function propModelVariation(
   return {
     modelId: choice?.modelId ?? modelId,
     turns: ((prop.rotation + (choice?.turns ?? 0)) % 4) as Rotation,
+  };
+}
+
+/**
+ * Seats shallow furniture against its back wall inside the same occupied tile.
+ * Only a solid/window rear edge counts: doorways, side walls and exterior
+ * furniture keep their existing pivots. No sideways corner fit is applied.
+ */
+export function propAppearanceOffset(
+  prop: Prop,
+  tile: Tile,
+  turns: Rotation,
+): { x: number; z: number } {
+  const style = INTERIOR_FURNITURE_STYLE;
+  const rearExtent = style.rearExtents[prop.kind as KnownPropKindId];
+  if (
+    rearExtent === undefined ||
+    tile.buildingId === undefined ||
+    tile.surface !== SurfaceIds.FLOOR ||
+    propTiles(prop).length !== 1
+  )
+    return { x: 0, z: 0 };
+  const back = FURNITURE_BACK[turns];
+  const wall = tile.walls[back];
+  if (wall !== "solid" && wall !== "window") return { x: 0, z: 0 };
+  const distance = Math.max(0, 0.5 - style.wallClearance - rearExtent);
+  const neighbour = stepGridPos(tile, back);
+  return {
+    x: (neighbour.x - tile.x) * distance,
+    z: (neighbour.z - tile.z) * distance,
   };
 }
 

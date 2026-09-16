@@ -1,5 +1,9 @@
-import type { RoomFurnishing } from "../model/room-furnishing";
-import { PropKindIds } from "./props";
+import type {
+  FurnishingGroup,
+  RoomArrangement,
+  RoomFurnishing,
+} from "../model/room-furnishing";
+import { PropKindIds as Prop } from "./props";
 import type { KnownRoomKindId } from "./room-kind-ids";
 
 // ===========================================
@@ -7,39 +11,182 @@ import type { KnownRoomKindId } from "./room-kind-ids";
 // ===========================================
 
 /**
- * Interior cover per room kind (ADR 0004 §4.4). Storage rooms are dense
- * with crates and shelving; halls and rooms get sparse furniture so a
- * firefight inside a house has something to duck behind. Numbers are
- * starting points; tune them in the preview harness, not in the pass.
+ * Recognisable rooms with functional pieces first, accents last. A tile
+ * represents two metres: a desk includes its chair, a dining table its
+ * seats. Shelf runs share an orientation and have a full tile aisle in
+ * front. Small rooms keep their purpose without inheriting a large room's
+ * clutter; circulation is protected by the furnishing pass.
  */
 export const ROOM_FURNISHING: Readonly<
   Record<KnownRoomKindId, RoomFurnishing>
 > = {
-  // Interior cover at the ADR 0009 room size (#829): a squad fighting
-  // through a 4×5 room finds three pieces of cover in it, a storage bay
-  // twice that, and a corridor a crate or two to duck behind.
-  hall: {
-    id: "hall",
-    tilesPerProp: 7,
-    maxProps: 3,
-    props: [PropKindIds.TABLE, PropKindIds.CRATE],
-  },
-  room: {
-    id: "room",
-    tilesPerProp: 6,
-    maxProps: 4,
-    props: [PropKindIds.TABLE, PropKindIds.SHELVING],
-  },
-  storage: {
-    id: "storage",
-    tilesPerProp: 4,
-    maxProps: 8,
-    props: [PropKindIds.CRATE, PropKindIds.SHELVING],
-  },
+  hall: furnishing("hall", 8, 3, [
+    [
+      { props: [Prop.SOFA], zone: "wall", count: 1 },
+      { props: [Prop.PLANTER], zone: "corner", count: 2 },
+    ],
+  ]),
+  room: furnishing("room", 5, 5, [
+    [
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 1 },
+      { props: [Prop.BOOKCASE], zone: "wall", count: 1 },
+      { props: [Prop.SOFA], zone: "wall", count: 1 },
+    ],
+  ]),
   corridor: {
-    id: "corridor",
-    tilesPerProp: 10,
-    maxProps: 2,
-    props: [PropKindIds.CRATE],
+    ...furnishing("corridor", 12, 2, [
+      [{ props: [Prop.PLANTER], zone: "corner", count: 2 }],
+    ]),
+    minimumRoomWidth: 2,
   },
+  retail: furnishing("retail", 4, 12, [
+    [
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.RETAIL_SHELF], zone: "aisle", count: 8 },
+      { props: [Prop.RETAIL_SHELF], zone: "wall", count: 5 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+    [
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.RETAIL_SHELF], zone: "wall", count: 5 },
+      { props: [Prop.RETAIL_SHELF], zone: "aisle", count: 6 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
+  storage: furnishing("storage", 4, 16, [
+    [
+      { props: [Prop.SHELVING], zone: "aisle", count: 9 },
+      { props: [Prop.CRATE], zone: "wall", count: 4 },
+      { props: [Prop.SHELVING], zone: "wall", count: 4 },
+    ],
+    [
+      { props: [Prop.SHELVING], zone: "wall", count: 6 },
+      { props: [Prop.CRATE], zone: "aisle", count: 8 },
+      { props: [Prop.WORKBENCH], zone: "wall", count: 1 },
+    ],
+  ]),
+  office: furnishing("office", 4, 7, [
+    [
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 3, spacing: 2 },
+      { props: [Prop.FILING_CABINET], zone: "wall", count: 2 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+    [
+      { props: [Prop.DESK_COMPUTER], zone: "aisle", count: 2, spacing: 2 },
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 1 },
+      { props: [Prop.FILING_CABINET], zone: "wall", count: 2 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
+  reception: furnishing("reception", 5, 5, [
+    [
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 1 },
+      { props: [Prop.SOFA], zone: "wall", count: 2 },
+      { props: [Prop.PLANTER], zone: "corner", count: 2 },
+    ],
+  ]),
+  meeting: furnishing("meeting", 5, 5, [
+    [
+      {
+        props: [Prop.MEETING_TABLE],
+        zone: "center",
+        fallbackZone: "wall",
+        count: 1,
+      },
+      { props: [Prop.FILING_CABINET], zone: "wall", count: 2 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
+  "break-room": furnishing("break-room", 5, 5, [
+    [
+      { props: [Prop.KITCHEN_COUNTER], zone: "wall", count: 1 },
+      {
+        props: [Prop.DINING_TABLE],
+        zone: "center",
+        fallbackZone: "wall",
+        count: 1,
+      },
+      { props: [Prop.SOFA], zone: "wall", count: 1 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
+  "living-room": furnishing("living-room", 5, 5, [
+    [
+      { props: [Prop.SOFA], zone: "wall", count: 1 },
+      {
+        props: [Prop.DINING_TABLE],
+        zone: "center",
+        fallbackZone: "wall",
+        count: 1,
+      },
+      { props: [Prop.BOOKCASE], zone: "wall", count: 1 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+    [
+      { props: [Prop.SOFA], zone: "wall", count: 2 },
+      { props: [Prop.TABLE], zone: "center", fallbackZone: "wall", count: 1 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
+  bedroom: furnishing("bedroom", 4, 5, [
+    [
+      { props: [Prop.BED], zone: "wall", count: 1 },
+      { props: [Prop.WARDROBE], zone: "wall", count: 1 },
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 1 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+    [
+      { props: [Prop.BED], zone: "wall", count: 1 },
+      { props: [Prop.WARDROBE], zone: "corner", count: 1 },
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 1 },
+    ],
+  ]),
+  kitchen: furnishing("kitchen", 4, 6, [
+    [
+      { props: [Prop.KITCHEN_COUNTER], zone: "wall", count: 1 },
+      { props: [Prop.REFRIGERATOR], zone: "wall", count: 1 },
+      {
+        props: [Prop.DINING_TABLE],
+        zone: "center",
+        fallbackZone: "wall",
+        count: 1,
+      },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
+  bathroom: furnishing("bathroom", 4, 3, [
+    [
+      { props: [Prop.BATHROOM_VANITY], zone: "wall", count: 1 },
+      { props: [Prop.TOILET], zone: "wall", count: 1 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
+  workshop: furnishing("workshop", 4, 10, [
+    [
+      { props: [Prop.WORKBENCH], zone: "wall", count: 3 },
+      { props: [Prop.SHELVING], zone: "wall", count: 3 },
+      { props: [Prop.CRATE], zone: "aisle", count: 4 },
+    ],
+  ]),
 };
+
+/** Derives the catalogue of allowed props from its authored arrangements. */
+function furnishing(
+  id: KnownRoomKindId,
+  tilesPerProp: number,
+  maxProps: number,
+  layouts: readonly (readonly FurnishingGroup[])[],
+): RoomFurnishing {
+  const arrangements: RoomArrangement[] = layouts.map((groups) => ({ groups }));
+  return {
+    id,
+    tilesPerProp,
+    maxProps,
+    arrangements,
+    props: [
+      ...new Set(
+        layouts.flatMap((groups) => groups.flatMap((group) => group.props)),
+      ),
+    ],
+  };
+}

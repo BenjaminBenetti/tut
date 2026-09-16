@@ -1,5 +1,6 @@
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { IntRange } from "./settlement-definition";
+import type { BuildingRoomProgram } from "./building-room-program";
 
 // ===========================================
 // Building template
@@ -46,6 +47,11 @@ export interface BuildingTemplate {
  * ```
  */
 export interface InteriorPlan {
+  /** Uses assigned to rooms after partitioning; omitted by generic templates. */
+  readonly roomPrograms?: {
+    readonly ground: BuildingRoomProgram;
+    readonly upper: BuildingRoomProgram;
+  };
   /**
    * Room edge the partitioner aims for, in tiles: no room edge is shorter
    * than `min`, and a room is cut again while an edge exceeds `max`.

@@ -48,6 +48,15 @@ describe("isGameStateShape", () => {
     }
   });
 
+  it("rejects a map whose cities lack the v24 population (#1154)", () => {
+    const copy = jsonCopy();
+    const map = (copy.overworld as Record<string, unknown>).map as {
+      cities: Record<string, unknown>[];
+    };
+    delete map.cities[0]?.population;
+    expect(isGameStateShape(copy)).toBe(false);
+  });
+
   it("rejects slices with the wrong field types", () => {
     const wrongSeed = jsonCopy();
     (wrongSeed.meta as Record<string, unknown>).seed = "42";

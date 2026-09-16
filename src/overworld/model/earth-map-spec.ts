@@ -23,6 +23,8 @@ export interface CitySeed {
   readonly scale?: SettlementScale;
   /** Local environment where a broad region spans several climates. */
   readonly biome?: BiomeId;
+  /** People living there (#1154); defaults to `DEFAULT_CITY_POPULATION`. */
+  readonly population?: number;
 }
 
 /** Authoring form of a region: its cities are nested rather than referenced. */

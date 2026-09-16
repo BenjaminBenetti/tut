@@ -18,6 +18,9 @@ import type { Region, RegionId } from "../model/region";
 /** Scale a city seed gets when it declares none: the shipped Earth is a map of major cities. */
 export const DEFAULT_CITY_SCALE: SettlementScale = "city";
 
+/** Population a city seed gets when it declares none: a mid-sized city (#1154). */
+export const DEFAULT_CITY_POPULATION = 1_000_000;
+
 // ===========================================
 // Types
 // ===========================================
@@ -49,8 +52,9 @@ type Neighbours = ReadonlyMap<CityId, readonly CityId[]>;
  * ```
  *
  * Throws on structural errors: a duplicate id, an empty region, a link
- * naming an unknown city, a self link, a repeated link, or an infestation
- * outside `[MIN_INFESTATION, MAX_INFESTATION]`. Graph-level properties
+ * naming an unknown city, a self link, a repeated link, an infestation
+ * outside `[MIN_INFESTATION, MAX_INFESTATION]`, or a population that is
+ * not a non-negative integer. Graph-level properties
  * such as connectivity are the seed data's responsibility and are covered
  * by its tests.
  */
@@ -126,7 +130,7 @@ function indexLinks(
 // Assembly
 // ===========================================
 
-/** Assembles a `City`, validating its starting infestation. */
+/** Assembles a `City`, validating its starting infestation and population. */
 function buildCity(
   seed: CitySeed,
   regionId: RegionId,
@@ -142,6 +146,12 @@ function buildCity(
       `City "${seed.id}" infestation ${infestation} is not an integer in [${MIN_INFESTATION}, ${MAX_INFESTATION}]`,
     );
   }
+  const population = seed.population ?? DEFAULT_CITY_POPULATION;
+  if (!Number.isInteger(population) || population < 0) {
+    throw new Error(
+      `City "${seed.id}" population ${population} is not a non-negative integer`,
+    );
+  }
   return {
     id: seed.id,
     name: seed.name,
@@ -149,6 +159,7 @@ function buildCity(
     infestation,
     scale: seed.scale ?? DEFAULT_CITY_SCALE,
     ...(seed.biome === undefined ? {} : { biome: seed.biome }),
+    population,
     neighbourIds: neighbours.get(seed.id) ?? [],
     layout: seed.layout,
   };

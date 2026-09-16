@@ -178,10 +178,15 @@
 }
 
 /* =========================================== */
-/* Overworld side panel: city card, deployables */
+/* Overworld side panel: region card, deployables */
 /* =========================================== */
 
-.tut-city__name {
+.tut-region:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.tut-region__name {
   font-family: var(--font-display, inherit);
   font-size: 18px;
   letter-spacing: 0.04em;
@@ -189,27 +194,50 @@
   margin-bottom: var(--space-2);
 }
 
-.tut-city__mission {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--space-1) var(--space-3);
-  align-items: center;
-}
-
 /*
- * Name above numbers, both left-aligned in the value column. As one
- * right-aligned string the four facts wrapped onto lines that *began*
- * with a "·" and read as fragments (see the view).
+ * One row per city in the region (#1154): name takes the width, scale
+ * and infestation are fixed monospace tracks so the numbers line up.
+ * As specific as `.tut-list > li`, which would otherwise win with its
+ * flex layout (see the mission rows above for the history).
  */
-.tut-city__mission-value {
+.tut-list > li.tut-region__city {
   display: grid;
-  gap: 0.1em;
-  justify-items: start;
+  grid-template-columns: minmax(0, 1fr) 5ch 3ch;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.tut-city__mission .tut-btn {
-  grid-column: 1 / -1;
-  justify-self: start;
+.tut-region__city .tut-data,
+.tut-region__city .tut-mono {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tut-region__city .tut-data {
+  color: var(--ui-text-dim);
+}
+
+.tut-region__city[aria-current="true"] {
+  background: var(--ui-panel-raised);
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.tut-region__city:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+/* The infestation figure takes the band's tint, like the threat badge. */
+.tut-region__city [data-tone="ok"] {
+  color: var(--ui-ok);
+}
+.tut-region__city [data-tone="warn"] {
+  color: var(--ui-warn);
+}
+.tut-region__city [data-tone="danger"] {
+  color: var(--ui-danger);
 }
 
 .tut-deployables .tut-list > li {

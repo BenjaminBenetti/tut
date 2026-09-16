@@ -176,6 +176,7 @@ function resolutionState(
       regionId: "region-1",
       infestation: 20,
       scale: "town",
+      population: 1_000_000,
       neighbourIds: [],
       layout: { x: 0, y: 0 },
     },

@@ -3,7 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { campaignOnDay, missionAt } from "./mission-fixtures.test-helper";
-import { MissionListView, sortByExpiry } from "./mission-list-view";
+import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
+import {
+  MissionListView,
+  missionsInRegion,
+  sortByExpiry,
+} from "./mission-list-view";
+
+/** Nothing selected: the list shows every mission. */
+const NONE: OverworldSelectionSnapshot = {
+  regionId: undefined,
+  cityId: undefined,
+  missionId: undefined,
+};
 
 describe("MissionListView", () => {
   let root: HTMLElement;
@@ -26,10 +38,7 @@ describe("MissionListView", () => {
       { onSelectMission: vi.fn() },
     );
     view.mount(root);
-    view.update(campaignOnDay(4, []), {
-      cityId: undefined,
-      missionId: undefined,
-    });
+    view.update(campaignOnDay(4, []), NONE);
     expect(rows()).toHaveLength(0);
     expect(
       root.querySelector<HTMLElement>('[data-role="no-missions"]')?.hidden,
@@ -47,7 +56,7 @@ describe("MissionListView", () => {
         missionAt("mission-2", "lagos", 9, 5),
         missionAt("mission-1", "cairo", 6, 2),
       ]),
-      { cityId: undefined, missionId: undefined },
+      NONE,
     );
     const [first, second] = rows();
     expect(first?.dataset.missionId).toBe("mission-1");
@@ -78,7 +87,11 @@ describe("MissionListView", () => {
     );
     view.mount(root);
     const state = campaignOnDay(4, [missionAt("mission-1", "cairo", 6)]);
-    view.update(state, { cityId: "cairo", missionId: "mission-1" });
+    view.update(state, {
+      regionId: "middle-east",
+      cityId: "cairo",
+      missionId: "mission-1",
+    });
     expect(rows()[0]?.classList.contains("is-selected")).toBe(true);
     rows()[0]?.querySelector<HTMLElement>('[data-field="reward"]')?.click();
     expect(onSelectMission).toHaveBeenCalledWith("mission-1", "cairo");
@@ -92,18 +105,75 @@ describe("MissionListView", () => {
     view.mount(root);
     const a = missionAt("mission-1", "cairo", 6);
     const b = missionAt("mission-2", "lagos", 9);
-    view.update(campaignOnDay(4, [a, b]), {
-      cityId: undefined,
-      missionId: undefined,
-    });
+    view.update(campaignOnDay(4, [a, b]), NONE);
     const before = rows()[0];
-    view.update(campaignOnDay(5, [a]), {
-      cityId: undefined,
-      missionId: undefined,
-    });
+    view.update(campaignOnDay(5, [a]), NONE);
     expect(rows()).toHaveLength(1);
     expect(rows()[0]).toBe(before);
     expect(cell(rows()[0]!, "days-left")).toBe("1 d");
+  });
+
+  it("shows every mission under 'Missions · all' when no region is selected (#1154)", () => {
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn() },
+    );
+    view.mount(root);
+    view.update(
+      campaignOnDay(4, [
+        missionAt("mission-1", "cairo", 6),
+        missionAt("mission-2", "lagos", 9),
+      ]),
+      NONE,
+    );
+    expect(
+      root.querySelector('[data-field="missions-heading"]')?.textContent,
+    ).toBe("Missions · all");
+    expect(rows().map((r) => r.dataset.cityId)).toEqual(["cairo", "lagos"]);
+  });
+
+  it("filters to the selected region and names it in the heading (#1154)", () => {
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn() },
+    );
+    view.mount(root);
+    const state = campaignOnDay(4, [
+      missionAt("mission-1", "cairo", 6),
+      missionAt("mission-2", "lagos", 9),
+    ]);
+    view.update(state, {
+      regionId: "sub-saharan-africa",
+      cityId: undefined,
+      missionId: undefined,
+    });
+    expect(
+      root.querySelector('[data-field="missions-heading"]')?.textContent,
+    ).toBe("Missions · Sub-Saharan Africa");
+    expect(rows().map((r) => r.dataset.cityId)).toEqual(["lagos"]);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="no-missions"]')?.hidden,
+    ).toBe(true);
+
+    // A region with nothing on offer says so, without telling the player
+    // to advance the day when missions exist elsewhere.
+    view.update(state, {
+      regionId: "east-asia",
+      cityId: "tokyo",
+      missionId: undefined,
+    });
+    expect(rows()).toHaveLength(0);
+    const empty = root.querySelector<HTMLElement>('[data-role="no-missions"]');
+    expect(empty?.hidden).toBe(false);
+    expect(empty?.textContent).toBe("No missions in East Asia.");
+
+    // Back to all: the rows return and the heading follows.
+    view.update(state, NONE);
+    expect(rows()).toHaveLength(2);
+    expect(
+      root.querySelector('[data-field="missions-heading"]')?.textContent,
+    ).toBe("Missions · all");
+    expect(empty?.textContent).toBe("No missions on offer. Advance the day.");
   });
 
   it("unmount removes the section and stops reporting clicks", () => {
@@ -113,15 +183,31 @@ describe("MissionListView", () => {
       { onSelectMission },
     );
     view.mount(root);
-    view.update(campaignOnDay(4, [missionAt("mission-1", "cairo", 6)]), {
-      cityId: undefined,
-      missionId: undefined,
-    });
+    view.update(campaignOnDay(4, [missionAt("mission-1", "cairo", 6)]), NONE);
     const row = rows()[0];
     view.unmount();
     expect(root.children).toHaveLength(0);
     row?.click();
     expect(onSelectMission).not.toHaveBeenCalled();
+  });
+});
+
+describe("missionsInRegion", () => {
+  it("keeps the missions whose city is in the region, or all with no region", () => {
+    const state = campaignOnDay(4, [
+      missionAt("mission-1", "cairo", 6),
+      missionAt("mission-2", "lagos", 9),
+      missionAt("mission-3", "atlantis", 9),
+    ]);
+    expect(missionsInRegion(state, undefined).map((m) => m.id)).toEqual([
+      "mission-1",
+      "mission-2",
+      "mission-3",
+    ]);
+    expect(missionsInRegion(state, "middle-east").map((m) => m.id)).toEqual([
+      "mission-1",
+    ]);
+    expect(missionsInRegion(state, "oceania")).toEqual([]);
   });
 });
 

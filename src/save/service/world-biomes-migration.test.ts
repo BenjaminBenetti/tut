@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { EarthMap } from "../../overworld/model/earth-map";
 import { GAME_STATE_MIGRATIONS } from "../data/migrations";
+import type { WorldBiomesSnapshot } from "../data/world-biomes-snapshot";
 import { WORLD_BIOMES_SNAPSHOT } from "../data/world-biomes-snapshot";
 import { GAME_STATE_SCHEMA_VERSION } from "../model/game-state";
 import { MigrationRunner } from "./migration-runner";
@@ -14,7 +14,7 @@ function oldCampaign() {
     (c) => regionIds.has(c.regionId) && c.id !== "alice-springs",
   );
   const cityIds = new Set(original.map((c) => c.id));
-  const map: EarthMap = {
+  const map: WorldBiomesSnapshot = {
     cities: original.map(({ biome: _biome, ...city }) => ({
       ...city,
       infestation: 47,

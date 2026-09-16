@@ -680,9 +680,8 @@ describe("v22 → v23", () => {
     });
     if (!migrated.ok) throw new Error(migrated.error.message);
     expect(migrated.value.state).toEqual(state);
-    expect(GAME_STATE_MIGRATIONS.at(-1)).toMatchObject({ from: 22, to: 23 });
-    expect(() =>
-      GAME_STATE_MIGRATIONS.at(-1)!.apply("not a campaign"),
-    ).toThrow();
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 22);
+    expect(step).toMatchObject({ from: 22, to: 23 });
+    expect(() => step!.apply("not a campaign")).toThrow();
   });
 });

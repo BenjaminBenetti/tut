@@ -45,6 +45,11 @@ export interface City {
   readonly scale: SettlementScale;
   /** Local environment for missions; absent cities inherit the region biome. */
   readonly biome?: BiomeId;
+  /**
+   * People living there, approximately (#1154): `37_000_000` for Tokyo.
+   * Flavour for the city's info wheel; the simulation does not read it.
+   */
+  readonly population: number;
   /** Cities the infestation can spread to. Adjacency is symmetric. */
   readonly neighbourIds: readonly CityId[];
   /** Where the overworld screen draws it. */

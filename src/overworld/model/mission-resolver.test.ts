@@ -51,6 +51,7 @@ const STATE: MissionResolutionState = {
     regionId: "north-america-east",
     infestation: 40,
     scale: "city",
+    population: 1_000_000,
     neighbourIds: [],
     layout: { x: 0, y: 0 },
   },

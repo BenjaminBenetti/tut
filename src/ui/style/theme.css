@@ -372,6 +372,9 @@ dd.tut-kv__block {
 .tut-meter--bug .tut-meter__fill {
   --fill: var(--ui-bug);
 }
+.tut-meter--warn .tut-meter__fill {
+  --fill: var(--ui-warn);
+}
 .tut-meter--danger .tut-meter__fill {
   --fill: var(--ui-danger);
 }

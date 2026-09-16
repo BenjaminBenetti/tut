@@ -15,8 +15,24 @@ export interface BuildingFrontageStyle {
   readonly entrances: readonly BuildingFrontageModule[];
   /** Alternative coherent entrance styles, each retaining its own narrow fallback. */
   readonly entranceVariants?: readonly (readonly BuildingFrontageModule[])[];
+  /** Known saved interior identities replace the generic entrance and its fallback. */
+  readonly entrancesByInteriorStyle?: Readonly<
+    Record<string, readonly BuildingFrontageModule[]>
+  >;
   readonly domesticWindows?: boolean;
   readonly sharedMail?: boolean;
   /** Mounted only on selected solid upper-storey bays, clear of all apertures. */
   readonly wallUtility?: BuildingFrontageModule;
 }
+
+/** Business identities with a purpose-built exterior canopy and compact sign. */
+export type BusinessFrontageKind =
+  | "grocery"
+  | "bakery-cafe"
+  | "pharmacy"
+  | "clothing"
+  | "electronics"
+  | "hardware"
+  | "bookshop"
+  | "offices"
+  | "depot";

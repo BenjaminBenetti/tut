@@ -2,6 +2,8 @@
 
 Generated buildings have room programs, architectural plans and furniture tied to their use. Shops include grocery stores, bakery/cafés, pharmacies, clothing shops, electronics stores, hardware stores and bookshops. Towers have offices, reception, meeting rooms and break rooms. Houses and apartments have living rooms, bedrooms, kitchens and bathrooms. Warehouses keep stock aisles and work areas.
 
+Matching [exterior business signs](business-signs.md) carry each shop's identity onto its entrance canopy. Offices and depots have their own signs too.
+
 The building mix now gives shops and workplaces comparable space to residential buildings. Across 80 large maps in each settlement scale (20 seeds × four biomes), cities produced approximately 40% shops, 30% offices and 29% residential buildings; towns added 5% warehouses. Rural maps mix shops, homes and warehouses. Compact storefronts fit seven-tile frontages. Business identities are drawn from a seeded, balanced bag: every available identity appears before another repeats.
 
 Partitions follow the entrance and building use. Shops retain a broad sales floor with a shallow rear service strip. Offices connect reception to a larger workfloor through a wide opening, with enclosed support rooms alongside. Homes place public rooms at the front and private rooms behind a short hall. Warehouse service blocks leave a large open work area around them. The same partition geometry stacks between floors so doors, circulation and stair landings align. Small rooms receive essentials first; larger rooms add storage, seating and plants.

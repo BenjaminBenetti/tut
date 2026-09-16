@@ -158,7 +158,10 @@ Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `
 Building frontage fabric uses flat `env-awning-green #56735F` and
 `env-awning-cream #D8D0B8`. These are untextured cloth colours; the grass and
 snow atlas cells would read as terrain painted onto the awning. Other frontage
-materials reuse the existing environment atlas.
+materials reuse the existing environment atlas. Business entrance signs use
+opaque embedded prints with this palette: one color, category name and pictogram
+per business, with icon-only versions for narrow entrances. Their geometry,
+artwork and mounting rules are documented in [the business sign kit](kits/business-signs.md).
 
 Lagos planting uses `env-tropical-leaf #39714E`,
 `env-tropical-leaf-light #568358` and `env-palm-trunk #786348`.

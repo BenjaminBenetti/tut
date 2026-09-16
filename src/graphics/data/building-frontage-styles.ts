@@ -2,6 +2,7 @@ import type {
   BuildingFrontageModule,
   BuildingFrontageStyle,
 } from "../model/building-frontage-style";
+import { BUSINESS_ENTRANCES } from "./business-frontages";
 
 /** Small porch canopy; its lamps remain above the real door opening. */
 const RESIDENTIAL_ENTRANCE: BuildingFrontageModule = {
@@ -52,22 +53,23 @@ export const BUILDING_FRONTAGE_STYLES: Readonly<
       [SHOP_FABRIC, SHOP_NARROW],
       [SHOP_SIGN, SHOP_NARROW],
     ],
+    entrancesByInteriorStyle: {
+      grocery: BUSINESS_ENTRANCES.grocery,
+      "bakery-cafe": BUSINESS_ENTRANCES["bakery-cafe"],
+      pharmacy: BUSINESS_ENTRANCES.pharmacy,
+      clothing: BUSINESS_ENTRANCES.clothing,
+      electronics: BUSINESS_ENTRANCES.electronics,
+      hardware: BUSINESS_ENTRANCES.hardware,
+      bookshop: BUSINESS_ENTRANCES.bookshop,
+    },
     wallUtility: WALL_AC,
   },
   warehouse: {
-    entrances: [
-      { modelId: "building.warehouse-entry", width: 2.4, mountHeight: 1.12 },
-    ],
+    entrances: BUSINESS_ENTRANCES.depot,
   },
   tower: {
     wallUtility: WALL_AC,
-    entrances: [
-      {
-        modelId: "building.workplace-entry",
-        width: 2.4,
-        mountHeight: 1.12,
-      },
-    ],
+    entrances: BUSINESS_ENTRANCES.offices,
   },
 };
 

@@ -5,7 +5,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import captureConfig from "./capture-vite.config.mjs";
 import { format } from "prettier";
 
-const out = "docs/design/diagnostics/building-interiors";
+const exteriors = process.argv.includes("--exteriors");
+const out = exteriors
+  ? "docs/design/diagnostics/business-signs"
+  : "docs/design/diagnostics/building-interiors";
 mkdirSync(out, { recursive: true });
 const server = await createServer({
   ...captureConfig,
@@ -24,7 +27,9 @@ const browser = await chromium.launch({
     "--enable-unsafe-swiftshader",
   ],
 });
-const requestedKinds = new Set(process.argv.slice(2));
+const requestedKinds = new Set(
+  process.argv.slice(2).filter((arg) => arg !== "--exteriors"),
+);
 const records =
   requestedKinds.size && existsSync(`${out}/captures.json`)
     ? JSON.parse(readFileSync(`${out}/captures.json`, "utf8"))
@@ -72,7 +77,7 @@ try {
     });
   });
   let loadedMap;
-  for (const [seed, settlement, size, kind, floorIndex, yaw, style] of [
+  const interiors = [
     ["shops-review", "city", "large", "shop", 0, 0, "grocery"],
     ["shops-review", "city", "large", "shop", 0, 2, "bakery-cafe"],
     ["shops-review", "city", "large", "shop", 0, 0, "pharmacy"],
@@ -87,7 +92,15 @@ try {
     ["interiors-review", "city", "medium", "apartment", 1, 1],
     ["warehouse-review", "rural", "medium", "warehouse", 0, 0],
     ["interiors-review", "city", "large", "shop", 0, 1],
-  ]) {
+  ];
+  const cases = exteriors
+    ? [
+        ...interiors.filter((entry) => entry[0] === "shops-review"),
+        ["interiors-second", "city", "medium", "tower", 0, 0],
+        ["warehouse-review", "rural", "medium", "warehouse", 0, 0],
+      ]
+    : interiors;
+  for (const [seed, settlement, size, kind, floorIndex, yaw, style] of cases) {
     if (
       requestedKinds.size &&
       !requestedKinds.has(kind) &&
@@ -111,7 +124,7 @@ try {
       .locator('body[data-models-ready="true"][data-preview-ready="true"]')
       .waitFor({ timeout: 120000 });
     const info = await page.evaluate(
-      async ({ kind, floorIndex, yaw, style }) => {
+      async ({ kind, floorIndex, yaw, style, exteriors }) => {
         const map = window.__interiorMap;
         const candidates = map.buildings.filter(
           (b) =>
@@ -130,16 +143,39 @@ try {
           throw new Error(`No generated ${kind} on seed ${map.recipe.seed}`);
         const floor = building.floors[floorIndex];
         const rect = building.footprint[0];
-        window.__interiorView.setLayerFocus({
-          storey: floorIndex,
-          storeyCount:
-            1 + Math.max(...map.buildings.map((b) => b.floors.length)),
-        });
+        window.__interiorView.setLayerFocus(
+          exteriors
+            ? undefined
+            : {
+                storey: floorIndex,
+                storeyCount:
+                  1 + Math.max(...map.buildings.map((b) => b.floors.length)),
+              },
+        );
         const rig = window.__interiorRig;
-        while (rig.getState().yawIndex !== yaw) rig.rotateRight();
+        // Select an ordinary camera quadrant that faces the actual entrance.
+        const front = building.entrances[0];
+        const directions = { n: [0, -1], e: [1, 0], s: [0, 1], w: [-1, 0] };
+        let chosenYaw = yaw;
+        if (exteriors) {
+          const normal = directions[front.side];
+          for (let i = 0; i < 4; i++) {
+            rig.apply();
+            const state = rig.getState();
+            const facing =
+              (rig.camera.position.x - state.target.x) * normal[0] +
+              (rig.camera.position.z - state.target.z) * normal[1];
+            if (facing > 0) {
+              chosenYaw = state.yawIndex;
+              break;
+            }
+            rig.rotateRight();
+          }
+        }
+        while (rig.getState().yawIndex !== chosenYaw) rig.rotateRight();
         const target = {
           x: rect.x + rect.w / 2,
-          y: floor.y * 0.75 + 0.55,
+          y: floor.y * 0.75 + (exteriors ? 1.4 : 0.55),
           z: rect.z + rect.d / 2,
         };
         rig.lookAt(target);
@@ -163,6 +199,7 @@ try {
           seed: map.recipe.seed,
           building,
           floorIndex,
+          exteriors,
           camera: rig.getState(),
           props: map.props.filter(
             (p) =>
@@ -174,9 +211,11 @@ try {
           ),
         };
       },
-      { kind, floorIndex, yaw, style },
+      { kind, floorIndex, yaw, style, exteriors },
     );
-    const id = `${seed}-${style ?? kind}-floor-${floorIndex}`;
+    const id = exteriors
+      ? `${seed}-${style ?? kind}-exterior`
+      : `${seed}-${style ?? kind}-floor-${floorIndex}`;
     await page
       .locator("#map-viewport")
       .screenshot({ path: `${out}/${id}.png`, timeout: 120000 });

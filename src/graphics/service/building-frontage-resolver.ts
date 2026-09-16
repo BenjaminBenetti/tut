@@ -33,6 +33,16 @@ const OUTWARD_TURNS: Readonly<Record<Direction, Rotation>> = {
   e: 3,
 };
 
+/** World bounds of accepted attachments, preventing overlapping entrances and facing canopies. */
+interface MountBounds {
+  readonly minX: number;
+  readonly maxX: number;
+  readonly minY: number;
+  readonly maxY: number;
+  readonly minZ: number;
+  readonly maxZ: number;
+}
+
 /**
  * Adds use cues to existing exterior walls. It does not alter the map, replace
  * a wall, create cover or invent a doorway. Owner tiles carry the attachment
@@ -43,6 +53,7 @@ export function resolveBuildingFrontages(
   index: TileIndex,
 ): readonly ModelPlacement[] {
   const result: ModelPlacement[] = [];
+  const occupied: MountBounds[] = [];
   const ladders = map.connectors.filter((c) => c.kind === "ladder");
   const propTops = new Map<string, number>();
   for (const prop of map.props) {
@@ -62,7 +73,9 @@ export function resolveBuildingFrontages(
     }
   }
   for (const building of map.buildings) {
-    const style = BUILDING_FRONTAGE_STYLES[building.kind];
+    const style = Object.hasOwn(BUILDING_FRONTAGE_STYLES, building.kind)
+      ? BUILDING_FRONTAGE_STYLES[building.kind]
+      : undefined;
     if (!style) continue;
     const utilityAlongX =
       hashSeed(`${map.recipe.seed}:${building.id}:service-sides`) % 2 === 0;
@@ -70,56 +83,26 @@ export function resolveBuildingFrontages(
       const tile = index.getAt(entrance.tile);
       if (tile?.walls[entrance.side] !== "door") continue;
       const entrances =
+        (building.interiorStyle === undefined ||
+        style.entrancesByInteriorStyle === undefined ||
+        !Object.hasOwn(style.entrancesByInteriorStyle, building.interiorStyle)
+          ? undefined
+          : style.entrancesByInteriorStyle[building.interiorStyle]) ??
         style.entranceVariants?.[
           hashSeed(`${map.recipe.seed}:${building.id}:entrance`) %
             style.entranceVariants.length
-        ] ?? style.entrances;
+        ] ??
+        style.entrances;
       for (const module of entrances) {
-        if (
-          clearMount(
-            building,
-            tile,
-            entrance.side,
-            module,
-            index,
-            ladders,
-            propTops,
-          )
-        ) {
-          result.push(
-            onWall(
-              mount(module, tile, entrance.side),
-              tile,
-              entrance.side,
-              index,
-            ),
-          );
-          break;
-        }
+        if (tryMount(module, tile, entrance.side)) break;
       }
       if (style.sharedMail) {
         for (const offset of [-1, 1, -2, 2]) {
           const next = index.getAt(alongWall(tile, entrance.side, offset));
           if (
             next?.walls[entrance.side] === "solid" &&
-            clearMount(
-              building,
-              next,
-              entrance.side,
-              MAILBOX_MODULE,
-              index,
-              ladders,
-              propTops,
-            )
+            tryMount(MAILBOX_MODULE, next, entrance.side)
           ) {
-            result.push(
-              onWall(
-                mount(MAILBOX_MODULE, next, entrance.side),
-                next,
-                entrance.side,
-                index,
-              ),
-            );
             break;
           }
         }
@@ -144,55 +127,72 @@ export function resolveBuildingFrontages(
                 0
                   ? DOMESTIC_WINDOW_MODULE
                   : SHUTTER_WINDOW_MODULE;
-              if (
-                style.domesticWindows &&
-                tile.walls[side] === "window" &&
-                clearMount(
-                  building,
-                  tile,
-                  side,
-                  windowModule,
-                  index,
-                  ladders,
-                  propTops,
-                )
-              ) {
-                result.push(
-                  onWall(mount(windowModule, tile, side), tile, side, index),
-                );
+              if (style.domesticWindows && tile.walls[side] === "window") {
+                tryMount(windowModule, tile, side);
               }
               const along = side === "n" || side === "s" ? tile.x : tile.z;
               if (
                 style.wallUtility &&
                 (side === "n" || side === "s") === utilityAlongX &&
                 tile.walls[side] === "solid" &&
-                (along + hashSeed(`${building.id}:${side}:utility`)) % 5 ===
-                  0 &&
-                clearMount(
-                  building,
-                  tile,
-                  side,
-                  style.wallUtility,
-                  index,
-                  ladders,
-                  propTops,
-                )
+                (along + hashSeed(`${building.id}:${side}:utility`)) % 5 === 0
               )
-                result.push(
-                  onWall(
-                    mount(style.wallUtility, tile, side),
-                    tile,
-                    side,
-                    index,
-                  ),
-                );
+                tryMount(style.wallUtility, tile, side);
             }
           }
         }
       }
     }
+
+    /** Accepts an unobstructed mount and remembers its occupied visual volume. */
+    function tryMount(
+      module: BuildingFrontageModule,
+      tile: Tile,
+      side: Direction,
+    ): boolean {
+      if (!clearMount(building, tile, side, module, index, ladders, propTops))
+        return false;
+      const placement = mount(module, tile, side);
+      const bounds = mountBounds(module, placement, side);
+      if (occupied.some((other) => overlaps(bounds, other))) return false;
+      occupied.push(bounds);
+      result.push(onWall(placement, tile, side, index));
+      return true;
+    }
   }
   return result;
+}
+
+/** Bounds use the authored rear wall pivot and extend only toward the outdoors. */
+function mountBounds(
+  module: BuildingFrontageModule,
+  placement: ModelPlacement,
+  side: Direction,
+): MountBounds {
+  const { x, y, z } = placement.position;
+  const asset = MODEL_MANIFEST[module.modelId];
+  const depth = asset.footprint.d;
+  const halfWidth = module.width / 2;
+  return {
+    minX: side === "w" ? x - depth : side === "e" ? x : x - halfWidth,
+    maxX: side === "e" ? x + depth : side === "w" ? x : x + halfWidth,
+    minY: y,
+    maxY: y + asset.height,
+    minZ: side === "n" ? z - depth : side === "s" ? z : z - halfWidth,
+    maxZ: side === "s" ? z + depth : side === "n" ? z : z + halfWidth,
+  };
+}
+
+/** Touching edges are allowed; intersecting attachment volumes are not. */
+function overlaps(a: MountBounds, b: MountBounds): boolean {
+  return (
+    a.minX < b.maxX &&
+    a.maxX > b.minX &&
+    a.minY < b.maxY &&
+    a.maxY > b.minY &&
+    a.minZ < b.maxZ &&
+    a.maxZ > b.minZ
+  );
 }
 
 /**

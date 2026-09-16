@@ -125,14 +125,24 @@ describe("InteriorPass", () => {
             expect(tile.roomId, building.id).toBe(room?.id);
           }
         }
-        const hall = building.floors[0]?.rooms.find((r) => r.kind === "hall");
-        if (building.kind === "warehouse") {
-          expect(
-            building.floors[0]?.rooms.every((r) => r.kind === "storage"),
-            building.id,
-          ).toBe(true);
-        } else {
-          expect(hall, building.id).toBeDefined();
+        const template = registries.buildingTemplates.get(building.kind);
+        const program =
+          template.interior.roomProgramVariants?.find(
+            (variant) => variant.id === building.interiorStyle,
+          ) ?? template.interior.roomPrograms;
+        expect(
+          building.floors[0]?.rooms.some(
+            (room) => room.kind === program?.ground.arrival,
+          ),
+          building.id,
+        ).toBe(true);
+        for (const floor of building.floors) {
+          for (const room of floor.rooms) {
+            expect(
+              registries.roomFurnishing.has(room.kind ?? ""),
+              `${building.id}/${room.kind}`,
+            ).toBe(true);
+          }
         }
       }
     }

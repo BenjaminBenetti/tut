@@ -1764,6 +1764,644 @@
     "bytes": 419844
   },
   {
+    "id": "prop.planter",
+    "category": "props",
+    "path": "assets/models/props/prop-planter.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.78,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 168,
+    "bytes": 20464
+  },
+  {
+    "id": "prop.checkout",
+    "category": "props",
+    "path": "assets/models/props/prop-checkout.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.73,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 240,
+    "bytes": 24844
+  },
+  {
+    "id": "prop.sofa",
+    "category": "props",
+    "path": "assets/models/props/prop-sofa.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.44,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 30876
+  },
+  {
+    "id": "prop.bed",
+    "category": "props",
+    "path": "assets/models/props/prop-bed.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 252,
+    "bytes": 28528
+  },
+  {
+    "id": "prop.kitchen-counter",
+    "category": "props",
+    "path": "assets/models/props/prop-kitchen-counter.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.59,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 35516
+  },
+  {
+    "id": "prop.dining-table",
+    "category": "props",
+    "path": "assets/models/props/prop-dining-table.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.46,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 35244
+  },
+  {
+    "id": "prop.bathroom-vanity",
+    "category": "props",
+    "path": "assets/models/props/prop-bathroom-vanity.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.92,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 204,
+    "bytes": 27124
+  },
+  {
+    "id": "prop.desk-computer",
+    "category": "props",
+    "path": "assets/models/props/prop-desk-computer.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.72,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 26200
+  },
+  {
+    "id": "prop.meeting-table",
+    "category": "props",
+    "path": "assets/models/props/prop-meeting-table.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.52,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 276,
+    "bytes": 24252
+  },
+  {
+    "id": "prop.workbench",
+    "category": "props",
+    "path": "assets/models/props/prop-workbench.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.89,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 27504
+  },
+  {
+    "id": "prop.retail-shelf",
+    "category": "props",
+    "path": "assets/models/props/prop-retail-shelf.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.02,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 276,
+    "bytes": 25540
+  },
+  {
+    "id": "prop.filing-cabinet",
+    "category": "props",
+    "path": "assets/models/props/prop-filing-cabinet.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.02,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 276,
+    "bytes": 22832
+  },
+  {
+    "id": "prop.wardrobe",
+    "category": "props",
+    "path": "assets/models/props/prop-wardrobe.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 224,
+    "bytes": 19396
+  },
+  {
+    "id": "prop.bookcase",
+    "category": "props",
+    "path": "assets/models/props/prop-bookcase.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.04,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 26468
+  },
+  {
+    "id": "prop.refrigerator",
+    "category": "props",
+    "path": "assets/models/props/prop-refrigerator.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.04,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 228,
+    "bytes": 25388
+  },
+  {
+    "id": "prop.toilet",
+    "category": "props",
+    "path": "assets/models/props/prop-toilet.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.52,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 228,
+    "bytes": 18900
+  },
+  {
+    "id": "prop.produce-bin",
+    "category": "props",
+    "path": "assets/models/props/prop-produce-bin.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.51,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 292,
+    "bytes": 30432
+  },
+  {
+    "id": "prop.cafe-table",
+    "category": "props",
+    "path": "assets/models/props/prop-cafe-table.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 264,
+    "bytes": 23368
+  },
+  {
+    "id": "prop.coffee-counter",
+    "category": "props",
+    "path": "assets/models/props/prop-coffee-counter.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.77,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 27816
+  },
+  {
+    "id": "prop.clothing-rack",
+    "category": "props",
+    "path": "assets/models/props/prop-clothing-rack.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 268,
+    "bytes": 24828
+  },
+  {
+    "id": "prop.electronics-display",
+    "category": "props",
+    "path": "assets/models/props/prop-electronics-display.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.68,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 252,
+    "bytes": 24812
+  },
+  {
+    "id": "prop.chilled-display",
+    "category": "props",
+    "path": "assets/models/props/prop-chilled-display.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 27064
+  },
+  {
+    "id": "prop.bakery-case",
+    "category": "props",
+    "path": "assets/models/props/prop-bakery-case.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.74,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 30092
+  },
+  {
+    "id": "prop.hardware-shelf",
+    "category": "props",
+    "path": "assets/models/props/prop-hardware-shelf.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.07,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 25200
+  },
+  {
+    "id": "prop.pharmacy-shelf",
+    "category": "props",
+    "path": "assets/models/props/prop-pharmacy-shelf.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.12,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 292,
+    "bytes": 25780
+  },
+  {
+    "id": "building.business-grocery-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-grocery-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11496
+  },
+  {
+    "id": "building.business-clothing-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-clothing-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11484
+  },
+  {
+    "id": "building.business-bakery-cafe-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-bakery-cafe-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11484
+  },
+  {
+    "id": "building.business-electronics-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-electronics-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11372
+  },
+  {
+    "id": "building.business-pharmacy-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-pharmacy-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11184
+  },
+  {
+    "id": "building.business-hardware-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-hardware-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11900
+  },
+  {
+    "id": "building.business-bookshop-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-bookshop-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11412
+  },
+  {
+    "id": "building.business-offices-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-offices-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 10364
+  },
+  {
+    "id": "building.business-depot-compact",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-depot-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 11236
+  },
+  {
+    "id": "building.business-grocery",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-grocery.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 29676
+  },
+  {
+    "id": "building.business-bakery-cafe",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-bakery-cafe.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 30504
+  },
+  {
+    "id": "building.business-clothing",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-clothing.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 25176
+  },
+  {
+    "id": "building.business-pharmacy",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-pharmacy.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 26772
+  },
+  {
+    "id": "building.business-electronics",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-electronics.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 30832
+  },
+  {
+    "id": "building.business-bookshop",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-bookshop.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 30296
+  },
+  {
+    "id": "building.business-hardware",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-hardware.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 30244
+  },
+  {
+    "id": "building.business-offices",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-offices.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 22288
+  },
+  {
+    "id": "building.business-depot",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-business-depot.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 20640
+  },
+  {
     "id": "overworld.deployable.defensive-battery",
     "category": "props",
     "path": "assets/models/props/overworld-deployable-defensive-battery.glb",

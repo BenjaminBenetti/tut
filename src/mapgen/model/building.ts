@@ -13,6 +13,10 @@ export interface Room {
   readonly rect: Rect;
   /** Flavour for later passes, e.g. `hall`, `office`, `storage`. */
   readonly kind?: string;
+  /** Architectural priority used to match public, principal and service uses. */
+  readonly layoutRole?: "arrival" | "main" | "service";
+  /** A planned functional slot resolved through the building's room programme. */
+  readonly layoutSlot?: string;
 }
 
 /** One storey of a building. Its tiles are those with matching `buildingId` and `y`. */
@@ -54,6 +58,8 @@ export interface Building {
   readonly id: string;
   /** Template id from `mapgen/data/building-templates`. */
   readonly kind: string;
+  /** Seeded programme variant, such as a shop's business type. */
+  readonly interiorStyle?: string;
   /** Union of rectangles. M1.5 emits one; the model allows L and T shapes. */
   readonly footprint: readonly Rect[];
   /** Layer of the flattened terrain under the building. */

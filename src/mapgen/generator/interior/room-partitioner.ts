@@ -1,10 +1,12 @@
 import type { Rect } from "../../../core/model/grid";
 import type { Rng } from "../../../core/model/rng";
 import { RoomKindIds } from "../../data/room-kind-ids";
-import type { Room } from "../../model/building";
+import type { Entrance, Room } from "../../model/building";
+import type { ArchitecturalFloorPlan } from "../../model/architectural-plan";
 import type { InteriorPlan } from "../../model/building-template";
 import type { MapDraft } from "../../model/map-draft";
 import type { IntRange } from "../../model/settlement-definition";
+import { planArchitecturalFloor } from "./architectural-floor-planner";
 
 // ===========================================
 // Constants
@@ -28,20 +30,32 @@ export interface FloorPlan {
   readonly roomSize: IntRange;
   /** The corridor inside the footprint, spanning its long axis, if any. */
   readonly corridor?: Rect;
+  /** Planned public/private regions and doorways, shared by all storeys. */
+  readonly architecture?: ArchitecturalFloorPlan;
 }
 
 /**
- * Lays the corridor for a footprint: the template's width along the long
- * axis, set so a room of at least `roomSize.min` fits on both sides.
- * Narrows the corridor a tile at a time when the footprint is too tight
- * and drops it when even one tile leaves no room for rooms.
+ * Plans purpose-built public/private spaces around the entrance when an
+ * architectural policy is supplied. Generic templates retain a corridor
+ * along the long axis, narrowed when needed to fit rooms on either side.
  */
 export function planFloor(
   footprint: Rect,
   plan: InteriorPlan,
   rng: Rng,
+  entrance?: Entrance,
 ): FloorPlan {
   const { roomSize } = plan;
+  if (plan.architecture !== undefined && entrance !== undefined) {
+    const architecture = planArchitecturalFloor(
+      footprint,
+      entrance,
+      plan.architecture,
+      plan.corridorWidth,
+      rng,
+    );
+    if (architecture !== undefined) return { roomSize, architecture };
+  }
   const alongX = footprint.w >= footprint.d;
   const short = alongX ? footprint.d : footprint.w;
   for (let width = plan.corridorWidth; width >= 1; width--) {
@@ -63,8 +77,8 @@ export function planFloor(
 // ===========================================
 
 /**
- * Cuts one floor of a building into rooms, writing the interior walls and
- * doors into the draft and tagging the floor's tiles with their room.
+ * Writes a building's architectural regions and doorways, or partitions
+ * a generic template recursively, tagging every tile with its room.
  *
  * With a corridor, each side of it is a strip of rooms `roomSize` long
  * along the corridor, every room with one door onto the corridor, and a
@@ -96,6 +110,24 @@ export function partitionFloor(
   rng: Rng,
 ): Room[] {
   const rooms: Room[] = [];
+  if (plan.architecture !== undefined) {
+    for (const partition of plan.architecture.partitions) {
+      draft.setWall(
+        { x: partition.x, y, z: partition.z },
+        partition.side,
+        partition.kind,
+      );
+    }
+    return plan.architecture.rooms.map((planned) => ({
+      ...makeRoom(planned.rect, planned.kind),
+      ...(planned.layoutRole === undefined
+        ? {}
+        : { layoutRole: planned.layoutRole }),
+      ...(planned.layoutSlot === undefined
+        ? {}
+        : { layoutSlot: planned.layoutSlot }),
+    }));
+  }
   const { roomSize, corridor } = plan;
   if (corridor === undefined) {
     split(footprint);

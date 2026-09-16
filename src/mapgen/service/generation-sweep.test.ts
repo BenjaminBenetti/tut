@@ -98,48 +98,49 @@ interface Golden {
   readonly checksum: number;
 }
 
+// Repinned for balanced businesses, entrance-oriented architecture and specialist shop furniture.
 const GOLDENS: readonly Golden[] = [
   {
     seed: "golden-temperate",
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 2978803522,
+    checksum: 4166501603,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 711408447,
+    checksum: 1950351720,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 562053710,
+    checksum: 1959862920,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 2662593970,
+    checksum: 3725587845,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 2799932634,
+    checksum: 537109768,
   },
   {
     seed: "golden-city",
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 1043168028,
+    checksum: 3534312375,
   },
 ];
 

@@ -18,9 +18,15 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { resolveBuildingFrontages } from "./building-frontage-resolver";
 import { TacticalMapView } from "../view/tactical-map-view";
 import { createGhostUniforms } from "./ghost-cutaway";
+import { wallPart } from "../model/map-part";
+import { BUSINESS_NAMES } from "../data/business-names";
 
 /** A real perimeter, two floors, roof and central door, with room outside all four sides. */
-function fixture(kind = "apartment", side: Direction = "s"): TacticalMap {
+function fixture(
+  kind = "apartment",
+  side: Direction = "s",
+  interiorStyle?: string,
+): TacticalMap {
   const b = new FixtureMapBuilder(12, 12, 8).fillGround(2, SurfaceIds.GRASS);
   for (let z = 3; z <= 7; z++)
     for (let x = 3; x <= 7; x++) {
@@ -52,6 +58,7 @@ function fixture(kind = "apartment", side: Direction = "s"): TacticalMap {
   const building: Building = {
     id: "home",
     kind,
+    ...(interiorStyle === undefined ? {} : { interiorStyle }),
     footprint: [{ x: 3, z: 3, w: 5, d: 5 }],
     groundLevel: 2,
     floors: [
@@ -104,7 +111,7 @@ describe("building use cues", () => {
           .size,
       ).toBe(1);
     expect(resolve(fixture("warehouse")).map((p) => p.modelId)).toEqual([
-      "building.warehouse-entry",
+      "building.business-depot",
     ]);
   });
 
@@ -213,7 +220,7 @@ describe("building use cues", () => {
       ),
     ).toBe(true);
     expect(resolve(fixture("tower")).map((p) => p.modelId)).toEqual([
-      "building.workplace-entry",
+      "building.business-offices",
     ]);
     expect(resolve(fixture("unknown"))).toEqual([]);
   });
@@ -375,6 +382,300 @@ describe("building use cues", () => {
     window.getMatrixAt(0, matrix);
     expect(matrix.determinant()).not.toBe(0);
     expect(prototype.material.name).not.toContain("ghosted");
+    view.dispose();
+    prototype.geometry.dispose();
+    prototype.material.dispose();
+  });
+});
+
+describe("business identity frontages", () => {
+  it.each([
+    ["grocery", "building.business-grocery"],
+    ["bakery-cafe", "building.business-bakery-cafe"],
+    ["pharmacy", "building.business-pharmacy"],
+    ["clothing", "building.business-clothing"],
+    ["electronics", "building.business-electronics"],
+    ["hardware", "building.business-hardware"],
+    ["bookshop", "building.business-bookshop"],
+  ])(
+    "matches the %s business on the saved building without changing the map",
+    (identity, modelId) => {
+      const map = fixture("shop", "s", identity);
+      const before = JSON.stringify(map);
+      const result = resolve(map);
+      expect(result.map((placement) => placement.modelId)).toEqual([modelId]);
+      const sign = result[0]!.businessSign!;
+      expect(sign.kind).toBe(identity);
+      expect(Number.isInteger(sign.nameIndex)).toBe(true);
+      expect(sign.nameIndex).toBeGreaterThanOrEqual(0);
+      expect(sign.nameIndex).toBeLessThan(BUSINESS_NAMES[sign.kind].length);
+      expect(resolve(map)).toEqual(result);
+      expect(resolve(JSON.parse(before) as TacticalMap)).toEqual(result);
+      const door = map.buildings[0]!.entrances[0]!.tile;
+      expect(result[0]!.part).toBe(
+        wallPart(new TileIndex(map).keyOf(door), "s"),
+      );
+      expect(result[0]!.tile).toEqual(door);
+      expect(result[0]!.level).toBe(door.y);
+      expect(result[0]!.position.y).toBeCloseTo(door.y * 0.75 + 0.15 + 1.08);
+      expect(JSON.stringify(map)).toBe(before);
+    },
+  );
+
+  it("keeps generic shop styling for absent or unknown interior identities", () => {
+    expect(resolve(fixture("shop"))[0]!.businessSign).toBeUndefined();
+    for (const identity of [
+      "future-business",
+      "constructor",
+      "toString",
+      "__proto__",
+    ]) {
+      expect(resolve(fixture("shop", "s", identity))).toEqual(
+        resolve(fixture("shop")),
+      );
+    }
+    expect(resolve(fixture("house", "s", "grocery"))).toEqual(
+      resolve(fixture("house")),
+    );
+    expect(resolve(fixture("constructor"))).toEqual([]);
+  });
+
+  it.each(DIRECTIONS)(
+    "orients a business canopy away from the %s facade",
+    (side) => {
+      const map = fixture("shop", side, "pharmacy");
+      const placement = resolve(map)[0]!;
+      const direction = new Vector3(0, 0, 1).applyAxisAngle(
+        new Vector3(0, 1, 0),
+        (-placement.turns * Math.PI) / 2,
+      );
+      const outward = stepGridPos({ x: 0, y: 0, z: 0 }, side);
+      expect(direction.x).toBeCloseTo(outward.x);
+      expect(direction.z).toBeCloseTo(outward.z);
+      expect(placement.modelId).toBe("building.business-pharmacy");
+    },
+  );
+
+  it.each([
+    ["shop", "grocery", "grocery"],
+    ["shop", "bakery-cafe", "bakery-cafe"],
+    ["shop", "pharmacy", "pharmacy"],
+    ["shop", "clothing", "clothing"],
+    ["shop", "electronics", "electronics"],
+    ["shop", "hardware", "hardware"],
+    ["shop", "bookshop", "bookshop"],
+    ["tower", undefined, "offices"],
+    ["warehouse", undefined, "depot"],
+  ])(
+    "retains %s/%s identity in a compact module beside a ladder",
+    (kind, identity, expected) => {
+      const map = fixture(kind, "s", identity);
+      const next: TacticalMap = {
+        ...map,
+        connectors: [
+          {
+            id: "ladder",
+            kind: "ladder",
+            pass: 1,
+            buildingId: "home",
+            from: { x: 6, y: 2, z: 8 },
+            to: { x: 6, y: 6, z: 7 },
+          },
+        ],
+      };
+      expect(resolve(next).map((placement) => placement.modelId)).toEqual([
+        `building.business-${expected}-compact`,
+      ]);
+      expect(resolve(next)[0]!.businessSign).toBeUndefined();
+      const blocked = {
+        ...next,
+        connectors: next.connectors.map((connector) => ({
+          ...connector,
+          from: { ...connector.from, x: 5 },
+          to: { ...connector.to, x: 5 },
+        })),
+      };
+      expect(resolve(blocked)).toEqual([]);
+    },
+  );
+
+  it("shares one business name across every entrance of a building", () => {
+    const map = fixture("shop", "s", "bookshop");
+    const rearDoor = { x: 5, y: 2, z: 3 };
+    const bothEntrances: TacticalMap = {
+      ...map,
+      buildings: map.buildings.map((building) => ({
+        ...building,
+        entrances: [...building.entrances, { tile: rearDoor, side: "n" }],
+      })),
+      tiles: map.tiles.map((tile) =>
+        tile.x === rearDoor.x && tile.y === rearDoor.y && tile.z === rearDoor.z
+          ? { ...tile, walls: { ...tile.walls, n: "door" } }
+          : tile,
+      ),
+    };
+    const signs = resolve(bothEntrances);
+    expect(signs).toHaveLength(2);
+    expect(signs[0]!.businessSign).toEqual(signs[1]!.businessSign);
+    expect(signs[0]!.businessSign).toEqual(resolve(map)[0]!.businessSign);
+  });
+
+  it("uses the compact identity at a corner and does not overlap adjacent entrance canopies", () => {
+    const map = fixture("shop", "s", "electronics");
+    const corner = { x: 3, y: 2, z: 7 };
+    const cornerMap: TacticalMap = {
+      ...map,
+      buildings: map.buildings.map((building) => ({
+        ...building,
+        entrances: [{ tile: corner, side: "s" }],
+      })),
+      tiles: map.tiles.map((tile) =>
+        tile.x === 3 && tile.y === 2 && tile.z === 7
+          ? { ...tile, walls: { ...tile.walls, s: "door" } }
+          : tile,
+      ),
+    };
+    expect(resolve(cornerMap).map((placement) => placement.modelId)).toEqual([
+      "building.business-electronics-compact",
+    ]);
+    const adjacent = { x: 6, y: 2, z: 7 };
+    const twoDoors: TacticalMap = {
+      ...map,
+      buildings: map.buildings.map((building) => ({
+        ...building,
+        entrances: [...building.entrances, { tile: adjacent, side: "s" }],
+      })),
+      tiles: map.tiles.map((tile) =>
+        tile.x === 6 && tile.y === 2 && tile.z === 7
+          ? { ...tile, walls: { ...tile.walls, s: "door" } }
+          : tile,
+      ),
+    };
+    expect(resolve(twoDoors).map((placement) => placement.modelId)).toEqual([
+      "building.business-electronics",
+    ]);
+  });
+
+  it("rejects canopies that would collide across a narrow passage", () => {
+    const builder = new FixtureMapBuilder(12, 18, 4).fillGround(2, "grass");
+    for (const [id, front, side] of [
+      ["one", 3, "s"],
+      ["two", 9, "n"],
+    ] as const) {
+      for (let z = front; z < front + 5; z++)
+        for (let x = 3; x <= 7; x++) {
+          const tile = { x, y: 2, z };
+          builder.tile(tile, "floor", { buildingId: id, floorIndex: 0 });
+          if (x === 3) builder.wall(tile, "w", "solid");
+          if (x === 7) builder.wall(tile, "e", "solid");
+          if (z === front) builder.wall(tile, "n", "solid");
+          if (z === front + 4) builder.wall(tile, "s", "solid");
+        }
+      const tile = { x: 5, y: 2, z: side === "s" ? front + 4 : front };
+      builder.wall(tile, side, "door");
+      builder.building({
+        id,
+        kind: "shop",
+        interiorStyle: "grocery",
+        groundLevel: 2,
+        footprint: [{ x: 3, z: front, w: 5, d: 5 }],
+        floors: [{ index: 0, y: 2, rooms: [] }],
+        entrances: [{ tile, side }],
+        roof: { kind: "flat", walkable: false },
+        connectorIds: [],
+      });
+    }
+    const result = resolve(builder.build());
+    expect(result.map((placement) => placement.modelId)).toEqual([
+      "building.business-grocery",
+    ]);
+  });
+
+  it("keeps the identity when a tall prop requires the compact fallback", () => {
+    const map = fixture("shop", "s", "hardware");
+    const blocked: TacticalMap = {
+      ...map,
+      props: [
+        {
+          id: "obstruction",
+          kind: "tree-pine",
+          tile: { x: 6, y: 2, z: 8 },
+          rotation: 0,
+        },
+      ],
+    };
+    expect(resolve(blocked).map((placement) => placement.modelId)).toEqual([
+      "building.business-hardware-compact",
+    ]);
+    expect(
+      resolve({
+        ...blocked,
+        props: blocked.props.map((prop) => ({
+          ...prop,
+          tile: { ...prop.tile, x: 5 },
+        })),
+      }),
+    ).toEqual([]);
+  });
+
+  it("uses owner fog and storey cuts and falls permanently with its entrance wall", async () => {
+    const map = fixture("shop", "s", "pharmacy");
+    const index = new TileIndex(map);
+    const door = map.buildings[0]!.entrances[0]!.tile;
+    const prototype = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+    const view = new TacticalMapView(map, createGhostUniforms(4, 0.175));
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    await view.loadModels({
+      preload: () => Promise.resolve(),
+      load: () => Promise.resolve(prototype.clone()),
+    });
+    let sign: InstancedMesh | undefined;
+    view.root.traverse((object) => {
+      if (
+        object instanceof InstancedMesh &&
+        object.name.startsWith("frontages-model:building.business-pharmacy:")
+      )
+        sign = object;
+    });
+    expect(sign).toBeDefined();
+    const instance = sign!;
+    expect((instance.material as MeshStandardMaterial).name).toContain(
+      "ghosted",
+    );
+    expect(instance.geometry.getAttribute("unexploredMist").getW(0)).toBe(1);
+    view.setVision({
+      visible: [index.keyOf(door)],
+      explored: [],
+      spotted: [],
+      lastSeen: {},
+    });
+    expect(instance.geometry.getAttribute("unexploredMist").getW(0)).toBe(0);
+    view.setLayerFocus({ storey: 0, storeyCount: 2 });
+    const matrix = new Matrix4();
+    instance.getMatrixAt(0, matrix);
+    expect(matrix.determinant()).not.toBe(0);
+    view.setMaxLevel(door.y - 1);
+    expect(view.root.getObjectByName(`level-${door.y}`)?.visible).toBe(false);
+    view.setMaxLevel(undefined);
+    const destroyed = {
+      ...map,
+      tiles: map.tiles.map((tile) => {
+        if (tile.x === door.x && tile.y === door.y && tile.z === door.z)
+          return { ...tile, walls: { ...tile.walls, s: undefined } };
+        if (tile.x === door.x && tile.y === door.y && tile.z === door.z + 1)
+          return { ...tile, walls: { ...tile.walls, n: undefined } };
+        return tile;
+      }),
+    };
+    view.applyMap(destroyed);
+    expect(view.demolishedParts()).toContain(wallPart(index.keyOf(door), "s"));
+    instance.getMatrixAt(0, matrix);
+    expect(matrix.determinant()).toBe(0);
+    view.setLayerFocus(undefined);
+    view.setVision(undefined);
+    instance.getMatrixAt(0, matrix);
+    expect(matrix.determinant()).toBe(0);
+    expect(resolve(destroyed)).toEqual([]);
     view.dispose();
     prototype.geometry.dispose();
     prototype.material.dispose();

@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 
+import { manhattanDistance } from "../../../core/service/grid-math";
+import { Mulberry32Rng } from "../../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { PropKindIds } from "../../data/props";
 import { SurfaceIds } from "../../data/surfaces";
 import { MapDraft } from "../../model/map-draft";
+import { HookKinds } from "../../model/hook";
+import { PassMask } from "../../model/pass-mask";
 import type { TileCoord } from "../../model/tile-coord";
 import type { WallKind } from "../../model/wall";
-import { hasFiringLine } from "./egg-spawner-placer";
+import { createDefaultRegistries } from "../../service/default-registries";
+import { DiagnosticsCollector } from "../../service/diagnostics-collector";
+import { resolveMapGenParams } from "../../service/param-resolver";
+import { EggSpawnerPlacer, hasFiringLine } from "./egg-spawner-placer";
 
 // ===========================================
 // Fixture
@@ -45,6 +52,67 @@ function room(east: WallKind | undefined): {
 }
 
 const anywhere = (): boolean => true;
+
+describe("EggSpawnerPlacer", () => {
+  it("keeps the first outdoor fallback near deploy when nearby interiors have no firing line", () => {
+    const draft = new MapDraft(
+      16,
+      16,
+      new SequentialIdGenerator(),
+      SurfaceIds.GRASS,
+    );
+    // The near room is reachable through a door, but has no window a
+    // mech could fire through. Plenty of nearby open ground remains.
+    for (const x of [2, 3]) {
+      const tile = { x, y: 0, z: 2 };
+      draft.setCovered(x, 2);
+      draft.addTile({
+        ...tile,
+        surface: SurfaceIds.FLOOR,
+        buildingId: "blind",
+      });
+      draft.setWall(tile, "n", "solid");
+      draft.setWall(tile, "s", "solid");
+    }
+    draft.setWall({ x: 2, y: 0, z: 2 }, "w", "door");
+    draft.setWall({ x: 3, y: 0, z: 2 }, "e", "solid");
+    const deploy = { x: 0, y: 0, z: 2 };
+    draft.addHook("deployZones", HookKinds.DEPLOY, [deploy], PassMask.ALL);
+    const registries = createDefaultRegistries();
+    const params = resolveMapGenParams(
+      {
+        archetype: "settlement",
+        biome: "temperate",
+        settlement: "town",
+        size: { width: 16, depth: 16 },
+        hooks: [],
+      },
+      registries,
+    );
+    new EggSpawnerPlacer().place(
+      {
+        kind: HookKinds.EGG_SPAWNER,
+        count: 1,
+        requiredPass: PassMask.INFANTRY,
+        minDistanceFromDeploy: 2,
+        maxNearestDistanceFromDeploy: 4,
+      },
+      {
+        draft,
+        params,
+        registries,
+        rng: new Mulberry32Rng(1),
+        diagnostics: new DiagnosticsCollector().forPass("hooks"),
+      },
+    );
+    const target = draft.hooks.objectives[0]?.tiles[0];
+    expect(target).toBeDefined();
+    if (target === undefined) return;
+    expect(draft.getTile(target)).toBeUndefined();
+    expect(manhattanDistance(deploy, target)).toBeLessThanOrEqual(4);
+    expect(hasFiringLine(draft, target, anywhere)).toBe(true);
+  });
+});
 
 describe("hasFiringLine", () => {
   it("finds a line out through a window", () => {

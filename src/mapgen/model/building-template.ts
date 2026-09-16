@@ -1,5 +1,10 @@
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { IntRange } from "./settlement-definition";
+import type {
+  BuildingInteriorVariant,
+  BuildingRoomProgram,
+} from "./building-room-program";
+import type { ArchitecturalPlan } from "./architectural-plan";
 
 // ===========================================
 // Building template
@@ -46,14 +51,25 @@ export interface BuildingTemplate {
  * ```
  */
 export interface InteriorPlan {
+  /** Entrance-oriented architectural organisation; omitted retains generic BSP. */
+  readonly architecture?: ArchitecturalPlan;
+  /** Seeded business/programme variants selected once per building. */
+  readonly roomProgramVariants?: readonly BuildingInteriorVariant[];
+  /** Uses assigned to rooms after partitioning; omitted by generic templates. */
+  readonly roomPrograms?: {
+    readonly ground: BuildingRoomProgram;
+    readonly upper: BuildingRoomProgram;
+  };
   /**
-   * Room edge the partitioner aims for, in tiles: no room edge is shorter
-   * than `min`, and a room is cut again while an edge exceeds `max`.
+   * Room edge the generic partitioner aims for, in tiles: no room edge is
+   * shorter than `min`. Architectural plans use their own service-room
+   * dimensions, retaining this range for the generic fallback.
    */
   readonly roomSize: IntRange;
   /**
-   * Corridor width in tiles along the footprint's long axis, shared by
-   * every floor so stairs land in it; 0 means no corridor. Narrowed or
+   * Preferred corridor width in tiles. Architectural plans can use a short
+   * private hall; generic plans run along the footprint's long axis, shared
+   * by every floor so stairs land in it. Zero means no corridor. Narrowed or
    * dropped when the footprint cannot hold a room on both sides.
    */
   readonly corridorWidth: number;

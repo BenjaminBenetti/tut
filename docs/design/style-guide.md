@@ -158,7 +158,10 @@ Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `
 Building frontage fabric uses flat `env-awning-green #56735F` and
 `env-awning-cream #D8D0B8`. These are untextured cloth colours; the grass and
 snow atlas cells would read as terrain painted onto the awning. Other frontage
-materials reuse the existing environment atlas.
+materials reuse the existing environment atlas. Business entrance signs use
+opaque prints with this palette: a trade color and pictogram, and a business name
+chosen from 50 authored names per type, with icon-only versions for narrow entrances. Their geometry,
+artwork and mounting rules are documented in [the business sign kit](kits/business-signs.md).
 
 Lagos planting uses `env-tropical-leaf #39714E`,
 `env-tropical-leaf-light #568358` and `env-palm-trunk #786348`.
@@ -186,6 +189,13 @@ open. Flush manholes and curb drains add no collision. Reproducible sources
 and footprints are listed in [the urban life kit](kits/urban-life-kit.md).
 
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
+
+Interior floor finishes use subdued material pairs: timber `#8B7050 / #967B5B`
+with `#68543E` seams, carpet `#65746A / #727B80` with `#59665E` weave,
+ceramic `#C3BEB0 / #B7C0BC` with `#96988D` grout, and concrete
+`#8E8A82 / #96928A` with `#7D7A72` joints. They are shared room finishes,
+not gameplay markings. Furniture reuses the existing environment tokens;
+see [the interior kit](kits/building-interiors.md).
 
 ### 4.4 UI
 

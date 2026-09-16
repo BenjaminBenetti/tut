@@ -3,10 +3,10 @@ import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
-import { RoomKindIds } from "../data/room-kind-ids";
 import { SurfaceIds } from "../data/surfaces";
-import type { Building, Floor, Room } from "../model/building";
+import type { Building, Floor } from "../model/building";
 import type { BuildingTemplate } from "../model/building-template";
+import type { BuildingInteriorVariant } from "../model/building-room-program";
 import { CONNECTOR_RULES, type Connector } from "../model/connector";
 import type { DiagnosticSink } from "../model/diagnostics";
 import type {
@@ -22,6 +22,8 @@ import {
   planFloor,
 } from "./interior/room-partitioner";
 import { placeStairs } from "./interior/stair-placer";
+import { assignRoomPurposes } from "./interior/room-programmer";
+import { selectInteriorVariant } from "./interior/interior-variant-selector";
 
 // ===========================================
 // Constants
@@ -39,8 +41,9 @@ const MAX_LADDER_CLIMB = 2 * STOREY_LAYERS;
 
 /**
  * Pass 5, part 2 (ADR 0004 §4.3, §4.5): rooms, stairs, roofs and ladders
- * for every shell the building pass raised. Each floor is bisected into
- * rooms with doors in the cuts; walkable roofs get `roof` tiles; one
+ * for every shell the building pass raised. Entrance-oriented plans give
+ * each building public, private and service spaces; generic templates use
+ * recursive partitioning. Walkable roofs get `roof` tiles; one
  * flight of stairs joins every consecutive pair of levels (roof
  * included), verified to keep the building connected; walkable roofs up
  * to two storeys up also get an exterior ladder where a free ground
@@ -70,14 +73,21 @@ export class InteriorPass implements GenerationPass {
     const { draft, rng, registries, diagnostics } = context;
     let stairs = 0;
     let ladders = 0;
+    const variantUse = new Map<string, number>();
     draft.buildings.forEach((building, index) => {
       const template = registries.buildingTemplates.get(building.kind);
+      const variant = selectInteriorVariant(
+        template.interior.roomProgramVariants ?? [],
+        variantUse,
+        rng.fork(`${building.id}-identity`),
+      );
       const furnished = furnish(
         draft,
         building,
         template,
         rng.fork(building.id),
         diagnostics,
+        variant,
       );
       draft.buildings[index] = furnished;
       stairs += furnished.connectorIds.length;
@@ -102,6 +112,7 @@ function furnish(
   template: BuildingTemplate,
   rng: Rng,
   diagnostics: DiagnosticSink,
+  variant?: BuildingInteriorVariant,
 ): Building {
   const footprint = building.footprint[0];
   const entrance = building.entrances[0];
@@ -110,7 +121,12 @@ function furnish(
   }
   // One plan per building: every floor shares the corridor, so the
   // stairs from one floor land in the corridor of the next (#829).
-  const plan = planFloor(footprint, template.interior, rng.fork("plan"));
+  const plan = planFloor(
+    footprint,
+    template.interior,
+    rng.fork("plan"),
+    entrance,
+  );
   const floors = building.floors.map((floor) =>
     withRooms(
       draft,
@@ -121,6 +137,7 @@ function furnish(
       plan,
       entrance.tile,
       rng,
+      variant,
     ),
   );
   const roofY = building.groundLevel + building.floors.length * STOREY_LAYERS;
@@ -174,7 +191,12 @@ function furnish(
       connectors.push(ladder);
     }
   }
-  return { ...building, floors, connectorIds: connectors.map((c) => c.id) };
+  return {
+    ...building,
+    ...(variant === undefined ? {} : { interiorStyle: variant.id }),
+    floors,
+    connectorIds: connectors.map((c) => c.id),
+  };
 }
 
 /** Partitions one floor and labels its rooms. */
@@ -187,6 +209,7 @@ function withRooms(
   plan: FloorPlan,
   entrance: TileCoord,
   rng: Rng,
+  variant?: BuildingInteriorVariant,
 ): Floor {
   const rooms = partitionFloor(
     draft,
@@ -196,37 +219,20 @@ function withRooms(
     footprint,
     plan,
     rng.fork(`rooms-${floor.index}`),
-  ).map((room): Room => ({
-    ...room,
-    kind: roomKind(room, floor, entrance, template),
-  }));
-  return { ...floor, rooms };
-}
-
-/**
- * Warehouses are storage throughout; elsewhere the entrance room is the
- * hall (a corridor the door opens into included), a corridor keeps its
- * kind, a shop's other ground-floor rooms are storage, the rest are rooms.
- */
-function roomKind(
-  room: Room,
-  floor: Floor,
-  entrance: TileCoord,
-  template: BuildingTemplate,
-): string {
-  if (template.id === "warehouse") {
-    return RoomKindIds.STORAGE;
-  }
-  const groundFloor = floor.y === entrance.y;
-  if (groundFloor && rectContains(room.rect, entrance.x, entrance.z)) {
-    return RoomKindIds.HALL;
-  }
-  if (room.kind !== undefined) {
-    return room.kind;
-  }
-  return groundFloor && template.id === "shop"
-    ? RoomKindIds.STORAGE
-    : RoomKindIds.ROOM;
+  );
+  const groundFloor = floor.index === 0;
+  return {
+    ...floor,
+    rooms: assignRoomPurposes(
+      rooms,
+      (variant ?? template.interior.roomPrograms)?.[
+        groundFloor ? "ground" : "upper"
+      ],
+      entrance,
+      groundFloor,
+      rng.fork(`purposes-${floor.index}`),
+    ),
+  };
 }
 
 /** Adds walkable roof tiles over the whole footprint. */

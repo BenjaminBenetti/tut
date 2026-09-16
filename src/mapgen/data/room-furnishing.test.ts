@@ -31,4 +31,20 @@ describe("room furnishing", () => {
       }
     }
   });
+
+  it("gives every room a usable arrangement whose groups stay inside its catalogue", () => {
+    for (const entry of furnishing.values) {
+      expect(entry.arrangements?.length, entry.id).toBeGreaterThan(0);
+      for (const arrangement of entry.arrangements ?? []) {
+        expect(arrangement.groups.length, entry.id).toBeGreaterThan(0);
+        for (const group of arrangement.groups) {
+          expect(group.count, entry.id).toBeGreaterThan(0);
+          expect(group.props.length, entry.id).toBeGreaterThan(0);
+          expect(group.spacing ?? 1, entry.id).toBeGreaterThanOrEqual(1);
+          for (const kind of group.props)
+            expect(entry.props, entry.id).toContain(kind);
+        }
+      }
+    }
+  });
 });

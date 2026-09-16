@@ -26,6 +26,56 @@ import { resolveMapModels, mapModelIds } from "./map-model-resolver";
 import { createGhostUniforms } from "./ghost-cutaway";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
 import { DEFAULT_MISSION_HOOKS } from "../../mapgen/data/hook-requirements";
+import { createRegistry } from "../../core/service/definition-registry";
+import type { MapGenRegistries } from "../../mapgen/model/registries";
+import { createDefaultRegistries } from "../../mapgen/service/default-registries";
+
+/** Pins the reported maps' building inputs so roof regressions do not follow settlement tuning. */
+function reportedRoofRegistries(): MapGenRegistries {
+  const registries = createDefaultRegistries();
+  return {
+    ...registries,
+    biomes: createRegistry(
+      "biome",
+      registries.biomes.values.map((biome) => {
+        if (biome.id === "temperate")
+          return {
+            ...biome,
+            buildingKinds: [
+              { template: "house", weight: 5 },
+              { template: "apartment", weight: 3 },
+              { template: "shop", weight: 2 },
+              { template: "warehouse", weight: 1 },
+              { template: "tower", weight: 1 },
+            ],
+          };
+        if (biome.id === "snowy")
+          return {
+            ...biome,
+            buildingKinds: [
+              { template: "house", weight: 5 },
+              { template: "apartment", weight: 3 },
+              { template: "warehouse", weight: 2 },
+              { template: "shop", weight: 1 },
+            ],
+          };
+        return biome;
+      }),
+    ),
+    buildingTemplates: createRegistry(
+      "building template",
+      registries.buildingTemplates.values.map((template) =>
+        template.id === "shop"
+          ? {
+              ...template,
+              footprintWidth: { ...template.footprintWidth, min: 8 },
+              scales: ["town", "city"] as const,
+            }
+          : template,
+      ),
+    ),
+  };
+}
 /** Uses shipped positions, normals and UVs; image decoding is unnecessary for ray tests. */
 function shippedModels(): ModelLoader {
   const cache = new Map<ModelAssetId, Promise<Object3D>>();
@@ -244,17 +294,20 @@ describe("pitched roof shelter (#916)", () => {
   }
   for (const biome of ["temperate", "snowy"] as const)
     it(`${biome}: covers all 120 house cells without changing map data`, () => {
-      const map = generateTacticalMap({
-        seed: "mc-opening-01",
-        params: {
-          archetype: "settlement",
-          biome,
-          settlement: "rural",
-          size: "small",
-          hooks: DEFAULT_MISSION_HOOKS,
-          slopeShare: 1,
+      const map = generateTacticalMap(
+        {
+          seed: "mc-opening-01",
+          params: {
+            archetype: "settlement",
+            biome,
+            settlement: "rural",
+            size: "small",
+            hooks: DEFAULT_MISSION_HOOKS,
+            slopeShare: 1,
+          },
         },
-      });
+        { registries: reportedRoofRegistries() },
+      );
       const original = JSON.stringify(map),
         placements = resolveMapModels(map);
       expect(placements.roofs).toHaveLength(120);
@@ -267,17 +320,20 @@ describe("pitched roof shelter (#916)", () => {
       expect(JSON.stringify(map)).toBe(original);
     });
   it("leaves the existing flat-roof control on its unchanged tile/art path", () => {
-    const map = generateTacticalMap({
-      seed: "mc-opening-02",
-      params: {
-        archetype: "settlement",
-        biome: "temperate",
-        settlement: "town",
-        size: "small",
-        hooks: DEFAULT_MISSION_HOOKS,
-        slopeShare: 1,
+    const map = generateTacticalMap(
+      {
+        seed: "mc-opening-02",
+        params: {
+          archetype: "settlement",
+          biome: "temperate",
+          settlement: "town",
+          size: "small",
+          hooks: DEFAULT_MISSION_HOOKS,
+          slopeShare: 1,
+        },
       },
-    });
+      { registries: reportedRoofRegistries() },
+    );
     const placements = resolveMapModels(map);
     expect(placements.roofs).toHaveLength(0);
     expect(

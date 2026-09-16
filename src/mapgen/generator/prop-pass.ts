@@ -1,4 +1,3 @@
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { BiomeId } from "../../content/model/biome-id";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Rng } from "../../core/model/rng";
@@ -10,13 +9,12 @@ import type {
   BiomeDefinition,
   VegetationEntry,
 } from "../model/biome-definition";
-import type { Building } from "../model/building";
 import type {
   DraftCapability,
   GenerationContext,
   GenerationPass,
 } from "../model/generation-pass";
-import type { DraftTile, MapDraft } from "../model/map-draft";
+import type { MapDraft } from "../model/map-draft";
 import type { PropDefinition, Rotation } from "../model/prop";
 import type { MapGenRegistries } from "../model/registries";
 import type { ResolvedMapGenParams } from "../model/resolved-params";
@@ -24,7 +22,7 @@ import type { ColumnCoord } from "../model/road";
 import type { TileCoord } from "../model/tile-coord";
 import { isOpenGround, isRoadAt } from "../service/draft-queries";
 import { propPlacementTiles } from "../service/prop-footprint";
-import { unreachableInteriorTiles } from "./interior/building-reachability";
+import { furnishBuildingInteriors } from "./interior/room-furnisher";
 import type { Axis } from "./road/road-builder";
 
 // ===========================================
@@ -187,9 +185,9 @@ export class PropPass implements GenerationPass {
       );
     }
     if (this.placements.has("interior")) {
-      counts.interior = placeInteriorProps(
+      counts.interior = furnishBuildingInteriors(
         draft,
-        params.biome,
+        params.biome.id,
         registries,
         blocked,
         rng.fork("interior"),
@@ -587,106 +585,6 @@ function touchesBuildingOrSidewalk(
 }
 
 // ===========================================
-// Interior props
-// ===========================================
-
-/**
- * Furnishes every room from its kind's `RoomFurnishing` (rooms of a kind
- * with no entry stay bare), reverting any prop that would cut part of
- * the building off; returns how many stayed.
- */
-function placeInteriorProps(
-  draft: MapDraft,
-  biome: BiomeDefinition,
-  registries: MapGenRegistries,
-  blocked: ReadonlySet<number>,
-  rng: Rng,
-): number {
-  let placed = 0;
-  for (const building of draft.buildings) {
-    const entrance = building.entrances[0];
-    if (entrance === undefined) {
-      continue;
-    }
-    const own = draft.connectors.filter((c) =>
-      building.connectorIds.includes(c.id),
-    );
-    const topLevel =
-      building.groundLevel + building.floors.length * STOREY_LAYERS;
-    for (const floor of building.floors) {
-      for (const room of floor.rooms) {
-        const furnishing =
-          room.kind === undefined
-            ? undefined
-            : registries.roomFurnishing.find(room.kind);
-        if (furnishing === undefined) {
-          continue;
-        }
-        const kinds = furnishing.props.filter((kind) =>
-          allowedIn(registries.props.get(kind), biome.id, "interior"),
-        );
-        if (kinds.length === 0) {
-          continue;
-        }
-        const candidates = rng.shuffle(
-          roomTiles(draft, building, floor.y, room.rect, blocked),
-        );
-        const quota = Math.min(
-          furnishing.maxProps,
-          Math.floor((room.rect.w * room.rect.d) / furnishing.tilesPerProp),
-        );
-        for (const tile of candidates.slice(0, quota)) {
-          const prop = draft.addProp(
-            rng.pick(kinds),
-            tile,
-            randomRotation(rng),
-          );
-          const cutOff = unreachableInteriorTiles(
-            draft,
-            building.id,
-            own,
-            entrance.tile,
-            topLevel,
-          );
-          if (cutOff.length > 0) {
-            draft.removeProp(prop.id);
-          } else {
-            placed++;
-          }
-        }
-      }
-    }
-  }
-  return placed;
-}
-
-/** Floor tiles of a room that may hold a prop. */
-function roomTiles(
-  draft: MapDraft,
-  building: Building,
-  y: number,
-  rect: { x: number; z: number; w: number; d: number },
-  blocked: ReadonlySet<number>,
-): DraftTile[] {
-  const tiles: DraftTile[] = [];
-  for (let z = rect.z; z < rect.z + rect.d; z++) {
-    for (let x = rect.x; x < rect.x + rect.w; x++) {
-      const tile = draft.getTile({ x, y, z });
-      if (
-        tile?.buildingId === building.id &&
-        tile.surface === SurfaceIds.FLOOR &&
-        !blocked.has(draft.tileKey(tile)) &&
-        !hasDoor(draft, tile) &&
-        draft.propAt(tile) === undefined
-      ) {
-        tiles.push(tile);
-      }
-    }
-  }
-  return tiles;
-}
-
-// ===========================================
 // Shared helpers
 // ===========================================
 
@@ -708,13 +606,6 @@ function hasAdjacentProp(draft: MapDraft, coord: TileCoord): boolean {
     const next = stepGridPos(coord, direction);
     return draft.inBounds(next.x, next.z) && draft.propAt(next) !== undefined;
   });
-}
-
-/** True when any edge of the tile holds a door. */
-function hasDoor(draft: MapDraft, tile: TileCoord): boolean {
-  return DIRECTIONS.some(
-    (direction) => draft.wallAt(tile, direction) === "door",
-  );
 }
 
 /** Every road column on the draft. */

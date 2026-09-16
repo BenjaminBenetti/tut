@@ -1,3 +1,6 @@
+import type { InteriorFloorAppearance } from "../model/interior-floor-style";
+import type { BusinessSignAppearance } from "../model/business-sign-appearance";
+import { resolveInteriorFloors } from "./interior-floor-resolver";
 import type { MapPartId } from "../model/map-part";
 import { propPart, wallPart } from "../model/map-part";
 import type { ModelAssetId } from "../../content/data/model-ids";
@@ -44,6 +47,7 @@ import { resolveStreetDetails } from "./street-detail-resolver";
 import { resolveStreetSurfaces } from "./street-surface-resolver";
 import { resolveRoofDetails } from "./roof-detail-resolver";
 import {
+  propAppearanceOffset,
   propAppearanceScale,
   propModelVariation,
 } from "./prop-appearance-resolver";
@@ -73,6 +77,10 @@ export interface ModelPlacement {
   readonly scaleZ?: number;
   /** Modular road surface/details; shared by every instance with the same appearance. */
   readonly road?: RoadAppearance;
+  /** Room finish applied to the authored floor, shared by every tile in that room. */
+  readonly interiorFloor?: InteriorFloorAppearance;
+  /** Authored fascia name selected per building; compact icon modules keep their original print. */
+  readonly businessSign?: BusinessSignAppearance;
   /** A diagonal plane or adjacent surface fitted to its shared corner heights. */
   readonly terrain?: TerrainSlopeAppearance;
   /** A full-tile ramp borrows its lower support's surface and retires that slab. */
@@ -282,6 +290,7 @@ function resolveTiles(
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
   const terrain = resolveTerrainSlopeAppearances(map, index);
+  const floors = resolveInteriorFloors(map, index);
   for (const tile of map.tiles) {
     if (rampFeet.has(index.keyOf(tile))) continue;
     const appearance = terrain.get(index.keyOf(tile));
@@ -343,6 +352,9 @@ function resolveTiles(
       },
       turns: fitted.turns,
       ...(road ? { road } : {}),
+      ...(floors.has(index.keyOf(tile))
+        ? { interiorFloor: floors.get(index.keyOf(tile)) }
+        : {}),
       tile: { x: tile.x, y: tile.y, z: tile.z },
     });
   }
@@ -522,7 +534,7 @@ function wallCentre(tile: Tile, side: Direction): Vec3 {
 // Props
 // ===========================================
 
-/** One prop per record, at its tile's base centre, turned as mapgen placed it. */
+/** One prop per record, with indoor furniture fitted back toward its supporting wall. */
 function resolveProps(
   map: TacticalMap,
   index: TileIndex,
@@ -535,13 +547,14 @@ function resolveProps(
       continue;
     }
     const bounds = propBounds(prop);
+    const offset = propAppearanceOffset(prop, tile, appearance.turns);
     placements.push({
       modelId: appearance.modelId,
       level: tile.y,
       position: {
-        x: bounds.x + bounds.w / 2,
+        x: bounds.x + bounds.w / 2 + offset.x,
         y: tileTop(tile.y),
-        z: bounds.z + bounds.d / 2,
+        z: bounds.z + bounds.d / 2 + offset.z,
       },
       turns: appearance.turns,
       ...propAppearanceScale(prop, map.recipe.seed),

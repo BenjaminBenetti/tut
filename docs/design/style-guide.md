@@ -206,6 +206,8 @@ Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour
 
 Contrast: all text on `ui-panel` meets WCAG AA (`ui-text-dim` on `ui-panel` is 6.3:1).
 
+**Infestation ramp** (`src/graphics/view/infestation-ramp.ts`, `INFESTATION_RAMP`): city markers and region fills sample one ramp so a region and the cities in it agree. Four evenly spaced stops: `ui-ok` `#7CCB5A` (clean) → `ui-bug` `#9CFF3D` → `ui-warn` `#F0C63C` → `#FF2A1E` (overrun). The top stop is deliberately hotter than `ui-danger`: at the territory fill's opacity `#E0453C` read as a muted brick next to the yellow stop (#1151), and a fully overrun region has to be the loudest thing on the map.
+
 ## 5. UI style
 
 Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom properties (`--ui-*`) and provides the `.tut-*` components below (panel, button, label, data, table, badge, meter, top bar, icon). Icons are registered in `src/ui/data/icon-manifest.ts`. Preview: `docs/design/ui-theme-preview.png`, built from `tools/art/preview/ui-theme.html`.

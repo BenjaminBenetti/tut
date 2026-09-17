@@ -49,7 +49,9 @@ export function buildPopover(
   const first = describeDeployableEffect(type, 1);
   const lines: PopoverLine[] = first.effects.map(body);
   lines.push(
-    dim(`Build ${formatCredits(first.cost)} · upkeep ${formatCredits(first.upkeepPerDay)}/day`),
+    dim(
+      `Build ${formatCredits(first.cost)} · upkeep ${formatCredits(first.upkeepPerDay)}/day`,
+    ),
     dim(
       `${String(type.maxPerRegion)} per region · ${String(context.held)}/${String(type.maxPerRegion)} built`,
     ),

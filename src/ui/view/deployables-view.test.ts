@@ -171,7 +171,10 @@ describe("DeployablesView", () => {
   it("reports Build with the type and region, and Decommission with the id", () => {
     const onBuild = vi.fn();
     const onDecommission = vi.fn();
-    const view = new DeployablesView({ onBuild, onDecommission, onUpgrade: vi.fn() }, CATALOGUE);
+    const view = new DeployablesView(
+      { onBuild, onDecommission, onUpgrade: vi.fn() },
+      CATALOGUE,
+    );
     view.mount(root);
     view.update(stateWith([built("d1", "sensor-array")], 5000), REGION.id);
     buildButton("defensive-battery")?.click();

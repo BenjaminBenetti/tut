@@ -2,7 +2,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { PopoverContent } from "../model/popover-content";
-import { POPOVER_ID, PopoverView, attachPopover, popoverFor } from "./popover-view";
+import {
+  POPOVER_ID,
+  PopoverView,
+  attachPopover,
+  popoverFor,
+} from "./popover-view";
 
 const CONTENT: PopoverContent = {
   title: "Sensor array",
@@ -54,8 +59,14 @@ describe("PopoverView (#1155)", () => {
         line.className,
       ]),
     ).toEqual([
-      ["Finds infested cities sooner", "tut-popover__line tut-popover__line--body"],
-      ["Build ¢800 · upkeep ¢20/day", "tut-popover__line tut-popover__line--dim"],
+      [
+        "Finds infested cities sooner",
+        "tut-popover__line tut-popover__line--body",
+      ],
+      [
+        "Build ¢800 · upkeep ¢20/day",
+        "tut-popover__line tut-popover__line--dim",
+      ],
     ]);
     // jsdom's popover box is 0×0: it lands GAP left of the anchor, top-aligned.
     expect(el?.style.left).toBe("892px");

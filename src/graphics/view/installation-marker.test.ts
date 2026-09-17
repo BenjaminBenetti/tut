@@ -226,26 +226,33 @@ describe("InstallationMarker (#1155)", () => {
   it("carries a hidden pick solid, and shows the type's name while hovered or selected (#1155)", async () => {
     const label = new Texture();
     const asked: string[] = [];
-    const marker = new InstallationMarker(deployable(), AT, look(loader(), {
-      text: {
-        textTexture: (text) => {
-          asked.push(text);
-          return label;
+    const marker = new InstallationMarker(
+      deployable(),
+      AT,
+      look(loader(), {
+        text: {
+          textTexture: (text) => {
+            asked.push(text);
+            return label;
+          },
         },
-      },
-      nameOf: () => "Sensor array",
-    }));
+        nameOf: () => "Sensor array",
+      }),
+    );
     await settled();
     expect(asked).toEqual(["Sensor array"]);
     expect(marker.pickTarget.visible).toBe(false);
     expect(marker.pickTarget.parent).toBe(marker.object);
-    const sprite = marker.object.getObjectByName("installation-label-deployable-1");
+    const sprite = marker.object.getObjectByName(
+      "installation-label-deployable-1",
+    );
     expect(sprite?.visible).toBe(false);
     expect(marker.look().labelVisible).toBe(false);
     marker.setHovered(true);
     expect(sprite?.visible).toBe(true);
     expect(
-      marker.object.getObjectByName("installation-visual-deployable-1")?.scale.x,
+      marker.object.getObjectByName("installation-visual-deployable-1")?.scale
+        .x,
     ).toBe(INSTALLATION_HOVER_SCALE);
     marker.setHovered(false);
     expect(sprite?.visible).toBe(false);
@@ -259,12 +266,23 @@ describe("InstallationMarker (#1155)", () => {
 
   it("labels with the type id when nothing names the types, and draws no label without a text source", () => {
     const asked: string[] = [];
-    new InstallationMarker(deployable(), AT, look(undefined, {
-      text: { textTexture: (text) => { asked.push(text); return new Texture(); } },
-    }));
+    new InstallationMarker(
+      deployable(),
+      AT,
+      look(undefined, {
+        text: {
+          textTexture: (text) => {
+            asked.push(text);
+            return new Texture();
+          },
+        },
+      }),
+    );
     expect(asked).toEqual(["sensor-array"]);
     const bare = new InstallationMarker(deployable(), AT, look(undefined));
-    expect(bare.object.getObjectByName("installation-label-deployable-1")).toBeUndefined();
+    expect(
+      bare.object.getObjectByName("installation-label-deployable-1"),
+    ).toBeUndefined();
     expect(bare.look().labelVisible).toBe(false);
   });
 

@@ -15,7 +15,11 @@ import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-t
 import { nextDeployableLevel } from "../../overworld/model/deployable-level";
 import type { RegionId } from "../../overworld/model/region";
 import type { GameState } from "../../save/model/game-state";
-import { buildPopover, installedPopover, MAX_LEVEL_LINE } from "../service/deployable-popover";
+import {
+  buildPopover,
+  installedPopover,
+  MAX_LEVEL_LINE,
+} from "../service/deployable-popover";
 import { formatCredits } from "../service/format";
 import { attachPopover, popoverFor } from "./popover-view";
 

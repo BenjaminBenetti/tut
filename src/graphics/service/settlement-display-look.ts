@@ -171,13 +171,15 @@ export class SettlementDisplayLook implements ModelDresser, Disposable {
    * at or above the near one, linear between.
    */
   setZoom(zoom: number): void {
-    const { edgeFadeFarZoom, edgeFadeNearZoom, edgeOpacityFar, edgeOpacityNear } =
-      this.tuning;
+    const {
+      edgeFadeFarZoom,
+      edgeFadeNearZoom,
+      edgeOpacityFar,
+      edgeOpacityNear,
+    } = this.tuning;
     const span = edgeFadeNearZoom - edgeFadeFarZoom;
     const unit =
-      span > 0
-        ? Math.min(1, Math.max(0, (zoom - edgeFadeFarZoom) / span))
-        : 1;
+      span > 0 ? Math.min(1, Math.max(0, (zoom - edgeFadeFarZoom) / span)) : 1;
     this.edgeMaterial.opacity =
       edgeOpacityFar + (edgeOpacityNear - edgeOpacityFar) * unit;
   }

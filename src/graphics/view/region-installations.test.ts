@@ -175,7 +175,10 @@ describe("RegionInstallations (#1155)", () => {
   });
 
   it("hit-tests by pick solid, and pushes hover and selection to exactly one marker (#1155)", () => {
-    const installations = new RegionInstallations(look(), OVERWORLD_SCENE_CONFIG);
+    const installations = new RegionInstallations(
+      look(),
+      OVERWORLD_SCENE_CONFIG,
+    );
     installations.setMap(EARTH_MAP);
     installations.sync([
       deployable("deployable-1", { regionId: "east-asia" }),
@@ -208,15 +211,29 @@ describe("RegionInstallations (#1155)", () => {
     expect(installations.hit(raycaster)).toBeUndefined();
 
     installations.setHovered("deployable-1");
-    expect(installations.root.getObjectByName("installation-visual-deployable-1")?.scale.x).toBeGreaterThan(1);
-    expect(installations.root.getObjectByName("installation-visual-deployable-2")?.scale.x).toBe(1);
+    expect(
+      installations.root.getObjectByName("installation-visual-deployable-1")
+        ?.scale.x,
+    ).toBeGreaterThan(1);
+    expect(
+      installations.root.getObjectByName("installation-visual-deployable-2")
+        ?.scale.x,
+    ).toBe(1);
     installations.setHovered("deployable-2");
-    expect(installations.root.getObjectByName("installation-visual-deployable-1")?.scale.x).toBe(1);
-    expect(installations.root.getObjectByName("installation-visual-deployable-2")?.scale.x).toBeGreaterThan(1);
+    expect(
+      installations.root.getObjectByName("installation-visual-deployable-1")
+        ?.scale.x,
+    ).toBe(1);
+    expect(
+      installations.root.getObjectByName("installation-visual-deployable-2")
+        ?.scale.x,
+    ).toBeGreaterThan(1);
     installations.setSelected("deployable-2");
     expect(installations.getSelected()).toBe("deployable-2");
     // A marker built after the selection was made comes up selected too.
-    installations.sync([deployable("deployable-2", { regionId: "western-europe" })]);
+    installations.sync([
+      deployable("deployable-2", { regionId: "western-europe" }),
+    ]);
     expect(installations.getSelected()).toBe("deployable-2");
     expect(installations.hit(rayAt("deployable-2"))).toBe("deployable-2");
     installations.dispose();

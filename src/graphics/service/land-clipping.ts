@@ -48,16 +48,16 @@ export function triangulateLand(
     const holes = polygon.holes.map((hole) => hole.map(toVector));
     // `triangulateShape` indexes into the contour followed by every
     // hole in order, and drops each ring's repeated closing point first.
-    const vertices = [openRing(polygon.outer), ...polygon.holes.map(openRing)]
-      .flat();
+    const vertices = [
+      openRing(polygon.outer),
+      ...polygon.holes.map(openRing),
+    ].flat();
     for (const [i, j, k] of ShapeUtils.triangulateShape(contour, holes)) {
       const a = vertices[i ?? -1];
       const b = vertices[j ?? -1];
       const c = vertices[k ?? -1];
       if (a && b && c) {
-        triangles.push(
-          signedArea([a, b, c]) < 0 ? [c, b, a] : [a, b, c],
-        );
+        triangles.push(signedArea([a, b, c]) < 0 ? [c, b, a] : [a, b, c]);
       }
     }
   }

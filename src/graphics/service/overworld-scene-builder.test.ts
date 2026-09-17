@@ -332,12 +332,16 @@ describe("OverworldSceneBuilder", () => {
       "deployable-1",
     );
     // The installation is not a city, and a corner of the map is nothing.
-    expect(builder.pickCity({ x: ndc.x, y: ndc.y }, rig.camera)).toBeUndefined();
+    expect(
+      builder.pickCity({ x: ndc.x, y: ndc.y }, rig.camera),
+    ).toBeUndefined();
     expect(
       builder.pickInstallation({ x: -0.999, y: 0.999 }, rig.camera),
     ).toBeUndefined();
 
-    const visual = builder.root.getObjectByName("installation-visual-deployable-1");
+    const visual = builder.root.getObjectByName(
+      "installation-visual-deployable-1",
+    );
     expect(builder.installationLook("deployable-1")?.labelVisible).toBe(false);
     builder.setHoveredInstallation("deployable-1");
     expect(visual?.scale.x).toBeGreaterThan(1);

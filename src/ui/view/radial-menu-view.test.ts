@@ -50,7 +50,11 @@ describe("RadialMenuView", () => {
   it("shows a hub note under the caption and pushes the ring out to make room for it (#1155)", () => {
     const view = new RadialMenuView({ onSelect: vi.fn(), onDismiss: vi.fn() });
     view.mount(host);
-    view.open(ITEMS, { value: "L1", caption: "Battery · online" }, { x: 0, y: 0 });
+    view.open(
+      ITEMS,
+      { value: "L1", caption: "Battery · online" },
+      { x: 0, y: 0 },
+    );
     const plainTop = Number.parseFloat(buttons()[0]?.style.top ?? "0");
     expect(host.querySelector('[data-field="hub-note"]')).toBeNull();
     view.open(

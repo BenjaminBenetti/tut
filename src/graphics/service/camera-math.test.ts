@@ -446,14 +446,20 @@ describe("the strategic projection (ADR 0005 §5)", () => {
   it("is pitched 35° back from straight down", () => {
     expect(STRATEGIC_PITCH_RAD).toBeCloseTo((35 * Math.PI) / 180);
     expect(STRATEGIC_PROJECTION.elevationRad).toBe(STRATEGIC_ELEVATION_RAD);
-    expect(STRATEGIC_ELEVATION_RAD).toBeCloseTo(Math.PI / 2 - STRATEGIC_PITCH_RAD);
+    expect(STRATEGIC_ELEVATION_RAD).toBeCloseTo(
+      Math.PI / 2 - STRATEGIC_PITCH_RAD,
+    );
   });
 
   it("puts the camera south of the target, above it, never east or west", () => {
     const at = cameraPosition(strategic(), 100);
     expect(at.x).toBeCloseTo(TARGET.x);
-    expect(at.z).toBeCloseTo(TARGET.z + 100 * Math.cos(STRATEGIC_ELEVATION_RAD));
-    expect(at.y).toBeCloseTo(TARGET.y + 100 * Math.sin(STRATEGIC_ELEVATION_RAD));
+    expect(at.z).toBeCloseTo(
+      TARGET.z + 100 * Math.cos(STRATEGIC_ELEVATION_RAD),
+    );
+    expect(at.y).toBeCloseTo(
+      TARGET.y + 100 * Math.sin(STRATEGIC_ELEVATION_RAD),
+    );
     expect(at.z).toBeGreaterThan(TARGET.z);
   });
 

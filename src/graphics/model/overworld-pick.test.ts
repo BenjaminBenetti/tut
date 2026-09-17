@@ -12,10 +12,16 @@ describe("samePick", () => {
     expect(samePick(cityPick("tokyo"), cityPick("tokyo"))).toBe(true);
     expect(samePick(cityPick("tokyo"), cityPick("seoul"))).toBe(false);
     expect(
-      samePick(installationPick("deployable-1"), installationPick("deployable-1")),
+      samePick(
+        installationPick("deployable-1"),
+        installationPick("deployable-1"),
+      ),
     ).toBe(true);
     expect(
-      samePick(installationPick("deployable-1"), installationPick("deployable-2")),
+      samePick(
+        installationPick("deployable-1"),
+        installationPick("deployable-2"),
+      ),
     ).toBe(false);
     expect(samePick(regionPick("east-asia"), regionPick("east-asia"))).toBe(
       true,

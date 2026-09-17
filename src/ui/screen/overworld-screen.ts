@@ -31,7 +31,11 @@ import { DeployablesView } from "../view/deployables-view";
 import { EventDialogView } from "../view/event-dialog-view";
 import { MissionDetailsView } from "../view/mission-details-view";
 import { MissionListView } from "../view/mission-list-view";
-import type { RadialMenuHub, RadialMenuItem, ScreenAnchor } from "../view/radial-menu-view";
+import type {
+  RadialMenuHub,
+  RadialMenuItem,
+  ScreenAnchor,
+} from "../view/radial-menu-view";
 import { RadialMenuView } from "../view/radial-menu-view";
 import { RegionPanelView } from "../view/region-panel-view";
 import { SidePanelView } from "../view/side-panel-view";
@@ -284,7 +288,10 @@ export class OverworldScreen implements Screen {
       // Another selection dismisses the wheel (ADR 0007 §2.2): the ring
       // belongs to the thing it opened on, not to whatever is picked
       // next.
-      if (this.wheelTarget && !this.wheelBelongsTo(this.wheelTarget, selection)) {
+      if (
+        this.wheelTarget &&
+        !this.wheelBelongsTo(this.wheelTarget, selection)
+      ) {
         this.closeWheel();
       }
       this.render(this.deps.session.store?.getState());

@@ -211,7 +211,11 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
         depthWrite: false,
       });
       const sprite = new Sprite(material);
-      sprite.scale.set(LABEL_HEIGHT * textureAspect(labelTexture), LABEL_HEIGHT, 1);
+      sprite.scale.set(
+        LABEL_HEIGHT * textureAspect(labelTexture),
+        LABEL_HEIGHT,
+        1,
+      );
       sprite.position.set(0, LABEL_LIFT, look.footprint * LABEL_OFFSET_SOUTH);
       sprite.renderOrder = LABEL_RENDER_ORDER;
       sprite.visible = false;
@@ -390,5 +394,3 @@ export function yawAt(animation: DeployableAnimation, t: number): number {
 function isPlaceholder(model: Object3D): boolean {
   return model.name.startsWith(PLACEHOLDER_PREFIX);
 }
-
-

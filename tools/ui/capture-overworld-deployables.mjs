@@ -36,7 +36,9 @@ async function settle(page) {
 }
 
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const page = await browser.newPage({
+    viewport: { width: 1280, height: 720 },
+  });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -47,7 +49,10 @@ try {
   await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-field="seed"]').fill(SEED);
   await page.locator('[data-action="new-game"]').click();
-  await expect(page.locator("body")).toHaveAttribute("data-screen", "overworld");
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-screen",
+    "overworld",
+  );
   await expect(page.locator("body")).toHaveAttribute("data-map-ready", "true");
 
   // Tokyo's region in the panel, a battery built there.
@@ -93,8 +98,13 @@ try {
   );
   assert.ok(at, "the battery must project on screen");
   await page.mouse.click(at.x, at.y);
-  await expect(page.locator("#radial-menu")).toHaveAttribute("data-open", "true");
-  await expect(page.locator('#radial-menu [data-field="hub-value"]')).toHaveText("L1");
+  await expect(page.locator("#radial-menu")).toHaveAttribute(
+    "data-open",
+    "true",
+  );
+  await expect(
+    page.locator('#radial-menu [data-field="hub-value"]'),
+  ).toHaveText("L1");
   await settle(page);
   await page.screenshot({
     path: `${output}/overworld-installation-wheel.png`,

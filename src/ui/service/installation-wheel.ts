@@ -1,7 +1,10 @@
 import type { DeployableId } from "../../overworld/model/deployable";
 import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
 import { levelSpec } from "../../overworld/model/deployable-type";
-import { describeDeployableEffect, summarizeDeployableEffect } from "../../overworld/service/deployable-effect-describer";
+import {
+  describeDeployableEffect,
+  summarizeDeployableEffect,
+} from "../../overworld/service/deployable-effect-describer";
 import type { GameState } from "../../save/model/game-state";
 import type { RadialMenuHub, RadialMenuItem } from "../view/radial-menu-view";
 import { formatCredits } from "./format";

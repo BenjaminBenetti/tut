@@ -11,7 +11,10 @@ import {
 
 import type { RegionId } from "../../overworld/model/region";
 import type { Disposable } from "../model/disposable";
-import type { GroundPoint, GroundPolygon } from "../service/coastline-projection";
+import type {
+  GroundPoint,
+  GroundPolygon,
+} from "../service/coastline-projection";
 import type { GroundSegment } from "../service/coastline-segments";
 import {
   clipLandToConvex,
@@ -158,9 +161,10 @@ export class RegionTerritories {
     this.disposables.push(this.noOutline);
     this.object.add(...this.createFills(input.cells, input.land));
     const borders = regionBorders(input.cells).flatMap((border) =>
-      clipSegmentToLand(border, input.land).map(
-        (piece): RegionBorder => ({ ...piece, regionIds: border.regionIds }),
-      ),
+      clipSegmentToLand(border, input.land).map((piece): RegionBorder => ({
+        ...piece,
+        regionIds: border.regionIds,
+      })),
     );
     this.object.add(this.createBorders(borders));
     this.createOutlines(input, borders);

@@ -926,7 +926,13 @@ describe("OverworldScreen", () => {
     const picks = new FakeInstallationPicks();
     const selection = newSelection();
     new OverworldScreen(
-      depsFor(new FakeStore(withBattery(5000)), undefined, selection, undefined, picks),
+      depsFor(
+        new FakeStore(withBattery(5000)),
+        undefined,
+        selection,
+        undefined,
+        picks,
+      ),
     ).mount(root);
     expect(wheel()?.hidden).toBe(true);
     selection.selectRegion("east-asia");
@@ -943,8 +949,9 @@ describe("OverworldScreen", () => {
     );
     expect(wheelItems()).toEqual(["upgrade", "decommission", "region"]);
     expect(
-      root.querySelector<HTMLButtonElement>('#radial-menu [data-item="upgrade"]')
-        ?.textContent,
+      root.querySelector<HTMLButtonElement>(
+        '#radial-menu [data-item="upgrade"]',
+      )?.textContent,
     ).toContain("¢1,500");
   });
 
@@ -963,8 +970,9 @@ describe("OverworldScreen", () => {
     expect(wheel()?.hidden).toBe(true);
     expect(store.dispatched.at(-1)).toEqual(upgradeDeployable("deployable-1"));
     expect(
-      root.querySelector('#deployables [data-deployable-id="deployable-1"] [data-field="level"]')
-        ?.textContent,
+      root.querySelector(
+        '#deployables [data-deployable-id="deployable-1"] [data-field="level"]',
+      )?.textContent,
     ).toBe("L2");
     expect(store.getState().economy.credits).toBe(3500);
   });
@@ -1030,7 +1038,13 @@ describe("OverworldScreen", () => {
     const picks = new FakeInstallationPicks();
     const selection = newSelection();
     const screen = new OverworldScreen(
-      depsFor(new FakeStore(withBattery(5000)), undefined, selection, undefined, picks),
+      depsFor(
+        new FakeStore(withBattery(5000)),
+        undefined,
+        selection,
+        undefined,
+        picks,
+      ),
     );
     screen.mount(root);
     selection.selectRegion("east-asia");
@@ -1061,7 +1075,13 @@ describe("OverworldScreen", () => {
     picks.positions.set("deployable-1", undefined);
     const selection = newSelection();
     new OverworldScreen(
-      depsFor(new FakeStore(withBattery(5000)), undefined, selection, undefined, picks),
+      depsFor(
+        new FakeStore(withBattery(5000)),
+        undefined,
+        selection,
+        undefined,
+        picks,
+      ),
     ).mount(root);
     picks.pick("deployable-1");
     expect(wheel()?.hidden).toBe(true);

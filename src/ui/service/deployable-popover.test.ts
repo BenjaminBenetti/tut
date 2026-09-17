@@ -73,7 +73,10 @@ describe("installedPopover (#1155)", () => {
   it("says Max level at the top of the ladder and reads offline in the title", () => {
     const content = installedPopover(SENSOR, built("sensor-array", 3, false));
     expect(content.title).toBe("Sensor array · L3 · offline");
-    expect(content.lines.at(-1)).toEqual({ text: MAX_LEVEL_LINE, kind: "heading" });
+    expect(content.lines.at(-1)).toEqual({
+      text: MAX_LEVEL_LINE,
+      kind: "heading",
+    });
     expect(content.lines.some((l) => l.text.startsWith("Upgrade"))).toBe(false);
   });
 });

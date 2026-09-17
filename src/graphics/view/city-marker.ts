@@ -265,7 +265,11 @@ export class CityMarker {
         depthWrite: false,
       });
       const sprite = new Sprite(material);
-      sprite.scale.set(LABEL_HEIGHT * textureAspect(labelTexture), LABEL_HEIGHT, 1);
+      sprite.scale.set(
+        LABEL_HEIGHT * textureAspect(labelTexture),
+        LABEL_HEIGHT,
+        1,
+      );
       // South of the settlement, on the ground plane: under the
       // strategic map's camera that reads as directly below it (#439).
       sprite.position.set(
@@ -435,4 +439,3 @@ export class CityMarker {
 function isPlaceholder(model: Object3D): boolean {
   return model.name.startsWith(PLACEHOLDER_PREFIX);
 }
-

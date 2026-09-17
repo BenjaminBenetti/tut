@@ -46,8 +46,7 @@ function materialOf(group: Group, token: string): Material {
 function edgesOf(group: Group, token: string): LineSegments | undefined {
   const mesh = group.getObjectByName(`prim-${token}`) as Mesh;
   return mesh.getObjectByName(SETTLEMENT_EDGES_NAME) as
-    | LineSegments
-    | undefined;
+    LineSegments | undefined;
 }
 
 // ===========================================

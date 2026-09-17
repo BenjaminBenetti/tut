@@ -1,3 +1,7 @@
+import {
+  ResinPatternModelFactory,
+  resinPatternKey,
+} from "../service/resin-pattern-model";
 import type { BusinessSignAppearance } from "../model/business-sign-appearance";
 import { resinGroundHeight, resinSurfaceLift } from "../service/surface-rise";
 import type { TextureSource } from "../model/texture-source";
@@ -354,6 +358,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly roofModels = new Map<string, Group>();
   private readonly roadModels = new Map<string, Group>();
   private readonly terrainModels = new Map<string, Group>();
+  private resinPatternFactory: ResinPatternModelFactory | undefined;
+  private readonly resinPatches = new Map<string, Group>();
   private readonly resinModels = new Map<string, Group>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
@@ -804,7 +810,25 @@ export class TacticalMapView implements Disposable, TilePicker {
                 models,
               )
             : await models.load(p.modelId);
-    const fitted = fitResinSurface(await models.load(id), support, appearance);
+    let skin = await models.load(id);
+    if (appearance.pattern) {
+      const patternKey = resinPatternKey(appearance.pattern);
+      let patch = this.resinPatches.get(patternKey);
+      if (!patch) {
+        if (!this.resinPatternFactory) {
+          this.resinPatternFactory = new ResinPatternModelFactory(skin);
+          this.disposables.push(this.resinPatternFactory);
+        }
+        patch = this.resinPatternFactory.create(appearance.pattern);
+        patch.traverse((object) => {
+          if (object instanceof Mesh)
+            this.disposables.push((object as Mesh).geometry);
+        });
+        this.resinPatches.set(patternKey, patch);
+      }
+      skin = patch;
+    }
+    const fitted = fitResinSurface(skin, support, appearance);
     fitted.traverse((object) => {
       if (object instanceof Mesh)
         this.disposables.push((object as Mesh).geometry);
@@ -1232,6 +1256,8 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.roadModels.clear();
     this.terrainModels.clear();
     this.resinModels.clear();
+    this.resinPatches.clear();
+    this.resinPatternFactory = undefined;
     this.root.removeFromParent();
   }
 

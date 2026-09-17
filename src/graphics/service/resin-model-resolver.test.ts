@@ -105,4 +105,31 @@ describe("Resin Shell map art", () => {
     expect(shell?.resin?.support.ramp?.from).toEqual(low);
     expect(shell?.tile).toEqual(high);
   });
+  it("uses a shared network phase and connects only marked neighbouring cells", () => {
+    const map = covered(new FixtureMapBuilder(3, 1, 1).fillGround().build());
+    const full = resolveMapModels(map).infestation.filter((p) => p.resin);
+    const a = full[0]!.resin!.pattern!,
+      b = full[1]!.resin!.pattern!;
+    expect((a.x + 1) % 6).toBe(b.x);
+    expect(a.z).toBe(b.z);
+    expect(a.turns).toBe(b.turns);
+    expect(a.neighbours & 4).toBe(4);
+    expect(b.neighbours & 64).toBe(64);
+    const separated = {
+      ...map,
+      tiles: map.tiles.map((t) =>
+        t.x === 1 ? { ...t, infested: undefined } : t,
+      ),
+    };
+    const edges = resolveMapModels(separated).infestation.filter(
+      (p) => p.resin,
+    );
+    expect(edges).toHaveLength(2);
+    expect(edges.every((p) => p.resin!.pattern!.neighbours === 0)).toBe(true);
+    const early = resolveMapModels(covered(map, 2)).infestation.find(
+      (p) => p.resin,
+    )!.resin!.pattern!;
+    expect([early.x, early.z, early.turns]).toEqual([a.x, a.z, a.turns]);
+    expect(early.growth).toBeLessThan(a.growth);
+  });
 });

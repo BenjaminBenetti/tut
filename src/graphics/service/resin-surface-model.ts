@@ -5,6 +5,8 @@ import type { ResinSurfaceAppearance } from "./map-model-resolver";
 /** Stable fitted geometry identity; map position is deliberately excluded. */
 export function resinSurfaceKey(appearance: ResinSurfaceAppearance): string {
   const p = appearance.support;
+  if (appearance.conform === false)
+    return JSON.stringify(["flat", appearance.pattern, appearance.thickness]);
   return JSON.stringify([
     p.modelId,
     p.turns,
@@ -14,6 +16,8 @@ export function resinSurfaceKey(appearance: ResinSurfaceAppearance): string {
     p.terrain,
     p.roof,
     p.ramp?.surface,
+    appearance.pattern,
+    appearance.conform,
     appearance.turns,
     appearance.size,
     appearance.thickness,
@@ -49,14 +53,17 @@ export function fitResinSurface(
     geometry.applyMatrix4(object.matrixWorld);
     geometry.scale(appearance.size, appearance.thickness, appearance.size);
     geometry.rotateY((-appearance.turns * Math.PI) / 2);
-    geometry.scale(p.scaleX ?? 1, 1, p.scaleZ ?? 1);
-    geometry.rotateY((-p.turns * Math.PI) / 2);
+    if (!appearance.pattern) {
+      geometry.scale(p.scaleX ?? 1, 1, p.scaleZ ?? 1);
+      geometry.rotateY((-p.turns * Math.PI) / 2);
+    }
     const vertices = geometry.getAttribute("position");
     for (let i = 0; i < vertices.count; i++) {
       const x = vertices.getX(i),
         z = vertices.getZ(i);
       const key = `${x}:${z}`;
       let top = heights.get(key);
+      if (appearance.conform === false) top = 0;
       if (top === undefined) {
         // The shell edge sits exactly on the support boundary. Nudge the
         // sampling ray inward to avoid missing a shared triangle edge.
@@ -67,7 +74,7 @@ export function fitResinSurface(
       vertices.setY(i, vertices.getY(i) + top);
     }
     vertices.needsUpdate = true;
-    geometry.computeVertexNormals();
+    if (appearance.conform !== false) geometry.computeVertexNormals();
     geometry.computeBoundingBox();
     geometry.computeBoundingSphere();
     result.add(new Mesh(geometry, mesh.material));

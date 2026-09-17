@@ -49,4 +49,35 @@ describe("fitted resin surfaces", () => {
       resinSurfaceKey(appearance),
     );
   });
+  it("keeps a world-aligned strand in place when its support is rotated", () => {
+    const material = new MeshStandardMaterial();
+    const geometry = new BoxGeometry(0.08, 0.04, 0.6);
+    geometry.translate(0.28, 0.02, 0);
+    const skin = new Group();
+    skin.add(new Mesh(geometry, material));
+    const support = new Group();
+    const slab = new BoxGeometry(1, 0.2, 1);
+    slab.translate(0, 0.1, 0);
+    support.add(new Mesh(slab, material));
+    const fitted = fitResinSurface(skin, support, {
+      support: {
+        modelId: "building.stairs",
+        turns: 1,
+        level: 0,
+        position: { x: 0.5, y: 0, z: 0.5 },
+        tile: { x: 0, y: 0, z: 0 },
+      },
+      turns: 0,
+      size: 1,
+      thickness: 1,
+      conform: true,
+      pattern: { x: 0, z: 0, turns: 0, neighbours: 255, growth: 1 },
+    });
+    const bounds = new Box3().setFromObject(fitted);
+    expect(bounds.min.x).toBeCloseTo(0.24);
+    expect(bounds.max.x).toBeCloseTo(0.32);
+    expect(bounds.min.z).toBeCloseTo(-0.3);
+    expect(bounds.max.z).toBeCloseTo(0.3);
+    expect(bounds.min.y).toBeCloseTo(0.2);
+  });
 });

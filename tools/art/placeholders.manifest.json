@@ -2532,42 +2532,28 @@
     "category": "tiles",
     "path": "assets/models/tiles/infestation-ground-a.glb",
     "footprint": {
-      "w": 1,
-      "d": 1
+      "w": 6,
+      "d": 6
     },
-    "height": 0.16,
+    "height": 0.07,
     "sockets": [],
     "quality": "final",
-    "triangles": 294,
-    "bytes": 12772
+    "triangles": 7744,
+    "bytes": 274736
   },
   {
     "id": "infestation.resin.ground-b",
     "category": "tiles",
     "path": "assets/models/tiles/infestation-ground-b.glb",
     "footprint": {
-      "w": 1,
-      "d": 1
+      "w": 6,
+      "d": 6
     },
-    "height": 0.16,
+    "height": 0.18,
     "sockets": [],
     "quality": "final",
-    "triangles": 294,
-    "bytes": 12792
-  },
-  {
-    "id": "infestation.resin.collar",
-    "category": "props",
-    "path": "assets/models/props/infestation-collar.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.52,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 240,
-    "bytes": 8568
+    "triangles": 7744,
+    "bytes": 179828
   },
   {
     "id": "infestation.resin.wall",
@@ -2577,11 +2563,11 @@
       "w": 1,
       "d": 0
     },
-    "height": 1.49,
+    "height": 1.6,
     "sockets": [],
     "quality": "final",
-    "triangles": 720,
-    "bytes": 19492
+    "triangles": 1528,
+    "bytes": 39188
   },
   {
     "id": "infestation.resin.window",
@@ -2594,8 +2580,8 @@
     "height": 1.54,
     "sockets": [],
     "quality": "final",
-    "triangles": 720,
-    "bytes": 19500
+    "triangles": 1328,
+    "bytes": 33796
   },
   {
     "id": "infestation.resin.door",
@@ -2605,10 +2591,24 @@
       "w": 1,
       "d": 0
     },
-    "height": 1.52,
+    "height": 1.53,
     "sockets": [],
     "quality": "final",
-    "triangles": 600,
-    "bytes": 17824
+    "triangles": 1096,
+    "bytes": 28560
+  },
+  {
+    "id": "infestation.resin.collar",
+    "category": "props",
+    "path": "assets/models/props/infestation-collar.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.24,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 396,
+    "bytes": 13540
   }
 ]

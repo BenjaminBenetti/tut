@@ -5,7 +5,7 @@ import type { Rotation } from "../../mapgen/model/prop";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileIndex } from "../../mapgen/service/tile-index";
 import { MODEL_MANIFEST } from "../data/model-manifest";
-import { RESIN_STYLE } from "../data/resin-style";
+import { RESIN_STYLE, RESIN_NEIGHBOURS } from "../data/resin-style";
 import type { MapModelPlacements, ModelPlacement } from "./map-model-resolver";
 import { resinGroundHeight, resinSurfaceLift } from "./surface-rise";
 import { tileTop } from "../view/tactical-map-view";
@@ -23,9 +23,10 @@ export function resolveResinModels(
   const level = map.recipe.params.infestationLevel ?? 0;
   if (level === 0) return [];
   const result: ModelPlacement[] = [];
-  const size =
-    RESIN_STYLE.minimumPatchSize +
-    ((1 - RESIN_STYLE.minimumPatchSize) * level) / 10;
+  const seed = hashSeed(`${map.recipe.seed}:resin-network`);
+  const turns = ((seed >>> 3) % 4) as Rotation;
+  const phaseX = seed % RESIN_STYLE.patternSize;
+  const phaseZ = (seed >>> 8) % RESIN_STYLE.patternSize;
   const thickness = resinGroundHeight(level) / RESIN_STYLE.maximumGroundHeight;
   const ground = [
     ...base.tiles,
@@ -35,14 +36,19 @@ export function resolveResinModels(
   for (const support of ground) {
     const tile = index.getAt(support.ramp?.from ?? support.tile);
     if (!tile?.infested) continue;
-    const seed = hashSeed(
-      `${map.recipe.seed}:resin:${tile.x}:${tile.y}:${tile.z}`,
-    );
-    const modelId =
-      seed % 2 === 0
-        ? "infestation.resin.ground-a"
-        : "infestation.resin.ground-b";
-    const turns = ((seed >>> 3) % 4) as Rotation;
+    const neighbours = RESIN_NEIGHBOURS.reduce((mask, [dx, dz], bit) => {
+      const connected = index
+        .column(tile.x + dx, tile.z + dz)
+        .some(
+          (other) =>
+            other.infested &&
+            (other.y === tile.y ||
+              (tile.buildingId === undefined &&
+                other.buildingId === undefined &&
+                Math.abs(other.y - tile.y) <= 1)),
+        );
+      return connected ? mask | (1 << bit) : mask;
+    }, 0);
     const conform =
       support.terrain !== undefined ||
       tile.slope !== undefined ||
@@ -50,7 +56,7 @@ export function resolveResinModels(
       support.roof !== undefined ||
       tile.surface === "stairs";
     result.push({
-      modelId,
+      modelId: "infestation.resin.ground-a",
       level: support.level,
       position: {
         x: support.position.x,
@@ -59,11 +65,36 @@ export function resolveResinModels(
           : tileTop(tile.y) + resinSurfaceLift(tile.surface),
         z: support.position.z,
       },
-      turns: conform ? 0 : turns,
+      turns: 0,
       tile: support.tile,
-      ...(conform
-        ? { resin: { support, turns, size, thickness } }
-        : { scaleX: size, scaleZ: size, scaleY: thickness }),
+      resin: {
+        support,
+        turns: 0,
+        size: 1,
+        thickness,
+        conform,
+        pattern: {
+          x: (tile.x + phaseX) % RESIN_STYLE.patternSize,
+          z: (tile.z + phaseZ) % RESIN_STYLE.patternSize,
+          turns,
+          ...(support.ramp
+            ? {
+                offsetX: support.position.x - tile.x - 0.5,
+                offsetZ: support.position.z - tile.z - 0.5,
+                width:
+                  support.turns % 2
+                    ? (support.scaleZ ?? 1)
+                    : (support.scaleX ?? 1),
+                depth:
+                  support.turns % 2
+                    ? (support.scaleX ?? 1)
+                    : (support.scaleZ ?? 1),
+              }
+            : {}),
+          neighbours,
+          growth: Math.pow(level / 10, 1.45),
+        },
+      },
     });
   }
   if (level >= RESIN_STYLE.wallsFromLevel) {
@@ -80,6 +111,10 @@ export function resolveResinModels(
       const kind = side
         ? tile?.walls[side as "n" | "e" | "s" | "w"]
         : undefined;
+      const column = hashSeed(
+        `${map.recipe.seed}:resin-wall:${wall.tile.x}:${wall.tile.z}:${side}`,
+      );
+      if (kind === "window" && column % 10 > Math.floor(level * 0.65)) continue;
       const modelId =
         kind === "door"
           ? "infestation.resin.door"
@@ -137,6 +172,9 @@ export function resolveResinModels(
     for (const prop of base.props) {
       if (!prop.part?.startsWith("prop:") || !index.getAt(prop.tile)?.infested)
         continue;
+      if (prop.modelId === "prop.fence") continue;
+      const variation = hashSeed(`${map.recipe.seed}:resin-prop:${prop.part}`);
+      if (variation % 10 > level - 3) continue;
       result.push({
         modelId: "infestation.resin.collar",
         position: prop.position,
@@ -147,7 +185,7 @@ export function resolveResinModels(
         occupiedTiles: prop.occupiedTiles,
         scaleX: prop.scaleX ?? 1,
         scaleZ: prop.scaleZ ?? 1,
-        scaleY: 0.3 + level * 0.07,
+        scaleY: (0.3 + level * 0.07) * (0.55 + (variation % 5) * 0.1),
       });
     }
   }

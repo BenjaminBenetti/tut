@@ -1,3 +1,4 @@
+import type { ResinPatternAppearance } from "../model/resin-pattern-appearance";
 import type { InteriorFloorAppearance } from "../model/interior-floor-style";
 import type { BusinessSignAppearance } from "../model/business-sign-appearance";
 import { resolveInteriorFloors } from "./interior-floor-resolver";
@@ -123,6 +124,8 @@ export interface MapModelPlacements {
 
 /** Local shell variation and the real support whose top the shell follows. */
 export interface ResinSurfaceAppearance {
+  readonly pattern?: ResinPatternAppearance;
+  readonly conform?: boolean;
   readonly support: ModelPlacement;
   readonly turns: Rotation;
   readonly size: number;

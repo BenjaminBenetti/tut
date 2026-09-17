@@ -7,10 +7,16 @@ import { MODEL_MANIFEST } from "../data/model-manifest";
 import { GROUND_SLAB_THICKNESS } from "../data/tactical-overlay-palette";
 import type { ModelManifest } from "../model/asset-manifest";
 import type { TileRise } from "../model/tile-rise";
+import { RESIN_STYLE } from "../data/resin-style";
 
 // ===========================================
 // Surface rise
 // ===========================================
+
+/** Ground thickness shared by the resin art and move-overlay clearance. */
+export function resinGroundHeight(level: number): number {
+  return RESIN_STYLE.maximumGroundHeight * (0.22 + 0.078 * level);
+}
 
 /**
  * How far a surface's slab stands above `tileTop` (#1130).
@@ -94,6 +100,12 @@ export function tileRiseFor(
       rise = surfaceRise(found.surface, manifest);
       bySurface.set(found.surface, rise);
     }
-    return rise;
+    return (
+      rise +
+      (found.infested
+        ? resinGroundHeight(map.recipe.params.infestationLevel ?? 0) +
+          RESIN_STYLE.groundLift
+        : 0)
+    );
   };
 }

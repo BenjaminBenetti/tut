@@ -22,6 +22,7 @@ import {
 } from "../../tactical/service/footprint-service";
 import {
   apCostOf,
+  pathCost,
   buildMoveGraph,
 } from "../../tactical/service/movement-service";
 import { BRUTE_TUNING } from "../data/brute-tuning";
@@ -334,7 +335,8 @@ export class BruteBehaviour implements BugBehaviour {
     to: TileCoord,
     path: readonly TileCoord[],
   ): TacticalState {
-    const apAfter = unit.ap - apCostOf(mission, unit, path.length);
+    const apAfter =
+      unit.ap - apCostOf(mission, unit, pathCost(mission, unit, path));
     return {
       ...mission,
       units: mission.units.map((u) =>

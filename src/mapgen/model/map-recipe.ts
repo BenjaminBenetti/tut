@@ -66,6 +66,8 @@ export interface HookRequirement {
 
 /** Everything except the seed that shapes a map. */
 export interface MapGenParams {
+  /** Resin infestation, integer 0–10. Omitted/zero preserves existing generation. */
+  readonly infestationLevel?: number;
   readonly archetype: MapArchetype;
   readonly biome: BiomeId;
   /** City-specific environment and art; absent preserves the biome defaults. */

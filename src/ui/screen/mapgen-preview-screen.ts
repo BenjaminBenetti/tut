@@ -27,6 +27,8 @@ import { nextSeed } from "../service/seed-sequence";
 
 /** What the controls say to generate. */
 export interface PreviewControlsState {
+  /** Whole-number resin infestation, from the current map (0) to consumed (10). */
+  readonly infestationLevel: number;
   readonly seed: string;
   readonly biome: BiomeId;
   readonly placeProfile?: PlaceProfileId;
@@ -103,6 +105,8 @@ export class MapgenPreviewScreen {
   private readonly stats: HTMLElement;
   private readonly slopeSlider: HTMLInputElement;
   private readonly slopeLabel: HTMLElement;
+  private readonly infestationSlider: HTMLInputElement;
+  private readonly infestationLabel: HTMLElement;
   private readonly ascii: HTMLPreElement;
   private readonly notes: HTMLElement;
   private readonly status: HTMLElement;
@@ -202,6 +206,32 @@ export class MapgenPreviewScreen {
       labelled(doc, "Slopes", this.slopeSlider, this.slopeLabel),
     );
 
+    this.infestationSlider = el(doc, "input");
+    this.infestationSlider.type = "range";
+    this.infestationSlider.id = "infestation";
+    this.infestationSlider.min = "0";
+    this.infestationSlider.max = "10";
+    this.infestationSlider.step = "1";
+    this.infestationSlider.value = String(initial.infestationLevel);
+    this.infestationSlider.title =
+      "Resin Shell: infested tiles cost double movement";
+    this.infestationLabel = el(doc, "span", "mapgen-level-label");
+    this.infestationLabel.textContent = `${this.infestationSlider.value} / 10`;
+    this.infestationSlider.addEventListener("input", () => {
+      this.infestationLabel.textContent = `${this.infestationSlider.value} / 10`;
+    });
+    this.infestationSlider.addEventListener("change", () => {
+      this.options.onGenerate(this.getState());
+    });
+    form.appendChild(
+      labelled(
+        doc,
+        "Infestation Level",
+        this.infestationSlider,
+        this.infestationLabel,
+      ),
+    );
+
     const generate = el(doc, "button", "tut-btn tut-btn-accent");
     generate.type = "submit";
     generate.id = "generate";
@@ -260,6 +290,7 @@ export class MapgenPreviewScreen {
       size: this.sizeSelect.value as MapSizePreset,
       archetype: this.archetype,
       slopeShare: Number(this.slopeSlider.value) / 100,
+      infestationLevel: Number(this.infestationSlider.value),
     };
   }
 
@@ -295,6 +326,10 @@ export class MapgenPreviewScreen {
     this.renderStats([
       ["Map", `${map.width}×${map.depth}×${map.levels}`],
       ["Tiles", String(map.tiles.length)],
+      [
+        "Infestation",
+        `${String(map.recipe.params.infestationLevel ?? 0)} / 10 · ${String(map.tiles.filter((tile) => tile.infested).length)} tiles · ×2 movement`,
+      ],
       ["Buildings", String(map.buildings.length)],
       ["Props", String(map.props.length)],
       ["Connectors", String(map.connectors.length)],

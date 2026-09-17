@@ -27,6 +27,39 @@ function result(props: number): PreviewResult {
 }
 
 describe("MapgenPreviewScreen", () => {
+  it("regenerates the same seed from the labelled infestation slider and reports its selected level", () => {
+    const root = document.createElement("div");
+    const onGenerate = vi.fn();
+    const screen = new MapgenPreviewScreen(
+      root,
+      {
+        seed: "resin-review",
+        biome: "temperate",
+        settlement: "town",
+        size: "small",
+        archetype: "settlement",
+        slopeShare: 1,
+        infestationLevel: 0,
+      },
+      { onGenerate, onLevelChange: vi.fn() },
+    );
+    const slider = root.querySelector<HTMLInputElement>("#infestation")!;
+    expect(slider.type).toBe("range");
+    expect([slider.min, slider.max, slider.step]).toEqual(["0", "10", "1"]);
+    expect(slider.closest("label")?.textContent).toContain("Infestation Level");
+    slider.value = "10";
+    slider.dispatchEvent(new Event("input"));
+    slider.dispatchEvent(new Event("change"));
+    expect(onGenerate).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        seed: "resin-review",
+        infestationLevel: 10,
+      }),
+    );
+    expect(screen.getState().infestationLevel).toBe(10);
+    screen.showResult(result(0));
+    expect(root.querySelector("#stats")?.textContent).toContain("×2 movement");
+  });
   it("steps the seed with the Next button and generates", () => {
     const onGenerate = vi.fn();
     const root = document.createElement("div");
@@ -39,6 +72,7 @@ describe("MapgenPreviewScreen", () => {
         size: "medium",
         archetype: "settlement",
         slopeShare: 1,
+        infestationLevel: 0,
       },
       { onGenerate, onLevelChange: vi.fn() },
     );
@@ -61,6 +95,7 @@ describe("MapgenPreviewScreen", () => {
         size: "medium",
         archetype: "settlement",
         slopeShare: 1,
+        infestationLevel: 0,
       },
       { onGenerate: vi.fn(), onLevelChange: vi.fn() },
     );

@@ -44,7 +44,16 @@ const DEFAULT_STATE: PreviewControlsState = {
   size: "medium",
   archetype: "settlement",
   slopeShare: 1,
+  infestationLevel: 0,
 };
+
+/** Clamps shared Map Lab links to the eleven supported infestation levels. */
+function infestationFromUrl(raw: string | null): number {
+  const value = Number(raw);
+  return Number.isFinite(value)
+    ? Math.max(0, Math.min(10, Math.round(value)))
+    : 0;
+}
 
 /** A percent from the URL as a 0–1 share; missing or malformed means all slope. */
 function clampShare(raw: string | null): number {
@@ -83,6 +92,7 @@ function stateFromUrl(): PreviewControlsState {
       DEFAULT_STATE.archetype,
     // `?slope=` is a percent, the way the slider shows it (#799).
     slopeShare: clampShare(query.get("slope")),
+    infestationLevel: infestationFromUrl(query.get("infestation")),
   };
 }
 
@@ -120,6 +130,7 @@ function writeUrl(state: PreviewControlsState): void {
     size: state.size,
     archetype: state.archetype,
     slope: String(Math.round(state.slopeShare * 100)),
+    infestation: String(state.infestationLevel),
   });
   if (state.placeProfile !== undefined) query.set("place", state.placeProfile);
   if (new URLSearchParams(window.location.search).get("models") === "1") {
@@ -190,8 +201,20 @@ async function main(): Promise<void> {
   let view: TacticalSceneBuilder | undefined;
   let input: TacticalInputController | undefined;
   let hud: TacticalHudView | undefined;
+  let previousLayout: string | undefined;
+  let chosenCut: number | undefined;
 
   const regenerate = (state: PreviewControlsState): void => {
+    const layout = JSON.stringify([
+      state.seed,
+      state.biome,
+      state.placeProfile,
+      state.settlement,
+      state.size,
+      state.archetype,
+      state.slopeShare,
+    ]);
+    const keepView = layout === previousLayout;
     const recipe: MapRecipe = {
       seed: state.seed,
       params: {
@@ -204,6 +227,7 @@ async function main(): Promise<void> {
         size: state.size,
         hooks: DEFAULT_MISSION_HOOKS,
         slopeShare: state.slopeShare,
+        infestationLevel: state.infestationLevel,
       },
     };
     const started = performance.now();
@@ -228,7 +252,7 @@ async function main(): Promise<void> {
         depth: map.depth,
         height: map.levels * LAYER_HEIGHT,
       });
-      rig.lookAt(builder.centre);
+      if (!keepView) rig.lookAt(builder.centre);
       delete document.body.dataset.previewReady;
       delete document.body.dataset.modelsReady;
       if (showModels) {
@@ -337,10 +361,16 @@ async function main(): Promise<void> {
         elapsedMs,
       });
       document.body.dataset.mapSeed = state.seed;
-      const floorCut = floorCutFromUrl(map);
+      document.body.dataset.infestationLevel = String(state.infestationLevel);
+      document.body.dataset.infestedTiles = String(
+        map.tiles.filter((tile) => tile.infested).length,
+      );
+      const floorCut = keepView ? chosenCut : floorCutFromUrl(map);
       if (floorCut !== undefined) {
         screen.showLevelCut(floorCut);
       }
+      chosenCut = floorCut;
+      previousLayout = layout;
       // Without units there is nothing async to wait for, so this render
       // is already done. Set unconditionally so `data-preview-ready`
       // means the same thing on both paths (#688).
@@ -355,7 +385,10 @@ async function main(): Promise<void> {
 
   const screen = new MapgenPreviewScreen(panel, stateFromUrl(), {
     onGenerate: regenerate,
-    onLevelChange: (maxLevel) => view?.setMaxLevel(maxLevel),
+    onLevelChange: (maxLevel) => {
+      chosenCut = maxLevel;
+      view?.setMaxLevel(maxLevel);
+    },
   });
 
   const scene = new SceneService(viewport, {

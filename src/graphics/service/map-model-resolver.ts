@@ -46,6 +46,7 @@ import { resolveDropshipModels } from "./dropship-model-resolver";
 import { resolveStreetDetails } from "./street-detail-resolver";
 import { resolveStreetSurfaces } from "./street-surface-resolver";
 import { resolveRoofDetails } from "./roof-detail-resolver";
+import { resolveResinModels } from "./resin-model-resolver";
 import {
   propAppearanceOffset,
   propAppearanceScale,
@@ -63,6 +64,8 @@ import {
  * they stand on.
  */
 export interface ModelPlacement {
+  /** Fits an authored resin skin to a non-flat surface without changing that surface. */
+  readonly resin?: ResinSurfaceAppearance;
   readonly modelId: ModelAssetId;
   /** Level group the placement hangs on, so the level slider still peels it off. */
   readonly level: number;
@@ -108,6 +111,7 @@ export interface ModelPlacement {
 
 /** Everything on a map that resolves to a model, split by what it replaces. */
 export interface MapModelPlacements {
+  readonly infestation: readonly ModelPlacement[];
   readonly tiles: readonly ModelPlacement[];
   readonly foundations: readonly ModelPlacement[];
   readonly roofs: readonly ModelPlacement[];
@@ -115,6 +119,14 @@ export interface MapModelPlacements {
   readonly frontages: readonly ModelPlacement[];
   readonly props: readonly ModelPlacement[];
   readonly connectors: readonly ModelPlacement[];
+}
+
+/** Local shell variation and the real support whose top the shell follows. */
+export interface ResinSurfaceAppearance {
+  readonly support: ModelPlacement;
+  readonly turns: Rotation;
+  readonly size: number;
+  readonly thickness: number;
 }
 
 // ===========================================
@@ -188,7 +200,7 @@ export function resolveMapModels(
       .filter((p) => p.ramp!.replacesGround)
       .map((p) => index.keyOf(p.ramp!.from)),
   );
-  return {
+  const base = {
     tiles: resolveTiles(map, index, rampFeet, roads),
     foundations: resolveFoundationModels(map),
     roofs,
@@ -205,6 +217,7 @@ export function resolveMapModels(
     ],
     connectors,
   };
+  return { ...base, infestation: resolveResinModels(map, index, base) };
 }
 
 /** The distinct model ids a map needs, for preloading in one pass. */
@@ -220,6 +233,7 @@ export function mapModelIds(
     placements.frontages,
     placements.props,
     placements.connectors,
+    placements.infestation,
   ]) {
     for (const placement of group) {
       ids.add(placement.modelId);

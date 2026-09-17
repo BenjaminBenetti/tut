@@ -1,3 +1,4 @@
+import { isInfestationLevel } from "../../content/model/infestation-level";
 import type { MapDimensions, MapGenParams } from "../model/map-recipe";
 import { isMapSizePreset } from "../model/map-recipe";
 import {
@@ -44,6 +45,9 @@ export function resolveMapGenParams(
   const settlement = registries.settlements.get(params.settlement);
   validateHooks(params);
   const slopeShare = resolveSlopeShare(params.slopeShare);
+  if (!isInfestationLevel(params.infestationLevel ?? 0)) {
+    throw new Error("infestationLevel must be an integer within 0..10");
+  }
   return {
     archetype: params.archetype,
     width,

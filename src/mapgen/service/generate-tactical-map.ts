@@ -7,6 +7,7 @@ import type { MapGenRegistries } from "../model/registries";
 import type { TacticalMap } from "../model/tactical-map";
 import { createDefaultRegistries } from "./default-registries";
 import { freezeDraft } from "./draft-freezer";
+import { infestMap } from "./infestation-service";
 import type { Violation } from "./map-validator";
 import { validateTacticalMap } from "./map-validator";
 import type { PipelineOptions } from "./pipeline-map-generator";
@@ -56,12 +57,12 @@ export class MapGenerationError extends Error {
 /**
  * The one function other domains call (ADR 0004 §4.7, §7.3): resolves
  * the recipe, runs the archetype's pipeline on a root RNG derived from
- * the seed, freezes the draft and validates it. Deterministic: the same
+ * the seed, freezes the draft, adds infestation and validates it. Deterministic: the same
  * recipe always yields a deep-equal map. Throws `MapGenerationError`
  * rather than returning an invalid map.
  *
  * ```
- *   MapRecipe ─► hashSeed ─► Rng ─► pipeline ─► draft ─► freeze ─► validate ─► TacticalMap
+ *   MapRecipe ─► hashSeed ─► Rng ─► pipeline ─► draft ─► freeze ─► infest ─► validate ─► TacticalMap
  * ```
  */
 export function generateTacticalMap(
@@ -83,7 +84,10 @@ export function generateTacticalMapWithDiagnostics(
   const rng = options.rng ?? new Mulberry32Rng(hashSeed(recipe.seed));
   const pipeline = createPipeline(recipe.params.archetype, registries, options);
   const result = pipeline.run(recipe.params, rng);
-  const map = freezeDraft(result.draft, recipe, registries);
+  const map = infestMap(
+    freezeDraft(result.draft, recipe, registries),
+    rng.fork("infestation"),
+  );
   const violations = validateTacticalMap(map, registries);
   if (violations.length > 0) {
     throw new MapGenerationError(recipe, violations);

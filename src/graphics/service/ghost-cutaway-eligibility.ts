@@ -15,6 +15,10 @@ import type { ModelAssetId } from "../../content/data/model-ids";
 export const GHOSTED_MODEL_PREFIXES: readonly string[] = [
   "building.",
   "prop.rooftop-",
+  "infestation.resin.wall",
+  "infestation.resin.window",
+  "infestation.resin.door",
+  "infestation.resin.collar",
 ];
 
 /**

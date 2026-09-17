@@ -14,7 +14,7 @@ import {
 } from "../../tactical/service/combat-service";
 import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { MoveGraph } from "../../tactical/service/movement-service";
-import { pathTo } from "../../tactical/service/movement-service";
+import { pathTo, pathCost } from "../../tactical/service/movement-service";
 import type { TacticalInvokeTarget } from "../model/tactical-intent";
 import type { RadialMenuHub, RadialMenuItem } from "../view/radial-menu-view";
 import type { ActionAvailabilityDeps, UnitAction } from "./action-availability";
@@ -428,11 +428,12 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
       reason: "That tile is out of reach this turn.",
     });
   } else if (path.length > 0) {
+    const distance = pathCost(ctx.mission, unit, path, ctx.graph.index);
     items.push({
       id,
       label: "Move",
       icon: "move",
-      detail: `${String(path.length)} ${path.length === 1 ? "tile" : "tiles"}`,
+      detail: `${String(path.length)} ${path.length === 1 ? "tile" : "tiles"}${distance > path.length ? ` · ${String(distance)} move (resin ×2)` : ""}`,
       primary: true,
     });
   }

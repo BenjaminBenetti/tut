@@ -285,6 +285,7 @@ function createMission(
     cityId: city.id,
     difficulty,
     mapParams: {
+      infestationLevel: infestationLevelFromMeter(city.infestation),
       biome: city.biome ?? region.biome,
       settlement: city.scale,
       size: mapSizeFor(difficulty, rule),
@@ -312,3 +313,4 @@ function assertIntelBonus(map: EarthMap, intelBonus: IntelBonus): void {
     }
   }
 }
+import { infestationLevelFromMeter } from "../../content/model/infestation-level";

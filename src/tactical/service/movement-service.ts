@@ -31,12 +31,12 @@ export interface MoveGraph {
 }
 
 /**
- * The result of a bounded search from a unit's tile: the steps to every
+ * The result of a bounded search from a unit's tile: the movement distance to every
  * tile it can reach, the tiles themselves, and the tile each one was
  * first reached from, so a path can be read back.
  */
 export interface MoveSearch {
-  /** Steps from the unit's own tile, which is present at `0`. */
+  /** Weighted movement distance from the unit's own tile, present at `0`. */
   readonly costs: ReadonlyMap<TileKey, number>;
   readonly tiles: ReadonlyMap<TileKey, Tile>;
   /** Key of the tile each reached tile was entered from; absent for the origin. */
@@ -47,8 +47,39 @@ export interface MoveSearch {
 // Constants
 // ===========================================
 
-/** Steps one tile of movement costs; connectors cost the same as a flat step. */
+/** Movement distance for a clean destination; infestation doubles it. */
 export const STEP_COST = 1;
+
+/**
+ * Distance spent entering an anchor. Any infested destination cell under a
+ * multi-tile unit doubles the step once, never once per footprint cell.
+ * All sides use the same terrain rule, including connectors and half steps.
+ */
+export function stepCost(
+  mission: TacticalState,
+  unit: Unit,
+  destination: TileCoord,
+  index: TileIndex,
+): number {
+  return footprintTiles(destination, unitFootprintSize(mission, unit)).some(
+    (tile) => index.getAt(tile)?.infested,
+  )
+    ? STEP_COST * 2
+    : STEP_COST;
+}
+
+/** Weighted distance along the supplied route, excluding its origin. */
+export function pathCost(
+  mission: TacticalState,
+  unit: Unit,
+  path: readonly TileCoord[],
+  index: TileIndex = new TileIndex(mission.map),
+): number {
+  return path.reduce(
+    (total, tile) => total + stepCost(mission, unit, tile, index),
+    0,
+  );
+}
 
 // ===========================================
 // Graph
@@ -181,7 +212,7 @@ export function footprintCanStep(
 // ===========================================
 
 /**
- * Tiles a unit may still walk this turn: `ap × move` (GDD §6.2, one
+ * Movement distance remaining this turn: `ap × move` (GDD §6.2, one
  * action per `move` tiles, a dash for two). `0` for a unit that is down
  * or whose template is missing.
  */
@@ -193,8 +224,8 @@ export function moveBudget(mission: TacticalState, unit: Unit): number {
 }
 
 /**
- * Action points a walk of `steps` tiles costs: one per started block of
- * `move` tiles, so a dash is two. `0` for no steps.
+ * Action points for weighted movement distance: one per started block of
+ * `move` distance, so a dash is two. `0` for no movement.
  */
 export function apCostOf(
   mission: TacticalState,
@@ -214,13 +245,13 @@ export function apCostOf(
 
 /**
  * Every tile the unit can end a move on this turn, keyed by tile key with
- * the steps it takes; the unit's own tile is included at `0`. Empty for
+ * the movement distance it takes; the unit's own tile is included at `0`. Empty for
  * an unknown unit. The traversal rule is mapgen's (ADR 0004 §5), so
  * infantry uses interiors, doors, stairs and ladders while mechs stay
  * outside and use ramps; living units of either team block their tiles.
  *
  * ```
- *   origin ──BFS, uniform STEP_COST, bounded by moveBudget──► { key → steps }
+ *   origin ──Dijkstra, destination cost 1 or 2──► { key → movement distance }
  *            neighbours: reachability.neighbours(tile, class) minus occupied
  * ```
  */
@@ -237,7 +268,7 @@ export function reachable(
 }
 
 /**
- * A shortest legal path for the unit to the target this turn, as the
+ * A lowest-cost legal path for the unit to the target this turn, as the
  * tiles stepped through in order ending on the target (the origin is not
  * included), or `undefined` when the target is out of reach. The unit's
  * own tile gives `[]`. Deterministic: ties break in `DIRECTIONS` order,
@@ -273,16 +304,16 @@ export function pathTo(
 }
 
 /**
- * Breadth-first search from the unit's tile under the §5 rule, uniform
- * `STEP_COST` per step, stopping at the unit's `moveBudget`. Tiles held
+ * Bounded Dijkstra search under the §5 rule, charging one for clean
+ * destinations and two for infestation, stopping at `moveBudget`. Tiles held
  * by other living units are never entered. A unit standing off the map
  * or on a tile its class may not occupy reaches nothing.
  *
  * A unit with a footprint (#1130) searches over anchors: a step is legal
  * only when its whole block makes it (`footprintCanStep`) and none of
  * the block's destination tiles is held by another unit. The costs are
- * still one per anchor step, so a brute's move is measured like anyone
- * else's.
+ * charged per anchor step, doubling once if any destination cell is infested.
+ * Integer distance buckets retain deterministic neighbour order for ties.
  */
 export function searchMoves(
   mission: TacticalState,
@@ -312,23 +343,30 @@ export function searchMoves(
   const originKey = graph.index.keyOf(origin);
   costs.set(originKey, 0);
   tiles.set(originKey, origin);
-  // for-of sees elements pushed during iteration, so this is a BFS queue.
-  const frontier: Tile[] = [origin];
-  for (const current of frontier) {
-    const currentKey = graph.index.keyOf(current);
-    const cost = (costs.get(currentKey) ?? 0) + STEP_COST;
-    if (cost > budget) {
-      continue;
-    }
-    for (const next of graph.reachability.neighbours(current, unitClass)) {
-      const key = graph.index.keyOf(next);
-      if (costs.has(key) || !enterable(current, next)) {
-        continue;
+  const buckets: Tile[][] = [[origin]];
+  for (
+    let distance = 0;
+    distance < buckets.length && distance <= budget;
+    distance++
+  ) {
+    for (const current of buckets[distance] ?? []) {
+      const currentKey = graph.index.keyOf(current);
+      if (costs.get(currentKey) !== distance) continue;
+      for (const next of graph.reachability.neighbours(current, unitClass)) {
+        const key = graph.index.keyOf(next);
+        const cost = distance + stepCost(mission, unit, next, graph.index);
+        if (
+          cost > budget ||
+          cost >= (costs.get(key) ?? Infinity) ||
+          !enterable(current, next)
+        ) {
+          continue;
+        }
+        costs.set(key, cost);
+        tiles.set(key, next);
+        parents.set(key, currentKey);
+        (buckets[cost] ??= []).push(next);
       }
-      costs.set(key, cost);
-      tiles.set(key, next);
-      parents.set(key, currentKey);
-      frontier.push(next);
     }
   }
   return { costs, tiles, parents };

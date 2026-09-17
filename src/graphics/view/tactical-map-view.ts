@@ -1,4 +1,6 @@
 import type { BusinessSignAppearance } from "../model/business-sign-appearance";
+import { resinGroundHeight } from "../service/surface-rise";
+import { RESIN_STYLE } from "../data/resin-style";
 import type { TextureSource } from "../model/texture-source";
 import {
   BusinessSignModelFactory,
@@ -90,6 +92,11 @@ import {
 import type { ModelAssetId } from "../../content/data/model-ids";
 import { mapModelIds, resolveMapModels } from "../service/map-model-resolver";
 import type { ModelPlacement } from "../service/map-model-resolver";
+import type { ResinSurfaceAppearance } from "../service/map-model-resolver";
+import {
+  fitResinSurface,
+  resinSurfaceKey,
+} from "../service/resin-surface-model";
 import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
 import type { TilePicker } from "../model/tile-picker";
@@ -348,6 +355,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly roofModels = new Map<string, Group>();
   private readonly roadModels = new Map<string, Group>();
   private readonly terrainModels = new Map<string, Group>();
+  private readonly resinModels = new Map<string, Group>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
@@ -573,6 +581,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       ["walls", placements.walls],
       ["frontages", placements.frontages],
       ["props", placements.props],
+      ["infestation", placements.infestation],
       ["ramps", placements.connectors.filter((p) => p.ramp !== undefined)],
       ["ladders", placements.connectors.filter((p) => p.ladder !== undefined)],
     ];
@@ -627,6 +636,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         roof?: PitchedRoofAppearance;
         terrain?: { appearance: TerrainSlopeAppearance; tile: Tile };
         naturalSurface?: Tile["surface"];
+        resin?: ResinSurfaceAppearance;
       }
     >();
     for (const placement of placements) {
@@ -644,15 +654,19 @@ export class TacticalMapView implements Disposable, TilePicker {
           ? { appearance: placement.terrain, tile }
           : undefined;
       const key = `${placement.modelId}:${String(placement.level)}${businessSign ? `:sign:${businessSignKey(businessSign)}` : ""}${interiorFloor ? `:floor:${interiorFloorKey(interiorFloor)}` : ""}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${ladder ? `:ladder:${ladder.finish}` : ""}${roof ? `:roof:${pitchedRoofKey(roof)}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
+      const batchKey = placement.resin
+        ? `${key}:resin:${resinSurfaceKey(placement.resin)}`
+        : key;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
       const owners = placement.occupiedTiles?.map((tile) =>
         this.index.keyOf(tile),
       );
-      const batch = batches.get(key);
+      const batch = batches.get(batchKey);
       if (batch === undefined) {
-        batches.set(key, {
+        batches.set(batchKey, {
           modelId: placement.modelId,
+          resin: placement.resin,
           level: placement.level,
           matrices: [matrix],
           keys: [tileKey],
@@ -677,8 +691,9 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
     }
     for (const [key, batch] of batches) {
-      const prototype =
-        batch.businessSign && this.businessSignFactory
+      const prototype = batch.resin
+        ? await this.resinPrototype(batch.modelId, batch.resin, models)
+        : batch.businessSign && this.businessSignFactory
           ? await this.businessSignFactory.create(batch.businessSign)
           : batch.interiorFloor
             ? await this.interiorFloorPrototype(batch.interiorFloor, models)
@@ -764,6 +779,39 @@ export class TacticalMapView implements Disposable, TilePicker {
         this.groupFor(batch.level).add(mesh);
       });
     }
+  }
+
+  /** Fits resin over a cached support profile, sharing the resulting geometry across tiles. */
+  private async resinPrototype(
+    id: ModelAssetId,
+    appearance: ResinSurfaceAppearance,
+    models: ModelLoader,
+  ): Promise<Group> {
+    const key = `${id}:${resinSurfaceKey(appearance)}`;
+    const cached = this.resinModels.get(key);
+    if (cached) return cached;
+    const p = appearance.support;
+    const tile = this.index.getAt(p.tile);
+    const support = p.roof
+      ? await this.roofPrototype(p.roof, models)
+      : p.ramp
+        ? await this.parameterisedPrototype("ramp", p.ramp.surface, models)
+        : p.terrain && tile
+          ? await this.terrainPrototype(p.terrain, tile, models)
+          : tile?.slope
+            ? await this.parameterisedPrototype(
+                tile.slope.kind,
+                tile.surface,
+                models,
+              )
+            : await models.load(p.modelId);
+    const fitted = fitResinSurface(await models.load(id), support, appearance);
+    fitted.traverse((object) => {
+      if (object instanceof Mesh)
+        this.disposables.push((object as Mesh).geometry);
+    });
+    this.resinModels.set(key, fitted);
+    return fitted;
   }
 
   /** Shares a room finish while owning all copied geometry and material resources. */
@@ -1184,6 +1232,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.ladderModels.clear();
     this.roadModels.clear();
     this.terrainModels.clear();
+    this.resinModels.clear();
     this.root.removeFromParent();
   }
 
@@ -1584,6 +1633,7 @@ export class TacticalMapView implements Disposable, TilePicker {
    * the truer picture, but with the two tile sets identical it would
    * mean one kind never appearing anywhere in the game, which is a
    * visual decision rather than a bug fix.
+   * Resin-covered tiles lift every shelf above the authored shell.
    */
   private buildHooks(): void {
     const batches = new Map<string, Batch>();
@@ -1602,7 +1652,11 @@ export class TacticalMapView implements Disposable, TilePicker {
         const lift =
           MARKER_LIFT +
           (isObjective(hook, this.map) ? SLAB_HEIGHT : 0) +
-          shelfOf(hook.kind);
+          shelfOf(hook.kind) +
+          (this.index.getAt(coord)?.infested
+            ? resinGroundHeight(this.map.recipe.params.infestationLevel ?? 0) +
+              RESIN_STYLE.groundLift
+            : 0);
         const matrix = boxMatrix(
           coord.x + 0.5,
           tileTop(coord.y) + lift,

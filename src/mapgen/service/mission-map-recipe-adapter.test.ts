@@ -50,6 +50,30 @@ function unwrap<T>(
 }
 
 describe("missionToMapRecipe", () => {
+  it("preserves a mission's infestation snapshot and keeps legacy missions at zero by omission", () => {
+    const infested = unwrap(
+      missionToMapRecipe(
+        mission({}, { infestationLevel: 7 }),
+        INFESTATION_CLEARANCE,
+        registries,
+      ),
+    );
+    expect(infested.params.infestationLevel).toBe(7);
+    expect(
+      unwrap(missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries))
+        .params.infestationLevel,
+    ).toBeUndefined();
+    expect(
+      missionToMapRecipe(
+        mission({}, { infestationLevel: 11 }),
+        INFESTATION_CLEARANCE,
+        registries,
+      ),
+    ).toMatchObject({
+      ok: false,
+      error: { kind: "invalid-infestation" },
+    });
+  });
   it("carries the mission's seed and site parameters into the recipe", () => {
     const recipe = unwrap(
       missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries),

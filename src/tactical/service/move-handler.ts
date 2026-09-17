@@ -24,7 +24,9 @@ import {
   buildMoveGraph,
   footprintCanStep,
   moveBudget,
+  pathCost,
   searchMoves,
+  stepCost,
 } from "./movement-service";
 
 // ===========================================
@@ -35,7 +37,7 @@ import {
  * Builds the `Move` handler (#325): walks the unit along the command's
  * path one step at a time, letting `react` answer each step (overwatch,
  * #328) and ending the walk early if the mover goes down; spends
- * `ceil(steps taken / move)` action points and turns the unit to face
+ * `ceil(weighted distance taken / move)` action points and turns the unit to face
  * its last step. Emits one `UnitMoved` per step, with any reaction's
  * events after the step that provoked them. Pure and deterministic.
  *
@@ -68,11 +70,13 @@ export function createMoveHandler(
     if (path.length === 0) {
       return reject("empty-path");
     }
-    if (path.length > moveBudget(mission, unit)) {
+    const graph = buildMoveGraph(mission.map);
+    if (
+      pathCost(mission, unit, path, graph.index) > moveBudget(mission, unit)
+    ) {
       return reject("over-budget");
     }
 
-    const graph = buildMoveGraph(mission.map);
     const search = searchMoves(mission, unit, graph);
     const unitClass = passMaskFor(unit.passClass);
     const size = unitFootprintSize(mission, unit);
@@ -109,7 +113,7 @@ export function createMoveHandler(
         payload: { unitId, from, to, path: [to] },
       });
       from = to;
-      taken += 1;
+      taken += stepCost(mission, unit, step, graph.index);
       const reaction = react(state, unitId, ctx);
       state = reaction.state;
       events.push(...reaction.events);

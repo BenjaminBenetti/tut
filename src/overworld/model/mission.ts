@@ -25,6 +25,8 @@ export type MissionId = string;
  * overworld importing `mapgen/`.
  */
 export interface MissionMapParams {
+  /** Infestation at offer time, quantized to 0–10; absent keeps legacy maps clean. */
+  readonly infestationLevel?: number;
   /** Biome of the host region. */
   readonly biome: BiomeId;
   /** How built-up the site is. */

@@ -12,6 +12,73 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "infestation.resin.ground-a": {
+    category: "tiles",
+    path: "assets/models/tiles/infestation-ground-a.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.16,
+    sockets: [],
+    quality: "final",
+  },
+  "infestation.resin.ground-b": {
+    category: "tiles",
+    path: "assets/models/tiles/infestation-ground-b.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.16,
+    sockets: [],
+    quality: "final",
+  },
+  "infestation.resin.wall": {
+    category: "buildings",
+    path: "assets/models/buildings/infestation-wall.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.49,
+    sockets: [],
+    quality: "final",
+  },
+  "infestation.resin.window": {
+    category: "buildings",
+    path: "assets/models/buildings/infestation-window.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.54,
+    sockets: [],
+    quality: "final",
+  },
+  "infestation.resin.door": {
+    category: "buildings",
+    path: "assets/models/buildings/infestation-door.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.52,
+    sockets: [],
+    quality: "final",
+  },
+  "infestation.resin.collar": {
+    category: "props",
+    path: "assets/models/props/infestation-collar.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.52,
+    sockets: [],
+    quality: "final",
+  },
+
   "tdf.turret": {
     category: "units",
     path: "assets/models/units/tdf-turret.glb",

@@ -22,6 +22,7 @@ export interface MapRecipeError {
     | "unknown-biome"
     | "unknown-settlement"
     | "unknown-size"
+    | "invalid-infestation"
     | "unknown-hook-kind";
   /** The id that was not recognised. */
   readonly id: string;
@@ -70,6 +71,10 @@ export function missionToMapRecipe(
   registries: AdapterRegistries = createDefaultRegistries(),
 ): Result<MapRecipe, MapRecipeError> {
   const { biome, settlement, size, seed } = mission.mapParams;
+  const infestationLevel = mission.mapParams.infestationLevel;
+  if (!isInfestationLevel(infestationLevel ?? 0)) {
+    return err({ kind: "invalid-infestation", id: String(infestationLevel) });
+  }
   if (!registries.biomes.has(biome)) {
     return err({ kind: "unknown-biome", id: biome });
   }
@@ -95,6 +100,7 @@ export function missionToMapRecipe(
       settlement,
       size,
       hooks,
+      ...(infestationLevel === undefined ? {} : { infestationLevel }),
       ...(isPlaceProfileId(mission.cityId)
         ? { placeProfile: mission.cityId }
         : {}),
@@ -172,3 +178,4 @@ function fitDistanceToMap(
   const room = Math.floor((size.width + size.depth) / 4) - MAP_EDGE_MARGIN;
   return Math.min(distance, Math.max(0, room));
 }
+import { isInfestationLevel } from "../../content/model/infestation-level";

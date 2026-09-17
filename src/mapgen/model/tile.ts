@@ -21,6 +21,8 @@ import type { WallSet } from "./wall";
  * ```
  */
 export interface Tile extends TileCoord {
+  /** Resin infestation: entering this tile costs double movement; absent is clean. */
+  readonly infested?: true;
   /** Surface kind; resolved through the surface registry. */
   readonly surface: SurfaceId;
   /**

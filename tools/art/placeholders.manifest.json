@@ -2526,5 +2526,89 @@
     "quality": "final",
     "triangles": 798,
     "bytes": 77960
+  },
+  {
+    "id": "infestation.resin.ground-a",
+    "category": "tiles",
+    "path": "assets/models/tiles/infestation-ground-a.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.16,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 294,
+    "bytes": 12772
+  },
+  {
+    "id": "infestation.resin.ground-b",
+    "category": "tiles",
+    "path": "assets/models/tiles/infestation-ground-b.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.16,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 294,
+    "bytes": 12792
+  },
+  {
+    "id": "infestation.resin.collar",
+    "category": "props",
+    "path": "assets/models/props/infestation-collar.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.52,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 240,
+    "bytes": 8568
+  },
+  {
+    "id": "infestation.resin.wall",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-wall.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.49,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 720,
+    "bytes": 19492
+  },
+  {
+    "id": "infestation.resin.window",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.54,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 720,
+    "bytes": 19500
+  },
+  {
+    "id": "infestation.resin.door",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.52,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 600,
+    "bytes": 17824
   }
 ]

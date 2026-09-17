@@ -27,6 +27,8 @@ const browser = await chromium.launch({
 });
 const records = [];
 const quick = process.argv.includes("--quick");
+const rural = process.argv.includes("--rural");
+const prefix = rural ? "rural-" : "";
 try {
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1080 },
@@ -69,18 +71,20 @@ try {
       ),
     });
   });
-  for (const biome of quick
+  for (const biome of quick || rural
     ? ["temperate"]
     : ["temperate", "snowy", "desert", "coastal"]) {
-    const levels = quick
-      ? [4, 10]
-      : biome === "temperate"
-        ? [0, 1, 4, 7, 10]
-        : [10];
+    const levels = rural
+      ? [10]
+      : quick
+        ? [4, 10]
+        : biome === "temperate"
+          ? [0, 1, 4, 7, 10]
+          : [10];
     const query = new URLSearchParams({
-      seed: "resin-review",
+      seed: rural ? "resin-roof-3" : "resin-review",
       biome,
-      settlement: "town",
+      settlement: rural ? "rural" : "town",
       size: "small",
       models: "1",
       infestation: "0",
@@ -101,7 +105,7 @@ try {
           `body[data-infestation-level="${level}"][data-models-ready="true"]`,
         )
         .waitFor({ timeout: 120000 });
-      const name = `${biome}-level-${level}`;
+      const name = `${prefix}${biome}-level-${level}`;
       await page.screenshot({ path: `${out}/${name}.png` });
       records.push({
         name,
@@ -115,14 +119,27 @@ try {
       console.log(name);
     }
     if (biome === "temperate") {
-      await page.locator("#level").fill("6");
-      await page.screenshot({ path: `${out}/temperate-level-10-cutaway.png` });
+      await page
+        .locator("#level")
+        .fill(
+          String(
+            Math.min(
+              6,
+              Number(await page.locator("#level").getAttribute("max")),
+            ),
+          ),
+        );
+      await page.screenshot({
+        path: `${out}/${prefix}temperate-level-10-cutaway.png`,
+      });
       await page
         .locator("#level")
         .fill(await page.locator("#level").getAttribute("max"));
       const detail = await page.evaluate(async () => {
         const map = window.__resinMap;
-        const building = map.buildings[0];
+        const building =
+          map.buildings.find((b) => b.roof.kind === "pitched") ??
+          map.buildings[0];
         const rect = building.footprint[0];
         const rig = window.__resinRig;
         rig.lookAt({
@@ -147,15 +164,23 @@ try {
               3) *
             (object.count ?? 1);
         });
-        return { building: building.id, rect, batches, triangles };
+        return {
+          building: building.id,
+          roof: building.roof.kind,
+          rect,
+          batches,
+          triangles,
+        };
       });
-      records.push({ name: "temperate-level-10-detail", ...detail });
-      await page.screenshot({ path: `${out}/temperate-level-10-detail.png` });
+      records.push({ name: `${prefix}temperate-level-10-detail`, ...detail });
+      await page.screenshot({
+        path: `${out}/${prefix}temperate-level-10-detail.png`,
+      });
     }
   }
   if (errors.length) throw new Error(errors.join("\n"));
   writeFileSync(
-    `${out}/captures.json`,
+    `${out}/${prefix}captures.json`,
     await format(JSON.stringify({ errors, records }), { parser: "json" }),
   );
 } finally {

@@ -30,7 +30,7 @@ A smooth, seeded colony field controls the ground web's local maturity and bendi
 
 `infestation_network.py` authors a **6 × 6 tile** source network from irregular warped cells, a winding main artery and tapered branches. `infestation-ground-a.glb` carries its `Mature` morph target; Ground B is the independently validated mature review model. The seed chooses a common source phase and rotation.
 
-Before clipping, the renderer samples the colony field at each source vertex's actual map position. That sample controls the maturity morph, height and a second, larger-scale bend. The field continues across source-canvas boundaries, so the six-tile source no longer repeats with the same silhouette or thickness everywhere. Each prepared canvas is cached, then sliced into tile footprints. Shared vertices use identical inputs on both sides, retaining exact seams at neighbouring tiles and canvas wraps. Missing neighbours trim and flatten the fringe. Shortened ramps sample the corresponding portion of the web; ramp and stair links join across a storey rise.
+Before clipping, the renderer samples the colony field at each source vertex's actual map position. That sample controls the maturity morph, height and a second, larger-scale bend. The field continues across source-canvas boundaries, so the six-tile source no longer repeats with the same silhouette or thickness everywhere. Source transforms and the triangles that can reach each translated canvas are cached once per rotation. Only relevant vertices are deformed; each prepared canvas is cached, then sliced into tile footprints. Shared vertices use identical inputs on both sides, retaining exact seams at neighbouring tiles and canvas wraps. Missing neighbours trim and flatten the fringe. Shortened ramps sample the corresponding portion of the web; ramp and stair links join across a storey rise.
 
 The ownership split preserves fog and floor cuts. Attached organs keep the host prop or wall's demolition identity. All ground colours sample the existing bug atlas through one skin material. Distinct world-space slices require more geometry batches than the former periodic web; the capture metadata records scene batch and triangle totals, including instances outside the camera. Those totals are not a frame-rate benchmark. The authored forms still repeat, but their combination, local growth and placement vary across the map.
 
@@ -63,6 +63,8 @@ Entering a marked tile costs **2 movement distance**, versus **1** on clean grou
 | ![Snow at level 10](../diagnostics/infestation/snowy-level-10.png) | ![Desert at level 10](../diagnostics/infestation/desert-level-10.png) |
 | **Coastal** | **Floor cut** |
 | ![Coastal map with water left clear](../diagnostics/infestation/coastal-level-10.png) | ![Resin follows the selected floor cut](../diagnostics/infestation/temperate-level-10-cutaway.png) |
+
+![A pitched house roof carries nursery growth without adding walkable obstructions](../diagnostics/infestation/rural-temperate-level-10-detail.png)
 
 ![Deployed units remain visible on the level-10 map](../diagnostics/infestation/tactical-level-10-move-range.png)
 
@@ -98,6 +100,6 @@ blender -b --python tools/art/make_model.py -- \
   --file infestation-ground-a.glb --quality final --max-triangles 9000
 ```
 
-Regenerate the Map Lab gallery with `node tools/art/preview/capture-infestation.mjs`; URLs, counts and browser errors are recorded in [captures.json](../diagnostics/infestation/captures.json). The recorded timings include regeneration and PNG readback under SwiftShader. Capture the deployed squad with `CAPTURE=1 pnpm exec playwright test e2e/infestation-movement.spec.ts --workers=1`.
+Regenerate the Map Lab gallery with `node tools/art/preview/capture-infestation.mjs`; URLs, counts and browser errors are recorded in [captures.json](../diagnostics/infestation/captures.json). The recorded timings include regeneration and PNG readback under SwiftShader. Use `--rural` for the pitched-roof house (`resin-roof-3`) and its separate [metadata](../diagnostics/infestation/rural-captures.json). Capture the deployed squad with `CAPTURE=1 pnpm exec playwright test e2e/infestation-movement.spec.ts --workers=1`.
 
 Automated coverage includes all 11 levels, unchanged level-0 maps, nested growth, all biomes, deterministic serialization, mission meter conversion, weighted routes/AP/interruption/connectors/footprints, shared strand seams and wrap boundaries, concave fringes, growth morph identity, visible isolated cells after deformation, hive model clearance and open apertures, deterministic organ diversity and host ownership, rotated-support fitting, and Map Lab URL/regeneration/floor-cut behavior. The tactical browser test launches a real level-10 mission, spends two AP on a route that would cost one on clean ground, and reloads the saved mission.

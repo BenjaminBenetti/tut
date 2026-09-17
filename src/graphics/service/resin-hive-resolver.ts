@@ -34,7 +34,7 @@ export function resolveResinFloorDetails(
     const roofOrgan =
       appearance.support.roof !== undefined &&
       level >= 7 &&
-      variation % 5 === 0;
+      variation % 3 === 0;
     const modelId = roofOrgan
       ? variation % 2
         ? "infestation.resin.brood"

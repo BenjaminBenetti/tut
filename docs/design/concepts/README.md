@@ -21,6 +21,7 @@ Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 | [tileset-city-street](tileset-city-street.md) | Modular road, sidewalk, wall, roof, stairs and prop kit | §7, §4.3 |
 | [tactical-firefight](tactical-firefight.md) | A whole mission: what everything adds up to in one scene | §12, §4.1, §4.2 |
 | [overworld-deployables](overworld-deployables.md) | Strategic-map deployables: defensive battery, repellent dispersal, sensor array (#1153) | §4.1, §6 |
+| [overworld-bank](overworld-bank.md) | Strategic-map bank: squat vault block with a stepped roof, armoured door and a turning holographic credit sign (#1155) | §4.1, §6 |
 | [overworld-settlement](overworld-settlement.md) | Strategic-map settlement markers at three scales, plus the egg-infested overlay; superseded by the ten regional sheets below (#1155) | §4.2, §4.3, §6 |
 | [overworld-settlement-north-american](overworld-settlement-north-american.md) | North American: farmstead, main-street grid, Manhattan grid with a stepped needle tower (#1155) | §4.3, §6 |
 | [overworld-settlement-european](overworld-settlement-european.md) | Western European: ochre roofs, spire church, twin-tower cathedral, iron lattice tower (#1155) | §4.3, §6 |

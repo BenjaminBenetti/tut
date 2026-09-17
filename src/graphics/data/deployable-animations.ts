@@ -36,6 +36,7 @@ export const REPELLENT_SPRAY: SprayPuffOptions = {
  *   defensive-battery    barrels traverse ±30° over 10 s
  *   repellent-dispersal  nozzle sweeps ±40° over 8 s, spraying
  *   sensor-array         dish turns once every 12 s
+ *   bank                 sign turns once every 20 s
  * ```
  */
 export const DEPLOYABLE_ANIMATIONS: Readonly<
@@ -55,5 +56,9 @@ export const DEPLOYABLE_ANIMATIONS: Readonly<
   "sensor-array": {
     kind: "spin",
     radiansPerSecond: (2 * Math.PI) / 12,
+  },
+  bank: {
+    kind: "spin",
+    radiansPerSecond: (2 * Math.PI) / 20,
   },
 };

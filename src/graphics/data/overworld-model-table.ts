@@ -63,7 +63,8 @@ export const SETTLEMENT_MODEL_IDS: readonly ModelAssetId[] =
 /**
  * The installation model drawn for each deployable type (#1153, #1155).
  * Every GLB has a `base` node with an `animated` child whose `rotation.y`
- * the map turns: barrels, a nozzle, a dish.
+ * the map turns: barrels, a nozzle, a dish, the bank's sign. The bank is
+ * a placeholder build until its model lands.
  */
 export const DEPLOYABLE_MODEL_IDS: Readonly<
   Record<DeployableTypeId, ModelAssetId>
@@ -71,6 +72,7 @@ export const DEPLOYABLE_MODEL_IDS: Readonly<
   "defensive-battery": "overworld.deployable.defensive-battery",
   "repellent-dispersal": "overworld.deployable.repellent-dispersal",
   "sensor-array": "overworld.deployable.sensor-array",
+  bank: "overworld.deployable.bank",
 };
 
 /** Name of the GLB node a deployable's moving part turns on. */

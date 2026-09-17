@@ -27,6 +27,7 @@ export const MODEL_IDS = [
   "overworld.deployable.defensive-battery",
   "overworld.deployable.repellent-dispersal",
   "overworld.deployable.sensor-array",
+  "overworld.deployable.bank",
   // Units (TDF)
   "tdf.infantry.engineer",
   "tdf.infantry.medic",

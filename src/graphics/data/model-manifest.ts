@@ -1574,6 +1574,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "overworld.deployable.bank": {
+    category: "props",
+    path: "assets/models/props/overworld-deployable-bank.glb",
+    footprint: { w: 0.45, d: 0.45 },
+    height: 0.29,
+    sockets: [],
+    quality: "placeholder",
+  },
   "overworld.settlement.north-american.rural": {
     category: "props",
     path: "assets/models/props/overworld-settlement-north-american-rural.glb",

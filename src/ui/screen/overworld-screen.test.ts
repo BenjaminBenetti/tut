@@ -24,8 +24,18 @@ import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
+import { deployableBuildCost } from "../../overworld/model/deployable-type";
 import { BUILD_DEPLOYABLE } from "../../overworld/model/build-deployable-command";
-import { DECOMMISSION_DEPLOYABLE } from "../../overworld/model/decommission-deployable-command";
+import {
+  DECOMMISSION_DEPLOYABLE,
+  decommissionDeployable,
+} from "../../overworld/model/decommission-deployable-command";
+import { nextDeployableLevel } from "../../overworld/model/deployable-level";
+import { levelSpec } from "../../overworld/model/deployable-type";
+import {
+  UPGRADE_DEPLOYABLE,
+  upgradeDeployable,
+} from "../../overworld/model/upgrade-deployable-command";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import { MISSION_TYPES } from "../../content/data/mission-types";
@@ -35,6 +45,10 @@ import type { PendingEvent } from "../../overworld/model/pending-event";
 import { RESOLVE_EVENT } from "../../overworld/model/resolve-event-command";
 import { DataEventTypeCatalogue } from "../../overworld/repository/event-type-catalogue";
 import type { Mission } from "../../overworld/model/mission";
+import { findCity } from "../../overworld/service/earth-map-query-service";
+import type { CityPickSource } from "../model/city-pick-source";
+import type { InstallationPickSource } from "../model/installation-pick-source";
+import type { ScreenAnchor } from "../view/radial-menu-view";
 import { OverworldSelectionState } from "../service/overworld-selection-state";
 import { OverworldScreen } from "./overworld-screen";
 
@@ -64,6 +78,7 @@ class FakeStore implements CampaignStore {
   >();
   fail = false;
   readonly resolved: string[] = [];
+  readonly dispatched: OverworldCommand[] = [];
   constructor(state: GameState) {
     this.state = state;
   }
@@ -79,10 +94,36 @@ class FakeStore implements CampaignStore {
     };
   }
   dispatch(command: OverworldCommand) {
+    this.dispatched.push(command);
     if (this.fail) {
       return err(commandError("campaign-over", "The campaign has ended"));
     }
-    if (command.type === BUILD_DEPLOYABLE) {
+    if (command.type === UPGRADE_DEPLOYABLE) {
+      const held = this.state.overworld.deployables.find(
+        (d) => d.id === command.payload.deployableId,
+      );
+      const next = held ? nextDeployableLevel(held.level) : undefined;
+      if (!held || next === undefined) {
+        return err(commandError("max-level-reached", "Already at max level"));
+      }
+      const cost = levelSpec(DEPLOYABLE_TYPES[held.typeId], next).buildCost;
+      if (this.state.economy.credits < cost) {
+        return err(commandError("insufficient-credits", "Not enough credits"));
+      }
+      this.state = {
+        ...this.state,
+        overworld: {
+          ...this.state.overworld,
+          deployables: this.state.overworld.deployables.map((d) =>
+            d.id === held.id ? { ...d, level: next } : d,
+          ),
+        },
+        economy: {
+          ...this.state.economy,
+          credits: this.state.economy.credits - cost,
+        },
+      };
+    } else if (command.type === BUILD_DEPLOYABLE) {
       const type = DEPLOYABLE_TYPES[command.payload.typeId];
       this.state = {
         ...this.state,
@@ -94,6 +135,7 @@ class FakeStore implements CampaignStore {
               id: `deployable-${String(this.state.overworld.deployables.length + 1)}`,
               typeId: command.payload.typeId,
               regionId: command.payload.regionId,
+              level: 1,
               builtDay: this.state.overworld.day,
               online: true,
             },
@@ -101,7 +143,7 @@ class FakeStore implements CampaignStore {
         },
         economy: {
           ...this.state.economy,
-          credits: this.state.economy.credits - type.buildCost,
+          credits: this.state.economy.credits - deployableBuildCost(type),
         },
       };
     } else if (command.type === DECOMMISSION_DEPLOYABLE) {
@@ -199,11 +241,77 @@ const DEPLOYABLE_TYPES_CATALOGUE = new DataDeployableTypeCatalogue(
   DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
 );
 
+/** The shipped map's city → region lookup, as the app injects it. */
+const regionOf = (cityId: string): string | undefined =>
+  findCity(EARTH_MAP, cityId)?.regionId;
+
+/** A selection over the shipped map. */
+const newSelection = (): OverworldSelectionState =>
+  new OverworldSelectionState(regionOf);
+
+/**
+ * A map that reports picks on demand and places every city at a fixed
+ * screen point unless told otherwise (#1154).
+ */
+class FakePicks implements CityPickSource {
+  readonly positions = new Map<string, ScreenAnchor | undefined>();
+  private readonly listeners = new Set<(cityId: string) => void>();
+  onCityPicked(listener: (cityId: string) => void): Unsubscribe {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+  cityScreenPosition(cityId: string): ScreenAnchor | undefined {
+    return this.positions.has(cityId)
+      ? this.positions.get(cityId)
+      : { x: 300, y: 200 };
+  }
+  /** A pointer pick on the marker. */
+  pick(cityId: string): void {
+    for (const listener of [...this.listeners]) {
+      listener(cityId);
+    }
+  }
+  get listenerCount(): number {
+    return this.listeners.size;
+  }
+}
+
+/**
+ * A map that reports installation picks on demand and places every
+ * installation at a fixed screen point unless told otherwise (#1155).
+ */
+class FakeInstallationPicks implements InstallationPickSource {
+  readonly positions = new Map<string, ScreenAnchor | undefined>();
+  private readonly listeners = new Set<(id: string) => void>();
+  onInstallationPicked(listener: (id: string) => void): Unsubscribe {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+  installationScreenPosition(id: string): ScreenAnchor | undefined {
+    return this.positions.has(id) ? this.positions.get(id) : { x: 120, y: 80 };
+  }
+  /** A pointer pick on the model. */
+  pick(id: string): void {
+    for (const listener of [...this.listeners]) {
+      listener(id);
+    }
+  }
+  get listenerCount(): number {
+    return this.listeners.size;
+  }
+}
+
 /** Screen deps around a store, with a fresh selection unless one is given. */
 const depsFor = (
   store: CampaignStore | undefined,
   router: ScreenRouter = fakeRouter().router,
-  selection = new OverworldSelectionState(),
+  selection = newSelection(),
+  cityPicks?: CityPickSource,
+  installationPicks?: InstallationPickSource,
 ) => ({
   router,
   session: sessionWith(store),
@@ -211,6 +319,8 @@ const depsFor = (
   deployableTypes: DEPLOYABLE_TYPES_CATALOGUE,
   missionTypes: MISSION_TYPES,
   eventTypes: EVENT_TYPES_CATALOGUE,
+  ...(cityPicks === undefined ? {} : { cityPicks }),
+  ...(installationPicks === undefined ? {} : { installationPicks }),
 });
 
 const fakeRouter = (): { router: ScreenRouter; navigate: NavigateMock } => {
@@ -249,7 +359,7 @@ describe("OverworldScreen", () => {
     expect(root.querySelector("#top-bar")).not.toBeNull();
     expect(root.querySelector("#map-area")).not.toBeNull();
     expect(root.querySelector("#side-panel")).not.toBeNull();
-    expect(root.querySelector("#selected-city")).not.toBeNull();
+    expect(root.querySelector("#selected-region")).not.toBeNull();
     expect(field("seed")?.textContent).toBe("1234");
     expect(field("day")?.textContent).toBe("1");
     expect(field("credits")?.textContent).toBe("¢5,000");
@@ -298,23 +408,31 @@ describe("OverworldScreen", () => {
     expect(navigate).toHaveBeenCalledWith("main-menu");
   });
 
-  it("renders the selected city and its region's deployables, and builds through the store", () => {
+  it("renders the selected city's region with its cities and deployables, and builds through the store", () => {
     const store = new FakeStore(newGame());
-    const selection = new OverworldSelectionState();
+    const selection = newSelection();
     new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
     expect(
-      root.querySelector<HTMLElement>('[data-role="no-city"]')?.hidden,
+      root.querySelector<HTMLElement>('[data-role="no-region"]')?.hidden,
     ).toBe(false);
 
     const city = EARTH_MAP.cities[0];
     if (!city) throw new Error("fixture map has no cities");
     selection.select(city.id);
-    expect(root.querySelector("#selected-city")?.textContent).toBe(city.name);
-    expect(field("region")?.textContent).toBe(
+    expect(root.querySelector("#selected-region")?.textContent).toBe(
       EARTH_MAP.regions.find((r) => r.id === city.regionId)?.name,
     );
+    const current = root.querySelector<HTMLElement>(
+      '#region-panel [data-city-id][aria-current="true"]',
+    );
+    expect(current?.dataset.cityId).toBe(city.id);
+    expect(current?.textContent).toContain(city.name);
+    expect(root.querySelectorAll("#region-panel [data-city-id]")).toHaveLength(
+      EARTH_MAP.regions.find((r) => r.id === city.regionId)?.cityIds.length ??
+        -1,
+    );
     expect(
-      root.querySelector<HTMLElement>('[data-role="no-city"]')?.hidden,
+      root.querySelector<HTMLElement>('[data-role="no-region"]')?.hidden,
     ).toBe(true);
 
     const build = root.querySelector<HTMLButtonElement>(
@@ -344,7 +462,7 @@ describe("OverworldScreen", () => {
 
   it("shows a rejected build in the bar", () => {
     const store = new FakeStore(newGame());
-    const selection = new OverworldSelectionState();
+    const selection = newSelection();
     new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
     selection.select(EARTH_MAP.cities[0]?.id);
     store.fail = true;
@@ -470,7 +588,7 @@ describe("OverworldScreen", () => {
   ];
 
   it("lists missions soonest first and opens one on click, selecting its city", () => {
-    const selection = new OverworldSelectionState();
+    const selection = newSelection();
     new OverworldScreen(
       depsFor(new FakeStore(withMissions(4, MISSIONS)), undefined, selection),
     ).mount(root);
@@ -480,11 +598,21 @@ describe("OverworldScreen", () => {
     ]);
     rows()[1]?.click();
     expect(selection.selection).toEqual({
+      regionId: "sub-saharan-africa",
       cityId: "lagos",
       missionId: "mission-2",
     });
-    expect(root.querySelector("#selected-city")?.textContent).toBe("Lagos");
-    expect(rows()[1]?.classList.contains("is-selected")).toBe(true);
+    expect(root.querySelector("#selected-region")?.textContent).toBe(
+      "Sub-Saharan Africa",
+    );
+    expect(
+      root.querySelector<HTMLElement>(
+        '#region-panel [data-city-id][aria-current="true"]',
+      )?.dataset.cityId,
+    ).toBe("lagos");
+    // The list narrows to the region the mission is in.
+    expect(rows().map((r) => r.dataset.missionId)).toEqual(["mission-2"]);
+    expect(rows()[0]?.classList.contains("is-selected")).toBe(true);
     const details = root.querySelector<HTMLElement>(
       '[data-role="mission-details"]',
     );
@@ -493,22 +621,60 @@ describe("OverworldScreen", () => {
   });
 
   it("a city picked on the map shows in the panel and drops a mission elsewhere", () => {
-    const selection = new OverworldSelectionState();
+    const selection = newSelection();
     new OverworldScreen(
       depsFor(new FakeStore(withMissions(4, MISSIONS)), undefined, selection),
     ).mount(root);
     rows()[0]?.click();
     selection.select("tokyo");
-    expect(root.querySelector("#selected-city")?.textContent).toBe("Tokyo");
+    expect(root.querySelector("#selected-region")?.textContent).toBe(
+      "East Asia",
+    );
+    expect(
+      root.querySelector<HTMLElement>(
+        '#region-panel [data-city-id][aria-current="true"]',
+      )?.dataset.cityId,
+    ).toBe("tokyo");
     expect(
       root.querySelector<HTMLElement>('[data-role="mission-details"]')?.hidden,
     ).toBe(true);
+    // East Asia has no mission on offer, so the list is empty; Show all
+    // clears the region and every mission returns.
+    expect(rows()).toHaveLength(0);
+    button("show-all-missions").click();
+    expect(selection.selection).toEqual({
+      regionId: undefined,
+      cityId: undefined,
+      missionId: undefined,
+    });
+    expect(rows()).toHaveLength(2);
     expect(rows().some((r) => r.classList.contains("is-selected"))).toBe(false);
+  });
+
+  it("a city row in the region panel selects that city (#1154)", () => {
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(new FakeStore(withMissions(4, MISSIONS)), undefined, selection),
+    ).mount(root);
+    selection.select("lagos");
+    root
+      .querySelector<HTMLElement>('#region-panel [data-city-id="nairobi"]')
+      ?.click();
+    expect(selection.selection).toEqual({
+      regionId: "sub-saharan-africa",
+      cityId: "nairobi",
+      missionId: undefined,
+    });
+    expect(
+      root.querySelector<HTMLElement>(
+        '#region-panel [data-city-id][aria-current="true"]',
+      )?.dataset.cityId,
+    ).toBe("nairobi");
   });
 
   it("Plan deployment from the briefing selects the mission and navigates to deployment", () => {
     const { router, navigate } = fakeRouter();
-    const selection = new OverworldSelectionState();
+    const selection = newSelection();
     new OverworldScreen(
       depsFor(new FakeStore(withMissions(4, MISSIONS)), router, selection),
     ).mount(root);
@@ -520,44 +686,30 @@ describe("OverworldScreen", () => {
       ?.click();
     expect(navigate).toHaveBeenCalledWith("deployment");
     expect(selection.selection).toEqual({
+      regionId: "middle-east",
       cityId: "cairo",
       missionId: "mission-1",
     });
   });
 
-  it("Plan deployment from the city panel goes through the same selection", () => {
-    const { router, navigate } = fakeRouter();
-    const selection = new OverworldSelectionState();
-    new OverworldScreen(
-      depsFor(new FakeStore(withMissions(4, MISSIONS)), router, selection),
-    ).mount(root);
-    selection.select("lagos");
-    root
-      .querySelector<HTMLButtonElement>(
-        '#city-panel [data-action="plan-deployment"]',
-      )
-      ?.click();
-    expect(navigate).toHaveBeenCalledWith("deployment");
-    expect(selection.selection).toEqual({
-      cityId: "lagos",
-      missionId: "mission-2",
-    });
-  });
-
   it("deselects a mission that expires on a tick and keeps the city", () => {
     const store = new FakeStore(withMissions(5, MISSIONS));
-    const selection = new OverworldSelectionState();
+    const selection = newSelection();
     new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
     rows()[0]?.click();
     expect(selection.selection.missionId).toBe("mission-1");
     root
       .querySelector<HTMLButtonElement>('[data-action="advance-day"]')
       ?.click();
-    expect(rows().map((r) => r.dataset.missionId)).toEqual(["mission-2"]);
+    // Cairo's region is still selected, so Lagos's mission is off the list.
+    expect(rows()).toHaveLength(0);
     expect(selection.selection).toEqual({
+      regionId: "middle-east",
       cityId: "cairo",
       missionId: undefined,
     });
+    selection.selectRegion(undefined);
+    expect(rows().map((r) => r.dataset.missionId)).toEqual(["mission-2"]);
     expect(
       root.querySelector<HTMLElement>('[data-role="mission-details"]')?.hidden,
     ).toBe(true);
@@ -577,13 +729,364 @@ describe("OverworldScreen", () => {
     // Returning from the results screen: the launched mission is no longer
     // on offer but still selected. The first render clears it and must
     // still end with the bar showing the day.
-    const selection = new OverworldSelectionState();
+    const selection = newSelection();
     selection.selectMission("mission-9", "lagos");
     new OverworldScreen(
       depsFor(new FakeStore(withMissions(4, MISSIONS)), undefined, selection),
     ).mount(root);
     expect(selection.selection.missionId).toBeUndefined();
     expect(field("day")?.textContent).toBe("4");
+  });
+
+  // ===========================================
+  // City wheel (#1154)
+  // ===========================================
+
+  const wheel = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>("#radial-menu");
+  const wheelItems = (): string[] =>
+    [...root.querySelectorAll<HTMLElement>("#radial-menu [data-item]")].map(
+      (b) => b.dataset.item ?? "",
+    );
+
+  it("a map pick opens the wheel at the marker with infestation, name and population, and the missions there", () => {
+    const picks = new FakePicks();
+    const selection = newSelection();
+    const offered = withMissions(4, MISSIONS);
+    // Lagos is infested and detected, so the hub shows its number.
+    const state: GameState = {
+      ...offered,
+      overworld: {
+        ...offered.overworld,
+        map: {
+          ...offered.overworld.map,
+          cities: offered.overworld.map.cities.map((c) =>
+            c.id === "lagos" ? { ...c, infestation: 12, detected: true } : c,
+          ),
+        },
+      },
+    };
+    new OverworldScreen(
+      depsFor(new FakeStore(state), undefined, selection, picks),
+    ).mount(root);
+    expect(wheel()?.hidden).toBe(true);
+    selection.select("lagos");
+    picks.pick("lagos");
+    expect(wheel()?.hidden).toBe(false);
+    expect(wheel()?.style.left).toBe("300px");
+    expect(wheel()?.style.top).toBe("200px");
+    expect(findCity(state.overworld.map, "lagos")?.detected).toBe(true);
+    expect(field("hub-value")?.textContent).toBe("12");
+    expect(
+      root.querySelector("#radial-menu .tut-radial__caption")?.textContent,
+    ).toBe("Lagos · 16.6M");
+    expect(wheelItems()).toEqual(["mission:mission-2", "region"]);
+  });
+
+  it("opens nothing for a city the map is not drawing, or with no campaign", () => {
+    const picks = new FakePicks();
+    picks.positions.set("tokyo", undefined);
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(new FakeStore(newGame()), undefined, selection, picks),
+    ).mount(root);
+    picks.pick("tokyo");
+    expect(wheel()?.hidden).toBe(true);
+    const idle = new OverworldScreen(
+      depsFor(undefined, undefined, newSelection(), picks),
+    );
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    idle.mount(root);
+    picks.pick("lagos");
+    expect(wheel()?.hidden).toBe(true);
+  });
+
+  it("a mission entry on the wheel opens that briefing and closes the wheel", () => {
+    const picks = new FakePicks();
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(
+        new FakeStore(withMissions(4, MISSIONS)),
+        undefined,
+        selection,
+        picks,
+      ),
+    ).mount(root);
+    selection.select("cairo");
+    picks.pick("cairo");
+    root
+      .querySelector<HTMLButtonElement>(
+        '#radial-menu [data-item="mission:mission-1"]',
+      )
+      ?.click();
+    expect(wheel()?.hidden).toBe(true);
+    expect(selection.selection).toEqual({
+      regionId: "middle-east",
+      cityId: "cairo",
+      missionId: "mission-1",
+    });
+    expect(
+      root.querySelector<HTMLElement>('[data-role="mission-details"]')?.dataset
+        .missionId,
+    ).toBe("mission-1");
+  });
+
+  it("the Region entry lands on the region panel and closes the wheel", () => {
+    const picks = new FakePicks();
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(new FakeStore(newGame()), undefined, selection, picks),
+    ).mount(root);
+    selection.select("tokyo");
+    picks.pick("tokyo");
+    root
+      .querySelector<HTMLButtonElement>('#radial-menu [data-item="region"]')
+      ?.click();
+    expect(wheel()?.hidden).toBe(true);
+    expect(document.activeElement?.id).toBe("region-panel");
+    expect(root.querySelector("#selected-region")?.textContent).toBe(
+      "East Asia",
+    );
+  });
+
+  it("another selection, Escape and unmount dismiss the wheel; the same pick reopens it", () => {
+    const picks = new FakePicks();
+    const selection = newSelection();
+    const screen = new OverworldScreen(
+      depsFor(
+        new FakeStore(withMissions(4, MISSIONS)),
+        undefined,
+        selection,
+        picks,
+      ),
+    );
+    screen.mount(root);
+    selection.select("tokyo");
+    picks.pick("tokyo");
+    expect(wheel()?.hidden).toBe(false);
+    // A pick elsewhere: the selection changes first, closing Tokyo's
+    // wheel, and the new pick opens Cairo's.
+    selection.select("cairo");
+    expect(wheel()?.hidden).toBe(true);
+    picks.pick("cairo");
+    expect(wheel()?.hidden).toBe(false);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(wheel()?.hidden).toBe(true);
+    picks.pick("cairo");
+    expect(wheel()?.hidden).toBe(false);
+    screen.unmount();
+    expect(root.querySelector("#radial-menu")).toBeNull();
+    expect(picks.listenerCount).toBe(0);
+  });
+
+  it("a tick redraws the open wheel: an expired mission leaves the ring", () => {
+    const picks = new FakePicks();
+    const selection = newSelection();
+    const store = new FakeStore(withMissions(5, MISSIONS));
+    new OverworldScreen(depsFor(store, undefined, selection, picks)).mount(
+      root,
+    );
+    selection.select("cairo");
+    picks.pick("cairo");
+    expect(wheelItems()).toEqual(["mission:mission-1", "region"]);
+    button("advance-day").click();
+    expect(wheel()?.hidden).toBe(false);
+    expect(wheelItems()).toEqual(["region"]);
+  });
+
+  // ===========================================
+  // Installation wheel (#1155)
+  // ===========================================
+
+  /** A campaign holding one level 1 battery in Tokyo's region, with `credits`. */
+  const withBattery = (credits: number, level: 1 | 2 | 3 = 1): GameState => {
+    const base = newGame();
+    return {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        deployables: [
+          {
+            id: "deployable-1",
+            typeId: "defensive-battery",
+            regionId: "east-asia",
+            level,
+            builtDay: 1,
+            online: true,
+          },
+        ],
+      },
+      economy: { ...base.economy, credits },
+    };
+  };
+
+  it("an installation pick opens the wheel at the model with the level, type and effect at the hub, and Upgrade, Decommission and Region on the ring", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(
+        new FakeStore(withBattery(5000)),
+        undefined,
+        selection,
+        undefined,
+        picks,
+      ),
+    ).mount(root);
+    expect(wheel()?.hidden).toBe(true);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    expect(wheel()?.style.left).toBe("120px");
+    expect(wheel()?.style.top).toBe("80px");
+    expect(field("hub-value")?.textContent).toBe("L1");
+    expect(
+      root.querySelector("#radial-menu .tut-radial__caption")?.textContent,
+    ).toBe("Defensive battery · online");
+    expect(field("hub-note")?.textContent).toBe(
+      "1 garrison turret on every mission map",
+    );
+    expect(wheelItems()).toEqual(["upgrade", "decommission", "region"]);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '#radial-menu [data-item="upgrade"]',
+      )?.textContent,
+    ).toContain("¢1,500");
+  });
+
+  it("Upgrade on the wheel dispatches the upgrade, closes the wheel, and the row reads L2", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const store = new FakeStore(withBattery(5000));
+    new OverworldScreen(
+      depsFor(store, undefined, selection, undefined, picks),
+    ).mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    root
+      .querySelector<HTMLButtonElement>('#radial-menu [data-item="upgrade"]')
+      ?.click();
+    expect(wheel()?.hidden).toBe(true);
+    expect(store.dispatched.at(-1)).toEqual(upgradeDeployable("deployable-1"));
+    expect(
+      root.querySelector(
+        '#deployables [data-deployable-id="deployable-1"] [data-field="level"]',
+      )?.textContent,
+    ).toBe("L2");
+    expect(store.getState().economy.credits).toBe(3500);
+  });
+
+  it("Decommission on the wheel dispatches the removal; Region lands on the region panel", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const store = new FakeStore(withBattery(5000));
+    new OverworldScreen(
+      depsFor(store, undefined, selection, undefined, picks),
+    ).mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    root
+      .querySelector<HTMLButtonElement>('#radial-menu [data-item="region"]')
+      ?.click();
+    expect(wheel()?.hidden).toBe(true);
+    expect(document.activeElement).toBe(root.querySelector("#region-panel"));
+    picks.pick("deployable-1");
+    root
+      .querySelector<HTMLButtonElement>(
+        '#radial-menu [data-item="decommission"]',
+      )
+      ?.click();
+    expect(store.dispatched.at(-1)).toEqual(
+      decommissionDeployable("deployable-1"),
+    );
+    expect(wheel()?.hidden).toBe(true);
+    expect(
+      root.querySelector('#deployables [data-deployable-id="deployable-1"]'),
+    ).toBeNull();
+  });
+
+  it("a rejected upgrade shows the reason in the bar and keeps the level", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const store = new FakeStore(withBattery(100));
+    new OverworldScreen(
+      depsFor(store, undefined, selection, undefined, picks),
+    ).mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    const upgrade = root.querySelector<HTMLButtonElement>(
+      '#radial-menu [data-item="upgrade"]',
+    );
+    expect(upgrade?.disabled).toBe(true);
+    expect(upgrade?.title).toBe("Need ¢1,500, have ¢100");
+    // The panel's button is disabled for the same reason; a forced
+    // dispatch surfaces the store's refusal the way a build does.
+    const rowUpgrade = root.querySelector<HTMLButtonElement>(
+      '#deployables [data-action="upgrade-deployable"]',
+    );
+    expect(rowUpgrade?.disabled).toBe(true);
+    rowUpgrade?.removeAttribute("disabled");
+    rowUpgrade?.click();
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toContain("credits");
+    expect(field("hub-value")?.textContent).toBe("L1");
+  });
+
+  it("a city selection, a click at sea, Escape and unmount dismiss the installation wheel", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const screen = new OverworldScreen(
+      depsFor(
+        new FakeStore(withBattery(5000)),
+        undefined,
+        selection,
+        undefined,
+        picks,
+      ),
+    );
+    screen.mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    // A city in the same region is another selection.
+    selection.select("tokyo");
+    expect(wheel()?.hidden).toBe(true);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    // A click at sea clears the selection.
+    selection.selectRegion(undefined);
+    expect(wheel()?.hidden).toBe(true);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(wheel()?.hidden).toBe(true);
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    screen.unmount();
+    expect(root.querySelector("#radial-menu")).toBeNull();
+    expect(picks.listenerCount).toBe(0);
+  });
+
+  it("opens nothing for an installation the map is not drawing or that is not in the campaign", () => {
+    const picks = new FakeInstallationPicks();
+    picks.positions.set("deployable-1", undefined);
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(
+        new FakeStore(withBattery(5000)),
+        undefined,
+        selection,
+        undefined,
+        picks,
+      ),
+    ).mount(root);
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(true);
+    picks.pick("deployable-9");
+    expect(wheel()?.hidden).toBe(true);
   });
 
   // ===========================================

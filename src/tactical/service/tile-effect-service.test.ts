@@ -9,7 +9,11 @@ import { EFFECT_ENDED } from "../model/effect-ended-event";
 import { EFFECT_STARTED } from "../model/effect-started-event";
 import { SPAWNER_DAMAGED } from "../model/spawner-damaged-event";
 import type { TileEffect } from "../model/tile-effect";
+import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
+import { TURRET_TUNING } from "../data/turret-tuning";
+import { TURRET_DESTROYED } from "../model/turret-destroyed-event";
 import { UNIT_DIED } from "../model/unit-died-event";
+import { turretUnit } from "./unit-factory";
 import {
   blockUnitAt,
   ctxWith,
@@ -172,6 +176,38 @@ describe("burn", () => {
     expect(burned.events[1]).toEqual({
       type: UNIT_DIED,
       payload: { unitId: "b" },
+    });
+  });
+
+  it("takes a turret to zero with a TurretDestroyed rather than a UnitDied (#1155)", () => {
+    const built = turretUnit(
+      TURRET_TUNING,
+      "tdf",
+      { pos: at(3, 3), facing: "n" },
+      new SequentialIdGenerator(),
+    );
+    const base = missionWith(openField().build(), [{ ...built.unit, hp: 2 }], {
+      phase: "player",
+      effects: [fire("effect-1", at(3, 3), 3)],
+    });
+    const mission = {
+      ...base,
+      templates: { ...base.templates, [built.template.id]: built.template },
+    };
+    const burned = burn(
+      mission,
+      ctxWith(riggedRng(true)),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
+    expect(burned.state.units[0]?.hp).toBe(0);
+    expect(burned.events.map((e) => e.type)).toEqual([
+      EFFECT_DAMAGED,
+      TURRET_DESTROYED,
+    ]);
+    expect(burned.events[1]).toEqual({
+      type: TURRET_DESTROYED,
+      payload: { turretId: built.unit.id, pos: at(3, 3) },
     });
   });
 

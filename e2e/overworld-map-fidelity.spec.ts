@@ -4,6 +4,10 @@ import { expect, test } from "@playwright/test";
 
 import type { TutTestHooks } from "../src/app/model/test-hooks";
 import { EARTH_COASTLINES } from "../src/graphics/data/earth-coastlines";
+import {
+  CAMERA_ZOOM,
+  STRATEGIC_PROJECTION,
+} from "../src/graphics/model/camera-state";
 import { OVERWORLD_SCENE_CONFIG } from "../src/graphics/model/overworld-scene-config";
 import { projectCoastlines } from "../src/graphics/service/coastline-projection";
 import { layoutToWorld } from "../src/graphics/service/overworld-layout";
@@ -41,11 +45,16 @@ interface ScreenFit {
   readonly scaleY: number;
 }
 
-/** One coastal city and where its nearest drawn coast vertex projects to. */
+/**
+ * One coastal city, where its nearest drawn coast vertex projects to, and
+ * where the coast is probed for a pixel: the nearest vertex clear of
+ * every settlement model.
+ */
 interface CoastProbe {
   readonly id: string;
   readonly marker: Point;
   readonly coast: Point;
+  readonly visible: Point;
   readonly coastDistancePx: number;
 }
 
@@ -202,27 +211,58 @@ function toScreen(fit: ScreenFit, layout: { x: number; y: number }): Point {
   };
 }
 
+/** A pair of drawn coast vertices for one city, in layout space. */
+interface CoastVertices {
+  /** The ring vertex closest to the city: how far its marker is from the coast. */
+  readonly nearest: { x: number; y: number };
+  /** The closest ring vertex no settlement model covers: where a coast pixel can be seen. */
+  readonly clear: { x: number; y: number };
+}
+
 /**
- * The drawn coast vertex nearest a city, in layout space. Every ring
- * vertex lies on a drawn segment, so a coast pixel must be there.
+ * The drawn coast vertices a city is measured against. Every ring
+ * vertex lies on a drawn segment, so a coast pixel must be there, but
+ * since #1155 every city stands as an opaque settlement model inside a
+ * halo, so the vertex nearest a coastal city is usually under a model.
+ * The pixel probe therefore reads the closest vertex that is at least a
+ * `settlementFootprint` from every city.
  */
-function nearestCoastVertex(cityId: string): { x: number; y: number } {
+function coastVertices(cityId: string): CoastVertices {
   const config = OVERWORLD_SCENE_CONFIG;
   const world = layoutToWorld(layoutOf(cityId), config);
-  let best = { x: 0, z: 0 };
-  let bestDistance = Number.POSITIVE_INFINITY;
+  const cities = EARTH_MAP.cities.map((city) =>
+    layoutToWorld(city.layout, config),
+  );
+  const covered = (vertex: { x: number; z: number }): boolean =>
+    cities.some(
+      (city) =>
+        Math.hypot(vertex.x - city.x, vertex.z - city.z) <
+        config.settlementFootprint,
+    );
+  let nearest = { x: 0, z: 0 };
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  let clear = { x: 0, z: 0 };
+  let clearDistance = Number.POSITIVE_INFINITY;
   for (const polygon of projectCoastlines(EARTH_COASTLINES, config)) {
     for (const ring of [polygon.outer, ...polygon.holes]) {
       for (const vertex of ring) {
         const distance = Math.hypot(vertex.x - world.x, vertex.z - world.z);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          best = vertex;
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearest = vertex;
+        }
+        if (distance < clearDistance && !covered(vertex)) {
+          clearDistance = distance;
+          clear = vertex;
         }
       }
     }
   }
-  return { x: best.x / config.mapWidth, y: best.z / config.mapDepth };
+  const toLayout = (vertex: { x: number; z: number }) => ({
+    x: vertex.x / config.mapWidth,
+    y: vertex.z / config.mapDepth,
+  });
+  return { nearest: toLayout(nearest), clear: toLayout(clear) };
 }
 
 // ===========================================
@@ -234,11 +274,12 @@ function nearestCoastVertex(cityId: string): { x: number; y: number } {
  * same projection the markers use (#1144), so a coastal city's marker
  * must stand on a drawn coast: the coast vertex nearest the city
  * projects to within a few pixels of the marker, and the screenshot
- * shows a coastline-coloured pixel there.
+ * shows a coastline-coloured pixel at the nearest coast vertex that no
+ * settlement model covers (#1155).
  *
  * ```
  *   city layout ──▶ nearest ring vertex ──▶ screen (fitted from markers)
- *                                              └─▶ cyan pixel in a 9×9 window?
+ *              └──▶ nearest clear vertex ──▶ screen ──▶ cyan pixel in a 9×9 window?
  * ```
  *
  * Two controls keep the measurement honest: the whole plate must draw
@@ -250,9 +291,11 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
 
   const anchors = await markerAnchors(page, [...FIT_PAIR, ...COASTAL_SAMPLE]);
   const fit = fitScreen(anchors);
-  // A 2:1 plane drawn with one scale: the two axes agree.
-  expect(fit.scaleX / fit.scaleY).toBeGreaterThan(1.95);
-  expect(fit.scaleX / fit.scaleY).toBeLessThan(2.05);
+  // A 2:1 plane drawn with one scale, foreshortened up the screen by
+  // the strategic camera's pitch (ADR 0005 §5): the two axes agree.
+  const expectedRatio = 2 / Math.sin(STRATEGIC_PROJECTION.elevationRad);
+  expect(fit.scaleX / fit.scaleY).toBeGreaterThan(expectedRatio - 0.05);
+  expect(fit.scaleX / fit.scaleY).toBeLessThan(expectedRatio + 0.05);
 
   const cell = await page.locator("#map-viewport").boundingBox();
   if (!cell) {
@@ -273,14 +316,17 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
     if (!marker) {
       throw new Error(`${id} did not project`);
     }
-    const coast = toScreen(fit, nearestCoastVertex(id));
-    if (hidden(coast)) {
+    const vertices = coastVertices(id);
+    const coast = toScreen(fit, vertices.nearest);
+    const visible = toScreen(fit, vertices.clear);
+    if (hidden(coast) || hidden(visible)) {
       continue;
     }
     probes.push({
       id,
       marker,
       coast,
+      visible,
       coastDistancePx: Math.hypot(coast.x - marker.x, coast.y - marker.y),
     });
   }
@@ -372,7 +418,7 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
       return {
         coastPixels,
         missingCoast: probes
-          .filter((probe) => !coastNear(probe.coast))
+          .filter((probe) => !coastNear(probe.visible))
           .map((probe) => probe.id),
         litOcean,
       };
@@ -397,10 +443,119 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
 // ===========================================
 
 /**
+ * The marker's label geometry, mirrored from `city-marker.ts` (#1155):
+ * the name is a sprite this many footprints south of the city, on the
+ * ground. Keep in step with `LABEL_OFFSET_SOUTH` there.
+ */
+const LABEL_OFFSET_SOUTH = 1.05;
+
+/**
+ * How far below a marker's anchor the middle of its name label is
+ * drawn, in client pixels, at the default camera.
+ *
+ * The strategic camera looks down at 55°, so a ground offset south of
+ * the city foreshortens by sin(elevation); the default camera fits the
+ * whole plate into the 1280 × 720 viewport, which lands on the
+ * `CAMERA_ZOOM.min` floor of 40 px per unit. So the label's centre is
+ * 0.6 × 1.05 × sin 55° × 40 ≈ 20.6 px below the anchor, and its glyphs,
+ * about 8 px tall inside the 0.34-unit sprite, span roughly 16–24 px.
+ */
+const LABEL_CENTRE_PX =
+  OVERWORLD_SCENE_CONFIG.settlementFootprint *
+  LABEL_OFFSET_SOUTH *
+  Math.sin(STRATEGIC_PROJECTION.elevationRad) *
+  CAMERA_ZOOM.min;
+
+/**
+ * The band probed for the label, relative to its centre: 24 px wide on
+ * the anchor's column, from 3 px above the centre to 5 px below it.
+ *
+ * ```
+ *          ▟███▙          settlement, anchor at its base
+ *        └       ┘        bracket's south bar, ending ~15 px below the anchor
+ *         [London]        label glyphs, 16–24 px below, centred on the anchor
+ *          ┌────┐         band: ±12 px wide, 17–25 px down
+ * ```
+ */
+const LABEL_BAND = { halfWidth: 12, above: 3, below: 5 } as const;
+
+/**
+ * What counts as a glyph pixel: the label is white text at partial
+ * alpha over its dark plate, so its pixels are bright and neutral —
+ * every channel at least this bright, the channels within `spread` of
+ * each other. Nothing else the map draws in the band is: coast is blue
+ * (`95,155,190`), the selected region's outline is orange
+ * (`240,138,36`), the graticule is too dark (`81,91,104`), settlement
+ * wireframes are light blue.
+ */
+const GLYPH_PIXEL = { minChannel: 110, spread: 16 } as const;
+
+/**
+ * The fewest new glyph pixels a drawn name must add to the band. The
+ * five sampled names add 40–89 at the default zoom; with the label
+ * hidden the band gains none, and London's brightened region outline
+ * added at most four under a looser classifier, so a dozen is well
+ * clear of both.
+ */
+const MIN_GLYPH_PIXELS = 12;
+
+/** True when `inner` lies wholly inside `outer`. */
+function within(inner: Box, outer: Box): boolean {
+  return (
+    inner.x >= outer.x &&
+    inner.y >= outer.y &&
+    inner.x + inner.width <= outer.x + outer.width &&
+    inner.y + inner.height <= outer.y + outer.height
+  );
+}
+
+/**
+ * Screenshots `band` and counts its {@link GLYPH_PIXEL} pixels. The PNG
+ * is decoded in the page, the only place with an image decoder to hand.
+ */
+async function glyphPixelsIn(page: Page, band: Box): Promise<number> {
+  const shot = `data:image/png;base64,${(await page.screenshot({ clip: band })).toString("base64")}`;
+  return page.evaluate(
+    async ({ shot, glyph }) => {
+      const bitmap = await createImageBitmap(await (await fetch(shot)).blob());
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("No 2d context available");
+      }
+      context.drawImage(bitmap, 0, 0);
+      const { data } = context.getImageData(0, 0, bitmap.width, bitmap.height);
+      let count = 0;
+      for (let index = 0; index < data.length; index += 4) {
+        const low = Math.min(data[index], data[index + 1], data[index + 2]);
+        const high = Math.max(data[index], data[index + 1], data[index + 2]);
+        if (low >= glyph.minChannel && high - low <= glyph.spread) {
+          count++;
+        }
+      }
+      return count;
+    },
+    { shot, glyph: GLYPH_PIXEL },
+  );
+}
+
+/**
  * A city must show its name, not a blank plate (#439). The name is drawn
  * in the scene for the hovered or selected city, so this selects a city
- * and asserts that fresh marks appear on the ground just below its
- * marker, outside the selection ring.
+ * and asserts that glyph pixels appear where the label is:
+ * {@link LABEL_CENTRE_PX} below the anchor, inside {@link LABEL_BAND}.
+ *
+ * It counts glyph-coloured pixels rather than diffing the band, because
+ * selecting a city also tints its region and turns the region's outline
+ * orange, and that outline follows the coast: under London it runs
+ * through the band (the label sits over the Bay of Biscay at this
+ * zoom), so a plain before/after diff passes with the label drawing
+ * nothing (#1164).
+ *
+ * Selecting a city also opens the city wheel (ADR 0007), whose hub, a
+ * DOM plate 56 px tall centred on the marker, covers the scene label.
+ * So the wheel is dismissed with Escape first: that closes the ring and
+ * keeps the selection, and with it the label.
  *
  * Reading the string itself needs a dev hook the map does not expose
  * yet; when one lands (`__tut__.cityLabel(cityId)`), assert the text
@@ -411,6 +566,10 @@ test("selecting a city draws its name under the marker", async ({ page }) => {
   const errors = await openOverworld(page);
 
   await waitForMapSettled(page);
+  const cell = await page.locator("#map-viewport").boundingBox();
+  if (!cell) {
+    throw new Error("the map cell has no box");
+  }
   const anchors = await markerAnchors(page, LABEL_SAMPLE);
   const blank: string[] = [];
   for (const id of LABEL_SAMPLE) {
@@ -418,14 +577,20 @@ test("selecting a city draws its name under the marker", async ({ page }) => {
     if (!anchor) {
       continue;
     }
-    // A band below the marker, clear of the marker glyph and its ring.
     const band = {
-      x: Math.round(anchor.x) - 55,
-      y: Math.round(anchor.y) + 10,
-      width: 110,
-      height: 26,
+      x: Math.round(anchor.x) - LABEL_BAND.halfWidth,
+      y: Math.round(anchor.y + LABEL_CENTRE_PX) - LABEL_BAND.above,
+      width: LABEL_BAND.halfWidth * 2,
+      height: LABEL_BAND.above + LABEL_BAND.below,
     };
-    const before = await page.screenshot({ clip: band });
+    // A band that straddles the map cell's edge is not comparable: the
+    // pixels past the edge belong to the side panel. The sample is
+    // chosen to sit well inside the plate, so this is a sampling error.
+    expect(
+      within(band, cell),
+      `${id}'s label band ${JSON.stringify(band)} leaves the map cell ${JSON.stringify(cell)}`,
+    ).toBe(true);
+    const before = await glyphPixelsIn(page, band);
     await page.evaluate(
       (cityId) => (globalThis as HookGlobal).__tut__?.selectCity(cityId),
       id,
@@ -434,15 +599,21 @@ test("selecting a city draws its name under the marker", async ({ page }) => {
       "data-selected-city",
       id,
     );
-    const after = await page.screenshot({ clip: band });
-    if (before.equals(after)) {
-      blank.push(id);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#radial-menu")).toBeHidden();
+    await expect(page.locator("body")).toHaveAttribute(
+      "data-selected-city",
+      id,
+    );
+    const after = await glyphPixelsIn(page, band);
+    if (after - before < MIN_GLYPH_PIXELS) {
+      blank.push(`${id} (${before} → ${after})`);
     }
   }
 
   expect(
     blank,
-    `selecting these cities drew nothing under their marker, so their name label is missing or blank: ${blank.join(", ")}`,
+    `selecting these cities drew no name under their marker, so their label is missing or blank: ${blank.join(", ")}`,
   ).toEqual([]);
   expect(errors).toEqual([]);
 });

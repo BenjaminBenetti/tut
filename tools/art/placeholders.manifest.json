@@ -2444,9 +2444,219 @@
     "bytes": 27104
   },
   {
-    "id": "overworld.settlement.rural",
+    "id": "overworld.settlement.north-american.rural",
     "category": "props",
-    "path": "assets/models/props/overworld-settlement-rural.glb",
+    "path": "assets/models/props/overworld-settlement-north-american-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.18,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 716,
+    "bytes": 59852
+  },
+  {
+    "id": "overworld.settlement-eggs.north-american.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-north-american-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.12,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30300
+  },
+  {
+    "id": "overworld.settlement.north-american.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-north-american-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.23,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 912,
+    "bytes": 74468
+  },
+  {
+    "id": "overworld.settlement-eggs.north-american.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-north-american-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.23,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 550,
+    "bytes": 36584
+  },
+  {
+    "id": "overworld.settlement.north-american.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-north-american-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.51,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2214,
+    "bytes": 163856
+  },
+  {
+    "id": "overworld.settlement-eggs.north-american.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-north-american-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.4,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 836,
+    "bytes": 52960
+  },
+  {
+    "id": "overworld.settlement.european.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-european-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.14,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 638,
+    "bytes": 56988
+  },
+  {
+    "id": "overworld.settlement-eggs.european.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-european-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.11,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30296
+  },
+  {
+    "id": "overworld.settlement.european.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-european-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.17,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 624,
+    "bytes": 57000
+  },
+  {
+    "id": "overworld.settlement-eggs.european.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-european-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.19,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 550,
+    "bytes": 36584
+  },
+  {
+    "id": "overworld.settlement.european.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-european-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.42,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1374,
+    "bytes": 108176
+  },
+  {
+    "id": "overworld.settlement-eggs.european.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-european-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.29,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 836,
+    "bytes": 52960
+  },
+  {
+    "id": "overworld.settlement.slavic.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-slavic-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.11,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 564,
+    "bytes": 52064
+  },
+  {
+    "id": "overworld.settlement-eggs.slavic.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-slavic-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.12,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30300
+  },
+  {
+    "id": "overworld.settlement.slavic.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-slavic-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.15,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 782,
+    "bytes": 68752
+  },
+  {
+    "id": "overworld.settlement-eggs.slavic.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-slavic-town.glb",
     "footprint": {
       "w": 0.6,
       "d": 0.6
@@ -2454,13 +2664,237 @@
     "height": 0.21,
     "sockets": [],
     "quality": "final",
-    "triangles": 224,
-    "bytes": 27596
+    "triangles": 550,
+    "bytes": 36584
   },
   {
-    "id": "overworld.settlement-eggs.rural",
+    "id": "overworld.settlement.slavic.city",
     "category": "props",
-    "path": "assets/models/props/overworld-settlement-eggs-rural.glb",
+    "path": "assets/models/props/overworld-settlement-slavic-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1526,
+    "bytes": 119840
+  },
+  {
+    "id": "overworld.settlement-eggs.slavic.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-slavic-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.29,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 836,
+    "bytes": 52960
+  },
+  {
+    "id": "overworld.settlement.middle-eastern.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-middle-eastern-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.19,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1006,
+    "bytes": 79744
+  },
+  {
+    "id": "overworld.settlement-eggs.middle-eastern.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-middle-eastern-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.23,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 550,
+    "bytes": 36580
+  },
+  {
+    "id": "overworld.settlement.middle-eastern.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-middle-eastern-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.54,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2458,
+    "bytes": 179400
+  },
+  {
+    "id": "overworld.settlement-eggs.middle-eastern.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-middle-eastern-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.36,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 836,
+    "bytes": 52960
+  },
+  {
+    "id": "overworld.settlement-eggs.african.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-african-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.14,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30300
+  },
+  {
+    "id": "overworld.settlement-eggs.african.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-african-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.2,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 550,
+    "bytes": 36584
+  },
+  {
+    "id": "overworld.settlement-eggs.african.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-african-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.3,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 836,
+    "bytes": 52960
+  },
+  {
+    "id": "overworld.settlement.south-asian.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-south-asian-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.22,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1094,
+    "bytes": 87968
+  },
+  {
+    "id": "overworld.settlement-eggs.south-asian.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-south-asian-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.22,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 580,
+    "bytes": 37616
+  },
+  {
+    "id": "overworld.settlement.south-asian.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-south-asian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.42,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1956,
+    "bytes": 144276
+  },
+  {
+    "id": "overworld.settlement-eggs.south-asian.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-south-asian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.38,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 866,
+    "bytes": 53992
+  },
+  {
+    "id": "overworld.settlement-eggs.east-asian.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-east-asian-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.11,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30300
+  },
+  {
+    "id": "overworld.settlement-eggs.east-asian.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-east-asian-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.23,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 550,
+    "bytes": 36584
+  },
+  {
+    "id": "overworld.settlement-eggs.east-asian.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-east-asian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.4,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 836,
+    "bytes": 52956
+  },
+  {
+    "id": "overworld.settlement.southeast-asian.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-southeast-asian-rural.glb",
     "footprint": {
       "w": 0.6,
       "d": 0.6
@@ -2468,27 +2902,41 @@
     "height": 0.13,
     "sockets": [],
     "quality": "final",
-    "triangles": 436,
-    "bytes": 41336
+    "triangles": 972,
+    "bytes": 81832
   },
   {
-    "id": "overworld.settlement.town",
+    "id": "overworld.settlement-eggs.southeast-asian.rural",
     "category": "props",
-    "path": "assets/models/props/overworld-settlement-town.glb",
+    "path": "assets/models/props/overworld-settlement-eggs-southeast-asian-rural.glb",
     "footprint": {
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.28,
+    "height": 0.12,
     "sockets": [],
     "quality": "final",
-    "triangles": 216,
-    "bytes": 28592
+    "triangles": 474,
+    "bytes": 30300
   },
   {
-    "id": "overworld.settlement-eggs.town",
+    "id": "overworld.settlement.southeast-asian.town",
     "category": "props",
-    "path": "assets/models/props/overworld-settlement-eggs-town.glb",
+    "path": "assets/models/props/overworld-settlement-southeast-asian-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.21,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 876,
+    "bytes": 74932
+  },
+  {
+    "id": "overworld.settlement-eggs.southeast-asian.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-southeast-asian-town.glb",
     "footprint": {
       "w": 0.6,
       "d": 0.6
@@ -2496,13 +2944,251 @@
     "height": 0.25,
     "sockets": [],
     "quality": "final",
-    "triangles": 542,
-    "bytes": 53148
+    "triangles": 550,
+    "bytes": 36580
   },
   {
-    "id": "overworld.settlement.city",
+    "id": "overworld.settlement.southeast-asian.city",
     "category": "props",
-    "path": "assets/models/props/overworld-settlement-city.glb",
+    "path": "assets/models/props/overworld-settlement-southeast-asian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.48,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1932,
+    "bytes": 146128
+  },
+  {
+    "id": "overworld.settlement-eggs.southeast-asian.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-southeast-asian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 836,
+    "bytes": 52960
+  },
+  {
+    "id": "overworld.settlement-eggs.latin-american.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-latin-american-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.11,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30300
+  },
+  {
+    "id": "overworld.settlement-eggs.latin-american.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-latin-american-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.21,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 550,
+    "bytes": 36584
+  },
+  {
+    "id": "overworld.settlement-eggs.latin-american.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-latin-american-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.36,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 866,
+    "bytes": 53992
+  },
+  {
+    "id": "overworld.settlement.oceanian.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-oceanian-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 672,
+    "bytes": 59140
+  },
+  {
+    "id": "overworld.settlement-eggs.oceanian.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-oceanian-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30300
+  },
+  {
+    "id": "overworld.settlement.oceanian.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-oceanian-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.21,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 820,
+    "bytes": 69876
+  },
+  {
+    "id": "overworld.settlement-eggs.oceanian.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-oceanian-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.2,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 550,
+    "bytes": 36584
+  },
+  {
+    "id": "overworld.settlement.oceanian.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-oceanian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.43,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1450,
+    "bytes": 113596
+  },
+  {
+    "id": "overworld.settlement-eggs.oceanian.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-oceanian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.36,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 866,
+    "bytes": 53992
+  },
+  {
+    "id": "overworld.settlement.middle-eastern.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-middle-eastern-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.15,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 694,
+    "bytes": 58344
+  },
+  {
+    "id": "overworld.settlement-eggs.middle-eastern.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-middle-eastern-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30300
+  },
+  {
+    "id": "overworld.settlement.south-asian.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-south-asian-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.12,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 612,
+    "bytes": 53328
+  },
+  {
+    "id": "overworld.settlement-eggs.south-asian.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-south-asian-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 474,
+    "bytes": 30296
+  },
+  {
+    "id": "overworld.settlement.african.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-african-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.13,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 592,
+    "bytes": 51300
+  },
+  {
+    "id": "overworld.settlement.african.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-african-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.22,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 616,
+    "bytes": 54744
+  },
+  {
+    "id": "overworld.settlement.african.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-african-city.glb",
     "footprint": {
       "w": 0.6,
       "d": 0.6
@@ -2510,21 +3196,105 @@
     "height": 0.35,
     "sockets": [],
     "quality": "final",
-    "triangles": 408,
-    "bytes": 53464
+    "triangles": 1846,
+    "bytes": 141340
   },
   {
-    "id": "overworld.settlement-eggs.city",
+    "id": "overworld.settlement.latin-american.rural",
     "category": "props",
-    "path": "assets/models/props/overworld-settlement-eggs-city.glb",
+    "path": "assets/models/props/overworld-settlement-latin-american-rural.glb",
     "footprint": {
       "w": 0.6,
       "d": 0.6
     },
-    "height": 0.28,
+    "height": 0.11,
     "sockets": [],
     "quality": "final",
-    "triangles": 798,
-    "bytes": 77960
+    "triangles": 518,
+    "bytes": 47728
+  },
+  {
+    "id": "overworld.settlement.latin-american.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-latin-american-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.17,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 722,
+    "bytes": 60564
+  },
+  {
+    "id": "overworld.settlement.latin-american.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-latin-american-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.3,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1626,
+    "bytes": 124848
+  },
+  {
+    "id": "overworld.settlement.east-asian.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-east-asian-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.2,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 774,
+    "bytes": 64340
+  },
+  {
+    "id": "overworld.settlement.east-asian.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-east-asian-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.24,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 840,
+    "bytes": 69524
+  },
+  {
+    "id": "overworld.settlement.east-asian.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-east-asian-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.48,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2004,
+    "bytes": 151204
+  },
+  {
+    "id": "overworld.deployable.bank",
+    "category": "props",
+    "path": "assets/models/props/overworld-deployable-bank.glb",
+    "footprint": {
+      "w": 0.45,
+      "d": 0.45
+    },
+    "height": 0.29,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 26796
   }
 ]

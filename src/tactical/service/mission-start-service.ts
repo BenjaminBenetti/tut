@@ -2,6 +2,7 @@ import type { Direction } from "../../core/model/direction";
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
+import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { MissionType } from "../../content/model/mission-type";
@@ -23,7 +24,9 @@ import type { MissionId } from "../../overworld/model/mission";
 import type { Mech } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
+import type { GarrisonTuning } from "../model/garrison-tuning";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
+import type { MissionStartOptions } from "../model/mission-start-options";
 import type { TacticalError } from "../model/tactical-error";
 import type {
   Objective,
@@ -32,7 +35,7 @@ import type {
 } from "../model/tactical-state";
 import { DEFAULT_HATCH_RADIUS, FIRST_TURN } from "../model/tactical-state";
 import { TURN_STARTED } from "../model/turn-started-event";
-import { initialVision } from "./vision-service";
+import { emptyVision, initialVision } from "./vision-service";
 import type { PassClass, Unit } from "../model/unit";
 import { passMaskFor } from "../model/unit";
 import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
@@ -40,6 +43,7 @@ import type { SpawnTuning } from "../model/spawn-tuning";
 import type { UnitTuning } from "../model/unit-tuning";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
 import { mechUnit, squadUnit } from "./unit-factory";
+import { placeGarrisonTurrets } from "./garrison-service";
 import { hatchInterval } from "./spawn-service";
 
 // ===========================================
@@ -59,11 +63,16 @@ export interface MissionStartDeps {
   readonly ids: IdGenerator;
   /** Map generation content; the composition root passes the shipped registries. */
   readonly registries: MapGenRegistries;
+  /** The turret a region's garrison stands and how the start spreads them (#1155). */
+  readonly garrison: GarrisonTuning;
 }
 
 /** Id prefixes the mission start issues. */
 export const SPAWNER_ID_PREFIX = "spawner";
 export const OBJECTIVE_ID_PREFIX = "objective";
+
+/** Label of the mission-seed fork the garrison's sites are drawn from. */
+export const GARRISON_RNG_LABEL = "garrison-turrets";
 
 // ===========================================
 // Mission start
@@ -81,22 +90,32 @@ export const OBJECTIVE_ID_PREFIX = "objective";
  *                                          (mechs on mech-passable ones first)
  *   map.hooks.objectives (egg-spawner) ──► spawners + destroy-spawner objectives
  *   map.hooks.extraction               ──► extraction tiles
+ *   options.garrisonTurrets            ──► garrison turrets on random clear tiles (#1155)
  *                                                               │
  *                                                               ▼
  *                              ok { ...state, activeMission: TacticalState }
  * ```
  *
- * Deterministic: the same campaign state, deployment and id counters
- * always produce a deep-equal tactical state, because the map comes from
- * the mission's seed and placement walks hooks and tiles in order.
- * Generic over the campaign state so the app passes its `GameState`
- * while this domain never imports `save/` (ADR 0002 §3).
+ * Deterministic: the same campaign state, deployment, options and id
+ * counters always produce a deep-equal tactical state, because the map
+ * comes from the mission's seed, placement walks hooks and tiles in
+ * order, and the garrison draws its sites from a labelled fork of the
+ * mission's seed. Generic over the campaign state so the app passes its
+ * `GameState` while this domain never imports `save/` (ADR 0002 §3).
+ *
+ * @param state - The campaign, with no mission active.
+ * @param missionId - The offered mission to start.
+ * @param deployment - The force sent.
+ * @param deps - Content and services the start reads.
+ * @param options - What the launch knows beyond the deployment; nothing by default.
+ * @returns The campaign with the mission in `activeMission`, or why it cannot start.
  */
 export function startTacticalMission<TState extends MissionCampaignState>(
   state: TState,
   missionId: MissionId,
   deployment: Deployment,
   deps: MissionStartDeps,
+  options: MissionStartOptions = {},
 ): Result<TState, TacticalError> {
   if (state.activeMission !== undefined) {
     return err({
@@ -152,9 +171,10 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     complete: false,
   }));
 
+  const seed = hashSeed(recipe.value.seed);
   const tactical: Omit<TacticalState, "vision"> = {
     missionId: mission.id,
-    seed: hashSeed(recipe.value.seed),
+    seed,
     difficulty: mission.difficulty,
     threat: state.overworld.threat,
     map,
@@ -183,11 +203,29 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     charges: [],
     commandSeq: 0,
   };
+  // The region's batteries stand last, on ground the deployment and the
+  // spawners have left free (#1155), from a stream that is a pure
+  // function of the mission's seed, so nothing else the start draws can
+  // move them. Their arrival is logged so the account opens with them.
+  const garrison = placeGarrisonTurrets(
+    { ...tactical, vision: emptyVision() },
+    options.garrisonTurrets ?? 0,
+    deps.garrison,
+    new Mulberry32Rng(seed).fork(GARRISON_RNG_LABEL),
+    deps.ids,
+  );
+  const withGarrison: Omit<TacticalState, "vision"> = {
+    ...tactical,
+    units: garrison.state.units,
+    templates: garrison.state.templates,
+    log: [...tactical.log, ...garrison.events],
+  };
   return ok({
     ...state,
     // Both sides look once from where they deployed, so the first frame
-    // is already fogged rather than blank (ADR 0006).
-    activeMission: { ...tactical, vision: initialVision(tactical) },
+    // is already fogged rather than blank (ADR 0006); the garrison looks
+    // with them, so a battery's ground is lit from the first turn.
+    activeMission: { ...withGarrison, vision: initialVision(withGarrison) },
   });
 }
 

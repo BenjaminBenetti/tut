@@ -6,7 +6,7 @@ import type { TacticalError } from "../model/tactical-error";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
 import type { TurretTuning } from "../model/turret";
-import { turretIsActive } from "../model/turret";
+import { turretHasBattery, turretIsActive } from "../model/turret";
 import { TURRET_BURNED_OUT } from "../model/turret-burned-out-event";
 import { TURRET_DEPLOYED } from "../model/turret-deployed-event";
 import type { Unit } from "../model/unit";
@@ -92,7 +92,7 @@ export function placeTurret(
     { pos: { x: tile.x, y: tile.y, z: tile.z }, facing: unit.facing },
     ids,
   );
-  const turret = armed(built.unit, tuning);
+  const turret = armTurret(built.unit, tuning);
   return {
     state: {
       ...mission,
@@ -109,7 +109,9 @@ export function placeTurret(
           unitId: unit.id,
           turretId: turret.id,
           tile: turret.pos,
-          turnsLeft: tuning.batteryTurns,
+          ...(tuning.batteryTurns === undefined
+            ? {}
+            : { turnsLeft: tuning.batteryTurns }),
           overwatchShots: overwatchShotsOf(tuning.weapon.profile),
         },
       },
@@ -126,16 +128,20 @@ export function placeTurret(
  * battery by one, and either puts it back on overwatch with a fresh
  * pair of shots or, at zero, burns it out — hit points to zero, a
  * `TurretBurnedOut` rather than a `UnitDied`, so nothing is credited
- * and nothing is mourned. A phase step for `createEndTurnHandler`, run
- * after `refreshSides` has let the last turn's watch lapse and beside
- * the radar drain; the bug phase opening touches nothing, so a turret
- * deployed on turn T watches the bug phases of T, T+1 and T+2 and is
- * burnt out when turn T+3 opens.
+ * and nothing is mourned. A turret with no battery (#1155, the
+ * garrison's) has nothing to drain and simply goes back on watch. A
+ * phase step for `createEndTurnHandler`, run after `refreshSides` has
+ * let the last turn's watch lapse and beside the radar drain; the bug
+ * phase opening touches nothing, so a turret deployed on turn T
+ * watches the bug phases of T, T+1 and T+2 and is burnt out when turn
+ * T+3 opens.
  *
  * ```
- *   player phase opens ──► for each living turret: turnsLeft − 1
- *                              ├─ > 0 ──► overwatch again, ap = maxAp, overwatchShots = the gun's
- *                              └─ = 0 ──► hp 0, TurretBurnedOut { turretId, pos }
+ *   player phase opens ──► for each living turret
+ *                              ├─ no battery ──► overwatch again, ap = maxAp, overwatchShots = the gun's
+ *                              └─ battery: turnsLeft − 1
+ *                                    ├─ > 0 ──► overwatch again, as above
+ *                                    └─ = 0 ──► hp 0, TurretBurnedOut { turretId, pos }
  *   bugs phase opens   ──► unchanged
  * ```
  *
@@ -159,6 +165,9 @@ export function createTurretStep(tuning: TurretTuning): PhaseStep {
       if (!turretIsActive(unit)) {
         return unit;
       }
+      if (!turretHasBattery(unit)) {
+        return armTurret(unit, tuning);
+      }
       const turnsLeft = (unit.turnsLeft ?? 0) - 1;
       if (turnsLeft <= 0) {
         events.push({
@@ -167,7 +176,7 @@ export function createTurretStep(tuning: TurretTuning): PhaseStep {
         });
         return { ...unit, hp: 0, turnsLeft: 0 };
       }
-      return { ...armed(unit, tuning), turnsLeft };
+      return { ...armTurret(unit, tuning), turnsLeft };
     });
     return { state: { ...mission, units }, events };
   };
@@ -177,7 +186,12 @@ export function createTurretStep(tuning: TurretTuning): PhaseStep {
 // Helpers
 // ===========================================
 
-/** The turret at full action points and on watch with its gun's shots. */
-function armed(unit: Unit, tuning: TurretTuning): Unit {
+/**
+ * The turret at full action points and on watch with its gun's shots:
+ * how one stands the moment it is put down and again as every player
+ * turn opens. Shared with the garrison (#1155), whose turrets stand
+ * armed from the first turn.
+ */
+export function armTurret(unit: Unit, tuning: TurretTuning): Unit {
   return enterOverwatch({ ...unit, ap: unit.maxAp }, [tuning.weapon]);
 }

@@ -20,7 +20,6 @@ import type {
   GroundPolygon,
 } from "../service/coastline-projection";
 import { coastlineSegments } from "../service/coastline-segments";
-import { writeLandStencil } from "../service/land-stencil";
 
 // ===========================================
 // Constants
@@ -78,9 +77,8 @@ const GRATICULE_LIFT = 0.02;
 const COASTLINE_LIFT = 0.03;
 
 /**
- * Fill draws first among transparent objects: it stamps the land
- * stencil that the region territories are clipped by, so it has to be
- * on screen before they are.
+ * Fill draws first among transparent objects, so the region
+ * territories (#1149) blend over it rather than under it.
  */
 export const FILL_RENDER_ORDER = 0;
 
@@ -100,7 +98,7 @@ export const FILL_RENDER_ORDER = 0;
  *     │ ●  city markers            markerLift
  *     │ ── coastline + glow        COASTLINE_LIFT
  *     │ ┼┼ graticule + axes        GRATICULE_LIFT
- *     │ ▒▒ land fill (stencil = 1) FILL_LIFT
+ *     │ ▒▒ land fill               FILL_LIFT
  *   0 ┼──── slab top, ui-bg
  * ```
  *
@@ -110,10 +108,10 @@ export const FILL_RENDER_ORDER = 0;
  * the antimeridian) are not drawn: they are the edge of the plane, not
  * a coast.
  *
- * The land fill is drawn as two meshes. The claimable land stamps the
- * stencil buffer as it draws, which is what clips the region
- * territories (#1149) to land; Antarctica is drawn identically but
- * leaves the stencil alone, so no region reaches it.
+ * The land fill is drawn as two meshes, the claimable land and the
+ * polar land no region reaches, so either can be asked for on its own;
+ * they look the same. The region territories (#1149) are cut to the
+ * claimable land on the CPU rather than clipped against this fill.
  */
 export class EarthWireframe {
   // ===========================================
@@ -139,9 +137,7 @@ export class EarthWireframe {
     this.object = new Group();
     this.object.name = "earth-wireframe";
     const land = partitionClaimableLand(polygons, config);
-    const claimable = this.createLandFill(land.claimable, "earth-land");
-    writeLandStencil(claimable.material as MeshBasicMaterial);
-    this.object.add(claimable);
+    this.object.add(this.createLandFill(land.claimable, "earth-land"));
     this.object.add(
       this.createLandFill(land.unclaimed, "earth-land-unclaimed"),
     );

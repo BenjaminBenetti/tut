@@ -7,6 +7,7 @@ import type { MoveCommand } from "../../tactical/model/move-command";
 import { move } from "../../tactical/model/move-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { isAutonomous } from "../../tactical/model/unit";
 import {
   attackTerrain,
   damageRange,
@@ -56,6 +57,45 @@ export interface AttackOption {
 /** Living units on the other team. */
 export function livingEnemies(mission: TacticalState, unit: Unit): Unit[] {
   return mission.units.filter((u) => u.team !== unit.team && u.hp > 0);
+}
+
+/**
+ * The living enemies worth walking toward (#1155): every crewed enemy
+ * — a squad, a mech — and a turret only when it is the nearest hostile
+ * the bug perceives. A turret in reach is priced like any other target
+ * by `attackOptions`; this is about what a bug crosses the map for. A
+ * garrison battery far behind the line would otherwise be a lurker's
+ * most isolated mark and a swarmer's nearest body, and the bugs would
+ * leave the squad alone to go and chew on furniture. When only turrets
+ * are perceived the nearest is the one worth going for, so a bug beside
+ * a battery that is shooting it does not stand there and take it.
+ *
+ * ```
+ *   perceived: squad at 9, turret at 3, turret at 12
+ *   → [squad, turret at 3]          nearest turret is closer than the crew
+ *   perceived: squad at 4, turret at 7
+ *   → [squad]                       the turret would be a detour
+ *   perceived: turret at 7
+ *   → [turret at 7]                 nothing else to go for
+ * ```
+ */
+export function huntableEnemies(mission: TacticalState, unit: Unit): Unit[] {
+  const enemies = livingEnemies(mission, unit);
+  const size = unitFootprintSize(mission, unit);
+  const distanceTo = (enemy: Unit): number =>
+    footprintDistance(unit.pos, size, enemy.pos);
+  let nearest: Unit | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const enemy of enemies) {
+    const distance = distanceTo(enemy);
+    if (distance < nearestDistance) {
+      nearest = enemy;
+      nearestDistance = distance;
+    }
+  }
+  return enemies.filter(
+    (enemy) => !isAutonomous(enemy) || enemy.id === nearest?.id,
+  );
 }
 
 /** Living units on the same team, excluding the unit itself. */

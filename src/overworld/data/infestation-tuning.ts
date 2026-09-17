@@ -19,6 +19,11 @@ import type { InfestationTuning } from "../model/infestation-tuning";
  *   chance per day of a fresh landing; at low threat seeding is rare.
  * - `seedAmount` 5: a seeded city starts as a small foothold.
  * - `hiveSpreadMultiplier` 1: no hives in M1, so no boost.
+ * - `regionDetectionThreshold` 15, `cityDetectionThreshold` 30 (GDD
+ *   §5.3): a lone foothold seeded at 5 grows 3 a day and is found on its
+ *   own after about eight days; in a region whose mean has reached 15
+ *   every infested city is found at once. A sensor array scales both
+ *   down (`deployable-types`).
  */
 export const INFESTATION_TUNING: InfestationTuning = {
   baseGrowthRate: 3,
@@ -29,4 +34,6 @@ export const INFESTATION_TUNING: InfestationTuning = {
   seedChance: 0.02,
   seedAmount: 5,
   hiveSpreadMultiplier: 1,
+  regionDetectionThreshold: 15,
+  cityDetectionThreshold: 30,
 };

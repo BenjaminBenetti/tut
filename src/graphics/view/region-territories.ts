@@ -11,9 +11,16 @@ import {
 
 import type { RegionId } from "../../overworld/model/region";
 import type { Disposable } from "../model/disposable";
-import type { GroundPoint } from "../service/coastline-projection";
+import type {
+  GroundPoint,
+  GroundPolygon,
+} from "../service/coastline-projection";
 import type { GroundSegment } from "../service/coastline-segments";
-import { testLandStencil } from "../service/land-stencil";
+import {
+  clipLandToConvex,
+  clipSegmentToLand,
+  triangulateLand,
+} from "../service/land-clipping";
 import type {
   RegionBorder,
   TerritoryCell,
@@ -39,9 +46,15 @@ export interface RegionTerritoriesInput {
   /** The Voronoi partition of the map by city, tagged with regions. */
   readonly cells: readonly TerritoryCell[];
   /**
-   * Coastline edges of the land regions may claim. Each is added to the
-   * outline of the region whose cell it falls in, so a selected region
-   * lights up its whole shoreline and not only its inland borders.
+   * The land regions may claim, on the ground plane. Every fill and
+   * border is cut to it on the CPU, so nothing is ever drawn over
+   * ocean and the GPU is handed plain triangles.
+   */
+  readonly land: readonly GroundPolygon[];
+  /**
+   * Coastline edges of that land. Each is added to the outline of the
+   * region whose cell it falls in, so a selected region lights up its
+   * whole shoreline and not only its inland borders.
    */
   readonly coast: readonly GroundSegment[];
 }
@@ -63,7 +76,10 @@ export const BORDER_COLOUR = AXIS_COLOUR;
 export const BORDER_OPACITY = 0.35;
 
 /** Fill opacity of a region whose worst city is fully overrun. */
-export const FILL_MAX_OPACITY = 0.35;
+export const FILL_MAX_OPACITY = 0.5;
+
+/** Opacity of the accent outline on the region under the pointer; the selection draws at 1 with a glow. */
+export const HOVER_OPACITY = 0.45;
 
 /**
  * Heights above the slab top, slotted between the wireframe's own:
@@ -77,9 +93,8 @@ const BORDER_LIFT = 0.025;
 const SELECTION_LIFT = 0.035;
 
 /**
- * Draw order among transparent objects: after the land fill (0), which
- * stamps the stencil these are clipped by, and before the marker
- * sprites (2).
+ * Draw order among transparent objects: after the land fill (0) so the
+ * fill blends over it, and before the marker sprites (2).
  */
 const TERRITORY_RENDER_ORDER = 1;
 
@@ -90,9 +105,9 @@ const TERRITORY_RENDER_ORDER = 1;
 /**
  * The regions of the strategic map as territories on the wireframe
  * Earth (#1149): each region's land outlined by dim border lines,
- * filled on the infestation ramp as its worst city worsens, and its
- * outline lit in the selection accent when one of its cities is
- * selected.
+ * filled on the infestation ramp as its worst city worsens, its
+ * outline lit dimly in the accent while the pointer is over it and
+ * fully, with a glow, when it is selected.
  *
  * ```
  *   clean region          infested region        selected region
@@ -100,54 +115,66 @@ const TERRITORY_RENDER_ORDER = 1;
  *                         at 0…FILL_MAX_OPACITY  outline with glow
  * ```
  *
- * Every mesh and line here is clipped to land by the stencil the land
- * fill writes, so nothing is ever drawn over ocean, and the cells that
- * make up one region's fill share one geometry, so two cells of the
- * same colour meet without a seam or doubled alpha.
+ * Every fill and border is cut to the land on the CPU: the land is
+ * triangulated once and each region's cells clip those triangles, so
+ * a region's fill is one geometry of non-overlapping triangles that
+ * ends exactly at the coast. Nothing here depends on the stencil or
+ * on what was drawn before it, so the fill is the same flat wash on
+ * every GPU.
  */
 export class RegionTerritories {
   // ===========================================
   // Fields
   // ===========================================
 
-  /** Add this to the scene; it carries the fills, borders and outline. */
+  /** Add this to the scene; it carries the fills, borders and outlines. */
   readonly object: Group;
   private readonly fills = new Map<RegionId, MeshBasicMaterial>();
-  /** Each region's outline where it meets other regions: clipped to land when drawn. */
+  /** Each region's outline where it meets other regions, cut to land. */
   private readonly borderOutlines = new Map<RegionId, BufferGeometry>();
   /** Each region's outline where it meets the sea: the coast, on land by definition. */
   private readonly coastOutlines = new Map<RegionId, BufferGeometry>();
-  /** The core border outline and its glow passes; their geometry is swapped on selection. */
+  /** The selected region's border outline and its glow passes; their geometry is swapped on selection. */
   private readonly borderLines: LineSegments[] = [];
-  /** The core coast outline and its glow passes, likewise. */
+  /** The selected region's coast outline and its glow passes, likewise. */
   private readonly coastLines: LineSegments[] = [];
+  /** The hovered region's border outline, dimmer than the selection and without glow. */
+  private readonly hoverBorder: LineSegments;
+  /** The hovered region's coast outline, likewise. */
+  private readonly hoverCoast: LineSegments;
   /** An empty geometry the outlines show while nothing is selected. */
   private readonly noOutline = new BufferGeometry();
   private readonly disposables: Disposable[] = [];
   private selected: RegionId | undefined;
+  private hovered: RegionId | undefined;
 
   // ===========================================
   // Constructor
   // ===========================================
 
   /**
-   * @param input - The partition and the coast to build from.
+   * @param input - The partition, the land and the coast to build from.
    */
   constructor(input: RegionTerritoriesInput) {
     this.object = new Group();
     this.object.name = "region-territories";
     this.disposables.push(this.noOutline);
-    this.object.add(...this.createFills(input.cells));
-    const borders = regionBorders(input.cells);
+    this.object.add(...this.createFills(input.cells, input.land));
+    const borders = regionBorders(input.cells).flatMap((border) =>
+      clipSegmentToLand(border, input.land).map((piece): RegionBorder => ({
+        ...piece,
+        regionIds: border.regionIds,
+      })),
+    );
     this.object.add(this.createBorders(borders));
     this.createOutlines(input, borders);
+    this.hoverBorder = this.createHover("territory-hover");
+    this.hoverCoast = this.createHover("territory-hover-coast");
     this.object.add(
-      ...this.createSelection("territory-selection", this.borderLines, true),
-      ...this.createSelection(
-        "territory-selection-coast",
-        this.coastLines,
-        false,
-      ),
+      this.hoverBorder,
+      this.hoverCoast,
+      ...this.createSelection("territory-selection", this.borderLines),
+      ...this.createSelection("territory-selection-coast", this.coastLines),
     );
   }
 
@@ -178,17 +205,35 @@ export class RegionTerritories {
    * Lights one region's outline in the selection accent, or none. The
    * fill is left to infestation: selection is an outline, not a wash.
    *
-   * @param regionId - The selected city's region, or `undefined`.
+   * @param regionId - The selected region, or `undefined`.
    */
   setSelected(regionId: RegionId | undefined): void {
     this.selected = regionId;
     this.showOutline(this.borderLines, regionId, this.borderOutlines);
     this.showOutline(this.coastLines, regionId, this.coastOutlines);
+    this.applyHover();
+  }
+
+  /**
+   * Outlines the region under the pointer dimly in the accent, or
+   * none. The selected region shows its selection instead, so hovering
+   * it changes nothing.
+   *
+   * @param regionId - The hovered region, or `undefined`.
+   */
+  setHovered(regionId: RegionId | undefined): void {
+    this.hovered = regionId;
+    this.applyHover();
   }
 
   /** The region whose outline is lit, if any. */
   selectedRegion(): RegionId | undefined {
     return this.selected;
+  }
+
+  /** The region whose outline is dimly lit under the pointer, if any. */
+  hoveredRegion(): RegionId | undefined {
+    return this.hovered;
   }
 
   /** What a region's fill shows, or `undefined` for an unknown region. */
@@ -225,25 +270,23 @@ export class RegionTerritories {
   // ===========================================
 
   /**
-   * One fill mesh per region: every cell of the region fanned into
-   * triangles in a single geometry, so the cells cannot overlap or gap.
-   * Starts invisible; `setInfestation` shows it.
+   * One fill mesh per region: the land triangles clipped to each of
+   * the region's cells, fanned into one geometry, so the fill covers
+   * exactly the region's land, once. Starts invisible; `setInfestation`
+   * shows it. A region with no land still gets an empty fill so its
+   * look can be asked for.
    */
-  private createFills(cells: readonly TerritoryCell[]): Mesh[] {
+  private createFills(
+    cells: readonly TerritoryCell[],
+    land: readonly GroundPolygon[],
+  ): Mesh[] {
+    const triangles = triangulateLand(land);
     const positions = new Map<RegionId, number[]>();
     for (const cell of cells) {
       const list = positions.get(cell.regionId) ?? [];
       positions.set(cell.regionId, list);
-      const [first, ...rest] = cell.vertices;
-      if (!first) {
-        continue;
-      }
-      for (let i = 1; i < rest.length; i++) {
-        const b = rest[i - 1];
-        const c = rest[i];
-        if (b && c) {
-          list.push(first.x, 0, first.z, b.x, 0, b.z, c.x, 0, c.z);
-        }
+      for (const piece of clipLandToConvex(triangles, cell.vertices)) {
+        pushFan(list, piece);
       }
     }
     return [...positions].map(([regionId, list]) => {
@@ -258,7 +301,6 @@ export class RegionTerritories {
         side: DoubleSide,
       });
       material.name = `territory-fill-${regionId}`;
-      testLandStencil(material);
       const mesh = new Mesh(geometry, material);
       mesh.name = `territory-fill-${regionId}`;
       mesh.position.y = FILL_LIFT;
@@ -269,7 +311,7 @@ export class RegionTerritories {
     });
   }
 
-  /** Every region border once, as one dim `LineSegments`. */
+  /** Every on-land region border piece once, as one dim `LineSegments`. */
   private createBorders(borders: readonly GroundSegment[]): LineSegments {
     const positions: number[] = [];
     for (const border of borders) {
@@ -284,7 +326,6 @@ export class RegionTerritories {
       depthWrite: false,
     });
     material.name = "territory-borders";
-    testLandStencil(material);
     const lines = new LineSegments(geometry, material);
     lines.name = "territory-borders";
     lines.position.y = BORDER_LIFT;
@@ -294,12 +335,10 @@ export class RegionTerritories {
   }
 
   /**
-   * Two outline geometries per region: its borders with other regions,
-   * and every coast segment whose midpoint falls in one of its cells.
-   * They are kept apart because the borders must be clipped to land by
-   * the stencil while the coast must not be: a coast segment lies
-   * exactly on the stencil's edge, and tested against it only half its
-   * pixels survive.
+   * Two outline geometries per region: its on-land borders with other
+   * regions, and every coast segment whose midpoint falls in one of
+   * its cells. Kept apart so a caller can tell, and test, which half
+   * of an outline came from where; both are drawn the same way.
    */
   private createOutlines(
     input: RegionTerritoriesInput,
@@ -356,19 +395,13 @@ export class RegionTerritories {
   /**
    * One half of the selected region's outline in the accent: a core
    * line plus the four offset glow passes the coastline uses, all
-   * hidden until a region is selected. Transparent even at full
-   * opacity so they draw in the transparent pass, after the land fill
-   * has written the stencil the border half tests.
+   * hidden until a region is selected. Transparent so they draw in the
+   * transparent pass, over the fills.
    *
    * @param name - Name of the core line; the glow passes are `${name}-glow-N`.
    * @param into - Where the created lines are kept for `setSelected`.
-   * @param clipToLand - Whether the lines test the land stencil.
    */
-  private createSelection(
-    name: string,
-    into: LineSegments[],
-    clipToLand: boolean,
-  ): LineSegments[] {
+  private createSelection(name: string, into: LineSegments[]): LineSegments[] {
     const core = new LineBasicMaterial({
       color: SELECTION_COLOUR,
       transparent: true,
@@ -383,10 +416,6 @@ export class RegionTerritories {
       depthWrite: false,
     });
     glow.name = `${name}-glow`;
-    if (clipToLand) {
-      testLandStencil(core);
-      testLandStencil(glow);
-    }
     this.disposables.push(core, glow);
     const lines = new LineSegments(this.noOutline, core);
     lines.name = name;
@@ -407,6 +436,36 @@ export class RegionTerritories {
       object.visible = false;
     }
     return into;
+  }
+
+  /**
+   * One half of the hovered region's outline: a single dim accent line
+   * with no glow, so hover reads as a hint and selection as the answer.
+   *
+   * @param name - Name of the line.
+   */
+  private createHover(name: string): LineSegments {
+    const material = new LineBasicMaterial({
+      color: SELECTION_COLOUR,
+      transparent: true,
+      opacity: HOVER_OPACITY,
+      depthWrite: false,
+    });
+    material.name = name;
+    this.disposables.push(material);
+    const lines = new LineSegments(this.noOutline, material);
+    lines.name = name;
+    lines.position.y = SELECTION_LIFT;
+    lines.renderOrder = TERRITORY_RENDER_ORDER;
+    lines.visible = false;
+    return lines;
+  }
+
+  /** Shows the hovered region's outline unless it is the selected one. */
+  private applyHover(): void {
+    const shown = this.hovered === this.selected ? undefined : this.hovered;
+    this.showOutline([this.hoverBorder], shown, this.borderOutlines);
+    this.showOutline([this.hoverCoast], shown, this.coastOutlines);
   }
 
   /** Points a set of outline lines at one region's geometry, or hides them. */
@@ -439,4 +498,19 @@ function pushSegment(
   b: GroundPoint,
 ): void {
   positions.push(a.x, 0, a.z, b.x, 0, b.z);
+}
+
+/** Appends a convex polygon to a flat position list as a triangle fan. */
+function pushFan(positions: number[], polygon: readonly GroundPoint[]): void {
+  const [first, ...rest] = polygon;
+  if (!first) {
+    return;
+  }
+  for (let i = 1; i < rest.length; i++) {
+    const b = rest[i - 1];
+    const c = rest[i];
+    if (b && c) {
+      positions.push(first.x, 0, first.z, b.x, 0, b.z, c.x, 0, c.z);
+    }
+  }
 }

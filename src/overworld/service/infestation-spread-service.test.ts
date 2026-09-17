@@ -336,6 +336,26 @@ describe("applySpread: seeding", () => {
     expect(levels(state.map).c).toBe(30);
   });
 
+  it("seeds a city undetected: a fresh landing is hidden until detection finds it", () => {
+    const seed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].find(
+      (s) =>
+        day(fixture(), 100, s, {
+          tuning: { ...TUNING, spreadThreshold: 101 },
+        }).events.length > 0,
+    );
+    const { state, events } = day(fixture(), 100, seed ?? 0, {
+      tuning: { ...TUNING, spreadThreshold: 101 },
+    });
+    expect(seededEvents(events).length).toBeGreaterThan(0);
+    for (const event of seededEvents(events)) {
+      const city = state.map.cities.find((c) => c.id === event.payload.cityId);
+      expect(city?.infestation).toBeGreaterThan(0);
+      expect(city?.detected).toBe(false);
+    }
+    // A city that was already infested and detected stays detected.
+    expect(state.map.cities.find((c) => c.id === "hot")?.detected).toBe(true);
+  });
+
   it("seeds more at higher threat", () => {
     const low = seededCount(20, {}, 60);
     const high = seededCount(100, {}, 60);

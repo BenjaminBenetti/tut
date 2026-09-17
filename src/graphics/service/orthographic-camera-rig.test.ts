@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   CAMERA_ZOOM,
   ISOMETRIC_ELEVATION_RAD,
+  STRATEGIC_ELEVATION_RAD,
+  STRATEGIC_PROJECTION,
   TOP_DOWN_PROJECTION,
 } from "../model/camera-state";
 import { cameraPosition, groundScreenAxes } from "./camera-math";
@@ -155,5 +157,37 @@ describe("OrthographicCameraRig with the top-down projection (#420)", () => {
     const east = new Vector3(TARGET.x + 1, 0, TARGET.z).project(rig.camera);
     expect(north.y).toBeGreaterThan(0);
     expect(east.x).toBeGreaterThan(0);
+  });
+});
+
+describe("OrthographicCameraRig with the strategic projection (ADR 0005 §5)", () => {
+  it("looks north from the south, pitched back, with north up and east right", () => {
+    const rig = new OrthographicCameraRig({
+      target: TARGET,
+      projection: STRATEGIC_PROJECTION,
+    });
+    rig.resize(WIDTH, HEIGHT);
+    rig.apply();
+    expect(rig.camera.position.x).toBeCloseTo(TARGET.x);
+    expect(rig.camera.position.z).toBeGreaterThan(TARGET.z);
+    expect(rig.camera.position.y).toBeCloseTo(
+      TARGET.y + CAMERA_DISTANCE * Math.sin(STRATEGIC_ELEVATION_RAD),
+    );
+    expect(rig.camera.up.y).toBe(1);
+    const origin = new Vector3(TARGET.x, 0, TARGET.z).project(rig.camera);
+    const north = new Vector3(TARGET.x, 0, TARGET.z - 1).project(rig.camera);
+    const east = new Vector3(TARGET.x + 1, 0, TARGET.z).project(rig.camera);
+    const above = new Vector3(TARGET.x, 1, TARGET.z).project(rig.camera);
+    expect(north.y).toBeGreaterThan(origin.y);
+    expect(north.x).toBeCloseTo(origin.x);
+    expect(east.x).toBeGreaterThan(origin.x);
+    expect(east.y).toBeCloseTo(origin.y);
+    // A unit north climbs the screen by sin(elevation) of a unit east's
+    // width; a unit of height climbs by cos(elevation): the skyline shows.
+    const eastPx = (east.x - origin.x) * (WIDTH / 2);
+    const northPx = (north.y - origin.y) * (HEIGHT / 2);
+    const abovePx = (above.y - origin.y) * (HEIGHT / 2);
+    expect(northPx / eastPx).toBeCloseTo(Math.sin(STRATEGIC_ELEVATION_RAD));
+    expect(abovePx / eastPx).toBeCloseTo(Math.cos(STRATEGIC_ELEVATION_RAD));
   });
 });

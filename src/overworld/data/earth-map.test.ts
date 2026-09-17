@@ -137,6 +137,14 @@ describe("EARTH_MAP seed data", () => {
     }
   });
 
+  it("gives every city a real-world population (#1154)", () => {
+    for (const city of cities) {
+      expect(Number.isInteger(city.population), city.id).toBe(true);
+      expect(city.population, city.id).toBeGreaterThan(0);
+    }
+    expect(cities.find((c) => c.id === "tokyo")?.population).toBe(37_000_000);
+  });
+
   it("keeps every layout inside normalised map space", () => {
     for (const placed of [...regions, ...cities]) {
       expect(placed.layout.x, placed.id).toBeGreaterThanOrEqual(0);

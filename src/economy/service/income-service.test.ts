@@ -43,6 +43,12 @@ describe("computeStipend", () => {
     expect(computeStipend(0.11, TUNING)).toBe(55);
   });
 
+  it("adds the income bonus on top, above the floor too", () => {
+    expect(computeStipend(1, TUNING, 150)).toBe(650);
+    expect(computeStipend(0, TUNING, 150)).toBe(200);
+    expect(computeStipend(0.5, TUNING, 0)).toBe(computeStipend(0.5, TUNING));
+  });
+
   it("honours substitute tuning", () => {
     const generous: EconomyTuning = { ...TUNING, baseStipend: 2000 };
     expect(computeStipend(0.5, generous)).toBe(1000);
@@ -80,6 +86,15 @@ describe("applyStipend", () => {
       },
     ]);
     expect(economy).toEqual(before);
+  });
+
+  it("folds the income bonus into the one stipend entry", () => {
+    const { transactions, economy } = setup();
+    const { state } = applyStipend(economy, 1, 3, TUNING, transactions, 150);
+    expect(state.credits).toBe(1650);
+    expect(state.ledger).toEqual([
+      { id: "txn-1", day: 3, amount: 650, kind: "stipend", ref: STIPEND_REF },
+    ]);
   });
 
   it("pays an overrun Earth the floor", () => {

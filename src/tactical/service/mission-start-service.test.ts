@@ -28,8 +28,11 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
+import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { FIRST_TURN } from "../model/tactical-state";
+import { GARRISON_TURRET_SOURCE_ID } from "../model/turret";
+import { TURRET_DEPLOYED } from "../model/turret-deployed-event";
 import { TURN_STARTED } from "../model/turn-started-event";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission, tileAdmits } from "./mission-start-service";
@@ -56,6 +59,7 @@ function deps(): MissionStartDeps {
     },
     unitTuning: UNIT_TUNING,
     spawnTuning: SPAWN_TUNING,
+    garrison: GARRISON_TUNING,
     ids: new SequentialIdGenerator(),
     registries: createDefaultRegistries(),
   };
@@ -421,6 +425,110 @@ describe("startTacticalMission", () => {
       ),
     );
     expect(c.activeMission?.units).not.toEqual(a.activeMission?.units);
+  });
+
+  it("stands the region's garrison turrets on clear ground, armed and on mains, and logs them (#1155)", () => {
+    const { state, mission, deployment } = campaign();
+    const started = unwrap(
+      startTacticalMission(state, mission.id, deployment, deps(), {
+        garrisonTurrets: 3,
+      }),
+    );
+    const tactical = started.activeMission!;
+    const turrets = tactical.units.filter((unit) => unit.kind === "turret");
+    expect(turrets).toHaveLength(3);
+    const zone = new Set(
+      tactical.map.hooks.deployZones
+        .flatMap((hook) => hook.tiles)
+        .map((tile) => `${String(tile.x)},${String(tile.z)}`),
+    );
+    const apart = (a: { x: number; z: number }, b: { x: number; z: number }) =>
+      Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
+    for (const turret of turrets) {
+      expect(turret).toMatchObject({
+        team: "tdf",
+        sourceId: GARRISON_TURRET_SOURCE_ID,
+        status: ["overwatch"],
+        overwatchShots: 2,
+        hp: 30,
+      });
+      expect(turret.turnsLeft).toBeUndefined();
+      expect(zone.has(`${String(turret.pos.x)},${String(turret.pos.z)}`)).toBe(
+        false,
+      );
+      for (const spawner of tactical.spawners) {
+        expect(apart(turret.pos, spawner.pos)).toBeGreaterThanOrEqual(
+          GARRISON_TUNING.spawnerClearance,
+        );
+      }
+      for (const other of turrets) {
+        if (other !== turret) {
+          expect(apart(turret.pos, other.pos)).toBeGreaterThanOrEqual(
+            GARRISON_TUNING.spacing,
+          );
+        }
+      }
+      // A battery lights its own ground from the first turn (ADR 0006).
+      expect(tactical.vision.tdf.visible).toContain(
+        new TileIndex(tactical.map).keyOf(turret.pos),
+      );
+    }
+    expect(
+      tactical.templates[`turret:${GARRISON_TURRET_SOURCE_ID}`]?.name,
+    ).toBe("Garrison turret");
+    expect(tactical.log.map((event) => event.type)).toEqual([
+      TURN_STARTED,
+      TURRET_DEPLOYED,
+      TURRET_DEPLOYED,
+      TURRET_DEPLOYED,
+    ]);
+    // The squad and mechs are exactly where a start without a garrison puts them.
+    const plain = unwrap(
+      startTacticalMission(state, mission.id, deployment, deps()),
+    );
+    expect(plain.activeMission?.units.some((u) => u.kind === "turret")).toBe(
+      false,
+    );
+    expect(tactical.units.filter((u) => u.kind !== "turret")).toEqual(
+      plain.activeMission?.units,
+    );
+  });
+
+  it("stands the same garrison for the same seed and count, and a different one for another count (#1155)", () => {
+    const { state, mission, deployment } = campaign();
+    const options = { garrisonTurrets: 4 };
+    const a = unwrap(
+      startTacticalMission(state, mission.id, deployment, deps(), options),
+    );
+    const b = unwrap(
+      startTacticalMission(state, mission.id, deployment, deps(), options),
+    );
+    expect(b).toEqual(a);
+    expect(JSON.parse(JSON.stringify(a))).toEqual(a);
+    const sites = (started: GameState) =>
+      started.activeMission?.units
+        .filter((u) => u.kind === "turret")
+        .map((u) => u.pos);
+    expect(sites(a)).toHaveLength(4);
+    const fewer = unwrap(
+      startTacticalMission(state, mission.id, deployment, deps(), {
+        garrisonTurrets: 2,
+      }),
+    );
+    expect(sites(fewer)).toHaveLength(2);
+    // The draw is one shuffle, so the first two of four are the two.
+    expect(sites(a)?.slice(0, 2)).toEqual(sites(fewer));
+    const other = campaign(8);
+    const elsewhere = unwrap(
+      startTacticalMission(
+        other.state,
+        other.mission.id,
+        other.deployment,
+        deps(),
+        options,
+      ),
+    );
+    expect(sites(elsewhere)).not.toEqual(sites(a));
   });
 
   it("rejects a second mission, an unknown mission, an empty deployment and unknown units", () => {

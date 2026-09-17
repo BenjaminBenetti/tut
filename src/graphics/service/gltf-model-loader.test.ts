@@ -42,6 +42,36 @@ function createLoader(
 }
 
 describe("GltfModelLoader", () => {
+  it("dresses a parsed scene once, before caching, and never a placeholder (#1155)", async () => {
+    const dress = vi.fn();
+    const create = vi.fn((id: ModelAssetId) => {
+      const stub = new Group();
+      stub.name = `fallback:${id}`;
+      return stub;
+    });
+    const loader = new GltfModelLoader({
+      manifest: MODEL_MANIFEST,
+      baseUrl: BASE_URL,
+      fallback: { create },
+      logger: { warn: vi.fn() },
+      loadScene: (url) =>
+        url.includes("swarmer")
+          ? Promise.resolve(fakeScene())
+          : Promise.reject(new Error("404")),
+      dresser: { dress },
+    });
+    const first = await loader.load("bug.swarmer");
+    const second = await loader.load("bug.swarmer");
+    await loader.load("prop.crate");
+    expect(dress).toHaveBeenCalledTimes(1);
+    expect(dress).toHaveBeenCalledWith("bug.swarmer", expect.any(Group));
+    // Dressed on the prototype: neither clone is what the dresser saw.
+    const prototype = dress.mock.calls[0]?.[1] as Object3D;
+    expect(prototype.name).toBe("bug.swarmer");
+    expect(first).not.toBe(prototype);
+    expect(second).not.toBe(prototype);
+  });
+
   it("fetches an id once and hands out distinct clones", async () => {
     const { loader, loadScene } = createLoader(() =>
       Promise.resolve(fakeScene()),

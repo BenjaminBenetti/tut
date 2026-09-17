@@ -31,6 +31,12 @@ export interface RadialMenuHub {
   readonly caption: string;
   /** Tone of the headline; `ok` above a comfortable chance, `danger` below. */
   readonly tone?: "plain" | "ok" | "warn" | "danger";
+  /**
+   * A small line under the caption that may wrap, for what the thing
+   * does in a sentence (#1155): an installation's effect. Omitted when
+   * the value and caption say it all.
+   */
+  readonly note?: string;
 }
 
 /** Where the menu sits, in client pixels: a projected world point (ADR 0007). */
@@ -70,6 +76,12 @@ const RADIUS_BY_COUNT: readonly number[] = [0, 84, 84, 92, 100, 108, 118];
  * ring puts a wide pill like "Missile pod 12-20" straight through the hub.
  */
 const RADIUS_X_SCALE = 1.75;
+
+/**
+ * Extra vertical radius when the hub carries a note (#1155): two more
+ * lines at the centre would otherwise sit on the lower entries.
+ */
+export const NOTE_RADIUS_BONUS = 28;
 
 /** Largest ring the layout is designed for. */
 const MAX_ITEMS = 6;
@@ -241,7 +253,9 @@ export class RadialMenuView {
     const shown = items.slice(0, MAX_ITEMS);
     const doc = root.ownerDocument;
     ring.textContent = "";
-    const radius = RADIUS_BY_COUNT[shown.length] ?? RADIUS_BY_COUNT[MAX_ITEMS]!;
+    const radius =
+      (RADIUS_BY_COUNT[shown.length] ?? RADIUS_BY_COUNT[MAX_ITEMS]!) +
+      (hub?.note === undefined ? 0 : NOTE_RADIUS_BONUS);
     this.drawTrack(radius);
     shown.forEach((item, index) => {
       const angle = START_ANGLE + (index * 2 * Math.PI) / shown.length;
@@ -297,6 +311,13 @@ export class RadialMenuView {
       caption.className = "tut-radial__caption tut-label";
       caption.textContent = hub.caption;
       hubEl.append(value, caption);
+      if (hub.note !== undefined) {
+        const note = doc.createElement("div");
+        note.className = "tut-radial__note";
+        note.dataset.field = "hub-note";
+        note.textContent = hub.note;
+        hubEl.appendChild(note);
+      }
     }
 
     this.moveTo(anchor);

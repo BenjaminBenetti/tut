@@ -264,6 +264,7 @@ describe("default tick pipeline", () => {
       TICK_STEP_NAMES.upkeep,
       TICK_STEP_NAMES.growth,
       TICK_STEP_NAMES.spread,
+      TICK_STEP_NAMES.detection,
       TICK_STEP_NAMES.missionExpiry,
       TICK_STEP_NAMES.missionGeneration,
       TICK_STEP_NAMES.events,
@@ -271,6 +272,115 @@ describe("default tick pipeline", () => {
       TICK_STEP_NAMES.threat,
       TICK_STEP_NAMES.outcome,
     ]);
+  });
+
+  it("pays an online bank's bonus inside the day's stipend, at its level", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    dispatcher.register(
+      ADVANCE_DAY,
+      createAdvanceDayHandler(createDefaultTickSteps<GameState>(TICK_DEPS), {
+        catalogue: CATALOGUE,
+      }),
+    );
+    const base = newGame(3);
+    const region = base.overworld.map.regions[0];
+    if (!region) throw new Error("fixture needs a region");
+    const withBank = (level: 1 | 3): GameState => ({
+      ...base,
+      overworld: {
+        ...base.overworld,
+        deployables: [
+          {
+            id: "bank-1",
+            typeId: "bank",
+            regionId: region.id,
+            level,
+            builtDay: 1,
+            online: true,
+          },
+        ],
+      },
+    });
+    const stipendOf = (state: GameState): number => {
+      const result = dispatcher.process(state, advanceDay());
+      if (!result.ok) throw new Error(result.error.message);
+      const stipend = result.value.state.economy.ledger.filter(
+        (t) => t.kind === "stipend",
+      );
+      expect(stipend).toHaveLength(1);
+      return stipend[0]?.amount ?? 0;
+    };
+    const plain = stipendOf(base);
+    const bank = DEPLOYABLE_TYPES.bank;
+    expect(stipendOf(withBank(1)) - plain).toBe(
+      bank.levels[1].effect.incomeBonus,
+    );
+    expect(stipendOf(withBank(3)) - plain).toBe(
+      bank.levels[3].effect.incomeBonus,
+    );
+  });
+
+  it("finds a hidden landing sooner with a level 3 sensor array in its region", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    dispatcher.register(
+      ADVANCE_DAY,
+      createAdvanceDayHandler(createDefaultTickSteps<GameState>(TICK_DEPS), {
+        catalogue: CATALOGUE,
+      }),
+    );
+    const base = newGame(3);
+    const region = base.overworld.map.regions.find(
+      (r) =>
+        base.overworld.map.cities.filter((c) => c.regionId === r.id).length >=
+        3,
+    );
+    if (!region) throw new Error("fixture needs a region with three cities");
+    const [target] = base.overworld.map.cities.filter(
+      (c) => c.regionId === region.id,
+    );
+    if (!target) throw new Error("fixture needs a city");
+    // Every other city on Earth is clean; the target is quietly at 8.
+    const quiet: GameState = {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        missions: [],
+        map: {
+          ...base.overworld.map,
+          cities: base.overworld.map.cities.map((c) =>
+            c.id === target.id
+              ? { ...c, infestation: 8, detected: false }
+              : { ...c, infestation: 0, detected: false },
+          ),
+        },
+      },
+    };
+    const withSensor: GameState = {
+      ...quiet,
+      overworld: {
+        ...quiet.overworld,
+        deployables: [
+          {
+            id: "sensor-1",
+            typeId: "sensor-array",
+            regionId: region.id,
+            level: 3,
+            builtDay: 1,
+            online: true,
+          },
+        ],
+      },
+    };
+    const detectedAfter = (state: GameState): boolean => {
+      const result = dispatcher.process(state, advanceDay());
+      if (!result.ok) throw new Error(result.error.message);
+      return (
+        result.value.state.overworld.map.cities.find((c) => c.id === target.id)
+          ?.detected ?? false
+      );
+    };
+    expect(detectedAfter(quiet)).toBe(false);
+    expect(detectedAfter(withSensor)).toBe(true);
   });
 
   it("is deterministic over 50 days from a fixed seed", () => {

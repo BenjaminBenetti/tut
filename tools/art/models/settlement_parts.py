@@ -1,21 +1,29 @@
-"""Shared builders for the strategic-map settlement markers (issue #1152).
+"""Parametrised builders for the strategic-map settlement markers (#1152, #1155).
 
-Six models share one module so the egg overlays can read the building layout
-of the base they stack on. Everything sits on a 0.6 × 0.6 u plot with the
-pivot at the base centre; the map views the plot straight down at 20 to 40 px,
-so every decision below is about the top-down read: roof heights vary, street
-gaps stay open, and the eggs land on rooftops and in those gaps rather than
-inside walls.
+A settlement is a *style* (one of ten regional architectural families,
+see `settlement_styles.py`) applied to a *scale template* (rural, town,
+city). The template fixes where the blocks stand and how tall each is
+relative to its neighbours; the style dresses every block (wall and roof
+tokens, roof shape, tower profile, tree kind) and builds the landmark.
+The egg overlays read the same dressed layout, so they still stack on the
+roofs and in the gaps of the base they belong to.
 
-    rural                town                 city
-    ┌───────────┐        ┌───────────┐        ┌───────────┐
-    │ ▄▄   ◯    │        │ ▄▄ ▄▄ ██  │        │ ██ ██ ██ █│  ▄ low block
-    │      ▄▄   │        │ ▄▄    ▄▄  │        │ ██ ▲█ ██ █│  █ tower
-    │ ▄▄   ▄▄   │        │ ██ ▄▄ ▄▄  │        │ ██ ██ ██  │  ◯ water tower
-    └───────────┘        └───────────┘        └───────────┘  ▲ spire (beacon)
-    height ≈ 0.21        height ≈ 0.28        height = 0.35
+    template (scale)          style (region family)           model
+    ┌───────────┐             palette · roof kind · tower       ┌───────────┐
+    │ ▄ ██ ▲█ ▄ │   dress()   profile · tree · landmark  build  │ ▄ ▟▙ ◭▟ ▄ │
+    │ ██ ██ ██  │ ──────────▶ ─────────────────────────▶ ─────▶ │ ▟▙ ▟▙ ▟▙  │
+    │ ▄  ██  ▄  │             seeded jitter per style           │ ▄  ▟▙  ▄  │
+    └───────────┘                                               └───────────┘
 
-Blender axes: Z up, the front faces -Y (the export turns that into +Z).
+Nothing stands on a pad any more: every block sits directly on z = 0, so
+on the map the buildings rise straight from the ground plane. Since ADR
+0005 §5 the map camera sits to the south, pitched 35° back from vertical,
+so the cluster is yawed 15° and windows are lit on the front and both
+side faces (the map mirrors some cities, so either side may face the
+light).
+
+Blender axes: Z up, the front faces -Y (the export turns that into +Z, the
+side the map camera looks from).
 """
 
 from __future__ import annotations
@@ -23,12 +31,14 @@ from __future__ import annotations
 import math
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
+from typing import Callable
 
-from mathutils import Vector
+import bpy
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from bpy_kit import box, cut_below, cylinder, sphere  # noqa: E402
+from bpy_kit import box, cut_below, cylinder, join, material, mesh_objects, sphere  # noqa: E402
 
 # ===========================================
 # Plot constants
@@ -37,33 +47,70 @@ from bpy_kit import box, cut_below, cylinder, sphere  # noqa: E402
 #: Plot edge in tiles; the marker is drawn at 20 to 40 px for the whole plot.
 PLOT = 0.6
 
-#: Thin asphalt plate under every scale, so the street gaps read dark from above.
-PLATE_HEIGHT = 0.02
+#: Ground level every building stands on.
+GROUND = 0.0
 
-#: Tallest point any scale may reach (the issue allows 0.35 for the city; the
-#: rural tower tops out near 0.21 and the town at 0.28).
-CITY_HEIGHT_CAP = 0.35
+#: Yaw of the whole cluster about Z, so the camera due south sees two faces.
+CLUSTER_YAW = math.radians(-15)
 
 #: Beacon block on the tallest structure; the one `tdf-orange` accent per plot.
-BEACON = 0.04
+BEACON = 0.035
+
+#: Lit windows: the token, their size, their grid pitch and how many are lit.
+WINDOW_TOKEN = "env-window-lit"
+WINDOW_W, WINDOW_H, WINDOW_D = 0.014, 0.011, 0.006
+WINDOW_PITCH_ACROSS, WINDOW_PITCH_UP = 0.028, 0.026
+WINDOW_LIT_FRACTION = 0.36
+
+#: Flat roof cap thickness, and how far it overhangs the walls. Every
+#: stacked seam either overlaps or differs in size: two same-size faces
+#: meeting exactly share vertices once the exporter's split vertices are
+#: merged, and the validator then reads the seam as non-manifold.
+CAP = 0.012
+CAP_LIP = 0.004
+SEAM = 0.003
 
 
 # ===========================================
-# Layout data
+# Seeded randomness
+# ===========================================
+
+
+class Rng:
+    """A tiny LCG so a style's jitter and window pattern never change between runs."""
+
+    def __init__(self, seed: int) -> None:
+        self.state = (seed * 7919 + 17) & 0x7FFFFFFF
+
+    def next(self) -> float:
+        """Uniform float in [0, 1)."""
+        self.state = (self.state * 1103515245 + 12345) & 0x7FFFFFFF
+        return self.state / 0x7FFFFFFF
+
+    def between(self, lo: float, hi: float) -> float:
+        """Uniform float in [lo, hi)."""
+        return lo + (hi - lo) * self.next()
+
+    def pick(self, options: tuple[str, ...]) -> str:
+        """One of ``options``."""
+        return options[min(len(options) - 1, int(self.next() * len(options)))]
+
+
+# ===========================================
+# Template data
 # ===========================================
 
 
 @dataclass(frozen=True)
-class Building:
-    """One block on the plot, centred at (x, y) on the plate.
+class Slot:
+    """One block position on a scale template, before any style dressing.
 
     @param x - Centre along X (tiles, plot centre at 0).
     @param y - Centre along Y.
     @param w - Width along X.
     @param d - Depth along Y.
-    @param h - Height above the plate.
-    @param body - Palette token for the walls.
-    @param roof - Palette token for the flat roof cap.
+    @param h - Nominal wall height.
+    @param role - `house` (rural), `block` (low), `mid` (mid-rise) or `tower`.
     """
 
     x: float
@@ -71,22 +118,16 @@ class Building:
     w: float
     d: float
     h: float
-    body: str = "env-concrete"
-    roof: str = "env-roof"
-
-    @property
-    def top(self) -> float:
-        """World Z of the roof surface."""
-        return PLATE_HEIGHT + self.h
+    role: str = "block"
 
 
 @dataclass(frozen=True)
 class EggSite:
-    """Where an egg cluster sits: on a building's roof or on the plate in a gap.
+    """Where an egg cluster sits: on a roof or on the ground in a gap.
 
-    @param x - Cluster centre along X.
+    @param x - Cluster centre along X, before the cluster yaw.
     @param y - Cluster centre along Y.
-    @param building - Index into the layout's buildings, or None for street level.
+    @param building - Index into the layout's buildings, or None for ground level.
     @param radius - Radius of the largest egg in the cluster.
     """
 
@@ -97,135 +138,328 @@ class EggSite:
 
 
 @dataclass(frozen=True)
-class Layout:
-    """A settlement scale: its buildings, the tallest one, and where eggs go.
+class Template:
+    """A settlement scale: block slots, the landmark slot, egg sites, web spans and tree spots."""
 
-    @param buildings - Blocks on the plot.
-    @param landmark - Index of the structure that carries the beacon.
-    @param eggs - Egg cluster sites for the overlay.
-    @param webs - Pairs of building indices that a webbing strand bridges.
-    """
-
-    buildings: tuple[Building, ...]
-    landmark: int
+    slots: tuple[Slot, ...]
+    landmark: int | None
     eggs: tuple[EggSite, ...]
     webs: tuple[tuple[int, int], ...]
+    trees: tuple[tuple[float, float], ...] = ()
 
 
-#: Rural: four low blocks around open ground, a water tower as the landmark.
-#: The tower is built separately (index 4 is reserved for it in `eggs`/`webs`).
-RURAL = Layout(
-    buildings=(
-        Building(-0.17, -0.13, 0.16, 0.11, 0.06),
-        Building(0.11, -0.17, 0.13, 0.09, 0.05, roof="env-concrete"),
-        Building(-0.15, 0.13, 0.11, 0.14, 0.07),
-        Building(0.14, 0.12, 0.19, 0.12, 0.05, body="env-metal", roof="env-roof"),
+#: Rural: eight houses around open ground, trees between; the landmark
+#: (water tower, church, pagoda...) stands at `RURAL_LANDMARK`.
+RURAL = Template(
+    slots=(
+        Slot(-0.10, 0.02, 0.09, 0.14, 0.06, "house"),
+        Slot(0.06, -0.12, 0.06, 0.05, 0.04, "house"),
+        Slot(0.15, -0.04, 0.05, 0.06, 0.04, "house"),
+        Slot(0.05, 0.08, 0.07, 0.05, 0.045, "house"),
+        Slot(0.17, 0.12, 0.05, 0.05, 0.04, "house"),
+        Slot(-0.05, -0.17, 0.05, 0.05, 0.04, "house"),
+        Slot(0.20, -0.15, 0.05, 0.04, 0.035, "house"),
+        Slot(-0.14, -0.13, 0.06, 0.05, 0.04, "house"),
     ),
-    landmark=4,
+    landmark=None,
     eggs=(
-        EggSite(0.14, 0.12, 3, 0.030),
-        EggSite(-0.02, -0.02, None, 0.042),
-        EggSite(0.23, -0.05, None, 0.032),
+        EggSite(0.02, -0.02, None, 0.036),
+        EggSite(0.11, 0.03, None, 0.030),
+        EggSite(-0.19, -0.06, None, 0.030),
     ),
-    webs=((3, 2), (0, 2)),
+    webs=((0, 3), (1, 2), (0, 7)),
+    trees=((0.23, 0.04), (-0.21, -0.14), (0.11, 0.20), (-0.02, 0.15), (-0.20, 0.12), (0.00, -0.23)),
 )
 
-#: Water tower for the rural plot: tank on legs, the plot's tallest structure.
-RURAL_TOWER = (-0.03, -0.20)
-RURAL_TOWER_TANK_Z = (0.09, 0.15)
+#: Where the rural landmark and its companion (silo, tank, shrine) stand.
+RURAL_LANDMARK = (-0.03, 0.20)
+RURAL_COMPANION = (-0.19, 0.08)
 
-#: Town: a 3 × 3 grid with 0.04 u streets, one cell left open, two glass
-#: mid-rises on the diagonal so the skyline reads from any yaw.
-TOWN = Layout(
-    buildings=(
-        Building(-0.20, -0.20, 0.16, 0.16, 0.08),
-        Building(0.00, -0.20, 0.16, 0.16, 0.10, roof="env-concrete"),
-        Building(0.20, -0.20, 0.16, 0.16, 0.24, body="env-glass", roof="env-glass"),
-        Building(-0.20, 0.00, 0.16, 0.16, 0.07, roof="env-concrete"),
-        Building(0.00, 0.00, 0.16, 0.16, 0.12),
-        Building(0.20, 0.00, 0.16, 0.16, 0.09),
-        Building(-0.20, 0.20, 0.16, 0.16, 0.18, body="env-glass", roof="env-roof"),
-        Building(0.00, 0.20, 0.16, 0.16, 0.08, roof="env-concrete"),
+#: Town: one mid-rise landmark over a low skyline with a couple of trees.
+TOWN = Template(
+    slots=(
+        Slot(0.02, -0.03, 0.10, 0.10, 0.20, "tower"),
+        Slot(-0.12, 0.04, 0.10, 0.08, 0.13, "mid"),
+        Slot(0.14, 0.08, 0.08, 0.10, 0.11, "mid"),
+        Slot(-0.13, -0.10, 0.09, 0.07, 0.08),
+        Slot(0.15, -0.10, 0.09, 0.07, 0.07),
+        Slot(0.00, 0.12, 0.11, 0.06, 0.07),
+        Slot(-0.03, -0.17, 0.12, 0.06, 0.06),
+        Slot(-0.21, -0.01, 0.05, 0.08, 0.06),
+        Slot(0.20, -0.01, 0.05, 0.06, 0.05),
+        Slot(-0.10, 0.16, 0.08, 0.05, 0.05),
+        Slot(0.10, 0.19, 0.07, 0.05, 0.05),
+        Slot(0.12, -0.20, 0.07, 0.05, 0.05),
     ),
-    landmark=2,
+    landmark=0,
     eggs=(
-        EggSite(0.00, 0.00, 4, 0.036),
-        EggSite(-0.20, -0.20, 0, 0.032),
-        EggSite(0.20, 0.20, None, 0.042),
-        EggSite(0.20, 0.00, 5, 0.030),
+        EggSite(-0.12, 0.04, 1, 0.032),
+        EggSite(0.14, 0.08, 2, 0.030),
+        EggSite(0.12, -0.02, None, 0.038),
+        EggSite(-0.03, -0.17, 6, 0.028),
     ),
-    webs=((2, 5), (6, 3), (4, 1), (2, 4)),
+    webs=((0, 1), (0, 2), (1, 5), (2, 4), (3, 6)),
+    trees=((-0.20, 0.11), (0.21, 0.16), (-0.22, -0.13)),
 )
 
-#: City: a 4 × 4 grid of towers with 0.03 u streets and one plaza at the far
-#: corner. Heights climb toward the spire at (row 1, column 2) so the
-#: silhouette peaks off-centre.
-_CITY_HEIGHTS = (
-    (0.12, 0.16, 0.20, 0.13),
-    (0.15, 0.21, 0.23, 0.18),
-    (0.19, 0.20, 0.22, 0.14),
-    (0.11, 0.17, 0.15, 0.12),
-)
-_CITY_GLASS = {(1, 1), (1, 2), (2, 2), (0, 2), (2, 0)}
-_CITY_PLAZA = (3, 3)
-
-
-def _city_buildings() -> tuple[Building, ...]:
-    """Lay the city towers out on their grid, leaving the plaza cell open."""
-    pitch, size = 0.15, 0.12
-    towers = []
-    for row, heights in enumerate(_CITY_HEIGHTS):
-        for col, h in enumerate(heights):
-            if (row, col) == _CITY_PLAZA:
-                continue
-            glass = (row, col) in _CITY_GLASS
-            towers.append(
-                Building(
-                    -0.225 + col * pitch,
-                    -0.225 + row * pitch,
-                    size,
-                    size,
-                    h,
-                    body="env-glass" if glass else "env-concrete",
-                    roof="env-glass" if glass else "env-roof",
-                )
-            )
-    return tuple(towers)
-
-
-CITY = Layout(
-    buildings=_city_buildings(),
-    landmark=6,  # row 1, column 2: the 0.23 tower that carries the spire
-    eggs=(
-        EggSite(-0.225, -0.225, 0, 0.030),
-        EggSite(0.225, 0.225, None, 0.032),
-        EggSite(-0.075, 0.225, 13, 0.030),
-        EggSite(0.225, -0.075, 7, 0.030),
-        EggSite(-0.225, 0.075, 8, 0.030),
-        EggSite(0.075, -0.225, 2, 0.030),
+#: City: five towers over mid-rises and low blocks, the landmark on slot 0.
+CITY = Template(
+    slots=(
+        Slot(0.03, -0.02, 0.11, 0.11, 0.36, "tower"),
+        Slot(-0.11, 0.05, 0.10, 0.10, 0.30, "tower"),
+        Slot(0.14, 0.10, 0.09, 0.09, 0.26, "tower"),
+        Slot(-0.13, -0.10, 0.10, 0.09, 0.22, "tower"),
+        Slot(0.15, -0.10, 0.09, 0.10, 0.20, "tower"),
+        Slot(0.00, 0.14, 0.10, 0.08, 0.17, "mid"),
+        Slot(0.00, -0.15, 0.12, 0.07, 0.15, "mid"),
+        Slot(-0.16, 0.14, 0.07, 0.07, 0.11),
+        Slot(0.18, 0.00, 0.06, 0.09, 0.10),
+        Slot(-0.21, 0.00, 0.06, 0.08, 0.13, "mid"),
+        Slot(0.12, -0.19, 0.08, 0.06, 0.09),
+        Slot(-0.10, -0.20, 0.07, 0.05, 0.08),
+        Slot(0.05, 0.22, 0.09, 0.05, 0.08),
+        Slot(0.15, 0.18, 0.06, 0.05, 0.07),
     ),
-    webs=((5, 6), (6, 10), (9, 5), (6, 7), (10, 14), (1, 5)),
+    landmark=0,
+    eggs=(
+        EggSite(0.00, 0.14, 5, 0.030),
+        EggSite(-0.21, 0.00, 9, 0.028),
+        EggSite(0.12, -0.19, 10, 0.028),
+        EggSite(-0.05, -0.07, None, 0.030),
+        EggSite(0.22, 0.10, None, 0.030),
+        EggSite(0.00, -0.15, 6, 0.030),
+    ),
+    webs=((0, 1), (0, 2), (1, 7), (2, 8), (3, 6), (4, 10), (1, 9)),
 )
 
 #: Every scale by id, sparsest first (mirrors `SETTLEMENT_SCALES`).
-LAYOUTS: dict[str, Layout] = {"rural": RURAL, "town": TOWN, "city": CITY}
+TEMPLATES: dict[str, Template] = {"rural": RURAL, "town": TOWN, "city": CITY}
 
 
 # ===========================================
-# Base builders
+# Dressed layout
 # ===========================================
 
 
-def plate() -> None:
-    """The asphalt plot every scale stands on."""
-    box("plate", (PLOT, PLOT, PLATE_HEIGHT), (0, 0, PLATE_HEIGHT / 2), "env-asphalt")
+@dataclass(frozen=True)
+class Building:
+    """One dressed block: a slot with its tokens, roof shape and tower profile decided.
+
+    @param roof - `flat`, `pitched`, `hip`, `tin`, `pagoda`, `thatch`, `dome`, `onion` or `none`.
+    @param rise - Height of the roof above the eaves (0 for flat).
+    @param profile - `box`, `slender`, `stepped`, `slab`, `drum`, `hut`, `stilt` or `veranda`.
+    @param accent - Whether this block gets the style's neon accent strip.
+    @param skip - True when the landmark replaces the block; nothing is built for it.
+    """
+
+    x: float
+    y: float
+    w: float
+    d: float
+    h: float
+    role: str
+    body: str
+    roof_token: str
+    roof: str
+    rise: float
+    profile: str = "box"
+    accent: bool = False
+    skip: bool = False
+
+    @property
+    def top(self) -> float:
+        """World Z of the eaves / flat roof surface."""
+        return GROUND + self.h
+
+    @property
+    def crest(self) -> float:
+        """World Z of the highest roof point."""
+        return self.top + self.rise
 
 
-def block(name: str, b: Building) -> None:
-    """A flat-roofed block: walls up to the roof, a thin cap in the roof token."""
-    cap = 0.012
-    box(f"{name}_body", (b.w, b.d, b.h - cap), (b.x, b.y, PLATE_HEIGHT + (b.h - cap) / 2), b.body)
-    box(f"{name}_roof", (b.w, b.d, cap), (b.x, b.y, b.top - cap / 2), b.roof)
+@dataclass(frozen=True)
+class Layout:
+    """A template dressed by a style: what the base and the egg overlay both build from."""
+
+    scale: str
+    buildings: tuple[Building, ...]
+    landmark: int | None
+    eggs: tuple[EggSite, ...]
+    webs: tuple[tuple[int, int], ...]
+    trees: tuple[tuple[float, float], ...]
+
+
+@dataclass(frozen=True)
+class Style:
+    """One regional architectural family.
+
+    @param id - Style id as used in the model id (`overworld.settlement.<id>.<scale>`).
+    @param seed - Seed for the style's jitter and window pattern.
+    @param house - House profile for rural slots: `box`, `hut`, `stilt`, `veranda` or `log`.
+    @param house_roof - Roof kind for houses.
+    @param house_bodies - Wall tokens houses are drawn from.
+    @param house_roofs - Roof tokens houses are drawn from.
+    @param block_roof - Roof kind for low blocks and mid-rises.
+    @param block_bodies - Wall tokens low blocks and mid-rises are drawn from.
+    @param block_roofs - Roof tokens for those.
+    @param tower - Tower profile: `box`, `slender`, `stepped` or `slab`.
+    @param tower_bodies - Wall tokens towers are drawn from.
+    @param tower_roofs - Cap tokens for towers.
+    @param tree - Tree kind: `round`, `pine`, `palm`, `acacia`, `eucalyptus`, `birch` or `none`.
+    @param heights - Height multiplier per role.
+    @param accent - Neon strip token on some towers, or None.
+    @param landmark - Builds the landmark for a scale and returns the beacon point.
+    @param extras - Adds style dressing (water tanks, domes, shrines) after the blocks.
+    @param replaces - Scales whose landmark slot is left empty for the landmark builder.
+    @param skips - Slot indices per scale the style leaves open (a pier, a plaza).
+    """
+
+    id: str
+    seed: int
+    house: str
+    house_roof: str
+    house_bodies: tuple[str, ...]
+    house_roofs: tuple[str, ...]
+    block_roof: str
+    block_bodies: tuple[str, ...]
+    block_roofs: tuple[str, ...]
+    tower: str
+    tower_bodies: tuple[str, ...]
+    tower_roofs: tuple[str, ...]
+    tree: str
+    landmark: Callable[["Style", Layout], tuple[float, float, float]]
+    heights: dict[str, float] = field(default_factory=dict)
+    accent: str | None = None
+    extras: Callable[["Style", Layout], None] | None = None
+    replaces: frozenset[str] = frozenset()
+    skips: dict[str, tuple[int, ...]] = field(default_factory=dict)
+
+
+#: Roof rise as a share of the smaller footprint side, per roof kind.
+ROOF_RISE = {
+    "flat": 0.0,
+    "pitched": 0.55,
+    "hip": 0.5,
+    "tin": 0.28,
+    "pagoda": 0.45,
+    "thatch": 0.8,
+    "dome": 0.55,
+    "onion": 0.7,
+    "none": 0.0,
+}
+
+
+def dress(style: Style, scale: str) -> Layout:
+    """Apply a style to a scale template: tokens, roof shapes, profiles and seeded jitter.
+
+    Every style jitters block positions and heights from its own seed, so
+    two styles on the same template never share a block layout either.
+    """
+    template = TEMPLATES[scale]
+    rng = Rng(style.seed * 31 + len(scale))
+    skipped = set(style.skips.get(scale, ()))
+    buildings = []
+    for i, slot in enumerate(template.slots):
+        role = slot.role
+        if role == "house":
+            bodies, roofs, roof, profile = style.house_bodies, style.house_roofs, style.house_roof, style.house
+        elif role == "tower":
+            bodies, roofs, roof, profile = style.tower_bodies, style.tower_roofs, "flat", style.tower
+        else:
+            bodies, roofs, roof, profile = style.block_bodies, style.block_roofs, style.block_roof, "box"
+        if profile in ("hut", "stilt", "veranda", "log"):
+            roof = {"hut": "thatch", "stilt": "pitched", "veranda": "tin", "log": "pitched"}[profile]
+        h = slot.h * style.heights.get(role, 1.0) * rng.between(0.88, 1.14)
+        jitter = 0.012 if role != "tower" else 0.006
+        x = slot.x + rng.between(-jitter, jitter)
+        y = slot.y + rng.between(-jitter, jitter)
+        replaced = i == template.landmark and scale in style.replaces
+        buildings.append(
+            Building(
+                x=x,
+                y=y,
+                w=slot.w,
+                d=slot.d,
+                h=h,
+                role=role,
+                body=rng.pick(bodies),
+                roof_token=rng.pick(roofs),
+                roof=roof,
+                rise=min(slot.w, slot.d) * ROOF_RISE[roof],
+                profile=profile,
+                accent=style.accent is not None and role == "tower" and rng.next() < 0.6,
+                skip=replaced or i in skipped,
+            )
+        )
+    return Layout(scale, tuple(buildings), template.landmark, template.eggs, template.webs, template.trees)
+
+
+# ===========================================
+# Mesh primitives
+# ===========================================
+
+
+def _mesh(name: str, verts: list[tuple[float, float, float]], faces: list[tuple[int, ...]], token: str) -> bpy.types.Object:
+    """A flat-shaded mesh from explicit vertices and outward-wound faces."""
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    ob = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(ob)
+    mesh.materials.append(material(token))
+    for poly in mesh.polygons:
+        poly.use_smooth = False
+    return ob
+
+
+def prism(name: str, at: tuple[float, float, float], width: float, length: float, rise: float, token: str) -> bpy.types.Object:
+    """A ridged roof: a triangular prism along Y with its flat base at ``at`` and its ridge ``rise`` above."""
+    x, y, z = at
+    hw, hl = width / 2, length / 2
+    verts = [(x - hw, y - hl, z), (x + hw, y - hl, z), (x + hw, y + hl, z), (x - hw, y + hl, z), (x, y - hl, z + rise), (x, y + hl, z + rise)]
+    faces = [(0, 3, 2, 1), (0, 1, 4), (2, 3, 5), (1, 2, 5, 4), (3, 0, 4, 5)]
+    return _mesh(name, verts, faces, token)
+
+
+def pyramid(name: str, at: tuple[float, float, float], width: float, length: float, rise: float, token: str, top: float = 0.0) -> bpy.types.Object:
+    """A hipped roof or spire: a rectangular pyramid, optionally truncated to a ``top`` square."""
+    x, y, z = at
+    hw, hl = width / 2, length / 2
+    if top <= 0:
+        verts = [(x - hw, y - hl, z), (x + hw, y - hl, z), (x + hw, y + hl, z), (x - hw, y + hl, z), (x, y, z + rise)]
+        faces = [(0, 3, 2, 1), (0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4)]
+    else:
+        tw, tl = top * hw, top * hl
+        verts = [
+            (x - hw, y - hl, z), (x + hw, y - hl, z), (x + hw, y + hl, z), (x - hw, y + hl, z),
+            (x - tw, y - tl, z + rise), (x + tw, y - tl, z + rise), (x + tw, y + tl, z + rise), (x - tw, y + tl, z + rise),
+        ]
+        faces = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+    return _mesh(name, verts, faces, token)
+
+
+def dome(name: str, at: tuple[float, float, float], radius: float, token: str, squash: float = 1.0, segments: int = 8) -> None:
+    """A half sphere standing on ``at``, cut flat so it stays watertight."""
+    x, y, z = at
+    d = sphere(name, radius, (x, y, z), token, segments=segments, rings=4, scale=(1, 1, squash), smooth=False)
+    cut_below(d, z)
+
+
+def onion(name: str, at: tuple[float, float, float], radius: float, token: str) -> float:
+    """An onion dome with its spike; returns the spike tip Z."""
+    x, y, z = at
+    d = sphere(name, radius, (x, y, z + radius * 0.75), token, segments=6, rings=4, scale=(1, 1, 1.25), smooth=False)
+    cut_below(d, z)
+    tip = z + radius * 2.05
+    cylinder(f"{name}_spike", 0.0, radius * 0.35, radius * 0.9, 4, (x, y, tip - radius * 0.45), token)
+    return tip + radius * 0.0
+
+
+def spire(name: str, at: tuple[float, float, float], base: float, height: float, token: str) -> float:
+    """A four-sided tapering spire; returns the tip Z."""
+    x, y, z = at
+    pyramid(name, (x, y, z), base, base, height, token)
+    return z + height
 
 
 def beacon(name: str, at: tuple[float, float, float]) -> None:
@@ -233,42 +467,192 @@ def beacon(name: str, at: tuple[float, float, float]) -> None:
     box(name, (BEACON, BEACON, BEACON * 0.6), (at[0], at[1], at[2] + BEACON * 0.3), "tdf-orange")
 
 
-def water_tower(name: str, x: float, y: float) -> float:
-    """A rural water tower: four legs, a steel tank, a cone lid. Returns the lid apex Z."""
-    z0, z1 = RURAL_TOWER_TANK_Z
-    for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
-        box(f"{name}_leg{sx:+}{sy:+}", (0.012, 0.012, z0), (x + sx * 0.03, y + sy * 0.03, PLATE_HEIGHT + z0 / 2), "env-metal")
-    cylinder(f"{name}_tank", 0.045, 0.045, z1 - z0, 8, (x, y, PLATE_HEIGHT + (z0 + z1) / 2), "env-metal")
-    lid = 0.02
-    cylinder(f"{name}_lid", 0.006, 0.047, lid, 8, (x, y, PLATE_HEIGHT + z1 + lid / 2), "env-roof")
-    return PLATE_HEIGHT + z1 + lid
+# ===========================================
+# Windows
+# ===========================================
 
 
-def spire(name: str, b: Building) -> float:
-    """A landmark spire on a city tower: a stepped crown and a tapered pyramid. Returns its tip Z."""
-    crown = 0.02
-    box(f"{name}_crown", (b.w * 0.6, b.d * 0.6, crown), (b.x, b.y, b.top + crown / 2), "env-concrete")
-    tip = CITY_HEIGHT_CAP - BEACON * 0.6
-    height = tip - (b.top + crown)
-    cylinder(f"{name}_pyramid", 0.014, b.w * 0.28, height, 4, (b.x, b.y, b.top + crown + height / 2), "env-concrete")
-    return tip
+def windows(name: str, x: float, y: float, w: float, d: float, z0: float, z1: float, rng: Rng, accent: str | None = None) -> None:
+    """Lit windows on the front (-Y), east (+X) and west (-X) faces of a box between ``z0`` and ``z1``.
+
+    A deterministic generator lights `WINDOW_LIT_FRACTION` of the cells;
+    every lit window is a small box sunk 0.002 into the wall so the join
+    stays a closed shell. ``accent`` adds a vertical neon strip on the front.
+    """
+    rows = max(0, int((z1 - z0 - 0.02) // WINDOW_PITCH_UP))
+    for face, span in (("f", w), ("e", d), ("w", d)):
+        cols = max(1, int((span - 0.016) // WINDOW_PITCH_ACROSS))
+        start = -(cols - 1) / 2 * WINDOW_PITCH_ACROSS
+        for row in range(rows):
+            z = z0 + 0.012 + row * WINDOW_PITCH_UP + WINDOW_H / 2
+            if z + WINDOW_H / 2 > z1 - 0.006:
+                break
+            for col in range(cols):
+                if rng.next() > WINDOW_LIT_FRACTION:
+                    continue
+                along = start + col * WINDOW_PITCH_ACROSS
+                if face == "f":
+                    at, size = (x + along, y - d / 2 - WINDOW_D / 2 + 0.002, z), (WINDOW_W, WINDOW_D, WINDOW_H)
+                elif face == "e":
+                    at, size = (x + w / 2 + WINDOW_D / 2 - 0.002, y + along, z), (WINDOW_D, WINDOW_W, WINDOW_H)
+                else:
+                    at, size = (x - w / 2 - WINDOW_D / 2 + 0.002, y + along, z), (WINDOW_D, WINDOW_W, WINDOW_H)
+                box(f"{name}_w{face}{row}{col}", size, at, WINDOW_TOKEN)
+    if accent and z1 - z0 > 0.1:
+        strip = (z1 - z0) * 0.7
+        box(f"{name}_neon", (0.008, WINDOW_D, strip), (x + w * 0.3, y - d / 2 - WINDOW_D / 2 + 0.002, z0 + (z1 - z0) * 0.55), accent)
 
 
-def build_settlement(scale: str) -> None:
-    """Build the base model for one scale: plate, blocks, landmark and beacon."""
-    layout = LAYOUTS[scale]
-    plate()
-    for i, b in enumerate(layout.buildings):
-        block(f"block{i}", b)
-    if scale == "rural":
-        tip = water_tower("tower", *RURAL_TOWER)
-        beacon("beacon", (RURAL_TOWER[0], RURAL_TOWER[1], tip))
-    elif scale == "town":
-        b = layout.buildings[layout.landmark]
-        beacon("beacon", (b.x, b.y, b.top))
+# ===========================================
+# Block builders
+# ===========================================
+
+
+def roof(name: str, b: Building, x: float, y: float, w: float, d: float, z: float, token: str) -> None:
+    """The roof for a block of the given footprint at eaves height ``z``, by the block's roof kind."""
+    kind = b.roof
+    if kind == "flat":
+        box(f"{name}_roof", (w + CAP_LIP, d + CAP_LIP, CAP), (x, y, z - CAP / 2), token)
+    elif kind == "pitched":
+        prism(f"{name}_roof", (x, y, z), w + 0.012, d + 0.012, b.rise, token)
+    elif kind == "hip":
+        pyramid(f"{name}_roof", (x, y, z), w + 0.012, d + 0.012, b.rise, token, top=0.18)
+    elif kind == "tin":
+        prism(f"{name}_roof", (x, y, z), w + 0.028, d + 0.02, b.rise, token)
+    elif kind == "pagoda":
+        pyramid(f"{name}_roof", (x, y, z), w + 0.03, d + 0.03, b.rise * 0.55, token, top=0.35)
+        box(f"{name}_loft", (w * 0.62, d * 0.62, b.rise * 0.3), (x, y, z + b.rise * 0.55 + b.rise * 0.15), b.body)
+        pyramid(f"{name}_roof2", (x, y, z + b.rise * 0.85), w * 0.62 + 0.024, d * 0.62 + 0.024, b.rise * 0.4, token, top=0.2)
+    elif kind == "thatch":
+        cylinder(f"{name}_roof", 0.0, max(w, d) * 0.62, b.rise, 6, (x, y, z + b.rise / 2), token)
+    elif kind == "dome":
+        box(f"{name}_cap", (w + CAP_LIP, d + CAP_LIP, CAP), (x, y, z - CAP / 2), b.body)
+        dome(f"{name}_roof", (x, y, z), min(w, d) * 0.5, token, squash=0.9)
+    elif kind == "onion":
+        box(f"{name}_cap", (w + CAP_LIP, d + CAP_LIP, CAP), (x, y, z - CAP / 2), b.body)
+        onion(f"{name}_roof", (x, y, z), min(w, d) * 0.4, token)
+
+
+def house(name: str, b: Building, rng: Rng) -> None:
+    """A rural house by profile: a box under its roof, a round hut, a stilt house or a veranda house."""
+    if b.profile == "hut":
+        r = min(b.w, b.d) * 0.55
+        cylinder(f"{name}_body", r, r, b.h, 6, (b.x, b.y, GROUND + b.h / 2), b.body)
+        cylinder(f"{name}_roof", 0.0, r + 0.008, b.rise, 6, (b.x, b.y, b.top + b.rise / 2), b.roof_token)
+        return
+    z0 = GROUND
+    if b.profile == "stilt":
+        z0 = GROUND + 0.02
+        for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+            box(f"{name}_post{sx:+}{sy:+}", (0.008, 0.008, 0.022), (b.x + sx * b.w * 0.38, b.y + sy * b.d * 0.38, GROUND + 0.011), "env-bark")
+    body_h = b.h - CAP + SEAM if b.roof == "flat" else b.h
+    box(f"{name}_body", (b.w, b.d, body_h), (b.x, b.y, z0 + body_h / 2), b.body)
+    roof(name, b, b.x, b.y, b.w, b.d, z0 + b.h, b.roof_token)
+    if b.profile == "veranda":
+        box(f"{name}_deck", (b.w + 0.03, 0.012, 0.01), (b.x, b.y - b.d / 2 - 0.006, z0 + 0.005), "env-bark")
+    windows(name, b.x, b.y, b.w, b.d, z0, z0 + b.h, rng)
+
+
+def block(name: str, b: Building, rng: Rng, accent: str | None) -> None:
+    """A low block, mid-rise or tower by profile, with its roof and lit windows."""
+    if b.role == "house":
+        house(name, b, rng)
+        return
+    if b.profile == "slender":
+        w, d, h = b.w * 0.74, b.d * 0.74, b.h * 1.12
+        box(f"{name}_body", (w, d, h), (b.x, b.y, GROUND + h / 2), b.body)
+        pyramid(f"{name}_cap", (b.x, b.y, GROUND + h - SEAM), w + CAP_LIP, d + CAP_LIP, 0.03, b.roof_token, top=0.3)
+        windows(name, b.x, b.y, w, d, GROUND, GROUND + h, rng, accent if b.accent else None)
+    elif b.profile == "stepped":
+        tiers = ((1.0, 0.55), (0.76, 0.3), (0.52, 0.15))
+        z = GROUND
+        for i, (shrink, share) in enumerate(tiers):
+            w, d, h = b.w * shrink, b.d * shrink, b.h * share
+            box(f"{name}_tier{i}", (w, d, h), (b.x, b.y, z + h / 2), b.body)
+            windows(f"{name}_t{i}", b.x, b.y, w, d, z, z + h, rng)
+            z += h
+        box(f"{name}_roof", (b.w * 0.52 + CAP_LIP, b.d * 0.52 + CAP_LIP, CAP), (b.x, b.y, z + CAP / 2 - SEAM), b.roof_token)
+    elif b.profile == "slab":
+        w, d, h = b.w * 1.3, b.d * 0.68, b.h * 0.85
+        box(f"{name}_body", (w, d, h - CAP + SEAM), (b.x, b.y, GROUND + (h - CAP + SEAM) / 2), b.body)
+        box(f"{name}_roof", (w + CAP_LIP, d + CAP_LIP, CAP), (b.x, b.y, GROUND + h - CAP / 2), b.roof_token)
+        windows(name, b.x, b.y, w, d, GROUND, GROUND + h - CAP, rng)
     else:
-        b = layout.buildings[layout.landmark]
-        beacon("beacon", (b.x, b.y, spire("spire", b)))
+        flat = b.roof == "flat"
+        h = b.h - CAP + SEAM if flat else b.h
+        box(f"{name}_body", (b.w, b.d, h), (b.x, b.y, GROUND + h / 2), b.body)
+        roof(name, b, b.x, b.y, b.w, b.d, GROUND + b.h, b.roof_token)
+        windows(name, b.x, b.y, b.w, b.d, GROUND, GROUND + b.h - CAP, rng, accent if b.accent else None)
+
+
+# ===========================================
+# Trees
+# ===========================================
+
+
+def tree(name: str, kind: str, x: float, y: float) -> None:
+    """A tree of the style's kind at ``(x, y)`` on the ground."""
+    if kind == "none":
+        return
+    if kind == "pine":
+        cylinder(f"{name}_trunk", 0.005, 0.006, 0.02, 5, (x, y, GROUND + 0.01), "env-bark")
+        cylinder(f"{name}_crown", 0.0, 0.02, 0.05, 6, (x, y, GROUND + 0.02 + 0.025), "env-foliage")
+    elif kind == "palm":
+        cylinder(f"{name}_trunk", 0.005, 0.007, 0.05, 5, (x, y, GROUND + 0.025), "env-palm-trunk")
+        sphere(f"{name}_crown", 0.026, (x, y, GROUND + 0.052), "env-tropical-leaf", segments=6, rings=3, scale=(1, 1, 0.45))
+    elif kind == "acacia":
+        cylinder(f"{name}_trunk", 0.005, 0.006, 0.04, 5, (x, y, GROUND + 0.02), "env-bark")
+        sphere(f"{name}_crown", 0.03, (x, y, GROUND + 0.046), "env-scrub", segments=6, rings=3, scale=(1.2, 1.2, 0.35))
+    elif kind == "eucalyptus":
+        cylinder(f"{name}_trunk", 0.005, 0.006, 0.04, 5, (x, y, GROUND + 0.02), "env-tuart-bark")
+        sphere(f"{name}_crown", 0.022, (x, y, GROUND + 0.055), "env-sclerophyll-leaf", segments=6, rings=4, scale=(1, 1, 1.1))
+    elif kind == "birch":
+        cylinder(f"{name}_trunk", 0.005, 0.006, 0.035, 5, (x, y, GROUND + 0.0175), "env-snow")
+        sphere(f"{name}_crown", 0.022, (x, y, GROUND + 0.05), "env-foliage", segments=6, rings=4, scale=(0.8, 0.8, 1.1))
+    else:
+        cylinder(f"{name}_trunk", 0.006, 0.007, 0.03, 5, (x, y, GROUND + 0.015), "env-bark")
+        sphere(f"{name}_crown", 0.026, (x, y, GROUND + 0.048), "env-foliage", segments=6, rings=4, scale=(1, 1, 0.9))
+
+
+# ===========================================
+# Cluster yaw and join
+# ===========================================
+
+
+def yaw_and_join(name: str) -> None:
+    """Turn every mesh by `CLUSTER_YAW` about the plot centre and join them into one object.
+
+    One object per model keeps the scene to a handful of draw calls per
+    settlement: the exporter writes one primitive per material, not one
+    per window.
+    """
+    turn = Matrix.Rotation(CLUSTER_YAW, 4, "Z")
+    bpy.ops.object.select_all(action="DESELECT")
+    turned = []
+    for ob in mesh_objects():
+        ob.matrix_world = turn @ ob.matrix_world
+        ob.select_set(True)
+        turned.append(ob)
+    if not turned:
+        return
+    bpy.context.view_layer.objects.active = turned[0]
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    join(turned, name)
+
+
+def build_settlement(style: Style, scale: str) -> None:
+    """Build the base model for one style and scale: blocks with windows, trees, extras, landmark, beacon."""
+    layout = dress(style, scale)
+    rng = Rng(style.seed * 131 + len(scale) * 7)
+    for i, b in enumerate(layout.buildings):
+        if not b.skip:
+            block(f"block{i}", b, rng, style.accent)
+    for i, (x, y) in enumerate(layout.trees):
+        tree(f"tree{i}", style.tree, x, y)
+    if style.extras:
+        style.extras(style, layout)
+    beacon("beacon", style.landmark(style, layout))
+    yaw_and_join("settlement")
 
 
 # ===========================================
@@ -277,11 +661,7 @@ def build_settlement(scale: str) -> None:
 
 
 def egg(name: str, at: tuple[float, float, float], radius: float) -> None:
-    """One ovoid egg standing on ``at`` with a magenta glow spot on its crown.
-
-    Six segments and three rings keep an egg at 24 triangles; the glow is a
-    16-triangle bead so a cluster of three stays under 130 triangles.
-    """
+    """One ovoid egg standing on ``at`` with a magenta glow spot on its crown."""
     x, y, z = at
     height = radius * 1.35
     sphere(name, radius, (x, y, z + height), "bug-flesh-light", segments=6, rings=3, scale=(1, 1, height / radius), smooth=True)
@@ -289,11 +669,7 @@ def egg(name: str, at: tuple[float, float, float], radius: float) -> None:
 
 
 def cluster(name: str, at: tuple[float, float, float], radius: float, mound: bool) -> None:
-    """Three eggs of falling size around a centre, optionally on a flesh mound.
-
-    Street clusters get a flattened `bug-flesh` mound cut at the plate so they
-    root into the ground; rooftop clusters stand directly on the roof cap.
-    """
+    """Three eggs of falling size around a centre, optionally on a flesh mound rooted in the ground."""
     x, y, z = at
     if mound:
         m = sphere(f"{name}_mound", radius * 2.2, (x, y, z), "bug-flesh", segments=8, rings=4, scale=(1, 0.9, 0.22), smooth=True)
@@ -303,7 +679,7 @@ def cluster(name: str, at: tuple[float, float, float], radius: float, mound: boo
         egg(f"{name}_egg{i}", (x + math.cos(angle) * spread, y + math.sin(angle) * spread, z), radius * scale)
 
 
-def strand(name: str, a: Vector, b: Vector, radius: float = 0.007) -> None:
+def strand(name: str, a: Vector, b: Vector, radius: float = 0.006) -> None:
     """A webbing strand from ``a`` to ``b``: a three-sided rod aligned along the span."""
     span = b - a
     mid = a + span / 2
@@ -311,36 +687,68 @@ def strand(name: str, a: Vector, b: Vector, radius: float = 0.007) -> None:
     cylinder(name, radius, radius, span.length, 3, tuple(mid), "bug-chitin-dark", rot=tuple(rot))
 
 
+def roost(b: Building) -> float:
+    """The Z an egg cluster stands at on a building: the flat roof, or part-way up a shaped roof."""
+    return b.top if b.roof == "flat" else b.top + b.rise * 0.35
+
+
 def roof_edge(b: Building, toward: Building) -> Vector:
     """The point on ``b``'s roof edge facing ``toward``, pulled in a little so the strand roots."""
     dx, dy = toward.x - b.x, toward.y - b.y
-    inset = 0.015
+    inset = 0.012
+    if b.roof != "flat":
+        return Vector((b.x, b.y, b.crest * 0.97))
     if abs(dx) >= abs(dy):
         return Vector((b.x + math.copysign(b.w / 2 - inset, dx), b.y, b.top))
     return Vector((b.x, b.y + math.copysign(b.d / 2 - inset, dy), b.top))
 
 
 def web(name: str, a: Building, b: Building) -> None:
-    """Bridge the street gap between two roofs from the edges that face each other.
-
-    Starting on the edges rather than the roof centres keeps the strand out of
-    the taller building's walls; a small lift at each end sits it on the cap.
-    """
-    lift = Vector((0, 0, 0.006))
+    """Bridge the gap between two roofs from the edges that face each other."""
+    lift = Vector((0, 0, 0.005))
     strand(name, roof_edge(a, b) + lift, roof_edge(b, a) + lift)
 
 
-def build_settlement_eggs(scale: str) -> None:
-    """Build the egg overlay for one scale over the matching base layout.
+def build_settlement_eggs(style: Style, scale: str) -> None:
+    """Build the egg overlay for one style and scale over the matching dressed layout.
 
-    Nothing here touches the plate or the buildings: clusters stand on roof
-    caps or on the plate in a street gap, and strands span only the gaps.
+    Nothing here touches the buildings: clusters stand on roofs or on the
+    ground in a gap, and strands span only the gaps. The overlay is yawed
+    exactly as the base, so it lands where the base's roofs and gaps are.
+    A site on a block the style left open drops to the ground there.
     """
-    layout = LAYOUTS[scale]
+    layout = dress(style, scale)
     for i, site in enumerate(layout.eggs):
-        if site.building is None:
-            cluster(f"cluster{i}", (site.x, site.y, PLATE_HEIGHT), site.radius, mound=True)
+        b = None if site.building is None else layout.buildings[site.building]
+        if b is None or b.skip:
+            cluster(f"cluster{i}", (site.x, site.y, GROUND), site.radius, mound=True)
         else:
-            cluster(f"cluster{i}", (site.x, site.y, layout.buildings[site.building].top), site.radius, mound=False)
+            cluster(f"cluster{i}", (b.x, b.y, roost(b)), site.radius, mound=False)
     for i, (a, b) in enumerate(layout.webs):
         web(f"web{i}", layout.buildings[a], layout.buildings[b])
+    yaw_and_join("settlement_eggs")
+
+
+__all__ = [
+    "Building",
+    "GROUND",
+    "Layout",
+    "RURAL_COMPANION",
+    "RURAL_LANDMARK",
+    "Rng",
+    "Style",
+    "beacon",
+    "box",
+    "build_settlement",
+    "build_settlement_eggs",
+    "cylinder",
+    "dome",
+    "dress",
+    "onion",
+    "prism",
+    "pyramid",
+    "replace",
+    "sphere",
+    "spire",
+    "tree",
+]

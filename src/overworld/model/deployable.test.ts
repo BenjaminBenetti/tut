@@ -8,6 +8,7 @@ describe("Deployable", () => {
       id: "deployable-1",
       typeId: "sensor-array",
       regionId: "western-europe",
+      level: 1,
       builtDay: 4,
       online: true,
     };

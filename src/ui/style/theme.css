@@ -372,6 +372,9 @@ dd.tut-kv__block {
 .tut-meter--bug .tut-meter__fill {
   --fill: var(--ui-bug);
 }
+.tut-meter--warn .tut-meter__fill {
+  --fill: var(--ui-warn);
+}
 .tut-meter--danger .tut-meter__fill {
   --fill: var(--ui-danger);
 }
@@ -569,4 +572,47 @@ input[type="radio"]:disabled {
 .tut-tooltip p + p {
   margin-top: var(--space-1);
   color: var(--ui-text-dim);
+}
+
+/*
+ * The popover (#1155): the tooltip's plate with a titled body. Beside
+ * its anchor rather than under it, sans for the sentences, mono for the
+ * numbers, the next-level block opened by an info-toned heading.
+ */
+.tut-popover {
+  max-width: 300px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+.tut-popover__title {
+  margin: 0 0 var(--space-1);
+  padding-bottom: var(--space-1);
+  border-bottom: var(--line) solid var(--ui-line);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-accent);
+}
+
+.tut-popover__line {
+  margin: 0;
+  color: var(--ui-text);
+}
+
+.tut-popover__line--dim {
+  font-family: var(--font-mono);
+  color: var(--ui-text-dim);
+}
+
+.tut-popover__line--heading {
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  color: var(--ui-info);
+}
+
+.tut-popover__line--warn {
+  margin-top: var(--space-1);
+  color: var(--ui-warn);
 }

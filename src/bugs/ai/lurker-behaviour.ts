@@ -30,7 +30,7 @@ import {
   exposureScore,
   landingSite,
   recalledSite,
-  livingEnemies,
+  huntableEnemies,
   moveTowards,
   reachableTiles,
   targetValue,
@@ -94,7 +94,9 @@ export class LurkerBehaviour implements BugBehaviour {
     if (unit === undefined || unit.hp <= 0) {
       return [];
     }
-    const enemies = livingEnemies(mission, unit);
+    // A far turret is the most isolated thing on the map; it is a mark
+    // only when it is also the nearest (#1155, `huntableEnemies`).
+    const enemies = huntableEnemies(mission, unit);
     if (enemies.length === 0) {
       return this.hunt(mission, unit, ctx);
     }

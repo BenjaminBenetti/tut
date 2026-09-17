@@ -178,10 +178,15 @@
 }
 
 /* =========================================== */
-/* Overworld side panel: city card, deployables */
+/* Overworld side panel: region card, deployables */
 /* =========================================== */
 
-.tut-city__name {
+.tut-region:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.tut-region__name {
   font-family: var(--font-display, inherit);
   font-size: 18px;
   letter-spacing: 0.04em;
@@ -189,42 +194,92 @@
   margin-bottom: var(--space-2);
 }
 
-.tut-city__mission {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--space-1) var(--space-3);
-  align-items: center;
-}
-
 /*
- * Name above numbers, both left-aligned in the value column. As one
- * right-aligned string the four facts wrapped onto lines that *began*
- * with a "·" and read as fragments (see the view).
+ * One row per city in the region (#1154): name takes the width, scale
+ * and infestation are fixed monospace tracks so the numbers line up.
+ * As specific as `.tut-list > li`, which would otherwise win with its
+ * flex layout (see the mission rows above for the history).
  */
-.tut-city__mission-value {
+.tut-list > li.tut-region__city {
   display: grid;
-  gap: 0.1em;
-  justify-items: start;
+  grid-template-columns: minmax(0, 1fr) 5ch 3ch;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.tut-city__mission .tut-btn {
-  grid-column: 1 / -1;
-  justify-self: start;
+.tut-region__city .tut-data,
+.tut-region__city .tut-mono {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tut-region__city .tut-data {
+  color: var(--ui-text-dim);
+}
+
+.tut-region__city[aria-current="true"] {
+  background: var(--ui-panel-raised);
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.tut-region__city:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+/* The infestation figure takes the band's tint, like the threat badge. */
+.tut-region__city [data-tone="ok"] {
+  color: var(--ui-ok);
+}
+.tut-region__city [data-tone="warn"] {
+  color: var(--ui-warn);
+}
+.tut-region__city [data-tone="danger"] {
+  color: var(--ui-danger);
 }
 
 .tut-deployables .tut-list > li {
   align-items: center;
   flex-wrap: wrap;
+  row-gap: var(--space-2);
+}
+
+.tut-deployables__build {
+  margin-top: var(--space-3);
 }
 
 .tut-deployables__build .tut-btn {
   justify-content: flex-start;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
   padding-block: var(--space-2);
   text-align: left;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/*
+ * A disabled button swallows pointer events, so the popover that says
+ * why it is disabled (#1155) is anchored to a wrapper around it, and the
+ * button itself is made transparent to the pointer so the wrapper sees
+ * the hover.
+ */
+.tut-deployables .tut-btn:disabled {
+  pointer-events: none;
+}
+
+.tut-deployables__option {
+  display: block;
+}
+
+/* The row's own buttons, kept to the right so the level and status read first. */
+.tut-deployables__actions {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: auto;
 }
 
 /* ===========================================
@@ -273,6 +328,24 @@
 .tut-missions__list {
   max-height: 40vh;
   overflow: auto;
+}
+
+/* Heading with the Show all control at its right (#1154). */
+.tut-missions__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.tut-missions__header h3 {
+  margin: 0;
+  min-width: 0;
+}
+
+.tut-missions__show-all {
+  font-size: 11px;
+  padding: 1px var(--space-2);
 }
 
 /*
@@ -1536,6 +1609,11 @@
   display: grid;
   justify-items: center;
   gap: 2px;
+  /* The hub sits in a zero-width anchor, which would shrink it to its
+     longest word; size it to its content instead, capped so a long
+     caption or note (#1155) wraps inside the ring rather than across it. */
+  width: max-content;
+  max-width: 210px;
   padding: var(--space-2) var(--space-3);
   /* Translucent, so the ground the decision is about shows through it:
      the hub sits on the impact tile, and a blast footprint painted there
@@ -1566,6 +1644,18 @@
 
 .tut-radial__caption {
   font-size: 10px;
+}
+
+/*
+ * The note is the one hub line allowed to wrap: an installation's effect
+ * in a sentence (#1155). Capped so the hub stays inside the ring.
+ */
+.tut-radial__note {
+  max-width: 190px;
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--ui-text-dim);
+  white-space: normal;
 }
 
 /*

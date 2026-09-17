@@ -19,6 +19,7 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
@@ -67,6 +68,7 @@ function mission(): TacticalState {
       },
       unitTuning: UNIT_TUNING,
       spawnTuning: SPAWN_TUNING,
+      garrison: GARRISON_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

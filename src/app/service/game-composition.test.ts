@@ -11,6 +11,7 @@ import { finishMission } from "../../tactical/model/finish-mission-command";
 import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
 import { startMission } from "../../tactical/model/start-mission-command";
+import { GARRISON_TURRET_SOURCE_ID } from "../../tactical/model/turret";
 import type { Mission } from "../../overworld/model/mission";
 import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
@@ -163,6 +164,41 @@ describe("composeGame", () => {
     expect(game.session.state?.overworld.missions).toHaveLength(1);
     const loaded = game.saves.loadGame(AUTOSAVE_SLOT_ID);
     expect(loaded.ok && loaded.value.activeMission?.missionId).toBe(mission.id);
+  });
+
+  it("stands the region's garrison when a mission starts: a level 2 battery is two turrets (#1155)", () => {
+    const { game } = build();
+    const { mission, deployment } = campaignWithMission(game);
+    const before = game.session.state;
+    const city = before?.overworld.map.cities.find(
+      (c) => c.id === mission.cityId,
+    );
+    if (!before || !city) throw new Error("fixture needs the mission's city");
+    game.session.start({
+      ...before,
+      overworld: {
+        ...before.overworld,
+        deployables: [
+          {
+            id: "deployable-1",
+            typeId: "defensive-battery",
+            regionId: city.regionId,
+            level: 2,
+            builtDay: 1,
+            online: true,
+          },
+        ],
+      },
+    });
+
+    const result = game.session.store?.dispatch(
+      startMission(mission.id, deployment),
+    );
+    expect(result?.ok).toBe(true);
+    const garrison = game.session.state?.activeMission?.units.filter(
+      (u) => u.sourceId === GARRISON_TURRET_SOURCE_ID,
+    );
+    expect(garrison).toHaveLength(2);
   });
 
   it("finishes a played mission through the tactical resolver and clears the slot", () => {

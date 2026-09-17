@@ -3,11 +3,16 @@ import { describe, expect, it } from "vitest";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TURRET } from "../data/equipment";
-import { TURRET_TUNING } from "../data/turret-tuning";
+import { GARRISON_TURRET_TUNING, TURRET_TUNING } from "../data/turret-tuning";
 import { endTurn } from "../model/end-turn-command";
 import type { Radar } from "../model/radar";
 import type { TacticalState } from "../model/tactical-state";
-import { turretBurnedOut, turretIsActive } from "../model/turret";
+import {
+  GARRISON_TURRET_SOURCE_ID,
+  turretBurnedOut,
+  turretDestroyed,
+  turretIsActive,
+} from "../model/turret";
 import { TURRET_BURNED_OUT } from "../model/turret-burned-out-event";
 import { TURRET_DEPLOYED } from "../model/turret-deployed-event";
 import type { Unit } from "../model/unit";
@@ -21,10 +26,12 @@ import {
 } from "./tactical-fixtures.test-helper";
 import { createEndTurnHandler, DEFAULT_PHASE_STEPS } from "./turn-service";
 import {
+  armTurret,
   createTurretStep,
   placeTurret,
   validateTurretSite,
 } from "./turret-service";
+import { turretUnit } from "./unit-factory";
 
 // ===========================================
 // Fixtures
@@ -250,6 +257,57 @@ describe("createTurretStep", () => {
     expect(applied.events).toEqual([
       { type: TURRET_BURNED_OUT, payload: { turretId: turret.id, pos: SITE } },
     ]);
+  });
+
+  it("puts a garrison turret on mains back on watch every player turn and never burns it out (#1155)", () => {
+    const built = turretUnit(
+      GARRISON_TURRET_TUNING,
+      "tdf",
+      { pos: SITE, facing: "e" },
+      new SequentialIdGenerator(),
+      GARRISON_TURRET_SOURCE_ID,
+    );
+    const lapsed: Unit = { ...built.unit, status: [], ap: 0 };
+    let mission: TacticalState = {
+      ...field([lapsed]),
+      templates: { ...field().templates, [built.template.id]: built.template },
+    };
+    for (let turn = 0; turn < 12; turn++) {
+      const applied = step(mission, ctx);
+      expect(applied.events).toEqual([]);
+      const turret = unitIn(applied.state, lapsed.id);
+      expect(turret).toMatchObject({
+        status: ["overwatch"],
+        overwatchShots: 2,
+        hp: 30,
+      });
+      expect(turret.turnsLeft).toBeUndefined();
+      expect(turretIsActive(turret)).toBe(true);
+      mission = { ...applied.state };
+    }
+  });
+
+  it("leaves a destroyed garrison turret where it fell: not active, not burnt out, destroyed (#1155)", () => {
+    const built = turretUnit(
+      GARRISON_TURRET_TUNING,
+      "tdf",
+      { pos: SITE, facing: "e" },
+      new SequentialIdGenerator(),
+      GARRISON_TURRET_SOURCE_ID,
+    );
+    const down: Unit = {
+      ...armTurret(built.unit, GARRISON_TURRET_TUNING),
+      hp: 0,
+    };
+    const mission: TacticalState = {
+      ...field([down]),
+      templates: { ...field().templates, [built.template.id]: built.template },
+    };
+    const applied = step(mission, ctx);
+    expect(applied.state).toBe(mission);
+    expect(turretIsActive(down)).toBe(false);
+    expect(turretBurnedOut(down)).toBe(false);
+    expect(turretDestroyed(down)).toBe(true);
   });
 
   it("touches nothing on the bug phase, and leaves a turret the bugs destroyed alone", () => {

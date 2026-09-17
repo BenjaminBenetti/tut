@@ -7,6 +7,8 @@ import { LedgerTransactionService } from "../../economy/service/transaction-serv
 import { DEPLOYABLE_TYPES } from "../data/deployable-types";
 import type { CampaignState } from "../model/campaign-state";
 import type { Deployable } from "../model/deployable";
+import type { DeployableLevel } from "../model/deployable-level";
+import { NO_DEPLOYABLE_MODIFIERS } from "../model/deployable-modifiers";
 import type { DeployableType } from "../model/deployable-type";
 import { DEPLOYABLE_TYPE_IDS } from "../model/deployable-type";
 import type { EarthMap } from "../model/earth-map";
@@ -17,7 +19,11 @@ import {
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
 import { buildEarthMap } from "./earth-map-builder";
 import type { UpkeepDeps } from "./deployable-effects-service";
-import { chargeUpkeep, computeModifiers } from "./deployable-effects-service";
+import {
+  chargeUpkeep,
+  computeModifiers,
+  garrisonTurretsFor,
+} from "./deployable-effects-service";
 
 // ===========================================
 // Fixtures
@@ -50,7 +56,7 @@ function map(): EarthMap {
   });
 }
 
-/** Shipped catalogue: battery suppression 2, repellent 0.5, sensor +2 days. */
+/** The shipped catalogue. */
 const CATALOGUE = new DataDeployableTypeCatalogue(
   DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
 );
@@ -58,6 +64,7 @@ const CATALOGUE = new DataDeployableTypeCatalogue(
 const BATTERY = DEPLOYABLE_TYPES["defensive-battery"];
 const REPELLENT = DEPLOYABLE_TYPES["repellent-dispersal"];
 const SENSOR = DEPLOYABLE_TYPES["sensor-array"];
+const BANK = DEPLOYABLE_TYPES.bank;
 
 /** Builds a deployable with sensible defaults. */
 function deployable(
@@ -65,8 +72,9 @@ function deployable(
   typeId: DeployableType["id"],
   regionId: string,
   online = true,
+  level: DeployableLevel = 1,
 ): Deployable {
-  return { id, typeId, regionId, builtDay: 1, online };
+  return { id, typeId, regionId, level, builtDay: 1, online };
 }
 
 /** A campaign with the given deployables and treasury. */
@@ -115,35 +123,32 @@ function online(state: CampaignState): Record<string, boolean> {
 // ===========================================
 
 describe("computeModifiers", () => {
-  it("returns empty maps with no deployables", () => {
-    expect(computeModifiers(campaign([], 0).overworld, CATALOGUE)).toEqual({
-      suppression: {},
-      spreadDeterrence: {},
-      intelBonus: {},
-    });
+  it("returns empty maps and no bonus with no deployables", () => {
+    expect(computeModifiers(campaign([], 0).overworld, CATALOGUE)).toEqual(
+      NO_DEPLOYABLE_MODIFIERS,
+    );
   });
 
-  it("applies battery suppression to every city in the region and sums batteries", () => {
-    const one = campaign([deployable("d1", "defensive-battery", "west")], 0);
-    expect(computeModifiers(one.overworld, CATALOGUE).suppression).toEqual({
-      a: BATTERY.effect.suppression,
-      b: BATTERY.effect.suppression,
+  it("applies the repellent's growth factor to every city in the region and stacks multiplicatively", () => {
+    const one = campaign([deployable("d1", "repellent-dispersal", "west")], 0);
+    const g = REPELLENT.levels[1].effect.growthFactor ?? 1;
+    expect(computeModifiers(one.overworld, CATALOGUE).growthFactor).toEqual({
+      a: g,
+      b: g,
     });
 
     const two = campaign(
       [
-        deployable("d1", "defensive-battery", "west"),
-        deployable("d2", "defensive-battery", "west"),
-        deployable("d3", "defensive-battery", "east"),
+        deployable("d1", "repellent-dispersal", "west"),
+        deployable("d2", "repellent-dispersal", "west"),
+        deployable("d3", "repellent-dispersal", "east"),
       ],
       0,
     );
-    const s = BATTERY.effect.suppression ?? 0;
-    expect(computeModifiers(two.overworld, CATALOGUE).suppression).toEqual({
-      a: 2 * s,
-      b: 2 * s,
-      c: s,
-    });
+    const { growthFactor } = computeModifiers(two.overworld, CATALOGUE);
+    expect(growthFactor.a).toBeCloseTo(g * g);
+    expect(growthFactor.b).toBeCloseTo(g * g);
+    expect(growthFactor.c).toBeCloseTo(g);
   });
 
   it("stacks deterrence multiplicatively and never past 1", () => {
@@ -154,27 +159,74 @@ describe("computeModifiers", () => {
       ],
       0,
     );
-    const d = REPELLENT.effect.spreadDeterrence ?? 0;
+    const d = REPELLENT.levels[1].effect.spreadDeterrence ?? 0;
     const { spreadDeterrence } = computeModifiers(state.overworld, CATALOGUE);
     expect(spreadDeterrence.west).toBeCloseTo(1 - (1 - d) * (1 - d));
     expect(spreadDeterrence.west).toBeLessThanOrEqual(1);
     expect(spreadDeterrence.east).toBeUndefined();
   });
 
-  it("sums intel bonus per region", () => {
+  it("sums intel bonus per region and takes the lowest detection factor", () => {
     const state = campaign(
       [
         deployable("d1", "sensor-array", "east"),
-        deployable("d2", "sensor-array", "east"),
+        deployable("d2", "sensor-array", "east", true, 3),
         deployable("d3", "sensor-array", "west"),
       ],
       0,
     );
-    const i = SENSOR.effect.intelBonus ?? 0;
-    expect(computeModifiers(state.overworld, CATALOGUE).intelBonus).toEqual({
-      east: 2 * i,
-      west: i,
+    const i1 = SENSOR.levels[1].effect.intelBonus ?? 0;
+    const i3 = SENSOR.levels[3].effect.intelBonus ?? 0;
+    const mods = computeModifiers(state.overworld, CATALOGUE);
+    expect(mods.intelBonus).toEqual({ east: i1 + i3, west: i1 });
+    expect(mods.detectionFactor).toEqual({
+      east: SENSOR.levels[3].effect.detectionFactor,
+      west: SENSOR.levels[1].effect.detectionFactor,
     });
+  });
+
+  it("sums garrison turrets per region by level", () => {
+    const state = campaign(
+      [
+        deployable("d1", "defensive-battery", "west", true, 2),
+        deployable("d2", "defensive-battery", "west"),
+        deployable("d3", "defensive-battery", "east", true, 3),
+      ],
+      0,
+    );
+    const t = (level: DeployableLevel): number =>
+      BATTERY.levels[level].effect.garrisonTurrets ?? 0;
+    expect(
+      computeModifiers(state.overworld, CATALOGUE).garrisonTurrets,
+    ).toEqual({ west: t(2) + t(1), east: t(3) });
+  });
+
+  it("sums the income bonus over every online bank on Earth", () => {
+    const state = campaign(
+      [
+        deployable("d1", "bank", "west"),
+        deployable("d2", "bank", "east", true, 3),
+        deployable("d3", "bank", "east", false, 3),
+      ],
+      0,
+    );
+    expect(computeModifiers(state.overworld, CATALOGUE).incomeBonus).toBe(
+      (BANK.levels[1].effect.incomeBonus ?? 0) +
+        (BANK.levels[3].effect.incomeBonus ?? 0),
+    );
+  });
+
+  it("reads the effect of the installation's current level, not level 1", () => {
+    const l1 = campaign([deployable("d1", "repellent-dispersal", "west")], 0);
+    const l3 = campaign(
+      [deployable("d1", "repellent-dispersal", "west", true, 3)],
+      0,
+    );
+    expect(
+      computeModifiers(l3.overworld, CATALOGUE).growthFactor.a,
+    ).toBeLessThan(
+      computeModifiers(l1.overworld, CATALOGUE).growthFactor.a ?? 1,
+    );
   });
 
   it("ignores offline deployables", () => {
@@ -183,30 +235,34 @@ describe("computeModifiers", () => {
         deployable("d1", "defensive-battery", "west", false),
         deployable("d2", "repellent-dispersal", "west", false),
         deployable("d3", "sensor-array", "east", false),
+        deployable("d4", "bank", "east", false),
       ],
       0,
     );
-    expect(computeModifiers(state.overworld, CATALOGUE)).toEqual({
-      suppression: {},
-      spreadDeterrence: {},
-      intelBonus: {},
-    });
+    expect(computeModifiers(state.overworld, CATALOGUE)).toEqual(
+      NO_DEPLOYABLE_MODIFIERS,
+    );
   });
 
-  it("produces maps the growth and spread services accept as inputs", () => {
+  it("produces maps the growth, spread and detection services accept as inputs", () => {
     const state = campaign(
       [
-        deployable("d1", "defensive-battery", "west"),
+        deployable("d1", "sensor-array", "west"),
         deployable("d2", "repellent-dispersal", "east"),
       ],
       0,
     );
     const mods = computeModifiers(state.overworld, CATALOGUE);
-    for (const value of Object.values(mods.suppression)) {
+    for (const value of Object.values(mods.growthFactor)) {
       expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
     }
     for (const value of Object.values(mods.spreadDeterrence)) {
       expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
+    for (const value of Object.values(mods.detectionFactor)) {
+      expect(value).toBeGreaterThan(0);
       expect(value).toBeLessThanOrEqual(1);
     }
     expect(JSON.parse(JSON.stringify(mods))).toEqual(mods);
@@ -223,11 +279,36 @@ describe("computeModifiers", () => {
   });
 });
 
+describe("garrisonTurretsFor", () => {
+  it("returns the city's region garrison, zero elsewhere or for an unknown city", () => {
+    const state = campaign(
+      [deployable("d1", "defensive-battery", "west", true, 2)],
+      0,
+    );
+    const two = BATTERY.levels[2].effect.garrisonTurrets;
+    expect(garrisonTurretsFor(state.overworld, CATALOGUE, "a")).toBe(two);
+    expect(garrisonTurretsFor(state.overworld, CATALOGUE, "b")).toBe(two);
+    expect(garrisonTurretsFor(state.overworld, CATALOGUE, "c")).toBe(0);
+    expect(garrisonTurretsFor(state.overworld, CATALOGUE, "atlantis")).toBe(0);
+  });
+
+  it("is zero while the battery is offline", () => {
+    const state = campaign(
+      [deployable("d1", "defensive-battery", "west", false)],
+      0,
+    );
+    expect(garrisonTurretsFor(state.overworld, CATALOGUE, "a")).toBe(0);
+  });
+});
+
 // ===========================================
 // Upkeep
 // ===========================================
 
 describe("chargeUpkeep", () => {
+  const batteryUpkeep = BATTERY.levels[1].upkeepPerDay;
+  const sensorUpkeep = SENSOR.levels[1].upkeepPerDay;
+
   it("charges each online deployable once, in order, with a ledger entry per charge", () => {
     const state = campaign(
       [
@@ -237,13 +318,13 @@ describe("chargeUpkeep", () => {
       1000,
     );
     const { state: next, events } = chargeUpkeep(state, 3, deps());
-    const total = BATTERY.upkeepPerDay + SENSOR.upkeepPerDay;
+    const total = batteryUpkeep + sensorUpkeep;
     expect(next.economy.credits).toBe(1000 - total);
     expect(
       next.economy.ledger.map((t) => [t.kind, t.ref, t.amount, t.day]),
     ).toEqual([
-      ["upkeep", "d1", -BATTERY.upkeepPerDay, 3],
-      ["upkeep", "d2", -SENSOR.upkeepPerDay, 3],
+      ["upkeep", "d1", -batteryUpkeep, 3],
+      ["upkeep", "d2", -sensorUpkeep, 3],
     ]);
     expect(events.map((e) => e.type)).toEqual([
       CREDITS_CHANGED,
@@ -252,16 +333,26 @@ describe("chargeUpkeep", () => {
     expect(online(next)).toEqual({ d1: true, d2: true });
   });
 
+  it("charges the upkeep of the installation's level", () => {
+    const state = campaign(
+      [deployable("d1", "defensive-battery", "west", true, 3)],
+      1000,
+    );
+    const { state: next } = chargeUpkeep(state, 3, deps());
+    expect(next.economy.credits).toBe(1000 - BATTERY.levels[3].upkeepPerDay);
+    expect(BATTERY.levels[3].upkeepPerDay).not.toBe(batteryUpkeep);
+  });
+
   it("takes an unaffordable deployable offline without going negative", () => {
     const state = campaign(
       [
         deployable("d1", "defensive-battery", "west"),
         deployable("d2", "sensor-array", "east"),
       ],
-      BATTERY.upkeepPerDay + SENSOR.upkeepPerDay - 1,
+      batteryUpkeep + sensorUpkeep - 1,
     );
     const { state: next, events } = chargeUpkeep(state, 3, deps());
-    expect(next.economy.credits).toBe(SENSOR.upkeepPerDay - 1);
+    expect(next.economy.credits).toBe(sensorUpkeep - 1);
     expect(online(next)).toEqual({ d1: true, d2: false });
     expect(events.map((e) => e.type)).toEqual([
       CREDITS_CHANGED,
@@ -305,7 +396,7 @@ describe("chargeUpkeep", () => {
   it("brings an offline deployable back online when upkeep can be paid", () => {
     const state = campaign(
       [deployable("d1", "defensive-battery", "west", false)],
-      BATTERY.upkeepPerDay,
+      batteryUpkeep,
     );
     const { state: next, events } = chargeUpkeep(state, 5, deps());
     expect(online(next)).toEqual({ d1: true });
@@ -328,7 +419,7 @@ describe("chargeUpkeep", () => {
     expect(online(state)).toEqual({ d1: false });
     state = {
       ...state,
-      economy: { ...state.economy, credits: SENSOR.upkeepPerDay * 2 },
+      economy: { ...state.economy, credits: sensorUpkeep * 2 },
     };
     state = chargeUpkeep(state, 2, d).state;
     expect(online(state)).toEqual({ d1: true });

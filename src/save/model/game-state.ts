@@ -43,8 +43,13 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  *   `units[].turnsLeft`, and a watch carries its shots, `units[].overwatchShots`
  *   (#1138). Both absent on every older unit, which is what the rules read as
  *   "not a turret" and "one shot", so the migration reshapes nothing.
+ * - `24`: every city carries its `population` (#1154), filled for older
+ *   saves from the frozen `CITY_POPULATION_SNAPSHOT`.
+ * - `25`: every installation carries its `level` and every city whether
+ *   the player has `detected` its infestation (#1155). Older installations
+ *   are level 1; older cities are detected exactly when infested.
  */
-export const GAME_STATE_SCHEMA_VERSION = 23;
+export const GAME_STATE_SCHEMA_VERSION = 25;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

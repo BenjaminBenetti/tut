@@ -126,7 +126,9 @@ export interface Unit {
    * Player turns of battery a deployed turret has left (#1138), like a
    * scanner's `Radar.turnsLeft`: drains as each player turn opens and at
    * zero the turret burns out. Absent for everything that is not a
-   * turret, and on every unit saved before turrets existed.
+   * turret, on every unit saved before turrets existed, and on a
+   * **garrison turret** (#1155), which runs on the region's mains and
+   * has no battery to drain (`turretHasBattery`).
    */
   readonly turnsLeft?: number;
   /**

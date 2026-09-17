@@ -200,21 +200,31 @@ export function bugUnit(
 }
 
 /**
- * Builds a deployed turret from the turret tuning (#1138), for
- * `placeTurret`. Every turret shares one template (`"turret:turret"`),
- * as every bug of a species does, and starts at full health with a
- * full battery. The template says it is `mechanical`, so a repair kit
- * mends it and a medkit passes it over (`constructionOf`). Pure: reads
- * only its arguments and draws one id.
+ * Builds a turret from a turret tuning (#1138), for `placeTurret` and
+ * the garrison (#1155). Every turret of a source shares one template
+ * (`"turret:turret"` for an engineer's, `"turret:garrison-turret"` for
+ * the region's), as every bug of a species does, and starts at full
+ * health with a full battery — or with none, when the tuning has no
+ * `batteryTurns`, in which case the unit carries no `turnsLeft` and
+ * never burns out. The template says it is `mechanical`, so a repair
+ * kit mends it and a medkit passes it over (`constructionOf`). Pure:
+ * reads only its arguments and draws one id.
+ *
+ * @param tuning - The turret's stats, and its battery if it has one.
+ * @param team - The side it fights for.
+ * @param placement - Where it stands and which way it faces.
+ * @param ids - Issues its unit id.
+ * @param sourceId - Which kind of turret it is; the engineer's by default.
  */
 export function turretUnit(
   tuning: TurretTuning,
   team: Team,
   placement: UnitPlacement,
   ids: IdGenerator,
+  sourceId: string = TURRET_SOURCE_ID,
 ): UnitBuild {
   const template: UnitTemplate = {
-    id: templateIdFor("turret", TURRET_SOURCE_ID),
+    id: templateIdFor("turret", sourceId),
     name: tuning.name,
     maxHp: tuning.maxHp,
     // A turret takes no orders: its overwatch is granted by the turn,
@@ -231,7 +241,7 @@ export function turretUnit(
   const built = build(
     "turret",
     team,
-    TURRET_SOURCE_ID,
+    sourceId,
     template,
     tuning.maxHp,
     placement,
@@ -239,7 +249,10 @@ export function turretUnit(
   );
   return {
     template,
-    unit: { ...built.unit, turnsLeft: tuning.batteryTurns },
+    unit:
+      tuning.batteryTurns === undefined
+        ? built.unit
+        : { ...built.unit, turnsLeft: tuning.batteryTurns },
   };
 }
 

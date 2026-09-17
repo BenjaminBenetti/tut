@@ -1,4 +1,5 @@
 import type { DeployableId } from "./deployable";
+import type { DeployableLevel } from "./deployable-level";
 import type { DeployableTypeId } from "./deployable-type";
 import type { RegionId } from "./region";
 
@@ -33,7 +34,14 @@ export interface UnknownDeployableError {
   readonly deployableId: DeployableId;
 }
 
-/** The treasury could not cover the build cost. Mirrors the economy's error. */
+/** An upgrade named an installation already at `MAX_DEPLOYABLE_LEVEL`. */
+export interface MaxLevelReachedError {
+  readonly code: "max-level-reached";
+  readonly deployableId: DeployableId;
+  readonly level: DeployableLevel;
+}
+
+/** The treasury could not cover the build or upgrade cost. Mirrors the economy's error. */
 export interface DeployableInsufficientCreditsError {
   readonly code: "insufficient-credits";
   readonly required: number;
@@ -50,14 +58,16 @@ export interface DeployableInsufficientCreditsError {
  * | `unknown-deployable-type` | BuildDeployable         |
  * | `unknown-region`          | BuildDeployable         |
  * | `region-cap-reached`      | BuildDeployable         |
- * | `insufficient-credits`    | BuildDeployable         |
- * | `unknown-deployable`      | DecommissionDeployable  |
+ * | `insufficient-credits`    | BuildDeployable, UpgradeDeployable |
+ * | `unknown-deployable`      | DecommissionDeployable, UpgradeDeployable |
+ * | `max-level-reached`       | UpgradeDeployable       |
  */
 export type DeployableError =
   | UnknownDeployableTypeError
   | UnknownRegionError
   | RegionCapReachedError
   | UnknownDeployableError
+  | MaxLevelReachedError
   | DeployableInsufficientCreditsError;
 
 /** The `code` tag of a `DeployableError`. */
@@ -78,6 +88,8 @@ export function describeDeployableError(error: DeployableError): string {
       return `Region "${error.regionId}" already holds ${String(error.cap)} of "${error.typeId}"`;
     case "unknown-deployable":
       return `No deployable "${error.deployableId}"`;
+    case "max-level-reached":
+      return `Deployable "${error.deployableId}" is already at level ${String(error.level)}`;
     case "insufficient-credits":
       return `Need ${String(error.required)} credits, have ${String(error.available)}`;
   }

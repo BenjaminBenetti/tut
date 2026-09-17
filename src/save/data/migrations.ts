@@ -9,6 +9,8 @@ import type { Migration } from "../model/migration";
 import { isRecord } from "../../core/model/record-guard";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { RADAR_DISH } from "../../tactical/data/equipment";
+import { ADD_CITY_POPULATION } from "../service/city-population-migration";
+import { ADD_DEPLOYABLE_LEVELS } from "../service/deployable-levels-migration";
 import { HALF_HEIGHT_LAYERS } from "../service/half-height-layer-migration";
 import { EXPAND_WORLD_BIOMES } from "../service/world-biomes-migration";
 
@@ -669,4 +671,6 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_RADAR_BATTERY,
   ABILITIES_TO_EQUIPMENT,
   ADD_TURRETS,
+  ADD_CITY_POPULATION,
+  ADD_DEPLOYABLE_LEVELS,
 ];

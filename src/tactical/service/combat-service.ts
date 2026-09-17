@@ -32,7 +32,6 @@ import type {
 } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
-import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { UnitWeapon, WeaponId } from "../model/unit-weapon";
@@ -52,6 +51,7 @@ import { findAttackTarget } from "./attack-target-service";
 import type { BlastTile } from "./blast-service";
 import { blastFootprint, blastVictims } from "./blast-service";
 import { demolish } from "./demolition-service";
+import { downedEvent } from "./downed-unit-event";
 import { endIfOver } from "./mission-end-service";
 import { coverAgainst, elevationBonus, hasLineOfSight } from "./sight-service";
 import { damageSpawner } from "./spawner-damage-service";
@@ -1098,7 +1098,8 @@ function billShot(
 /**
  * Takes `damage` off `target`, wherever it lives: a spawner through
  * `damageSpawner`, the one rule for that; a unit by its hit points, with
- * `UnitDied` when they reach zero. Zero damage changes nothing.
+ * `UnitDied` when they reach zero — or `TurretDestroyed` when the unit
+ * is a turret (#1155, `downedEvent`). Zero damage changes nothing.
  */
 function applyDamage(
   mission: TacticalState,
@@ -1115,11 +1116,9 @@ function applyDamage(
   }
   const hp = Math.max(0, target.hp - damage);
   const events: TacticalEvent[] = [];
-  if (target.hp > 0 && hp === 0) {
-    events.push({
-      type: UNIT_DIED,
-      payload: { unitId: target.id, killerId: attackerId },
-    });
+  const struck = mission.units.find((unit) => unit.id === target.id);
+  if (target.hp > 0 && hp === 0 && struck !== undefined) {
+    events.push(downedEvent(struck, attackerId));
   }
   return {
     state: {

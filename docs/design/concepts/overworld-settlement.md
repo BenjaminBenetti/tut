@@ -1,12 +1,14 @@
 # Concept: Overworld settlement markers
 
+> Superseded on 2026-09-16 by the ten regional sheets (`overworld-settlement-<style>.md`, #1155): settlements now vary by region, stand directly on the map with no plate, and the egg overlay is built per style. This sheet remains as the origin of the three-scale density ladder.
+
 ![Overworld settlement markers](overworld-settlement.png)
 
 - **Generator**: Codex CLI 0.154.0 built-in image generation, via `tools/art/gen-image.sh`.
 - **Date**: 2026-09-16
 - **Prompt file**: [`prompts/overworld-settlement.txt`](prompts/overworld-settlement.txt) (exact text passed to the generator, plus the standard save-path suffix the script appends)
 - **Style guide refs**: §4.2 bug palette, §4.3 environment palette, §6 budgets
-- **Drives**: `overworld.settlement.{rural,town,city}` and `overworld.settlement-eggs.{rural,town,city}` (#1152), built by `tools/art/models/settlement_parts.py`
+- **Drives** (historical): the original `overworld.settlement.{rural,town,city}` and `overworld.settlement-eggs.{rural,town,city}` (#1152), since replaced by `overworld.settlement.<style>.<scale>` built by `tools/art/models/settlement_styles.py`
 
 ## Prompt
 

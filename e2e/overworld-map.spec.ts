@@ -25,7 +25,7 @@ test("renders the overworld map into #map-viewport and selects cities", async ({
   await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
   await expect(page.locator("#map-viewport canvas")).toBeVisible();
 
-  // The selected-city label lives on the overworld panel; start a campaign to show it.
+  // The region panel lives on the overworld screen; start a campaign to show it.
   await page.locator('[data-action="new-game"]').click();
   await expect(page.locator("body")).toHaveAttribute(
     "data-screen",
@@ -44,7 +44,16 @@ test("renders the overworld map into #map-viewport and selects cities", async ({
     "data-selected-city",
     "new-york",
   );
-  await expect(page.locator("#selected-city")).toHaveText("New York");
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-selected-region",
+    "north-america-east",
+  );
+  await expect(page.locator("#selected-region")).toHaveText(
+    "North America East",
+  );
+  await expect(
+    page.locator('#region-panel [data-city-id][aria-current="true"]'),
+  ).toContainText("New York");
 
   // A real click on the projected marker goes through raycast picking.
   const position = await page.evaluate(() =>
@@ -59,7 +68,10 @@ test("renders the overworld map into #map-viewport and selects cities", async ({
     "data-selected-city",
     "london",
   );
-  await expect(page.locator("#selected-city")).toHaveText("London");
+  await expect(page.locator("#selected-region")).toHaveText("Western Europe");
+  await expect(
+    page.locator('#region-panel [data-city-id][aria-current="true"]'),
+  ).toContainText("London");
 
   expect(errors).toEqual([]);
 });

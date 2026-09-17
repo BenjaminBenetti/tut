@@ -1,5 +1,4 @@
-import type { CityId } from "../../overworld/model/city";
-import type { EarthMap } from "../../overworld/model/earth-map";
+import type { MapSceneState } from "./map-scene-state";
 
 /**
  * The part of the strategic map scene that follows campaign state. The
@@ -7,6 +6,9 @@ import type { EarthMap } from "../../overworld/model/earth-map";
  * builder, so the scene can be swapped or stubbed in tests.
  */
 export interface MapStateView {
-  /** Retints every city for `map` and badges the cities in `missionCityIds`. */
-  update(map: EarthMap, missionCityIds: ReadonlySet<CityId>): void;
+  /**
+   * Retints every city for the map, adds the egg cue to the cities in
+   * `missionCueCityIds`, and places every installation in its region.
+   */
+  update(state: MapSceneState): void;
 }

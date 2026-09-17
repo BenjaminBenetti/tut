@@ -5,14 +5,18 @@
  * live in `overworld/data/infestation-tuning.ts`.
  *
  * ```
- *   growth = baseGrowthRate × (1 + threatFactor × threat / 100) − suppression
+ *   growth = baseGrowthRate × (1 + threatFactor × threat / 100) × growthFactor[city]
  *
  *   spread: city ≥ spreadThreshold, off cooldown
  *             ──► one least-infested neighbour += spreadAmount × hiveSpreadMultiplier?
  *             ──► cooldown[city] = spreadCooldownDays
  *
  *   seed:   P(clean city) = seedChance × threat / 100 × (1 − deterrence[region])
- *             ──► city = seedAmount
+ *             ──► city = seedAmount, undetected
+ *
+ *   detect: infested, undetected city becomes detected when
+ *             region mean ≥ regionDetectionThreshold × detectionFactor[region]
+ *             or city    ≥ cityDetectionThreshold   × detectionFactor[region]
  * ```
  */
 export interface InfestationTuning {
@@ -49,4 +53,18 @@ export interface InfestationTuning {
    * exist, so it is `1` in the defaults. Positive.
    */
   readonly hiveSpreadMultiplier: number;
+  /**
+   * Mean infestation of a region at or above which every infested city
+   * in it is detected (GDD §5.3): the baseline "the region has built up"
+   * signal. Sensor arrays scale it down. Positive, in the infestation
+   * range.
+   */
+  readonly regionDetectionThreshold: number;
+  /**
+   * Infestation at or above which a city is detected on its own, before
+   * its region builds up. Above `regionDetectionThreshold`, so a lone
+   * foothold is found later than one among infested neighbours. Sensor
+   * arrays scale it down. Positive, in the infestation range.
+   */
+  readonly cityDetectionThreshold: number;
 }

@@ -43,7 +43,7 @@ export interface CameraState {
   /**
    * How the camera looks at the ground plane. Absent means the isometric
    * projection every tactical scene uses; the strategic map passes
-   * {@link TOP_DOWN_PROJECTION} (#420).
+   * {@link STRATEGIC_PROJECTION} (#420, ADR 0005 §5).
    */
   readonly projection?: CameraProjection;
   /**
@@ -78,6 +78,7 @@ export interface ZoomRange {
  *
  *   isometric  35.26°     π/4  camera on a diagonal, screen-up is north-west
  *   top-down   90°        π/2  camera straight above, screen-up is north
+ *   strategic  55°        π/2  camera to the south, pitched back 35°; north up
  * ```
  */
 export interface CameraProjection {
@@ -98,6 +99,16 @@ export const ISOMETRIC_ELEVATION_RAD = Math.atan(1 / Math.SQRT2);
 export const TOP_DOWN_ELEVATION_RAD = Math.PI / 2;
 
 /**
+ * How far the strategic map camera is pitched back from straight down
+ * (ADR 0005 §5): enough that a settlement's fronts and its skyline
+ * show, little enough that the map still reads as a map.
+ */
+export const STRATEGIC_PITCH_RAD = (35 * Math.PI) / 180;
+
+/** Elevation of the strategic map camera above the ground plane: 55°. */
+export const STRATEGIC_ELEVATION_RAD = Math.PI / 2 - STRATEGIC_PITCH_RAD;
+
+/**
  * The tactical projection: true isometric, camera on one of the four
  * diagonals. Tactical maps are authored for it (ADR 0004 §3).
  */
@@ -113,6 +124,27 @@ export const ISOMETRIC_PROJECTION: CameraProjection = {
  */
 export const TOP_DOWN_PROJECTION: CameraProjection = {
   elevationRad: TOP_DOWN_ELEVATION_RAD,
+  yawOffsetRad: Math.PI / 2,
+};
+
+/**
+ * The strategic map projection since ADR 0005 §5: the camera sits south
+ * of its target, pitched {@link STRATEGIC_PITCH_RAD} back from straight
+ * down, so north is still screen-up and east screen-right but a
+ * settlement shows its fronts and skyline rather than only its roofs.
+ * The map plane foreshortens by `sin(elevation)` up the screen and
+ * nothing else changes: pan, zoom and picking all read the projection.
+ *
+ * ```
+ *        camera                     screen
+ *          ╲  35° from vertical       ▲ north (−z), × sin 55°
+ *           ╲                         │
+ *            ╲                        └────▶ east (+x), × 1
+ *   ──────────▼──────── ground, camera to the south (+z)
+ * ```
+ */
+export const STRATEGIC_PROJECTION: CameraProjection = {
+  elevationRad: STRATEGIC_ELEVATION_RAD,
   yawOffsetRad: Math.PI / 2,
 };
 

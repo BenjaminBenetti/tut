@@ -302,6 +302,21 @@ describe("generateMissions", () => {
     ]);
   });
 
+  it("offers nothing to a city the player has not detected, however infested (GDD §5.3)", () => {
+    const map = fixtureMap();
+    const hidden = {
+      ...map,
+      cities: map.cities.map((c) =>
+        c.id === "mid" ? { ...c, detected: false } : c,
+      ),
+    };
+    const result = generateMissions(
+      fixtureState({ map: hidden }),
+      deps(1, ALWAYS),
+    );
+    expect(result.state.missions.map((m) => m.cityId)).toEqual(["full"]);
+  });
+
   it("returns the same state when the chance is zero", () => {
     const state = fixtureState();
     const result = generateMissions(state, deps(1, NEVER));

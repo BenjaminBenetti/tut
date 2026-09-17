@@ -6,7 +6,11 @@ import { MISSION_DIFFICULTY_RANGE } from "../../content/model/mission-type";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
 import type { City, CityId } from "../model/city";
-import { clampInfestation, MAX_INFESTATION } from "../model/city";
+import {
+  clampInfestation,
+  MAX_INFESTATION,
+  withInfestation,
+} from "../model/city";
 import type { EarthMap } from "../model/earth-map";
 import type { Mission } from "../model/mission";
 import type {
@@ -184,7 +188,7 @@ export function expireMissions(
       type: CITY_INFESTATION_CHANGED,
       payload: { cityId: city.id, from: city.infestation, to },
     });
-    return { ...city, infestation: to };
+    return withInfestation(city, to);
   });
 
   return {
@@ -202,15 +206,17 @@ export function expireMissions(
 // ===========================================
 
 /**
- * Offers new missions for `state.day`. Every city without an active
- * mission is visited in map order; for each mission type in
+ * Offers new missions for `state.day`. Every detected city without an
+ * active mission is visited in map order (an undetected infestation is
+ * one the player has not found, so it cannot be answered, GDD §5.3); for
+ * each mission type in
  * `MISSION_TYPE_IDS` order with a positive `offerChance`, one `chance`
  * draw decides whether that type is offered, and the first success wins
  * the city for the day. An offered mission draws one more number for its
  * map seed and takes the next `"mission"` id.
  *
  * ```
- *   for city in map.cities (no active mission):
+ *   for city in map.cities (detected, no active mission):
  *     for type in MISSION_TYPE_IDS:
  *       p = offerChance(city.infestation, rule[type])
  *       p > 0 and rng.chance(p) ──► mission { difficulty, rewards, expiry, mapParams }
@@ -234,7 +240,7 @@ export function generateMissions(
   const occupied = new Set(state.missions.map((mission) => mission.cityId));
   const offered: Mission[] = [];
   for (const city of state.map.cities) {
-    if (occupied.has(city.id)) {
+    if (!city.detected || occupied.has(city.id)) {
       continue;
     }
     for (const typeId of MISSION_TYPE_IDS) {

@@ -3,6 +3,7 @@ import type { Result } from "../../core/model/result";
 import type { Deployment } from "../../overworld/model/deployment";
 import type { MissionId } from "../../overworld/model/mission";
 import type { MissionCampaignState } from "./mission-campaign-state";
+import type { MissionStartOptions } from "./mission-start-options";
 import type { TacticalError } from "./tactical-error";
 
 // ===========================================
@@ -22,7 +23,8 @@ import type { TacticalError } from "./tactical-error";
  */
 export interface MissionStarter {
   /**
-   * Generates the mission's map, places the deployment and returns the
+   * Generates the mission's map, places the deployment and whatever
+   * `options` says the region has standing (#1155), and returns the
    * campaign with the mission in `activeMission`, or the reason it
    * cannot be started.
    */
@@ -31,5 +33,6 @@ export interface MissionStarter {
     missionId: MissionId,
     deployment: Deployment,
     ids: IdGenerator,
+    options?: MissionStartOptions,
   ): Result<TState, TacticalError>;
 }

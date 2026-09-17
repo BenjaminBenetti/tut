@@ -15,21 +15,24 @@ import { projectEquirectangular } from "../service/map-projection";
 // ===========================================
 
 /**
- * Declares a city at a real-world latitude / longitude (degrees). Scale
- * defaults to `"city"`; the sparser sites are declared `"town"` so map
- * generation gets exercised at more than one settlement scale.
+ * Declares a city at a real-world latitude / longitude (degrees) with
+ * its approximate real-world metro population (people). Scale defaults
+ * to `"city"`; the sparser sites are declared `"town"` so map generation
+ * gets exercised at more than one settlement scale.
  */
 function city(
   id: string,
   name: string,
   latitude: number,
   longitude: number,
+  population: number,
   options: { readonly scale?: SettlementScale; readonly biome?: BiomeId } = {},
 ): CitySeed {
   return {
     id,
     name,
     layout: projectEquirectangular(latitude, longitude),
+    population,
     ...options,
   };
 }
@@ -59,11 +62,13 @@ const REGIONS: readonly RegionSeed[] = [
     name: "North America West",
     biome: "coastal",
     cities: [
-      city("vancouver", "Vancouver", 49.28, -123.12, { biome: "temperate" }),
-      city("san-francisco", "San Francisco", 37.77, -122.42, {
+      city("vancouver", "Vancouver", 49.28, -123.12, 2_600_000, {
+        biome: "temperate",
+      }),
+      city("san-francisco", "San Francisco", 37.77, -122.42, 4_700_000, {
         biome: "mediterranean",
       }),
-      city("los-angeles", "Los Angeles", 34.05, -118.24, {
+      city("los-angeles", "Los Angeles", 34.05, -118.24, 12_900_000, {
         biome: "mediterranean",
       }),
     ],
@@ -73,9 +78,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "North America East",
     biome: "temperate",
     cities: [
-      city("toronto", "Toronto", 43.65, -79.38),
-      city("chicago", "Chicago", 41.88, -87.63),
-      city("new-york", "New York", 40.71, -74.01),
+      city("toronto", "Toronto", 43.65, -79.38, 6_400_000),
+      city("chicago", "Chicago", 41.88, -87.63, 9_400_000),
+      city("new-york", "New York", 40.71, -74.01, 19_500_000),
     ],
   },
   {
@@ -83,10 +88,16 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Latin America",
     biome: "temperate",
     cities: [
-      city("mexico-city", "Mexico City", 19.43, -99.13, { biome: "alpine" }),
-      city("bogota", "Bogotá", 4.71, -74.07, { biome: "alpine" }),
-      city("sao-paulo", "São Paulo", -23.55, -46.63, { biome: "tropical" }),
-      city("buenos-aires", "Buenos Aires", -34.6, -58.38, { biome: "steppe" }),
+      city("mexico-city", "Mexico City", 19.43, -99.13, 21_800_000, {
+        biome: "alpine",
+      }),
+      city("bogota", "Bogotá", 4.71, -74.07, 10_700_000, { biome: "alpine" }),
+      city("sao-paulo", "São Paulo", -23.55, -46.63, 22_600_000, {
+        biome: "tropical",
+      }),
+      city("buenos-aires", "Buenos Aires", -34.6, -58.38, 15_600_000, {
+        biome: "steppe",
+      }),
     ],
   },
   {
@@ -94,9 +105,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Western Europe",
     biome: "temperate",
     cities: [
-      city("london", "London", 51.51, -0.13),
-      city("paris", "Paris", 48.86, 2.35),
-      city("berlin", "Berlin", 52.52, 13.4),
+      city("london", "London", 51.51, -0.13, 9_700_000),
+      city("paris", "Paris", 48.86, 2.35, 12_300_000),
+      city("berlin", "Berlin", 52.52, 13.4, 3_800_000),
     ],
   },
   {
@@ -104,9 +115,11 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Eastern Europe",
     biome: "temperate",
     cities: [
-      city("stockholm", "Stockholm", 59.33, 18.07, { biome: "taiga" }),
-      city("warsaw", "Warsaw", 52.23, 21.01),
-      city("moscow", "Moscow", 55.76, 37.62),
+      city("stockholm", "Stockholm", 59.33, 18.07, 2_400_000, {
+        biome: "taiga",
+      }),
+      city("warsaw", "Warsaw", 52.23, 21.01, 3_100_000),
+      city("moscow", "Moscow", 55.76, 37.62, 12_700_000),
     ],
   },
   {
@@ -114,9 +127,11 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Middle East",
     biome: "desert",
     cities: [
-      city("istanbul", "Istanbul", 41.01, 28.98, { biome: "mediterranean" }),
-      city("cairo", "Cairo", 30.04, 31.24),
-      city("tehran", "Tehran", 35.69, 51.39, { biome: "steppe" }),
+      city("istanbul", "Istanbul", 41.01, 28.98, 15_900_000, {
+        biome: "mediterranean",
+      }),
+      city("cairo", "Cairo", 30.04, 31.24, 22_200_000),
+      city("tehran", "Tehran", 35.69, 51.39, 9_400_000, { biome: "steppe" }),
     ],
   },
   {
@@ -124,9 +139,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Sub-Saharan Africa",
     biome: "savanna",
     cities: [
-      city("lagos", "Lagos", 6.52, 3.38, { biome: "tropical" }),
-      city("nairobi", "Nairobi", -1.29, 36.82),
-      city("johannesburg", "Johannesburg", -26.2, 28.05),
+      city("lagos", "Lagos", 6.52, 3.38, 16_600_000, { biome: "tropical" }),
+      city("nairobi", "Nairobi", -1.29, 36.82, 5_500_000),
+      city("johannesburg", "Johannesburg", -26.2, 28.05, 6_300_000),
     ],
   },
   {
@@ -134,9 +149,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "South Asia",
     biome: "savanna",
     cities: [
-      city("karachi", "Karachi", 24.86, 67.01, { biome: "desert" }),
-      city("delhi", "Delhi", 28.61, 77.21),
-      city("mumbai", "Mumbai", 19.08, 72.88, { biome: "tropical" }),
+      city("karachi", "Karachi", 24.86, 67.01, 17_600_000, { biome: "desert" }),
+      city("delhi", "Delhi", 28.61, 77.21, 32_900_000),
+      city("mumbai", "Mumbai", 19.08, 72.88, 21_300_000, { biome: "tropical" }),
     ],
   },
   {
@@ -144,15 +159,17 @@ const REGIONS: readonly RegionSeed[] = [
     name: "North Asia",
     biome: "steppe",
     cities: [
-      city("novosibirsk", "Novosibirsk", 55.03, 82.92, {
+      city("novosibirsk", "Novosibirsk", 55.03, 82.92, 1_600_000, {
         scale: "town",
         biome: "taiga",
       }),
-      city("almaty", "Almaty", 43.24, 76.89, {
+      city("almaty", "Almaty", 43.24, 76.89, 2_100_000, {
         scale: "town",
         biome: "alpine",
       }),
-      city("ulaanbaatar", "Ulaanbaatar", 47.89, 106.91, { scale: "town" }),
+      city("ulaanbaatar", "Ulaanbaatar", 47.89, 106.91, 1_600_000, {
+        scale: "town",
+      }),
     ],
   },
   {
@@ -160,9 +177,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "East Asia",
     biome: "temperate",
     cities: [
-      city("beijing", "Beijing", 39.9, 116.4),
-      city("seoul", "Seoul", 37.57, 126.98),
-      city("tokyo", "Tokyo", 35.68, 139.69),
+      city("beijing", "Beijing", 39.9, 116.4, 21_900_000),
+      city("seoul", "Seoul", 37.57, 126.98, 26_000_000),
+      city("tokyo", "Tokyo", 35.68, 139.69, 37_000_000),
     ],
   },
   {
@@ -170,9 +187,13 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Southeast Asia",
     biome: "wetland",
     cities: [
-      city("bangkok", "Bangkok", 13.76, 100.5),
-      city("singapore", "Singapore", 1.35, 103.82, { biome: "tropical" }),
-      city("jakarta", "Jakarta", -6.21, 106.85, { biome: "tropical" }),
+      city("bangkok", "Bangkok", 13.76, 100.5, 11_000_000),
+      city("singapore", "Singapore", 1.35, 103.82, 6_000_000, {
+        biome: "tropical",
+      }),
+      city("jakarta", "Jakarta", -6.21, 106.85, 34_500_000, {
+        biome: "tropical",
+      }),
     ],
   },
   {
@@ -180,13 +201,15 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Oceania",
     biome: "coastal",
     cities: [
-      city("alice-springs", "Alice Springs", -23.7, 133.88, {
+      city("alice-springs", "Alice Springs", -23.7, 133.88, 26_000, {
         scale: "town",
         biome: "desert",
       }),
-      city("perth", "Perth", -31.95, 115.86, { scale: "town" }),
-      city("sydney", "Sydney", -33.87, 151.21),
-      city("auckland", "Auckland", -36.85, 174.76, { scale: "town" }),
+      city("perth", "Perth", -31.95, 115.86, 2_200_000, { scale: "town" }),
+      city("sydney", "Sydney", -33.87, 151.21, 5_400_000),
+      city("auckland", "Auckland", -36.85, 174.76, 1_700_000, {
+        scale: "town",
+      }),
     ],
   },
   {
@@ -194,8 +217,10 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Boreal North America",
     biome: "taiga",
     cities: [
-      city("anchorage", "Anchorage", 61.22, -149.9, { scale: "town" }),
-      city("yellowknife", "Yellowknife", 62.45, -114.38, { scale: "town" }),
+      city("anchorage", "Anchorage", 61.22, -149.9, 400_000, { scale: "town" }),
+      city("yellowknife", "Yellowknife", 62.45, -114.38, 20_000, {
+        scale: "town",
+      }),
     ],
   },
   {
@@ -203,9 +228,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Arctic North Atlantic",
     biome: "tundra",
     cities: [
-      city("reykjavik", "Reykjavík", 64.15, -21.94, { scale: "town" }),
-      city("tromso", "Tromsø", 69.65, 18.96, { scale: "town" }),
-      city("longyearbyen", "Longyearbyen", 78.22, 15.65, {
+      city("reykjavik", "Reykjavík", 64.15, -21.94, 250_000, { scale: "town" }),
+      city("tromso", "Tromsø", 69.65, 18.96, 78_000, { scale: "town" }),
+      city("longyearbyen", "Longyearbyen", 78.22, 15.65, 2_500, {
         scale: "rural",
         biome: "snowy",
       }),
@@ -216,8 +241,8 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Amazon Basin",
     biome: "tropical",
     cities: [
-      city("manaus", "Manaus", -3.12, -60.02),
-      city("iquitos", "Iquitos", -3.75, -73.25, { biome: "wetland" }),
+      city("manaus", "Manaus", -3.12, -60.02, 2_300_000),
+      city("iquitos", "Iquitos", -3.75, -73.25, 480_000, { biome: "wetland" }),
     ],
   },
   {
@@ -225,9 +250,11 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Andes and Pacific",
     biome: "alpine",
     cities: [
-      city("quito", "Quito", -0.18, -78.47),
-      city("lima", "Lima", -12.05, -77.04, { biome: "desert" }),
-      city("santiago", "Santiago", -33.45, -70.67, { biome: "mediterranean" }),
+      city("quito", "Quito", -0.18, -78.47, 2_900_000),
+      city("lima", "Lima", -12.05, -77.04, 11_200_000, { biome: "desert" }),
+      city("santiago", "Santiago", -33.45, -70.67, 7_100_000, {
+        biome: "mediterranean",
+      }),
     ],
   },
   {
@@ -235,9 +262,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Mediterranean Basin",
     biome: "mediterranean",
     cities: [
-      city("lisbon", "Lisbon", 38.72, -9.14),
-      city("rome", "Rome", 41.9, 12.5),
-      city("athens", "Athens", 37.98, 23.73),
+      city("lisbon", "Lisbon", 38.72, -9.14, 2_900_000),
+      city("rome", "Rome", 41.9, 12.5, 4_300_000),
+      city("athens", "Athens", 37.98, 23.73, 3_600_000),
     ],
   },
 ];

@@ -33,8 +33,8 @@ import {
   bestBy,
   clumpScore,
   footprintDistance,
+  huntableEnemies,
   landingSite,
-  livingEnemies,
   moveTowards,
   overwatchScore,
   reachableTiles,
@@ -130,7 +130,9 @@ export class BruteBehaviour implements BugBehaviour {
     if (unit === undefined || unit.hp <= 0) {
       return [];
     }
-    const enemies = livingEnemies(mission, unit);
+    // Turrets draw the advance only when nearest (#1155, `huntableEnemies`);
+    // one in reach is still swung at like anything else.
+    const enemies = huntableEnemies(mission, unit);
     if (enemies.length === 0) {
       return this.hunt(mission, unit, ctx);
     }

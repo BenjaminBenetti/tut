@@ -136,7 +136,9 @@ test("the world map is axis aligned: east is right, south is down", async ({
       }
     }
   }
-  // One scale for the whole map: no skew, no rotation.
+  // One east-west scale for the whole map: no skew, no rotation. (The
+  // north-south scale is smaller by the strategic camera's pitch, ADR
+  // 0005 §5, and is not compared with it here.)
   const first = ratios[0] ?? 0;
   expect(first).toBeGreaterThan(0);
   for (const ratio of ratios) {

@@ -8,8 +8,8 @@ import type {
 import { Box3 } from "three";
 import { describe, expect, it } from "vitest";
 
+import type { GroundPolygon } from "../service/coastline-projection";
 import type { GroundSegment } from "../service/coastline-segments";
-import { testsLandStencil } from "../service/land-stencil";
 import type { TerritorySeed } from "../service/region-territory-service";
 import { computeTerritories } from "../service/region-territory-service";
 import { SELECTION_COLOUR } from "./city-marker";
@@ -18,6 +18,7 @@ import {
   BORDER_COLOUR,
   BORDER_OPACITY,
   FILL_MAX_OPACITY,
+  HOVER_OPACITY,
   RegionTerritories,
 } from "./region-territories";
 
@@ -38,9 +39,26 @@ const COAST: readonly GroundSegment[] = [
   { a: { x: 15, z: 2 }, b: { x: 17, z: 2 } },
 ];
 
-function makeTerritories(): RegionTerritories {
+/** One continent a unit in from every edge of the 24×12 plane. */
+const LAND: readonly GroundPolygon[] = [
+  {
+    outer: [
+      { x: 1, z: 1 },
+      { x: 23, z: 1 },
+      { x: 23, z: 11 },
+      { x: 1, z: 11 },
+      { x: 1, z: 1 },
+    ],
+    holes: [],
+  },
+];
+
+function makeTerritories(
+  land: readonly GroundPolygon[] = LAND,
+): RegionTerritories {
   return new RegionTerritories({
     cells: computeTerritories(SEEDS, { width: 24, depth: 12 }),
+    land,
     coast: COAST,
   });
 }
@@ -68,16 +86,17 @@ function linesOf(territories: RegionTerritories, name: string): LineSegments {
 // ===========================================
 
 describe("RegionTerritories (#1149)", () => {
-  it("builds one fill per region covering that region's cells, hidden while clean", () => {
+  it("builds one fill per region covering that region's land, hidden while clean", () => {
     const territories = makeTerritories();
     const west = fillOf(territories, "west");
     const bounds = new Box3().setFromObject(west);
-    expect(bounds.min.x).toBeCloseTo(0);
+    // The continent's edge, not the map's: the fill is cut to land.
+    expect(bounds.min.x).toBeCloseTo(1);
     // West ends at the tilted b|c bisector, which crosses x = 12 at its midpoint.
     expect(bounds.max.x).toBeGreaterThan(12);
     expect(bounds.max.x).toBeLessThan(14);
-    expect(bounds.min.z).toBeCloseTo(0);
-    expect(bounds.max.z).toBeCloseTo(12);
+    expect(bounds.min.z).toBeCloseTo(1);
+    expect(bounds.max.z).toBeCloseTo(11);
     expect(bounds.min.y).toBeCloseTo(bounds.max.y);
     expect(bounds.min.y).toBeGreaterThan(0);
     expect(territories.fillLook("west")).toEqual({
@@ -154,32 +173,103 @@ describe("RegionTerritories (#1149)", () => {
     territories.dispose();
   });
 
-  it("clips every fill and border line to the land stencil, but not the coast outline", () => {
+  it("cuts fills and borders to land on the CPU and leaves the stencil alone", () => {
     const territories = makeTerritories();
-    const clipped = [
+    const materials = [
       fillOf(territories, "west").material,
       fillOf(territories, "east").material,
       linesOf(territories, "territory-borders").material,
       linesOf(territories, "territory-selection").material,
-      linesOf(territories, "territory-selection-glow-3").material,
-    ];
-    for (const material of clipped) {
-      if (Array.isArray(material)) throw new Error("unexpected material array");
-      expect(testsLandStencil(material)).toBe(true);
-      // Drawn in the transparent pass, after the land fill has stamped it.
-      expect(material.transparent).toBe(true);
-    }
-    // The coast lies on the stencil's own edge: tested against it, only
-    // half its pixels would survive, and it is on land by definition.
-    const coast = [
       linesOf(territories, "territory-selection-coast").material,
-      linesOf(territories, "territory-selection-coast-glow-1").material,
+      linesOf(territories, "territory-hover").material,
     ];
-    for (const material of coast) {
+    for (const material of materials) {
       if (Array.isArray(material)) throw new Error("unexpected material array");
-      expect(testsLandStencil(material)).toBe(false);
+      expect(material.stencilWrite).toBe(false);
       expect(material.transparent).toBe(true);
+      expect(material.depthWrite).toBe(false);
     }
+    // The b|c border runs the plane's full depth but is drawn only across the continent.
+    const border = new Box3().setFromObject(
+      linesOf(territories, "territory-borders"),
+    );
+    expect(border.min.z).toBeCloseTo(1);
+    expect(border.max.z).toBeCloseTo(11);
+    // Every fill vertex is on the continent.
+    for (const regionId of ["west", "east"]) {
+      const bounds = new Box3().setFromObject(fillOf(territories, regionId));
+      expect(bounds.min.x).toBeGreaterThanOrEqual(1 - 1e-6);
+      expect(bounds.max.x).toBeLessThanOrEqual(23 + 1e-6);
+      expect(bounds.min.z).toBeGreaterThanOrEqual(1 - 1e-6);
+      expect(bounds.max.z).toBeLessThanOrEqual(11 + 1e-6);
+    }
+    territories.dispose();
+  });
+
+  it("gives a region with no land an empty fill and no border", () => {
+    // An island under east's cells only.
+    const territories = makeTerritories([
+      {
+        outer: [
+          { x: 15, z: 2 },
+          { x: 22, z: 2 },
+          { x: 22, z: 8 },
+          { x: 15, z: 8 },
+          { x: 15, z: 2 },
+        ],
+        holes: [],
+      },
+    ]);
+    expect(
+      fillOf(territories, "west").geometry.getAttribute("position").count,
+    ).toBe(0);
+    expect(
+      fillOf(territories, "east").geometry.getAttribute("position").count,
+    ).toBeGreaterThan(0);
+    expect(
+      linesOf(territories, "territory-borders").geometry.getAttribute(
+        "position",
+      ).count,
+    ).toBe(0);
+    expect(territories.fillLook("west")?.opacity).toBe(0);
+    territories.dispose();
+  });
+
+  it("outlines the hovered region dimly in the accent, unless it is the selected one", () => {
+    const territories = makeTerritories();
+    const hover = linesOf(territories, "territory-hover");
+    const hoverCoast = linesOf(territories, "territory-hover-coast");
+    const core = linesOf(territories, "territory-selection");
+    expect(hover.visible).toBe(false);
+    expect(territories.hoveredRegion()).toBeUndefined();
+
+    territories.setHovered("west");
+
+    expect(territories.hoveredRegion()).toBe("west");
+    expect(hover.visible).toBe(true);
+    expect(hoverCoast.visible).toBe(true);
+    expect((hover.material as LineBasicMaterial).color.getHex()).toBe(
+      SELECTION_COLOUR,
+    );
+    expect((hover.material as LineBasicMaterial).opacity).toBeCloseTo(
+      HOVER_OPACITY,
+    );
+    expect(hover.geometry.getAttribute("position").count / 2).toBe(1);
+    expect(hoverCoast.geometry.getAttribute("position").count / 2).toBe(1);
+    expect(core.visible).toBe(false);
+
+    territories.setSelected("west");
+    expect(hover.visible).toBe(false);
+    expect(core.visible).toBe(true);
+    expect(core.geometry).not.toBe(hover.geometry);
+
+    territories.setHovered("east");
+    expect(hover.visible).toBe(true);
+    expect(hover.geometry).not.toBe(core.geometry);
+
+    territories.setHovered(undefined);
+    expect(hover.visible).toBe(false);
+    expect(territories.hoveredRegion()).toBeUndefined();
     territories.dispose();
   });
 
@@ -206,7 +296,7 @@ describe("RegionTerritories (#1149)", () => {
     for (const item of seen) {
       expect(disposed.has(item)).toBe(true);
     }
-    // Two fills, the borders, and a core and glow for each outline half.
-    expect([...seen].filter((item) => "isMaterial" in item)).toHaveLength(7);
+    // Two fills, the borders, a hover line and a core and glow for each outline half.
+    expect([...seen].filter((item) => "isMaterial" in item)).toHaveLength(9);
   });
 });

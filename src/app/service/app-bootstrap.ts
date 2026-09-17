@@ -4,28 +4,36 @@ import "../../ui/style/screens.css";
 import { randomSeed } from "../../core/service/random-seed";
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
 import {
-  cityPickerAdapter,
+  overworldPickerAdapter,
   PickingController,
 } from "../../graphics/controller/picking-controller";
 import {
+  cityPick,
+  installationPick,
+} from "../../graphics/model/overworld-pick";
+import {
   CAMERA_ZOOM,
-  TOP_DOWN_PROJECTION,
+  STRATEGIC_PROJECTION,
 } from "../../graphics/model/camera-state";
+import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { OVERWORLD_SCENE_CONFIG } from "../../graphics/model/overworld-scene-config";
+import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
 import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
 import { loadOverworldAssets } from "../../graphics/service/overworld-asset-loader";
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
+import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { SceneService } from "../../graphics/service/scene-service";
-import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
+import { SettlementDisplayLook } from "../../graphics/service/settlement-display-look";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
+import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
+import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
-import { iconHref } from "../../ui/data/icon-manifest";
 import type { ScreenId } from "../../ui/model/screen";
 import { GameOverScreen } from "../../ui/screen/game-over-screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
@@ -33,6 +41,8 @@ import type { OverworldSelection } from "../../ui/model/overworld-selection";
 import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import { TacticalScreen } from "../../ui/screen/tactical-screen";
+import { CityPickChannel } from "../../ui/service/city-pick-channel";
+import { InstallationPickChannel } from "../../ui/service/installation-pick-channel";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { DomMechPreviewHost } from "./mech-preview-host";
@@ -90,7 +100,6 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 
   const viewport = createMapViewport(doc, appRoot);
   const mapViewport = new DomMapViewportHost(viewport, appRoot);
-  const selection = new OverworldSelectionState();
   const debug = import.meta.env.DEV
     ? parseDebugOptions(window.location.search)
     : undefined;
@@ -119,6 +128,21 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     // the composition made of it rather than the environment.
     devTools: import.meta.env.DEV,
   });
+  // Region-first selection (#1154): a city's region is looked up on the
+  // running campaign's map, so a custom or migrated map answers for
+  // itself rather than the shipped data.
+  const selection = new OverworldSelectionState((cityId) => {
+    const state = game.session.state;
+    return state ? findCity(state.overworld.map, cityId)?.regionId : undefined;
+  });
+  // The map reports pointer picks here and the overworld screen opens
+  // the city or installation wheel on them; the projectors arrive with
+  // the scene.
+  const cityPicks = new CityPickChannel();
+  const installationPicks = new InstallationPickChannel();
+  const deployableTypes = new DataDeployableTypeCatalogue(
+    DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
+  );
 
   const router: DomScreenRouter = new DomScreenRouter(
     uiRoot,
@@ -162,10 +186,10 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             selection,
             missionTypes: game.content.missionTypes,
             eventTypes: game.content.eventTypes,
-            deployableTypes: new DataDeployableTypeCatalogue(
-              DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
-            ),
+            deployableTypes,
             mapViewport,
+            cityPicks,
+            installationPicks,
           }),
       ],
       [
@@ -250,8 +274,13 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     viewport,
     window,
     selection,
+    { cityPicks, installationPicks, deployableTypes },
     mapSync,
     (id) => startMissionForTests(id, game, router),
+    (deployableId) =>
+      game.session.state?.overworld.deployables.find(
+        (d) => d.id === deployableId,
+      )?.regionId,
   );
   scene.start();
   // The host raises `data-map-ready` whenever the scene has drawn at the
@@ -266,40 +295,74 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 // Composition helpers
 // ===========================================
 
+/** The channels and catalogue the map's picking is wired through. */
+interface ScenePickWiring {
+  /** Where city picks go, and where the city wheel asks for a marker's screen position. */
+  readonly cityPicks: CityPickChannel;
+  /** The same for installation picks and the installation wheel (#1155). */
+  readonly installationPicks: InstallationPickChannel;
+  /** Names the installation types for their hover labels. */
+  readonly deployableTypes: DeployableTypeCatalogue;
+}
+
 /**
- * The overworld map scene from #160: loads the marker glyphs, builds
- * the wireframe Earth scene (#1144), the isometric rig at minimum zoom, camera
- * input and city picking, all mounted into the given `#map-viewport`. A
- * selected city is mirrored to `body[data-selected-city]` and pushed into
- * `selection`, which the overworld panels render. The scene attaches to
- * `mapSync` so every campaign store's state retints and badges the
- * markers (#302). In dev builds the `window.__tut__` hooks let
- * end-to-end tests select cities and read marker looks without pointer
- * input.
+ * The overworld map scene from #160: preloads the settlement and
+ * installation models (#1155), builds the wireframe Earth scene
+ * (#1144), the top-down rig at minimum zoom, camera input and picking,
+ * all mounted into the given `#map-viewport`. A picked city is pushed
+ * into `selection`, which the overworld panels render, and reported
+ * through `cityPicks` so the screen can open the city wheel on it
+ * (#1154); a picked installation selects its region and is reported
+ * through `installationPicks` for the installation wheel; a click on a
+ * region's bare land selects the region alone, and one at sea clears
+ * the selection (#1155). The selection's city and region are mirrored
+ * to `body[data-selected-city]` and `body[data-selected-region]`. The
+ * scene attaches to `mapSync` so every campaign store's state retints
+ * the settlements, adds their egg cues and places the installations
+ * (#302, #1155). In dev builds the `window.__tut__` hooks let
+ * end-to-end tests select cities, focus the camera and read marker and
+ * installation looks without pointer input.
  */
 async function composeScene(
   doc: Document,
   viewport: HTMLElement,
   window: Window,
   selection: OverworldSelection,
+  picks: ScenePickWiring,
   mapSync: MapSceneSync,
   startMission: (missionId: string) => string | undefined,
+  regionOfInstallation: (deployableId: string) => string | undefined,
 ): Promise<SceneService> {
+  const { cityPicks, installationPicks } = picks;
+  // The settlements, egg overlays and installations are GLBs (#1155),
+  // loaded through the same manifest-backed loader the tactical scene
+  // uses, so a missing file falls back to a placeholder box and a
+  // warning rather than an empty map. The settlements are dressed for
+  // the WarGames display as they load: dark bodies, cyan edges.
+  const displayLook = new SettlementDisplayLook();
   const assets = await loadOverworldAssets({
-    glyphs: new SvgGlyphRasteriser({ logger: console }),
-    markerGlyphUrl: iconHref("marker-city"),
-    missionGlyphUrl: iconHref("mission"),
+    models: new GltfModelLoader({
+      manifest: MODEL_MANIFEST,
+      baseUrl: import.meta.env.BASE_URL,
+      fallback: new PlaceholderModelFactory(),
+      logger: console,
+      dresser: displayLook,
+    }),
   });
 
-  const mapScene = new OverworldSceneBuilder({ assets });
+  const mapScene = new OverworldSceneBuilder({
+    assets,
+    deployableTypes: picks.deployableTypes,
+  });
   mapScene.build(EARTH_MAP);
   mapSync.attach(mapScene);
   const rig = new OrthographicCameraRig({
     target: mapScene.centre,
     zoom: CAMERA_ZOOM.min,
-    // The strategic map is looked at straight on with north up, the way
-    // a map is read, rather than from an isometric corner (#420).
-    projection: TOP_DOWN_PROJECTION,
+    // The strategic map is looked at from the south with north up, the
+    // way a map is read, pitched back just enough that the settlements
+    // show their skylines (#420, ADR 0005 §5).
+    projection: STRATEGIC_PROJECTION,
     // The target stays on the map plate, so a held pan key can never
     // carry Earth off screen (#218).
     bounds: {
@@ -311,28 +374,85 @@ async function composeScene(
   });
   // No rotation on the strategic map: north stays up (#420).
   const cameraInput = new CameraInputController(rig, { rotate: false });
-  const picking = new PickingController(cityPickerAdapter(mapScene), rig, {
-    onSelected: (cityId) => {
-      selection.select(cityId);
+  const picking = new PickingController(overworldPickerAdapter(mapScene), rig, {
+    // A city pick (pointer, or the test hook) selects the city and its
+    // region, then tells the screen so the city wheel opens on it. The
+    // order matters: a different city closes the old wheel through the
+    // selection first, so the new one is not dismissed by its own pick.
+    // An installation pick selects its region alone, then tells the
+    // screen so the installation wheel opens on it (#1155). A pick on a
+    // region's land selects the region alone, no wheel.
+    onSelected: (pick) => {
+      switch (pick.kind) {
+        case "city":
+          selection.select(pick.cityId);
+          cityPicks.emit(pick.cityId);
+          return;
+        case "installation":
+          selection.selectRegion(regionOfInstallation(pick.deployableId));
+          installationPicks.emit(pick.deployableId);
+          return;
+        case "region":
+          selection.selectRegion(pick.regionId);
+      }
+    },
+    // A click at sea, or off the map, picks nothing and clears.
+    onMissed: () => {
+      selection.selectRegion(undefined);
     },
   });
+  cityPicks.useProjector((cityId) =>
+    picking.screenPositionOf(cityPick(cityId)),
+  );
+  installationPicks.useProjector((id) =>
+    picking.screenPositionOf(installationPick(id)),
+  );
   // The selection is the truth for both directions: a map click lands
-  // in it above, and a mission chosen in the side panel highlights its
-  // city here. The identity checks stop the two from echoing.
-  selection.subscribe(({ cityId }) => {
+  // in it above, and a mission or city row chosen in the side panel
+  // highlights its city here. The scene is told directly rather than
+  // through `picking.select`, which would report a pick and open the
+  // wheel over a click that happened in a list. A region selected with
+  // no city is lit on its own; with a city, the city's region is.
+  selection.subscribe(({ cityId, regionId }) => {
+    if (regionId === undefined) {
+      delete doc.body.dataset.selectedRegion;
+    } else {
+      doc.body.dataset.selectedRegion = regionId;
+    }
     if (cityId === undefined) {
       delete doc.body.dataset.selectedCity;
-      return;
+    } else {
+      doc.body.dataset.selectedCity = cityId;
     }
-    doc.body.dataset.selectedCity = cityId;
     if (mapScene.getSelected() !== cityId) {
-      picking.select(cityId);
+      mapScene.setSelected(cityId);
+    }
+    const bareRegion = cityId === undefined ? regionId : undefined;
+    if (mapScene.getSelectedRegion() !== bareRegion) {
+      mapScene.setSelectedRegion(bareRegion);
+    }
+    // A picked installation stays lit only while its region is the
+    // bare selection; a city or another region chosen anywhere drops it.
+    const installation = mapScene.getSelectedInstallation();
+    if (
+      installation !== undefined &&
+      (bareRegion === undefined ||
+        regionOfInstallation(installation) !== bareRegion)
+    ) {
+      mapScene.setSelectedInstallation(undefined);
     }
   });
   const scene = new SceneService(viewport, {
     camera: rig,
     content: mapScene.root,
-    updatables: [cameraInput],
+    // The map's installations idle every frame (#1155): dishes turn,
+    // barrels traverse, the dispersal sprays; the settlement edges
+    // follow the zoom.
+    updatables: [
+      cameraInput,
+      mapScene.animator,
+      displayLook.followZoom(() => rig.getState().zoom),
+    ],
   });
 
   cameraInput.attach(viewport);
@@ -340,10 +460,24 @@ async function composeScene(
   if (import.meta.env.DEV) {
     const hooks: TutTestHooks = {
       selectCity: (cityId) => {
-        picking.select(cityId);
+        picking.select(cityPick(cityId));
       },
-      cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
+      cityScreenPosition: (cityId) =>
+        picking.screenPositionOf(cityPick(cityId)),
       cityMarkerLook: (cityId) => mapScene.markerLook(cityId),
+      focusCity: (cityId, zoom) => {
+        const world = mapScene.markerWorldPosition(cityId);
+        if (!world) {
+          return;
+        }
+        rig.lookAt(world);
+        if (zoom !== undefined) {
+          rig.zoomBy(zoom / rig.getState().zoom);
+        }
+      },
+      installationLook: (id) => mapScene.installationLook(id),
+      installationScreenPosition: (id) =>
+        picking.screenPositionOf(installationPick(id)),
       startTacticalMission: startMission,
     };
     window.__tut__ = hooks;

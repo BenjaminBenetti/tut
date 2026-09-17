@@ -5,6 +5,7 @@ import type { ModelAssetId } from "../../content/data/model-ids";
 import type { ModelAssetEntry, ModelManifest } from "../model/asset-manifest";
 import type { AssetLogger } from "../model/asset-logger";
 import { ASSET_WARNING_PREFIX } from "../model/asset-logger";
+import type { ModelDresser } from "../model/model-dresser";
 import type { FallbackModelFactory, ModelLoader } from "../model/model-loader";
 
 // ===========================================
@@ -24,6 +25,11 @@ export interface GltfModelLoaderOptions {
   readonly logger: AssetLogger;
   /** Replaces three's `GLTFLoader`; tests inject a fake here. */
   readonly loadScene?: SceneLoadFn;
+  /**
+   * Restyles each parsed scene once before it is cached, so every clone
+   * shares the result (#1155). Placeholders are never dressed.
+   */
+  readonly dresser?: ModelDresser;
 }
 
 // ===========================================
@@ -45,12 +51,12 @@ export { ASSET_WARNING_PREFIX };
  * the same way so the warning never repeats.
  *
  * ```
- *   load(id) ──► prototypes.get(id)? ──no──► fetch ──ok──► scene ─┐
- *                      │ yes                   │fail            │
- *                      │                       ▼                 │
- *                      │              warn + fallback.create ────┤
- *                      ▼                                         ▼
- *                 await prototype ◄──────────────── cache promise ┘
+ *   load(id) ──► prototypes.get(id)? ──no──► fetch ──ok──► scene ──dress─┐
+ *                      │ yes                   │fail                  │
+ *                      │                       ▼                       │
+ *                      │              warn + fallback.create ──────────┤
+ *                      ▼                                               ▼
+ *                 await prototype ◄──────────────────────── cache promise ┘
  *                      │
  *                      ▼
  *                 prototype.clone(true)
@@ -66,6 +72,7 @@ export class GltfModelLoader implements ModelLoader {
   private readonly fallback: FallbackModelFactory;
   private readonly logger: AssetLogger;
   private readonly loadScene: SceneLoadFn;
+  private readonly dresser: ModelDresser | undefined;
   /** Pending or settled prototype per id; caching the promise dedupes concurrent loads. */
   private readonly prototypes = new Map<ModelAssetId, Promise<Object3D>>();
 
@@ -80,6 +87,7 @@ export class GltfModelLoader implements ModelLoader {
     this.fallback = options.fallback;
     this.logger = options.logger;
     this.loadScene = options.loadScene ?? createGltfSceneLoader();
+    this.dresser = options.dresser;
   }
 
   // ===========================================
@@ -111,13 +119,14 @@ export class GltfModelLoader implements ModelLoader {
     return pending;
   }
 
-  /** Fetches the GLB, or logs once and builds the placeholder. */
+  /** Fetches the GLB and dresses it, or logs once and builds the placeholder. */
   private async fetchPrototype(id: ModelAssetId): Promise<Object3D> {
     const entry = this.entryFor(id);
     const url = `${this.baseUrl}${entry.path}`;
     try {
       const scene = await this.loadScene(url);
       scene.name = id;
+      this.dresser?.dress(id, scene);
       return scene;
     } catch (error: unknown) {
       this.logger.warn(

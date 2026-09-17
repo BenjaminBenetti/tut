@@ -1,6 +1,6 @@
 # ADR 0005: The strategic map camera is top-down; tactical stays isometric
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by §5 (2026-09-16)
 - **Date:** 2026-09-04
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#420)
@@ -73,6 +73,10 @@ city's own position. The mission badge offsets **across the ground plane**
 (east and north) rather than along `+y`: under a top-down camera an offset
 in `+y` points at the viewer and produces no screen movement at all.
 
+Since #1155 the marker is a settlement model and the mission badge is an
+egg overlay drawn at the same origin as the model; the rule stands, since
+everything a marker draws still sits on the ground plane around the city.
+
 ## 3. Consequences
 
 - Anything drawn for the strategic map must place itself on the ground
@@ -104,3 +108,42 @@ in `+y` points at the viewer and produces no screen movement at all.
 - **Keep the pin anchoring and only change the camera.** The pin would still
   draw a marker-height above its city; the Executive Director asked about
   exactly that.
+
+## 5. Addendum (2026-09-16): pitched back 35°, still north up
+
+The Executive Director, looking at the settlement models #1155 put on
+the map, asked for the display tilted "to look nice". Seen straight
+down, a settlement is its roofs: a grey tile grid with no skyline, and
+the building fronts, which is where a model's silhouette and its lit
+windows live, are edge-on.
+
+The strategic map now uses `STRATEGIC_PROJECTION`: elevation 55° (a
+pitch of `STRATEGIC_PITCH_RAD`, 35°, back from vertical), yaw offset
+π/2, so the camera sits due **south** of its target and looks north.
+
+| Projection | Elevation | Yaw offset | Used by |
+|---|---|---|---|
+| `STRATEGIC_PROJECTION` | 55° | π/2 (from the south) | the strategic map |
+| `TOP_DOWN_PROJECTION` | 90° | π/2 | kept; the previous strategic view |
+
+What §2 said still holds, because everything was written against the
+projection rather than against "straight down":
+
+- North is still screen-up and east screen-right (§2.2); the map does
+  not rotate. The plane simply foreshortens by `sin 55°` ≈ 0.82 up the
+  screen, so a 2:1 plate draws at about 2.44:1.
+- `panBy` divides screen-up by `sin(elevation)`, so a drag still tracks
+  the ground exactly; `cameraPosition` places the camera south and
+  above; `screenUpVector` hands three world `+y` since the view is no
+  longer parallel to it (§2.3).
+- Picking, `cityScreenPosition` and `installationScreenPosition` all
+  go through the camera's own matrices, so the city wheel (ADR 0007)
+  still anchors to its marker.
+- Markers still sit on their cities (§2.4). Ground-hugging layers (the
+  wireframe, the territory fill, the halo and selection rings) stay
+  flat on the plane and draw as ellipses; a settlement's height now
+  reads as height, `cos 55°` ≈ 0.57 of a unit per unit.
+
+The camera is due south rather than on a slight yaw so the map stays
+axis-aligned; the settlement models are authored with a small yaw of
+their own so two faces of each building show under it.

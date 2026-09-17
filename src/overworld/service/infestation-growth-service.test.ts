@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { DEPLOYABLE_TYPES } from "../data/deployable-types";
 import { INFESTATION_TUNING } from "../data/infestation-tuning";
 import type { EarthMap } from "../model/earth-map";
 import type { InfestationTuning } from "../model/infestation-tuning";
@@ -84,20 +85,36 @@ function snapshot(map: EarthMap): EarthMap {
 
 describe("growthDelta", () => {
   it("is the base rate at zero threat and scales linearly with threat", () => {
-    expect(growthDelta(0, 0, TUNING)).toBe(4);
-    expect(growthDelta(50, 0, TUNING)).toBe(6);
-    expect(growthDelta(100, 0, TUNING)).toBe(8);
+    expect(growthDelta(0, 1, TUNING)).toBe(4);
+    expect(growthDelta(50, 1, TUNING)).toBe(6);
+    expect(growthDelta(100, 1, TUNING)).toBe(8);
   });
 
   it("ignores threat when the threat factor is zero", () => {
     const flat: InfestationTuning = { ...TUNING, threatFactor: 0 };
-    expect(growthDelta(100, 0, flat)).toBe(4);
+    expect(growthDelta(100, 1, flat)).toBe(4);
   });
 
-  it("subtracts suppression and can go negative", () => {
-    expect(growthDelta(0, 1, TUNING)).toBe(3);
-    expect(growthDelta(0, 4, TUNING)).toBe(0);
-    expect(growthDelta(0, 10, TUNING)).toBe(-6);
+  it("scales by the growth factor and never goes negative", () => {
+    expect(growthDelta(0, 0.75, TUNING)).toBe(3);
+    expect(growthDelta(0, 0.5, TUNING)).toBe(2);
+    expect(growthDelta(0, 0, TUNING)).toBe(0);
+    expect(growthDelta(100, 0.5, TUNING)).toBe(4);
+  });
+
+  it("slows a city more at the level 3 repellent factor than at level 1", () => {
+    const l1 =
+      DEPLOYABLE_TYPES["repellent-dispersal"].levels[1].effect.growthFactor ??
+      1;
+    const l3 =
+      DEPLOYABLE_TYPES["repellent-dispersal"].levels[3].effect.growthFactor ??
+      1;
+    expect(growthDelta(50, l3, TUNING)).toBeLessThan(
+      growthDelta(50, l1, TUNING),
+    );
+    expect(growthDelta(50, l1, TUNING)).toBeLessThan(
+      growthDelta(50, 1, TUNING),
+    );
   });
 });
 
@@ -139,29 +156,23 @@ describe("applyGrowth", () => {
     expect(levels(at100.state).fresh).toBe(18);
   });
 
-  it("reduces growth by suppression, per city, and can push a city down", () => {
-    const partial = applyGrowth(fixture(), 0, { fresh: 3 }, TUNING);
+  it("slows growth by the factor, per city, and never pushes a city down", () => {
+    const partial = applyGrowth(fixture(), 0, { fresh: 0.25 }, TUNING);
     expect(levels(partial.state).fresh).toBe(11);
     expect(levels(partial.state).high).toBe(100);
 
-    const cancelled = applyGrowth(fixture(), 0, { fresh: 4 }, TUNING);
-    expect(levels(cancelled.state).fresh).toBe(10);
-    expect(cancelled.events.map((e) => e.payload.cityId)).toEqual(["high"]);
+    const halted = applyGrowth(fixture(), 0, { fresh: 0 }, TUNING);
+    expect(levels(halted.state).fresh).toBe(10);
+    expect(halted.events.map((e) => e.payload.cityId)).toEqual(["high"]);
+    expect(halted.state.cities[1]).toBe(halted.state.cities[1]);
 
-    const reversed = applyGrowth(fixture(), 0, { fresh: 10, full: 50 }, TUNING);
-    expect(levels(reversed.state).fresh).toBe(4);
-    expect(levels(reversed.state).full).toBe(54);
-    expect(reversed.events.map((e) => e.payload)).toEqual([
-      { cityId: "fresh", from: 10, to: 4 },
-      { cityId: "high", from: 98, to: 100 },
-      { cityId: "full", from: 100, to: 54 },
-    ]);
+    const untouched = applyGrowth(fixture(), 0, { full: 0 }, TUNING);
+    expect(levels(untouched.state).full).toBe(100);
   });
 
-  it("clamps at zero when suppression overwhelms a city", () => {
-    const { state, events } = applyGrowth(fixture(), 0, { fresh: 99 }, TUNING);
-    expect(levels(state).fresh).toBe(0);
-    expect(events[0]?.payload).toEqual({ cityId: "fresh", from: 10, to: 0 });
+  it("keeps a slowed city detected: growth never clears the sighting", () => {
+    const { state } = applyGrowth(fixture(), 0, { fresh: 0.25 }, TUNING);
+    expect(state.cities[1]?.detected).toBe(true);
   });
 
   it("leaves dormant cities at zero regardless of threat", () => {
@@ -186,7 +197,7 @@ describe("applyGrowth", () => {
   });
 
   it("emits no events when nothing changes", () => {
-    const { events } = applyGrowth(fixture(), 0, { fresh: 4, high: 4 }, TUNING);
+    const { events } = applyGrowth(fixture(), 0, { fresh: 0, high: 0 }, TUNING);
     expect(events).toEqual([]);
   });
 
@@ -203,7 +214,7 @@ describe("applyGrowth", () => {
   });
 
   it("returns JSON-serializable state", () => {
-    const { state } = applyGrowth(fixture(), 30, { fresh: 1 }, TUNING);
+    const { state } = applyGrowth(fixture(), 30, { fresh: 0.5 }, TUNING);
     expect(JSON.parse(JSON.stringify(state))).toEqual(state);
   });
 
@@ -220,8 +231,11 @@ describe("applyGrowth", () => {
     );
   });
 
-  it("rejects negative, non-finite or misaddressed suppression", () => {
+  it("rejects growth factors outside [0, 1], non-finite or misaddressed", () => {
     expect(() => applyGrowth(fixture(), 0, { fresh: -1 }, TUNING)).toThrow(
+      RangeError,
+    );
+    expect(() => applyGrowth(fixture(), 0, { fresh: 1.5 }, TUNING)).toThrow(
       RangeError,
     );
     expect(() =>

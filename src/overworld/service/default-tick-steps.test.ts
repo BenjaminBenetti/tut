@@ -17,6 +17,7 @@ import { INFESTATION_TUNING } from "../data/infestation-tuning";
 import { MISSION_TUNING } from "../data/mission-tuning";
 import { NEW_GAME_TUNING } from "../data/new-game-tuning";
 import { THREAT_TUNING } from "../data/threat-tuning";
+import { NO_DEPLOYABLE_MODIFIERS } from "../model/deployable-modifiers";
 import { DEPLOYABLE_TYPE_IDS } from "../model/deployable-type";
 import type { TickContext } from "../model/tick-step";
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
@@ -67,7 +68,7 @@ function ctx(day: number): TickContext {
     day,
     rng: new Mulberry32Rng(day),
     ids: new SequentialIdGenerator(),
-    modifiers: { suppression: {}, spreadDeterrence: {}, intelBonus: {} },
+    modifiers: NO_DEPLOYABLE_MODIFIERS,
   };
 }
 
@@ -94,6 +95,19 @@ describe("stipend step with event modifiers", () => {
     );
     expect(next.economy.credits - state.economy.credits).toBe(expected);
     expect("stipendModifiers" in next.overworld).toBe(false);
+  });
+
+  it("adds the deployable income bonus to the stipend", () => {
+    const state = newGame();
+    const plain = stipendStep().run(state, ctx(2));
+    const boosted = stipendStep().run(state, {
+      ...ctx(2),
+      modifiers: { ...NO_DEPLOYABLE_MODIFIERS, incomeBonus: 150 },
+    });
+    expect(boosted.state.economy.credits - plain.state.economy.credits).toBe(
+      150,
+    );
+    expect(boosted.state.economy.ledger).toHaveLength(1);
   });
 
   it("scales the payment by the product of active modifiers and counts them down", () => {

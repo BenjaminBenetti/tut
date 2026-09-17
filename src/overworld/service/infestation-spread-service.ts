@@ -5,6 +5,7 @@ import {
   clampInfestation,
   MAX_INFESTATION,
   MIN_INFESTATION,
+  withInfestation,
 } from "../model/city";
 import type { EarthMap } from "../model/earth-map";
 import type { InfestationTuning } from "../model/infestation-tuning";
@@ -86,6 +87,10 @@ export function seedProbability(
  *                 hit ──► city = seedAmount
  * ```
  *
+ * A city that goes from clean to infested, by spread or by seeding,
+ * starts undetected (`withInfestation`, GDD §5.3): the detection step
+ * that follows decides whether the player sees it today.
+ *
  * RNG draws happen in exactly that order and only for those decisions,
  * so a fixed seed replays the same day. The caller passes a fork of the
  * tick's RNG labelled for this step.
@@ -159,7 +164,7 @@ export function applySpread(
 
   const cities = map.cities.map((city): City => {
     const level = levels.get(city.id) ?? city.infestation;
-    return level === city.infestation ? city : { ...city, infestation: level };
+    return withInfestation(city, level);
   });
   return {
     state: {

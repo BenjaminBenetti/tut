@@ -16,15 +16,25 @@ These are actual production-renderer captures of the same generated map and came
 
 ![Level 10 coats almost the entire map, including cliffs, foundations and rooftops](../diagnostics/infestation/temperate-level-10.png)
 
-The ground is a continuous low skin with overlapping walnut/chestnut scutes, tan lips and small wet green seams. Wall growth starts at level 3; thicker collars and exposed cliff/foundation courses start at level 5. Skin size and thickness increase at every level. Ground height tops out at 0.16 world units to keep infantry readable; heavy volume grows around the existing vertical structures. Original materials remain underneath. Door/window apertures remain open, and decorative growth does not create cover, collision, damage or spawns.
+The ground is a connected web of curved arteries, finer branches and stretched brown membrane. The wider strands span several tiles; clean edges taper inward. The dial widens the same web and shrinks its irregular tears through an authored growth morph. Swept, pointed shell blades climb walls and selected prop bases. Window growth clusters in columns, and fences do not receive repeated collars. Wall growth starts at level 3; prop and exposed foundation growth starts at level 5. Ground height stays below 0.18 world units to keep infantry readable. Doors and windows retain their apertures; the art adds no collision or cover.
+
+![Connected strands and curved shell blades around a generated building](../diagnostics/infestation/temperate-level-10-detail.png)
+
+### How adjacent tiles merge
+
+`infestation_network.py` authors a periodic **6 × 6 tile** network from irregular, warped cells, a winding main artery and tapered branches. `infestation-ground-a.glb` carries its `Mature` morph target; Ground B is the independently validated mature review model. There is one continuous composition across 36 cells rather than a repeated one-tile mound. The seed chooses its phase and rotation, shared across the map.
+
+The renderer matures that composition once, bins its triangles by cell, then slices out the footprint owned by each marked tile. Neighbours retain identical edge positions, heights and UVs, including at the six-tile wrap. Missing neighbours trim and flatten the exposed fringe. A shortened ramp samples the corresponding portion of the web instead of squeezing a whole tile. World orientation stays fixed while the skin is projected onto the rotated support underneath. Explicit ramp and stair links keep seams joined across a full storey rise.
+
+This ownership split preserves fog, floor cuts and demolition. Repeated slices and support profiles share cached geometry and instanced batches. All ground colours sample the existing bug atlas through one skin material, avoiding a separate draw per palette colour. The network remains periodic at six tiles; architecture, elevation, patch boundaries and the seeded phase break up its repetition in the map.
 
 ## Dial and movement
 
 | Level | Eligible tiles marked | Treatment |
 |---:|---:|---|
 | 0 | 0% | Existing map generation and art |
-| 1 | 2.5% | Small isolated resin patches |
-| 2 | 6% | Wider patches |
+| 1 | 2.5% | Fine roots and small patches |
+| 2 | 6% | Wider strands |
 | 3 | 13% | Patches begin wrapping walls |
 | 4 | 24% | Established shell pockets |
 | 5 | 38% | Ground joins cliffs, foundations and prop bases |
@@ -32,7 +42,7 @@ The ground is a continuous low skin with overlapping walnut/chestnut scutes, tan
 | 7 | 66% | Connected hive territory |
 | 8 | 80% | Remaining clean areas become islands |
 | 9 | 91% | Almost consumed |
-| 10 | 98% | Maximum shell size and thickness |
+| 10 | 98% | Thick web and shell growth throughout |
 
 Coverage is a fraction of non-water tiles outside the landed dropship hull, rounded down to whole tiles. Floors and roofs participate. A dedicated seeded noise field ranks tiles; the same ranking at every level makes growth monotonic. None of the terrain, buildings, props, connectors or hooks rerolls when the dial changes. These percentages are initial tuning in `src/mapgen/data/infestation-tuning.ts`.
 
@@ -54,16 +64,16 @@ Sloped tiles, shortened ramps, stairs and pitched roofs fit the authored skin to
 
 ## Authored kit
 
-Every piece is a closed Blender mesh built from `tools/art/models/infestation_parts.py` through its corresponding `infestation-<name>.py` wrapper. All six GLBs are registered in both asset manifests, use the existing bug atlas, and pass the watertight/base/budget validator. Ground skins have a 300-triangle overlay budget; walls use the existing 800-triangle building budget and collars the 300-triangle prop budget.
+The kit is built from `tools/art/models/infestation_parts.py` and `infestation_network.py` through the six wrapper scripts. All GLBs use the existing bug atlas and pass the watertight/base/budget validator. The connected ground source has a 9,000-triangle allowance across 36 tiles (250 per tile before runtime slicing); vertical overlays have a 1,700-triangle allowance and collars 450. These are separate overlay budgets; the underlying terrain and building assets are unchanged. Ground A includes the morph data and remains under the 500 KiB asset cap.
 
 | Model | Triangles | 45° | 135° | 225° |
 |---|---:|---|---|---|
-| Ground A | 294 | [render](../renders/infestation.resin.ground-a_045.png) | [render](../renders/infestation.resin.ground-a_135.png) | [render](../renders/infestation.resin.ground-a_225.png) |
-| Ground B | 294 | [render](../renders/infestation.resin.ground-b_045.png) | [render](../renders/infestation.resin.ground-b_135.png) | [render](../renders/infestation.resin.ground-b_225.png) |
-| Wall | 720 | [render](../renders/infestation.resin.wall_045.png) | [render](../renders/infestation.resin.wall_135.png) | [render](../renders/infestation.resin.wall_225.png) |
-| Window | 720 | [render](../renders/infestation.resin.window_045.png) | [render](../renders/infestation.resin.window_135.png) | [render](../renders/infestation.resin.window_225.png) |
-| Door | 600 | [render](../renders/infestation.resin.door_045.png) | [render](../renders/infestation.resin.door_135.png) | [render](../renders/infestation.resin.door_225.png) |
-| Prop collar | 240 | [render](../renders/infestation.resin.collar_045.png) | [render](../renders/infestation.resin.collar_135.png) | [render](../renders/infestation.resin.collar_225.png) |
+| Ground A + growth morph | 7744 | [render](../renders/infestation.resin.ground-a_045.png) | [render](../renders/infestation.resin.ground-a_135.png) | [render](../renders/infestation.resin.ground-a_225.png) |
+| Mature review endpoint | 7744 | [render](../renders/infestation.resin.ground-b_045.png) | [render](../renders/infestation.resin.ground-b_135.png) | [render](../renders/infestation.resin.ground-b_225.png) |
+| Wall | 1528 | [render](../renders/infestation.resin.wall_045.png) | [render](../renders/infestation.resin.wall_135.png) | [render](../renders/infestation.resin.wall_225.png) |
+| Window | 1328 | [render](../renders/infestation.resin.window_045.png) | [render](../renders/infestation.resin.window_135.png) | [render](../renders/infestation.resin.window_225.png) |
+| Door | 1096 | [render](../renders/infestation.resin.door_045.png) | [render](../renders/infestation.resin.door_135.png) | [render](../renders/infestation.resin.door_225.png) |
+| Prop collar | 396 | [render](../renders/infestation.resin.collar_045.png) | [render](../renders/infestation.resin.collar_135.png) | [render](../renders/infestation.resin.collar_225.png) |
 
 Regenerate one piece, substituting its wrapper, id, category and budget:
 
@@ -71,9 +81,9 @@ Regenerate one piece, substituting its wrapper, id, category and budget:
 blender -b --python tools/art/make_model.py -- \
   --script tools/art/models/infestation-ground-a.py \
   --id infestation.resin.ground-a --category tiles \
-  --file infestation-ground-a.glb --quality final --max-triangles 300
+  --file infestation-ground-a.glb --quality final --max-triangles 9000
 ```
 
-Regenerate the Map Lab gallery with `node tools/art/preview/capture-infestation.mjs`; URLs, counts and browser errors are recorded in [captures.json](../diagnostics/infestation/captures.json). Capture the deployed squad with `CAPTURE=1 pnpm exec playwright test e2e/infestation-movement.spec.ts --workers=1`.
+Regenerate the Map Lab gallery with `node tools/art/preview/capture-infestation.mjs`; URLs, counts and browser errors are recorded in [captures.json](../diagnostics/infestation/captures.json). The recorded timings include regeneration and PNG readback under SwiftShader. Capture the deployed squad with `CAPTURE=1 pnpm exec playwright test e2e/infestation-movement.spec.ts --workers=1`.
 
-Automated coverage includes all 11 levels, unchanged level-0 maps, nested growth, all biomes, deterministic serialization, mission meter conversion, weighted routes/AP/interruption/connectors/footprints, support fitting, and Map Lab URL/regeneration/floor-cut behavior. The tactical browser test launches a real level-10 mission, spends two AP on a route that would cost one on clean ground, and reloads the saved mission.
+Automated coverage includes all 11 levels, unchanged level-0 maps, nested growth, all biomes, deterministic serialization, mission meter conversion, weighted routes/AP/interruption/connectors/footprints, shared strand seams and wrap boundaries, concave fringes, growth morph identity, visible sparse cells, rotated-support fitting, and Map Lab URL/regeneration/floor-cut behavior. The tactical browser test launches a real level-10 mission, spends two AP on a route that would cost one on clean ground, and reloads the saved mission.

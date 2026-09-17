@@ -106,6 +106,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 ### 6.2 Turn structure
 - Player phase → bug phase. Each unit has action points (move + act, XCOM-style two-action budget by default; mechs may have distinct budgets).
 - Actions: move, attack, overwatch, reload/vent, use equipment (§6.2.4), interact with objective.
+- **Infestation doubles movement distance spent.** Entering an infested tile costs two movement units instead of one; move ranges, route choice, AP and AI all use that cost. A multi-tile unit pays twice once if any destination cell is infested. Clean destinations retain their normal cost. Resin changes movement cost, not collision, cover or sight (Executive Director, 2026-09-17, #1166).
 - **One attack action per weapon.** A unit does not have a single generic "attack". A mech carrying an arm weapon and a back weapon offers two distinct attacks, each with its own range, damage, accuracy and cost. Squad weapons work the same way.
 - **The weapon decides how many attacks a turn.** By kind, an attack costs an infantry squad one action, so a squad with two actions fires twice, while a mech's or a bug's attack ends its turn. Since #1130 a weapon can say otherwise for its own shots: a carbine or a shotgun keeps the squad's two, an SMG, a marksman rifle or a rocket launcher is one shot a turn whoever carries it. Squads remain the answer to numerous small bugs and mechs the answer to armoured and large targets; the asymmetry is deliberate and is what makes both worth fielding, and the per-weapon rule is what makes a radio squad feel different from a rifle squad rather than a rifle squad with a gadget (Executive Director, 2026-09-13, #1130).
 - Cover, line of sight, elevation bonuses, flanking. Hit chance and damage are visible before committing.
@@ -197,6 +198,8 @@ A dev build (Vite's development mode — `pnpm dev`, and the Playwright server) 
 - Output is a 3D tile grid: ground height, floor type, walls, cover objects, buildings with floors and stairs/ladders, roads, props.
 - Placement hooks: deploy zones, objectives (eggs, hive cores, crash sites), edge spawn zones, extraction.
 - Ships with a standalone preview harness so maps can be tuned without playing missions.
+- **Infestation Level (0–10)** controls the approved **B — Resin Shell** treatment: level 0 retains the existing map; higher levels spread connected brown shell patches and increase their thickness; level 10 coats almost every eligible surface, including roofs, walls and exposed foundations. Water and the landed dropship hull stay clear. The Map Lab slider regenerates the same layout and shares its value in the URL. See the [production kit and progression captures](kits/resin-infestation.md).
+- New mission offers snapshot `ceil(city infestation / 10)`, clamped to 0–10: 0 remains clean, any positive overworld infestation is visible, and 91–100 maps to level 10. Existing offers without the field and existing clean tactical maps retain level 0.
 
 ## 8. Milestones
 

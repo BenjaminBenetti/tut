@@ -1,8 +1,8 @@
 # Infestation Level — concept review
 
-**Proposed · 2026-09-17 · [#1166](https://github.com/BenjaminBenetti/tut/issues/1166).** Explore an **Infestation Level** dial from **0 to 10**, roughly corresponding to the overworld's **0–100** infestation meter. Level 0 preserves the current generated map. Level 10 should feel almost completely overtaken by a wet, creeping insect hive.
+**B — Resin Shell selected · 2026-09-17 · [#1166](https://github.com/BenjaminBenetti/tut/issues/1166).** An **Infestation Level** dial from **0 to 10**, roughly corresponding to the overworld's **0–100** infestation meter. Level 0 preserves the current generated map. Level 10 should feel almost completely overtaken by a wet, creeping insect hive.
 
-This package contains three concept sheets for review. The dial, map generation and runtime assets are unchanged. No direction is selected yet.
+The user selected **B — Resin Shell**, approved the level progression and especially thick level 10, and requested **double movement distance cost on infested tiles** plus a **Map Lab slider**. The [implemented kit and actual progression screenshots](../../kits/resin-infestation.md) record that production work. The original generated sheets below remain concept references.
 
 ## Three visual directions
 
@@ -14,7 +14,7 @@ This package contains three concept sheets for review. The dial, map generation 
 | **B — Resin shell** | Walnut/chestnut carapace grows around existing structures with tan shell ridges. | Strong connection to the current bug family. Large projecting plates can obscure cover and entrances. |
 | **C — Brood membrane** | Stretched wet skin, sticky filaments and ribbed egg pockets turn buildings into nesting surfaces. | Strongest creepy-hive feeling. Dense eggs and sheets need restraint so units and mission objectives remain identifiable. |
 
-**Suggested blend for discussion:** A supplies the spreading veins and goop at every nonzero level; B reinforces mature growth; C concentrates around advanced hive pockets. The progression and detail sheets explore this blend. The user can select one direction or combine their features.
+**Original blend explored in the sheets:** A supplies spreading veins and goop; B reinforces mature growth; C concentrates around advanced hive pockets. Production follows the subsequently selected **B** direction: layered brown shell, tan ridges and restrained wet seams, without decorative eggs that could be confused with mission objectives.
 
 The alternatives share the same approximate level-7 intensity and similar city corners. Their coverage is illustrative, not measured or exactly matched. [Direction notes and prompt](directions.md).
 
@@ -68,9 +68,9 @@ These six pieces are shape studies, not an approved production kit. [Surface not
 
 ## Review decisions
 
-1. Preferred direction: A, B, C, or the suggested blend.
-2. Whether level 10 feels sufficiently transformed, and whether its balance of wet goop, hard shell and brood growth is right.
-3. How much decorative egg imagery is acceptable alongside real egg-spawner objectives.
+1. **B — Resin Shell selected.** Keep the progression and make level 10 very thick.
+2. **Gameplay:** entering infestation costs double movement distance.
+3. **Validation:** add an Infestation Level slider to Map Lab. The production kit includes same-seed captures and a coverage table for review.
 
 ## Provenance
 
@@ -82,4 +82,4 @@ Generated on **2026-09-17** using the **built-in `image_gen` tool**, with the im
 | [progression.png](progression.png) | Edit/composite using the existing city screenshot above as its only image input | [progression.txt](prompts/progression.txt) |
 | [surface-language.png](surface-language.png) | New image; no image inputs | [surface-language.txt](prompts/surface-language.txt) |
 
-Art references: [style guide](../../style-guide.md), [implemented brown bug family](../../kits/crescent-bugs.md), [architecture §7](../../architecture.md), and [GDD §5.1–5.3](../../gdd.md). No palette tokens, model budgets or gameplay rules are changed by this review.
+Art references: [style guide](../../style-guide.md), [implemented brown bug family](../../kits/crescent-bugs.md), [architecture §7](../../architecture.md), and [GDD §5.1–5.3](../../gdd.md). The generated concept images are unchanged; the linked production kit documents implemented assets and gameplay.

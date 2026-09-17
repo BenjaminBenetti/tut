@@ -148,6 +148,8 @@ export interface Tile {
   readonly slope?: { kind: 'straight' | 'inner' | 'outer'; turns: 0 | 1 | 2 | 3 };
   /** #799: set on every natural edge tile with a wedge shape, sloped or not. */
   readonly naturalEdge?: true;
+  /** #1166: resin coating; entering this tile costs twice the movement distance. */
+  readonly infested?: true;
 }
 ```
 
@@ -370,6 +372,7 @@ export interface MapGenParams {
   readonly settlement: SettlementScale;
   readonly size: MapSizePreset | { readonly width: number; readonly depth: number };
   readonly hooks: readonly HookRequirement[];       // from the mission type definition
+  readonly infestationLevel?: number;             // integer 0..10, absent = 0
 }
 
 /** What a save stores. Generating from the same recipe yields a deep-equal map. */
@@ -418,7 +421,9 @@ canStep(unitClass, A, B):
 ```
 
 A "cliff" has a rise of at least two layers and no connector; it is impassable both ways. A one-layer
-step is walkable both ways at flat cost through `ReachabilityService`, shared by tactical and mapgen.
+step is walkable both ways through `ReachabilityService`, shared by tactical and mapgen.
+
+Infestation (#1166) adds a tactical destination cost: 1 for a clean tile, 2 for an infested tile, including connector and half-step arrivals. For a multi-tile unit, any infested destination cell doubles the anchor step once. Bounded Dijkstra search supplies lowest-cost routes and weighted move ranges; AP uses weighted distance actually traversed, including interrupted moves. It does not change this legality rule or the generator's reachability guarantees. Optional `infested` and recipe `infestationLevel` fields are additive and default clean; map version 2 and existing saves remain compatible without migration. New mission offers snapshot the city meter as `ceil(clamp(meter, 0, 100) / 10)`.
 
 Combat measures whole storeys: `trunc((from.y - to.y) / STOREY_LAYERS) * elevationPerStorey`.
 The eye is one layer above the tile. LOS samples the ray in layers; walls and opaque props still

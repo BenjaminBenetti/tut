@@ -5,7 +5,7 @@ How a `MapRecipe` becomes a `TacticalMap`. Salvaged from the Map Generation Spec
 ```
  MapRecipe ─► hashSeed ─► Rng ─► PipelineMapGenerator(createSettlementPasses())
    terrain ─► water ─► roads ─► lots ─► buildings ─► interiors ─► props ─► ramps ─► hooks ─► connectivity
-   ─► freezeDraft ─► validateTacticalMap (throws MapGenerationError) ─► TacticalMap
+   ─► freezeDraft ─► infestMap ─► validateTacticalMap (throws MapGenerationError) ─► TacticalMap
 ```
 
 | Pass | What it does | Key decisions |
@@ -24,5 +24,7 @@ How a `MapRecipe` becomes a `TacticalMap`. Salvaged from the Map Generation Spec
 Entry: `service/generate-tactical-map.ts`. Adapter: `service/mission-map-recipe-adapter.ts` plus
 `data/hook-kind-defaults.ts`. Metrics: `service/map-metrics.ts` (`computeMapMetrics`).
 Hatch BFS: `service/hatch-space.ts`. Wide sweep: `MAPGEN_WIDE=1 pnpm exec vitest run generation-wide-sweep`.
+
+`service/infestation-service.ts` runs after freezing on its own `rng.fork("infestation")`. The optional integer `infestationLevel` defaults to zero, which returns the original frozen map. Positive levels rank eligible tiles by seeded coherent noise and tag a growing prefix with `infested: true`; water and dropship hull columns are excluded. Raising the dial only adds marked tiles and cannot reroll terrain, props, buildings or hooks. Coverage tuning lives in `data/infestation-tuning.ts`; the visual kit and gameplay rules are documented in [Resin Shell infestation](kits/resin-infestation.md).
 
 Elevation layers, half walls, the crash-site archetype and map scale are recorded in ADR 0008, ADR 0004 and ADR 0009. Tuning knobs and their measured effect are in `tactical-tuning.md`.

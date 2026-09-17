@@ -72,8 +72,8 @@ describe("Resin Shell map art", () => {
     builder.wall({ x: 1, y: 0, z: 0 }, "n", "window");
     const models = resolveMapModels(covered(builder.build()));
     for (const kind of ["door", "window"]) {
-      const shell = models.infestation.find(
-        (p) => p.modelId === `infestation.resin.${kind}`,
+      const shell = models.infestation.find((p) =>
+        p.modelId.startsWith(`infestation.resin.${kind}`),
       )!;
       expect(shell).toBeDefined();
       expect(models.walls.find((p) => p.part === shell.part)?.position).toEqual(
@@ -121,7 +121,7 @@ describe("Resin Shell map art", () => {
       .tile(high, "floor");
     builder.connector("stairs", low, high);
     const skins = resolveMapModels(covered(builder.build())).infestation.filter(
-      (p) => p.resin,
+      (p) => p.resin?.pattern,
     );
     expect(
       skins.find((p) => p.tile.x === 0)!.resin!.pattern!.neighbours & 4,
@@ -148,14 +148,45 @@ describe("Resin Shell map art", () => {
       ),
     };
     const edges = resolveMapModels(separated).infestation.filter(
-      (p) => p.resin,
+      (p) => p.resin?.pattern,
     );
     expect(edges).toHaveLength(2);
     expect(edges.every((p) => p.resin!.pattern!.neighbours === 0)).toBe(true);
     const early = resolveMapModels(covered(map, 2)).infestation.find(
-      (p) => p.resin,
+      (p) => p.resin?.pattern,
     )!.resin!.pattern!;
     expect([early.x, early.z, early.turns]).toEqual([a.x, a.z, a.turns]);
     expect(early.growth).toBeLessThan(a.growth);
+  });
+  it("composes multiple hive forms at ten, keeps tall organs on props, and preserves the map", () => {
+    const builder = new FixtureMapBuilder(24, 24, 1).fillGround();
+    for (let x = 1; x < 24; x += 3)
+      for (let z = 1; z < 24; z += 3) builder.prop("tree-oak", { x, y: 0, z });
+    const map = covered(builder.build());
+    const snapshot = JSON.stringify(map);
+    const models = resolveMapModels(map);
+    const ids = new Set(models.infestation.map((p) => p.modelId));
+    for (const kind of ["brood", "vent", "fan", "pool", "scales", "blisters"])
+      expect(
+        ids.has(
+          `infestation.resin.${kind}` as (typeof models.infestation)[number]["modelId"],
+        ),
+        kind,
+      ).toBe(true);
+    for (const organ of models.infestation.filter((p) =>
+      /\.(brood|vent|fan)$/.test(p.modelId),
+    )) {
+      const owner = models.props.find((p) => p.part === organ.part);
+      expect(owner).toBeDefined();
+      expect(organ.position).toEqual(owner!.position);
+      expect(organ.occupiedTiles).toEqual(owner!.occupiedTiles);
+      expect(takesGhostCutaway(organ.modelId)).toBe(true);
+    }
+    expect(JSON.stringify(map)).toBe(snapshot);
+    expect(resolveMapModels(map).infestation).toEqual(models.infestation);
+    const early = resolveMapModels(covered(map, 4)).infestation;
+    expect(early.some((p) => /\.(brood|vent|fan)$/.test(p.modelId))).toBe(
+      false,
+    );
   });
 });

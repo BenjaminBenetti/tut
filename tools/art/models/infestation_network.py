@@ -70,15 +70,15 @@ def cells():
 def membrane(name, centre, contour, mature):
     """Closed stretched tissue, with an angular pore that shrinks as resin matures."""
     cx, cy = centre
-    inner = .88 - .36 * mature
+    inner = .93 - .34 * mature
     n = len(contour)
-    rings = [(.998, .018), (.90, .030 + mature * .015), (inner, .006)]
+    rings = [(.998, .018), (.96, .020 + mature * .020), (inner, .006)]
     verts = []
     for ring, (r, h) in enumerate(rings):
         for x,y in contour:
             a = math.atan2(y-cy,x-cx)
             # The tear has long lobes and pinches, not a regular polygon pore.
-            shape = 1 + (.08 + mature*.22) * math.sin(a*3 + cx) + mature*.12*math.sin(a*5 + cy)
+            shape = 1 + (.025 + mature*.12) * math.sin(a*3 + cx) + mature*.07*math.sin(a*5 + cy)
             scale = r * shape if ring == 2 else r
             verts.append((cx+(x-cx)*scale,cy+(y-cy)*scale,h))
     verts += [(x, y, .001) for x, y, _z in verts]
@@ -91,7 +91,7 @@ def membrane(name, centre, contour, mature):
     for k in range(n):
         j = (k+1) % n
         faces += [(k, 3*n+k, 3*n+j, j), (2*n+j, 5*n+j, 5*n+k, 2*n+k)]
-    mesh(name, verts, triangulate(faces), 'bug-flesh', smooth=True)
+    mesh(name, verts, triangulate(faces), 'bug-chitin-dark', smooth=True)
 
 
 def strand(name, points, radii, token='bug-chitin-dark', height=.55):
@@ -165,4 +165,4 @@ def build_network(mature):
         r = (.048 + .105*mature)*(1+.15*math.cos(x*math.tau/3))
         points.append((x,y,.014+r*.52))
         radii.append(r)
-    strand('main_artery',points,radii,'bug-chitin-mid',.47)
+    strand('main_artery',points,radii,'bug-chitin-dark',.47)

@@ -63,8 +63,8 @@ def wall(kind='solid'):
                     curve.append(tuple(.5*((2*b[v])+(-a[v]+c[v])*t+(2*a[v]-5*b[v]+4*c[v]-d[v])*t*t+(-a[v]+3*b[v]-3*c[v]+d[v])*t*t*t) for v in range(3)))
                     widths.append(radii[j]*(1-t)+radii[j+1]*t)
             curve.append(pts[-1]); widths.append(radii[-1])
-            strand(f'{kind}_root_{side}_{i}',curve,widths,'bug-flesh',.65)
-        pieces = [(-.20,.59,.51,1.03,.29,-.24),(.20,1.03,.44,.86,.22,.28),(.29,.26,.32,.52,.19,-.46)] if kind=='solid' else [(-.44,.57,.17,.93,.25,-.035),(.44,1.11,.13,.54,.19,.04)]
+            strand(f'{kind}_root_{side}_{i}',curve,widths,'bug-chitin-dark',.65)
+        pieces = [(-.28,.22,.28,.44,.14,-.40)] if kind=='solid' else []
         for i,(x,z,w,length,h,angle) in enumerate(pieces):
             blade(f'{kind}_blade_{side}_{i}',x,z,w,length,h,angle=angle,variant=i)
         for ob in set(mesh_objects())-objects_before:
@@ -74,6 +74,7 @@ def wall(kind='solid'):
 
 def transform_wall(ob, side):
     """Turn a horizontal authored network into a wall, preserving front faces."""
+    bpy.context.view_layer.update()
     matrix = ob.matrix_world.copy()
     for vertex in ob.data.vertices:
         x,y,z = matrix @ vertex.co

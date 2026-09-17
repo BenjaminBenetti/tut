@@ -6,7 +6,14 @@ import type { ResinSurfaceAppearance } from "./map-model-resolver";
 export function resinSurfaceKey(appearance: ResinSurfaceAppearance): string {
   const p = appearance.support;
   if (appearance.conform === false)
-    return JSON.stringify(["flat", appearance.pattern, appearance.thickness]);
+    return JSON.stringify([
+      "flat",
+      appearance.pattern,
+      appearance.thickness,
+      appearance.size,
+      appearance.turns,
+      appearance.pattern ? undefined : [p.turns, p.scaleX, p.scaleZ],
+    ]);
   return JSON.stringify([
     p.modelId,
     p.turns,

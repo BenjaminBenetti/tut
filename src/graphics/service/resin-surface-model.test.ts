@@ -80,4 +80,37 @@ describe("fitted resin surfaces", () => {
     expect(bounds.max.z).toBeCloseTo(0.3);
     expect(bounds.min.y).toBeCloseTo(0.2);
   });
+  it("does not alias flat detail poses while sharing world-aligned network slices", () => {
+    const appearance = {
+      support: {
+        modelId: "building.floor" as const,
+        turns: 0 as const,
+        level: 0,
+        position: { x: 0.5, y: 0, z: 0.5 },
+        tile: { x: 0, y: 0, z: 0 },
+      },
+      conform: false,
+      turns: 0 as const,
+      size: 0.8,
+      thickness: 1,
+    };
+    const rotated = {
+      ...appearance,
+      support: { ...appearance.support, turns: 1 as const },
+    };
+    expect(resinSurfaceKey(appearance)).not.toBe(resinSurfaceKey(rotated));
+    expect(resinSurfaceKey(appearance)).not.toBe(
+      resinSurfaceKey({ ...appearance, size: 0.6 }),
+    );
+    const pattern = {
+      x: 0,
+      z: 0,
+      turns: 0 as const,
+      growth: 1,
+      neighbours: 255,
+    };
+    expect(resinSurfaceKey({ ...appearance, pattern })).toBe(
+      resinSurfaceKey({ ...rotated, pattern }),
+    );
+  });
 });

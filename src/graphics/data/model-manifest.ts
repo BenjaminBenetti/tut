@@ -12,6 +12,102 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "infestation.resin.blisters": {
+    category: "tiles",
+    path: "assets/models/tiles/infestation-blisters.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.17,
+    sockets: [],
+    quality: "final",
+  },
+
+  "infestation.resin.scales": {
+    category: "tiles",
+    path: "assets/models/tiles/infestation-scales.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.14,
+    sockets: [],
+    quality: "final",
+  },
+
+  "infestation.resin.pool": {
+    category: "tiles",
+    path: "assets/models/tiles/infestation-pool.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.05,
+    sockets: [],
+    quality: "final",
+  },
+
+  "infestation.resin.window-nest": {
+    category: "buildings",
+    path: "assets/models/buildings/infestation-window-nest.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.54,
+    sockets: [],
+    quality: "final",
+  },
+
+  "infestation.resin.wall-nest": {
+    category: "buildings",
+    path: "assets/models/buildings/infestation-wall-nest.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.54,
+    sockets: [],
+    quality: "final",
+  },
+
+  "infestation.resin.brood": {
+    category: "props",
+    path: "assets/models/props/infestation-brood.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.34,
+    sockets: [],
+    quality: "final",
+  },
+
+  "infestation.resin.fan": {
+    category: "props",
+    path: "assets/models/props/infestation-fan.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.2,
+    sockets: [],
+    quality: "final",
+  },
+
+  "infestation.resin.vent": {
+    category: "props",
+    path: "assets/models/props/infestation-vent.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.64,
+    sockets: [],
+    quality: "final",
+  },
+
   "infestation.resin.ground-a": {
     category: "tiles",
     path: "assets/models/tiles/infestation-ground-a.glb",
@@ -41,7 +137,7 @@ export const MODEL_MANIFEST = {
       w: 1,
       d: 0,
     },
-    height: 1.6,
+    height: 1.54,
     sockets: [],
     quality: "final",
   },
@@ -63,7 +159,7 @@ export const MODEL_MANIFEST = {
       w: 1,
       d: 0,
     },
-    height: 1.53,
+    height: 1.44,
     sockets: [],
     quality: "final",
   },

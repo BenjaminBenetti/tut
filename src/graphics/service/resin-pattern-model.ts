@@ -2,6 +2,7 @@ import {
   BufferGeometry,
   Float32BufferAttribute,
   Group,
+  Matrix3,
   Mesh,
   MeshStandardMaterial,
   Vector3,
@@ -9,6 +10,7 @@ import {
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { Material, Object3D } from "three";
 import type { ResinPatternAppearance } from "../model/resin-pattern-appearance";
+import { resinColonyDensity } from "./resin-colony-field";
 import { RESIN_STYLE, RESIN_NEIGHBOURS } from "../data/resin-style";
 
 interface Vertex {
@@ -67,8 +69,8 @@ interface PreparedPart {
 }
 
 /**
- * Matures the authored web once, bins triangles into its 36 ownership cells,
- * then clips cached cell triangles against each patch's exposed fringe.
+ * Matures and bends each canvas in a shared world-space colony field, then
+ * bins triangles into ownership cells and clips each patch's exposed fringe.
  * The factory owns one atlas material; callers own every returned geometry.
  */
 export class ResinPatternModelFactory {
@@ -183,9 +185,9 @@ export class ResinPatternModelFactory {
     return result;
   }
 
-  /** Transforms source vertices once and assigns triangles to their spatial cells. */
+  /** Caches each deformed canvas and assigns its triangles to ownership cells. */
   private prepare(pattern: ResinPatternAppearance): readonly PreparedPart[] {
-    const key = `${pattern.turns}:${pattern.growth}`;
+    const key = JSON.stringify([pattern.turns, pattern.growth, pattern.colony]);
     const cached = this.prepared.get(key);
     if (cached) return cached;
     const period = RESIN_STYLE.patternSize;
@@ -205,38 +207,69 @@ export class ResinPatternModelFactory {
       const uv = source.geometry.getAttribute("uv");
       const index = source.geometry.index;
       const count = index?.count ?? a.count;
-      const vertices: Vertex[] = Array.from({ length: a.count }, (_, i) => ({
+      const angle = (-pattern.turns * Math.PI) / 2;
+      const authored = Array.from({ length: a.count }, (_, i) => ({
         position: new Vector3()
           .fromBufferAttribute(a, i)
-          .addScaledVector(
-            new Vector3().fromBufferAttribute(b, i),
-            pattern.growth,
-          )
           .applyMatrix4(source.matrixWorld)
-          .applyAxisAngle(axis, (-pattern.turns * Math.PI) / 2),
+          .applyAxisAngle(axis, angle),
+        delta: new Vector3()
+          .fromBufferAttribute(b, i)
+          .applyMatrix3(new Matrix3().setFromMatrix4(source.matrixWorld))
+          .applyAxisAngle(axis, angle),
         normal: new Vector3()
           .fromBufferAttribute(normal, i)
-          .addScaledVector(
-            new Vector3().fromBufferAttribute(deltaNormal, i),
-            pattern.growth,
-          )
           .transformDirection(source.matrixWorld)
-          .applyAxisAngle(axis, (-pattern.turns * Math.PI) / 2)
-          .normalize(),
-        uv: [uv.getX(i), uv.getY(i)],
+          .applyAxisAngle(axis, angle),
+        deltaNormal: new Vector3()
+          .fromBufferAttribute(deltaNormal, i)
+          .applyMatrix3(new Matrix3().setFromMatrix4(source.matrixWorld))
+          .applyAxisAngle(axis, angle),
+        uv: [uv.getX(i), uv.getY(i)] as const,
       }));
       const cells: Vertex[][][] = Array.from(
         { length: period * period },
         () => [],
       );
-      for (let i = 0; i < count; i += 3) {
-        const triangle = [0, 1, 2].map(
-          (j) => vertices[index?.getX(i + j) ?? i + j]!,
-        );
-        for (const dx of [-period, 0, period])
-          for (const dz of [-period, 0, period]) {
-            const xs = triangle.map((v) => v.position.x + dx);
-            const zs = triangle.map((v) => v.position.z + dz);
+      for (const dx of [-period, 0, period])
+        for (const dz of [-period, 0, period]) {
+          const vertices: Vertex[] = authored.map((v) => {
+            const position = v.position.clone().add(new Vector3(dx, 0, dz));
+            const colony = pattern.colony;
+            const wx = position.x + (colony?.x ?? 0);
+            const wz = position.z + (colony?.z ?? 0);
+            const density = colony
+              ? resinColonyDensity(wx, wz, colony.seed)
+              : 1;
+            const growth = pattern.growth * (0.06 + density * 0.94);
+            position.addScaledVector(v.delta, growth);
+            if (colony) {
+              const phase = (colony.seed % 997) * 0.013;
+              // Deform before ownership clipping: neighbouring tiles and canvas
+              // wraps share the same source vertices and the same world field.
+              position.x +=
+                0.34 * Math.sin(wz * 0.63 + phase) +
+                0.16 * Math.sin(wx * 0.91 + wz * 0.37);
+              position.z +=
+                0.31 * Math.sin(wx * 0.57 - phase) +
+                0.13 * Math.cos(wz * 0.83 - wx * 0.23);
+              position.y *= 0.45 + 0.55 * density;
+            }
+            return {
+              position,
+              normal: v.normal
+                .clone()
+                .addScaledVector(v.deltaNormal, growth)
+                .normalize(),
+              uv: v.uv,
+            };
+          });
+          for (let i = 0; i < count; i += 3) {
+            const triangle = [0, 1, 2].map(
+              (j) => vertices[index?.getX(i + j) ?? i + j]!,
+            );
+            const xs = triangle.map((v) => v.position.x);
+            const zs = triangle.map((v) => v.position.z);
             const minX = Math.max(0, Math.floor(Math.min(...xs) + period / 2));
             const maxX = Math.min(
               period - 1,
@@ -247,16 +280,11 @@ export class ResinPatternModelFactory {
               period - 1,
               Math.floor(Math.max(...zs) + period / 2),
             );
-            if (minX > maxX || minZ > maxZ) continue;
-            const translated = triangle.map((v, j) => ({
-              ...v,
-              position: new Vector3(xs[j], v.position.y, zs[j]),
-            }));
             for (let z = minZ; z <= maxZ; z++)
               for (let x = minX; x <= maxX; x++)
-                cells[z * period + x]!.push(translated);
+                cells[z * period + x]!.push(triangle);
           }
-      }
+        }
       return { cells };
     });
     this.prepared.set(key, parts);

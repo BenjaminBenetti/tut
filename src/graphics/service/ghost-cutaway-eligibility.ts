@@ -19,6 +19,9 @@ export const GHOSTED_MODEL_PREFIXES: readonly string[] = [
   "infestation.resin.window",
   "infestation.resin.door",
   "infestation.resin.collar",
+  "infestation.resin.brood",
+  "infestation.resin.vent",
+  "infestation.resin.fan",
 ];
 
 /**

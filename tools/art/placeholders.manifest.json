@@ -2528,6 +2528,174 @@
     "bytes": 77960
   },
   {
+    "id": "infestation.resin.collar",
+    "category": "props",
+    "path": "assets/models/props/infestation-collar.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.24,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 396,
+    "bytes": 13540
+  },
+  {
+    "id": "infestation.resin.vent",
+    "category": "props",
+    "path": "assets/models/props/infestation-vent.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.64,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1984,
+    "bytes": 50868
+  },
+  {
+    "id": "infestation.resin.fan",
+    "category": "props",
+    "path": "assets/models/props/infestation-fan.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.2,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 520,
+    "bytes": 15480
+  },
+  {
+    "id": "infestation.resin.pool",
+    "category": "tiles",
+    "path": "assets/models/tiles/infestation-pool.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 670,
+    "bytes": 21724
+  },
+  {
+    "id": "infestation.resin.scales",
+    "category": "tiles",
+    "path": "assets/models/tiles/infestation-scales.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.14,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 400,
+    "bytes": 12680
+  },
+  {
+    "id": "infestation.resin.blisters",
+    "category": "tiles",
+    "path": "assets/models/tiles/infestation-blisters.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.17,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 448,
+    "bytes": 16576
+  },
+  {
+    "id": "infestation.resin.brood",
+    "category": "props",
+    "path": "assets/models/props/infestation-brood.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.34,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3358,
+    "bytes": 79512
+  },
+  {
+    "id": "infestation.resin.wall",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-wall.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.54,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1128,
+    "bytes": 27992
+  },
+  {
+    "id": "infestation.resin.window",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.54,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 928,
+    "bytes": 22408
+  },
+  {
+    "id": "infestation.resin.door",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.44,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 696,
+    "bytes": 17172
+  },
+  {
+    "id": "infestation.resin.wall-nest",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-wall-nest.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.54,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 5312,
+    "bytes": 123572
+  },
+  {
+    "id": "infestation.resin.window-nest",
+    "category": "buildings",
+    "path": "assets/models/buildings/infestation-window-nest.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.54,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 5112,
+    "bytes": 118920
+  },
+  {
     "id": "infestation.resin.ground-a",
     "category": "tiles",
     "path": "assets/models/tiles/infestation-ground-a.glb",
@@ -2539,7 +2707,7 @@
     "sockets": [],
     "quality": "final",
     "triangles": 7744,
-    "bytes": 274736
+    "bytes": 275412
   },
   {
     "id": "infestation.resin.ground-b",
@@ -2553,62 +2721,6 @@
     "sockets": [],
     "quality": "final",
     "triangles": 7744,
-    "bytes": 179828
-  },
-  {
-    "id": "infestation.resin.wall",
-    "category": "buildings",
-    "path": "assets/models/buildings/infestation-wall.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.6,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1528,
-    "bytes": 39188
-  },
-  {
-    "id": "infestation.resin.window",
-    "category": "buildings",
-    "path": "assets/models/buildings/infestation-window.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.54,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1328,
-    "bytes": 33796
-  },
-  {
-    "id": "infestation.resin.door",
-    "category": "buildings",
-    "path": "assets/models/buildings/infestation-door.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.53,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1096,
-    "bytes": 28560
-  },
-  {
-    "id": "infestation.resin.collar",
-    "category": "props",
-    "path": "assets/models/props/infestation-collar.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.24,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 396,
-    "bytes": 13540
+    "bytes": 178876
   }
 ]

@@ -14,6 +14,14 @@
  * id here and an entry there in the same PR.
  */
 export const MODEL_IDS = [
+  "infestation.resin.blisters",
+  "infestation.resin.scales",
+  "infestation.resin.pool",
+  "infestation.resin.window-nest",
+  "infestation.resin.wall-nest",
+  "infestation.resin.brood",
+  "infestation.resin.fan",
+  "infestation.resin.vent",
   "infestation.resin.ground-a",
   "infestation.resin.ground-b",
   "infestation.resin.wall",

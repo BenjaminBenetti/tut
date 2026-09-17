@@ -160,4 +160,51 @@ describe("continuous authored resin network", () => {
     release(whole);
     release(half);
   });
+  it("keeps world-deformed colony strands seamless across ownership and canvas boundaries", () => {
+    for (const turns of [0, 1, 2, 3] as const)
+      for (const x of [2, 5]) {
+        const colony = { x: 12, z: 18, seed: 1937 };
+        const west = factory.create({ ...base, turns, x, colony });
+        const east = factory.create({
+          ...base,
+          turns,
+          x: (x + 1) % 6,
+          colony: { ...colony, x: colony.x + (x === 5 ? 6 : 0) },
+        });
+
+        expect(seam(west, "x", 0.5)).toEqual(seam(east, "x", -0.5));
+        release(west);
+        release(east);
+      }
+    const near = factory.create({
+      ...base,
+      colony: { x: 12, z: 18, seed: 1937 },
+    });
+    const far = factory.create({
+      ...base,
+      colony: { x: 24, z: 18, seed: 1937 },
+    });
+    expect(seam(near, "x", 0.5)).not.toEqual(seam(far, "x", 0.5));
+    release(near);
+    release(far);
+  });
+  it("leaves a visible infestation mark on isolated tiles after colony deformation", () => {
+    for (const origin of [0, 12, 30])
+      for (let z = 0; z < 6; z++)
+        for (let x = 0; x < 6; x++) {
+          const patch = factory.create({
+            ...base,
+            x,
+            z,
+            growth: 0,
+            neighbours: 0,
+            colony: { x: origin, z: origin, seed: 1937 },
+          });
+          expect(
+            new Box3().setFromObject(patch).isEmpty(),
+            `empty at ${origin}:${x},${z}`,
+          ).toBe(false);
+          release(patch);
+        }
+  });
 });

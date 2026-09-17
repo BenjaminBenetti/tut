@@ -262,14 +262,15 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 | Crescent egg spawner | 16 000 | < 500 KB |
 | Tile piece (ground, road) | ≤ 60 | ≤ 20 KB |
 | Resin web source (6 × 6 tiles, with growth morph) | ≤ 9 000 | ≤ 500 KiB |
-| Resin vertical overlay / prop collar | ≤ 1 700 / 450 | ≤ 100 KB / 60 KB |
+| Resin vertical roots / prop collar | ≤ 1 700 / 450 | ≤ 100 KB / 60 KB |
+| Resin nursery wall / prop organ / floor detail | ≤ 6 000 / 4 000 / 750 | ≤ 200 KB / 150 KB / 60 KB |
 | Building module (wall, floor, roof, stairs) | ≤ 800 | ≤ 100 KB |
 | Prop (cover, street furniture) | ≤ 300 | ≤ 60 KB |
 | TDF dropship (one 5×7 cargo transport) | ≤ 3 000 | ≤ 200 KB |
 
 The detailed brown bug kit replaces the original 600/1,000/2,000-triangle bug and 1,200-triangle spawner budgets. Geometry goes into continuous shell curvature, plate overlap, joints and blade profiles; per-file caps and runtime read/animation checks still apply. Authored continuous UVs map the whole sculpted surface into its atlas cell, preserving shared vertices and avoiding one repeated texture patch per triangle.
 
-The approved **Resin Shell** direction (#1166, 2026-09-17) uses a continuous six-tile web with merging roots, irregular membrane tears and swept shell blades. The user's review rejected repeated round scutes. The revised web carries an authored maturity morph and is sliced at tile ownership boundaries, with exact shared seams and tapered exposed fringes. Its 9,000-triangle source budget spans 36 tiles; vertical overlays and collars have separate allowances for curved strands and larger carapace forms. At level 10, 98% of eligible tiles are marked; the web thickens and its tears shrink, while ground height stays below 0.18 units for infantry readability. Doors/windows keep their apertures. Ground skins remain solid under ghost cuts; wall and prop growth inherits fog, floor-cut and demolition identity. Sources, measurements and actual Map Lab captures are in the [Resin Shell kit](kits/resin-infestation.md).
+The approved **Resin Shell** direction (#1166, 2026-09-17) combines a connected web with ribbed nursery sacs, hollow vents, chitin fans, shed plates, blisters and wet seeps. The user's review rejected uniform repeated assets. A seeded map-scale colony field now varies the web's growth and bending before slicing it into tile ownership, preserving continuous seams. Organs cluster around occupied props and non-walkable roofs; walls alternate bare roots and nursery masses. Mature organs follow their host's height, while walkable floor details stay below 0.18 units. Doors/windows keep their apertures. At level 10, 98% of eligible tiles are marked, with varied thin and thick growth across the connected hive. Ground skins remain solid under ghost cuts; tall growth inherits fog, floor-cut and demolition identity. Sources, measurements and actual Map Lab captures are in the [Resin Shell kit](kits/resin-infestation.md).
 
 Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². The strategic map is not a texture: its Earth is drawn as vector coastlines from `src/graphics/data/earth-coastlines.ts` (#1144), so nothing needs to exceed the cap.
 

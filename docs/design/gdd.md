@@ -64,7 +64,8 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - Each tick: infestation spreads (within city, then to neighbours), new infestations may seed, missions/events are generated, bug species may unlock, deployables act, economy pays out.
 
 ### 5.3 Infestation dynamics
-- Infestation grows in a city each tick by a base rate scaled by threat, minus suppression from deployables and minus reductions from won missions.
+- Infestation grows in a city each tick by a base rate scaled by threat, multiplied by the growth factor of any repellent dispersal in the region (§5.6), and is reduced by won missions.
+- **Detection** (#1155). A landing is not seen the day it happens. Each city is either *detected* or not; an undetected city hides its infestation from the player (a `?` in the Situation panel's city rows and at the city wheel's hub, no egg overlay) and offers no missions, while its infestation still counts towards its region's tint, the panel's Worst/Mean meter and global threat. A city is detected once its **region's mean infestation reaches 15** or **its own reaches 30**; a sensor array scales both thresholds down (60% / 40% / 20% by level). Clean cities read as undetected too, so the panel never gives away where the next landing is. A city cleared to zero is forgotten and must be found again. The opening landings are detected from day one.
 - When a city passes a threshold it spreads to a neighbouring city.
 - When a region's infestation is high enough for long enough, a **bug hive** forms (M3). Hives are persistent, boost regional growth, and require a special assault mission.
 - Lose condition: global threat reaches 100 (Earth overrun).
@@ -78,11 +79,22 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 
 ### 5.5 Economy
 - One currency: **credits**. Everything costs credits: squads, mech chassis, parts, upgrades, deployables, repairs.
-- Income: mission rewards, a per-tick stipend scaled by how much of Earth is unfested, event outcomes.
+- Income: mission rewards, a per-tick stipend scaled by how much of Earth is unfested, event outcomes, and a flat bonus per online **bank** (§5.6) folded into the stipend: a level 1 bank pays for itself in about ten days, and the bank ladder is the player's engine for out-growing upkeep.
 
 ### 5.6 Earth deployables
-- Region-level installations bought with credits. Examples: **defensive battery** (reduces spawn/growth in a region), **repellent dispersal** (deters spread to neighbours), **sensor array** (reveals missions earlier / better intel). Each has a build cost, upkeep, and a limited count per region.
-- Every built installation is drawn on the map near its region's anchor, spread deterministically on a ring clear of the region's cities so the same campaign always looks the same. Offline installations are dimmed, not hidden. Each type idles: the sensor dish turns about once every 12 s, the battery's barrels traverse, and the dispersal nozzle sweeps while puffing a pale spray (#1155).
+- Region-level installations bought with credits, **one of each type per region**, each with a build cost and a daily upkeep. An installation whose upkeep the treasury cannot cover goes offline (no effect, still drawn, dimmed) and comes back the first day it can be paid.
+- **Three levels.** Every installation is built at level 1 and can be upgraded to 2 and then 3; each upgrade costs credits and raises the daily upkeep, and each level strengthens every effect the type has. The Situation panel shows the level beside the type (`L2`) and the effect at the current and next level, phrased from the catalogue by the effect describer so the panel can never drift from the rules (#1155).
+- The four types and what each level does:
+
+  | Type | Effect | L1 (cost / upkeep) | L2 | L3 |
+  |------|--------|--------------------|----|----|
+  | **Sensor array** | Detects infested cities sooner: both detection thresholds (§5.3) scaled to 60% / 40% / 20%; missions in the region also stay on offer 1 / 2 / 3 days longer. | ¢800 / ¢20 | ¢1,000 / ¢35 | ¢1,400 / ¢50 |
+  | **Repellent dispersal** | Slows the infestation's climb: every city in the region grows at 75% / 55% / 35% of the usual rate, and fresh landings there are 25% / 40% / 60% rarer. | ¢1,000 / ¢30 | ¢1,300 / ¢50 | ¢1,800 / ¢75 |
+  | **Defensive battery** | Garrisons the region: 1 / 2 / 3 **garrison turrets** stand on every mission map in the region, spread over clear ground at random, the same turret an engineer deploys but on the mains, so it never runs out of battery and watches every turn until it is destroyed (§6.2.4). | ¢1,500 / ¢50 | ¢1,500 / ¢80 | ¢2,000 / ¢120 |
+  | **Bank** | Passive income: +¢150 / +¢350 / +¢600 to the daily stipend while online. | ¢1,200 / ¢30 | ¢1,500 / ¢60 | ¢2,000 / ¢100 |
+
+- Effects of the same type never stack within a region (one per region); a bank's bonus is global and sums over every online bank on Earth.
+- Every built installation is drawn on the map near its region's anchor, spread deterministically on a ring clear of the region's cities so the same campaign always looks the same. Offline installations are dimmed, not hidden. Each type idles: the sensor dish turns about once every 12 s, the battery's barrels traverse, the dispersal nozzle sweeps while puffing a pale spray, and the bank's sign turns once every 20 s (#1155).
 
 ### 5.7 Roster
 - **Infantry squads**: one roster entry = one squad token of ~5 soldiers. Types include rifle, rocket, sniper, engineer, medic, and radio (expand under Track: Arsenal). Each type fights with its own weapon, and the weapon is what tells the types apart on the field: rifle and medic squads carry carbines and fire twice a turn; radio squads carry SMGs, shorter and harder-hitting, one burst a turn; engineers carry shotguns, two blasts a turn at arm's length; snipers carry marksman rifles, one shot a turn out to the edge of sight; the rocket squad's one shot a turn is its rocket, with its blast and its force (§6.2.3) (Executive Director, 2026-09-13, #1130). Squads take casualties; a squad below strength can be reinforced for credits; a wiped squad is gone.

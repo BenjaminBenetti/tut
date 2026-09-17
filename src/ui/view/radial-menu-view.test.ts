@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RadialMenuItem } from "./radial-menu-view";
-import { RadialMenuView } from "./radial-menu-view";
+import { NOTE_RADIUS_BONUS, RadialMenuView } from "./radial-menu-view";
 
 // ===========================================
 // Fixtures
@@ -45,6 +45,24 @@ describe("RadialMenuView", () => {
     const root = host.querySelector<HTMLElement>("#radial-menu");
     expect(root?.style.left).toBe("400px");
     expect(root?.style.top).toBe("300px");
+  });
+
+  it("shows a hub note under the caption and pushes the ring out to make room for it (#1155)", () => {
+    const view = new RadialMenuView({ onSelect: vi.fn(), onDismiss: vi.fn() });
+    view.mount(host);
+    view.open(ITEMS, { value: "L1", caption: "Battery · online" }, { x: 0, y: 0 });
+    const plainTop = Number.parseFloat(buttons()[0]?.style.top ?? "0");
+    expect(host.querySelector('[data-field="hub-note"]')).toBeNull();
+    view.open(
+      ITEMS,
+      { value: "L1", caption: "Battery · online", note: "1 garrison turret" },
+      { x: 0, y: 0 },
+    );
+    expect(host.querySelector('[data-field="hub-note"]')?.textContent).toBe(
+      "1 garrison turret",
+    );
+    const notedTop = Number.parseFloat(buttons()[0]?.style.top ?? "0");
+    expect(plainTop - notedTop).toBe(NOTE_RADIUS_BONUS);
   });
 
   it("marks the primary, disables what cannot be picked, and says why", () => {

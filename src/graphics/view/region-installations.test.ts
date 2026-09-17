@@ -1,4 +1,14 @@
-import { BoxGeometry, Group, Mesh, MeshStandardMaterial, Texture } from "three";
+import {
+  BoxGeometry,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  OrthographicCamera,
+  Raycaster,
+  Texture,
+  Vector2,
+  Vector3,
+} from "three";
 import { describe, expect, it } from "vitest";
 
 import { EARTH_MAP } from "../../overworld/data/earth-map";
@@ -55,6 +65,8 @@ function look(): InstallationLook {
     animations: DEPLOYABLE_ANIMATIONS,
     falloff: new Texture(),
     standIn: new BoxGeometry(0.45, 0.29, 0.45),
+    pick: new BoxGeometry(0.45, 0.4, 0.45),
+    footprint: 0.45,
   };
 }
 
@@ -160,6 +172,56 @@ describe("RegionInstallations (#1155)", () => {
       Math.PI / 2,
       6,
     );
+  });
+
+  it("hit-tests by pick solid, and pushes hover and selection to exactly one marker (#1155)", () => {
+    const installations = new RegionInstallations(look(), OVERWORLD_SCENE_CONFIG);
+    installations.setMap(EARTH_MAP);
+    installations.sync([
+      deployable("deployable-1", { regionId: "east-asia" }),
+      deployable("deployable-2", { regionId: "western-europe" }),
+    ]);
+    const camera = new OrthographicCamera(-20, 20, 10, -10, 0.1, 50);
+    camera.position.set(
+      OVERWORLD_SCENE_CONFIG.mapWidth / 2,
+      10,
+      OVERWORLD_SCENE_CONFIG.mapDepth / 2,
+    );
+    camera.lookAt(
+      OVERWORLD_SCENE_CONFIG.mapWidth / 2,
+      0,
+      OVERWORLD_SCENE_CONFIG.mapDepth / 2,
+    );
+    camera.updateMatrixWorld(true);
+    camera.updateProjectionMatrix();
+    const raycaster = new Raycaster();
+    const rayAt = (id: string): Raycaster => {
+      const at = installations.worldPosition(id);
+      if (!at) throw new Error(`missing ${id}`);
+      const ndc = new Vector3(at.x, at.y, at.z).project(camera);
+      raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
+      return raycaster;
+    };
+    expect(installations.hit(rayAt("deployable-1"))).toBe("deployable-1");
+    expect(installations.hit(rayAt("deployable-2"))).toBe("deployable-2");
+    raycaster.setFromCamera(new Vector2(0.999, 0.999), camera);
+    expect(installations.hit(raycaster)).toBeUndefined();
+
+    installations.setHovered("deployable-1");
+    expect(installations.root.getObjectByName("installation-visual-deployable-1")?.scale.x).toBeGreaterThan(1);
+    expect(installations.root.getObjectByName("installation-visual-deployable-2")?.scale.x).toBe(1);
+    installations.setHovered("deployable-2");
+    expect(installations.root.getObjectByName("installation-visual-deployable-1")?.scale.x).toBe(1);
+    expect(installations.root.getObjectByName("installation-visual-deployable-2")?.scale.x).toBeGreaterThan(1);
+    installations.setSelected("deployable-2");
+    expect(installations.getSelected()).toBe("deployable-2");
+    // A marker built after the selection was made comes up selected too.
+    installations.sync([deployable("deployable-2", { regionId: "western-europe" })]);
+    expect(installations.getSelected()).toBe("deployable-2");
+    expect(installations.hit(rayAt("deployable-2"))).toBe("deployable-2");
+    installations.dispose();
+    raycaster.setFromCamera(new Vector2(0, 0), camera);
+    expect(installations.hit(raycaster)).toBeUndefined();
   });
 
   it("skips an installation whose region the map does not know, and empties on dispose", () => {

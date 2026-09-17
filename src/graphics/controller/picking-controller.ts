@@ -4,8 +4,14 @@ import { Vector3 } from "three";
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CityId } from "../../overworld/model/city";
 import type { CityPicker } from "../model/city-picker";
+import type { InstallationPicker } from "../model/installation-picker";
 import type { OverworldPick } from "../model/overworld-pick";
-import { cityPick, regionPick, samePick } from "../model/overworld-pick";
+import {
+  cityPick,
+  installationPick,
+  regionPick,
+  samePick,
+} from "../model/overworld-pick";
 import type { RegionPicker } from "../model/region-picker";
 import type { SceneCamera } from "../model/scene-camera";
 import { ndcToPointer, pointerToNdc } from "../service/pointer-ndc";
@@ -296,20 +302,21 @@ export function cityPickerAdapter(picker: CityPicker): Picker<CityId> {
 }
 
 /**
- * Adapts the overworld scene's city and region pickers into one
- * `Picker` over `OverworldPick` (#1155): a settlement under the pointer
- * wins, the land of a region is picked otherwise, and the sea is a
- * miss. Hover and selection are pushed to both halves of the scene,
- * clearing the half the pick is not.
+ * Adapts the overworld scene's city, installation and region pickers
+ * into one `Picker` over `OverworldPick` (#1155): a settlement under
+ * the pointer wins, then a built installation, then the land of a
+ * region, and the sea is a miss. Hover and selection are pushed to
+ * every part of the scene, clearing the parts the pick is not.
  *
  * ```
  *   pick ──▶ pickCity ──hit──▶ { city }
- *              └─miss──▶ pickRegion ──hit──▶ { region }
- *                            └─miss──▶ undefined
+ *              └─miss──▶ pickInstallation ──hit──▶ { installation }
+ *                            └─miss──▶ pickRegion ──hit──▶ { region }
+ *                                          └─miss──▶ undefined
  * ```
  */
 export function overworldPickerAdapter(
-  picker: CityPicker & RegionPicker,
+  picker: CityPicker & InstallationPicker & RegionPicker,
 ): Picker<OverworldPick> {
   return {
     pick: (ndc, camera) => {
@@ -317,23 +324,41 @@ export function overworldPickerAdapter(
       if (cityId !== undefined) {
         return cityPick(cityId);
       }
+      const deployableId = picker.pickInstallation(ndc, camera);
+      if (deployableId !== undefined) {
+        return installationPick(deployableId);
+      }
       const regionId = picker.pickRegion(ndc, camera);
       return regionId === undefined ? undefined : regionPick(regionId);
     },
     setHovered: (pick) => {
       picker.setHovered(pick?.kind === "city" ? pick.cityId : undefined);
+      picker.setHoveredInstallation(
+        pick?.kind === "installation" ? pick.deployableId : undefined,
+      );
       picker.setHoveredRegion(
         pick?.kind === "region" ? pick.regionId : undefined,
       );
     },
     setSelected: (pick) => {
       picker.setSelected(pick?.kind === "city" ? pick.cityId : undefined);
+      picker.setSelectedInstallation(
+        pick?.kind === "installation" ? pick.deployableId : undefined,
+      );
       picker.setSelectedRegion(
         pick?.kind === "region" ? pick.regionId : undefined,
       );
     },
-    worldPosition: (pick) =>
-      pick.kind === "city" ? picker.markerWorldPosition(pick.cityId) : undefined,
+    worldPosition: (pick) => {
+      switch (pick.kind) {
+        case "city":
+          return picker.markerWorldPosition(pick.cityId);
+        case "installation":
+          return picker.installationWorldPosition(pick.deployableId);
+        case "region":
+          return undefined;
+      }
+    },
     sameId: samePick,
   };
 }

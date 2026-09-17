@@ -1,4 +1,5 @@
-import { Group } from "three";
+import type { Object3D, Raycaster } from "three";
+import { Group, Vector3 } from "three";
 
 import type { Vec3 } from "../../core/model/grid";
 import type {
@@ -40,6 +41,8 @@ export const INSTALLATIONS_NAME = "installations";
  *   setMap(map)              ──► region anchors and city obstacles in world units
  *   sync(deployables)        ──► markers added, moved, retinted, removed
  *   update(dt)               ──► every marker's moving part turned
+ *   hit(raycaster)           ──► the installation whose pick solid the ray meets
+ *   setHovered / setSelected ──► one marker grown and labelled, the rest plain
  * ```
  *
  * Slots are planned per region from the deployables sorted by id, so
@@ -56,8 +59,11 @@ export class RegionInstallations implements FrameUpdatable, Disposable {
   private readonly style: InstallationLook;
   private readonly config: OverworldSceneConfig;
   private readonly markers = new Map<DeployableId, InstallationMarker>();
+  private readonly targetToId = new Map<Object3D, DeployableId>();
   private readonly anchors = new Map<RegionId, GroundPoint>();
   private obstacles: GroundPoint[] = [];
+  private hovered: DeployableId | undefined;
+  private selected: DeployableId | undefined;
 
   // ===========================================
   // Constructor
@@ -101,6 +107,7 @@ export class RegionInstallations implements FrameUpdatable, Disposable {
       if (!wanted.has(id)) {
         marker.dispose();
         this.markers.delete(id);
+        this.targetToId.delete(marker.pickTarget);
       }
     }
     for (const [regionId, group] of byRegion(deployables)) {
@@ -128,10 +135,67 @@ export class RegionInstallations implements FrameUpdatable, Disposable {
           return;
         }
         const marker = new InstallationMarker(deployable, at, this.style);
+        marker.setHovered(deployable.id === this.hovered);
+        marker.setSelected(deployable.id === this.selected);
         this.markers.set(deployable.id, marker);
+        this.targetToId.set(marker.pickTarget, deployable.id);
         this.root.add(marker.object);
       });
     }
+  }
+
+  /**
+   * The installation whose pick solid `raycaster` meets, or `undefined`
+   * for none. Solids never overlap (the layout keeps a clearance), so
+   * the nearest hit is the one the pointer is on; ties, if the camera
+   * ever lines two up, go to the one whose anchor is nearest the ray.
+   * World matrices are refreshed first so a pick between frames sees
+   * the current layout.
+   */
+  hit(raycaster: Raycaster): DeployableId | undefined {
+    if (this.targetToId.size === 0) {
+      return undefined;
+    }
+    this.root.updateMatrixWorld(true);
+    const hits = raycaster.intersectObjects([...this.targetToId.keys()], false);
+    let best: DeployableId | undefined;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    const anchor = new Vector3();
+    for (const hit of hits) {
+      const id = this.targetToId.get(hit.object);
+      const marker = id === undefined ? undefined : this.markers.get(id);
+      if (!marker) {
+        continue;
+      }
+      marker.object.getWorldPosition(anchor);
+      const distance = raycaster.ray.distanceToPoint(anchor);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = id;
+      }
+    }
+    return best;
+  }
+
+  /** Grows and labels one installation as hovered, or none. */
+  setHovered(id: DeployableId | undefined): void {
+    this.hovered = id;
+    for (const [markerId, marker] of this.markers) {
+      marker.setHovered(markerId === id);
+    }
+  }
+
+  /** Keeps one installation labelled as the selected one, or none. */
+  setSelected(id: DeployableId | undefined): void {
+    this.selected = id;
+    for (const [markerId, marker] of this.markers) {
+      marker.setSelected(markerId === id);
+    }
+  }
+
+  /** The selected installation, if any. */
+  getSelected(): DeployableId | undefined {
+    return this.selected;
   }
 
   /** Turns every installation's moving part. */
@@ -167,6 +231,7 @@ export class RegionInstallations implements FrameUpdatable, Disposable {
       marker.dispose();
     }
     this.markers.clear();
+    this.targetToId.clear();
     this.anchors.clear();
     this.obstacles = [];
     this.root.clear();

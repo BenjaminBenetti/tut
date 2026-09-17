@@ -16,6 +16,7 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { DeployablesView } from "./deployables-view";
+import { POPOVER_ID, popoverFor } from "./popover-view";
 
 const CATALOGUE = new DataDeployableTypeCatalogue(
   DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
@@ -55,14 +56,18 @@ const built = (
   id: string,
   typeId: Deployable["typeId"],
   online = true,
+  level: Deployable["level"] = 1,
 ): Deployable => ({
   id,
   typeId,
   regionId: REGION.id,
-  level: 1,
+  level,
   builtDay: 1,
   online,
 });
+
+const popover = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('[data-role="popover"]');
 
 describe("DeployablesView", () => {
   let root: HTMLElement;
@@ -79,7 +84,7 @@ describe("DeployablesView", () => {
 
   it("shows the placeholder with no region or no campaign", () => {
     const view = new DeployablesView(
-      { onBuild: vi.fn(), onDecommission: vi.fn() },
+      { onBuild: vi.fn(), onDecommission: vi.fn(), onUpgrade: vi.fn() },
       CATALOGUE,
     );
     view.mount(root);
@@ -98,7 +103,7 @@ describe("DeployablesView", () => {
 
   it("lists the region's installations with status and upkeep, and one Build button per type", () => {
     const view = new DeployablesView(
-      { onBuild: vi.fn(), onDecommission: vi.fn() },
+      { onBuild: vi.fn(), onDecommission: vi.fn(), onUpgrade: vi.fn() },
       CATALOGUE,
     );
     view.mount(root);
@@ -145,7 +150,7 @@ describe("DeployablesView", () => {
 
   it("disables Build when capped or unaffordable, with the reason in the title", () => {
     const view = new DeployablesView(
-      { onBuild: vi.fn(), onDecommission: vi.fn() },
+      { onBuild: vi.fn(), onDecommission: vi.fn(), onUpgrade: vi.fn() },
       CATALOGUE,
     );
     view.mount(root);
@@ -166,7 +171,7 @@ describe("DeployablesView", () => {
   it("reports Build with the type and region, and Decommission with the id", () => {
     const onBuild = vi.fn();
     const onDecommission = vi.fn();
-    const view = new DeployablesView({ onBuild, onDecommission }, CATALOGUE);
+    const view = new DeployablesView({ onBuild, onDecommission, onUpgrade: vi.fn() }, CATALOGUE);
     view.mount(root);
     view.update(stateWith([built("d1", "sensor-array")], 5000), REGION.id);
     buildButton("defensive-battery")?.click();
@@ -181,10 +186,110 @@ describe("DeployablesView", () => {
     expect(onDecommission).toHaveBeenCalledWith("d1");
   });
 
+  it("offers Upgrade on each row with the next level's price, disabled with the reason at the top or when unaffordable (#1155)", () => {
+    const onUpgrade = vi.fn();
+    const view = new DeployablesView(
+      { onBuild: vi.fn(), onDecommission: vi.fn(), onUpgrade },
+      CATALOGUE,
+    );
+    view.mount(root);
+    view.update(
+      stateWith(
+        [
+          built("d1", "defensive-battery"),
+          built("d2", "sensor-array", true, 3),
+          built("d3", "bank", true, 2),
+        ],
+        1600,
+      ),
+      REGION.id,
+    );
+    const upgrades = [
+      ...root.querySelectorAll<HTMLButtonElement>(
+        '[data-action="upgrade-deployable"]',
+      ),
+    ];
+    expect(upgrades.map((b) => b.textContent)).toEqual([
+      "Upgrade · ¢1,500",
+      "Upgrade",
+      "Upgrade · ¢2,000",
+    ]);
+    expect(upgrades[0]?.disabled).toBe(false);
+    expect(upgrades[0]?.title).toBe("Upgrade to L2");
+    expect(upgrades[1]?.disabled).toBe(true);
+    expect(upgrades[1]?.title).toBe("Max level");
+    expect(upgrades[2]?.disabled).toBe(true);
+    expect(upgrades[2]?.title).toBe("Need ¢2,000, have ¢1,600");
+    expect(
+      root.querySelector('[data-deployable-id="d3"] [data-field="level"]')
+        ?.textContent,
+    ).toBe("L2");
+    expect(
+      root.querySelector('[data-deployable-id="d3"] [data-field="type-name"]')
+        ?.textContent,
+    ).toBe("Bank");
+    upgrades[0]?.click();
+    expect(onUpgrade).toHaveBeenCalledWith("d1");
+    upgrades[2]?.click();
+    expect(onUpgrade).toHaveBeenCalledTimes(1);
+  });
+
+  it("resting on a Build option or an installed row opens the popover for it (#1155)", () => {
+    const view = new DeployablesView(
+      { onBuild: vi.fn(), onDecommission: vi.fn(), onUpgrade: vi.fn() },
+      CATALOGUE,
+    );
+    view.mount(root);
+    view.update(stateWith([built("d1", "sensor-array")], 900), REGION.id);
+    const option = root.querySelector<HTMLElement>(
+      '[data-role="build-option"][data-type-id="defensive-battery"]',
+    );
+    expect(option?.contains(buildButton("defensive-battery"))).toBe(true);
+    option?.dispatchEvent(new Event("mouseenter"));
+    let shown = popover();
+    expect(shown?.hidden).toBe(false);
+    expect(shown?.querySelector(".tut-popover__title")?.textContent).toBe(
+      "Defensive battery",
+    );
+    const lines = (): string[] =>
+      [...(popover()?.querySelectorAll(".tut-popover__line") ?? [])].map(
+        (l) => l.textContent ?? "",
+      );
+    expect(lines()).toEqual([
+      "1 garrison turret on every mission map",
+      "Build ¢1,500 · upkeep ¢50/day",
+      "1 per region · 0/1 built",
+      "Need ¢1,500, have ¢900",
+    ]);
+    expect(option?.getAttribute("aria-describedby")).toBe(POPOVER_ID);
+    option?.dispatchEvent(new Event("mouseleave"));
+    expect(popover()?.hidden).toBe(true);
+
+    const row = root.querySelector<HTMLElement>('[data-deployable-id="d1"]');
+    row?.dispatchEvent(new Event("mouseenter"));
+    shown = popover();
+    expect(shown?.hidden).toBe(false);
+    expect(shown?.querySelector(".tut-popover__title")?.textContent).toBe(
+      "Sensor array · L1 · online",
+    );
+    expect(lines()).toEqual([
+      "Finds infested cities at 60% of the usual infestation",
+      "Missions stay on offer 1 day longer",
+      "Upkeep ¢20/day",
+      "Upgrade to L2 · ¢1,000 · upkeep ¢35/day",
+      "Finds infested cities at 40% of the usual infestation (from 60%)",
+      "Missions stay on offer 2 days longer (from 1 day)",
+    ]);
+    // A re-render replaces the row under the pointer; the popover goes with it.
+    view.update(stateWith([built("d1", "sensor-array")], 900), REGION.id);
+    expect(popover()?.hidden).toBe(true);
+    popoverFor(document).dispose();
+  });
+
   it("unmount removes the section and stops listening", () => {
     const onBuild = vi.fn();
     const view = new DeployablesView(
-      { onBuild, onDecommission: vi.fn() },
+      { onBuild, onDecommission: vi.fn(), onUpgrade: vi.fn() },
       CATALOGUE,
     );
     view.mount(root);

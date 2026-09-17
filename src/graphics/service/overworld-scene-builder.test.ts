@@ -11,6 +11,7 @@ import type {
 import { Box3, Group, Texture, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 
+import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { SELECTION_COLOUR } from "../view/city-marker";
 import type { City } from "../../overworld/model/city";
@@ -293,6 +294,62 @@ describe("OverworldSceneBuilder", () => {
     expect(
       builder.root.getObjectByName("installation-deployable-1"),
     ).toBeUndefined();
+  });
+
+  it("picks an installation by its model through the real camera, lifts it on hover and labels it while selected (#1155)", async () => {
+    const label = new Texture();
+    const builder = new OverworldSceneBuilder({
+      assets: { models: fakeLoader(), text: { textTexture: () => label } },
+      deployableTypes: {
+        getDeployableType: (id) =>
+          id === "sensor-array"
+            ? { ...DEPLOYABLE_TYPES[id], name: "Sensor array" }
+            : undefined,
+        listDeployableTypes: () => [],
+      },
+    });
+    builder.build(EARTH_MAP);
+    builder.update(
+      stateOf(EARTH_MAP, {
+        deployables: [
+          {
+            id: "deployable-1",
+            typeId: "sensor-array",
+            regionId: "east-asia",
+            level: 1,
+            builtDay: 1,
+            online: true,
+          },
+        ],
+      }),
+    );
+    await settled();
+    const rig = makeCamera(builder);
+    const world = builder.installationWorldPosition("deployable-1");
+    if (!world) throw new Error("missing installation");
+    const ndc = new Vector3(world.x, world.y, world.z).project(rig.camera);
+    expect(builder.pickInstallation({ x: ndc.x, y: ndc.y }, rig.camera)).toBe(
+      "deployable-1",
+    );
+    // The installation is not a city, and a corner of the map is nothing.
+    expect(builder.pickCity({ x: ndc.x, y: ndc.y }, rig.camera)).toBeUndefined();
+    expect(
+      builder.pickInstallation({ x: -0.999, y: 0.999 }, rig.camera),
+    ).toBeUndefined();
+
+    const visual = builder.root.getObjectByName("installation-visual-deployable-1");
+    expect(builder.installationLook("deployable-1")?.labelVisible).toBe(false);
+    builder.setHoveredInstallation("deployable-1");
+    expect(visual?.scale.x).toBeGreaterThan(1);
+    expect(builder.installationLook("deployable-1")?.labelVisible).toBe(true);
+    builder.setHoveredInstallation(undefined);
+    expect(visual?.scale.x).toBe(1);
+    expect(builder.installationLook("deployable-1")?.labelVisible).toBe(false);
+    builder.setSelectedInstallation("deployable-1");
+    expect(builder.getSelectedInstallation()).toBe("deployable-1");
+    expect(builder.installationLook("deployable-1")?.labelVisible).toBe(true);
+    builder.setSelectedInstallation(undefined);
+    expect(builder.installationLook("deployable-1")?.labelVisible).toBe(false);
   });
 
   it("picks settlements through the real camera too", () => {

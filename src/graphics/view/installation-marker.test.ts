@@ -8,6 +8,7 @@ import { DEPLOYABLE_ANIMATED_NODE } from "../data/overworld-model-table";
 import type { ModelLoader } from "../model/model-loader";
 import type { InstallationLook } from "./installation-marker";
 import {
+  INSTALLATION_HOVER_SCALE,
   INSTALLATION_STAND_IN_HEIGHT,
   InstallationMarker,
   OFFLINE_DIM,
@@ -64,12 +65,18 @@ function loader(
   };
 }
 
-function look(models: ModelLoader | undefined): InstallationLook {
+function look(
+  models: ModelLoader | undefined,
+  extra: Partial<InstallationLook> = {},
+): InstallationLook {
   return {
+    ...extra,
     models,
     animations: DEPLOYABLE_ANIMATIONS,
     falloff: new Texture(),
     standIn: new BoxGeometry(0.45, INSTALLATION_STAND_IN_HEIGHT, 0.45),
+    pick: new BoxGeometry(0.45, 0.4, 0.45),
+    footprint: 0.45,
   };
 }
 
@@ -214,6 +221,51 @@ describe("InstallationMarker (#1155)", () => {
     expect((block.material as MeshStandardMaterial).opacity).toBe(
       OFFLINE_OPACITY,
     );
+  });
+
+  it("carries a hidden pick solid, and shows the type's name while hovered or selected (#1155)", async () => {
+    const label = new Texture();
+    const asked: string[] = [];
+    const marker = new InstallationMarker(deployable(), AT, look(loader(), {
+      text: {
+        textTexture: (text) => {
+          asked.push(text);
+          return label;
+        },
+      },
+      nameOf: () => "Sensor array",
+    }));
+    await settled();
+    expect(asked).toEqual(["Sensor array"]);
+    expect(marker.pickTarget.visible).toBe(false);
+    expect(marker.pickTarget.parent).toBe(marker.object);
+    const sprite = marker.object.getObjectByName("installation-label-deployable-1");
+    expect(sprite?.visible).toBe(false);
+    expect(marker.look().labelVisible).toBe(false);
+    marker.setHovered(true);
+    expect(sprite?.visible).toBe(true);
+    expect(
+      marker.object.getObjectByName("installation-visual-deployable-1")?.scale.x,
+    ).toBe(INSTALLATION_HOVER_SCALE);
+    marker.setHovered(false);
+    expect(sprite?.visible).toBe(false);
+    marker.setSelected(true);
+    expect(marker.look().labelVisible).toBe(true);
+    // The model stands in the visual group, so growing it leaves the pick solid alone.
+    expect(marker.pickTarget.scale.x).toBe(1);
+    marker.dispose();
+    expect(marker.object.children).toHaveLength(0);
+  });
+
+  it("labels with the type id when nothing names the types, and draws no label without a text source", () => {
+    const asked: string[] = [];
+    new InstallationMarker(deployable(), AT, look(undefined, {
+      text: { textTexture: (text) => { asked.push(text); return new Texture(); } },
+    }));
+    expect(asked).toEqual(["sensor-array"]);
+    const bare = new InstallationMarker(deployable(), AT, look(undefined));
+    expect(bare.object.getObjectByName("installation-label-deployable-1")).toBeUndefined();
+    expect(bare.look().labelVisible).toBe(false);
   });
 
   it("drops a model that loads after disposal and detaches itself", async () => {

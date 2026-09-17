@@ -1,5 +1,5 @@
 import type { BufferGeometry, Material, Object3D, Texture, Color } from "three";
-import { Group, Mesh, MeshBasicMaterial } from "three";
+import { Group, Mesh, MeshBasicMaterial, Sprite, SpriteMaterial } from "three";
 
 import type { Vec3 } from "../../core/model/grid";
 import type {
@@ -15,6 +15,8 @@ import type { DeployableAnimation } from "../model/deployable-animation";
 import type { Disposable } from "../model/disposable";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { ModelLoader } from "../model/model-loader";
+import type { TextTextureSource } from "../model/text-texture-source";
+import { textureAspect } from "../service/texture-aspect";
 import { SprayPuffs } from "./spray-puffs";
 
 // ===========================================
@@ -36,6 +38,21 @@ export const INSTALLATION_STAND_IN_HEIGHT = 0.29;
 /** Prefix the model loader's fallback factory gives a placeholder's root name. */
 const PLACEHOLDER_PREFIX = "placeholder:";
 
+/** How much a hovered installation grows, so the pointer's find reads on the map. */
+export const INSTALLATION_HOVER_SCALE = 1.15;
+
+/** Name label height in world units; a touch under the city label so the type name reads as a caption. */
+const LABEL_HEIGHT = 0.16;
+
+/** Height the label floats at so it never z-fights the model's base. */
+const LABEL_LIFT = 0.02;
+
+/** How far south of the installation its name sits, in footprints. */
+const LABEL_OFFSET_SOUTH = 0.9;
+
+/** Draw order of the label: after everything, like the city names (#1155). */
+const LABEL_RENDER_ORDER = 100;
+
 // ===========================================
 // Types
 // ===========================================
@@ -50,6 +67,14 @@ export interface InstallationLook {
   readonly falloff: Texture;
   /** Block drawn instead of a model when there is no loader; owned by the builder. */
   readonly standIn: BufferGeometry;
+  /** Invisible solid the pointer raycasts against; owned by the builder. */
+  readonly pick: BufferGeometry;
+  /** Side of the square footprint the models are authored on; places the label. */
+  readonly footprint: number;
+  /** Rasterises the type name for the hover label; absent draws no label. */
+  readonly text?: TextTextureSource | undefined;
+  /** The display name of each type, for the label; absent labels with the type id. */
+  readonly nameOf?: (typeId: DeployableTypeId) => string;
 }
 
 /** Which installation visual a marker currently shows. */
@@ -67,6 +92,8 @@ export interface InstallationLookReport {
   readonly animatedYaw: number | undefined;
   /** True while a spray of puffs is attached to the moving part. */
   readonly spraying: boolean;
+  /** True while the name label is drawn: hovered or selected. */
+  readonly labelVisible: boolean;
 }
 
 /** A material the marker dimmed, with the colour to restore. */
@@ -89,8 +116,13 @@ interface OwnedMaterial {
  * ```
  *   new InstallationMarker(deployable, at, look)  ──► model fetched, stood at `at`
  *   setOnline(false)                             ──► materials darkened and made translucent
+ *   setHovered(true) / setSelected(true)         ──► model grown, name label shown
  *   update(dt)                                   ──► `animated` yawed per the type's animation
  * ```
+ *
+ * An invisible pick solid the size of the footprint stands under the
+ * model, so the pointer hits the same volume whether the GLB has
+ * loaded, failed or is a stand-in block (#1155).
  *
  * A clone from the loader shares its materials with every other clone,
  * so dimming replaces them with copies this marker owns and disposes.
@@ -104,7 +136,15 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
   readonly typeId: DeployableTypeId;
   /** Add this to the scene; it carries the model. */
   readonly object: Group;
+  /** Raycast this to hit-test the installation; the scene maps it back to the id. */
+  readonly pickTarget: Object3D;
   private readonly animation: DeployableAnimation;
+  /** The model or stand-in, grown while hovered; the label and pick solid stay put. */
+  private readonly visual: Group;
+  private readonly label: Sprite | undefined;
+  private readonly labelMaterial: SpriteMaterial | undefined;
+  private hovered = false;
+  private selected = false;
   private readonly falloff: Texture;
   private readonly owned: OwnedMaterial[] = [];
   private standInMaterial: MeshBasicMaterial | undefined;
@@ -132,6 +172,17 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
     this.object = new Group();
     this.object.name = `installation-${deployable.id}`;
     this.object.position.set(at.x, at.y, at.z);
+
+    const pick = new Mesh(look.pick);
+    pick.name = `installation-body-${deployable.id}`;
+    pick.visible = false;
+    this.pickTarget = pick;
+    this.object.add(pick);
+
+    this.visual = new Group();
+    this.visual.name = `installation-visual-${deployable.id}`;
+    this.object.add(this.visual);
+
     if (look.models) {
       this.modelState = "loading";
       void this.loadModel(look.models);
@@ -141,11 +192,33 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
       const block = new Mesh(look.standIn, this.standInMaterial);
       block.name = `installation-stand-in-${deployable.id}`;
       block.position.y = INSTALLATION_STAND_IN_HEIGHT / 2;
-      this.object.add(block);
+      this.visual.add(block);
       this.owned.push({
         material: this.standInMaterial,
         colour: this.standInMaterial.color.clone(),
       });
+    }
+
+    const name = look.nameOf?.(deployable.typeId) ?? deployable.typeId;
+    const labelTexture = look.text?.textTexture(name);
+    if (labelTexture) {
+      // A cue, not a thing in the scene: ignores depth and draws last,
+      // like the city names, so no neighbour stands in front of it.
+      const material = new SpriteMaterial({
+        map: labelTexture,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      });
+      const sprite = new Sprite(material);
+      sprite.scale.set(LABEL_HEIGHT * textureAspect(labelTexture), LABEL_HEIGHT, 1);
+      sprite.position.set(0, LABEL_LIFT, look.footprint * LABEL_OFFSET_SOUTH);
+      sprite.renderOrder = LABEL_RENDER_ORDER;
+      sprite.visible = false;
+      sprite.name = `installation-label-${deployable.id}`;
+      this.label = sprite;
+      this.labelMaterial = material;
+      this.object.add(sprite);
     }
     this.setOnline(deployable.online);
   }
@@ -165,6 +238,19 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
     this.applyStrength();
   }
 
+  /** Grows the model and shows its name while the pointer rests on it. */
+  setHovered(hovered: boolean): void {
+    this.hovered = hovered;
+    this.visual.scale.setScalar(hovered ? INSTALLATION_HOVER_SCALE : 1);
+    this.refreshCues();
+  }
+
+  /** Keeps the name shown while the installation is the one picked. */
+  setSelected(selected: boolean): void {
+    this.selected = selected;
+    this.refreshCues();
+  }
+
   /** Turns the `animated` node on by the type's idle and drifts the spray. */
   update(deltaSeconds: number): void {
     this.clock += deltaSeconds;
@@ -182,6 +268,7 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
       model: this.modelState,
       animatedYaw: this.animated?.rotation.y,
       spraying: this.spray !== undefined,
+      labelVisible: this.label?.visible ?? false,
     };
   }
 
@@ -200,6 +287,8 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
     this.owned.length = 0;
     this.standInMaterial = undefined;
     this.animated = undefined;
+    // The label texture belongs to the text source; only the material is ours.
+    this.labelMaterial?.dispose();
     this.object.clear();
     this.object.removeFromParent();
   }
@@ -217,7 +306,7 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
     this.modelState = isPlaceholder(model) ? "placeholder" : "glb";
     model.name = `installation-model-${this.id}`;
     this.ownMaterials(model);
-    this.object.add(model);
+    this.visual.add(model);
     this.animated = model.getObjectByName(DEPLOYABLE_ANIMATED_NODE);
     if (
       this.animated &&
@@ -274,6 +363,13 @@ export class InstallationMarker implements FrameUpdatable, Disposable {
       this.spray.root.visible = this.online;
     }
   }
+
+  /** The name follows hover and selection, and only those: no label on an installation nobody is looking at. */
+  private refreshCues(): void {
+    if (this.label) {
+      this.label.visible = this.hovered || this.selected;
+    }
+  }
 }
 
 // ===========================================
@@ -294,3 +390,5 @@ export function yawAt(animation: DeployableAnimation, t: number): number {
 function isPlaceholder(model: Object3D): boolean {
   return model.name.startsWith(PLACEHOLDER_PREFIX);
 }
+
+

@@ -12,9 +12,12 @@ import {
   levelSpec,
 } from "../../overworld/model/deployable-type";
 import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
+import { nextDeployableLevel } from "../../overworld/model/deployable-level";
 import type { RegionId } from "../../overworld/model/region";
 import type { GameState } from "../../save/model/game-state";
+import { buildPopover, installedPopover, MAX_LEVEL_LINE } from "../service/deployable-popover";
 import { formatCredits } from "../service/format";
+import { attachPopover, popoverFor } from "./popover-view";
 
 // ===========================================
 // Types
@@ -26,6 +29,8 @@ export interface DeployablesViewHandlers {
   readonly onBuild: (typeId: DeployableTypeId, regionId: RegionId) => void;
   /** The player pressed Decommission on an installation. */
   readonly onDecommission: (deployableId: DeployableId) => void;
+  /** The player pressed Upgrade on an installation. */
+  readonly onUpgrade: (deployableId: DeployableId) => void;
 }
 
 // ===========================================
@@ -34,25 +39,29 @@ export interface DeployablesViewHandlers {
 
 /**
  * The selected region's installations (GDD §5.6): what is built, with
- * its level, status and upkeep at that level and a Decommission button,
- * then under a Build heading one button per type showing the level 1
- * cost, upkeep and how many of the cap are used (#1151). A button is
- * disabled when the treasury cannot cover the cost or the region is at
- * the type's cap; the reason is in the button's title. Upgrades are not
- * offered here yet: the installation wheel (#1155) will carry them.
+ * its level, status and upkeep at that level, an Upgrade button naming
+ * the next level's price and a Decommission button, then under a Build
+ * heading one button per type showing the level 1 cost, upkeep and how
+ * many of the cap are used (#1151). A button is disabled when the
+ * treasury cannot cover the cost, the region is at the type's cap or
+ * the installation is at the top of the ladder; the reason is in the
+ * button's title. Resting on a row or a Build option opens the popover
+ * that says what the thing does, what it costs to run and what the next
+ * level adds (#1155), read from the catalogue by `deployable-popover`.
  *
  * ```
  *   DEPLOYABLES · North America East
- *   ├ Defensive battery  L2  online   ¢80/day   [Decommission]
- *   ├ Sensor array       L1  offline  ¢20/day   [Decommission]
+ *   ├ Defensive battery  L2  online   ¢80/day   [Upgrade · ¢2,000] [Decommission]
+ *   ├ Sensor array       L1  offline  ¢20/day   [Upgrade · ¢1,000] [Decommission]
  *   BUILD
- *   [Defensive battery · L1 · ¢1,500 · 1/1]
+ *   [Defensive battery · L1 · ¢1,500 · 1/1]  ◄── hover: popover
  *   [Repellent dispersal · L1 · ¢1,000 · 0/1]  …
  * ```
  *
  * The lists are rebuilt on every update (they are a handful of rows);
- * one delegated click listener on the section serves every button; a
- * Decommission button finds its installation from the row it sits in.
+ * one delegated click listener on the section serves every button; an
+ * Upgrade or Decommission button finds its installation from the row
+ * it sits in.
  */
 export class DeployablesView {
   // ===========================================
@@ -166,11 +175,14 @@ export class DeployablesView {
     const held = state.overworld.deployables.filter(
       (d) => d.regionId === region.id,
     );
-    this.renderList(held);
+    this.renderList(held, state.economy.credits);
     this.renderBuilds(held, state.economy.credits);
     this.list.hidden = held.length === 0;
     this.builds.hidden = false;
     this.empty.hidden = true;
+    // The rows were just replaced: a popover open for one of the old
+    // ones would otherwise float beside nothing.
+    popoverFor(this.list.ownerDocument).hideIfDetached();
   }
 
   /** Removes the section and its listener. */
@@ -191,8 +203,8 @@ export class DeployablesView {
   // Rendering
   // ===========================================
 
-  /** One row per built installation in the region. */
-  private renderList(held: readonly Deployable[]): void {
+  /** One row per built installation in the region, with the popover on the row. */
+  private renderList(held: readonly Deployable[], credits: number): void {
     if (!this.list) {
       return;
     }
@@ -203,9 +215,13 @@ export class DeployablesView {
       const row = doc.createElement("li");
       row.dataset.deployableId = deployable.id;
       row.dataset.typeId = deployable.typeId;
+      if (type) {
+        attachPopover(row, () => installedPopover(type, deployable));
+      }
 
       const name = doc.createElement("span");
       name.className = "tut-data";
+      name.dataset.field = "type-name";
       name.textContent = type?.name ?? deployable.typeId;
 
       const level = doc.createElement("span");
@@ -225,13 +241,34 @@ export class DeployablesView {
           ? "—"
           : `${formatCredits(levelSpec(type, deployable.level).upkeepPerDay)}/day`;
 
+      const actions = doc.createElement("span");
+      actions.className = "tut-deployables__actions";
+
+      const upgrade = doc.createElement("button");
+      upgrade.type = "button";
+      upgrade.className = "tut-btn";
+      upgrade.dataset.action = "upgrade-deployable";
+      const next = nextDeployableLevel(deployable.level);
+      if (type === undefined || next === undefined) {
+        upgrade.textContent = "Upgrade";
+        upgrade.disabled = true;
+        upgrade.title = MAX_LEVEL_LINE;
+      } else {
+        const cost = levelSpec(type, next).buildCost;
+        upgrade.textContent = `Upgrade · ${formatCredits(cost)}`;
+        const reason = this.upgradeBlocker(cost, credits);
+        upgrade.disabled = reason !== undefined;
+        upgrade.title = reason ?? `Upgrade to L${String(next)}`;
+      }
+
       const remove = doc.createElement("button");
       remove.type = "button";
       remove.className = "tut-btn tut-btn--danger";
       remove.dataset.action = "decommission-deployable";
       remove.textContent = "Decommission";
 
-      row.append(name, level, status, upkeep, remove);
+      actions.append(upgrade, remove);
+      row.append(name, level, status, upkeep, actions);
       this.list.appendChild(row);
     }
   }
@@ -261,8 +298,26 @@ export class DeployablesView {
       button.title =
         reason ??
         `${type.description} Upkeep ${formatCredits(first.upkeepPerDay)} per day.`;
-      this.builds.appendChild(button);
+      // The popover anchors to a wrapper, because a disabled button
+      // swallows the pointer events that would open it.
+      const option = doc.createElement("div");
+      option.className = "tut-deployables__option";
+      option.dataset.role = "build-option";
+      option.dataset.typeId = type.id;
+      option.appendChild(button);
+      attachPopover(option, () =>
+        buildPopover(type, { held: count, blocker: reason }),
+      );
+      this.builds.appendChild(option);
     }
+  }
+
+  /** Why an installation cannot be upgraded right now, or undefined when it can. */
+  private upgradeBlocker(cost: number, credits: number): string | undefined {
+    if (credits < cost) {
+      return `Need ${formatCredits(cost)}, have ${formatCredits(credits)}`;
+    }
+    return undefined;
   }
 
   /** Why a type cannot be built right now, or undefined when it can. */
@@ -285,7 +340,7 @@ export class DeployablesView {
   // Events
   // ===========================================
 
-  /** Routes a click on a Build or Decommission button to its handler. */
+  /** Routes a click on a Build, Upgrade or Decommission button to its handler. */
   private handleClick(event: Event): void {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
@@ -306,6 +361,8 @@ export class DeployablesView {
       this.handlers.onBuild(typeId, this.regionId);
     } else if (action === "decommission-deployable" && deployableId) {
       this.handlers.onDecommission(deployableId);
+    } else if (action === "upgrade-deployable" && deployableId) {
+      this.handlers.onUpgrade(deployableId);
     }
   }
 }

@@ -26,7 +26,16 @@ import type { StoreListener } from "../model/state-store";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { deployableBuildCost } from "../../overworld/model/deployable-type";
 import { BUILD_DEPLOYABLE } from "../../overworld/model/build-deployable-command";
-import { DECOMMISSION_DEPLOYABLE } from "../../overworld/model/decommission-deployable-command";
+import {
+  DECOMMISSION_DEPLOYABLE,
+  decommissionDeployable,
+} from "../../overworld/model/decommission-deployable-command";
+import { nextDeployableLevel } from "../../overworld/model/deployable-level";
+import { levelSpec } from "../../overworld/model/deployable-type";
+import {
+  UPGRADE_DEPLOYABLE,
+  upgradeDeployable,
+} from "../../overworld/model/upgrade-deployable-command";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import { MISSION_TYPES } from "../../content/data/mission-types";
@@ -38,6 +47,7 @@ import { DataEventTypeCatalogue } from "../../overworld/repository/event-type-ca
 import type { Mission } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { CityPickSource } from "../model/city-pick-source";
+import type { InstallationPickSource } from "../model/installation-pick-source";
 import type { ScreenAnchor } from "../view/radial-menu-view";
 import { OverworldSelectionState } from "../service/overworld-selection-state";
 import { OverworldScreen } from "./overworld-screen";
@@ -68,6 +78,7 @@ class FakeStore implements CampaignStore {
   >();
   fail = false;
   readonly resolved: string[] = [];
+  readonly dispatched: OverworldCommand[] = [];
   constructor(state: GameState) {
     this.state = state;
   }
@@ -83,10 +94,36 @@ class FakeStore implements CampaignStore {
     };
   }
   dispatch(command: OverworldCommand) {
+    this.dispatched.push(command);
     if (this.fail) {
       return err(commandError("campaign-over", "The campaign has ended"));
     }
-    if (command.type === BUILD_DEPLOYABLE) {
+    if (command.type === UPGRADE_DEPLOYABLE) {
+      const held = this.state.overworld.deployables.find(
+        (d) => d.id === command.payload.deployableId,
+      );
+      const next = held ? nextDeployableLevel(held.level) : undefined;
+      if (!held || next === undefined) {
+        return err(commandError("max-level-reached", "Already at max level"));
+      }
+      const cost = levelSpec(DEPLOYABLE_TYPES[held.typeId], next).buildCost;
+      if (this.state.economy.credits < cost) {
+        return err(commandError("insufficient-credits", "Not enough credits"));
+      }
+      this.state = {
+        ...this.state,
+        overworld: {
+          ...this.state.overworld,
+          deployables: this.state.overworld.deployables.map((d) =>
+            d.id === held.id ? { ...d, level: next } : d,
+          ),
+        },
+        economy: {
+          ...this.state.economy,
+          credits: this.state.economy.credits - cost,
+        },
+      };
+    } else if (command.type === BUILD_DEPLOYABLE) {
       const type = DEPLOYABLE_TYPES[command.payload.typeId];
       this.state = {
         ...this.state,
@@ -241,12 +278,40 @@ class FakePicks implements CityPickSource {
   }
 }
 
+/**
+ * A map that reports installation picks on demand and places every
+ * installation at a fixed screen point unless told otherwise (#1155).
+ */
+class FakeInstallationPicks implements InstallationPickSource {
+  readonly positions = new Map<string, ScreenAnchor | undefined>();
+  private readonly listeners = new Set<(id: string) => void>();
+  onInstallationPicked(listener: (id: string) => void): Unsubscribe {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+  installationScreenPosition(id: string): ScreenAnchor | undefined {
+    return this.positions.has(id) ? this.positions.get(id) : { x: 120, y: 80 };
+  }
+  /** A pointer pick on the model. */
+  pick(id: string): void {
+    for (const listener of [...this.listeners]) {
+      listener(id);
+    }
+  }
+  get listenerCount(): number {
+    return this.listeners.size;
+  }
+}
+
 /** Screen deps around a store, with a fresh selection unless one is given. */
 const depsFor = (
   store: CampaignStore | undefined,
   router: ScreenRouter = fakeRouter().router,
   selection = newSelection(),
   cityPicks?: CityPickSource,
+  installationPicks?: InstallationPickSource,
 ) => ({
   router,
   session: sessionWith(store),
@@ -255,6 +320,7 @@ const depsFor = (
   missionTypes: MISSION_TYPES,
   eventTypes: EVENT_TYPES_CATALOGUE,
   ...(cityPicks === undefined ? {} : { cityPicks }),
+  ...(installationPicks === undefined ? {} : { installationPicks }),
 });
 
 const fakeRouter = (): { router: ScreenRouter; navigate: NavigateMock } => {
@@ -828,6 +894,179 @@ describe("OverworldScreen", () => {
     button("advance-day").click();
     expect(wheel()?.hidden).toBe(false);
     expect(wheelItems()).toEqual(["region"]);
+  });
+
+  // ===========================================
+  // Installation wheel (#1155)
+  // ===========================================
+
+  /** A campaign holding one level 1 battery in Tokyo's region, with `credits`. */
+  const withBattery = (credits: number, level: 1 | 2 | 3 = 1): GameState => {
+    const base = newGame();
+    return {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        deployables: [
+          {
+            id: "deployable-1",
+            typeId: "defensive-battery",
+            regionId: "east-asia",
+            level,
+            builtDay: 1,
+            online: true,
+          },
+        ],
+      },
+      economy: { ...base.economy, credits },
+    };
+  };
+
+  it("an installation pick opens the wheel at the model with the level, type and effect at the hub, and Upgrade, Decommission and Region on the ring", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(new FakeStore(withBattery(5000)), undefined, selection, undefined, picks),
+    ).mount(root);
+    expect(wheel()?.hidden).toBe(true);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    expect(wheel()?.style.left).toBe("120px");
+    expect(wheel()?.style.top).toBe("80px");
+    expect(field("hub-value")?.textContent).toBe("L1");
+    expect(
+      root.querySelector("#radial-menu .tut-radial__caption")?.textContent,
+    ).toBe("Defensive battery · online");
+    expect(field("hub-note")?.textContent).toBe(
+      "1 garrison turret on every mission map",
+    );
+    expect(wheelItems()).toEqual(["upgrade", "decommission", "region"]);
+    expect(
+      root.querySelector<HTMLButtonElement>('#radial-menu [data-item="upgrade"]')
+        ?.textContent,
+    ).toContain("¢1,500");
+  });
+
+  it("Upgrade on the wheel dispatches the upgrade, closes the wheel, and the row reads L2", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const store = new FakeStore(withBattery(5000));
+    new OverworldScreen(
+      depsFor(store, undefined, selection, undefined, picks),
+    ).mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    root
+      .querySelector<HTMLButtonElement>('#radial-menu [data-item="upgrade"]')
+      ?.click();
+    expect(wheel()?.hidden).toBe(true);
+    expect(store.dispatched.at(-1)).toEqual(upgradeDeployable("deployable-1"));
+    expect(
+      root.querySelector('#deployables [data-deployable-id="deployable-1"] [data-field="level"]')
+        ?.textContent,
+    ).toBe("L2");
+    expect(store.getState().economy.credits).toBe(3500);
+  });
+
+  it("Decommission on the wheel dispatches the removal; Region lands on the region panel", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const store = new FakeStore(withBattery(5000));
+    new OverworldScreen(
+      depsFor(store, undefined, selection, undefined, picks),
+    ).mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    root
+      .querySelector<HTMLButtonElement>('#radial-menu [data-item="region"]')
+      ?.click();
+    expect(wheel()?.hidden).toBe(true);
+    expect(document.activeElement).toBe(root.querySelector("#region-panel"));
+    picks.pick("deployable-1");
+    root
+      .querySelector<HTMLButtonElement>(
+        '#radial-menu [data-item="decommission"]',
+      )
+      ?.click();
+    expect(store.dispatched.at(-1)).toEqual(
+      decommissionDeployable("deployable-1"),
+    );
+    expect(wheel()?.hidden).toBe(true);
+    expect(
+      root.querySelector('#deployables [data-deployable-id="deployable-1"]'),
+    ).toBeNull();
+  });
+
+  it("a rejected upgrade shows the reason in the bar and keeps the level", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const store = new FakeStore(withBattery(100));
+    new OverworldScreen(
+      depsFor(store, undefined, selection, undefined, picks),
+    ).mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    const upgrade = root.querySelector<HTMLButtonElement>(
+      '#radial-menu [data-item="upgrade"]',
+    );
+    expect(upgrade?.disabled).toBe(true);
+    expect(upgrade?.title).toBe("Need ¢1,500, have ¢100");
+    // The panel's button is disabled for the same reason; a forced
+    // dispatch surfaces the store's refusal the way a build does.
+    const rowUpgrade = root.querySelector<HTMLButtonElement>(
+      '#deployables [data-action="upgrade-deployable"]',
+    );
+    expect(rowUpgrade?.disabled).toBe(true);
+    rowUpgrade?.removeAttribute("disabled");
+    rowUpgrade?.click();
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toContain("credits");
+    expect(field("hub-value")?.textContent).toBe("L1");
+  });
+
+  it("a city selection, a click at sea, Escape and unmount dismiss the installation wheel", () => {
+    const picks = new FakeInstallationPicks();
+    const selection = newSelection();
+    const screen = new OverworldScreen(
+      depsFor(new FakeStore(withBattery(5000)), undefined, selection, undefined, picks),
+    );
+    screen.mount(root);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    // A city in the same region is another selection.
+    selection.select("tokyo");
+    expect(wheel()?.hidden).toBe(true);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    // A click at sea clears the selection.
+    selection.selectRegion(undefined);
+    expect(wheel()?.hidden).toBe(true);
+    selection.selectRegion("east-asia");
+    picks.pick("deployable-1");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(wheel()?.hidden).toBe(true);
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(false);
+    screen.unmount();
+    expect(root.querySelector("#radial-menu")).toBeNull();
+    expect(picks.listenerCount).toBe(0);
+  });
+
+  it("opens nothing for an installation the map is not drawing or that is not in the campaign", () => {
+    const picks = new FakeInstallationPicks();
+    picks.positions.set("deployable-1", undefined);
+    const selection = newSelection();
+    new OverworldScreen(
+      depsFor(new FakeStore(withBattery(5000)), undefined, selection, undefined, picks),
+    ).mount(root);
+    picks.pick("deployable-1");
+    expect(wheel()?.hidden).toBe(true);
+    picks.pick("deployable-9");
+    expect(wheel()?.hidden).toBe(true);
   });
 
   // ===========================================

@@ -6,8 +6,13 @@ import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { SceneCamera } from "../model/scene-camera";
 import type { CityId } from "../../overworld/model/city";
 import type { CityPicker } from "../model/city-picker";
+import type { InstallationPicker } from "../model/installation-picker";
 import type { OverworldPick } from "../model/overworld-pick";
-import { cityPick, regionPick } from "../model/overworld-pick";
+import {
+  cityPick,
+  installationPick,
+  regionPick,
+} from "../model/overworld-pick";
 import type { RegionPicker } from "../model/region-picker";
 import type { Picker, PickingSurface } from "./picking-controller";
 import {
@@ -82,13 +87,28 @@ class FakePicker implements Picker<string> {
  * An overworld scene as the composite adapter sees it: a city on the
  * left third, its region's land across the left half, sea to the right.
  */
-class FakeOverworldScene implements CityPicker, RegionPicker {
+class FakeOverworldScene
+  implements CityPicker, InstallationPicker, RegionPicker
+{
   readonly calls: string[] = [];
   pickCity(ndc: Vec2, _camera: Camera): CityId | undefined {
     return ndc.x < -0.5 ? "london" : undefined;
   }
+  /** Stands between London and the open land, so the order of the asks shows. */
+  pickInstallation(ndc: Vec2, _camera: Camera): string | undefined {
+    return ndc.x < -0.3 ? "deployable-1" : undefined;
+  }
   pickRegion(ndc: Vec2, _camera: Camera): string | undefined {
     return ndc.x < 0 ? "western-europe" : undefined;
+  }
+  setHoveredInstallation(id: string | undefined): void {
+    this.calls.push(`hover-installation:${id ?? "none"}`);
+  }
+  setSelectedInstallation(id: string | undefined): void {
+    this.calls.push(`select-installation:${id ?? "none"}`);
+  }
+  installationWorldPosition(id: string): Vec3 | undefined {
+    return id === "deployable-1" ? { x: 3, y: 0, z: 4 } : undefined;
   }
   setHovered(id: CityId | undefined): void {
     this.calls.push(`hover-city:${id ?? "none"}`);
@@ -274,11 +294,14 @@ describe("PickingController", () => {
     expect(at.y).toBeCloseTo(surface.rect.top + surface.rect.height / 2, 0);
   });
 
-  it("picks a city over its region's land, the land over the sea, and reports a sea click as a miss (#1155)", () => {
+  it("picks a city over an installation, an installation over its region's land, the land over the sea, and reports a sea click as a miss (#1155)", () => {
     const scene = new FakeOverworldScene();
     const adapted = overworldPickerAdapter(scene);
     const camera = sceneCamera().camera;
     expect(adapted.pick({ x: -0.8, y: 0 }, camera)).toEqual(cityPick("london"));
+    expect(adapted.pick({ x: -0.4, y: 0 }, camera)).toEqual(
+      installationPick("deployable-1"),
+    );
     expect(adapted.pick({ x: -0.2, y: 0 }, camera)).toEqual(
       regionPick("western-europe"),
     );
@@ -294,23 +317,34 @@ describe("PickingController", () => {
     });
     const surface = new FakeSurface();
     controller.attach(surface.asSurface());
-    // Land: the region alone is selected, the city cleared.
+    // Land: the region alone is selected, the city and installation cleared.
     surface.dispatch("pointerdown", { clientX: 160, clientY: 200 });
     surface.dispatch("pointerup", { clientX: 160, clientY: 200 });
     expect(selected).toEqual([regionPick("western-europe")]);
-    expect(scene.calls.slice(-2)).toEqual([
+    expect(scene.calls.slice(-3)).toEqual([
       "select-city:none",
+      "select-installation:none",
       "select-region:western-europe",
     ]);
-    // City: the city is selected, the bare region cleared.
+    // City: the city is selected, the rest cleared.
     surface.dispatch("pointerdown", { clientX: 20, clientY: 200 });
     surface.dispatch("pointerup", { clientX: 20, clientY: 200 });
     expect(selected).toEqual([
       regionPick("western-europe"),
       cityPick("london"),
     ]);
-    expect(scene.calls.slice(-2)).toEqual([
+    expect(scene.calls.slice(-3)).toEqual([
       "select-city:london",
+      "select-installation:none",
+      "select-region:none",
+    ]);
+    // Installation: it is selected, the city and bare region cleared.
+    surface.dispatch("pointerdown", { clientX: 120, clientY: 200 });
+    surface.dispatch("pointerup", { clientX: 120, clientY: 200 });
+    expect(selected.at(-1)).toEqual(installationPick("deployable-1"));
+    expect(scene.calls.slice(-3)).toEqual([
+      "select-city:none",
+      "select-installation:deployable-1",
       "select-region:none",
     ]);
     // Sea: nothing selected, the miss reported; a drag there is neither.
@@ -320,8 +354,11 @@ describe("PickingController", () => {
     surface.dispatch("pointerdown", { clientX: 300, clientY: 200 });
     surface.dispatch("pointerup", { clientX: 340, clientY: 200 });
     expect(missed).toBe(1);
-    expect(selected).toHaveLength(2);
+    expect(selected).toHaveLength(3);
     expect(controller.screenPositionOf(cityPick("london"))).toBeDefined();
+    expect(
+      controller.screenPositionOf(installationPick("deployable-1")),
+    ).toBeDefined();
     expect(
       controller.screenPositionOf(regionPick("western-europe")),
     ).toBeUndefined();
@@ -338,14 +375,21 @@ describe("PickingController", () => {
     controller.attach(surface.asSurface());
     surface.dispatch("pointermove", { clientX: 160, clientY: 200 });
     surface.dispatch("pointermove", { clientX: 170, clientY: 200 });
+    surface.dispatch("pointermove", { clientX: 120, clientY: 200 });
     surface.dispatch("pointermove", { clientX: 20, clientY: 200 });
     surface.dispatch("pointermove", { clientX: 300, clientY: 200 });
     expect(scene.calls).toEqual([
       "hover-city:none",
+      "hover-installation:none",
       "hover-region:western-europe",
+      "hover-city:none",
+      "hover-installation:deployable-1",
+      "hover-region:none",
       "hover-city:london",
+      "hover-installation:none",
       "hover-region:none",
       "hover-city:none",
+      "hover-installation:none",
       "hover-region:none",
     ]);
   });

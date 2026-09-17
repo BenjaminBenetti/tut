@@ -16,12 +16,15 @@ import {
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CityId } from "../../overworld/model/city";
 import type { DeployableId } from "../../overworld/model/deployable";
+import type { DeployableTypeId } from "../../overworld/model/deployable-type";
+import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
 import type { EarthMap } from "../../overworld/model/earth-map";
 import type { RegionId } from "../../overworld/model/region";
 import { citiesInRegion } from "../../overworld/service/earth-map-query-service";
 import { DEPLOYABLE_ANIMATIONS } from "../data/deployable-animations";
 import { EARTH_COASTLINES } from "../data/earth-coastlines";
 import type { CityPicker } from "../model/city-picker";
+import type { InstallationPicker } from "../model/installation-picker";
 import type { RegionPicker } from "../model/region-picker";
 import type { EarthCoastlines } from "../model/earth-coastlines";
 import type { FrameUpdatable } from "../model/frame-updatable";
@@ -71,6 +74,8 @@ export interface OverworldSceneBuilderOptions {
   readonly coastlines?: EarthCoastlines;
   /** Which architectural family each region's settlements wear; defaults to the shipped table (#1155). */
   readonly styles?: SettlementStyleSource;
+  /** Names the installation types for their hover labels; defaults to labelling with the type id. */
+  readonly deployableTypes?: DeployableTypeCatalogue;
 }
 
 // ===========================================
@@ -97,6 +102,9 @@ const GROUND_PLANE = new Plane(new Vector3(0, 1, 0), 0);
  * reject it.
  */
 const MARKER_SEGMENTS = 12;
+
+/** Installation pick solid radius over half the footprint (#1155). */
+const INSTALLATION_PICK_SCALE = 1.2;
 
 /**
  * Corner brackets relative to half the settlement footprint: just
@@ -142,12 +150,13 @@ const SKY_FILL_INTENSITY = 0.7;
  *   update(state)  ─▶  markers retinted and egg-cued, installations synced, territories retinted
  *   animator       ─▶  tick every frame: installations idle
  *   pickCity()     ─▶  raycast against marker pick solids
+ *   pickInstallation() ─▶  raycast against the installations' pick solids
  *   pickRegion()   ─▶  raycast the ground, then the cell the point falls in, on claimable land
  *   dispose()      ─▶  everything released, `root` emptied
  * ```
  */
 export class OverworldSceneBuilder
-  implements CityPicker, RegionPicker, MapStateView
+  implements CityPicker, InstallationPicker, RegionPicker, MapStateView
 {
   // ===========================================
   // Fields
@@ -224,6 +233,7 @@ export class OverworldSceneBuilder
         config.settlementFootprint,
       ),
     };
+    const types = options.deployableTypes;
     this.installationStyle = {
       models: this.assets.models,
       animations: DEPLOYABLE_ANIMATIONS,
@@ -233,6 +243,23 @@ export class OverworldSceneBuilder
         INSTALLATION_STAND_IN_HEIGHT,
         config.installationFootprint,
       ),
+      // A little wider than the footprint, so the pointer need not land
+      // on the model itself at the default zoom; still inside the
+      // clearance the layout keeps from any city.
+      pick: new CylinderGeometry(
+        (config.installationFootprint / 2) * INSTALLATION_PICK_SCALE,
+        (config.installationFootprint / 2) * INSTALLATION_PICK_SCALE,
+        config.markerPickHeight,
+        MARKER_SEGMENTS,
+      ),
+      footprint: config.installationFootprint,
+      text: this.assets.text,
+      ...(types === undefined
+        ? {}
+        : {
+            nameOf: (typeId: DeployableTypeId) =>
+              types.getDeployableType(typeId)?.name ?? typeId,
+          }),
     };
     this.animator = {
       update: (deltaSeconds) => {
@@ -346,6 +373,7 @@ export class OverworldSceneBuilder
     this.markerGeometry.pick.dispose();
     this.markerGeometry.standIn.dispose();
     this.installationStyle.standIn.dispose();
+    this.installationStyle.pick.dispose();
     this.installationStyle.falloff.dispose();
   }
 
@@ -411,6 +439,34 @@ export class OverworldSceneBuilder
   /** The selected city, if any. */
   getSelected(): CityId | undefined {
     return this.selected;
+  }
+
+  // ===========================================
+  // InstallationPicker
+  // ===========================================
+
+  /** Raycasts the installations' pick solids from a normalised device coordinate (#1155). */
+  pickInstallation(ndc: Vec2, camera: Camera): DeployableId | undefined {
+    if (!this.installations) {
+      return undefined;
+    }
+    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
+    return this.installations.hit(this.raycaster);
+  }
+
+  /** Grows and labels one installation as hovered, or none. */
+  setHoveredInstallation(id: DeployableId | undefined): void {
+    this.installations?.setHovered(id);
+  }
+
+  /** Keeps one installation labelled as the picked one, or none. */
+  setSelectedInstallation(id: DeployableId | undefined): void {
+    this.installations?.setSelected(id);
+  }
+
+  /** The selected installation, if any. */
+  getSelectedInstallation(): DeployableId | undefined {
+    return this.installations?.getSelected();
   }
 
   // ===========================================

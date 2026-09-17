@@ -1,4 +1,4 @@
-import type { BufferGeometry, Object3D, Texture } from "three";
+import type { BufferGeometry, Object3D } from "three";
 import { Group, Mesh, MeshBasicMaterial, Sprite, SpriteMaterial } from "three";
 
 import type { ModelAssetId } from "../../content/data/model-ids";
@@ -16,6 +16,7 @@ import type {
 } from "../model/settlement-style";
 import type { SettlementVariation } from "../model/settlement-variation";
 import type { TextTextureSource } from "../model/text-texture-source";
+import { textureAspect } from "../service/texture-aspect";
 import { settlementVariation } from "../service/settlement-variation";
 
 // ===========================================
@@ -264,7 +265,7 @@ export class CityMarker {
         depthWrite: false,
       });
       const sprite = new Sprite(material);
-      sprite.scale.set(LABEL_HEIGHT * aspectOf(labelTexture), LABEL_HEIGHT, 1);
+      sprite.scale.set(LABEL_HEIGHT * textureAspect(labelTexture), LABEL_HEIGHT, 1);
       // South of the settlement, on the ground plane: under the
       // strategic map's camera that reads as directly below it (#439).
       sprite.position.set(
@@ -435,14 +436,3 @@ function isPlaceholder(model: Object3D): boolean {
   return model.name.startsWith(PLACEHOLDER_PREFIX);
 }
 
-/**
- * Width over height of a rasterised label, so a sprite wearing it is not
- * stretched. Falls back to square for a texture with no measurable image
- * (a stub in tests).
- */
-function aspectOf(texture: Texture): number {
-  const image = texture.image as { width?: number; height?: number } | null;
-  const width = image?.width ?? 1;
-  const height = image?.height ?? 1;
-  return height > 0 ? width / height : 1;
-}

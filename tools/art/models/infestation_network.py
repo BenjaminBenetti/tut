@@ -70,7 +70,7 @@ def cells():
 def membrane(name, centre, contour, mature):
     """Closed stretched tissue, with an angular pore that shrinks as resin matures."""
     cx, cy = centre
-    inner = .93 - .34 * mature
+    inner = .985 - .055 * mature
     n = len(contour)
     rings = [(.998, .018), (.96, .020 + mature * .020), (inner, .006)]
     verts = []
@@ -78,7 +78,7 @@ def membrane(name, centre, contour, mature):
         for x,y in contour:
             a = math.atan2(y-cy,x-cx)
             # The tear has long lobes and pinches, not a regular polygon pore.
-            shape = 1 + (.025 + mature*.12) * math.sin(a*3 + cx) + mature*.07*math.sin(a*5 + cy)
+            shape = 1 + (.004 + mature*.012) * math.sin(a*3 + cx) + mature*.006*math.sin(a*5 + cy)
             scale = r * shape if ring == 2 else r
             verts.append((cx+(x-cx)*scale,cy+(y-cy)*scale,h))
     verts += [(x, y, .001) for x, y, _z in verts]
@@ -117,7 +117,6 @@ def strand(name, points, radii, token='bug-chitin-dark', height=.55):
 
 def build_network(mature):
     """Build thin and thick endpoints with matching objects, vertices and indices."""
-    from infestation_parts import blade
     seen = set()
     for i, (centre, contour) in enumerate(cells()):
         cx, cy = centre
@@ -129,7 +128,7 @@ def build_network(mature):
             if key in seen:
                 continue
             seen.add(key)
-            width = (.035 + .075*mature) * (1 + .20*math.sin(a[0]*2 + a[1]))
+            width = (.015 + .032*mature) * (1 + .20*math.sin(a[0]*2 + a[1]))
             radii = [width*(1.25 - .40*math.sin(k*math.pi/6)) for k in range(7)]
             points = [(x,y,.012+r*.5) for (x,y),r in zip(edge,radii)]
             strand(f'root_{i}_{j}', points, radii, height=.46)
@@ -139,13 +138,7 @@ def build_network(mature):
             pts = [(x, y, .035), (cx+(x-cx)*.72+.08, cy+(y-cy)*.75, .03),
                    (cx+(x-cx)*.46, cy+(y-cy)*.40, .021),
                    (cx+(x-cx)*.15-.06, cy+(y-cy)*.22, .008)]
-            strand(f'branch_{i}_{j}', pts, [.038+.025*mature, .026+.02*mature, .018, .002], 'bug-chitin-mid', .55)
-        # Broad asymmetric shell splinters occur at a larger scale than a tile.
-        if i % 3 == 0:
-            x, y = contour[2]
-            blade(f'shard_{i}', x*.65+cx*.35, y*.65+cy*.35,
-                  .36+.25*mature, .90+.35*mature, .055+.085*mature,
-                  angle=.6+i*1.7, base=.009, variant=i)
+            strand(f'branch_{i}_{j}', pts, [.021+.016*mature, .013+.009*mature, .007, .001], 'bug-chitin-mid', .55)
         if i == 3:
             # Irregular green residue stays inside the tear, not a luminous outline.
             x, y = cx+.08, cy-.04
@@ -162,7 +155,7 @@ def build_network(mature):
     for k in range(49):
         x = -3 + k/8
         y = .62*math.sin(x*math.tau/6) + .18*math.sin(x*math.tau/3)
-        r = (.048 + .105*mature)*(1+.15*math.cos(x*math.tau/3))
+        r = (.025 + .045*mature)*(1+.15*math.cos(x*math.tau/3))
         points.append((x,y,.014+r*.52))
         radii.append(r)
     strand('main_artery',points,radii,'bug-chitin-dark',.47)

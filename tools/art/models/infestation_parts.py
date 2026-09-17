@@ -113,6 +113,11 @@ def finish_materials():
     combined=join(mesh_objects(),'resin_shell')
     combined['atlas_preserve_uv']=True
     for token in ('bug-chitin-dark','bug-chitin-mid','bug-chitin-tan'):
-        material(token).node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.55
+        material(token).node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.23
     for token in ('bug-flesh','bug-bio-green-dim'):
-        material(token).node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.32
+        material(token).node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.18
+
+    for token in ('bug-chitin-dark','bug-chitin-mid','bug-chitin-tan','bug-flesh','bug-bio-green-dim'):
+        shader = material(token).node_tree.nodes.get('Principled BSDF')
+        shader.inputs['Coat Weight'].default_value=.85
+        shader.inputs['Coat Roughness'].default_value=.09

@@ -12,6 +12,762 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "building.wall-door-plaster-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-plaster-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-plaster-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-plaster-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-door-panel-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-panel-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-panel-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-panel-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-door-concrete-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-concrete-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-concrete-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-concrete-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-door-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.rooftop-hvac-infested-3": {
+    category: "props",
+    path: "assets/models/props/prop-rooftop-hvac-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.04,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.rooftop-hvac-infested-2": {
+    category: "props",
+    path: "assets/models/props/prop-rooftop-hvac-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.87,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.rooftop-hvac-infested-1": {
+    category: "props",
+    path: "assets/models/props/prop-rooftop-hvac-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.85,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.tree-pine-infested-3": {
+    category: "props",
+    path: "assets/models/props/prop-tree-pine-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.05,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.tree-pine-infested-2": {
+    category: "props",
+    path: "assets/models/props/prop-tree-pine-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.05,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.tree-pine-infested-1": {
+    category: "props",
+    path: "assets/models/props/prop-tree-pine-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.05,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.tree-oak-infested-3": {
+    category: "props",
+    path: "assets/models/props/prop-tree-oak-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.71,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.tree-oak-infested-2": {
+    category: "props",
+    path: "assets/models/props/prop-tree-oak-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.71,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.tree-oak-infested-1": {
+    category: "props",
+    path: "assets/models/props/prop-tree-oak-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.71,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-utility-infested-3": {
+    category: "props",
+    path: "assets/models/props/prop-car-utility-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 2,
+    },
+    height: 0.99,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-utility-infested-2": {
+    category: "props",
+    path: "assets/models/props/prop-car-utility-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 2,
+    },
+    height: 0.91,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-utility-infested-1": {
+    category: "props",
+    path: "assets/models/props/prop-car-utility-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 2,
+    },
+    height: 0.86,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-hatchback-infested-3": {
+    category: "props",
+    path: "assets/models/props/prop-car-hatchback-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 2,
+    },
+    height: 0.89,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-hatchback-infested-2": {
+    category: "props",
+    path: "assets/models/props/prop-car-hatchback-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 2,
+    },
+    height: 0.81,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-hatchback-infested-1": {
+    category: "props",
+    path: "assets/models/props/prop-car-hatchback-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 2,
+    },
+    height: 0.76,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-compact-infested-3": {
+    category: "props",
+    path: "assets/models/props/prop-car-compact-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.87,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-compact-infested-2": {
+    category: "props",
+    path: "assets/models/props/prop-car-compact-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.79,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-compact-infested-1": {
+    category: "props",
+    path: "assets/models/props/prop-car-compact-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.74,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-sedan-infested-3": {
+    category: "props",
+    path: "assets/models/props/prop-car-sedan-infested-3.glb",
+    footprint: {
+      w: 2,
+      d: 1,
+    },
+    height: 0.93,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-sedan-infested-2": {
+    category: "props",
+    path: "assets/models/props/prop-car-sedan-infested-2.glb",
+    footprint: {
+      w: 2,
+      d: 1,
+    },
+    height: 0.85,
+    sockets: [],
+    quality: "final",
+  },
+
+  "prop.car-sedan-infested-1": {
+    category: "props",
+    path: "assets/models/props/prop-car-sedan-infested-1.glb",
+    footprint: {
+      w: 2,
+      d: 1,
+    },
+    height: 0.8,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-half-concrete-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-half-concrete-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-half-concrete-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-half-concrete-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-half-concrete-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-half-concrete-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-half-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-half-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-half-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-half-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-half-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-half-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-door-plaster-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-plaster-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-door-plaster-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-plaster-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-window-plaster-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-plaster-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-plaster-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-plaster-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-plaster-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-plaster-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-plaster-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-plaster-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-plaster-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-plaster-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-door-panel-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-panel-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-door-panel-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-panel-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-window-panel-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-panel-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-panel-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-panel-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-panel-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-panel-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-panel-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-panel-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-panel-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-panel-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-door-concrete-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-concrete-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-door-concrete-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-concrete-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-window-concrete-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-concrete-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-concrete-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-concrete-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-concrete-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-concrete-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-concrete-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-concrete-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-concrete-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-concrete-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-door-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-door-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
+  "building.wall-window-infested-3": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-infested-3.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-window-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-infested-2": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-infested-2.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
+  "building.wall-infested-1": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-infested-1.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+
   "infestation.resin.blisters": {
     category: "tiles",
     path: "assets/models/tiles/infestation-blisters.glb",
@@ -115,7 +871,7 @@ export const MODEL_MANIFEST = {
       w: 6,
       d: 6,
     },
-    height: 0.07,
+    height: 0.04,
     sockets: [],
     quality: "final",
   },
@@ -126,7 +882,7 @@ export const MODEL_MANIFEST = {
       w: 6,
       d: 6,
     },
-    height: 0.18,
+    height: 0.09,
     sockets: [],
     quality: "final",
   },

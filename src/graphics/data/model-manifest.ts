@@ -1580,7 +1580,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 0.45, d: 0.45 },
     height: 0.29,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "overworld.settlement.north-american.rural": {
     category: "props",

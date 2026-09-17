@@ -491,53 +491,8 @@ function buildTurret(mf) {
   ]);
 }
 
-/**
- * Strategic-map bank installation (#1155), a stand-in until the Blender
- * model lands: a squat vault on a plinth with a slow-turning sign on the
- * `animated` node, on the deployables' 0.45 footprint. The map turns
- * `animated`, so the node names match the other installations' GLBs.
- * @param {MaterialFactory} mf - Material factory.
- * @returns {Object3D} Root group.
- */
-function buildBankInstallation(mf) {
-  const plate = mf.get("tdf-grey-mid");
-  const dark = mf.get("tdf-grey-dark");
-  const trim = mf.get("tdf-orange");
-  const sign = group(
-    "animated",
-    [
-      box(dark, [0.02, 0.06, 0.02], [0, 0.03, 0], { name: "mast" }),
-      box(trim, [0.12, 0.05, 0.015], [0, 0.075, 0], { name: "sign" }),
-    ],
-    [0, 0.2, 0],
-  );
-  return group("root", [
-    group(
-      "base",
-      [
-        box(dark, [0.4, 0.04, 0.4], [0, 0.02, 0], { name: "plinth" }),
-        box(plate, [0.3, 0.14, 0.26], [0, 0.11, 0], { name: "vault" }),
-        box(trim, [0.32, 0.02, 0.28], [0, 0.19, 0], { name: "cornice" }),
-        box(dark, [0.04, 0.12, 0.04], [-0.11, 0.1, 0.13], { name: "column_l" }),
-        box(dark, [0.04, 0.12, 0.04], [0.11, 0.1, 0.13], { name: "column_r" }),
-        sign,
-      ],
-      [0, 0, 0],
-    ),
-  ]);
-}
-
 /** @type {ModelDef[]} */
 const MODEL_DEFS = [
-  {
-    id: "overworld.deployable.bank",
-    category: "props",
-    file: "overworld-deployable-bank.glb",
-    footprint: { w: 0.45, d: 0.45 },
-    height: 0.29,
-    textured: false,
-    build: buildBankInstallation,
-  },
   {
     id: "tdf.turret",
     category: "units",

@@ -2430,20 +2430,6 @@
     "bytes": 27396
   },
   {
-    "id": "overworld.deployable.bank",
-    "category": "props",
-    "path": "assets/models/props/overworld-deployable-bank.glb",
-    "footprint": {
-      "w": 0.45,
-      "d": 0.45
-    },
-    "height": 0.29,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 84,
-    "bytes": 13460
-  },
-  {
     "id": "overworld.deployable.repellent-dispersal",
     "category": "props",
     "path": "assets/models/props/overworld-deployable-repellent-dispersal.glb",
@@ -3296,5 +3282,19 @@
     "quality": "final",
     "triangles": 2004,
     "bytes": 151204
+  },
+  {
+    "id": "overworld.deployable.bank",
+    "category": "props",
+    "path": "assets/models/props/overworld-deployable-bank.glb",
+    "footprint": {
+      "w": 0.45,
+      "d": 0.45
+    },
+    "height": 0.29,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 26796
   }
 ]

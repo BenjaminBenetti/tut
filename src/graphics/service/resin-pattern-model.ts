@@ -68,6 +68,20 @@ interface PreparedPart {
   readonly cells: readonly (readonly Vertex[][])[];
 }
 
+interface AuthoredVertex extends Vertex {
+  readonly delta: Vector3;
+  readonly deltaNormal: Vector3;
+}
+
+interface AuthoredPart {
+  readonly vertices: readonly AuthoredVertex[];
+  readonly copies: readonly {
+    readonly dx: number;
+    readonly dz: number;
+    readonly indices: readonly number[];
+  }[];
+}
+
 /**
  * Matures and bends each canvas in a shared world-space colony field, then
  * bins triangles into ownership cells and clips each patch's exposed fringe.
@@ -75,6 +89,7 @@ interface PreparedPart {
  */
 export class ResinPatternModelFactory {
   private readonly material: Material;
+  private readonly authoredParts = new Map<number, readonly AuthoredPart[]>();
   private readonly prepared = new Map<string, readonly PreparedPart[]>();
 
   /** Borrows the source GLB and its authored Mature morph target. */
@@ -94,6 +109,7 @@ export class ResinPatternModelFactory {
   dispose(): void {
     this.material.dispose();
     this.prepared.clear();
+    this.authoredParts.clear();
   }
 
   /** Cuts one support footprint out of the continuous web, preserving shared seams. */
@@ -185,14 +201,12 @@ export class ResinPatternModelFactory {
     return result;
   }
 
-  /** Caches each deformed canvas and assigns its triangles to ownership cells. */
-  private prepare(pattern: ResinPatternAppearance): readonly PreparedPart[] {
-    const key = JSON.stringify([pattern.turns, pattern.growth, pattern.colony]);
-    const cached = this.prepared.get(key);
+  /** Extracts source transforms once per rotation, shared by every colony canvas. */
+  private authored(turns: number): readonly AuthoredPart[] {
+    const cached = this.authoredParts.get(turns);
     if (cached) return cached;
-    const period = RESIN_STYLE.patternSize;
     const axis = new Vector3(0, 1, 0);
-    const parts = meshes(this.source).map((source): PreparedPart => {
+    const parts = meshes(this.source).map((source): AuthoredPart => {
       const a = source.geometry.getAttribute("position");
       const b = source.geometry.morphAttributes.position?.[0];
       const normal = source.geometry.getAttribute("normal");
@@ -207,15 +221,16 @@ export class ResinPatternModelFactory {
       const uv = source.geometry.getAttribute("uv");
       const index = source.geometry.index;
       const count = index?.count ?? a.count;
-      const angle = (-pattern.turns * Math.PI) / 2;
-      const authored = Array.from({ length: a.count }, (_, i) => ({
+      const linear = new Matrix3().setFromMatrix4(source.matrixWorld);
+      const angle = (-turns * Math.PI) / 2;
+      const vertices = Array.from({ length: a.count }, (_, i) => ({
         position: new Vector3()
           .fromBufferAttribute(a, i)
           .applyMatrix4(source.matrixWorld)
           .applyAxisAngle(axis, angle),
         delta: new Vector3()
           .fromBufferAttribute(b, i)
-          .applyMatrix3(new Matrix3().setFromMatrix4(source.matrixWorld))
+          .applyMatrix3(linear)
           .applyAxisAngle(axis, angle),
         normal: new Vector3()
           .fromBufferAttribute(normal, i)
@@ -223,17 +238,61 @@ export class ResinPatternModelFactory {
           .applyAxisAngle(axis, angle),
         deltaNormal: new Vector3()
           .fromBufferAttribute(deltaNormal, i)
-          .applyMatrix3(new Matrix3().setFromMatrix4(source.matrixWorld))
+          .applyMatrix3(linear)
           .applyAxisAngle(axis, angle),
         uv: [uv.getX(i), uv.getY(i)] as const,
       }));
-      const cells: Vertex[][][] = Array.from(
-        { length: period * period },
-        () => [],
-      );
+      const copies = [];
+      const period = RESIN_STYLE.patternSize;
       for (const dx of [-period, 0, period])
         for (const dz of [-period, 0, period]) {
-          const vertices: Vertex[] = authored.map((v) => {
+          const indices: number[] = [];
+          for (let i = 0; i < count; i += 3) {
+            const ids = [0, 1, 2].map((j) => index?.getX(i + j) ?? i + j);
+            // Precompute conservative bounds for the complete growth range.
+            // Neither the morph nor the world bend can reach beyond them.
+            const reaches = (["x", "z"] as const).every((axis) => {
+              const shift = axis === "x" ? dx : dz;
+              const margin = axis === "x" ? 0.5 : 0.44;
+              const bounds = ids.flatMap((id) => {
+                const v = vertices[id]!;
+                const at = v.position[axis] + shift;
+                return [at, at + v.delta[axis]];
+              });
+              return (
+                Math.min(...bounds) <= period / 2 + margin &&
+                Math.max(...bounds) >= -period / 2 - margin
+              );
+            });
+            if (reaches) indices.push(...ids);
+          }
+          if (indices.length) copies.push({ dx, dz, indices });
+        }
+      return { vertices, copies };
+    });
+    this.authoredParts.set(turns, parts);
+    return parts;
+  }
+
+  /** Caches each deformed canvas and assigns its triangles to ownership cells. */
+  private prepare(pattern: ResinPatternAppearance): readonly PreparedPart[] {
+    const key = JSON.stringify([pattern.turns, pattern.growth, pattern.colony]);
+    const cached = this.prepared.get(key);
+    if (cached) return cached;
+    const period = RESIN_STYLE.patternSize;
+    const parts = this.authored(pattern.turns).map(
+      ({ vertices: authored, copies }): PreparedPart => {
+        const cells: Vertex[][][] = Array.from(
+          { length: period * period },
+          () => [],
+        );
+        for (const { dx, dz, indices } of copies) {
+          const vertices = new Map<number, Vertex>();
+          /** Deforms only vertices belonging to a triangle that can reach this canvas. */
+          const deform = (id: number): Vertex => {
+            const cached = vertices.get(id);
+            if (cached) return cached;
+            const v = authored[id]!;
             const position = v.position.clone().add(new Vector3(dx, 0, dz));
             const colony = pattern.colony;
             const wx = position.x + (colony?.x ?? 0);
@@ -255,7 +314,7 @@ export class ResinPatternModelFactory {
                 0.13 * Math.cos(wz * 0.83 - wx * 0.23);
               position.y *= 0.45 + 0.55 * density;
             }
-            return {
+            const vertex = {
               position,
               normal: v.normal
                 .clone()
@@ -263,11 +322,12 @@ export class ResinPatternModelFactory {
                 .normalize(),
               uv: v.uv,
             };
-          });
-          for (let i = 0; i < count; i += 3) {
-            const triangle = [0, 1, 2].map(
-              (j) => vertices[index?.getX(i + j) ?? i + j]!,
-            );
+            vertices.set(id, vertex);
+            return vertex;
+          };
+          for (let i = 0; i < indices.length; i += 3) {
+            const ids = [indices[i]!, indices[i + 1]!, indices[i + 2]!];
+            const triangle = ids.map(deform);
             const xs = triangle.map((v) => v.position.x);
             const zs = triangle.map((v) => v.position.z);
             const minX = Math.max(0, Math.floor(Math.min(...xs) + period / 2));
@@ -285,8 +345,9 @@ export class ResinPatternModelFactory {
                 cells[z * period + x]!.push(triangle);
           }
         }
-      return { cells };
-    });
+        return { cells };
+      },
+    );
     this.prepared.set(key, parts);
     return parts;
   }

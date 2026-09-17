@@ -1,3 +1,4 @@
+import { ResinWetMaterials } from "../service/resin-wet-materials";
 import {
   ResinPatternModelFactory,
   resinPatternKey,
@@ -361,6 +362,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   private resinPatternFactory: ResinPatternModelFactory | undefined;
   private readonly resinPatches = new Map<string, Group>();
   private readonly resinModels = new Map<string, Group>();
+  private readonly resinWetMaterials = new ResinWetMaterials();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
@@ -735,15 +737,18 @@ export class TacticalMapView implements Disposable, TilePicker {
         // move to read through it (#1143, `takesGhostCutaway`). The
         // prototype material is shared by every instance of the model,
         // so it is cloned rather than ghosted in place.
-        const prototypeMaterial = Array.isArray(part.material)
-          ? part.material[0]
-          : part.material;
+        const surfaceMaterial = Array.isArray(part.material)
+          ? part.material.map((m) => this.resinWetMaterials.material(m))
+          : this.resinWetMaterials.material(part.material);
+        const prototypeMaterial = Array.isArray(surfaceMaterial)
+          ? surfaceMaterial[0]
+          : surfaceMaterial;
         const originalMaterial =
           this.ghostUniforms !== undefined &&
           takesGhostCutaway(batch.modelId) &&
           prototypeMaterial !== undefined
             ? this.ghostMaterial(prototypeMaterial)
-            : part.material;
+            : surfaceMaterial;
         const naturalSurface = batch.naturalSurface ?? batch.ramp?.surface;
         const material =
           naturalSurface === undefined
@@ -1258,6 +1263,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.resinModels.clear();
     this.resinPatches.clear();
     this.resinPatternFactory = undefined;
+    this.resinWetMaterials.dispose();
     this.root.removeFromParent();
   }
 

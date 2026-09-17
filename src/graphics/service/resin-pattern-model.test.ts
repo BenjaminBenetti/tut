@@ -86,19 +86,25 @@ describe("continuous authored resin network", () => {
   });
 
   it("joins real strands exactly across cells, rotations and the six-tile wrap", () => {
+    let crossings = 0;
     for (const turns of [0, 1, 2, 3] as const)
-      for (const x of [2, 5]) {
-        const left = factory.create({ ...base, turns, x });
-        const right = factory.create({
-          ...base,
-          turns,
-          x: (x + 1) % 6,
-        });
-        expect(seam(left, "x", 0.5).length).toBeGreaterThan(0);
-        expect(seam(left, "x", 0.5)).toEqual(seam(right, "x", -0.5));
-        release(left);
-        release(right);
-      }
+      for (let z = 0; z < 6; z++)
+        for (let x = 0; x < 6; x++) {
+          const left = factory.create({ ...base, turns, x, z });
+          const right = factory.create({
+            ...base,
+            turns,
+            z,
+            x: (x + 1) % 6,
+          });
+          // Open ground between thin tendons can span an entire cell edge.
+          // Compare every edge, including empty ones, and require real crossings.
+          crossings += seam(left, "x", 0.5).length;
+          expect(seam(left, "x", 0.5)).toEqual(seam(right, "x", -0.5));
+          release(left);
+          release(right);
+        }
+    expect(crossings).toBeGreaterThan(100);
     const north = factory.create({ ...base, z: 5 });
     const south = factory.create({ ...base, z: 0 });
     expect(seam(north, "z", 0.5)).toEqual(seam(south, "z", -0.5));

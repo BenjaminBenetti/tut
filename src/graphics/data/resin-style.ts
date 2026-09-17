@@ -5,10 +5,8 @@ export const RESIN_STYLE: ResinStyle = {
   patternSize: 6,
   fringeInset: 0.1,
   fringeTaper: 0.16,
-  maximumGroundHeight: 0.18,
+  maximumGroundHeight: 0.08,
   groundLift: 0.006,
-  wallsFromLevel: 3,
-  propsFromLevel: 5,
 };
 
 /** Adjacent tile offsets, clockwise from north; the mask is shared with the resolver. */

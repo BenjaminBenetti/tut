@@ -5,6 +5,4 @@ export interface ResinStyle {
   readonly fringeTaper: number;
   readonly maximumGroundHeight: number;
   readonly groundLift: number;
-  readonly wallsFromLevel: number;
-  readonly propsFromLevel: number;
 }

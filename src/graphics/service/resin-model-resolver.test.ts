@@ -3,7 +3,6 @@ import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { resolveMapModels, mapModelIds } from "./map-model-resolver";
 import { resinGroundHeight, tileRiseFor } from "./surface-rise";
-import { takesGhostCutaway } from "./ghost-cutaway-eligibility";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { tileTop } from "../view/tactical-map-view";
 
@@ -64,24 +63,6 @@ describe("Resin Shell map art", () => {
     expect(rise({ x: 1, y: 0, z: 1 })).toBeGreaterThanOrEqual(
       resinGroundHeight(10),
     );
-  });
-
-  it("uses open door/window shells, retains demolition identities and ghosts walls only", () => {
-    const builder = new FixtureMapBuilder(3, 3, 1).fillGround();
-    builder.wall({ x: 0, y: 0, z: 0 }, "n", "door");
-    builder.wall({ x: 1, y: 0, z: 0 }, "n", "window");
-    const models = resolveMapModels(covered(builder.build()));
-    for (const kind of ["door", "window"]) {
-      const shell = models.infestation.find((p) =>
-        p.modelId.startsWith(`infestation.resin.${kind}`),
-      )!;
-      expect(shell).toBeDefined();
-      expect(models.walls.find((p) => p.part === shell.part)?.position).toEqual(
-        shell.position,
-      );
-      expect(takesGhostCutaway(shell.modelId)).toBe(true);
-    }
-    expect(takesGhostCutaway("infestation.resin.ground-a")).toBe(false);
   });
 
   it("coats a ramp according to its lower surface, even when the upper tile is clean", () => {
@@ -157,36 +138,5 @@ describe("Resin Shell map art", () => {
     )!.resin!.pattern!;
     expect([early.x, early.z, early.turns]).toEqual([a.x, a.z, a.turns]);
     expect(early.growth).toBeLessThan(a.growth);
-  });
-  it("composes multiple hive forms at ten, keeps tall organs on props, and preserves the map", () => {
-    const builder = new FixtureMapBuilder(24, 24, 1).fillGround();
-    for (let x = 1; x < 24; x += 3)
-      for (let z = 1; z < 24; z += 3) builder.prop("tree-oak", { x, y: 0, z });
-    const map = covered(builder.build());
-    const snapshot = JSON.stringify(map);
-    const models = resolveMapModels(map);
-    const ids = new Set(models.infestation.map((p) => p.modelId));
-    for (const kind of ["brood", "vent", "fan", "pool", "scales", "blisters"])
-      expect(
-        ids.has(
-          `infestation.resin.${kind}` as (typeof models.infestation)[number]["modelId"],
-        ),
-        kind,
-      ).toBe(true);
-    for (const organ of models.infestation.filter((p) =>
-      /\.(brood|vent|fan)$/.test(p.modelId),
-    )) {
-      const owner = models.props.find((p) => p.part === organ.part);
-      expect(owner).toBeDefined();
-      expect(organ.position).toEqual(owner!.position);
-      expect(organ.occupiedTiles).toEqual(owner!.occupiedTiles);
-      expect(takesGhostCutaway(organ.modelId)).toBe(true);
-    }
-    expect(JSON.stringify(map)).toBe(snapshot);
-    expect(resolveMapModels(map).infestation).toEqual(models.infestation);
-    const early = resolveMapModels(covered(map, 4)).infestation;
-    expect(early.some((p) => /\.(brood|vent|fan)$/.test(p.modelId))).toBe(
-      false,
-    );
   });
 });

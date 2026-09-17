@@ -102,7 +102,7 @@ export class ResinPatternModelFactory {
     this.material = material.clone();
     this.material.name = "resin-skin";
     if (this.material instanceof MeshStandardMaterial)
-      this.material.roughness = 0.48;
+      this.material.roughness = 0.22;
   }
 
   /** Releases the shared skin material; slice geometries belong to the view. */

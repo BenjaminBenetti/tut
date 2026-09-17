@@ -47,6 +47,7 @@ import { resolveDropshipModels } from "./dropship-model-resolver";
 import { resolveStreetDetails } from "./street-detail-resolver";
 import { resolveStreetSurfaces } from "./street-surface-resolver";
 import { resolveRoofDetails } from "./roof-detail-resolver";
+import { resolveInfestedModels } from "./infested-model-resolver";
 import { resolveResinModels } from "./resin-model-resolver";
 import {
   propAppearanceOffset,
@@ -220,7 +221,13 @@ export function resolveMapModels(
     ],
     connectors,
   };
-  return { ...base, infestation: resolveResinModels(map, index, base) };
+  return {
+    ...base,
+    walls: resolveInfestedModels(map, index, base.walls),
+    props: resolveInfestedModels(map, index, base.props),
+    frontages: resolveInfestedModels(map, index, base.frontages),
+    infestation: resolveResinModels(map, index, base),
+  };
 }
 
 /** The distinct model ids a map needs, for preloading in one pass. */

@@ -6,7 +6,9 @@ Generated reference art for the first asset set, plus later explorations. Every 
 tools/art/gen-image.sh docs/design/concepts/prompts/<name>.txt docs/design/concepts/<name>.png
 ```
 
-Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
+Sheets are documentation, not runtime assets; they are usually stored at 1536 px wide. Later explorations may preserve a different native output size, recorded in the sheet's sidecar.
+
+**Infestation Level exploration:** [Review three visual directions, a city progression and six surface studies](infestation-level/README.md) for a proposed 0–10 map-generation dial. Level 0 preserves current maps; level 10 approaches a fully transformed bug hive. Awaiting direction selection.
 
 **Selected swarmer direction:** [Brown Crescent B](swarmer-redesign/b-crescent-brown.md). The [brown family kit](../kits/crescent-bugs.md) implements all four replacement models with distinct species silhouettes and shared materials. [The three concept directions](swarmer-redesign/README.md) and earlier palettes remain available as design history. The original bug sheets below are superseded by this kit.
 

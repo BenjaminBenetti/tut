@@ -4,6 +4,8 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { resolveMapModels, mapModelIds } from "./map-model-resolver";
 import { resinGroundHeight, tileRiseFor } from "./surface-rise";
 import { takesGhostCutaway } from "./ghost-cutaway-eligibility";
+import { MODEL_MANIFEST } from "../data/model-manifest";
+import { tileTop } from "../view/tactical-map-view";
 
 /** Infested fixture with the same base structures as its clean counterpart. */
 function covered(map: TacticalMap, level = 10): TacticalMap {
@@ -18,6 +20,32 @@ function covered(map: TacticalMap, level = 10): TacticalMap {
 }
 
 describe("Resin Shell map art", () => {
+  it("keeps the continuous skin above actual thin slabs and raised sidewalks", () => {
+    for (const surface of [
+      "grass",
+      "snow",
+      "sand",
+      "road",
+      "sidewalk",
+      "floor",
+      "roof",
+    ]) {
+      const map = covered(
+        new FixtureMapBuilder(1, 1, 1).fillGround(0, surface).build(),
+      );
+      const models = resolveMapModels(map);
+      const support = models.tiles[0]!;
+      const shell = models.infestation.find((p) =>
+        p.modelId.startsWith("infestation.resin.ground-"),
+      )!;
+      const top = support.position.y + MODEL_MANIFEST[support.modelId].height;
+      expect(shell.position.y, surface).toBeGreaterThan(top);
+      expect(tileRiseFor(map)(support.tile)).toBeCloseTo(
+        shell.position.y - tileTop(support.tile.y) + resinGroundHeight(10),
+      );
+    }
+  });
+
   it("adds no placements at zero and keeps every original placement intact at ten", () => {
     const clean = new FixtureMapBuilder(3, 3, 1).fillGround().build();
     const base = resolveMapModels(clean);

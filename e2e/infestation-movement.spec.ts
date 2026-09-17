@@ -41,7 +41,7 @@ test("a squad pays two actions for a resin route that would cost one on clean gr
     mission.map.tiles.length * 0.9,
   );
   const squad = mission.units.find((u) => u.kind === "squad")!;
-  const move = mission.templates[squad.templateId]!.move;
+  const move = mission.templates[squad.templateId].move;
   const graph = buildMoveGraph(mission.map);
   const search = searchMoves(mission, squad, graph);
   const target = [...search.tiles.values()].find((tile) => {

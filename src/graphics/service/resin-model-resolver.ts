@@ -7,7 +7,7 @@ import type { TileIndex } from "../../mapgen/service/tile-index";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { RESIN_STYLE } from "../data/resin-style";
 import type { MapModelPlacements, ModelPlacement } from "./map-model-resolver";
-import { resinGroundHeight, surfaceRise } from "./surface-rise";
+import { resinGroundHeight, resinSurfaceLift } from "./surface-rise";
 import { tileTop } from "../view/tactical-map-view";
 
 /**
@@ -56,9 +56,7 @@ export function resolveResinModels(
         x: support.position.x,
         y: conform
           ? support.position.y + RESIN_STYLE.groundLift
-          : tileTop(tile.y) +
-            surfaceRise(tile.surface) +
-            RESIN_STYLE.groundLift,
+          : tileTop(tile.y) + resinSurfaceLift(tile.surface),
         z: support.position.z,
       },
       turns: conform ? 0 : turns,

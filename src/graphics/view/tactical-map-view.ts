@@ -1,6 +1,5 @@
 import type { BusinessSignAppearance } from "../model/business-sign-appearance";
-import { resinGroundHeight } from "../service/surface-rise";
-import { RESIN_STYLE } from "../data/resin-style";
+import { resinGroundHeight, resinSurfaceLift } from "../service/surface-rise";
 import type { TextureSource } from "../model/texture-source";
 import {
   BusinessSignModelFactory,
@@ -1648,14 +1647,15 @@ export class TacticalMapView implements Disposable, TilePicker {
         continue;
       }
       for (const coord of hook.tiles) {
+        const tile = this.index.getAt(coord);
         const colour = HOOK_COLOURS[hook.kind] ?? FALLBACK_HOOK_COLOUR;
         const lift =
           MARKER_LIFT +
           (isObjective(hook, this.map) ? SLAB_HEIGHT : 0) +
           shelfOf(hook.kind) +
-          (this.index.getAt(coord)?.infested
+          (tile?.infested
             ? resinGroundHeight(this.map.recipe.params.infestationLevel ?? 0) +
-              RESIN_STYLE.groundLift
+              resinSurfaceLift(tile.surface)
             : 0);
         const matrix = boxMatrix(
           coord.x + 0.5,

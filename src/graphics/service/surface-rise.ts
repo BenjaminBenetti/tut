@@ -18,6 +18,17 @@ export function resinGroundHeight(level: number): number {
   return RESIN_STYLE.maximumGroundHeight * (0.22 + 0.078 * level);
 }
 
+/** Clears the base-pivoted slab's top, including the thin ground/road slab. */
+export function resinSurfaceLift(
+  surface: SurfaceId,
+  manifest: ModelManifest = MODEL_MANIFEST,
+): number {
+  return (
+    Math.max(surfaceRise(surface, manifest), GROUND_SLAB_THICKNESS / 2) +
+    RESIN_STYLE.groundLift
+  );
+}
+
 /**
  * How far a surface's slab stands above `tileTop` (#1130).
  *
@@ -100,12 +111,9 @@ export function tileRiseFor(
       rise = surfaceRise(found.surface, manifest);
       bySurface.set(found.surface, rise);
     }
-    return (
-      rise +
-      (found.infested
-        ? resinGroundHeight(map.recipe.params.infestationLevel ?? 0) +
-          RESIN_STYLE.groundLift
-        : 0)
-    );
+    return found.infested
+      ? resinSurfaceLift(found.surface, manifest) +
+          resinGroundHeight(map.recipe.params.infestationLevel ?? 0)
+      : rise;
   };
 }

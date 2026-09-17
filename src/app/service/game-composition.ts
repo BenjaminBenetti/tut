@@ -26,6 +26,7 @@ import { createLaunchMissionHandler } from "../../overworld/service/launch-missi
 import { LAUNCH_MISSION } from "../../overworld/model/launch-mission-command";
 import type { MissionResolver } from "../../overworld/model/mission-resolver";
 import { registerFinishMission } from "../../tactical/service/finish-mission-handler";
+import { createGarrisonStartOptions } from "../../tactical/service/garrison-start-options";
 import { registerStartMission } from "../../tactical/service/start-mission-handler";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
@@ -266,7 +267,10 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
   dispatcher.register(LAUNCH_MISSION, launch);
-  registerStartMission(dispatcher, { starter: tacticalResolver });
+  registerStartMission(dispatcher, {
+    starter: tacticalResolver,
+    startOptionsFor: createGarrisonStartOptions(tickDeps.catalogue),
+  });
   registerFinishMission(dispatcher, { launch });
 
   return {

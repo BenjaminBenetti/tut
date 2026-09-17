@@ -37,7 +37,14 @@ function oldCampaign() {
       map,
       day: 28,
       threat: 43,
-      deployables: ["battery"],
+      deployables: [
+        {
+          id: "battery",
+          typeId: "defensive-battery",
+          regionId: "r",
+          online: true,
+        },
+      ],
       spreadCooldowns: { lagos: 3 },
       missions: [
         { cityId: "bogota", mapParams: { biome: "coastal", seed: "offered" } },

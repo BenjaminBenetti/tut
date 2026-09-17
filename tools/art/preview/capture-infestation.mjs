@@ -135,11 +135,12 @@ try {
       await page
         .locator("#level")
         .fill(await page.locator("#level").getAttribute("max"));
-      const detail = await page.evaluate(async () => {
+      const detail = await page.evaluate(async (preferPitched) => {
         const map = window.__resinMap;
         const building =
-          map.buildings.find((b) => b.roof.kind === "pitched") ??
-          map.buildings[0];
+          (preferPitched
+            ? map.buildings.find((b) => b.roof.kind === "pitched")
+            : undefined) ?? map.buildings[0];
         const rect = building.footprint[0];
         const rig = window.__resinRig;
         rig.lookAt({
@@ -155,7 +156,13 @@ try {
         let batches = 0,
           triangles = 0;
         window.__resinView.root.traverse((object) => {
-          if (!object.isMesh || !object.name.startsWith("infestation-model:"))
+          if (
+            !object.isMesh ||
+            !(
+              object.name.startsWith("infestation-model:") ||
+              object.name.includes("-infested-")
+            )
+          )
             return;
           batches++;
           triangles +=
@@ -170,8 +177,10 @@ try {
           rect,
           batches,
           triangles,
+          counted:
+            "connecting strands, pools, and complete infested host models",
         };
-      });
+      }, rural);
       records.push({ name: `${prefix}temperate-level-10-detail`, ...detail });
       await page.screenshot({
         path: `${out}/${prefix}temperate-level-10-detail.png`,

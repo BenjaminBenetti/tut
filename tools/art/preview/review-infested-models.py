@@ -35,6 +35,21 @@ def main():
                     sheet.paste(picture,(x,y))
                     if stage==0: draw.text((x+5,y+222),base,fill='white')
             sheet.save(out/f'host-stages-{start//7+1}-{yaw}.png')
+    # A shorter sheet for the PR; the complete three-angle catalogue stays above.
+    choices = ('building.wall-window','prop.car-hatchback','prop.tree-oak','prop.rooftop-hvac')
+    sheet = Image.new('RGB',(1120,len(choices)*246+30),'#20262f')
+    draw = ImageDraw.Draw(sheet)
+    for col,label in enumerate(('CLEAN','1 / TRACES','2 / ESTABLISHED','3 / CONSUMED')):
+        draw.text((col*280+8,8),label,fill='white')
+    for row,base in enumerate(choices):
+        for stage in range(4):
+            name = base if stage==0 else f'{base}-infested-{stage}'
+            picture = Image.open(ROOT/f'docs/design/renders/{name}_045.png').convert('RGB')
+            picture.thumbnail((280,220))
+            x,y = stage*280,row*246+30
+            sheet.paste(picture,(x,y))
+            if stage==0: draw.text((x+5,y+222),base,fill='white')
+    sheet.save(out/'representative-stages.png')
 
 
 if __name__ == '__main__': main()

@@ -37,6 +37,7 @@ import type { PlaceableUnit } from "../../tactical/model/place-unit-command";
 import { RELOAD } from "../../tactical/model/reload-command";
 import type { AttackDeps } from "../../tactical/service/combat-service";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
 import { createTurretStep } from "../../tactical/service/turret-service";
 import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
@@ -198,6 +199,7 @@ export function composeTactical(
     spawnTuning: SPAWN_TUNING,
     ids,
     registries,
+    garrison: GARRISON_TUNING,
   });
   return {
     handlers,

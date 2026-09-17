@@ -19,6 +19,7 @@ import type { EffectDamagedPayload } from "../../tactical/model/effect-damaged-e
 import { EFFECT_DAMAGED } from "../../tactical/model/effect-damaged-event";
 import type { StructureDestroyedPayload } from "../../tactical/model/structure-destroyed-event";
 import { STRUCTURE_DESTROYED } from "../../tactical/model/structure-destroyed-event";
+import { TURRET_DESTROYED } from "../../tactical/model/turret-destroyed-event";
 import {
   SPAWNER_DAMAGED,
   type SpawnerDamagedPayload,
@@ -621,6 +622,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       const event = this.pending[next]?.event;
       if (event?.type === UNIT_DIED) {
         struck.push(event.payload.unitId);
+      } else if (event?.type === TURRET_DESTROYED) {
+        struck.push(event.payload.turretId);
       } else if (event?.type === SPAWNER_DAMAGED) {
         struck.push(event.payload.spawnerId);
       } else {
@@ -697,6 +700,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         );
       case UNIT_DIED:
         return this.fade(event.payload.unitId);
+      case TURRET_DESTROYED:
+        // A turret leaves as a unit does (#1155): the scene has already
+        // taken its mesh, so the fade is what the eye gets.
+        return this.fade(event.payload.turretId);
       case SPAWNER_DAMAGED:
         return this.spawnerBurst(event.payload);
       case BLAST_RESOLVED:
@@ -1218,6 +1225,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
           parts.push({
             at: landsAt,
             start: () => this.fade(event.payload.unitId),
+          });
+          break;
+        case TURRET_DESTROYED:
+          parts.push({
+            at: landsAt,
+            start: () => this.fade(event.payload.turretId),
           });
           break;
         case SPAWNER_DAMAGED:

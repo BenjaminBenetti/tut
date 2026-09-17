@@ -12,12 +12,12 @@ import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { TileEffect } from "../model/tile-effect";
 import { TILE_EFFECT_ID_PREFIX } from "../model/tile-effect";
-import { UNIT_DIED } from "../model/unit-died-event";
 import type { Team, Unit, UnitId } from "../model/unit";
 import type { AreaEffect, WeaponProfile } from "../model/weapon-profile";
 import { falloffShare } from "../model/weapon-profile";
 import { footprintContains, unitFootprintSize } from "./footprint-service";
 import { damageRange } from "./attack-formulae";
+import { downedEvent } from "./downed-unit-event";
 import { damageSpawner } from "./spawner-damage-service";
 import type { PhaseStep } from "./turn-service";
 
@@ -210,7 +210,7 @@ export function burn(
         },
       });
       if (hp === 0) {
-        events.push({ type: UNIT_DIED, payload: { unitId: unit.id } });
+        events.push(downedEvent(unit));
       }
     }
     if (acting === "bugs") {

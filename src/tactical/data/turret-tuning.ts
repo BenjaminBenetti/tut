@@ -28,3 +28,20 @@ export const TURRET_TUNING: TurretTuning = {
   batteryTurns: 3,
   modelId: "tdf.turret",
 };
+
+/**
+ * A region's garrison turret (#1155): the engineer's turret exactly —
+ * same plate, same gun, same sight, same model — on the region's mains
+ * rather than a battery, so it has no `batteryTurns` and watches every
+ * turn until the bugs pull it down. How many stand on a map is the
+ * overworld's `garrisonTurrets` for the region; where they stand is
+ * `garrison-tuning.ts`.
+ */
+export const GARRISON_TURRET_TUNING: TurretTuning = {
+  name: "Garrison turret",
+  maxHp: TURRET_TUNING.maxHp,
+  armor: TURRET_TUNING.armor,
+  sightRange: TURRET_TUNING.sightRange,
+  weapon: TURRET_TUNING.weapon,
+  modelId: TURRET_TUNING.modelId,
+};

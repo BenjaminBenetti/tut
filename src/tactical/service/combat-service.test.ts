@@ -18,12 +18,17 @@ import type { CombatTuning } from "../model/combat-tuning";
 import type { TacticalContext } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
+import { TURRET_TUNING } from "../data/turret-tuning";
+import { TURRET_DESTROYED } from "../model/turret-destroyed-event";
 import { UNIT_DIED } from "../model/unit-died-event";
+import { armTurret } from "./turret-service";
+import { turretUnit } from "./unit-factory";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import {
   blockUnitAt,
+  ctxWith,
   fixtureAttackDeps,
   missionWith,
   openField,
@@ -473,6 +478,49 @@ describe("resolveAttack", () => {
     expect(events[1]?.payload).toEqual({ unitId: "b1", killerId: "s1" });
     expect(state.units).toHaveLength(2);
     expect(m.units[1]?.hp).toBe(6);
+  });
+
+  it("ends a turret with a TurretDestroyed naming the killer, never a UnitDied (#1155)", () => {
+    const built = turretUnit(
+      TURRET_TUNING,
+      "tdf",
+      { pos: { x: 3, y: 0, z: 0 }, facing: "e" },
+      new SequentialIdGenerator(),
+    );
+    const turret = { ...armTurret(built.unit, TURRET_TUNING), hp: 1 };
+    const base = missionWith(
+      openField().build(),
+      [
+        unitAt("b1", "infantry", { x: 4, y: 0, z: 0 }, { team: "bugs" }),
+        turret,
+      ],
+      { phase: "bugs" },
+    );
+    const m = {
+      ...base,
+      templates: { ...base.templates, [built.template.id]: built.template },
+    };
+    const result = resolveAttack(
+      m,
+      attack("b1", turret.id),
+      ctxWith(riggedRng(true, "high")),
+      T,
+      DEPS,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const { state, events } = result.value;
+    expect(state.units.find((u) => u.id === turret.id)?.hp).toBe(0);
+    expect(events.map((e) => e.type)).toEqual([
+      ATTACK_RESOLVED,
+      TURRET_DESTROYED,
+    ]);
+    expect(events[1]?.payload).toEqual({
+      turretId: turret.id,
+      pos: { x: 3, y: 0, z: 0 },
+      killerId: "b1",
+    });
+    expect(events.some((e) => e.type === UNIT_DIED)).toBe(false);
   });
 
   it("spends only the attack cost when attacks do not end the turn, and a miss changes no hit points", () => {

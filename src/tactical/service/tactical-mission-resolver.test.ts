@@ -27,6 +27,7 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
+import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { MISSION_ENDED } from "../model/mission-ended-event";
@@ -737,6 +738,7 @@ describe("TacticalMissionResolver", () => {
         },
         unitTuning: UNIT_TUNING,
         spawnTuning: SPAWN_TUNING,
+        garrison: GARRISON_TUNING,
         ids,
         registries: createDefaultRegistries(),
       }),

@@ -275,13 +275,17 @@ export class UnitCardView {
         el.hidden = enemy || autonomous;
       }
     }
+    // A garrison turret (#1155) runs on mains: the row stays, reading
+    // so, rather than a turret card with nothing where its power goes.
     for (const el of this.rows.get("battery") ?? []) {
-      el.hidden = unit.turnsLeft === undefined;
+      el.hidden = !autonomous && unit.turnsLeft === undefined;
     }
     this.set(
       "battery",
       unit.turnsLeft === undefined
-        ? EMPTY_FIELD
+        ? autonomous
+          ? "mains"
+          : EMPTY_FIELD
         : `${formatWhole(unit.turnsLeft)} ${unit.turnsLeft === 1 ? "turn" : "turns"}`,
     );
     this.set("unit-name", name ?? template.name);

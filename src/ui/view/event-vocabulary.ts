@@ -203,17 +203,37 @@ export function describeEvent(
         icon: "radar",
         tone: "dim",
       };
-    case "tactical:turret-deployed":
+    case "tactical:turret-deployed": {
+      // A garrison turret (#1155) was standing when the mission opened
+      // and runs on mains: nobody deployed it and no battery to read.
+      const who =
+        event.payload.unitId === undefined
+          ? "Garrison turret standing"
+          : `${nameOf(event.payload.unitId)} deployed a turret`;
+      const power =
+        event.payload.turnsLeft === undefined
+          ? "on mains"
+          : `${formatWhole(event.payload.turnsLeft)}-turn battery`;
       return {
-        text: `${nameOf(event.payload.unitId)} deployed a turret · ${formatWhole(event.payload.overwatchShots)} shots a turn on overwatch · ${formatWhole(event.payload.turnsLeft)}-turn battery`,
+        text: `${who} · ${formatWhole(event.payload.overwatchShots)} shots a turn on overwatch · ${power}`,
         icon: "overwatch",
         tone: "accent",
       };
+    }
     case "tactical:turret-burned-out":
       return {
         text: "Turret burned out · battery dead",
         icon: "overwatch",
         tone: "dim",
+      };
+    case "tactical:turret-destroyed":
+      return {
+        text:
+          event.payload.killerId === undefined
+            ? `${nameOf(event.payload.turretId)} destroyed`
+            : `${nameOf(event.payload.turretId)} destroyed by ${nameOf(event.payload.killerId)}`,
+        icon: "warning",
+        tone: "danger",
       };
     case "tactical:equipment-used": {
       // A scanner's or a turret's deployment logs itself with its
@@ -345,6 +365,9 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:turret-deployed":
     case "tactical:equipment-used":
       return event.payload.unitId;
+    case "tactical:turret-destroyed":
+      // Above the turret, as a death is above the unit that died.
+      return event.payload.turretId;
     case "tactical:charge-placed":
       return event.payload.charge.ownerId;
     case "tactical:units-healed":

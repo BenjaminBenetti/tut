@@ -27,6 +27,7 @@ import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId, UnitKind } from "../model/unit";
 import type { UnitTuning } from "../model/unit-tuning";
+import type { MissionStartOptions } from "../model/mission-start-options";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission } from "./mission-start-service";
 import { missionOutcome } from "./mission-end-service";
@@ -261,12 +262,14 @@ export class TacticalMissionResolver implements MissionResolver {
     missionId: MissionId,
     deployment: Deployment,
     ids: IdGenerator,
+    options: MissionStartOptions = {},
   ): Result<TState, TacticalError> {
     return startTacticalMission(
       state,
       missionId,
       deployment,
       this.deps.missionStartDepsFor(ids),
+      options,
     );
   }
 

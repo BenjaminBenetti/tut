@@ -12,6 +12,7 @@ import {
   clumpScore,
   distanceScore,
   exposureScore,
+  huntableEnemies,
   overwatchScore,
   tileDistance,
 } from "./utility";
@@ -130,5 +131,51 @@ describe("utility scores", () => {
       picks.add(bestBy(["a", "b", "c"], () => 1, new Mulberry32Rng(i))!);
     }
     expect(picks.size).toBeGreaterThan(1);
+  });
+});
+
+// ===========================================
+// Hunting turrets
+// ===========================================
+
+describe("huntableEnemies (#1155)", () => {
+  const at = (x: number, z: number) => ({ x, y: 0, z });
+  const turretAt = (id: string, x: number, z: number): Unit => ({
+    ...unitAt(id, "infantry", at(x, z)),
+    kind: "turret",
+  });
+  const bug = unitAt("bug", "infantry", at(0, 0), { team: "bugs" });
+  const field = (units: readonly Unit[]) =>
+    missionWith(new FixtureMapBuilder(10, 10, 2).fillGround().build(), [
+      bug,
+      ...units,
+    ]);
+  const ids = (units: readonly Unit[]) => units.map((u) => u.id);
+
+  it("keeps every crewed enemy and a turret only when it is the nearest hostile", () => {
+    const mission = field([
+      unitAt("squad", "infantry", at(4, 0)),
+      turretAt("near", 2, 0),
+      turretAt("far", 7, 7),
+    ]);
+    expect(ids(huntableEnemies(mission, bug))).toEqual(["squad", "near"]);
+  });
+
+  it("drops a turret that would be a detour past the crew", () => {
+    const mission = field([
+      unitAt("squad", "infantry", at(1, 0)),
+      turretAt("turret", 3, 0),
+    ]);
+    expect(ids(huntableEnemies(mission, bug))).toEqual(["squad"]);
+  });
+
+  it("goes for the nearest turret when turrets are all it perceives, and skips the dead", () => {
+    const mission = field([
+      turretAt("far", 7, 0),
+      turretAt("near", 3, 0),
+      { ...turretAt("down", 1, 0), hp: 0 },
+    ]);
+    expect(ids(huntableEnemies(mission, bug))).toEqual(["near"]);
+    expect(huntableEnemies(field([]), bug)).toEqual([]);
   });
 });

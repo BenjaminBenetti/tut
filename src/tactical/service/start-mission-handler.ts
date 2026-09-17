@@ -2,7 +2,9 @@ import { commandError } from "../../core/model/command-error";
 import { err, ok } from "../../core/model/result";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { CommandHandler } from "../../overworld/model/command-handler";
+import type { MissionId } from "../../overworld/model/mission";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
+import type { MissionStartOptions } from "../model/mission-start-options";
 import type { MissionStarter } from "../model/mission-starter";
 import type { StartMissionCommand } from "../model/start-mission-command";
 import { START_MISSION } from "../model/start-mission-command";
@@ -16,6 +18,16 @@ import { tacticalRefusal } from "../model/tactical-error";
 export interface StartMissionDeps {
   /** Begins the mission; the M2 resolver's first half (#330). */
   readonly starter: MissionStarter;
+  /**
+   * What the campaign knows about the mission beyond the deployment
+   * (#1155): the region's garrison turret count, read from the
+   * overworld at launch. Absent, or returning nothing, starts the
+   * mission with no garrison.
+   */
+  readonly startOptionsFor?: (
+    state: MissionCampaignState,
+    missionId: MissionId,
+  ) => MissionStartOptions | undefined;
 }
 
 /** `CommandError.code` when the deployment does not name the launched mission. */
@@ -34,7 +46,7 @@ export const DEPLOYMENT_MISMATCH = "deployment-mismatch";
  * ```
  *   deployment.missionId ≠ missionId ──► err deployment-mismatch
  *          │
- *   starter.beginMission(state, missionId, deployment, ctx.ids)
+ *   starter.beginMission(state, missionId, deployment, ctx.ids, startOptionsFor?.(state, missionId))
  *          ├── err TacticalError ──► CommandError(kind, message)
  *          └── ok  ──► { ...state, activeMission }
  * ```
@@ -62,6 +74,7 @@ export function createStartMissionHandler<TState extends MissionCampaignState>(
       missionId,
       deployment,
       ctx.ids,
+      deps.startOptionsFor?.(state, missionId),
     );
     if (!started.ok) {
       return err(tacticalRefusal(started.error));

@@ -27,7 +27,9 @@ export interface OverworldStateFactoryDeps {
 /**
  * Builds the overworld a new campaign starts on: the given Earth with a
  * few cities seeded with infestation, day `FIRST_DAY`, the threat that
- * map implies, and nothing else happening yet.
+ * map implies, and nothing else happening yet. The opening landings are
+ * the reason the campaign exists, so they start detected (GDD §5.3):
+ * day one offers missions rather than a hunt.
  *
  * Draws from `deps.rng`, in order:
  *
@@ -98,7 +100,9 @@ function seedInfestation(
   }
   const cities = map.cities.map((city) => {
     const level = levels.get(city.id);
-    return level === undefined ? city : { ...city, infestation: level };
+    return level === undefined
+      ? city
+      : { ...city, infestation: level, detected: true };
   });
   return { regions: map.regions, cities };
 }

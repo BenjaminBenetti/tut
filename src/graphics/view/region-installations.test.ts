@@ -25,6 +25,7 @@ function deployable(
     id,
     typeId: "sensor-array",
     regionId: "east-asia",
+    level: 1,
     builtDay: 1,
     online: true,
     ...overrides,

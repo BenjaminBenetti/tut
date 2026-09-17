@@ -5,7 +5,7 @@ import type { TransactionService } from "../../economy/model/transaction-service
 import type { CampaignEvent } from "../model/campaign-event";
 import type { CampaignState } from "../model/campaign-state";
 import type { City } from "../model/city";
-import { clampInfestation } from "../model/city";
+import { clampInfestation, withInfestation } from "../model/city";
 import { CITY_INFESTATION_CHANGED } from "../model/city-infestation-changed-event";
 import type { EventResolutionError } from "../model/event-resolution-error";
 import { EVENT_RESOLVED } from "../model/event-resolved-event";
@@ -225,7 +225,7 @@ function applyCityInfestation(
     map: {
       regions: map.regions,
       cities: map.cities.map((c) =>
-        c.id === city.id ? { ...c, infestation: to } : c,
+        c.id === city.id ? withInfestation(c, to) : c,
       ),
     },
   };

@@ -6,7 +6,11 @@ import type { CampaignState } from "../model/campaign-state";
 import type { CityId } from "../model/city";
 import type { Deployable } from "../model/deployable";
 import type { DeployableModifiers } from "../model/deployable-modifiers";
-import type { DeployableType } from "../model/deployable-type";
+import type {
+  DeployableLevelSpec,
+  DeployableType,
+} from "../model/deployable-type";
+import { levelSpec } from "../model/deployable-type";
 import type { DeployableTypeCatalogue } from "../model/deployable-type-catalogue";
 import type {
   DeployableOfflineEvent,
@@ -18,7 +22,7 @@ import {
 } from "../model/overworld-domain-event";
 import type { OverworldState } from "../model/overworld-state";
 import type { RegionId } from "../model/region";
-import { getRegion } from "./earth-map-query-service";
+import { findCity, getRegion } from "./earth-map-query-service";
 
 // ===========================================
 // Types
@@ -40,15 +44,18 @@ export type UpkeepEvent =
 // ===========================================
 
 /**
- * Sums what every online deployable does into the modifier maps the rest
- * of the tick consumes (GDD §5.6). Offline installations contribute
- * nothing. Pure over its inputs.
+ * Sums what every online deployable does at its current level into the
+ * modifier maps the rest of the tick consumes (GDD §5.6). Offline
+ * installations contribute nothing. Pure over its inputs.
  *
  * ```
- *   for each online deployable, type = catalogue[typeId]:
- *     suppression[city]      += type.effect.suppression   for each city in region
- *     deterrence[region]      = 1 − (1 − deterrence[region]) × (1 − type.effect.spreadDeterrence)
- *     intelBonus[region]     += type.effect.intelBonus
+ *   for each online deployable, effect = catalogue[typeId].levels[level].effect:
+ *     detectionFactor[region]  = min(detectionFactor[region], effect.detectionFactor)
+ *     intelBonus[region]      += effect.intelBonus
+ *     growthFactor[city]      *= effect.growthFactor        for each city in region
+ *     deterrence[region]       = 1 − (1 − deterrence[region]) × (1 − effect.spreadDeterrence)
+ *     garrisonTurrets[region] += effect.garrisonTurrets
+ *     incomeBonus             += effect.incomeBonus
  * ```
  *
  * @throws {Error} if a deployable references a type the catalogue does
@@ -59,20 +66,33 @@ export function computeModifiers(
   overworld: OverworldState,
   catalogue: DeployableTypeCatalogue,
 ): DeployableModifiers {
-  const suppression: Record<CityId, number> = {};
-  const spreadDeterrence: Record<RegionId, number> = {};
+  const detectionFactor: Record<RegionId, number> = {};
   const intelBonus: Record<RegionId, number> = {};
+  const growthFactor: Record<CityId, number> = {};
+  const spreadDeterrence: Record<RegionId, number> = {};
+  const garrisonTurrets: Record<RegionId, number> = {};
+  let incomeBonus = 0;
 
   for (const deployable of overworld.deployables) {
     if (!deployable.online) {
       continue;
     }
-    const { effect } = typeOf(deployable, catalogue);
+    const { effect } = specOf(deployable, catalogue);
     const region = getRegion(overworld.map, deployable.regionId);
 
-    if (effect.suppression !== undefined) {
+    if (effect.detectionFactor !== undefined) {
+      detectionFactor[region.id] = Math.min(
+        detectionFactor[region.id] ?? 1,
+        effect.detectionFactor,
+      );
+    }
+    if (effect.intelBonus !== undefined) {
+      intelBonus[region.id] = (intelBonus[region.id] ?? 0) + effect.intelBonus;
+    }
+    if (effect.growthFactor !== undefined) {
       for (const cityId of region.cityIds) {
-        suppression[cityId] = (suppression[cityId] ?? 0) + effect.suppression;
+        growthFactor[cityId] =
+          (growthFactor[cityId] ?? 1) * effect.growthFactor;
       }
     }
     if (effect.spreadDeterrence !== undefined) {
@@ -80,12 +100,43 @@ export function computeModifiers(
       spreadDeterrence[region.id] =
         1 - (1 - current) * (1 - effect.spreadDeterrence);
     }
-    if (effect.intelBonus !== undefined) {
-      intelBonus[region.id] = (intelBonus[region.id] ?? 0) + effect.intelBonus;
+    if (effect.garrisonTurrets !== undefined) {
+      garrisonTurrets[region.id] =
+        (garrisonTurrets[region.id] ?? 0) + effect.garrisonTurrets;
+    }
+    if (effect.incomeBonus !== undefined) {
+      incomeBonus += effect.incomeBonus;
     }
   }
 
-  return { suppression, spreadDeterrence, intelBonus };
+  return {
+    detectionFactor,
+    intelBonus,
+    growthFactor,
+    spreadDeterrence,
+    garrisonTurrets,
+    incomeBonus,
+  };
+}
+
+/**
+ * How many garrison turrets a mission fought at `cityId` starts with
+ * (GDD §5.6): the `garrisonTurrets` modifier of the city's region, `0`
+ * when the region has no online battery or the city is not on the map.
+ * The launch path hands this to the tactical mission start.
+ */
+export function garrisonTurretsFor(
+  overworld: OverworldState,
+  catalogue: DeployableTypeCatalogue,
+  cityId: CityId,
+): number {
+  const city = findCity(overworld.map, cityId);
+  if (city === undefined) {
+    return 0;
+  }
+  return (
+    computeModifiers(overworld, catalogue).garrisonTurrets[city.regionId] ?? 0
+  );
 }
 
 // ===========================================
@@ -93,16 +144,17 @@ export function computeModifiers(
 // ===========================================
 
 /**
- * Charges one day of upkeep for every deployable, in state order, through
- * the transaction service (GDD §5.6). An installation whose upkeep the
- * treasury cannot cover is skipped and goes offline; one that is offline
- * comes back the first day its upkeep can be paid. Credits never go
- * negative and unaffordable installations are never removed.
+ * Charges one day of upkeep for every deployable, at its current level,
+ * in state order, through the transaction service (GDD §5.6). An
+ * installation whose upkeep the treasury cannot cover is skipped and
+ * goes offline; one that is offline comes back the first day its upkeep
+ * can be paid. Credits never go negative and unaffordable installations
+ * are never removed.
  *
  * ```
  *   for each deployable:
- *     spend(upkeep) ──ok──► online: true   (DeployableOnline if it was offline)
- *                   └─err─► online: false  (DeployableOffline if it was online)
+ *     spend(levels[level].upkeepPerDay) ──ok──► online: true   (DeployableOnline if it was offline)
+ *                                       └─err─► online: false  (DeployableOffline if it was online)
  * ```
  *
  * Earlier entries are paid first, so with a thin treasury the oldest
@@ -121,10 +173,10 @@ export function chargeUpkeep<TState extends CampaignState>(
 
   const deployables = state.overworld.deployables.map(
     (deployable): Deployable => {
-      const type = typeOf(deployable, deps.catalogue);
+      const spec = specOf(deployable, deps.catalogue);
       const paid = deps.transactions.spend(
         economy,
-        type.upkeepPerDay,
+        spec.upkeepPerDay,
         "upkeep",
         deployable.id,
         day,
@@ -167,7 +219,7 @@ export function chargeUpkeep<TState extends CampaignState>(
 // ===========================================
 
 /** Resolves a deployable's type, throwing on a catalogue miss. */
-function typeOf(
+export function typeOf(
   deployable: Deployable,
   catalogue: DeployableTypeCatalogue,
 ): DeployableType {
@@ -178,4 +230,12 @@ function typeOf(
     );
   }
   return type;
+}
+
+/** The cost, upkeep and effect of a deployable at its current level. */
+function specOf(
+  deployable: Deployable,
+  catalogue: DeployableTypeCatalogue,
+): DeployableLevelSpec {
+  return levelSpec(typeOf(deployable, catalogue), deployable.level);
 }

@@ -1,8 +1,11 @@
 import type { City } from "../../overworld/model/city";
 import type { Region } from "../../overworld/model/region";
 
-/** A city as v19 saved it: `population` arrived at v24 (#1154) and is filled by that step. */
-export type V19City = Omit<City, "population">;
+/**
+ * A city as v19 saved it: `population` arrived at v24 (#1154) and
+ * `detected` at v25 (#1155); each is filled by its own step.
+ */
+export type V19City = Omit<City, "population" | "detected">;
 
 /** The v19 map shape: today's regions, cities without their v24 population. */
 export interface WorldBiomesSnapshot {

@@ -11,6 +11,8 @@ import { decommissionDeployable } from "../model/decommission-deployable-command
 import { DEPLOYABLE_BUILT } from "../model/deployable-built-event";
 import { DEPLOYABLE_REMOVED } from "../model/deployable-removed-event";
 import { DEPLOYABLE_TYPE_IDS } from "../model/deployable-type";
+import { DEPLOYABLE_UPGRADED } from "../model/deployable-upgraded-event";
+import { upgradeDeployable } from "../model/upgrade-deployable-command";
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { DeployableHandlerDeps } from "./deployable-command-handlers";
@@ -23,6 +25,8 @@ import { buildEarthMap } from "./earth-map-builder";
 
 const DAY = 4;
 const BATTERY = DEPLOYABLE_TYPES["defensive-battery"];
+const SENSOR = DEPLOYABLE_TYPES["sensor-array"];
+const BATTERY_COST = BATTERY.levels[1].buildCost;
 
 const BASE: CampaignState = {
   meta: {
@@ -52,6 +56,7 @@ const BASE: CampaignState = {
         id: "deployable-1",
         typeId: "sensor-array",
         regionId: "west",
+        level: 1,
         builtDay: 1,
         online: true,
       },
@@ -81,11 +86,12 @@ function dispatcher(): CommandDispatcher<CampaignState> {
 // ===========================================
 
 describe("registerDeployableCommands", () => {
-  it("registers both commands and leaves others unknown", () => {
+  it("registers the three commands and leaves others unknown", () => {
     const d = dispatcher();
     expect(
       d.process(BASE, buildDeployable("defensive-battery", "west")).ok,
     ).toBe(true);
+    expect(d.process(BASE, upgradeDeployable("deployable-1")).ok).toBe(true);
     expect(d.process(BASE, decommissionDeployable("deployable-1")).ok).toBe(
       true,
     );
@@ -120,7 +126,7 @@ describe("deployable handlers through the dispatcher", () => {
       "deployable-2",
     ]);
     expect(state.overworld.deployables[1]?.builtDay).toBe(DAY);
-    expect(state.economy.credits).toBe(10_000 - BATTERY.buildCost);
+    expect(state.economy.credits).toBe(10_000 - BATTERY_COST);
     expect(state.economy.ledger.map((t) => [t.id, t.ref, t.day])).toEqual([
       ["txn-5", "deployable-2", DAY],
     ]);
@@ -130,6 +136,26 @@ describe("deployable handlers through the dispatcher", () => {
     expect(events.map((e) => e.type)).toEqual([
       "economy:credits-changed",
       DEPLOYABLE_BUILT,
+    ]);
+  });
+
+  it("UpgradeDeployable charges the next level against the installation's id on the campaign day", () => {
+    const outcome = dispatcher().process(
+      BASE,
+      upgradeDeployable("deployable-1"),
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const { state, events } = outcome.value;
+    expect(state.overworld.deployables[0]?.level).toBe(2);
+    expect(state.economy.credits).toBe(10_000 - SENSOR.levels[2].buildCost);
+    expect(state.economy.ledger.map((t) => [t.id, t.ref, t.day])).toEqual([
+      ["txn-5", "deployable-1", DAY],
+    ]);
+    expect(state.meta.ids.counters).toEqual({ txn: 6, deployable: 2 });
+    expect(events.map((e) => e.type)).toEqual([
+      "economy:credits-changed",
+      DEPLOYABLE_UPGRADED,
     ]);
   });
 
@@ -151,10 +177,23 @@ describe("deployable handlers through the dispatcher", () => {
     ["cap", buildDeployable("sensor-array", "west"), "region-cap-reached"],
     ["region", buildDeployable("sensor-array", "mars"), "unknown-region"],
     ["decommission", decommissionDeployable("ghost"), "unknown-deployable"],
+    ["upgrade", upgradeDeployable("ghost"), "unknown-deployable"],
+    [
+      "max level",
+      upgradeDeployable("deployable-1"),
+      "max-level-reached",
+      {
+        ...BASE,
+        overworld: {
+          ...BASE.overworld,
+          deployables: [{ ...BASE.overworld.deployables[0]!, level: 3 }],
+        },
+      },
+    ],
   ] as const)(
     "%s error folds into a CommandError with the deployable code",
-    (_name, command, code) => {
-      const outcome = dispatcher().process(BASE, command);
+    (_name, command, code, base: CampaignState = BASE) => {
+      const outcome = dispatcher().process(base, command);
       expect(outcome.ok).toBe(false);
       if (outcome.ok) return;
       expect(outcome.error.code).toBe(code);
@@ -174,7 +213,7 @@ describe("deployable handlers through the dispatcher", () => {
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;
     expect(outcome.error.code).toBe("insufficient-credits");
-    expect(outcome.error.message).toContain(String(BATTERY.buildCost));
+    expect(outcome.error.message).toContain(String(BATTERY_COST));
     expect(poor.meta.ids.counters).toEqual({ txn: 5, deployable: 2 });
   });
 });

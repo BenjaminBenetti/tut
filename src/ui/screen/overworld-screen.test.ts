@@ -24,6 +24,7 @@ import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
+import { deployableBuildCost } from "../../overworld/model/deployable-type";
 import { BUILD_DEPLOYABLE } from "../../overworld/model/build-deployable-command";
 import { DECOMMISSION_DEPLOYABLE } from "../../overworld/model/decommission-deployable-command";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
@@ -97,6 +98,7 @@ class FakeStore implements CampaignStore {
               id: `deployable-${String(this.state.overworld.deployables.length + 1)}`,
               typeId: command.payload.typeId,
               regionId: command.payload.regionId,
+              level: 1,
               builtDay: this.state.overworld.day,
               online: true,
             },
@@ -104,7 +106,7 @@ class FakeStore implements CampaignStore {
         },
         economy: {
           ...this.state.economy,
-          credits: this.state.economy.credits - type.buildCost,
+          credits: this.state.economy.credits - deployableBuildCost(type),
         },
       };
     } else if (command.type === DECOMMISSION_DEPLOYABLE) {
@@ -684,7 +686,20 @@ describe("OverworldScreen", () => {
   it("a map pick opens the wheel at the marker with infestation, name and population, and the missions there", () => {
     const picks = new FakePicks();
     const selection = newSelection();
-    const state = withMissions(4, MISSIONS);
+    const offered = withMissions(4, MISSIONS);
+    // Lagos is infested and detected, so the hub shows its number.
+    const state: GameState = {
+      ...offered,
+      overworld: {
+        ...offered.overworld,
+        map: {
+          ...offered.overworld.map,
+          cities: offered.overworld.map.cities.map((c) =>
+            c.id === "lagos" ? { ...c, infestation: 12, detected: true } : c,
+          ),
+        },
+      },
+    };
     new OverworldScreen(
       depsFor(new FakeStore(state), undefined, selection, picks),
     ).mount(root);
@@ -694,10 +709,8 @@ describe("OverworldScreen", () => {
     expect(wheel()?.hidden).toBe(false);
     expect(wheel()?.style.left).toBe("300px");
     expect(wheel()?.style.top).toBe("200px");
-    const lagos = findCity(state.overworld.map, "lagos");
-    expect(field("hub-value")?.textContent).toBe(
-      String(lagos?.infestation ?? -1),
-    );
+    expect(findCity(state.overworld.map, "lagos")?.detected).toBe(true);
+    expect(field("hub-value")?.textContent).toBe("12");
     expect(
       root.querySelector("#radial-menu .tut-radial__caption")?.textContent,
     ).toBe("Lagos · 16.6M");

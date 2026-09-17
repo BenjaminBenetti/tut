@@ -12,6 +12,7 @@ import { THREAT_CHANGED } from "../model/overworld-domain-event";
 import type { ThreatTuning } from "../model/threat-tuning";
 import type { TickStep } from "../model/tick-step";
 import { chargeUpkeep } from "./deployable-effects-service";
+import { applyDetection } from "./infestation-detection-service";
 import { applyGrowth } from "./infestation-growth-service";
 import { applySpread } from "./infestation-spread-service";
 import type { MissionTypeCatalogue } from "./mission-generation-service";
@@ -54,6 +55,7 @@ export const TICK_STEP_NAMES = {
   upkeep: "upkeep",
   growth: "growth",
   spread: "spread",
+  detection: "detection",
   missionExpiry: "mission-expiry",
   missionGeneration: "mission-generation",
   events: EVENT_STEP_NAME,
@@ -71,19 +73,20 @@ export const TICK_STEP_NAMES = {
  *
  * ```
  *   1. upkeep              charge deployables; offline ones stop contributing
- *   2. growth              infested cities grow, less suppression
+ *   2. growth              infested cities grow, slowed by repellent
  *   3. spread              infested cities spread to neighbours; threat seeds clean ones
- *   4. mission-expiry      lapsed missions go; host cities pay the ignore penalty
- *   5. mission-generation  infested cities may offer missions (+ intel bonus)
- *   6. events              lapsed events resolve by default; maybe a new one (#71)
- *   7. stipend             Earth pays for the day, scaled by how much is unfested
- *                          and by any event-driven stipend modifiers (#70)
- *   8. threat              recompute and store global threat
- *   9. outcome             defeat / victory-stub check, once
+ *   4. detection           infested cities past the (sensor-lowered) thresholds are found
+ *   5. mission-expiry      lapsed missions go; host cities pay the ignore penalty
+ *   6. mission-generation  detected cities may offer missions (+ intel bonus)
+ *   7. events              lapsed events resolve by default; maybe a new one (#71)
+ *   8. stipend             Earth pays for the day, scaled by how much is unfested,
+ *                          by any event-driven stipend modifiers (#70), plus the banks
+ *   9. threat              recompute and store global threat
+ *  10. outcome             defeat / victory-stub check, once
  * ```
  *
  * Growth and spread read the threat stored by the previous tick; the
- * recompute in step 7 is what the next day sees. Modifiers reach each
+ * recompute in step 9 is what the next day sees. Modifiers reach each
  * step through `ctx`, computed after upkeep so an installation that just
  * went offline contributes nothing today.
  */
@@ -94,6 +97,7 @@ export function createDefaultTickSteps<TState extends CampaignState>(
     upkeepStep(deps),
     growthStep(deps),
     spreadStep(deps),
+    detectionStep(deps),
     missionExpiryStep(),
     missionGenerationStep(deps),
     createEventStep<TState>(deps),
@@ -121,7 +125,7 @@ function upkeepStep<TState extends CampaignState>(
   };
 }
 
-/** Grows every infested city, net of the day's suppression. */
+/** Grows every infested city, slowed by the day's growth factors. */
 function growthStep<TState extends CampaignState>(
   deps: TickDeps,
 ): TickStep<TState> {
@@ -132,7 +136,7 @@ function growthStep<TState extends CampaignState>(
       const grown = applyGrowth(
         overworld.map,
         overworld.threat,
-        ctx.modifiers.suppression,
+        ctx.modifiers.growthFactor,
         deps.infestationTuning,
       );
       if (grown.events.length === 0) {
@@ -172,6 +176,30 @@ function spreadStep<TState extends CampaignState>(
           },
         },
         events: spread.events,
+      };
+    },
+  };
+}
+
+/** Finds infested cities past their region's detection thresholds. */
+function detectionStep<TState extends CampaignState>(
+  deps: TickDeps,
+): TickStep<TState> {
+  return {
+    name: TICK_STEP_NAMES.detection,
+    run: (state, ctx) => {
+      const { overworld } = state;
+      const detected = applyDetection(
+        overworld.map,
+        ctx.modifiers.detectionFactor,
+        deps.infestationTuning,
+      );
+      if (detected.state === overworld.map) {
+        return { state, events: [] };
+      }
+      return {
+        state: { ...state, overworld: { ...overworld, map: detected.state } },
+        events: detected.events,
       };
     },
   };
@@ -219,7 +247,7 @@ function missionGenerationStep<TState extends CampaignState>(
   };
 }
 
-/** Pays the day's stipend, scaled by how much of Earth is unfested. */
+/** Pays the day's stipend, scaled by how much of Earth is unfested, plus the banks' bonus. */
 function stipendStep<TState extends CampaignState>(
   deps: TickDeps,
 ): TickStep<TState> {
@@ -234,6 +262,7 @@ function stipendStep<TState extends CampaignState>(
         ctx.day,
         scaleStipend(deps.economyTuning, factor),
         deps.createTransactions(ctx.ids),
+        ctx.modifiers.incomeBonus,
       );
       const remaining = tickStipendModifiers(overworld.stipendModifiers);
       const { stipendModifiers: _dropped, ...rest } = overworld;

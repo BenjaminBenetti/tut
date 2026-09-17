@@ -6,7 +6,11 @@ import type {
   DeployableType,
   DeployableTypeId,
 } from "../../overworld/model/deployable-type";
-import { isDeployableTypeId } from "../../overworld/model/deployable-type";
+import {
+  deployableBuildCost,
+  isDeployableTypeId,
+  levelSpec,
+} from "../../overworld/model/deployable-type";
 import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
 import type { RegionId } from "../../overworld/model/region";
 import type { GameState } from "../../save/model/game-state";
@@ -30,19 +34,20 @@ export interface DeployablesViewHandlers {
 
 /**
  * The selected region's installations (GDD §5.6): what is built, with
- * its status and upkeep and a Decommission button, then under a Build
- * heading one button per type showing cost, upkeep and how many of the
- * cap are used (#1151). A button is disabled when the treasury cannot
- * cover the cost or the region is at the type's cap; the reason is in
- * the button's title.
+ * its level, status and upkeep at that level and a Decommission button,
+ * then under a Build heading one button per type showing the level 1
+ * cost, upkeep and how many of the cap are used (#1151). A button is
+ * disabled when the treasury cannot cover the cost or the region is at
+ * the type's cap; the reason is in the button's title. Upgrades are not
+ * offered here yet: the installation wheel (#1155) will carry them.
  *
  * ```
  *   DEPLOYABLES · North America East
- *   ├ Defensive battery   online   ¢50/day   [Decommission]
- *   ├ Sensor array        offline  ¢20/day   [Decommission]
+ *   ├ Defensive battery  L2  online   ¢80/day   [Decommission]
+ *   ├ Sensor array       L1  offline  ¢20/day   [Decommission]
  *   BUILD
- *   [Defensive battery · ¢1,500 · 1/2]
- *   [Repellent dispersal · ¢1,000 · 0/1]  …
+ *   [Defensive battery · L1 · ¢1,500 · 1/1]
+ *   [Repellent dispersal · L1 · ¢1,000 · 0/1]  …
  * ```
  *
  * The lists are rebuilt on every update (they are a handful of rows);
@@ -203,6 +208,11 @@ export class DeployablesView {
       name.className = "tut-data";
       name.textContent = type?.name ?? deployable.typeId;
 
+      const level = doc.createElement("span");
+      level.className = "tut-mono tut-dim";
+      level.dataset.field = "level";
+      level.textContent = `L${String(deployable.level)}`;
+
       const status = doc.createElement("span");
       status.className = `tut-badge tut-badge--${deployable.online ? "ok" : "warn"}`;
       status.dataset.field = "status";
@@ -211,7 +221,9 @@ export class DeployablesView {
       const upkeep = doc.createElement("span");
       upkeep.className = "tut-mono tut-dim";
       upkeep.textContent =
-        type === undefined ? "—" : `${formatCredits(type.upkeepPerDay)}/day`;
+        type === undefined
+          ? "—"
+          : `${formatCredits(levelSpec(type, deployable.level).upkeepPerDay)}/day`;
 
       const remove = doc.createElement("button");
       remove.type = "button";
@@ -219,7 +231,7 @@ export class DeployablesView {
       remove.dataset.action = "decommission-deployable";
       remove.textContent = "Decommission";
 
-      row.append(name, status, upkeep, remove);
+      row.append(name, level, status, upkeep, remove);
       this.list.appendChild(row);
     }
   }
@@ -242,12 +254,13 @@ export class DeployablesView {
       button.className = "tut-btn";
       button.dataset.action = "build-deployable";
       button.dataset.typeId = type.id;
-      button.textContent = `${type.name} · ${formatCredits(type.buildCost)} · ${String(count)}/${String(type.maxPerRegion)}`;
+      const first = levelSpec(type, 1);
+      button.textContent = `${type.name} · L1 · ${formatCredits(first.buildCost)} · ${String(count)}/${String(type.maxPerRegion)}`;
       const reason = this.buildBlocker(type, count, credits);
       button.disabled = reason !== undefined;
       button.title =
         reason ??
-        `${type.description} Upkeep ${formatCredits(type.upkeepPerDay)} per day.`;
+        `${type.description} Upkeep ${formatCredits(first.upkeepPerDay)} per day.`;
       this.builds.appendChild(button);
     }
   }
@@ -261,8 +274,9 @@ export class DeployablesView {
     if (count >= type.maxPerRegion) {
       return `Region cap of ${String(type.maxPerRegion)} reached`;
     }
-    if (credits < type.buildCost) {
-      return `Need ${formatCredits(type.buildCost)}, have ${formatCredits(credits)}`;
+    const cost = deployableBuildCost(type);
+    if (credits < cost) {
+      return `Need ${formatCredits(cost)}, have ${formatCredits(credits)}`;
     }
     return undefined;
   }

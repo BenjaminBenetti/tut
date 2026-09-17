@@ -89,6 +89,7 @@ const STATE: MissionResolutionState = {
     name: "C",
     regionId: "r",
     infestation: 40,
+    detected: true,
     scale: "city",
     population: 1_000_000,
     neighbourIds: [],

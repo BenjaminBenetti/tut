@@ -58,7 +58,7 @@ test("selecting a city and building a battery charges credits and lists it", asy
 
   const battery = DEPLOYABLE_TYPES["defensive-battery"];
   await expect(credits).toHaveText(
-    `¢${(before - battery.buildCost).toLocaleString("en-US")}`,
+    `¢${(before - battery.levels[1].buildCost).toLocaleString("en-US")}`,
   );
   const rows = page.locator("#deployables [data-deployable-id]");
   await expect(rows).toHaveCount(1);
@@ -100,7 +100,7 @@ test("selecting a city and building a battery charges credits and lists it", asy
     )
     .toBeUndefined();
   await expect(credits).toHaveText(
-    `¢${(before - battery.buildCost).toLocaleString("en-US")}`,
+    `¢${(before - battery.levels[1].buildCost).toLocaleString("en-US")}`,
   );
 
   expect(errors).toEqual([]);

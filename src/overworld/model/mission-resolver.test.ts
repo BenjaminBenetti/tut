@@ -50,6 +50,7 @@ const STATE: MissionResolutionState = {
     name: "New York",
     regionId: "north-america-east",
     infestation: 40,
+    detected: true,
     scale: "city",
     population: 1_000_000,
     neighbourIds: [],

@@ -26,6 +26,7 @@ const CITY: City = {
   name: "London",
   regionId: "western-europe",
   infestation: 0,
+  detected: false,
   scale: "city",
   population: 1_000_000,
   neighbourIds: [],

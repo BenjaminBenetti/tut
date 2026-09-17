@@ -41,6 +41,16 @@ export interface City {
   readonly regionId: RegionId;
   /** Integer in `[MIN_INFESTATION, MAX_INFESTATION]`. */
   readonly infestation: number;
+  /**
+   * Whether the player has found the infestation here (GDD §5.3). A
+   * clean city is never detected; an infested one stays undetected — its
+   * infestation hidden and no missions offered — until the region's
+   * mean or its own infestation crosses the detection thresholds in
+   * `infestation-tuning`, lowered by a sensor array. The opening landings
+   * of a new campaign start detected. Invariant: `infestation === 0`
+   * implies `detected === false`.
+   */
+  readonly detected: boolean;
   /** How built-up the city is; missions here generate maps at this scale (GDD §7). */
   readonly scale: SettlementScale;
   /** Local environment for missions; absent cities inherit the region biome. */
@@ -59,4 +69,29 @@ export interface City {
 /** Clamps a value into `[MIN_INFESTATION, MAX_INFESTATION]`. */
 export function clampInfestation(value: number): number {
   return Math.min(MAX_INFESTATION, Math.max(MIN_INFESTATION, value));
+}
+
+/**
+ * A copy of `city` at infestation `to`, keeping the detection invariant
+ * (GDD §5.3): a city cleared to zero is forgotten, and a clean city that
+ * becomes infested starts undetected, so a fresh landing is never shown
+ * just because the city was known before. Every service that moves a
+ * city's infestation goes through here. Returns `city` itself when
+ * nothing would change.
+ *
+ * ```
+ *   to === 0                    ──► detected: false   (cleared, forgotten)
+ *   from === 0 and to > 0       ──► detected: false   (fresh landing, unseen)
+ *   otherwise                   ──► detected unchanged
+ * ```
+ */
+export function withInfestation(city: City, to: number): City {
+  const detected =
+    to === MIN_INFESTATION || city.infestation === MIN_INFESTATION
+      ? false
+      : city.detected;
+  if (to === city.infestation && detected === city.detected) {
+    return city;
+  }
+  return { ...city, infestation: to, detected };
 }

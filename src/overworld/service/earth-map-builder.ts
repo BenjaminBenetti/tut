@@ -157,6 +157,7 @@ function buildCity(
     name: seed.name,
     regionId,
     infestation,
+    detected: seed.detected ?? infestation > MIN_INFESTATION,
     scale: seed.scale ?? DEFAULT_CITY_SCALE,
     ...(seed.biome === undefined ? {} : { biome: seed.biome }),
     population,

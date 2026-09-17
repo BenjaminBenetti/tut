@@ -5,6 +5,7 @@ import { SequentialIdGenerator } from "../../core/service/sequential-id-generato
 import { CREDITS_CHANGED } from "../../economy/model/economy-event";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { EVENT_TYPES } from "../data/event-types";
+import { NO_DEPLOYABLE_MODIFIERS } from "../model/deployable-modifiers";
 import type { CampaignState } from "../model/campaign-state";
 import { EVENT_EXPIRED } from "../model/event-expired-event";
 import { EVENT_OFFERED } from "../model/event-offered-event";
@@ -105,7 +106,7 @@ function ctx(
     day,
     rng: new Mulberry32Rng(seed),
     ids,
-    modifiers: { suppression: {}, spreadDeterrence: {}, intelBonus: {} },
+    modifiers: NO_DEPLOYABLE_MODIFIERS,
   };
 }
 

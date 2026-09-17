@@ -10,7 +10,7 @@ import { applyCasualties } from "../../roster/service/roster-casualty-service";
 import type { CampaignEvent } from "../model/campaign-event";
 import type { CampaignState } from "../model/campaign-state";
 import type { City } from "../model/city";
-import { clampInfestation } from "../model/city";
+import { clampInfestation, withInfestation } from "../model/city";
 import { CITY_INFESTATION_CHANGED } from "../model/city-infestation-changed-event";
 import type { CommandDispatcher } from "../model/command-dispatcher";
 import type { CommandHandler } from "../model/command-handler";
@@ -173,7 +173,8 @@ export function validateLaunch(
  *   1. MissionResolved { result }
  *   2. roster  ── applyCasualties ──► losses, damage, wipes, graveyard, xp   (roster events)
  *   3. economy ── earn(creditsAwarded, "reward", mission.id)                 (CreditsChanged)
- *   4. map     ── city.infestation += infestationDelta, clamped              (CityInfestationChanged)
+ *   4. map     ── city.infestation += infestationDelta, clamped; a city     (CityInfestationChanged)
+ *                 cleared to zero is forgotten again (GDD §5.3)
  *   5. mission removed from the offers; lastMissionResult := result
  * ```
  *
@@ -233,7 +234,7 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
         type: CITY_INFESTATION_CHANGED,
         payload: { cityId: candidate.id, from: candidate.infestation, to },
       });
-      return { ...candidate, infestation: to };
+      return withInfestation(candidate, to);
     });
 
     return ok({

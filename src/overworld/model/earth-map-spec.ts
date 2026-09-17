@@ -19,6 +19,12 @@ export interface CitySeed {
   readonly layout: MapLayout;
   /** Starting infestation; defaults to `MIN_INFESTATION`. */
   readonly infestation?: number;
+  /**
+   * Whether a starting infestation is already found; defaults to
+   * detected when `infestation` is positive, so an authored infested
+   * city behaves as it did before detection existed.
+   */
+  readonly detected?: boolean;
   /** Settlement scale for missions here; defaults to `DEFAULT_CITY_SCALE`. */
   readonly scale?: SettlementScale;
   /** Local environment where a broad region spans several climates. */

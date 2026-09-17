@@ -11,8 +11,14 @@ import type { DecommissionDeployableCommand } from "../model/decommission-deploy
 import { DECOMMISSION_DEPLOYABLE } from "../model/decommission-deployable-command";
 import { describeDeployableError } from "../model/deployable-error";
 import type { DeployableTypeCatalogue } from "../model/deployable-type-catalogue";
+import type { UpgradeDeployableCommand } from "../model/upgrade-deployable-command";
+import { UPGRADE_DEPLOYABLE } from "../model/upgrade-deployable-command";
 import type { DeployableResult } from "./deployable-service";
-import { buildDeployable, decommissionDeployable } from "./deployable-service";
+import {
+  buildDeployable,
+  decommissionDeployable,
+  upgradeDeployable,
+} from "./deployable-service";
 
 // ===========================================
 // Types
@@ -31,6 +37,7 @@ export interface DeployableHandlerDeps {
 /** One handler per deployable command, ready to register. */
 export interface DeployableCommandHandlers<TState extends CampaignState> {
   readonly buildDeployable: CommandHandler<TState, BuildDeployableCommand>;
+  readonly upgradeDeployable: CommandHandler<TState, UpgradeDeployableCommand>;
   readonly decommissionDeployable: CommandHandler<
     TState,
     DecommissionDeployableCommand
@@ -66,18 +73,32 @@ export function createDeployableCommandHandlers<TState extends CampaignState>(
           },
         ),
       ),
+    upgradeDeployable: (state, command, ctx) =>
+      lift(
+        state,
+        upgradeDeployable(
+          state,
+          command.payload.deployableId,
+          state.overworld.day,
+          {
+            catalogue: deps.catalogue,
+            transactions: deps.transactionsFor(ctx.ids),
+          },
+        ),
+      ),
     decommissionDeployable: (state, command) =>
       lift(state, decommissionDeployable(state, command.payload.deployableId)),
   };
 }
 
-/** Registers both deployable handlers on `dispatcher`. Called once at the composition root. */
+/** Registers the three deployable handlers on `dispatcher`. Called once at the composition root. */
 export function registerDeployableCommands<TState extends CampaignState>(
   dispatcher: CommandDispatcher<TState>,
   deps: DeployableHandlerDeps,
 ): void {
   const handlers = createDeployableCommandHandlers<TState>(deps);
   dispatcher.register(BUILD_DEPLOYABLE, handlers.buildDeployable);
+  dispatcher.register(UPGRADE_DEPLOYABLE, handlers.upgradeDeployable);
   dispatcher.register(DECOMMISSION_DEPLOYABLE, handlers.decommissionDeployable);
 }
 

@@ -59,6 +59,7 @@ const built = (
   id,
   typeId,
   regionId: REGION.id,
+  level: 1,
   builtDay: 1,
   online,
 });
@@ -124,7 +125,7 @@ describe("DeployablesView", () => {
       "online",
     );
     expect(rows[0]?.textContent).toContain(
-      `¢${String(BATTERY.upkeepPerDay)}/day`,
+      `¢${String(BATTERY.levels[1].upkeepPerDay)}/day`,
     );
     expect(rows[1]?.querySelector('[data-field="status"]')?.textContent).toBe(
       "offline",
@@ -132,7 +133,7 @@ describe("DeployablesView", () => {
     const builds = root.querySelectorAll('[data-action="build-deployable"]');
     expect(builds).toHaveLength(DEPLOYABLE_TYPE_IDS.length);
     expect(buildButton("defensive-battery")?.textContent).toBe(
-      "Defensive battery · ¢1,500 · 1/2",
+      "Defensive battery · L1 · ¢1,500 · 1/1",
     );
     const heading = root.querySelector('[data-role="build-heading"]');
     expect(heading?.textContent).toBe("Build");

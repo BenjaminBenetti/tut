@@ -26,6 +26,7 @@ function deployable(overrides: Partial<Deployable> = {}): Deployable {
     id: "deployable-1",
     typeId: "sensor-array",
     regionId: "east-asia",
+    level: 1,
     builtDay: 1,
     online: true,
     ...overrides,

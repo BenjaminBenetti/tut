@@ -19,10 +19,11 @@ export const STIPEND_REF = "earth";
 
 /**
  * The stipend Earth pays for one day (GDD §5.5): the base stipend scaled
- * by how much of Earth is unfested, never below the floor.
+ * by how much of Earth is unfested, never below the floor, plus whatever
+ * the player's banks add (GDD §5.6), which the floor does not eat.
  *
  * ```
- *   stipend = max( stipendFloor, round( baseStipend × unfestedFraction ) )
+ *   stipend = max( stipendFloor, round( baseStipend × unfestedFraction ) ) + incomeBonus
  *
  *   credits
  *   base ┤╲
@@ -38,14 +39,19 @@ export const STIPEND_REF = "earth";
  * this domain never reads the overworld directly. Always a whole number
  * of credits when the tuning is whole. The floor keeps a nearly overrun
  * Earth from starving the player of the credits needed to fight back.
+ * `incomeBonus` is the whole number of credits online banks add, `0` by
+ * default.
  */
 export function computeStipend(
   unfestedFraction: number,
   tuning: EconomyTuning,
+  incomeBonus = 0,
 ): number {
-  return Math.max(
-    tuning.stipendFloor,
-    Math.round(tuning.baseStipend * unfestedFraction),
+  return (
+    Math.max(
+      tuning.stipendFloor,
+      Math.round(tuning.baseStipend * unfestedFraction),
+    ) + incomeBonus
   );
 }
 
@@ -53,8 +59,8 @@ export function computeStipend(
  * Pays the day's stipend into the treasury through the transaction
  * service: exactly one `stipend` ledger entry against `STIPEND_REF` and
  * a `CreditsChanged` event. Pure over its inputs; the day tick supplies
- * `day` and the current unfested fraction, and mission rewards are not
- * applied here.
+ * `day`, the current unfested fraction and the banks' `incomeBonus`, and
+ * mission rewards are not applied here.
  */
 export function applyStipend(
   economy: EconomyState,
@@ -62,10 +68,11 @@ export function applyStipend(
   day: number,
   tuning: EconomyTuning,
   transactions: TransactionService,
+  incomeBonus = 0,
 ): EconomyApplied {
   return transactions.earn(
     economy,
-    computeStipend(unfestedFraction, tuning),
+    computeStipend(unfestedFraction, tuning, incomeBonus),
     "stipend",
     STIPEND_REF,
     day,

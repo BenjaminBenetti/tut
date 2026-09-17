@@ -26,6 +26,9 @@ export interface RegionPanelViewHandlers {
 // Constants
 // ===========================================
 
+/** What an undetected city's infestation cell reads (GDD §5.3). */
+export const UNDETECTED_INFESTATION = "?";
+
 /** Meter modifier per infestation band: the style guide's status tints. */
 const METER_CLASS: Readonly<Record<ThreatTone, string>> = {
   ok: "tut-meter--ok",
@@ -340,19 +343,30 @@ export class RegionPanelView {
     return row;
   }
 
-  /** Writes a city's cells into an existing row, touching only changed text. */
+  /**
+   * Writes a city's cells into an existing row, touching only changed
+   * text. A city the player has not detected (GDD §5.3) shows
+   * `UNDETECTED_INFESTATION` with no tone: its infestation is hidden,
+   * whether it is clean or quietly infested.
+   */
   private fillRow(row: HTMLElement, city: City): void {
     const cells = row.querySelectorAll<HTMLElement>("[data-field]");
     const values: Record<string, string> = {
       "city-name": city.name,
       "city-scale": city.scale,
-      "city-infestation": formatWhole(city.infestation),
+      "city-infestation": city.detected
+        ? formatWhole(city.infestation)
+        : UNDETECTED_INFESTATION,
     };
     for (const cell of cells) {
       const field = cell.dataset.field ?? "";
       this.setText(cell, values[field] ?? "");
       if (field === "city-infestation") {
-        cell.dataset.tone = threatTone(city.infestation);
+        if (city.detected) {
+          cell.dataset.tone = threatTone(city.infestation);
+        } else {
+          delete cell.dataset.tone;
+        }
       }
     }
   }

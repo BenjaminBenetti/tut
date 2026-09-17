@@ -7,6 +7,9 @@ import type { RadialMenuHub, RadialMenuItem } from "../view/radial-menu-view";
 import { formatCredits, formatPopulation, formatWhole } from "./format";
 import { threatTone } from "./threat-band";
 
+/** What the hub reads for a city the player has not detected (GDD §5.3). */
+export const UNDETECTED_INFESTATION = "?";
+
 // ===========================================
 // Types
 // ===========================================
@@ -44,7 +47,9 @@ export const CITY_WHEEL_MAX_MISSIONS = 5;
 
 /**
  * The info wheel that opens at a city on the strategic map (#1154): the
- * city's infestation at the hub over its name and population, a ring
+ * city's infestation at the hub over its name and population (a
+ * question mark with a plain tone while the city is undetected, GDD
+ * §5.3), a ring
  * entry per mission on offer there (soonest to expire first, the first
  * one primary), and a Region entry that leads to the Situation panel.
  * Pure: state in, ring out; the screen maps a choice back through
@@ -80,11 +85,17 @@ export function buildCityWheel(
   }));
   items.push({ id: CITY_WHEEL_REGION_ITEM, label: "Region", icon: "region" });
   return {
-    hub: {
-      value: formatWhole(city.infestation),
-      caption: `${city.name} · ${formatPopulation(city.population)}`,
-      tone: threatTone(city.infestation),
-    },
+    hub: city.detected
+      ? {
+          value: formatWhole(city.infestation),
+          caption: `${city.name} · ${formatPopulation(city.population)}`,
+          tone: threatTone(city.infestation),
+        }
+      : {
+          value: UNDETECTED_INFESTATION,
+          caption: `${city.name} · ${formatPopulation(city.population)}`,
+          tone: "plain",
+        },
     items,
   };
 }

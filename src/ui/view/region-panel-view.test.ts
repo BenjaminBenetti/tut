@@ -12,7 +12,7 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
-import { RegionPanelView } from "./region-panel-view";
+import { RegionPanelView, UNDETECTED_INFESTATION } from "./region-panel-view";
 
 const newGame = (): GameState =>
   createNewGame(
@@ -39,7 +39,11 @@ function eastAsia(infestations: Readonly<Record<string, number>>): GameState {
         cities: base.overworld.map.cities.map((c) =>
           infestations[c.id] === undefined
             ? c
-            : { ...c, infestation: infestations[c.id]! },
+            : {
+                ...c,
+                infestation: infestations[c.id]!,
+                detected: infestations[c.id]! > 0,
+              },
         ),
       },
     },
@@ -153,6 +157,41 @@ describe("RegionPanelView", () => {
       rows()[0]?.querySelector<HTMLElement>('[data-field="city-infestation"]')
         ?.dataset.tone,
     ).toBe("danger");
+  });
+
+  it("hides an undetected city's infestation behind a question mark with no tone (GDD §5.3)", () => {
+    const view = new RegionPanelView({ onSelectCity: vi.fn() });
+    view.mount(root);
+    const base = eastAsia({ tokyo: 62, seoul: 40, beijing: 0 });
+    const hidden: GameState = {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        map: {
+          ...base.overworld.map,
+          cities: base.overworld.map.cities.map((c) =>
+            c.id === "seoul" ? { ...c, detected: false } : c,
+          ),
+        },
+      },
+    };
+    view.update(hidden, pick("east-asia"));
+    const cell = (id: string) =>
+      rows()
+        .find((row) => row.dataset.cityId === id)
+        ?.querySelector<HTMLElement>('[data-field="city-infestation"]');
+    expect(cell("seoul")?.textContent).toBe(UNDETECTED_INFESTATION);
+    expect(cell("seoul")?.dataset.tone).toBeUndefined();
+    expect(cell("tokyo")?.textContent).toBe("62");
+    expect(cell("tokyo")?.dataset.tone).toBe("warn");
+    // A clean city is undetected too, so the row never leaks where the next landing is.
+    expect(cell("beijing")?.textContent).toBe(UNDETECTED_INFESTATION);
+    // The region's meter still counts the hidden city (mean of 62, 40, 0).
+    expect(root.querySelector('[data-field="mean"]')?.textContent).toBe("34");
+    // Detection flips the row back to its number and tone.
+    view.update(base, pick("east-asia"));
+    expect(cell("seoul")?.textContent).toBe("40");
+    expect(cell("seoul")?.dataset.tone).toBe("warn");
   });
 
   it("reuses rows across updates and moves the current mark with the selection", () => {

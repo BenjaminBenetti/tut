@@ -16,6 +16,7 @@ import {
   CITY_WHEEL_MAX_MISSIONS,
   CITY_WHEEL_REGION_ITEM,
   cityWheelChoice,
+  UNDETECTED_INFESTATION,
 } from "./city-wheel";
 
 const mission = (id: string, cityId: string, expiresDay: number): Mission => ({
@@ -56,7 +57,9 @@ function stateWith(infestation: number, missions: Mission[] = []): GameState {
       map: {
         ...base.overworld.map,
         cities: base.overworld.map.cities.map((c) =>
-          c.id === "tokyo" ? { ...c, infestation } : c,
+          c.id === "tokyo"
+            ? { ...c, infestation, detected: infestation > 0 }
+            : c,
         ),
       },
     },
@@ -71,12 +74,39 @@ describe("buildCityWheel", () => {
       caption: "Tokyo · 37M",
       tone: "warn",
     });
-    expect(buildCityWheel(stateWith(0), "tokyo", MISSION_TYPES)?.hub.tone).toBe(
+    // A clean city is undetected, so it reads the same as a hidden landing.
+    expect(buildCityWheel(stateWith(0), "tokyo", MISSION_TYPES)?.hub).toEqual({
+      value: UNDETECTED_INFESTATION,
+      caption: "Tokyo · 37M",
+      tone: "plain",
+    });
+    expect(buildCityWheel(stateWith(3), "tokyo", MISSION_TYPES)?.hub.tone).toBe(
       "ok",
     );
     expect(
       buildCityWheel(stateWith(90), "tokyo", MISSION_TYPES)?.hub.tone,
     ).toBe("danger");
+  });
+
+  it("hides an undetected city's infestation behind a plain question mark (GDD §5.3)", () => {
+    const base = stateWith(62);
+    const hidden: GameState = {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        map: {
+          ...base.overworld.map,
+          cities: base.overworld.map.cities.map((c) =>
+            c.id === "tokyo" ? { ...c, detected: false } : c,
+          ),
+        },
+      },
+    };
+    expect(buildCityWheel(hidden, "tokyo", MISSION_TYPES)?.hub).toEqual({
+      value: UNDETECTED_INFESTATION,
+      caption: "Tokyo · 37M",
+      tone: "plain",
+    });
   });
 
   it("offers only the Region entry when the city has no mission", () => {

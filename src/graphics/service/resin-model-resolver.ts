@@ -23,6 +23,14 @@ export function resolveResinModels(
   const level = map.recipe.params.infestationLevel ?? 0;
   if (level === 0) return [];
   const result: ModelPlacement[] = [];
+  const surfaceLinks = new Set<string>();
+  for (const connector of map.connectors) {
+    if (connector.kind === "ladder") continue;
+    const from = index.keyOf(connector.from),
+      to = index.keyOf(connector.to);
+    surfaceLinks.add(`${from}:${to}`);
+    surfaceLinks.add(`${to}:${from}`);
+  }
   const seed = hashSeed(`${map.recipe.seed}:resin-network`);
   const turns = ((seed >>> 3) % 4) as Rotation;
   const phaseX = seed % RESIN_STYLE.patternSize;
@@ -43,6 +51,7 @@ export function resolveResinModels(
           (other) =>
             other.infested &&
             (other.y === tile.y ||
+              surfaceLinks.has(`${index.keyOf(tile)}:${index.keyOf(other)}`) ||
               (tile.buildingId === undefined &&
                 other.buildingId === undefined &&
                 Math.abs(other.y - tile.y) <= 1)),

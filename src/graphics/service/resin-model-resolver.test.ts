@@ -92,6 +92,14 @@ describe("Resin Shell map art", () => {
       .tile(high, "grass");
     builder.connector("ramp", low, high);
     const map = covered(builder.build());
+    const joined = resolveMapModels(map).infestation.filter((p) => p.resin);
+    expect(
+      joined.find((p) => p.resin!.support.ramp)!.resin!.pattern!.neighbours & 4,
+    ).toBe(4);
+    expect(
+      joined.find((p) => !p.resin!.support.ramp)!.resin!.pattern!.neighbours &
+        64,
+    ).toBe(64);
     const partial = {
       ...map,
       tiles: map.tiles.map((tile) =>
@@ -105,6 +113,24 @@ describe("Resin Shell map art", () => {
     expect(shell?.resin?.support.ramp?.from).toEqual(low);
     expect(shell?.tile).toEqual(high);
   });
+  it("joins the stairs to a marked upper landing across the storey rise", () => {
+    const low = { x: 0, y: 0, z: 0 },
+      high = { x: 1, y: 2, z: 0 };
+    const builder = new FixtureMapBuilder(2, 1, 3)
+      .tile(low, "stairs")
+      .tile(high, "floor");
+    builder.connector("stairs", low, high);
+    const skins = resolveMapModels(covered(builder.build())).infestation.filter(
+      (p) => p.resin,
+    );
+    expect(
+      skins.find((p) => p.tile.x === 0)!.resin!.pattern!.neighbours & 4,
+    ).toBe(4);
+    expect(
+      skins.find((p) => p.tile.x === 1)!.resin!.pattern!.neighbours & 64,
+    ).toBe(64);
+  });
+
   it("uses a shared network phase and connects only marked neighbouring cells", () => {
     const map = covered(new FixtureMapBuilder(3, 1, 1).fillGround().build());
     const full = resolveMapModels(map).infestation.filter((p) => p.resin);

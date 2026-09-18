@@ -195,6 +195,22 @@ describe("infestation generation", () => {
           tile.slope !== undefined && tile.surface === SurfaceIds.INFESTED,
       ),
     ).toBe(true);
+    expect(validateTacticalMap(afterGrowth, registries)).toEqual([]);
+  });
+
+  it("reclaims mature vegetation before colonies are large enough for wall formations", () => {
+    const infested = recipe(5);
+    const pipeline = new PipelineMapGenerator(
+      createSettlementPasses().filter((pass) => pass.id !== "infestation"),
+      registries,
+    );
+    const beforeGrowth = freezeDraft(
+      pipeline.run(infested.params, new Mulberry32Rng(hashSeed(infested.seed)))
+        .draft,
+      infested,
+      registries,
+    );
+    const afterGrowth = generateTacticalMap(infested);
     const matureTrees = (map: typeof afterGrowth): number =>
       map.props.filter(
         (prop) =>
@@ -202,11 +218,11 @@ describe("infestation generation", () => {
           (map.infestation!.influence[prop.tile.z * map.width + prop.tile.x] ??
             0) > 0.7,
       ).length;
+    expect(matureTrees(beforeGrowth)).toBeGreaterThan(0);
     expect(matureTrees(afterGrowth)).toBeLessThan(matureTrees(beforeGrowth));
-    expect(validateTacticalMap(afterGrowth, registries)).toEqual([]);
   });
 
-  it("keeps the mech route to an indoor objective's only firing position", () => {
+  it("keeps mech firing routes after colony formations change the settlement", () => {
     const params = { ...recipe(10).params, size: "medium" as const };
     const seed = "colony-scale-medium";
     const before = new PipelineMapGenerator(
@@ -233,28 +249,21 @@ describe("infestation generation", () => {
       afterSnapshot,
       PassMask.MECH,
     );
-    const origin = { x: 47, y: 4, z: 15 };
-    const windowPosition = { x: 43, y: 4, z: 15 };
-    expect(
-      before.draft.hooks.objectives.some((hook) =>
-        hook.tiles.some(
-          (tile) =>
-            tile.x === origin.x && tile.y === origin.y && tile.z === origin.z,
-        ),
-      ),
-    ).toBe(true);
-    expect(hasFiringLine(before.draft, origin, beforeMech)).toBe(true);
-    expect(beforeMech(windowPosition)).toBe(true);
-    expect(afterMech(windowPosition)).toBe(true);
-    expect(hasFiringLine(after.draft, origin, afterMech)).toBe(true);
+    // This seed originally stranded the only firing position at (43,4,15).
+    // Colony parcels can now move that room; preserve every firing line that
+    // the same completed settlement actually offered before infestation props.
+    let shootable = 0;
     for (const hook of before.draft.hooks.objectives) {
       const previous = hook.tiles[0]!;
       if (!hasFiringLine(before.draft, previous, beforeMech)) continue;
+      shootable++;
       const current = after.draft.hooks.objectives.find(
         (candidate) => candidate.id === hook.id,
       )!.tiles[0]!;
+      expect(current).toEqual(previous);
       expect(hasFiringLine(after.draft, current, afterMech)).toBe(true);
     }
+    expect(shootable).toBeGreaterThan(0);
     expect(
       validateTacticalMap(
         freezeDraft(after.draft, { seed, params }, registries),

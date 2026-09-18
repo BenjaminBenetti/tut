@@ -121,9 +121,17 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
-  [PropKindIds.INFESTED_CARAPACE_LODGE]: "building.infested-carapace-lodge",
-  [PropKindIds.INFESTED_CARAPACE_HALL]: "building.infested-carapace-hall",
-  [PropKindIds.INFESTED_CARAPACE_KEEP]: "building.infested-carapace-keep",
+  [PropKindIds.INFESTED_CARAPACE_WALL_RIDGE]: "building.carapace-wall-ridge",
+  [PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP]:
+    "building.carapace-wall-overlap",
+  [PropKindIds.INFESTED_CARAPACE_WALL_RIBBED]: "building.carapace-wall-ribbed",
+  [PropKindIds.INFESTED_CARAPACE_WALL_CURVE]: "building.carapace-wall-curve",
+  [PropKindIds.INFESTED_CARAPACE_WALL_FORK]: "building.carapace-wall-fork",
+  [PropKindIds.INFESTED_CARAPACE_WALL_END]: "building.carapace-wall-end",
+  [PropKindIds.INFESTED_CARAPACE_WALL_BROKEN]: "building.carapace-wall-broken",
+  [PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS]:
+    "building.carapace-spine-buttress",
+
   [PropKindIds.INFESTED_SHELTER]: "prop.bus-stop-infested",
   [PropKindIds.INFESTED_NEST]: "prop.infested-nest",
   [PropKindIds.INFESTED_HIVE]: "prop.infested-hive-spire",

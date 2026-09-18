@@ -1,3 +1,5 @@
+import type { Direction } from "../../core/model/direction";
+import type { TileCoord } from "./tile-coord";
 import type { Rect } from "../../core/model/grid";
 import type { PropKindId, Rotation } from "./prop";
 import type { ColumnCoord } from "./road";
@@ -11,7 +13,7 @@ export interface InfestationZone {
   /** Nest clearing, unavailable to buildings and conventional landscaping. */
   readonly clearingRadius: number;
   readonly maturity: "outbreak" | "nest" | "hive";
-  /** Optional flat platform; final placement can decline it to preserve a mission route. */
+  /** An open colony formation planned before settlement parcels claim its courtyard. */
   readonly carapace?: CarapaceSite;
 }
 
@@ -39,11 +41,40 @@ export interface InfestationPlan {
   readonly ruins: readonly InfestationRuin[];
 }
 
-/** An early, bounded platform reservation for one solid colony building. */
-export interface CarapaceSite {
+/** A wall module with semantic connections, independent of graphics model ids. */
+export interface CarapaceWallCell {
+  readonly tile: TileCoord;
   readonly kind: PropKindId;
+  readonly rotation: Rotation;
+  readonly joins: readonly Direction[];
+}
+
+/** Two adjacent free boundary cells, facing out of the colony courtyard. */
+export interface CarapaceGateway {
+  readonly tiles: readonly ColumnCoord[];
+  readonly outward: Direction;
+  /** A two-cell-wide channel extending two cells outside and inside the boundary. */
+  readonly approach: readonly ColumnCoord[];
+}
+
+/** A terrain-following formation of joined walls around an accessible open courtyard. */
+export interface CarapaceSite {
   readonly footprint: Rect;
   readonly clearance: Rect;
-  readonly level: number;
-  readonly rotation: Rotation;
+  readonly cells: readonly CarapaceWallCell[];
+  readonly courtyard: readonly ColumnCoord[];
+  readonly gateways: readonly CarapaceGateway[];
+  /** The bounded, level route supporting native 2×2 units between the two gateways. */
+  readonly passage: readonly TileCoord[];
+  /** False during early planning; true only after individual module props are installed. */
+  readonly realized: boolean;
+}
+
+/** A local cell graph before terrain, parcels and mission reservations are applied. */
+export interface CarapaceOutline {
+  readonly width: number;
+  readonly depth: number;
+  readonly walls: readonly ColumnCoord[];
+  readonly courtyard: readonly ColumnCoord[];
+  readonly gateways: readonly CarapaceGateway[];
 }

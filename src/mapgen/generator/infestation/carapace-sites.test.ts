@@ -1,20 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { rectContains } from "../../../core/service/grid-math";
+import { DIRECTIONS } from "../../../core/model/direction";
+import { stepGridPos } from "../../../core/service/grid-math";
 import { Mulberry32Rng } from "../../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { BIOME_DEFINITIONS } from "../../data/biomes";
 import { DEFAULT_MISSION_HOOKS } from "../../data/hook-requirements";
-import { PropKindIds } from "../../data/props";
 import { SETTLEMENT_DEFINITIONS } from "../../data/settlements";
 import { SurfaceIds } from "../../data/surfaces";
 import type { GenerationContext } from "../../model/generation-pass";
-import type { InfestationZone } from "../../model/infestation-plan";
+import type {
+  CarapaceSite,
+  InfestationZone,
+} from "../../model/infestation-plan";
 import { MapDraft } from "../../model/map-draft";
 import { PassMask } from "../../model/pass-mask";
 import type { TacticalMap } from "../../model/tactical-map";
 import { createDefaultRegistries } from "../../service/default-registries";
 import { DiagnosticsCollector } from "../../service/diagnostics-collector";
 import { generateTacticalMap } from "../../service/generate-tactical-map";
+import {
+  columnKey,
+  createCarapaceOutline,
+  stepColumn,
+} from "./carapace-outline";
 import { placeCarapaceSite, planCarapaceSites } from "./carapace-sites";
 
 /** Four separate colony cores on dry, fully infested terrain. */
@@ -62,66 +70,58 @@ function fixture(level = 10): GenerationContext {
   };
 }
 
-/** Final physical bounds, including a complete open circulation ring. */
-function expectSafeBuildings(map: TacticalMap): void {
-  const buildings = map.props.filter((prop) =>
-    prop.kind.startsWith("infested-carapace-"),
-  );
+/** Compares the semantic wall graph with real, individually occupied tiles and open chambers. */
+function expectAssembledSite(map: TacticalMap, site: CarapaceSite): void {
   const ground = new Map(
     map.tiles
       .filter((tile) => tile.buildingId === undefined)
-      .map((tile) => [`${tile.x}:${tile.z}`, tile]),
+      .map((tile) => [columnKey(tile), tile]),
   );
-  expect(buildings.length).toBeGreaterThan(0);
-  expect(buildings.length).toBeLessThanOrEqual(
-    Math.ceil(map.infestation!.zones.length / 2),
-  );
-  const used = new Set<string>();
-  for (const building of buildings) {
-    const cells = building.occupiedTiles!;
-    const site = map.infestation!.zones.find(
-      (zone) =>
-        zone.carapace !== undefined &&
-        cells.every((tile) =>
-          rectContains(zone.carapace!.footprint, tile.x, tile.z),
-        ),
+  const cells = new Map(site.cells.map((cell) => [columnKey(cell.tile), cell]));
+  expect(site.cells.length).toBeGreaterThanOrEqual(12);
+  for (const cell of site.cells) {
+    const tile = ground.get(columnKey(cell.tile))!;
+    const prop = map.props.find((candidate) => candidate.id === tile.propId)!;
+    expect(prop).toBeDefined();
+    expect(prop.kind).toBe(cell.kind);
+    expect(prop.rotation).toBe(cell.rotation);
+    expect(prop.occupiedTiles ?? [prop.tile]).toEqual([cell.tile]);
+    expect(tile.y).toBe(cell.tile.y);
+    expect(tile.surface).toBe(SurfaceIds.INFESTED);
+    expect(tile.pass).toBe(PassMask.NONE);
+    expect(cell.joins.length).toBeGreaterThanOrEqual(1);
+    expect(cell.joins.length).toBeLessThanOrEqual(3);
+    expect(cell.joins).toEqual(
+      DIRECTIONS.filter((direction) =>
+        cells.has(columnKey(stepGridPos(cell.tile, direction))),
+      ),
     );
-    expect(site).toBeDefined();
-    expect(used.has(site!.id)).toBe(false);
-    used.add(site!.id);
-    for (const cell of cells) {
-      const tile = ground.get(`${cell.x}:${cell.z}`)!;
-      expect(tile.y).toBe(building.tile.y);
-      expect(tile.surface).toBe(SurfaceIds.INFESTED);
-      expect(tile.slope).toBeUndefined();
-      expect(tile.propId).toBe(building.id);
-      expect(tile.pass).toBe(PassMask.NONE);
-      expect(
-        map.infestation!.influence[cell.z * map.width + cell.x],
-      ).toBeGreaterThanOrEqual(0.55);
-      for (const other of map.props.filter((prop) => prop.id !== building.id))
-        expect(
-          (other.occupiedTiles ?? [other.tile]).some(
-            (position) => position.x === cell.x && position.z === cell.z,
-          ),
-        ).toBe(false);
+    for (const direction of cell.joins) {
+      const next = cells.get(columnKey(stepGridPos(cell.tile, direction)))!;
+      expect(Math.abs(next.tile.y - cell.tile.y)).toBeLessThanOrEqual(1);
     }
-    const minX = Math.min(...cells.map((tile) => tile.x));
-    const maxX = Math.max(...cells.map((tile) => tile.x));
-    const minZ = Math.min(...cells.map((tile) => tile.z));
-    const maxZ = Math.max(...cells.map((tile) => tile.z));
-    for (let z = minZ - 1; z <= maxZ + 1; z++)
-      for (let x = minX - 1; x <= maxX + 1; x++) {
-        if (x >= minX && x <= maxX && z >= minZ && z <= maxZ) continue;
-        const ring = ground.get(`${x}:${z}`)!;
-        expect(ring.propId).toBeUndefined();
-        expect(ring.pass).toBe(PassMask.ALL);
-        expect(Object.keys(ring.walls)).toHaveLength(0);
-      }
+  }
+  expect(site.courtyard.length).toBeGreaterThanOrEqual(12);
+  for (const tile of [
+    ...site.courtyard,
+    ...site.gateways.flatMap((gate) => gate.approach),
+  ]) {
+    const actual = ground.get(columnKey(tile))!;
+    expect(actual.propId).toBeUndefined();
+    expect(actual.pass).toBe(PassMask.ALL);
+    expect(Object.keys(actual.walls)).toHaveLength(0);
+  }
+  expect(site.gateways).toHaveLength(2);
+  for (const gate of site.gateways) {
+    expect(gate.tiles).toHaveLength(2);
+    expect(gate.approach).toHaveLength(10);
+    expect(
+      new Set(gate.approach.map((tile) => ground.get(columnKey(tile))!.y)).size,
+    ).toBe(1);
   }
 }
 
-describe("carapace colony sites", () => {
+describe("modular carapace colony sites", () => {
   it.each([0, 1, 4, 5])(
     "does not reserve or grade terrain at infestation %s",
     (level) => {
@@ -132,10 +132,10 @@ describe("carapace colony sites", () => {
     },
   );
 
-  it("grades at most one layer only within the selected half of colony platforms", () => {
+  it("limits formation reservations to half the colonies and grades only their narrow gateway channels", () => {
     const context = fixture();
-    context.draft.setGroundLevel(7, 7, 1);
-    context.draft.setGroundLevel(7, 23, 1);
+    for (let z = 0; z < 32; z++)
+      for (let x = 16; x < 32; x++) context.draft.setGroundLevel(x, z, 1);
     const before = Array.from({ length: 32 * 32 }, (_, index) =>
       context.draft.groundLevelAt(index % 32, Math.floor(index / 32)),
     );
@@ -144,27 +144,29 @@ describe("carapace colony sites", () => {
       zone.carapace === undefined ? [] : [zone.carapace],
     );
     expect(sites).toHaveLength(2);
+    const channels = new Set(
+      sites.flatMap((site) => site.passage.map(columnKey)),
+    );
     for (let z = 0; z < 32; z++)
       for (let x = 0; x < 32; x++) {
         const change = Math.abs(
           context.draft.groundLevelAt(x, z) - before[z * 32 + x]!,
         );
         expect(change).toBeLessThanOrEqual(1);
-        if (change !== 0)
-          expect(sites.some((site) => rectContains(site.clearance, x, z))).toBe(
-            true,
-          );
+        if (change !== 0) expect(channels.has(columnKey({ x, z }))).toBe(true);
       }
-    expect(context.draft.groundLevelAt(7, 23)).toBe(1);
   });
 
-  it("declines water and small fragmented patches without mutating terrain", () => {
+  it("declines water and fragmented growth instead of placing disconnected wall scatter", () => {
     const context = fixture();
     for (let z = 0; z < 32; z++)
       for (let x = 0; x < 32; x++)
         context.draft.setGroundSurface(x, z, SurfaceIds.WATER);
-    const zones = planCarapaceSites(context, context.draft.infestation!.zones);
-    expect(zones.every((zone) => zone.carapace === undefined)).toBe(true);
+    expect(
+      planCarapaceSites(context, context.draft.infestation!.zones).every(
+        (zone) => zone.carapace === undefined,
+      ),
+    ).toBe(true);
     for (let z = 5; z < 9; z++)
       for (let x = 5; x < 9; x++)
         context.draft.setGroundSurface(x, z, SurfaceIds.INFESTED);
@@ -176,22 +178,26 @@ describe("carapace colony sites", () => {
     expect(planCarapaceSites(context, [])).toEqual([]);
   });
 
-  it("shrinks within an existing pad to preserve a firing line and declines a fully protected pad", () => {
+  it("clips protected mission columns, rejoins surviving sections and rejects a fully protected formation", () => {
     const context = fixture();
-    const site = {
-      kind: PropKindIds.INFESTED_CARAPACE_KEEP,
-      footprint: { x: 5, z: 5, w: 4, d: 4 },
-      clearance: { x: 4, z: 4, w: 6, d: 6 },
-      level: 0,
-      rotation: 0 as const,
+    context.draft.infestation = {
+      ...context.draft.infestation!,
+      zones: planCarapaceSites(context, context.draft.infestation!.zones),
     };
-    const protectedColumns = new Set(
-      Array.from({ length: 32 }, (_, x) => 5 * 32 + x),
-    );
+    const site = context.draft.infestation.zones[0]!.carapace!;
+    const protectedTile = site.cells.find(
+      (cell) => cell.joins.length === 2,
+    )!.tile;
+    const protectedColumns = new Set([protectedTile.z * 32 + protectedTile.x]);
     expect(placeCarapaceSite(context, site, protectedColumns)).toBe(true);
-    const building = context.draft.props[0]!;
-    expect(building.kind).not.toBe(PropKindIds.INFESTED_CARAPACE_KEEP);
-    expect(building.occupiedTiles!.every((tile) => tile.z > 5)).toBe(true);
+    const actual = context.draft.infestation.zones[0]!.carapace!;
+    expect(actual.realized).toBe(true);
+    expect(
+      actual.cells.some(
+        (cell) => columnKey(cell.tile) === columnKey(protectedTile),
+      ),
+    ).toBe(false);
+    expect(actual.cells.length).toBeLessThan(site.cells.length);
     const blocked = fixture();
     expect(
       placeCarapaceSite(
@@ -203,12 +209,41 @@ describe("carapace colony sites", () => {
     expect(blocked.draft.props).toHaveLength(0);
   });
 
+  it("varies stepped wall contours and chambers within equal-sized formations", () => {
+    const outlines = Array.from({ length: 32 }, (_, seed) =>
+      createCarapaceOutline(10, 10, new Mulberry32Rng(seed)),
+    );
+    const shapes = new Set(
+      outlines.map((outline) => outline.walls.map(columnKey).sort().join("|")),
+    );
+    expect(shapes.size).toBeGreaterThan(16);
+    for (const outline of outlines) {
+      const walls = new Set(outline.walls.map(columnKey));
+      expect(
+        outline.walls.some(
+          (tile) =>
+            DIRECTIONS.filter((direction) =>
+              walls.has(columnKey(stepColumn(tile, direction))),
+            ).length === 3,
+        ),
+      ).toBe(true);
+      expect(
+        outline.walls.every(
+          (tile) =>
+            DIRECTIONS.filter((direction) =>
+              walls.has(columnKey(stepColumn(tile, direction))),
+            ).length <= 3,
+        ),
+      ).toBe(true);
+    }
+  });
+
   it.each([
     { seed: "infestation-review", infestation: 10 },
-    { seed: "carapace-0", infestation: 6 },
+    { seed: "carapace-3", infestation: 6 },
     { seed: "carapace-0", infestation: 10 },
   ])(
-    "builds safe landmarks in $seed at level $infestation",
+    "assembles open terrain-following formations in $seed at level $infestation",
     ({ seed, infestation }) => {
       const recipe = {
         seed,
@@ -222,27 +257,25 @@ describe("carapace colony sites", () => {
         },
       };
       const map = generateTacticalMap(recipe);
-      expectSafeBuildings(map);
+      const sites = map.infestation!.zones.flatMap((zone) =>
+        zone.carapace?.realized === true ? [zone.carapace] : [],
+      );
+      expect(sites.length).toBeGreaterThan(0);
+      expect(sites.length).toBeLessThanOrEqual(
+        Math.ceil(map.infestation!.zones.length / 2),
+      );
+      for (const site of sites) expectAssembledSite(map, site);
       expect(generateTacticalMap(recipe)).toEqual(map);
-      if (infestation < 8)
-        expect(
-          map.props.some(
-            (prop) => prop.kind === PropKindIds.INFESTED_CARAPACE_KEEP,
-          ),
-        ).toBe(false);
-      if (seed === "carapace-0" && infestation === 10)
-        expect(
-          map.props.some(
-            (prop) => prop.kind === PropKindIds.INFESTED_CARAPACE_KEEP,
-          ),
-        ).toBe(true);
       expect(
-        map.props.some((prop) =>
-          [
-            PropKindIds.INFESTED_HIVE,
-            PropKindIds.INFESTED_BROOD,
-            PropKindIds.INFESTED_NEST,
-          ].some((kind) => kind === prop.kind),
+        new Set(sites.flatMap((site) => site.cells.map((cell) => cell.kind)))
+          .size,
+      ).toBeGreaterThanOrEqual(6);
+      expect(
+        map.props.some(
+          (prop) =>
+            prop.kind === "infested-hive" ||
+            prop.kind === "infested-nest" ||
+            prop.kind === "infested-brood",
         ),
       ).toBe(true);
     },

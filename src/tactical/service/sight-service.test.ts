@@ -153,22 +153,21 @@ describe("hasLineOfSight", () => {
   });
 });
 
-describe("building-sized prop sight", () => {
+describe("modular carapace sight", () => {
   it.each([
-    { kind: PropKindIds.INFESTED_CARAPACE_LODGE, height: 4, w: 3, d: 3 },
-    { kind: PropKindIds.INFESTED_CARAPACE_HALL, height: 5, w: 4, d: 3 },
-    { kind: PropKindIds.INFESTED_CARAPACE_KEEP, height: 6, w: 4, d: 4 },
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_RIDGE, height: 3 },
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP, height: 3 },
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_RIBBED, height: 3 },
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_CURVE, height: 3 },
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_FORK, height: 3 },
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_END, height: 3 },
+    { kind: PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS, height: 4 },
   ])(
     "$kind blocks its shell from the ground up, with clear sight above",
-    ({ kind, height, w, d }) => {
-      const cells = Array.from({ length: w * d }, (_, i) => ({
-        x: 2 + (i % w),
-        y: 0,
-        z: 2 + Math.floor(i / w),
-      }));
+    ({ kind, height }) => {
       const builder = new FixtureMapBuilder(8, 8, 8)
         .fillGround()
-        .prop(kind, { x: 2, y: 0, z: 2 }, 0, cells);
+        .prop(kind, at(3, 3));
       for (const eyeLevel of [1, height - 1, height, height + 1]) {
         const from = { x: 0, y: eyeLevel - 1, z: 3 };
         const to = { x: 7, y: eyeLevel - 1, z: 3 };
@@ -178,18 +177,31 @@ describe("building-sized prop sight", () => {
     },
   );
 
+  it("sees over broken wall pieces while their low cover still protects the next tile", () => {
+    const broken = field()
+      .prop(PropKindIds.INFESTED_CARAPACE_WALL_BROKEN, at(3, 3))
+      .build();
+    const intact = field()
+      .prop(PropKindIds.INFESTED_CARAPACE_WALL_RIDGE, at(3, 3))
+      .build();
+    expect(los(broken, at(1, 3), at(4, 3))).toBe(true);
+    expect(coverAgainst(broken, at(4, 3), at(1, 3))).toBe(CoverLevel.LOW);
+    expect(los(intact, at(1, 3), at(4, 3))).toBe(false);
+    expect(coverAgainst(intact, at(4, 3), at(1, 3))).toBe(CoverLevel.HIGH);
+  });
+
   it("blocks an elevated diagonal seam only when both grazed sides contain shell", () => {
-    const from = { x: 1, y: 2, z: 1 };
-    const to = { x: 2, y: 2, z: 2 };
+    const from = { x: 1, y: 1, z: 1 };
+    const to = { x: 2, y: 1, z: 2 };
     const builder = field()
       .tile(from, SurfaceIds.FLOOR)
       .tile(to, SurfaceIds.FLOOR)
-      .prop(PropKindIds.INFESTED_CARAPACE_HALL, at(1, 2));
+      .prop(PropKindIds.INFESTED_CARAPACE_WALL_CURVE, at(1, 2));
     expect(los(builder.build(), from, to)).toBe(true);
-    builder.prop(PropKindIds.INFESTED_CARAPACE_HALL, at(2, 1));
+    builder.prop(PropKindIds.INFESTED_CARAPACE_WALL_FORK, at(2, 1));
     expect(los(builder.build(), from, to)).toBe(false);
-    const aboveFrom = { ...from, y: 4 };
-    const aboveTo = { ...to, y: 4 };
+    const aboveFrom = { ...from, y: 2 };
+    const aboveTo = { ...to, y: 2 };
     builder.tile(aboveFrom, SurfaceIds.FLOOR).tile(aboveTo, SurfaceIds.FLOOR);
     expect(los(builder.build(), aboveFrom, aboveTo)).toBe(true);
   });
@@ -203,7 +215,7 @@ describe("building-sized prop sight", () => {
       .build();
     const tall = field()
       .tile(from, SurfaceIds.GRASS)
-      .prop(PropKindIds.INFESTED_CARAPACE_HALL, at(3, 3))
+      .prop(PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS, at(3, 3))
       .build();
     expect(los(legacy, from, to)).toBe(true);
     expect(los(tall, from, to)).toBe(false);
@@ -216,7 +228,7 @@ describe("building-sized prop sight", () => {
       .tile(from, SurfaceIds.FLOOR)
       .tile(to, SurfaceIds.FLOOR)
       .tile({ x: 3, y: 2, z: 3 }, SurfaceIds.FLOOR)
-      .prop(PropKindIds.INFESTED_CARAPACE_HALL, at(3, 3));
+      .prop(PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS, at(3, 3));
     expect(los(builder.build(), from, to)).toBe(false);
     const legacy = field()
       .tile(from, SurfaceIds.FLOOR)
@@ -236,10 +248,10 @@ describe("building-sized prop sight", () => {
       .tile(to, SurfaceIds.GRASS)
       .removeTile(at(3, 3))
       .tile(foundation, SurfaceIds.GRASS)
-      .prop(PropKindIds.INFESTED_CARAPACE_LODGE, foundation);
+      .prop(PropKindIds.INFESTED_CARAPACE_WALL_RIDGE, foundation);
     expect(los(builder.build(), from, to)).toBe(false);
-    const aboveFrom = { ...from, y: 4 };
-    const aboveTo = { ...to, y: 4 };
+    const aboveFrom = { ...from, y: 3 };
+    const aboveTo = { ...to, y: 3 };
     builder.tile(aboveFrom, SurfaceIds.GRASS).tile(aboveTo, SurfaceIds.GRASS);
     expect(los(builder.build(), aboveFrom, aboveTo)).toBe(true);
   });

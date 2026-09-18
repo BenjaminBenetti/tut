@@ -12,36 +12,91 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
-  "building.infested-carapace-keep": {
+  "building.carapace-wall-ridge": {
     category: "buildings",
-    path: "assets/models/buildings/building-infested-carapace-keep.glb",
+    path: "assets/models/buildings/building-carapace-wall-ridge.glb",
     footprint: {
-      w: 4,
-      d: 4,
+      w: 1,
+      d: 1,
     },
-    height: 4.13,
+    height: 1.88,
     sockets: [],
     quality: "final",
   },
-  "building.infested-carapace-hall": {
+  "building.carapace-wall-overlap": {
     category: "buildings",
-    path: "assets/models/buildings/building-infested-carapace-hall.glb",
+    path: "assets/models/buildings/building-carapace-wall-overlap.glb",
     footprint: {
-      w: 4,
-      d: 3,
+      w: 1,
+      d: 1,
     },
-    height: 3.08,
+    height: 1.76,
     sockets: [],
     quality: "final",
   },
-  "building.infested-carapace-lodge": {
+  "building.carapace-wall-ribbed": {
     category: "buildings",
-    path: "assets/models/buildings/building-infested-carapace-lodge.glb",
+    path: "assets/models/buildings/building-carapace-wall-ribbed.glb",
     footprint: {
-      w: 3,
-      d: 3,
+      w: 1,
+      d: 1,
     },
-    height: 2.37,
+    height: 1.85,
+    sockets: [],
+    quality: "final",
+  },
+  "building.carapace-wall-curve": {
+    category: "buildings",
+    path: "assets/models/buildings/building-carapace-wall-curve.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.85,
+    sockets: [],
+    quality: "final",
+  },
+  "building.carapace-wall-fork": {
+    category: "buildings",
+    path: "assets/models/buildings/building-carapace-wall-fork.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.8,
+    sockets: [],
+    quality: "final",
+  },
+  "building.carapace-wall-end": {
+    category: "buildings",
+    path: "assets/models/buildings/building-carapace-wall-end.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.69,
+    sockets: [],
+    quality: "final",
+  },
+  "building.carapace-wall-broken": {
+    category: "buildings",
+    path: "assets/models/buildings/building-carapace-wall-broken.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.67,
+    sockets: [],
+    quality: "final",
+  },
+  "building.carapace-spine-buttress": {
+    category: "buildings",
+    path: "assets/models/buildings/building-carapace-spine-buttress.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.45,
     sockets: [],
     quality: "final",
   },

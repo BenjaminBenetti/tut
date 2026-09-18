@@ -193,12 +193,12 @@ describe("validateTacticalMap", () => {
   it("I2: accepts declared shell height and rejects missing, wrong, or orphaned height", () => {
     const anchor = { x: 7, y: 0, z: 0 };
     const builder = validFixture().prop(
-      PropKindIds.INFESTED_CARAPACE_KEEP,
+      PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS,
       anchor,
     );
     const valid = builder.build();
     expect(validateTacticalMap(valid, registries)).toEqual([]);
-    for (const sightHeight of [0, 5, 6.5, Number.NaN]) {
+    for (const sightHeight of [0, 3, 4.5, Number.NaN]) {
       const wrong = builder.patchTile(anchor, { sightHeight }).build();
       expect(invariantsOf(wrong)).toContain("I2");
     }
@@ -212,7 +212,7 @@ describe("validateTacticalMap", () => {
     ).toContain("I2");
     expect(
       invariantsOf(
-        validFixture().patchTile(anchor, { sightHeight: 6 }).build(),
+        validFixture().patchTile(anchor, { sightHeight: 4 }).build(),
       ),
     ).toContain("I2");
   });

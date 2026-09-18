@@ -39,7 +39,9 @@ export function populateInfestationColonies(
       structures < structureLimit &&
       placeCarapaceSite(context, zone.carapace, protectedColumns)
     ) {
-      count++;
+      count += draft.infestation!.zones.find(
+        (current) => current.id === zone.id,
+      )!.carapace!.cells.length;
       structures++;
       continue;
     }
@@ -234,17 +236,23 @@ function place(
   return true;
 }
 
-/** Keeps later nests and debris out of every solid colony building's circulation ring. */
+/** Keeps later nests and debris out of the assembled formation's chambers, gateways and approach ring. */
 function withinCarapaceMargin(draft: MapDraft, tile: TileCoord): boolean {
-  for (let z = tile.z - 1; z <= tile.z + 1; z++)
-    for (let x = tile.x - 1; x <= tile.x + 1; x++) {
-      if (!draft.inBounds(x, z)) continue;
-      if (
-        draft
-          .propAt(draft.groundCoord(x, z))
-          ?.kind.startsWith("infested-carapace-")
-      )
-        return true;
-    }
-  return false;
+  return (
+    draft.infestation?.zones.some((zone) => {
+      const site = zone.carapace;
+      return (
+        site?.realized === true &&
+        ((tile.x >= site.clearance.x &&
+          tile.x < site.clearance.x + site.clearance.w &&
+          tile.z >= site.clearance.z &&
+          tile.z < site.clearance.z + site.clearance.d) ||
+          site.gateways.some((gate) =>
+            gate.approach.some(
+              (cell) => cell.x === tile.x && cell.z === tile.z,
+            ),
+          ))
+      );
+    }) ?? false
+  );
 }

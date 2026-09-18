@@ -10,7 +10,6 @@ import type { MapRecipe } from "../model/map-recipe";
 import { PassMask } from "../model/pass-mask";
 import { createDefaultRegistries } from "./default-registries";
 import { freezeDraft } from "./draft-freezer";
-import { propPlacementTiles } from "./prop-footprint";
 import { TileIndex } from "./tile-index";
 
 const registries = createDefaultRegistries();
@@ -82,17 +81,41 @@ describe("freezeDraft", () => {
     expect(map.props[0]?.rotation).toBe(3);
   });
 
-  it("carries an explicit opaque height across the whole building-sized footprint", () => {
-    const d = new MapDraft(8, 8, new SequentialIdGenerator(), SurfaceIds.GRASS);
-    const kind = PropKindIds.INFESTED_CARAPACE_HALL;
-    const anchor = { x: 2, y: 0, z: 2 };
-    const cells = propPlacementTiles(anchor, registries.props.get(kind), 1);
-    d.addProp(kind, anchor, 1, cells);
+  it("freezes each carapace wall's own height while broken walls stay transparent", () => {
+    const d = draft();
+    d.addProp(
+      PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
+      { x: 0, y: 0, z: 0 },
+      1,
+    );
+    d.addProp(
+      PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS,
+      { x: 1, y: 0, z: 0 },
+      2,
+    );
+    d.addProp(
+      PropKindIds.INFESTED_CARAPACE_WALL_BROKEN,
+      { x: 2, y: 0, z: 0 },
+      3,
+    );
     const map = freezeDraft(d, recipe, registries);
-    const occupied = map.tiles.filter((tile) => tile.propId !== undefined);
-    expect(occupied).toHaveLength(12);
-    expect(occupied.every((tile) => tile.sightHeight === 5)).toBe(true);
-    expect(occupied.every((tile) => tile.blocksLos)).toBe(true);
+    const index = new TileIndex(map);
+    expect(index.get(0, 0, 0)).toMatchObject({
+      sightHeight: 3,
+      blocksLos: true,
+      coverProvided: CoverLevel.HIGH,
+    });
+    expect(index.get(1, 0, 0)).toMatchObject({
+      sightHeight: 4,
+      blocksLos: true,
+      coverProvided: CoverLevel.HIGH,
+    });
+    expect(index.get(2, 0, 0)).toMatchObject({
+      blocksLos: false,
+      coverProvided: CoverLevel.LOW,
+    });
+    expect(index.get(2, 0, 0)).not.toHaveProperty("sightHeight");
+    expect(map.props).toHaveLength(3);
     expect(
       map.tiles
         .filter((tile) => tile.propId === undefined)

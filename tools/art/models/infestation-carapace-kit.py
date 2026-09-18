@@ -1,9 +1,12 @@
-"""Enclosed colony architecture: a lodge, segmented hall and tiered carapace keep.
+"""Modular grown carapace curtains: joining walls, bends, branches and buttresses.
 
-These are solid map obstacles, not enlarged nests or enterable human buildings.
-Paired elytra, armored vaults, grown buttresses and sealed biological valves make
-their construction readable from every tactical camera angle. Build with
-make_model.py --build-arg kind=lodge|hall|keep --no-register.
+Every tile is a component, never a standalone hut. Straight pieces join at local
+X ±0.5. In Blender, a curve joins east/+X and north/+Y; a fork joins west, east
+and north; an end joins west only. glTF exports north to −Z. All high joins share
+one 1.34-u cross section, so the generator can assemble continuous structures.
+
+Build with make_model.py --build-arg kind=wall-ridge|wall-overlap|wall-ribbed|
+wall-curve|wall-fork|wall-end|wall-broken|spine-buttress --no-register.
 """
 
 from __future__ import annotations
@@ -20,326 +23,304 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, ".."))
 from bpy_kit import cut_below, join, material, mesh_objects  # noqa: E402
-from crescent_geometry import bead, mesh, shell, sweep  # noqa: E402
+from crescent_geometry import mesh, sweep  # noqa: E402
 
 spec = importlib.util.spec_from_file_location("organic_kit", os.path.join(HERE, "infestation-organic-kit.py"))
 organic = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(organic)
+FOOTPRINT = (1, 1)
+JOIN_HEIGHT = 1.34
 
 
-def closed_grid(name, points, rows, columns, thickness, token="bug-chitin-dark", smooth=True):
-    """Thicken an authored roof surface into a closed shell with a clean underside."""
-    n = len(points)
-    vertices = list(points) + [(x, y, z-thickness) for x, y, z in points]
-    faces = []
-    for row in range(rows-1):
-        for column in range(columns-1):
-            a = row*columns+column
-            b = a+1
-            c = b+columns
-            d = a+columns
-            faces.extend([(a, b, c, d), (d+n, c+n, b+n, a+n)])
-    boundary = list(range(columns))
-    boundary += [row*columns+columns-1 for row in range(1, rows)]
-    boundary += [(rows-1)*columns+column for column in range(columns-2, -1, -1)]
-    boundary += [row*columns for row in range(rows-2, 0, -1)]
-    for a, b in zip(boundary, boundary[1:]+boundary[:1]):
-        faces.append((a, a+n, b+n, b))
-    return mesh(name, vertices, faces, token, smooth)
-
-
-def body(name, width, depth, shoulder, peak, base=0.03, axis="y", token="bug-chitin-black"):
-    """A closed vaulted volume with substantial walls and rounded armored end caps."""
-    sections = 9
-    arch_steps = 14
-    vertices = []
-    ring_count = arch_steps+3
-    for j in range(sections):
-        longitudinal = -1+2*j/(sections-1)
-        taper = 0.80+0.20*math.sin(math.pi*j/(sections-1))**0.5
-        w = width*0.5*taper
-        h = peak-(0.19*peak)*abs(longitudinal)**2
-        coords = [(w*0.90, base)]
-        for k in range(arch_steps+1):
-            a = k*math.pi/arch_steps
-            coords.append((w*math.cos(a), shoulder+(h-shoulder)*math.sin(a)**0.84))
-        coords.append((-w*0.90, base))
-        for cross, z in coords:
-            point = (cross, longitudinal*depth*0.5, z)
-            vertices.append(point if axis=="y" else (point[1], point[0], point[2]))
-    faces = [tuple(reversed(range(ring_count)))]
-    for j in range(sections-1):
-        for k in range(ring_count):
-            q = (k+1)%ring_count
-            faces.append((j*ring_count+k, j*ring_count+q, (j+1)*ring_count+q, (j+1)*ring_count+k))
-    faces.append(tuple((sections-1)*ring_count+k for k in range(ring_count)))
-    return mesh(name, vertices, faces, token, True)
-
-
-def footing(width, depth):
-    """Irregular rooted corners seat the architecture directly into the colony floor."""
-    for side in [-1, 1]:
-        for end in [-1, 1]:
-            x, y = side*width*0.35, end*depth*0.31
-            organic.plate(f"rooted_corner_{side}_{end}", (x, y, 0.035),
-                          (width*0.14, depth*0.15, 0.19), side*end*0.35, "bug-chitin-dark", False)
-            organic.root(f"foundation_root_{side}_{end}",
-                         [(x*0.82, y*0.82, 0.23), (x*1.06, y*0.94, 0.11),
-                          (x*1.16, y*1.2, 0.045), (side*width*0.49, end*depth*0.46, 0.022)],
-                         0.10, "bug-flesh", 8)
-
-
-def buttress(name, start, shoulder, width=0.17, token="bug-chitin-mid"):
-    """A fluted load-bearing rib rooted at the ground and fused into the roof wall."""
-    a = Vector(start)
-    d = Vector(shoulder)
-    delta = d-a
-    path = organic.curve([a, a+Vector((delta.x*0.08, delta.y*0.08, delta.z*0.63)),
-                          d-Vector((delta.x*0.18, delta.y*0.18, delta.z*0.08)), d], 10)
-    radii = [width*(1-0.36*i/9)*(1+0.09*math.sin(i*1.8)) for i in range(10)]
-    sweep(name, path, radii, [r*0.62 for r in radii], token, 8, False)
-    outer = Vector((a.x, a.y, 0)).normalized()
-    stripe = [path[i]+outer*radii[i]*0.7 for i in range(2, 6)]
-    sweep(name+"_fracture", stripe, [0.009, 0.017, 0.016, 0.005], token="bug-chitin-tan", sides=5)
-
-
-def sealed_valve(name, at, width, height, turn=0):
-    """A recessed black membrane closed by overlapping armored folds and a rib grille."""
-    before = set(mesh_objects())
-    x, y, z = at
-    bead(name+"_backing", (x, y, z+height*0.51), 1, "bug-chitin-black",
-         (width*0.5, 0.07, height*0.53), 20, 12)
-    for side in [-1, 1]:
-        points = [(x+side*width*0.45, y-0.075, z+0.09),
-                  (x+side*width*0.46, y-0.11, z+height*0.55),
-                  (x+side*width*0.23, y-0.13, z+height*0.97),
-                  (x+side*width*0.05, y-0.095, z+height*1.03)]
-        path = organic.curve(points, 13)
-        sweep(name+f"_valve_fold_{side}", path,
-              [width*(0.095-0.045*i/12) for i in range(13)],
-              token="bug-chitin-mid", sides=8)
-    for i in range(7):
-        t = (i-3)/3
-        dz = height*(0.85-0.38*abs(t))
-        rib = [(x+t*width*0.32, y-0.09, z+height*0.12),
-               (x+t*width*0.30, y-0.15, z+dz*0.48),
-               (x+t*width*0.18, y-0.13, z+dz*0.83),
-               (x+t*width*0.12, y-0.10, z+dz)]
-        organic.root(name+f"_closed_grille_{i}", rib, width*0.035,
-                     "bug-flesh" if i%2 else "bug-chitin-dark", 6)
-    # Two broad folds make the centre visibly sealed rather than a usable doorway.
-    for side in [-1, 1]:
-        vertices = [(x+side*width*0.055,y-0.18,z+height*0.18),
-                    (x+side*width*0.29,y-0.11,z+height*0.27),
-                    (x+side*width*0.22,y-0.15,z+height*0.77),
-                    (x+side*width*0.018,y-0.21,z+height*0.88)]
-        mesh(name+f"_sealed_leaf_{side}", vertices+[(px,py+0.038,pz) for px,py,pz in vertices],
-             [(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)],
-             "bug-flesh", True)
-    if turn:
-        transform = Matrix.Translation(Vector(at)) @ Matrix.Rotation(turn,4,"Z") @ Matrix.Translation(-Vector(at))
-        for ob in set(mesh_objects())-before:
-            ob.matrix_world = transform @ ob.matrix_world
-
-
-def elytron(name, side, width=1.30, depth=1.3, base=0.81, rise=1.49, token="bug-chitin-dark"):
-    """One asymmetric beetle wing case: a high inner ridge sweeping to a fractured eave."""
-    rows, cols = 17, 9
-    points = []
-    for row in range(rows):
-        t = -1+2*row/(rows-1)
-        y = t*depth
-        arch = max(0,1-t*t)**0.70
-        notch = 0.14 if row in ([3,12] if side<0 else [5,14]) else 0
-        w = width*(0.80+0.20*arch)-notch
-        for column in range(cols):
-            u = column/(cols-1)
-            x = side*(0.033+w*u)
-            z = base+rise*arch*max(0,1-u**1.78)**0.72
-            z += 0.035*math.sin(row*1.8)*(u**5)
-            if row in [4,11] and column>4:
-                z -= 0.065*(column-4)/4
-            points.append((x,y,z))
-    closed_grid(name,points,rows,cols,0.075,token,True)
-    # Short pale cuts are edge damage, not an ornamental outline.
-    for start in ([2,10] if side<0 else [6,13]):
-        edge=[Vector(points[row*cols+cols-1])+Vector((0,0,0.008)) for row in range(start,start+3)]
-        sweep(name+f"_cut_{start}",edge,[0.006,0.018,0.007],token="bug-chitin-tan",sides=5)
-    ridge=[Vector(points[row*cols])+Vector((side*0.009,0,0.018)) for row in range(3,14)]
-    sweep(name+"_inner_seam",ridge,[0.022]*len(ridge),token="bug-chitin-black",sides=6)
-
-
-def vent_slits(name, at, span, vertical=False):
-    """Small closed dark vents with restrained biological glints behind armor."""
-    x,y,z=at
-    for i in range(4):
-        dx=(i-1.5)*span/4
-        bead(name+f"_slit_{i}",(x+dx,y,z),1,"bug-chitin-black",(span*0.055,0.034,0.12),10,6)
-        if i in [0,3]:
-            bead(name+f"_life_{i}",(x+dx,y-0.028,z-0.03),1,"bug-bio-green-dim",
-                 (span*0.022,0.018,0.025),8,6)
-
-
-def lodge():
-    """Low paired wing cases enclose a substantial three-tile colony lodge."""
-    footing(3,3)
-    body("lodge_substructure",2.32,2.35,0.75,1.92,token="bug-chitin-dark")
-    elytron("left_vault",-1,rise=1.53,token="bug-chitin-dark")
-    elytron("right_vault",1,depth=1.26,rise=1.46,token="bug-chitin-mid")
-    for side in [-1,1]:
-        for i,y in enumerate([-0.79,0.0,0.77]):
-            buttress(f"lodge_buttress_{side}_{i}",(side*1.30,y,0.10),
-                     (side*1.04,y+0.07,1.37-0.12*abs(y)),0.15,
-                     "bug-chitin-mid" if i==1 else "bug-chitin-dark")
-    sealed_valve("lodge_seal",(0,-1.18,0.12),0.87,1.33)
-    organic.plate("brow_armour",(0,-0.86,1.38),(0.56,0.43,0.30),0,"bug-chitin-dark")
-    for side in [-1,1]:
-        organic.plate(f"lodge_cheek_{side}",(side*0.71,-0.92,0.28),(0.36,0.42,0.34),
-                      side*0.22,"bug-chitin-dark")
-    vent_slits("lodge_rear",(0,1.215,0.69),0.69)
-
-
-def roof_segment(name, x, length, width, shoulder, peak, token, phase):
-    """A broad overlapping transverse armor band above the brood hall's solid core."""
-    rows,cols=5,19
-    points=[]
-    for row in range(rows):
-        t=row/(rows-1)
-        along=x+(t-0.5)*length
-        for column in range(cols):
-            a=column*math.pi/(cols-1)
-            across=width*math.cos(a)
-            h=shoulder+(peak-shoulder)*math.sin(a)**0.83
-            h+=0.10*(1-t)+0.025*math.sin(column*1.7+phase)*math.sin(a)
-            if row==0 and column in [4+phase%3,14-phase%3]:
-                along_local=along+0.09
-                h-=0.065
-            else:along_local=along
-            points.append((along_local,across,h))
-    closed_grid(name,points,rows,cols,0.095,token)
-    for start in [2,12]:
-        edge=[Vector(points[k])+Vector((0,0,0.012)) for k in range(start,start+4)]
-        sweep(name+f"_exposed_cut_{start}",edge,[0.007,0.015,0.013,0.004],
-              token="bug-chitin-tan",sides=5)
-
-
-def hall():
-    """An elongated brood hall whose segmented roof stands on grown external ribs."""
-    footing(4,3)
-    body("hall_enclosed_chambers",2.35,3.45,1.17,2.49,axis="x",token="bug-chitin-dark")
-    for i,x in enumerate([-1.36,-0.69,0.0,0.68,1.32]):
-        height=[2.39,2.68,2.90,2.77,2.42][i]
-        roof_segment(f"hall_roof_band_{i}",x,0.91,1.30,1.16,height,
-                     "bug-chitin-dark" if i%2==0 else "bug-chitin-mid",i)
-        for side in [-1,1]:
-            buttress(f"hall_rib_{i}_{side}",(x,side*1.33,0.12),
-                     (x-0.05,side*1.06,1.76+0.1*math.sin(i)),0.14)
-    sealed_valve("hall_front_seal",(-0.15,-1.19,0.15),0.99,1.48)
-    organic.plate("hall_door_cowl",(-0.15,-0.83,1.47),(0.64,0.48,0.28),0,"bug-chitin-dark")
-    for side in [-1,1]:
-        organic.plate(f"hall_end_shield_{side}",(side*1.49,0,0.96),
-                      (0.34,0.87,0.90),0,"bug-chitin-dark",False)
-        vent_slits(f"hall_rear_slits_{side}",(side*0.98,1.217,0.67),0.60)
-    for i,x in enumerate([-0.72,0,0.73]):
-        organic.plate(f"hall_dorsal_scute_{i}",(x,0,2.71 if i==1 else 2.48),
-                      (0.44,0.19,0.38 if i==1 else 0.33),math.pi/2,"bug-chitin-dark")
-
-
-def tier(name, width, depth, bottom, shoulder, peak, token="bug-chitin-dark"):
-    """A rounded rectangular fortified chamber with a closed vaulted crown."""
-    n=32
-    profiles=[(0.86,bottom),(1.0,bottom+0.23),(0.96,shoulder),(0.70,peak-0.13),(0.40,peak)]
+def curtain(name, path, heights, token="bug-chitin-dark", widths=None):
+    """Loft a closed, faceted chitin curtain with shared joining cross sections."""
     vertices=[]
-    for scale,z in profiles:
-        for i in range(n):
-            a=i*math.tau/n
-            c,s=math.cos(a),math.sin(a)
-            x=math.copysign(abs(c)**0.55,c)*width*0.5*scale
-            y=math.copysign(abs(s)**0.55,s)*depth*0.5*scale
-            vertices.append((x,y,z+0.025*math.sin(i*1.4)*(z-bottom)/(peak-bottom)))
-    faces=[tuple(reversed(range(n)))]
-    for j in range(len(profiles)-1):
-        for i in range(n):
-            q=(i+1)%n
-            faces.append((j*n+i,j*n+q,(j+1)*n+q,(j+1)*n+i))
-    faces.append(tuple((len(profiles)-1)*n+i for i in range(n)))
-    return mesh(name,vertices,faces,token,True)
+    count=8
+    for i,((x,y),height) in enumerate(zip(path,heights)):
+        previous=Vector((*path[max(i-1,0)],0))
+        following=Vector((*path[min(i+1,len(path)-1)],0))
+        tangent=(following-previous).normalized()
+        outward=Vector((-tangent.y,tangent.x,0))
+        width=widths[i] if widths else 1
+        cross=[(-0.21,0),(-0.24,0.13),(-0.17,height*0.57),(-0.095,height),
+               (0.084,height),(0.16,height*0.59),(0.23,0.14),(0.21,0)]
+        for side,z in cross:
+            vertices.append(Vector((x,y,z))+outward*side*width)
+    faces=[tuple(reversed(range(count)))]
+    for i in range(len(path)-1):
+        for j in range(count):
+            k=(j+1)%count
+            faces.append((i*count+j,i*count+k,(i+1)*count+k,(i+1)*count+j))
+    faces.append(tuple((len(path)-1)*count+j for j in range(count)))
+    return mesh(name,vertices,faces,token,False)
 
 
-def crest(name, x, y, base, height, length, side=1):
-    """A broad serrated dorsal armor keel, closed and thick rather than a needle spike."""
-    outline=[(-length*0.52,0),(-length*0.50,height*0.37),(-length*0.31,height*0.80),
-             (-length*0.06,height),(length*0.07,height*0.80),(length*0.13,height*0.84),
-             (length*0.35,height*0.43),(length*0.52,0.04)]
-    vertices=[]
-    for offset in [-0.065,0.065]:
-        vertices.extend((x+offset+side*h*0.065,y+p,base+h) for p,h in outline)
+def straight_core(name="continuous_curtain", heights=None):
+    """A complete opaque spine joins neighboring modules without gaps at their bases."""
+    path=[(-0.5,0),(-0.34,0),(-0.19,0),(-0.025,0),(0.17,0),(0.34,0),(0.5,0)]
+    tops=heights or [JOIN_HEIGHT,1.48,1.33,1.54,1.40,1.47,JOIN_HEIGHT]
+    return curtain(name,path,tops)
+
+
+def shell_plate(name, at, width, height, side=-1, yaw=0, token="bug-chitin-mid", lean=0):
+    """A broad concave shell plate with real edge notches and depressed radial fissures.
+
+    A shallow closed concavity creates large angled faces instead of a rounded
+    blob. The asymmetric silhouette rises into two irregular cutting points;
+    the centre crease and two missing edge wedges are geometry, not decals.
+    """
+    cx,cy,base=at
+    outline=[(-0.52,0),(-0.59,0.22),(-0.47,0.57),(-0.31,0.86),(-0.09,1.0),
+             (0.012,0.77),(0.15,0.83),(0.29,0.95),(0.49,0.64),(0.59,0.23),(0.38,0)]
     n=len(outline)
-    faces=[tuple(reversed(range(n))),tuple(range(n,n*2))]
-    faces.extend((i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n))
-    mesh(name,vertices,faces,"bug-chitin-dark" if side<0 else "bug-chitin-mid",False)
-    sweep(name+"_worn_tip",[(x+side*h*0.065,y+p,base+h+0.004) for p,h in outline[2:5]],
-          [0.010,0.016,0.008],token="bug-chitin-tan",sides=5)
+    centre_height=0.43
+    vertices=[]
+    for scale,depth in [(1,0.066),(0.68,-0.018),(0.22,0.034)]:
+        for i,(px,pz) in enumerate(outline):
+            z=centre_height+(pz-centre_height)*scale
+            x=px*width*scale+lean*z
+            hook=0.105*max(0,(z-0.55)/0.45)**2
+            y=side*(depth+0.10*(1-z)**2+hook)
+            if i in [3,8] and scale<1:
+                y-=side*0.045
+            vertices.append((x,y,z*height))
+    vertices.append((lean*centre_height,side*0.023,centre_height*height))
+    centre=3*n
+    faces=[]
+    for ring in range(2):
+        for i in range(n):
+            j=(i+1)%n
+            faces.append((ring*n+i,ring*n+j,(ring+1)*n+j,(ring+1)*n+i))
+    for i in range(n):faces.append((2*n+i,2*n+(i+1)%n,centre))
+    back_start=len(vertices)
+    for px,pz in outline:
+        hook=0.105*max(0,(pz-0.55)/0.45)**2
+        vertices.append((px*width+lean*pz,side*(-0.068+0.1*(1-pz)**2+hook),pz*height))
+    faces.append(tuple(reversed(range(back_start,back_start+n))))
+    for i in range(n):
+        j=(i+1)%n
+        faces.append((i,back_start+i,back_start+j,j))
+    c,s=math.cos(yaw),math.sin(yaw)
+    transform=lambda p:(cx+p[0]*c-p[1]*s,cy+p[0]*s+p[1]*c,base+p[2])
+    mesh(name,[transform(p) for p in vertices],faces,token,False)
+    # Sparse exposed tips preserve the walnut silhouette; no continuous piping.
+    for index in [3]:
+        a=Vector(vertices[index]);b=Vector(vertices[(index+1)%n])
+        path=[transform(a.lerp(b,t)+Vector((0,side*0.004,0))) for t in [0.25,0.40,0.56]]
+        sweep(name+f"_chipped_tip_{index}",path,[0.002,0.007,0.002],
+              token="bug-chitin-tan",sides=5,smooth=False)
 
 
-def keep():
-    """A tiered armored keep: broad lower chamber, shoulder roofs and sealed vent crown."""
-    footing(4,4)
-    tier("keep_lower_body",3.49,3.28,0.04,1.40,1.95,"bug-chitin-dark")
-    tier("keep_upper_chamber",2.15,1.93,1.63,3.27,3.63,"bug-chitin-dark")
+def shield_scale(name,at,width,height,side=-1,yaw=0,token="bug-chitin-dark"):
+    """A broad convex scute with an underlapping dark lip and fractured lower edge."""
+    outline=[(-0.52,0.31),(-0.40,0.07),(-0.09,0.0),(0.045,0.065),(0.16,0.035),
+             (0.47,0.19),(0.51,0.47),(0.26,0.81),(0.025,1.0),(-0.25,0.82),(-0.44,0.60)]
+    n=len(outline)
+    c,s=math.cos(yaw),math.sin(yaw)
+    transform=lambda p:(at[0]+p[0]*c-p[1]*s,at[1]+p[0]*s+p[1]*c,at[2]+p[2])
+    for backing in [True,False]:
+        expansion=1.04 if backing else 1
+        vertices=[]
+        for scale,depth in [(1,0.025),(0.57,0.122)]:
+            for i,(x,z) in enumerate(outline):
+                px=x*width*scale*expansion
+                pz=(0.47+(z-0.47)*scale*expansion)*height
+                py=side*(depth-(0.025 if backing else 0))
+                if i in [1,6] and scale<1:py-=side*0.03
+                vertices.append((px,py,pz))
+        vertices.append((0.03*width,side*(0.155-(0.025 if backing else 0)),height*0.45))
+        centre=2*n
+        faces=[]
+        for i in range(n):
+            j=(i+1)%n
+            faces.extend([(i,j,n+j,n+i),(n+i,n+j,centre)])
+        back=len(vertices)
+        vertices.extend((x*width*expansion,side*(-0.025-(0.025 if backing else 0)),
+                         (0.47+(z-0.47)*expansion)*height) for x,z in outline)
+        faces.append(tuple(reversed(range(back,back+n))))
+        for i in range(n):faces.append((i,back+i,back+(i+1)%n,(i+1)%n))
+        mesh(name+("_underlip" if backing else "_armour"),[transform(p) for p in vertices],faces,
+             "bug-chitin-black" if backing else token,False)
+    edge=[transform((outline[i][0]*width,side*0.031,outline[i][1]*height)) for i in [1,2,3]]
+    sweep(name+"_broken_lip",edge,[0.003,0.009,0.002],token="bug-chitin-tan",sides=5,smooth=False)
+
+
+def laminar_faces(name,front=True,back=True):
+    """Transverse courses interrupt vertical blades and give the curtain armored thickness."""
+    if front:
+        shield_scale(name+"_lower_left",(-0.235,-0.195,0.10),0.47,0.64,-1,
+                     token="bug-chitin-dark")
+        shield_scale(name+"_lower_right",(0.20,-0.19,0.22),0.51,0.58,-1,
+                     token="bug-chitin-mid")
+        shield_scale(name+"_upper_scale",(-0.065,-0.145,0.82),0.74,0.48,-1,
+                     token="bug-chitin-dark")
+    if back:
+        shield_scale(name+"_back_lower",(0.025,0.19,0.13),0.76,0.65,1,
+                     token="bug-chitin-dark")
+        shield_scale(name+"_back_upper",(-0.075,0.15,0.84),0.68,0.43,1,
+                     token="bug-chitin-mid")
+
+
+def foot_roots(name, rotation=0, offset=(0,0)):
+    """Low lateral roots blend the curtain into resin without a display plinth."""
+    before=set(mesh_objects())
+    for i,(x,side) in enumerate([(-0.27,-1),(0.21,1)]):
+        organic.root(name+f"_root_{i}",[(x,side*0.12,0.16),(x+0.065,side*0.24,0.075),
+                                      (x-0.065,side*0.31,0.039),(x-0.10,side*0.415,0.020)],
+                     0.055,"bug-flesh",7)
+    if rotation or offset!=(0,0):
+        matrix=Matrix.Translation((offset[0],offset[1],0))@Matrix.Rotation(rotation,4,"Z")
+        for ob in set(mesh_objects())-before:ob.matrix_world=matrix@ob.matrix_world
+
+
+def ridge():
+    """High serrated curtain, dominated by three wide fused shell blades."""
+    straight_core()
+    for i,(x,w,h,lean) in enumerate([(-0.27,0.35,0.92,-0.018),(0.06,0.51,1.16,0.025),
+                                    (0.33,0.27,0.77,-0.014)]):
+        shell_plate(f"ridge_front_{i}",(x,-0.13,0.725),w,h,-1,
+                    token="bug-chitin-mid" if i==0 else "bug-chitin-dark",lean=lean)
+    shell_plate("ridge_back_left",(-0.23,0.13,0.525),0.41,1.03,1,token="bug-chitin-dark")
+    shell_plate("ridge_back_right",(0.21,0.13,0.525),0.43,1.17,1,token="bug-chitin-mid",lean=-0.02)
+    laminar_faces("ridge")
+    foot_roots("ridge")
+
+
+def overlap():
+    """Layered directional shell plates overlap into a complete grown wall."""
+    straight_core(heights=[JOIN_HEIGHT,1.45,1.47,1.40,1.43,1.38,JOIN_HEIGHT])
+    for i,(x,w,h) in enumerate([(-0.29,0.34,1.49),(-0.10,0.39,1.75),
+                              (0.14,0.42,1.62),(0.34,0.25,1.48)]):
+        shell_plate(f"overlapping_front_{i}",(x,-0.13-i*0.008,0.565),w,h-0.55,-1,
+                    token="bug-chitin-dark" if i%2 else "bug-chitin-mid",lean=0.027)
+    for i,(x,h) in enumerate([(-0.24,1.55),(0.21,1.64)]):
+        shell_plate(f"overlapping_back_{i}",(x,0.12,0.575),0.40,h-0.55,1,
+                    token="bug-chitin-dark",lean=-0.028)
+    laminar_faces("overlap")
+    foot_roots("overlap")
+
+
+def ribbed():
+    """Uneven fused ribs rise from a continuous plate curtain, without fence-post gaps."""
+    straight_core(heights=[JOIN_HEIGHT,1.49,1.43,1.56,1.44,1.41,JOIN_HEIGHT])
     for side in [-1,1]:
-        for i,y in enumerate([-0.97,0,0.91]):
-            organic.plate(f"keep_shoulder_{side}_{i}",(side*1.03,y,1.31),
-                          (0.78,0.69,0.73),side*0.09,
-                          "bug-chitin-mid" if i==1 else "bug-chitin-dark")
-        for end in [-1,1]:
-            buttress(f"keep_corner_{side}_{end}",(side*1.72,end*1.48,0.11),
-                     (side*1.29,end*1.03,2.04),0.24,"bug-chitin-dark")
-        # Vertical facade scales interrupt the lower tier without creating human windows.
-        for i,x in enumerate([-0.75,0.73]):
-            organic.plate(f"keep_facade_scale_{side}_{i}",(x,side*1.32,0.50),
-                          (0.46,0.40,0.55),side*0.2,"bug-chitin-mid",False)
-    sealed_valve("keep_sealed_gate",(0,-1.57,0.19),1.14,1.61)
-    organic.plate("keep_gate_brow",(0,-1.22,1.48),(0.72,0.59,0.46),0,"bug-chitin-dark")
-    for side in [-1,1]:
-        organic.plate(f"keep_upper_roof_{side}",(side*0.39,0.07,3.14),
-                      (0.65,1.02,0.60),side*0.06,"bug-chitin-dark")
-        crest(f"dorsal_keel_{side}",side*0.24,0.05,3.59,
-              0.53 if side<0 else 0.42,1.28,side)
-    # Crown vents are shallow closed grilles, backed by an armored upper chamber.
-    for front in [-1,1]:
-        for i in range(5):
-            x=(i-2)*0.26
-            bead(f"keep_crown_vent_{front}_{i}",(x,front*0.898,3.21),1,"bug-chitin-black",
-                 (0.070,0.045,0.23),10,8)
-            if i==1:
-                bead(f"keep_crown_life_{front}",(x,front*0.935,3.13),1,"bug-bio-green-dim",
-                     (0.021,0.015,0.042),8,6)
-    vent_slits("keep_rear_low",(0,1.588,0.77),0.81)
+        for i,(x,h) in enumerate([(-0.36,1.53),(-0.20,1.68),(0.025,1.84),(0.23,1.60),(0.38,1.47)]):
+            path=organic.curve([(x,side*0.23,0.06),(x-0.07,side*0.27,h*0.35),
+                                (x+0.05,side*0.18,h*0.77),(x-0.025,side*0.055,h)],10)
+            widths=[0.085*(1-k/11)**0.63+0.007 for k in range(10)]
+            sweep(f"fused_rib_{side}_{i}",path,widths,[r*0.58 for r in widths],
+                  "bug-chitin-dark" if i%2 else "bug-chitin-mid",8,False)
+            if i in [1,3]:
+                sweep(f"rib_chip_{side}_{i}",[p+Vector((0,side*0.04,0)) for p in path[6:9]],
+                      [0.005,0.012,0.004],token="bug-chitin-tan",sides=5,smooth=False)
+    shell_plate("ribbed_low_apron",(-0.05,-0.21,0.01),0.69,0.77,-1,token="bug-chitin-dark")
+    shield_scale("ribbed_transverse_front",(-0.025,-0.19,0.54),0.76,0.50,-1,
+                 token="bug-chitin-dark")
+    shield_scale("ribbed_transverse_back",(0.035,0.19,0.76),0.71,0.46,1,
+                 token="bug-chitin-mid")
+    foot_roots("ribbed")
 
 
-def build(kind="lodge"):
-    """Build one closed colony building, seat its roots and consolidate static materials."""
-    builders={"lodge":lodge,"hall":hall,"keep":keep}
-    if kind not in builders:
-        raise ValueError(f"unknown carapace building {kind!r}")
-    builders[kind]()
-    for name,roughness in [("bug-chitin-dark",0.72),("bug-chitin-mid",0.74),
-                           ("bug-chitin-tan",0.81),("bug-chitin-black",0.88),("bug-flesh",0.65)]:
-        shader=material(name).node_tree.nodes["Principled BSDF"]
-        shader.inputs["Roughness"].default_value=roughness
-        if name=="bug-chitin-black":
-            shader.inputs["Specular IOR Level"].default_value=0.13
+def curve():
+    """A grown ninety-degree bend, joining north and east along orthogonal centre lines."""
+    path=[(0.5,0),(0.32,0),(0.18,0.035),(0.065,0.14),(0,0.32),(0,0.5)]
+    curtain("continuous_organic_bend",path,[JOIN_HEIGHT,1.43,1.52,1.58,1.46,JOIN_HEIGHT])
+    shell_plate("bend_east_outer",(0.285,-0.11,0.018),0.33,1.66,-1,token="bug-chitin-dark")
+    shell_plate("bend_middle_outer",(0.085,0.042,0.02),0.44,1.83,-1,-math.pi/4,
+                token="bug-chitin-mid")
+    shell_plate("bend_north_outer",(-0.10,0.29,0.018),0.33,1.62,-1,-math.pi/2,
+                token="bug-chitin-dark")
+    shell_plate("bend_inner_fold",(0.18,0.18,0.02),0.34,1.54,1,-math.pi/4,
+                token="bug-chitin-dark")
+    shield_scale("bend_outer_lamella",(0.035,0.015,0.37),0.67,0.68,-1,-math.pi/4,
+                 token="bug-chitin-dark")
+    shield_scale("bend_inner_lamella",(0.20,0.19,0.85),0.42,0.47,1,-math.pi/4,
+                 token="bug-chitin-mid")
+    organic.root("bend_outer_root",[(0.17,-0.10,0.13),(-0.13,-0.20,0.06),
+                                    (-0.25,0.01,0.04),(-0.38,0.13,0.015)],0.06,"bug-flesh",7)
+
+
+def fork():
+    """Three fused curtain branches form a structural T junction, not a central trophy."""
+    straight_core("fork_cross_curtain")
+    curtain("fork_north_branch",[(0,0.01),(0,0.21),(0,0.36),(0,0.5)],
+            [1.55,1.49,1.40,JOIN_HEIGHT])
+    shell_plate("fork_front_left",(-0.24,-0.12,0.02),0.42,1.63,-1,token="bug-chitin-dark")
+    shell_plate("fork_front_right",(0.19,-0.13,0.02),0.46,1.78,-1,token="bug-chitin-mid")
+    shell_plate("fork_north_east",(0.13,0.29,0.02),0.35,1.64,1,-math.pi/2,
+                token="bug-chitin-dark")
+    shell_plate("fork_north_west",(-0.13,0.27,0.02),0.36,1.56,-1,-math.pi/2,
+                token="bug-chitin-mid")
+    laminar_faces("fork",back=False)
+    shield_scale("fork_branch_lamella",(-0.14,0.28,0.49),0.40,0.57,-1,-math.pi/2,
+                 token="bug-chitin-dark")
+    foot_roots("fork")
+
+
+def end():
+    """West-joining wall tapers into a broken, exposed carapace end toward east."""
+    curtain("tapered_curtain",[(-0.5,0),(-0.31,0),(-0.09,0),(0.15,0),(0.37,0)],
+            [JOIN_HEIGHT,1.43,1.23,0.74,0.20],widths=[1,1,0.93,0.72,0.38])
+    shell_plate("end_main_plate",(-0.26,-0.12,0.018),0.35,1.67,-1,token="bug-chitin-mid",lean=-0.02)
+    shell_plate("end_torn_plate",(-0.005,-0.12,0.018),0.34,1.36,-1,token="bug-chitin-dark",lean=0.06)
+    shell_plate("end_small_fracture",(0.225,-0.07,0.015),0.26,0.60,-1,token="bug-chitin-mid")
+    shell_plate("end_reverse_fold",(-0.22,0.12,0.018),0.39,1.45,1,token="bug-chitin-dark")
+    shield_scale("end_lower_scale",(-0.17,-0.17,0.28),0.53,0.53,-1,token="bug-chitin-dark")
+    shield_scale("end_reverse_scale",(-0.17,0.15,0.63),0.48,0.40,1,token="bug-chitin-mid")
+    organic.root("broken_end_root",[(0.03,0.07,0.18),(0.21,0.08,0.07),
+                                    (0.28,-0.03,0.04),(0.46,-0.17,0.015)],0.048,"bug-flesh",7)
+
+
+def broken():
+    """Low fractured wall remains retain west/east continuity and readable half cover."""
+    straight_core("low_broken_core",[0.46,0.53,0.38,0.57,0.42,0.48,0.46])
+    for i,(x,w,h) in enumerate([(-0.31,0.30,0.58),(-0.02,0.45,0.66),(0.30,0.31,0.50)]):
+        shell_plate(f"fractured_front_{i}",(x,-0.13,0.008),w,h,-1,
+                    token="bug-chitin-mid" if i==1 else "bug-chitin-dark",lean=0.018)
+    shell_plate("fractured_back",(-0.03,0.13,0.008),0.59,0.61,1,token="bug-chitin-dark")
+    shield_scale("fractured_transverse",(0.025,-0.18,0.06),0.61,0.39,-1,token="bug-chitin-mid")
+    foot_roots("broken")
+
+
+def spine_buttress():
+    """A tall cluster of broad curved blades buttresses the continuous west/east wall."""
+    straight_core("buttressed_curtain")
+    shell_plate("buttress_front_wall",(-0.05,-0.15,0.02),0.67,1.64,-1,token="bug-chitin-dark")
+    shell_plate("buttress_back_wall",(0.07,0.15,0.02),0.66,1.57,1,token="bug-chitin-mid")
+    organic.horn("dominant_anchored_blade",(-0.14,0.045,0.02),math.pi*0.12,2.43,0.22,0.22,
+                 "bug-chitin-dark")
+    organic.horn("supporting_hook",(0.19,-0.045,0.015),math.pi*0.83,1.99,0.16,0.16,
+                 "bug-chitin-mid")
+    organic.horn("lateral_buttress",(-0.23,0.16,0.014),-math.pi*0.44,1.22,0.12,0.13,
+                 "bug-chitin-dark")
+    laminar_faces("buttress")
+    foot_roots("buttress")
+
+
+BUILDERS={"wall-ridge":ridge,"wall-overlap":overlap,"wall-ribbed":ribbed,
+          "wall-curve":curve,"wall-fork":fork,"wall-end":end,"wall-broken":broken,
+          "spine-buttress":spine_buttress}
+
+
+def finish():
+    """Seat rooted surfaces and consolidate immutable geometry by palette material."""
+    for token,roughness in [("bug-chitin-dark",0.73),("bug-chitin-mid",0.76),
+                            ("bug-chitin-tan",0.83),("bug-chitin-black",0.89),("bug-flesh",0.67)]:
+        material(token).node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value=roughness
     bpy.context.view_layer.update()
     for ob in mesh_objects():
         if min((ob.matrix_world@Vector(v)).z for v in ob.bound_box)<-0.0001:
             cut_below(ob)
-    # These buildings never animate: one closed mesh per palette material keeps
-    # the added architectural detail affordable in a populated colony precinct.
     groups={}
-    for ob in mesh_objects():
-        groups.setdefault(ob.data.materials[0].name,[]).append(ob)
+    for ob in mesh_objects():groups.setdefault(ob.data.materials[0].name,[]).append(ob)
     for token,parts in groups.items():
-        result=join(parts,f"carapace_{kind}_{token}") if len(parts)>1 else parts[0]
+        result=join(parts,"carapace_"+token) if len(parts)>1 else parts[0]
         result["atlas_preserve_uv"]=True
     bpy.context.view_layer.update()
+
+
+def build(kind="wall-ridge"):
+    """Build one joining wall module; generation owns its neighbors and structure layout."""
+    if kind not in BUILDERS:raise ValueError(f"unknown carapace module {kind!r}")
+    BUILDERS[kind]()
+    finish()

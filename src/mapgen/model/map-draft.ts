@@ -236,7 +236,10 @@ export class MapDraft {
           Math.hypot(x - zone.centre.x, z - zone.centre.z) <=
             zone.clearingRadius ||
           (zone.carapace !== undefined &&
-            rectContains(zone.carapace.clearance, x, z)),
+            (rectContains(zone.carapace.clearance, x, z) ||
+              zone.carapace.gateways.some((gateway) =>
+                gateway.approach.some((tile) => tile.x === x && tile.z === z),
+              ))),
       ) ?? false
     );
   }

@@ -4202,45 +4202,115 @@
     "bytes": 86544
   },
   {
-    "id": "building.infested-carapace-lodge",
+    "id": "building.carapace-wall-ridge",
     "category": "buildings",
-    "path": "assets/models/buildings/building-infested-carapace-lodge.glb",
+    "path": "assets/models/buildings/building-carapace-wall-ridge.glb",
     "footprint": {
-      "w": 3,
-      "d": 3
+      "w": 1,
+      "d": 1
     },
-    "height": 2.37,
+    "height": 1.88,
     "sockets": [],
     "quality": "final",
-    "triangles": 8634,
-    "bytes": 249612
+    "triangles": 1794,
+    "bytes": 114692
   },
   {
-    "id": "building.infested-carapace-hall",
+    "id": "building.carapace-wall-overlap",
     "category": "buildings",
-    "path": "assets/models/buildings/building-infested-carapace-hall.glb",
+    "path": "assets/models/buildings/building-carapace-wall-overlap.glb",
     "footprint": {
-      "w": 4,
-      "d": 3
+      "w": 1,
+      "d": 1
     },
-    "height": 3.08,
+    "height": 1.76,
     "sockets": [],
     "quality": "final",
-    "triangles": 11612,
-    "bytes": 349664
+    "triangles": 1906,
+    "bytes": 122592
   },
   {
-    "id": "building.infested-carapace-keep",
+    "id": "building.carapace-wall-ribbed",
     "category": "buildings",
-    "path": "assets/models/buildings/building-infested-carapace-keep.glb",
+    "path": "assets/models/buildings/building-carapace-wall-ribbed.glb",
     "footprint": {
-      "w": 4,
-      "d": 4
+      "w": 1,
+      "d": 1
     },
-    "height": 4.13,
+    "height": 1.85,
     "sockets": [],
     "quality": "final",
-    "triangles": 12154,
-    "bytes": 325852
+    "triangles": 2548,
+    "bytes": 163840
+  },
+  {
+    "id": "building.carapace-wall-curve",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-curve.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.85,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1026,
+    "bytes": 69456
+  },
+  {
+    "id": "building.carapace-wall-fork",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-fork.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.8,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1588,
+    "bytes": 99368
+  },
+  {
+    "id": "building.carapace-wall-end",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-end.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.69,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1010,
+    "bytes": 68404
+  },
+  {
+    "id": "building.carapace-wall-broken",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-broken.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.67,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1066,
+    "bytes": 62900
+  },
+  {
+    "id": "building.carapace-spine-buttress",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-spine-buttress.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.45,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2898,
+    "bytes": 158960
   }
 ]

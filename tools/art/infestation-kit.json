@@ -512,27 +512,67 @@
     "footprint": "1x0"
   },
   {
-    "id": "building.infested-carapace-lodge",
+    "id": "building.carapace-wall-ridge",
     "script": "infestation-carapace-kit.py",
-    "kind": "lodge",
+    "kind": "wall-ridge",
     "category": "buildings",
-    "file": "building-infested-carapace-lodge.glb",
-    "footprint": "3x3"
+    "file": "building-carapace-wall-ridge.glb",
+    "footprint": "1x1"
   },
   {
-    "id": "building.infested-carapace-hall",
+    "id": "building.carapace-wall-overlap",
     "script": "infestation-carapace-kit.py",
-    "kind": "hall",
+    "kind": "wall-overlap",
     "category": "buildings",
-    "file": "building-infested-carapace-hall.glb",
-    "footprint": "4x3"
+    "file": "building-carapace-wall-overlap.glb",
+    "footprint": "1x1"
   },
   {
-    "id": "building.infested-carapace-keep",
+    "id": "building.carapace-wall-ribbed",
     "script": "infestation-carapace-kit.py",
-    "kind": "keep",
+    "kind": "wall-ribbed",
     "category": "buildings",
-    "file": "building-infested-carapace-keep.glb",
-    "footprint": "4x4"
+    "file": "building-carapace-wall-ribbed.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-curve",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-curve",
+    "category": "buildings",
+    "file": "building-carapace-wall-curve.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-fork",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-fork",
+    "category": "buildings",
+    "file": "building-carapace-wall-fork.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-end",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-end",
+    "category": "buildings",
+    "file": "building-carapace-wall-end.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-broken",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-broken",
+    "category": "buildings",
+    "file": "building-carapace-wall-broken.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-spine-buttress",
+    "script": "infestation-carapace-kit.py",
+    "kind": "spine-buttress",
+    "category": "buildings",
+    "file": "building-carapace-spine-buttress.glb",
+    "footprint": "1x1"
   }
 ]

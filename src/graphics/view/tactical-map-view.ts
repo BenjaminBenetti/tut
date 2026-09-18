@@ -741,9 +741,10 @@ export class TacticalMapView implements Disposable, TilePicker {
           prototypeMaterial !== undefined
             ? this.ghostMaterial(prototypeMaterial)
             : part.material;
-        const colonyModel = /infested|breached|prop\.ruin-|prop\.rubble-/.test(
-          batch.modelId,
-        );
+        const colonyModel =
+          /infested|breached|building\.carapace-|prop\.ruin-|prop\.rubble-/.test(
+            batch.modelId,
+          );
         const shellMaterial = colonyModel
           ? Array.isArray(cutawayMaterial)
             ? cutawayMaterial.map((m) =>

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { PropKindIds } from "../../mapgen/data/props";
+import { PROP_DEFINITIONS, PropKindIds } from "../../mapgen/data/props";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { WallKind } from "../../mapgen/model/wall";
 import { MODEL_MANIFEST } from "./model-manifest";
+import { LAYER_HEIGHT } from "./mapgen-preview-palette";
 import {
   PROP_MODELS,
   propModel,
@@ -119,20 +120,40 @@ describe("map model table", () => {
     expect(propModel("statue")).toBeUndefined();
   });
 
-  it("draws terrain, colony buildings and ordinary props from their respective kits", () => {
+  it("matches carapace sight volumes to exported shell heights", () => {
+    for (const definition of PROP_DEFINITIONS.filter((prop) =>
+      prop.id.startsWith("infested-carapace-"),
+    )) {
+      const model = MODEL_MANIFEST[propModel(definition.id)!];
+      if (definition.blocksLos) {
+        expect(definition.sightHeight, definition.id).toBe(
+          Math.ceil(model.height / LAYER_HEIGHT),
+        );
+      } else {
+        expect(model.height, definition.id).toBeLessThanOrEqual(LAYER_HEIGHT);
+      }
+    }
+  });
+
+  it("draws terrain, carapace modules and ordinary props from their respective kits", () => {
     for (const [surface, id] of Object.entries(SURFACE_MODELS)) {
       expect(["tiles", "buildings"], `${surface} -> ${id}`).toContain(
         MODEL_MANIFEST[id].category,
       );
     }
-    const colonyBuildings = new Set<string>([
-      PropKindIds.INFESTED_CARAPACE_LODGE,
-      PropKindIds.INFESTED_CARAPACE_HALL,
-      PropKindIds.INFESTED_CARAPACE_KEEP,
+    const carapaceModules = new Set<string>([
+      PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
+      PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP,
+      PropKindIds.INFESTED_CARAPACE_WALL_RIBBED,
+      PropKindIds.INFESTED_CARAPACE_WALL_CURVE,
+      PropKindIds.INFESTED_CARAPACE_WALL_FORK,
+      PropKindIds.INFESTED_CARAPACE_WALL_END,
+      PropKindIds.INFESTED_CARAPACE_WALL_BROKEN,
+      PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS,
     ]);
     for (const [kind, id] of Object.entries(PROP_MODELS)) {
       expect(MODEL_MANIFEST[id].category, kind).toBe(
-        colonyBuildings.has(kind) ? "buildings" : "props",
+        carapaceModules.has(kind) ? "buildings" : "props",
       );
     }
     for (const id of allWallModels) {

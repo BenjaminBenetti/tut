@@ -77,11 +77,16 @@ describe("takesGhostCutaway", () => {
     }
   });
 
-  it("fades carapace buildings when their large shells hide a visible unit", () => {
+  it("fades individual carapace walls when their shells hide a visible unit", () => {
     for (const kind of [
-      PropKindIds.INFESTED_CARAPACE_LODGE,
-      PropKindIds.INFESTED_CARAPACE_HALL,
-      PropKindIds.INFESTED_CARAPACE_KEEP,
+      PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
+      PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP,
+      PropKindIds.INFESTED_CARAPACE_WALL_RIBBED,
+      PropKindIds.INFESTED_CARAPACE_WALL_CURVE,
+      PropKindIds.INFESTED_CARAPACE_WALL_FORK,
+      PropKindIds.INFESTED_CARAPACE_WALL_END,
+      PropKindIds.INFESTED_CARAPACE_WALL_BROKEN,
+      PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS,
     ]) {
       expect(takesGhostCutaway(PROP_MODELS[kind])).toBe(true);
     }

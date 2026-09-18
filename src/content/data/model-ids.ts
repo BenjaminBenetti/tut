@@ -313,9 +313,14 @@ export const MODEL_IDS = [
   "building.wall-door-concrete-infested",
   "building.wall-door-plaster-infested",
   "building.wall-door-panel-infested",
-  "building.infested-carapace-lodge",
-  "building.infested-carapace-hall",
-  "building.infested-carapace-keep",
+  "building.carapace-wall-ridge",
+  "building.carapace-wall-overlap",
+  "building.carapace-wall-ribbed",
+  "building.carapace-wall-curve",
+  "building.carapace-wall-fork",
+  "building.carapace-wall-end",
+  "building.carapace-wall-broken",
+  "building.carapace-spine-buttress",
 ] as const;
 
 /** A registered model id. */

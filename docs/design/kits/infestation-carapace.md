@@ -1,41 +1,52 @@
-# Carapace colony buildings
+# Modular carapace structures
 
-Large infestation patches can grow enclosed carapace buildings in their mature cores. These are biological structures with overlapping shell roofs, heavy ribs and sealed chamber mouths. They use the approved walnut/chestnut colony palette and continuous shell grain.
+Mature infestation patches grow structures from joined shell walls, corners, branching partitions and spine buttresses. The generator lays out their shape a cell at a time. Open chambers, broken sight lines and broad gateways give them the spatial role of buildings.
 
-| Structure | Footprint | Height | Triangles | Silhouette |
-| --- | --- | --- | --- | --- |
-| Shell lodge | 3×3 | 2.37 u | 8,634 | Low paired beetle vaults, split roof seam and lateral buttresses |
-| Brood hall | 4×3 | 3.08 u | 11,612 | Long segmented roof, enclosed brood chambers and repeated structural ribs |
-| Carapace keep | 4×4 | 4.13 u | 12,154 | Broad armoured body, stepped shell tiers and a raised vent crown |
+The kit contains eight independently placed and demolishable pieces:
 
-From infestation level 6, selected colony cores reserve a level building site and circulation margin before settlement lots and slopes are generated. Placement checks the complete footprint against infestation, terrain, other structures and protected mission routes. Planning selects at most half the colonies, rounded up, and grades each affected tile by at most one elevation layer. A smaller shell may fit within the same reserved site when a mission firing route crosses its edge. A site that cannot safely hold a building retains its ordinary nest. Levels 0–5 retain their previous generation.
+| Piece | Role | Height | Triangles |
+| --- | --- | --- | --- |
+| Ridge wall | Serrated carapace curtain | 1.88 u | 1,794 |
+| Overlapping wall | Fused, layered shell plates | 1.76 u | 1,906 |
+| Ribbed wall | Irregular structural ribs | 1.85 u | 2,548 |
+| Curved corner | Joins two perpendicular wall runs | 1.85 u | 1,026 |
+| Fork | Connects a partition to a wall run | 1.80 u | 1,588 |
+| Torn end | Tapers a run into an opening | 1.69 u | 1,010 |
+| Broken wall | Low fractured plates and low cover | 0.67 u | 1,066 |
+| Spine buttress | Tall blade cluster attached to a wall | 2.45 u | 2,898 |
 
-The structures are solid, demolishable high cover. Their full footprints block movement and their shell heights block sight, including elevated shots through the upper structure. Their sight volumes occupy 4, 5 and 6 half-height layers respectively; older props retain their existing one-storey rule. They do not provide walkable interiors or roofs. The renderer reveals the building when any occupied tile is seen and fades shells that hide visible units, using the existing building cutaway.
+Each module occupies one tile. Straight walls join west/east at rotation zero; corners join north/east, forks west/east/north, and ends west. Clockwise quarter turns match map generation. The bases meet at tile boundaries, while overlapping plates and irregular tips break up the repeated grid.
 
-| Shell lodge | Brood hall | Carapace keep |
+## Generation and play
+
+From infestation level 6, selected large colony cores reserve an irregular courtyard and circulation margin before human building lots are allocated. The planner constructs connected wall contours, opens two-cell gateways and grows partial dividers. Final placement respects mission approaches and reclassifies exposed ends when a protected route cuts a planned wall. Formations follow local ground heights; a narrow connected passage between gateways may be graded by at most one elevation layer to admit large bugs, with existing ramp endpoints held at their original heights. Levels 0–5 retain the approved generation.
+
+Courtyards and gateways remain walkable infested ground, with enough room for large bugs. Ordinary colony obstacles are kept out of these routes. Each wall blocks only its own tile; demolishing one opens a local gap and leaves neighboring modules intact. High walls provide high cover and block sight through three half-height layers; tall spine buttresses occupy four. Broken sections provide low cover without blocking sight. Carapace walls use the existing building cutaway when they obscure a visible unit.
+
+| Ridge wall | Curved corner | Spine buttress |
 | --- | --- | --- |
-| ![Shell lodge](../renders/building.infested-carapace-lodge_045.png) | ![Brood hall](../renders/building.infested-carapace-hall_045.png) | ![Carapace keep](../renders/building.infested-carapace-keep_045.png) |
+| ![Layered shell wall](../renders/building.carapace-wall-ridge_045.png) | ![Joining corner](../renders/building.carapace-wall-curve_045.png) | ![Spine buttress](../renders/building.carapace-spine-buttress_045.png) |
 
 ## Reproduction and review
 
-Source: [`infestation-carapace-kit.py`](../../../tools/art/models/infestation-carapace-kit.py). Export recipes join the existing infestation kit. Each model is exported with Blender, validated with trimesh and reviewed at 45°, 135° and 225° before registration.
+Source: [`infestation-carapace-kit.py`](../../../tools/art/models/infestation-carapace-kit.py). Export recipes are in [`infestation-kit.json`](../../../tools/art/infestation-kit.json). Each piece is exported with Blender, validated with trimesh and reviewed at 45°, 135° and 225°. Joined strips and corners are also reviewed to check continuity.
 
 ```sh
-python3 tools/art/build-infestation-kit.py --only building.infested-carapace-lodge
-python3 tools/art/build-infestation-kit.py --only building.infested-carapace-hall
-python3 tools/art/build-infestation-kit.py --only building.infested-carapace-keep
+python3 tools/art/build-infestation-kit.py --only building.carapace-wall-ridge
+python3 tools/art/build-infestation-kit.py --only building.carapace-wall-curve
+python3 tools/art/build-infestation-kit.py --only building.carapace-spine-buttress
 ```
 
-Review in Map Lab with models enabled, temperate / town / small, infestation 10: `infestation-review` shows a lodge and hall alongside existing nests; `carapace-0` shows the keep.
+Review in Map Lab with models enabled, temperate / town / small, infestation 10. Seed `carapace-0` assembles 35- and 21-piece formations; `infestation-review` assembles 16- and 26-piece formations. Both retain ordinary colonies and require zero final connectivity repairs. For level 6, use `carapace-3`.
 
-![Lodge and brood hall among mature colony organisms](../infestation-carapace-colony.png)
+![A 35-piece carapace formation around an open chamber in carapace-0](../infestation-carapace-colony.png)
 
-![Armoured keep and hall in a second generated colony](../infestation-carapace-keep.png)
+![Joined wall runs with protected openings in infestation-review](../infestation-carapace-passages.png)
 
-The complete structures use the detailed colony budget: at most 16,000 triangles and less than 500 KiB per GLB. The three models extend the accepted kit without replacing its 64 existing pieces.
+The eight pieces extend the accepted 64-model infestation kit. Every GLB stays under 500 KiB; each module is budgeted at most 10,000 triangles.
 
 ## Approved restore point
 
-The version approved before this extension is commit [`97664986`](https://github.com/BenjaminBenetti/tut/commit/9766498603b0d07ebc5fddf3cb22290b7689db63). It is also saved remotely as annotated tag `checkpoint/infestation-colonies-approved-2026-09-18`.
+The version approved before this extension is commit [`97664986`](https://github.com/BenjaminBenetti/tut/commit/9766498603b0d07ebc5fddf3cb22290b7689db63), saved remotely as annotated tag `checkpoint/infestation-colonies-approved-2026-09-18`.
 
 The [original level 0 / 4 / 10 comparison](infestation.md#review-in-map-lab) records that approved version.

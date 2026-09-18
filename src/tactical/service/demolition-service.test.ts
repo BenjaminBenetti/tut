@@ -5,6 +5,7 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { PassMask } from "../../mapgen/model/pass-mask";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { ReachabilityService } from "../../mapgen/service/reachability-service";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { DEMOLITION_TUNING } from "../data/demolition-tuning";
 import { demolish } from "./demolition-service";
@@ -68,28 +69,58 @@ describe("demolish", () => {
     expect(index.getAt(at(2, 2))!.propId).toBeUndefined();
   });
 
-  it("demolishes an entire tall shell and reopens its elevated firing lane", () => {
-    const cells = Array.from({ length: 16 }, (_, i) =>
-      at(2 + (i % 4), 2 + Math.floor(i / 4)),
-    );
-    const from = { x: 0, y: 4, z: 3 };
-    const to = { x: 7, y: 4, z: 3 };
-    const map = openField()
+  it("demolishes one wall piece into a usable breach while its neighbors and open interior remain", () => {
+    const from = { x: 1, y: 1, z: 3 };
+    const to = { x: 3, y: 1, z: 3 };
+    const breach = at(2, 3);
+    const interior = [at(3, 3), at(3, 4), at(4, 3), at(4, 4)];
+    const builder = openField()
       .fillGround(0, SurfaceIds.INFESTED)
       .tile(from, SurfaceIds.GRASS)
-      .tile(to, SurfaceIds.GRASS)
-      .prop(PropKindIds.INFESTED_CARAPACE_KEEP, at(2, 2), 0, cells)
-      .build();
+      .tile(to, SurfaceIds.GRASS);
+    for (let z = 2; z <= 5; z++) {
+      for (let x = 2; x <= 5; x++) {
+        if (x !== 2 && x !== 5 && z !== 2 && z !== 5) continue;
+        const corner = (x === 2 || x === 5) && (z === 2 || z === 5);
+        builder.prop(
+          corner
+            ? PropKindIds.INFESTED_CARAPACE_WALL_CURVE
+            : PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
+          at(x, z),
+        );
+      }
+    }
+    const map = builder.build();
+    const before = new TileIndex(map);
+    const beforeReach = new ReachabilityService(before, map.connectors);
+    const removedId = before.getAt(breach)?.propId;
+    expect(map.props).toHaveLength(12);
+    expect(hasLineOfSight(map, at(1, 3), at(3, 3))).toBe(false);
     expect(hasLineOfSight(map, from, to)).toBe(false);
-    const light = demolish(map, [at(5, 5)], 1, structures, DEMOLITION_TUNING);
+    const light = demolish(map, [breach], 1, structures, DEMOLITION_TUNING);
     expect(light.map).toBe(map);
-    const result = demolish(map, [at(5, 5)], 2, structures, DEMOLITION_TUNING);
+    const result = demolish(map, [breach], 2, structures, DEMOLITION_TUNING);
     expect(result.props).toHaveLength(1);
-    expect(result.map.props).toEqual([]);
+    expect(result.props[0]?.id).toBe(removedId);
+    expect(result.map.props).toEqual(
+      map.props.filter((prop) => prop.id !== removedId),
+    );
+    expect(hasLineOfSight(result.map, at(1, 3), at(3, 3))).toBe(true);
     expect(hasLineOfSight(result.map, from, to)).toBe(true);
     expect(hasLineOfSight(result.map, to, from)).toBe(true);
     const index = new TileIndex(result.map);
-    for (const cell of cells) {
+    const afterReach = new ReachabilityService(index, result.map.connectors);
+    for (const unitClass of [PassMask.INFANTRY, PassMask.MECH] as const) {
+      const blocked = beforeReach.reachableFrom([at(1, 3)], unitClass);
+      const opened = afterReach.reachableFrom([at(1, 3)], unitClass);
+      expect(interior.every((cell) => !blocked.has(before.keyOf(cell)))).toBe(
+        true,
+      );
+      expect(interior.every((cell) => opened.has(index.keyOf(cell)))).toBe(
+        true,
+      );
+    }
+    for (const cell of [breach, ...interior]) {
       expect(index.getAt(cell)).toMatchObject({
         surface: SurfaceIds.INFESTED,
         pass: PassMask.ALL,
@@ -99,7 +130,14 @@ describe("demolish", () => {
       expect(index.getAt(cell)).not.toHaveProperty("propId");
       expect(index.getAt(cell)).not.toHaveProperty("sightHeight");
     }
-    expect(new TileIndex(map).getAt(at(5, 5))?.sightHeight).toBe(6);
+    for (const cell of interior) {
+      expect(before.getAt(cell)?.pass).toBe(PassMask.ALL);
+      expect(before.getAt(cell)).not.toHaveProperty("propId");
+      expect(index.getAt(cell)).toBe(before.getAt(cell));
+    }
+    expect(index.getAt(at(2, 2))).toBe(before.getAt(at(2, 2)));
+    expect(index.getAt(at(2, 4))).toBe(before.getAt(at(2, 4)));
+    expect(before.getAt(breach)?.sightHeight).toBe(3);
     expect(hasLineOfSight(map, from, to)).toBe(false);
   });
 

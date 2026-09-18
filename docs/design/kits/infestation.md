@@ -6,7 +6,7 @@ The colony pressure field also selects infested civilian assets. Cars keep their
 
 ## Art direction and scope
 
-The kit contains **67 models**, replacing the initial nine and adding **58**, against **226 baseline models**. The new additions are approximately one quarter of that catalogue. The kit includes six resin ground modules, 24 organic structures/details, 34 infested urban/ruin models and three large carapace buildings.
+The kit contains **72 models**, replacing the initial nine and adding **63**, against **226 baseline models**. The new additions are approximately one quarter of that catalogue. The kit includes six resin ground modules, 24 organic structures/details, 34 infested urban/ruin models and eight modular carapace wall and spine pieces.
 
 The palette follows the Crescent bugs: dark walnut and chestnut shells, irregular tan fracture edges, recessed flesh and restrained biological green. Nest mouths are hollow; spines use swept, fractured blades; layered shells have chipped rims and fissures. Vehicles have opened cabins, broken glazing, rust and growth emerging through their bodywork. Building pieces expose broken masonry and supports.
 
@@ -14,11 +14,11 @@ The user's request for substantially higher quality supersedes the initial 60/30
 
 ## Sources and reproduction
 
-- [Carapace buildings](infestation-carapace.md): enclosed shell lodges, brood halls and keeps for large colony cores.
+- [Modular carapace structures](infestation-carapace.md): joined shell walls, corners, branches and spikes around walkable colony chambers.
 - [Organic kit](infestation-organic.md): all 30 organic models and individual build arguments.
 - `tools/art/models/infestation-organic-kit.py`: colony structures and terrain relief.
 - `tools/art/models/infestation-urban-kit.py`: invaded city objects and fractured architecture.
-- `tools/art/infestation-kit.json`: all 64 export recipes and footprints.
+- `tools/art/infestation-kit.json`: all 72 export recipes and footprints.
 - `tools/art/build-infestation-textures.py`: seamless 1024² albedo, normal and roughness maps.
 
 ```sh
@@ -40,7 +40,7 @@ The ground uses one four-tile repeating PBR field projected in world coordinates
 
 Most ground uses the quiet base module; sparse ribs, cracks and root plates indicate feeding routes and nest areas. The textures contain no baked lighting. Ground remains **2× movement cost for TDF, ½× for bugs**, including infested slopes and indoor floors. Infantry-only building access is retained.
 
-The [carapace building review](infestation-carapace.md) shows the latest extension in generated maps, with the original approved comparison retained below.
+The [modular carapace review](infestation-carapace.md) shows the latest extension in generated maps, with the original approved comparison retained below.
 
 ## Review in Map Lab
 

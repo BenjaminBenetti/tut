@@ -9,7 +9,6 @@ import { PROP_MODEL_VARIANTS } from "../data/prop-model-variants";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { PROP_DEFINITIONS } from "../../mapgen/data/props";
 import { propModel } from "../data/map-model-table";
-import { propPlacementTiles } from "../../mapgen/service/prop-footprint";
 
 const baseline = new FixtureMapBuilder(8, 8, 1).fillGround().build();
 
@@ -107,26 +106,36 @@ describe("infested asset resolution", () => {
     expect(resolveMapModels(map)).toEqual(models);
   });
 
-  it("centres a turned brood hall on its whole footprint and keeps every cell as a fog owner", () => {
-    const kind = "infested-carapace-hall";
-    const anchor = { x: 2, y: 0, z: 2 };
-    const definition = PROP_DEFINITIONS.find((d) => d.id === kind)!;
-    const cells = propPlacementTiles(anchor, definition, 1);
+  it("resolves joined walls as independent pieces with a real opening between them", () => {
     const map = new FixtureMapBuilder(8, 8, 1)
       .fillGround(0, "infested")
-      .prop(kind, anchor, 1, cells)
+      .prop("infested-carapace-wall-ridge", { x: 2, y: 0, z: 2 })
+      .prop("infested-carapace-wall-curve", { x: 3, y: 0, z: 2 }, 2)
+      .prop("infested-carapace-wall-end", { x: 3, y: 0, z: 5 }, 1)
       .build();
-    const hall = resolveMapModels(map).props.find(
-      (prop) => prop.modelId === "building.infested-carapace-hall",
+    const walls = resolveMapModels(map).props.filter((prop) =>
+      prop.modelId.startsWith("building.carapace-"),
     );
-    expect(hall).toMatchObject({
-      position: { x: 3.5, z: 4 },
-      turns: 1,
-      occupiedTiles: cells,
+    expect(walls).toHaveLength(3);
+    expect(walls[1]).toMatchObject({
+      modelId: "building.carapace-wall-curve",
+      position: { x: 3.5, z: 2.5 },
+      tile: { x: 3, y: 0, z: 2 },
+      turns: 2,
     });
-    expect(hall?.occupiedTiles).toHaveLength(12);
-    expect(hall?.part).toBeDefined();
-    expect(hall?.scaleX).toBeUndefined();
-    expect(hall?.scaleZ).toBeUndefined();
+    expect(new Set(walls.map((wall) => JSON.stringify(wall.part))).size).toBe(
+      3,
+    );
+    for (const wall of walls) {
+      expect(wall.part).toBeDefined();
+      expect(wall.scaleX).toBeUndefined();
+      expect(wall.scaleZ).toBeUndefined();
+      expect(wall.occupiedTiles).toBeUndefined();
+    }
+    for (const z of [3, 4]) {
+      const gap = map.tiles.find((tile) => tile.x === 3 && tile.z === z);
+      expect(gap?.propId).toBeUndefined();
+      expect(gap?.pass).toBeGreaterThan(0);
+    }
   });
 });

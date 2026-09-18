@@ -1,3 +1,4 @@
+import { MISSION_ENDED } from "../model/mission-ended-event";
 import { describe, expect, it } from "vitest";
 
 import { PropKindIds } from "../../mapgen/data/props";
@@ -374,7 +375,9 @@ describe("fire during movement", () => {
       UNIT_MOVED,
       EFFECT_DAMAGED,
       UNIT_DIED,
+      MISSION_ENDED,
     ]);
+    expect(result.value.state.outcome).toBe("lost");
     expect(result.value.state.units[0]).toMatchObject({
       hp: 0,
       pos: at(1, 0),

@@ -1,3 +1,4 @@
+import { endIfOver } from "./mission-end-service";
 import type { Rng } from "../../core/model/rng";
 import { NO_REACTION, type StepReaction } from "../model/step-reaction";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -291,10 +292,17 @@ export function createHazardReaction(
       state = hurt.state;
       events.push(...hurt.events);
     }
-    if ((state.units.find((unit) => unit.id === unitId)?.hp ?? 0) > 0) {
+    const mover = state.units.find((unit) => unit.id === unitId);
+    if (mover && mover.hp > 0) {
       const reaction = next(state, unitId, ctx);
       state = reaction.state;
       events.push(...reaction.events);
+    } else if (
+      events.length > 0 &&
+      mover?.team === "tdf" &&
+      state.outcome === undefined
+    ) {
+      return endIfOver(state, events);
     }
     return { state, events };
   };

@@ -19,7 +19,7 @@ import { weaponProfileText } from "../service/weapon-profile-text";
  * `weapons` (#532), which the Combat block prints per weapon.
  */
 type BuildKey = {
-  [K in keyof MechStatSheet]: MechStatSheet[K] extends number ? K : never;
+  [K in keyof MechStatSheet]-?: MechStatSheet[K] extends number ? K : never;
 }[keyof MechStatSheet];
 
 /**
@@ -33,7 +33,7 @@ type BuildKey = {
 const BUILD_ROWS: readonly [BuildKey, string][] = [
   ["weight", "Weight"],
   ["powerBalance", "Power balance"],
-  ["heat", "Heat"],
+  ["heat", "Heat load"],
   ["combatRating", "Rating"],
   ["totalCost", "Total cost"],
 ];
@@ -152,6 +152,8 @@ export class StatSheetView {
     weapons.dataset.field = "combat-weapons";
     weapons.textContent = EMPTY;
     combat.append(weaponsTerm, weapons);
+    combat.append(...this.row(doc, "systems", "Systems"));
+    combat.append(...this.row(doc, "cooling", "Thermal"));
 
     const buildTitle = doc.createElement("div");
     buildTitle.className = "tut-label";
@@ -205,6 +207,51 @@ export class StatSheetView {
         this.set(key, formatWhole(fields[key]));
       }
       this.setWeapons(profile);
+      const systems = profile.systems;
+      this.set(
+        "cooling",
+        systems
+          ? `capacity ${String(systems.heatCapacity)} · cool ${String(systems.cooling)}/turn · idle +${String(systems.idleHeat)} · move +${String(systems.movementHeat)}/AP`
+          : EMPTY,
+      );
+      this.set(
+        "systems",
+        systems
+          ? [
+              ...(systems.jumpRange
+                ? [
+                    `jump ${String(systems.jumpRange)} · height ${String(systems.jumpHeight)} · heat +${String(systems.jumpHeat)}`,
+                  ]
+                : []),
+              ...(systems.allTerrain ? ["all-terrain"] : []),
+              ...(systems.braceAccuracy
+                ? [`braced aim +${String(systems.braceAccuracy)}`]
+                : []),
+              ...(systems.stationaryAccuracy
+                ? [`stationary aim +${String(systems.stationaryAccuracy)}`]
+                : []),
+              ...(systems.energyHeatFactor && systems.energyHeatFactor < 1
+                ? [
+                    `energy heat −${String(Math.round(100 * (1 - systems.energyHeatFactor)))}%`,
+                  ]
+                : []),
+              ...(systems.ablativeHits
+                ? [
+                    `ablative ${String(systems.ablativeHits)} hits × ${String(systems.ablativeAbsorption)}`,
+                  ]
+                : []),
+              ...(systems.equipment ?? []).map(
+                (id) =>
+                  ({
+                    "mech-recon": "3 recon beacons",
+                    "mech-repair": "2 field repairs",
+                    "mech-coolant": `${String(systems.coolantUses ?? 0)} coolant doses`,
+                    "mech-designator": "target designation",
+                  })[id] ?? id,
+              ),
+            ].join(" · ") || EMPTY
+          : EMPTY,
+      );
       for (const [key] of BUILD_ROWS) {
         this.set(
           key,

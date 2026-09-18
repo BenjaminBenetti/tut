@@ -1,3 +1,4 @@
+import { MECH_ACTION } from "../../tactical/model/mech-action-command";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -139,6 +140,7 @@ describe("composeTactical", () => {
     const dispatcher = createOverworldCommandDispatcher<GameState>();
     const tactical = composeTactical(dispatcher, CONTENT);
     expect(Object.keys(tactical.handlers)).toEqual([
+      MECH_ACTION,
       ATTACK,
       MOVE,
       OVERWATCH,

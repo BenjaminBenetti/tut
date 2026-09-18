@@ -1,3 +1,8 @@
+import type {
+  MechAction,
+  MechActionPayload,
+} from "../../tactical/model/mech-action-command";
+import { validateMechAction } from "../../tactical/service/mech-action-service";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalError } from "../../tactical/model/tactical-error";
@@ -82,6 +87,12 @@ export interface WheelPage {
 
 /** What a chosen entry stands for, parsed back out of its id. */
 export type WheelChoice =
+  | {
+      readonly action: "mech";
+      readonly system: MechAction;
+      readonly tile?: TileCoord;
+      readonly targetId?: string;
+    }
   | { readonly action: "move"; readonly tile: TileCoord }
   | { readonly action: "deploy-radar"; readonly tile: TileCoord }
   /** Put a turret on the tile (#1138); its own entry on the ring, like the dish. */
@@ -198,16 +209,15 @@ export function actionWheel(
   if (unit === undefined) {
     return { items: [] };
   }
-  switch (target.kind) {
-    case "tile":
-      return tilePage(target.tile, unit, ctx);
-    case "unit":
-      return target.unitId === unit.id
-        ? selfPage(unit, ctx)
-        : enemyPage(target.unitId, unit, ctx);
-    case "spawner":
-      return enemyPage(target.spawnerId, unit, ctx);
-  }
+  const page =
+    target.kind === "tile"
+      ? tilePage(target.tile, unit, ctx)
+      : target.kind === "spawner"
+        ? enemyPage(target.spawnerId, unit, ctx)
+        : target.unitId === unit.id
+          ? selfPage(unit, ctx)
+          : enemyPage(target.unitId, unit, ctx);
+  return { ...page, items: [...page.items, ...mechItems(target, unit, ctx)] };
 }
 
 /**
@@ -347,6 +357,13 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
   const action = at === -1 ? id : id.slice(0, at);
   const argument = at === -1 ? "" : id.slice(at + 1);
   switch (action) {
+    case "mech": {
+      const [system, value = ""] = argument.split(ID_SEPARATOR);
+      if (system === "brace" || system === "coolant") return { action, system };
+      if (system === "designate") return { action, system, targetId: value };
+      const tile = parseTile(value);
+      return system === "jump" && tile ? { action, system, tile } : undefined;
+    }
     case "move":
     case "deploy-radar":
     case "deploy-turret": {
@@ -492,7 +509,12 @@ function equipmentItem(
 ): RadialMenuItem {
   const rules = equipmentRulesOf(ctx);
   if (definition.kind === "radar") {
-    const id = itemId("deploy-radar", tileArgument(tile));
+    const id =
+      definition.id === RADAR_DISH.id
+        ? itemId("deploy-radar", tileArgument(tile))
+        : itemId("equipment", `${definition.id}:${tileArgument(tile)}`);
+    const label =
+      definition.id === RADAR_DISH.id ? "Deploy radar" : definition.name;
     const site = validateEquipmentUse(
       ctx.mission,
       unit.id,
@@ -504,11 +526,11 @@ function equipmentItem(
     return site.ok
       ? {
           id,
-          label: "Deploy radar",
+          label,
           icon: "radar",
-          detail: `${String(definition.apCost)} AP · scan ${String(RADAR_TUNING.scanRange)}`,
+          detail: `${String(definition.apCost)} AP · scan ${String(definition.radar?.scanRange ?? RADAR_TUNING.scanRange)}`,
         }
-      : closed(id, "Deploy radar", "radar", site.error, ctx);
+      : closed(id, label, "radar", site.error, ctx);
   }
   if (definition.kind === "turret") {
     const id = itemId("deploy-turret", tileArgument(tile));
@@ -1096,4 +1118,67 @@ function damageText(damage: readonly [number, number]): string {
 /** Joins an action and its argument into an entry id. */
 function itemId(action: string, argument: string): string {
   return argument === "" ? action : `${action}${ID_SEPARATOR}${argument}`;
+}
+
+/** Fitted mech actions, previewed through their command validator before the wheel offers them. */
+function mechItems(
+  target: TacticalInvokeTarget,
+  unit: Unit,
+  ctx: WheelContext,
+): RadialMenuItem[] {
+  const template = ctx.mission.templates[unit.templateId];
+  const systems = template?.systems;
+  if (!systems) return [];
+  const items: RadialMenuItem[] = [];
+  const offer = (
+    action: MechAction,
+    label: string,
+    detail: string,
+    extra: Partial<MechActionPayload> = {},
+  ): void => {
+    const payload: MechActionPayload = { unitId: unit.id, action, ...extra };
+    const checked = validateMechAction(ctx.mission, payload);
+    const argument = extra.tile
+      ? tileArgument(extra.tile)
+      : (extra.targetId ?? "");
+    const id = `mech:${action}${argument ? `:${argument}` : ""}`;
+    items.push(
+      checked.ok
+        ? { id, label, detail, icon: "ability" }
+        : closed(id, label, "ability", checked.error, ctx),
+    );
+  };
+  if (
+    (systems.braceAccuracy ?? 0) > 0 ||
+    template.weapons.some((weapon) => weapon.profile.requiresBrace)
+  )
+    offer(
+      "brace",
+      "Brace",
+      `1 AP · +${String(systems.braceAccuracy ?? 0)} aim`,
+    );
+  if (systems.equipment?.includes("mech-coolant"))
+    offer(
+      "coolant",
+      "Inject coolant",
+      `0 AP · ${String(unit.equipment?.["mech-coolant"] ?? systems.coolantUses ?? 0)}/${String(systems.coolantUses ?? 0)} left`,
+    );
+  if (target.kind === "tile" && (systems.jumpRange ?? 0) > 0)
+    offer("jump", "Jump", `1 AP · +${String(systems.jumpHeat ?? 0)} heat`, {
+      tile: target.tile,
+    });
+  if (
+    target.kind === "unit" &&
+    target.unitId !== unit.id &&
+    systems.equipment?.includes("mech-designator")
+  )
+    offer(
+      "designate",
+      "Designate",
+      `1 AP · +${String(systems.designationAccuracy ?? 0)} guided aim`,
+      {
+        targetId: target.unitId,
+      },
+    );
+  return items;
 }

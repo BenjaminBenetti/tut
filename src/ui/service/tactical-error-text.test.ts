@@ -34,6 +34,7 @@ const NAMES: TacticalNames = {
  * that names something and is never given a player wording.
  */
 const EVERY_KIND: readonly TacticalError[] = [
+  { kind: "systems-unavailable", reason: "Reactor is already cool" },
   { kind: "no-active-mission" },
   { kind: "mission-active", missionId: ID },
   { kind: "mission-not-found", missionId: ID },

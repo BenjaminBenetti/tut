@@ -95,7 +95,7 @@ The original four extrema remain intact. Reconnaissance and cooling extend the o
 | 2 | Field Repair Module | Limited repairs to nearby mechanical allies; action and fitting cost. |
 | 3 | Active Heat Exchanger | Strong sustained cooling; heavy, costly and power hungry. |
 | 3 | Emergency Coolant Injector | Limited emergency heat removal; exhausted after its burst allowance. |
-| 3 | Ablative Armour | Reduces a few heavy hits; protection depletes during the mission. |
+| 3 | Ablative Armour | Reduces the first three damaging weapon hits; protection depletes during the mission. |
 | 3 | Target Designator | Marks a visible target to improve allied guided attacks; costs an action. |
 
 Total: **48 parts, 27 additions**. Core part ids are preserved for saved loadouts.
@@ -137,3 +137,31 @@ Example journeys: the starter Vanguard swaps its autocannon for a lighter Pulse 
 5. Exercise new rules with deterministic tests, run typecheck/lint/unit/build/e2e checks, and review in the browser.
 
 Balance against both individual targets and sustained engagements. Check terrain, sight, friendly fire, utility stacking, heat loops, rank/upgrade combinations, and replacement cost. Research and additional late-game enemy species remain separate projects.
+
+
+## Shipped rules (#1168)
+
+The entire catalogue is purchasable for credits. The bay's **Try a blueprint** selector loads one of six valid drafts without buying it: Jump Scout, Forward Observer, Urban Breacher, Siege Battery, Beam Crucible, and Rapid Response. Normal build, save, upgrade, deployment, and permadeath rules apply. Parts are tagged by tier for the later research tree.
+
+| System | Concrete rule |
+| --- | --- |
+| Mobility | Base movement can now reach 14 before pilot rank. Sand, rock, snow and demolished rubble cost mechs two movement points per tile; All-Terrain legs pay one. Infantry costs are unchanged. |
+| Shared heat | Capacity comes from the chassis (20–36). Shots add their displayed heat, even on misses and overwatch. Moving adds the legs' heat per action spent. At the start of the mech's own phase, idle heat is added and cooling is subtracted, clamped to the pool. A shot or move that would exceed capacity is refused. |
+| Cooling | Vent costs 1 AP and clears the pool. The injector supplies two full clears per mission at 0 AP. Conduit arms reduce energy heat by 30%, rounded up per shot. Cooling and energy bonuses do not grant extra attacks. |
+| Jump | Jumper legs jump at most five Manhattan tiles and two elevation levels, for 1 AP and five heat. A living ally must see the free, passable outdoor landing. Buildings and terrain above the arc block it; overwatch can react at landing. |
+| Brace and stationary aim | Bracing costs 1 AP. Anchor legs and Brace arms supply the displayed bonus; the Siege Howitzer requires bracing. Walking or jumping releases it. Marksman arms give their stationary bonus until the mech moves that turn. |
+| Indirect fire | Mortar minimum range is three; Siege Howitzer minimum is six. A living ally must visually see the target. Radar contacts do not count. Both obey heat, range and action limits in previews, normal fire and overwatch. |
+| Smoke | Radius two; harmless and lasts four phase boundaries. Blocks visual detection and ranged targeting for both sides, including firing out of the cloud. Adjacent contact remains possible. |
+| Beam | A narrow line from the shooter through the aimed tile. Each intersected unit or spawner is damaged once, including allies; the lane is previewed. The beam stops at the aimed tile and obeys line of sight. |
+| Guidance | Designate a personally visible enemy unit for 1 AP. Allied guided attacks gain 20 accuracy until the designating side's next turn. Ordinary weapons receive no guidance bonus. |
+| Cluster recovery | After a volley, the Cluster Rocket Rack skips the following friendly turn before it can fire again. Other weapons and movement remain available. |
+| Recon | Three beacons per mission, each deployed within two tiles for 1 AP. A beacon scans 12 tiles for one friendly-turn cycle; contacts do not reveal terrain or permit indirect targeting. |
+| Repair | Two uses per mission; 1 AP, range three, radius one. Repairs up to 20 HP on nearby allied mechanical units, including the user. Refuses an empty or fully repaired area. |
+| Ablative protection | Absorbs up to eight damage after armour on each of the first three damaging weapon hits. Fully absorbed hits still consume a layer; smoke and misses do not. No regeneration; passive base armour remains. |
+| Utility stacking | A mech may repeat passive utilities within its fitting budgets. Duplicate copies of each active utility or Ablative Armour are refused, so charges and protection cannot silently multiply. |
+
+New missions derive these systems from both existing and new saved loadouts. A resumed older mission whose frozen templates lack the new systems retains its original four-charge thermal rules until that mission ends. New heat, equipment use, brace, recovery and protection state survives autosave/resume. Research unlocks and long campaign balance tuning remain future work.
+
+The progression kit adds 23 validated GLBs (including a dedicated Courser), matching thumbnails, and three review renders per model in `docs/design/renders/`. Utilities use the existing nonvisual fitting slots.
+
+Review captures: [Beam Crucible in the bay](mech-progression-crucible.png) and [Siege Battery in the bay](mech-progression-siege.png).

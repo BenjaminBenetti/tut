@@ -884,6 +884,54 @@ describe("TacticalAnimationQueue blast", () => {
     expect(queue.root.children).toHaveLength(0);
   });
 
+  it("draws a continuous beam without an explosion and disposes it when skipped", () => {
+    const queue = new TacticalAnimationQueue({
+      scene: scene(),
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue(
+      [
+        {
+          ...BLAST,
+          payload: { ...BLAST.payload, beam: true, radius: 0, victims: [] },
+        },
+      ],
+      () => {},
+    );
+    queue.update(0.05);
+    expect(named(queue, "vfx.mech-beam")).toEqual(["vfx.mech-beam"]);
+    expect(named(queue, "vfx.blast")).toEqual([]);
+    queue.skip();
+    expect(queue.root.children).toHaveLength(0);
+  });
+
+  it("smoke lands without explosive effects or damage numbers", () => {
+    const queue = new TacticalAnimationQueue({
+      scene: scene(),
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue(
+      [
+        {
+          ...BLAST,
+          payload: {
+            ...BLAST.payload,
+            smoke: true,
+            aimedAtTile: true,
+            victims: [],
+          },
+        },
+      ],
+      () => {},
+    );
+    queue.update(0.16);
+    expect(named(queue, "vfx.blast")).toEqual([]);
+    expect(queue.root.children).toHaveLength(0);
+    expect(queue.busy).toBe(false);
+  });
+
   it("finishes a blast whole when skipped or played instantly", () => {
     const s = withThird();
     const queue = new TacticalAnimationQueue({

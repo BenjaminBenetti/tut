@@ -189,7 +189,17 @@ export function moveBudget(mission: TacticalState, unit: Unit): number {
   if (unit.hp <= 0) {
     return 0;
   }
-  return unit.ap * moveOf(mission, unit);
+  const systems = mission.templates[unit.templateId]?.systems;
+  const actions =
+    systems && systems.movementHeat > 0
+      ? Math.min(
+          unit.ap,
+          Math.floor(
+            (systems.heatCapacity - (unit.heat ?? 0)) / systems.movementHeat,
+          ),
+        )
+      : unit.ap;
+  return Math.max(0, actions) * moveOf(mission, unit);
 }
 
 /**
@@ -273,8 +283,9 @@ export function pathTo(
 }
 
 /**
- * Breadth-first search from the unit's tile under the §5 rule, uniform
- * `STEP_COST` per step, stopping at the unit's `moveBudget`. Tiles held
+ * Weighted queue search from the unit's tile under the §5 rule,
+ * stopping at the unit's `moveBudget`. A cheaper route may revisit a tile
+ * so rough terrain cannot hide a legal detour. Tiles held
  * by other living units are never entered. A unit standing off the map
  * or on a tile its class may not occupy reaches nothing.
  *
@@ -312,17 +323,19 @@ export function searchMoves(
   const originKey = graph.index.keyOf(origin);
   costs.set(originKey, 0);
   tiles.set(originKey, origin);
-  // for-of sees elements pushed during iteration, so this is a BFS queue.
+  // for-of visits appended entries; relaxation propagates cheaper detours.
   const frontier: Tile[] = [origin];
   for (const current of frontier) {
     const currentKey = graph.index.keyOf(current);
-    const cost = (costs.get(currentKey) ?? 0) + STEP_COST;
-    if (cost > budget) {
-      continue;
-    }
+    const currentCost = costs.get(currentKey) ?? 0;
     for (const next of graph.reachability.neighbours(current, unitClass)) {
+      const cost = currentCost + movementStepCost(mission, unit, next);
       const key = graph.index.keyOf(next);
-      if (costs.has(key) || !enterable(current, next)) {
+      if (
+        cost > budget ||
+        (costs.get(key) ?? Infinity) <= cost ||
+        !enterable(current, next)
+      ) {
         continue;
       }
       costs.set(key, cost);
@@ -370,4 +383,29 @@ function findUnit(mission: TacticalState, unitId: UnitId): Unit | undefined {
 /** Tiles per move action from the unit's template; `0` when the template is missing. */
 function moveOf(mission: TacticalState, unit: Unit): number {
   return mission.templates[unit.templateId]?.move ?? 0;
+}
+
+/** Terrain cost shared by pathfinding, command billing and previews. */
+export function movementStepCost(
+  mission: TacticalState,
+  unit: Unit,
+  tile: Tile,
+): number {
+  return unit.kind === "mech" &&
+    !mission.templates[unit.templateId]?.systems?.allTerrain
+    ? Math.max(1, tile.mechMoveCost ?? 1)
+    : STEP_COST;
+}
+
+/** Movement points actually spent along a chosen path. */
+export function movementPathCost(
+  mission: TacticalState,
+  unit: Unit,
+  path: readonly TileCoord[],
+): number {
+  const index = new TileIndex(mission.map);
+  return path.reduce((total, coord) => {
+    const tile = index.getAt(coord);
+    return total + (tile ? movementStepCost(mission, unit, tile) : Infinity);
+  }, 0);
 }

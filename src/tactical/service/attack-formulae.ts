@@ -62,6 +62,7 @@ export function damageRange(
   armor: number,
   tuning: CombatTuning,
 ): readonly [number, number] {
+  if (weapon.damage <= 0) return [0, 0];
   const effectiveArmor = Math.max(0, armor - weapon.armorPen);
   const low = Math.round(weapon.damage * (1 - tuning.damageSpread));
   const high = Math.round(weapon.damage * (1 + tuning.damageSpread));

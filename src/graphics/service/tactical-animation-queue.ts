@@ -3,7 +3,10 @@ import type { Camera, DataTexture, Object3D, Texture } from "three";
 import {
   AdditiveBlending,
   CanvasTexture,
+  CylinderGeometry,
   Group,
+  Mesh,
+  MeshBasicMaterial,
   NormalBlending,
   Sprite,
   SpriteMaterial,
@@ -689,6 +692,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
           event.payload.unitId,
           event.payload.path,
           event.payload.to,
+          event.payload.jump ?? false,
         );
       case ATTACK_RESOLVED:
         return this.attack(
@@ -732,6 +736,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     unitId: UnitId,
     path: readonly TileCoord[],
     to: TileCoord,
+    jump = false,
   ): Animation | undefined {
     const object = this.scene.unitObject(unitId);
     // Where this unit's feet go on a tile: its footprint's centre when
@@ -752,7 +757,9 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
     const motion = this.scene.unitMotion?.(unitId);
     const walkedBefore = this.walkedTiles.get(unitId) ?? 0;
-    const stepSeconds = this.timing.stepSeconds;
+    const stepSeconds = jump
+      ? Math.max(0.7, this.timing.stepSeconds * 3)
+      : this.timing.stepSeconds;
     let elapsed = 0;
     const total = stepSeconds * points.length;
     const from = {
@@ -778,10 +785,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         const start = index === 0 ? from : points[index - 1]!;
         const target = points[index]!;
         faceTowards(object, start, target);
-        motion?.walk(walkedBefore + progress);
+        if (!jump) motion?.walk(walkedBefore + progress);
         object.position.set(
           start.x + (target.x - start.x) * local,
-          start.y + (target.y - start.y) * local,
+          start.y +
+            (target.y - start.y) * local +
+            (jump ? Math.sin(Math.PI * local) * 1.6 : 0),
           start.z + (target.z - start.z) * local,
         );
         if (elapsed >= total) {
@@ -1172,7 +1181,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       readonly label: string;
       readonly tone: number;
     }[] = [];
-    if (aimed) {
+    if (aimed && !impact.smoke) {
       const at =
         this.anchor(aimed.payload.targetId, 1, TEXT_MARGIN) ??
         this.spawnerTop(aimed.payload.targetId);
@@ -1187,6 +1196,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       }
     }
     for (const victim of impact.victims) {
+      if (impact.smoke) continue;
       const at =
         victim.kind === "unit"
           ? this.anchor(victim.targetId, 1, TEXT_MARGIN)
@@ -1208,9 +1218,13 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
 
     const parts: ScheduledPart[] = [
-      { at: 0, start: () => this.shot(muzzle, aim, melee) },
+      {
+        at: 0,
+        start: () =>
+          impact.beam ? this.beam(muzzle, aim) : this.shot(muzzle, aim, melee),
+      },
     ];
-    if (impact.hit) {
+    if (impact.hit && !impact.beam && !impact.smoke) {
       parts.push({
         at: landsAt,
         start: () => this.explosion(aim, impact.radius),
@@ -1270,6 +1284,50 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         inner.finish();
         cleanup();
       },
+    };
+  }
+
+  /** A short, continuous cyan beam across the complete firing lane. */
+  private beam(muzzle: Vec3 | undefined, aim: Vec3): Animation | undefined {
+    if (!muzzle) return undefined;
+    const start = new Vector3(muzzle.x, muzzle.y, muzzle.z);
+    const end = new Vector3(aim.x, aim.y, aim.z);
+    const direction = end.clone().sub(start);
+    const geometry = new CylinderGeometry(0.045, 0.045, direction.length(), 6);
+    const material = new MeshBasicMaterial({
+      color: 0x9eefff,
+      transparent: true,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    });
+    const beam = new Mesh(geometry, material);
+    beam.name = "vfx.mech-beam";
+    beam.position.copy(start).add(end).multiplyScalar(0.5);
+    beam.quaternion.setFromUnitVectors(
+      new Vector3(0, 1, 0),
+      direction.normalize(),
+    );
+    this.root.add(beam);
+    const duration =
+      this.timing.flashSeconds +
+      this.timing.tracerSeconds +
+      this.timing.impactSeconds;
+    let elapsed = 0;
+    const cleanup = (): void => {
+      beam.removeFromParent();
+      geometry.dispose();
+      material.dispose();
+    };
+    return {
+      name: "beam",
+      advance: (seconds) => {
+        elapsed += seconds;
+        material.opacity = Math.max(0, 1 - elapsed / duration);
+        if (elapsed < duration) return undefined;
+        cleanup();
+        return elapsed - duration;
+      },
+      finish: cleanup,
     };
   }
 

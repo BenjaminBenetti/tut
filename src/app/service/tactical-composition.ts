@@ -1,3 +1,5 @@
+import { MECH_ACTION } from "../../tactical/model/mech-action-command";
+import { createMechActionHandler } from "../../tactical/service/mech-action-service";
 import type { BugBehaviour } from "../../bugs/ai/bug-behaviour";
 import { MapBehaviourRegistry } from "../../bugs/ai/behaviour-registry";
 import { createBugPhaseRunner } from "../../bugs/ai/bug-phase-runner";
@@ -278,6 +280,9 @@ export function shippedTacticalHandlers(
     turret: TURRET_TUNING,
   };
   const actions: TacticalHandlers = {
+    [MECH_ACTION]: createMechActionHandler(
+      createOverwatchReaction(COMBAT_TUNING, attackDeps),
+    ),
     [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
     [MOVE]: createMoveHandler(
       createOverwatchReaction(COMBAT_TUNING, attackDeps),

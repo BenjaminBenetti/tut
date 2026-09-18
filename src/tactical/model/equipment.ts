@@ -74,6 +74,11 @@ export const CHARGE_ID_PREFIX = "charge";
  * ```
  */
 export interface EquipmentDefinition {
+  /** Optional scanner override for a compact mech fitting. */
+  readonly radar?: {
+    readonly scanRange: number;
+    readonly batteryTurns: number;
+  };
   readonly id: EquipmentId;
   /** What the wheel and the card call it, e.g. `"Grenade"`. */
   readonly name: string;

@@ -119,7 +119,7 @@ export const UNIT_TUNING: UnitTuning = {
     maxAp: 2,
     baseMove: 3,
     minMove: 2,
-    maxMove: 8,
+    maxMove: 14,
     weapon: { range: 10, accuracy: 70, damage: 1, armorPen: 2 },
     sightRange: 14,
     modelId: "tdf.mech.assembled-a",

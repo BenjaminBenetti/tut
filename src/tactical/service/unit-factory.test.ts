@@ -396,7 +396,7 @@ describe("mechUnit", () => {
       expect(template.weapons[i]).toMatchObject({
         id: fitted.id,
         name: fitted.name,
-        charges: UNIT_TUNING.mech.charges,
+        profile: { heat: fitted.heat },
       });
       expect(template.weapons[i]?.profile.range).toBe(fitted.range);
       expect(template.weapons[i]?.profile.armorPen).toBe(fitted.armorPen);

@@ -1,3 +1,4 @@
+import { movedMech } from "./mech-heat-service";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import { err, ok } from "../../core/model/result";
@@ -21,6 +22,8 @@ import { UNIT_MOVED } from "../model/unit-moved-event";
 import { unitFootprintSize } from "./footprint-service";
 import {
   apCostOf,
+  movementPathCost,
+  movementStepCost,
   buildMoveGraph,
   footprintCanStep,
   moveBudget,
@@ -97,6 +100,8 @@ export function createMoveHandler(
       previous = tile;
     }
 
+    if (movementPathCost(mission, unit, path) > moveBudget(mission, unit))
+      return reject("over-budget");
     let state = mission;
     const events: TacticalEvent[] = [];
     let from: TileCoord = unit.pos;
@@ -109,7 +114,7 @@ export function createMoveHandler(
         payload: { unitId, from, to, path: [to] },
       });
       from = to;
-      taken += 1;
+      taken += movementStepCost(mission, unit, step);
       const reaction = react(state, unitId, ctx);
       state = reaction.state;
       events.push(...reaction.events);
@@ -122,7 +127,10 @@ export function createMoveHandler(
       ...state,
       units: state.units.map((candidate) =>
         candidate.id === unitId
-          ? { ...candidate, ap: Math.max(0, candidate.ap - apCost) }
+          ? {
+              ...movedMech(mission, candidate, apCost),
+              ap: Math.max(0, candidate.ap - apCost),
+            }
           : candidate,
       ),
     };
@@ -150,7 +158,7 @@ function placeUnit(
     ...mission,
     units: mission.units.map((unit) =>
       unit.id === unitId
-        ? { ...unit, pos, facing: facing ?? unit.facing }
+        ? { ...movedMech(mission, unit, 0), pos, facing: facing ?? unit.facing }
         : unit,
     ),
   };

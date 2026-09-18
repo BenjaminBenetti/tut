@@ -11,6 +11,8 @@ export const UNIT_MOVED = "tactical:unit-moved";
 
 /** Payload of `UnitMoved`. */
 export interface UnitMovedPayload {
+  /** Render a jump arc rather than a walking step. */
+  readonly jump?: boolean;
   readonly unitId: UnitId;
   readonly from: TileCoord;
   readonly to: TileCoord;

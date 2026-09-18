@@ -130,7 +130,8 @@ describe("validateLoadout on a valid loadout", () => {
     const result = validateLoadout(VALID, CATALOGUE, TUNING, UPGRADE_TUNING);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value).toEqual({
+    expect(result.value).toMatchObject({
+      systems: { heatCapacity: 20, cooling: 6, idleHeat: 0, movementHeat: 0 },
       armor: 25,
       mobility: 7,
       heat: 1,

@@ -1,3 +1,4 @@
+import { mechSystemsOf } from "./mech-system-service";
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import type { LoadoutError } from "../model/loadout-error";
@@ -272,6 +273,21 @@ function checkCapacity(
     components.map((c) => effectivePartStats(c.part, c.upgradeLevel, upgrades)),
   );
   const { maxWeight, powerOutput, utilitySlots } = chassis.capacity;
+  const unique = new Set<string>();
+  for (const { part } of components) {
+    if (
+      part.slot !== "utility" ||
+      !(part.traits?.equipment?.length || part.traits?.ablativeHits)
+    )
+      continue;
+    if (unique.has(part.id))
+      errors.push({
+        code: "duplicate-active-utility",
+        slot: "utility",
+        detail: `${part.name} can only be fitted once.`,
+      });
+    unique.add(part.id);
+  }
 
   if (fitted.weight > maxWeight) {
     errors.push({
@@ -330,6 +346,7 @@ function buildStatSheet(
       cumulativeUpgradeCost(chassis, chassisUpgradeLevel, upgrades),
   );
   return {
+    systems: mechSystemsOf([chassis, ...components.map((c) => c.part)]),
     armor: total.armor,
     mobility: total.mobility,
     heat: total.heat,
@@ -371,6 +388,8 @@ function weaponsOf(
         upgrades,
       );
       weapons.push({
+        ...weapon,
+        heat: Math.max(0, stats.heat),
         id: slot,
         name: part.name,
         range: weapon.range,

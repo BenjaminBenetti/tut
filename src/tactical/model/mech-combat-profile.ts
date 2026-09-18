@@ -1,3 +1,4 @@
+import type { MechSystems } from "./mech-systems";
 import type { UnitWeapon } from "./unit-weapon";
 
 // ===========================================
@@ -20,6 +21,7 @@ import type { UnitWeapon } from "./unit-weapon";
  * folded in after this; the profile is the mech as built.
  */
 export interface MechCombatProfile {
+  readonly systems?: MechSystems;
   /** Hit points at full repair. Positive integer. */
   readonly maxHp: number;
   /** Action points per turn. Positive integer. */

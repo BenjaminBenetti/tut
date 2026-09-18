@@ -1,4 +1,8 @@
 import type {
+  MechSystems,
+  WeaponMechanics,
+} from "../../tactical/model/mech-systems";
+import type {
   AreaEffect,
   AreaOfEffect,
 } from "../../tactical/model/weapon-profile";
@@ -27,7 +31,7 @@ import type {
  * not know hit-chance formulae or damage scaling, and the tactical unit
  * factory converts it.
  */
-export interface MechWeapon {
+export interface MechWeapon extends WeaponMechanics {
   /** The slot it is fitted in, which is what names the attack: `"arm-weapon"`. */
   readonly id: string;
   /** The part's own name, e.g. `"Autocannon"` — what the player is offered. */
@@ -47,6 +51,7 @@ export interface MechWeapon {
 }
 
 export interface MechStatSheet {
+  readonly systems?: MechSystems;
   /** Total protective bulk. */
   readonly armor: number;
   /** Tiles per action after every part's contribution. */

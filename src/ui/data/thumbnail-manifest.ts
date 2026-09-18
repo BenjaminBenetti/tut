@@ -28,6 +28,122 @@ export interface ThumbnailAssetEntry {
 
 /** Every thumbnail, keyed by model id. */
 export const THUMBNAIL_MANIFEST = {
+  "tdf.mech.chassis.courser": {
+    path: "assets/ui/thumbs/tdf.mech.chassis.courser.png",
+    model: "tdf.mech.chassis.courser",
+    label: "Courser chassis",
+  },
+  "tdf.mech.chassis.surveyor": {
+    path: "assets/ui/thumbs/tdf.mech.chassis.surveyor.png",
+    model: "tdf.mech.chassis.surveyor",
+    label: "Surveyor chassis",
+  },
+  "tdf.mech.chassis.crucible": {
+    path: "assets/ui/thumbs/tdf.mech.chassis.crucible.png",
+    model: "tdf.mech.chassis.crucible",
+    label: "Crucible chassis",
+  },
+  "tdf.mech.legs.all-terrain": {
+    path: "assets/ui/thumbs/tdf.mech.legs.all-terrain.png",
+    model: "tdf.mech.legs.all-terrain",
+    label: "All Terrain legs",
+  },
+  "tdf.mech.legs.sprint": {
+    path: "assets/ui/thumbs/tdf.mech.legs.sprint.png",
+    model: "tdf.mech.legs.sprint",
+    label: "Sprint legs",
+  },
+  "tdf.mech.legs.anchor": {
+    path: "assets/ui/thumbs/tdf.mech.legs.anchor.png",
+    model: "tdf.mech.legs.anchor",
+    label: "Anchor legs",
+  },
+  "tdf.mech.arms.assault-l": {
+    path: "assets/ui/thumbs/tdf.mech.arms.assault-l.png",
+    model: "tdf.mech.arms.assault-l",
+    label: "Assault L arms",
+  },
+  "tdf.mech.arms.assault-r": {
+    path: "assets/ui/thumbs/tdf.mech.arms.assault-r.png",
+    model: "tdf.mech.arms.assault-r",
+    label: "Assault R arms",
+  },
+  "tdf.mech.arms.marksman-l": {
+    path: "assets/ui/thumbs/tdf.mech.arms.marksman-l.png",
+    model: "tdf.mech.arms.marksman-l",
+    label: "Marksman L arms",
+  },
+  "tdf.mech.arms.marksman-r": {
+    path: "assets/ui/thumbs/tdf.mech.arms.marksman-r.png",
+    model: "tdf.mech.arms.marksman-r",
+    label: "Marksman R arms",
+  },
+  "tdf.mech.arms.conduit-l": {
+    path: "assets/ui/thumbs/tdf.mech.arms.conduit-l.png",
+    model: "tdf.mech.arms.conduit-l",
+    label: "Conduit L arms",
+  },
+  "tdf.mech.arms.conduit-r": {
+    path: "assets/ui/thumbs/tdf.mech.arms.conduit-r.png",
+    model: "tdf.mech.arms.conduit-r",
+    label: "Conduit R arms",
+  },
+  "tdf.mech.weapon-arm.scatter-cannon": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.scatter-cannon.png",
+    model: "tdf.mech.weapon-arm.scatter-cannon",
+    label: "Scatter Cannon arm",
+  },
+  "tdf.mech.weapon-arm.pile-driver": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.pile-driver.png",
+    model: "tdf.mech.weapon-arm.pile-driver",
+    label: "Pile Driver arm",
+  },
+  "tdf.mech.weapon-arm.heavy-autocannon": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.heavy-autocannon.png",
+    model: "tdf.mech.weapon-arm.heavy-autocannon",
+    label: "Heavy Autocannon arm",
+  },
+  "tdf.mech.weapon-arm.thermal-lance": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.thermal-lance.png",
+    model: "tdf.mech.weapon-arm.thermal-lance",
+    label: "Thermal Lance arm",
+  },
+  "tdf.mech.weapon-arm.siege-railgun": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.siege-railgun.png",
+    model: "tdf.mech.weapon-arm.siege-railgun",
+    label: "Siege Railgun arm",
+  },
+  "tdf.mech.weapon-arm.beam-projector": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.beam-projector.png",
+    model: "tdf.mech.weapon-arm.beam-projector",
+    label: "Beam Projector arm",
+  },
+  "tdf.mech.weapon-back.smoke-launcher": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-back.smoke-launcher.png",
+    model: "tdf.mech.weapon-back.smoke-launcher",
+    label: "Smoke Launcher back",
+  },
+  "tdf.mech.weapon-back.guided-missile-rack": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-back.guided-missile-rack.png",
+    model: "tdf.mech.weapon-back.guided-missile-rack",
+    label: "Guided Missile Rack back",
+  },
+  "tdf.mech.weapon-back.incendiary-launcher": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-back.incendiary-launcher.png",
+    model: "tdf.mech.weapon-back.incendiary-launcher",
+    label: "Incendiary Launcher back",
+  },
+  "tdf.mech.weapon-back.siege-howitzer": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-back.siege-howitzer.png",
+    model: "tdf.mech.weapon-back.siege-howitzer",
+    label: "Siege Howitzer back",
+  },
+  "tdf.mech.weapon-back.cluster-rocket-rack": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-back.cluster-rocket-rack.png",
+    model: "tdf.mech.weapon-back.cluster-rocket-rack",
+    label: "Cluster Rocket Rack back",
+  },
+
   "tdf.infantry.radio": {
     path: "assets/ui/thumbs/tdf.infantry.radio.png",
     model: "tdf.infantry.radio",

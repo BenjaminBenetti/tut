@@ -1,4 +1,8 @@
 import type {
+  MechTraits,
+  WeaponMechanics,
+} from "../../tactical/model/mech-systems";
+import type {
   AreaEffect,
   AreaOfEffect,
 } from "../../tactical/model/weapon-profile";
@@ -95,6 +99,7 @@ export interface ChassisCapacity {
 
 /** Fields shared by every part regardless of slot. */
 interface MechPartBase {
+  readonly traits?: MechTraits;
   readonly id: PartId;
   readonly name: string;
   readonly tier: PartTier;
@@ -123,7 +128,7 @@ export interface ChassisPart extends MechPartBase {
  * The three optional blocks are the tactical `WeaponProfile`'s own, so
  * the unit factory copies them through unchanged.
  */
-export interface PartWeapon {
+export interface PartWeapon extends WeaponMechanics {
   /** Tiles the weapon reaches on level ground, Manhattan. Positive integer. */
   readonly range: number;
   /** Armor points ignored by each hit. Non-negative. */

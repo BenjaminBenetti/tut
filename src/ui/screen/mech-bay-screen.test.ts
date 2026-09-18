@@ -378,7 +378,10 @@ describe("MechBayScreen", () => {
     const search = q<HTMLInputElement>('[data-field="part-search"]');
     search.value = "rail";
     search.dispatchEvent(new Event("input"));
-    expect(visible()).toEqual(["arm-weapon-railgun"]);
+    expect(visible()).toEqual([
+      "arm-weapon-railgun",
+      "arm-weapon-siege-railgun",
+    ]);
     expect(q('[data-role="no-parts"]').hidden).toBe(true);
 
     search.value = "zzz";

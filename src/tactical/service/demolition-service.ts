@@ -119,6 +119,7 @@ export function demolish(
       put({
         ...bare,
         pass: structures.surfacePass(tile.surface),
+        mechMoveCost: 2,
         coverProvided: CoverLevel.NONE,
         blocksLos: false,
       });

@@ -1,3 +1,4 @@
+import type { MechSystems } from "./mech-systems";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { EquipmentId } from "./equipment";
@@ -47,6 +48,7 @@ export interface TemplateRank {
  * ```
  */
 export interface UnitTemplate {
+  readonly systems?: MechSystems;
   readonly id: UnitTemplateId;
   /** Display name, e.g. the squad type or species name. */
   readonly name: string;

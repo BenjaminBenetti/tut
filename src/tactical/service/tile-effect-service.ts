@@ -178,6 +178,7 @@ export function burn(
     for (const unit of state.units) {
       // A block burns when any tile of it is alight (#1130), once per fire.
       if (
+        rule.damage <= 0 ||
         unit.hp <= 0 ||
         unit.team !== acting ||
         !footprintContains(
@@ -213,7 +214,7 @@ export function burn(
         events.push(downedEvent(unit));
       }
     }
-    if (acting === "bugs") {
+    if (acting === "bugs" && rule.damage > 0) {
       for (const spawner of state.spawners) {
         if (
           spawner.destroyed ||

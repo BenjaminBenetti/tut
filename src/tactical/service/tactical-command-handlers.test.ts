@@ -362,11 +362,11 @@ describe("the RNG fork nonce (#667)", () => {
 // ===========================================
 
 describe("liftTacticalHandler carrying the cause", () => {
-  /** A real refusal from a real handler: the mech starts with full charges. */
+  /** A real refusal from a real handler: the squad starts with full charges. */
   function refuseReload() {
     const state = inMission();
-    const unit = state.activeMission?.units.find((u) => u.kind === "mech");
-    if (!unit) throw new Error("fixture needs a mech");
+    const unit = state.activeMission?.units.find((u) => u.kind === "squad");
+    if (!unit) throw new Error("fixture needs a squad");
     const lifted = liftTacticalHandler<GameState, typeof RELOAD>(reloadHandler);
     const result = lifted(state, reload(unit.id), {
       rng: riggedRng(false),

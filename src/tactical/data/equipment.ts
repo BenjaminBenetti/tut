@@ -131,6 +131,24 @@ export const TURRET: EquipmentDefinition = {
 
 /** Every piece of equipment keyed by id, in catalogue order. */
 export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
+  "mech-recon": {
+    id: "mech-recon",
+    name: "Recon beacon",
+    kind: "radar",
+    uses: 3,
+    apCost: 1,
+    range: 2,
+    radar: { scanRange: 12, batteryTurns: 1 },
+  },
+  "mech-repair": {
+    id: "mech-repair",
+    name: "Field repair",
+    kind: "heal",
+    uses: 2,
+    apCost: 1,
+    range: 3,
+    heal: { amount: 20, target: "mechanical", radius: 1 },
+  },
   [RADAR_DISH.id]: RADAR_DISH,
   [GRENADE.id]: GRENADE,
   [BREACHING_CHARGE.id]: BREACHING_CHARGE,

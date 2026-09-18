@@ -12,6 +12,260 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "tdf.mech.chassis.courser": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-chassis-courser.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 1.2,
+    sockets: ["socket_arm_l", "socket_arm_r", "socket_back"],
+    quality: "final",
+  },
+  "tdf.mech.chassis.surveyor": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-chassis-surveyor.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 1.49,
+    sockets: ["socket_arm_l", "socket_arm_r", "socket_back"],
+    quality: "final",
+  },
+  "tdf.mech.chassis.crucible": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-chassis-crucible.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 1.2,
+    sockets: ["socket_arm_l", "socket_arm_r", "socket_back"],
+    quality: "final",
+  },
+  "tdf.mech.legs.all-terrain": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-legs-all-terrain.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.36,
+    sockets: ["socket_chassis"],
+    quality: "final",
+  },
+  "tdf.mech.legs.sprint": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-legs-sprint.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.54,
+    sockets: ["socket_chassis"],
+    quality: "final",
+  },
+  "tdf.mech.legs.anchor": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-legs-anchor.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.36,
+    sockets: ["socket_chassis"],
+    quality: "final",
+  },
+  "tdf.mech.arms.assault-l": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-arms-assault-l.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.9,
+    sockets: ["socket_weapon"],
+    quality: "final",
+  },
+  "tdf.mech.arms.assault-r": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-arms-assault-r.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.9,
+    sockets: ["socket_weapon"],
+    quality: "final",
+  },
+  "tdf.mech.arms.marksman-l": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-arms-marksman-l.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.88,
+    sockets: ["socket_weapon"],
+    quality: "final",
+  },
+  "tdf.mech.arms.marksman-r": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-arms-marksman-r.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.88,
+    sockets: ["socket_weapon"],
+    quality: "final",
+  },
+  "tdf.mech.arms.conduit-l": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-arms-conduit-l.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.91,
+    sockets: ["socket_weapon"],
+    quality: "final",
+  },
+  "tdf.mech.arms.conduit-r": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-arms-conduit-r.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.91,
+    sockets: ["socket_weapon"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-arm.scatter-cannon": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-arm-scatter-cannon.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.32,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-arm.pile-driver": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-arm-pile-driver.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.35,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-arm.heavy-autocannon": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-arm-heavy-autocannon.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.35,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-arm.thermal-lance": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-arm-thermal-lance.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.32,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-arm.siege-railgun": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-arm-siege-railgun.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.32,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-arm.beam-projector": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-arm-beam-projector.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.35,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-back.smoke-launcher": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-back-smoke-launcher.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.67,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-back.guided-missile-rack": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-back-guided-missile-rack.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.74,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-back.incendiary-launcher": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-back-incendiary-launcher.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.65,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-back.siege-howitzer": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-back-siege-howitzer.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 1.25,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+  "tdf.mech.weapon-back.cluster-rocket-rack": {
+    category: "units",
+    path: "assets/models/units/tdf-mech-weapon-back-cluster-rocket-rack.glb",
+    footprint: {
+      w: 0,
+      d: 0,
+    },
+    height: 0.9,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
+
   "tdf.turret": {
     category: "units",
     path: "assets/models/units/tdf-turret.glb",

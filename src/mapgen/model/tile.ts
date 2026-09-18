@@ -21,6 +21,8 @@ import type { WallSet } from "./wall";
  * ```
  */
 export interface Tile extends TileCoord {
+  /** Denormalised rough-ground cost for mechs; absent on old maps means one. */
+  readonly mechMoveCost?: number;
   /** Surface kind; resolved through the surface registry. */
   readonly surface: SurfaceId;
   /**

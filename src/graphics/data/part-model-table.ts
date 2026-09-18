@@ -52,10 +52,73 @@ export interface MechAssembly {
  * mapped to a placeholder.
  */
 export const PART_MODELS: Readonly<Partial<Record<PartId, PartModels>>> = {
+  "chassis-courser": { kind: "single", model: "tdf.mech.chassis.courser" },
+  "chassis-surveyor": { kind: "single", model: "tdf.mech.chassis.surveyor" },
+  "chassis-crucible": { kind: "single", model: "tdf.mech.chassis.crucible" },
+  "legs-all-terrain": { kind: "single", model: "tdf.mech.legs.all-terrain" },
+  "legs-sprint": { kind: "single", model: "tdf.mech.legs.sprint" },
+  "legs-anchor": { kind: "single", model: "tdf.mech.legs.anchor" },
+  "arms-assault": {
+    kind: "pair",
+    left: "tdf.mech.arms.assault-l",
+    right: "tdf.mech.arms.assault-r",
+  },
+  "arms-marksman": {
+    kind: "pair",
+    left: "tdf.mech.arms.marksman-l",
+    right: "tdf.mech.arms.marksman-r",
+  },
+  "arms-conduit": {
+    kind: "pair",
+    left: "tdf.mech.arms.conduit-l",
+    right: "tdf.mech.arms.conduit-r",
+  },
+  "arm-weapon-scatter-cannon": {
+    kind: "single",
+    model: "tdf.mech.weapon-arm.scatter-cannon",
+  },
+  "arm-weapon-pile-driver": {
+    kind: "single",
+    model: "tdf.mech.weapon-arm.pile-driver",
+  },
+  "arm-weapon-heavy-autocannon": {
+    kind: "single",
+    model: "tdf.mech.weapon-arm.heavy-autocannon",
+  },
+  "arm-weapon-thermal-lance": {
+    kind: "single",
+    model: "tdf.mech.weapon-arm.thermal-lance",
+  },
+  "arm-weapon-siege-railgun": {
+    kind: "single",
+    model: "tdf.mech.weapon-arm.siege-railgun",
+  },
+  "arm-weapon-beam-projector": {
+    kind: "single",
+    model: "tdf.mech.weapon-arm.beam-projector",
+  },
+  "back-weapon-smoke-launcher": {
+    kind: "single",
+    model: "tdf.mech.weapon-back.smoke-launcher",
+  },
+  "back-weapon-guided-missile-rack": {
+    kind: "single",
+    model: "tdf.mech.weapon-back.guided-missile-rack",
+  },
+  "back-weapon-incendiary-launcher": {
+    kind: "single",
+    model: "tdf.mech.weapon-back.incendiary-launcher",
+  },
+  "back-weapon-siege-howitzer": {
+    kind: "single",
+    model: "tdf.mech.weapon-back.siege-howitzer",
+  },
+  "back-weapon-cluster-rocket-rack": {
+    kind: "single",
+    model: "tdf.mech.weapon-back.cluster-rocket-rack",
+  },
+
   "chassis-vanguard": { kind: "single", model: "tdf.mech.chassis-a" },
-  // The Courser (#1130) has no model of its own yet and wears the
-  // Vanguard's light frame; the two are the same silhouette class.
-  "chassis-courser": { kind: "single", model: "tdf.mech.chassis-a" },
   "chassis-bulwark": { kind: "single", model: "tdf.mech.chassis.bulwark" },
   "chassis-atlas": { kind: "single", model: "tdf.mech.chassis.atlas" },
   "legs-strider": { kind: "single", model: "tdf.mech.legs-a" },

@@ -235,6 +235,19 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:mech-system-used": {
+      const verbs = {
+        jump: "jumped",
+        brace: "deployed stabilisers",
+        coolant: "injected emergency coolant",
+        designate: "designated a target",
+      };
+      return {
+        text: `${nameOf(event.payload.unitId)} ${verbs[event.payload.action]}`,
+        icon: "ability",
+        tone: "accent",
+      };
+    }
     case "tactical:equipment-used": {
       // A scanner's or a turret's deployment logs itself with its
       // battery on the next line; a second line for the same act read
@@ -364,6 +377,7 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:radar-deployed":
     case "tactical:turret-deployed":
     case "tactical:equipment-used":
+    case "tactical:mech-system-used":
       return event.payload.unitId;
     case "tactical:turret-destroyed":
       // Above the turret, as a death is above the unit that died.

@@ -1,0 +1,183 @@
+"""Progression mech kit (#1168): practical silhouettes, shared sockets, TDF palette."""
+
+import math
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from bpy_kit import box, cylinder, socket
+from mech_a_parts import armour
+
+DARK = "tdf-grey-dark"
+MID = "tdf-grey-mid"
+LIGHT = "tdf-grey-light"
+OLIVE = "tdf-olive"
+ORANGE = "tdf-orange"
+LENS = "tdf-visor"
+
+
+def barrel(name, radius, length, at, token=DARK, tilt=math.pi / 2):
+    """A closed six-sided tube aligned forward, within the weapon triangle budget."""
+    return cylinder(name, radius, radius, length, 6, at, token, rot=(tilt, 0, 0))
+
+
+def build_chassis(variant):
+    """Light scout, sensor platform or radiator torso, with compatible arm and back sockets."""
+    heavy = variant == "crucible"
+    width = 1.02 if heavy else 0.8
+    armour("torso", (width, 0.62, 0.94), (0, 0, 0.47), MID, chamfer=0.035)
+    armour("breastplate", (width * 0.7, 0.13, 0.52), (0, -0.36, 0.49), LIGHT, chamfer=0.025)
+    box("service_panel", (0.29, 0.025, 0.25), (0.12, -0.435, 0.4), OLIVE)
+    armour("cockpit", (0.38, 0.38, 0.3), (0, -0.04, 1.01), MID, chamfer=0.035)
+    box("visor", (0.29, 0.025, 0.085), (0, -0.245, 1.025), LENS)
+    box("brow", (0.44, 0.1, 0.045), (0, -0.2, 1.18), DARK)
+    box("id_flash", (0.075, 0.026, 0.18), (-0.25, -0.435, 0.5), ORANGE)
+    for side in (-1, 1):
+        cylinder(f"shoulder_{side}", 0.12, 0.12, 0.16, 8, (side * (width / 2 + 0.06), 0, 0.82), DARK, rot=(0, math.pi / 2, 0))
+        if heavy:
+            box(f"radiator_bank_{side}", (0.23, 0.48, 0.73), (side * 0.59, 0.12, 0.5), DARK)
+            for fin in range(5):
+                box(f"fin_{side}_{fin}", (0.3, 0.53, 0.045), (side * 0.59, 0.12, 0.23 + fin * 0.13), LIGHT)
+            box(f"coolant_pipe_{side}", (0.07, 0.08, 0.85), (side * 0.38, 0.37, 0.55), OLIVE)
+        elif variant == "surveyor":
+            box(f"optic_pylon_{side}", (0.08, 0.12, 0.52), (side * 0.45, 0.14, 1.06), DARK)
+            box(f"sensor_panel_{side}", (0.31, 0.16, 0.22), (side * 0.45, 0.14, 1.32), OLIVE)
+            box(f"sensor_lens_{side}", (0.2, 0.02, 0.09), (side * 0.45, 0.049, 1.32), LENS)
+        else:
+            armour(f"swept_shoulder_{side}", (0.25, 0.4, 0.19), (side * 0.42, 0.05, 0.94), OLIVE, rot=(0, side * 0.22, 0), chamfer=0.025)
+            box(f"rear_vent_{side}", (0.13, 0.08, 0.42), (side * 0.25, 0.35, 0.5), DARK)
+    if variant == "surveyor":
+        box("antenna", (0.035, 0.035, 0.52), (-0.32, 0.28, 1.23), DARK)
+    socket("arm_l", (-width / 2 - 0.15, 0, 0.82))
+    socket("arm_r", (width / 2 + 0.15, 0, 0.82))
+    socket("back", (0, 0.22, 1.2))
+
+
+def build_legs(variant):
+    """Broad articulated feet, reverse-jointed sprint actuators or folded anchor spades."""
+    sprint = variant == "sprint"
+    anchor = variant == "anchor"
+    height = 1.43 if sprint else 1.25
+    for side in (-1, 1):
+        x = side * 0.29
+        foot_width = 0.23 if sprint else 0.39
+        armour(f"foot_{side}", (foot_width, 0.59, 0.14), (x, -0.09, 0.07), DARK, chamfer=0.018)
+        for toe in (-1, 1):
+            box(f"toe_{side}_{toe}", (foot_width * 0.35, 0.14, 0.09), (x + toe * foot_width * 0.25, -0.4, 0.045), LIGHT)
+        armour(f"shin_{side}", (0.19 if sprint else 0.29, 0.22, 0.55), (x, 0.035, 0.43), MID, rot=(-0.16 if sprint else 0, 0, 0), chamfer=0.02)
+        cylinder(f"knee_{side}", 0.12, 0.12, 0.29, 8, (x, -0.02, 0.73), DARK, rot=(0, math.pi / 2, 0))
+        armour(f"thigh_{side}", (0.23, 0.3, height - 0.7), (x, 0.04, (height + 0.7) / 2), MID, chamfer=0.02)
+        box(f"piston_{side}", (0.055, 0.055, 0.57), (x + side * 0.15, 0.08, 0.86), LIGHT)
+        box(f"mark_{side}", (0.09, 0.02, 0.12), (x, -0.16, 1.0), ORANGE)
+        if anchor:
+            box(f"folded_spade_{side}", (0.12, 0.48, 0.45), (x + side * 0.24, 0.06, 0.31), OLIVE)
+            box(f"spade_edge_{side}", (0.15, 0.52, 0.055), (x + side * 0.24, 0.06, 0.11), LIGHT)
+        elif not sprint:
+            box(f"heel_pivot_{side}", (0.15, 0.14, 0.15), (x, 0.25, 0.18), OLIVE)
+    armour("hip", (0.82, 0.43, 0.22), (0, 0, height), DARK, chamfer=0.025)
+    box("pelvis", (0.35, 0.09, 0.16), (0, -0.25, height), OLIVE)
+    socket("chassis", (0, 0, height + 0.11))
+
+
+def build_arm(variant, side):
+    """Armour gauntlet, precision cradle or exposed coolant conduits; pivots at shoulder."""
+    assault = variant == "assault"
+    width = 0.29 if assault else 0.2
+    box("shoulder", (width + 0.04, 0.29, 0.25), (side * 0.08, 0, 0), DARK)
+    armour("upper_arm", (width, 0.26, 0.48), (side * 0.09, 0, -0.32), MID, chamfer=0.02)
+    cylinder("elbow", 0.1, 0.1, width + 0.07, 8, (side * 0.09, 0, -0.6), DARK, rot=(0, math.pi / 2, 0))
+    box("forearm", (width, 0.46, 0.2), (side * 0.09, -0.23, -0.65), MID)
+    if assault:
+        box("gauntlet", (0.1, 0.51, 0.38), (side * 0.29, -0.23, -0.59), LIGHT)
+        box("stripe", (0.015, 0.12, 0.12), (side * 0.345, -0.35, -0.59), ORANGE)
+    elif variant == "marksman":
+        box("stabiliser", (0.08, 0.62, 0.07), (side * 0.23, -0.19, -0.55), LIGHT)
+        box("optic", (0.13, 0.23, 0.1), (side * 0.1, -0.16, -0.48), OLIVE)
+        box("optic_lens", (0.08, 0.015, 0.045), (side * 0.1, -0.285, -0.48), LENS)
+    else:
+        for n in (-1, 1):
+            box(f"conduit_{n}", (0.055, 0.44, 0.055), (side * 0.23, -0.21, -0.64 + n * 0.07), OLIVE)
+        for n in range(3):
+            box(f"cooling_fin_{n}", (0.3, 0.035, 0.27), (side * 0.08, -0.08 - n * 0.13, -0.65), DARK)
+    socket("weapon", (side * 0.09, -0.48, -0.65))
+
+
+def build_arm_weapon(variant):
+    """Each weapon reads by its muzzle, receiver and support hardware rather than paint."""
+    box("receiver", (0.27, 0.35, 0.25), (0, -0.14, 0), DARK)
+    box("top_plate", (0.25, 0.28, 0.065), (0, -0.13, 0.16), OLIVE)
+    length = 0.78
+    if variant == "scatter-cannon":
+        for side in (-1, 1):
+            barrel(f"barrel_{side}", 0.09, 0.44, (side * 0.09, -0.49, 0), MID)
+            barrel(f"bore_{side}", 0.06, 0.025, (side * 0.09, -0.722, 0), DARK)
+        length = 0.74
+    elif variant == "pile-driver":
+        barrel("piston_casing", 0.16, 0.46, (0, -0.45, 0), MID)
+        barrel("steel_ram", 0.07, 0.36, (0, -0.78, 0), LIGHT)
+        cylinder("point", 0, 0.07, 0.2, 4, (0, -1.03, 0), LIGHT, rot=(math.pi / 2, 0, 0))
+        box("hazard", (0.3, 0.06, 0.045), (0, -0.42, 0.17), ORANGE)
+        length = 1.13
+    elif variant == "heavy-autocannon":
+        barrel("barrel", 0.105, 0.7, (0, -0.65, 0), MID)
+        barrel("muzzle_brake", 0.14, 0.14, (0, -1.03, 0), DARK)
+        cylinder("ammo_drum", 0.16, 0.16, 0.16, 8, (0.21, -0.08, 0), OLIVE, rot=(0, math.pi / 2, 0))
+        length = 1.11
+    elif variant == "siege-railgun":
+        for side in (-1, 1):
+            box(f"rail_{side}", (0.08, 1.0, 0.2), (side * 0.1, -0.8, 0), LIGHT)
+            box(f"capacitor_{side}", (0.12, 0.34, 0.18), (side * 0.19, -0.21, 0), OLIVE)
+        for n in range(3):
+            box(f"coil_{n}", (0.29, 0.055, 0.26), (0, -0.47 - n * 0.29, 0), DARK)
+        box("charge_strip", (0.05, 0.54, 0.025), (0, -0.64, 0.15), ORANGE)
+        length = 1.31
+    elif variant == "thermal-lance":
+        barrel("emitter", 0.08, 0.6, (0, -0.55, 0), LIGHT)
+        for n in range(4):
+            box(f"heat_fin_{n}", (0.26, 0.055, 0.26), (0, -0.34 - n * 0.14, 0), DARK)
+        barrel("lens", 0.06, 0.025, (0, -0.865, 0), LENS)
+        length = 0.89
+    else:
+        box("emitter_body", (0.29, 0.53, 0.19), (0, -0.53, 0), MID)
+        for side in (-1, 1):
+            box(f"focusing_rail_{side}", (0.06, 0.7, 0.3), (side * 0.19, -0.59, 0), DARK)
+        box("lens", (0.22, 0.025, 0.13), (0, -0.81, 0), LENS)
+        box("radiator", (0.33, 0.35, 0.06), (0, -0.49, 0.17), LIGHT)
+        length = 0.95
+    socket("muzzle", (0, -length, 0))
+
+
+def build_back_weapon(variant):
+    """Shoulder modules share a pivot but have distinct tube, rack and cannon silhouettes."""
+    box("mount", (0.22, 0.22, 0.12), (0, 0, -0.04), DARK)
+    box("receiver", (0.46, 0.38, 0.25), (0, 0, 0.14), MID)
+    if variant == "smoke-launcher":
+        for n in range(3):
+            barrel(f"tube_{n}", 0.065, 0.35, ((n - 1) * 0.14, -0.12, 0.39), OLIVE, 0.7)
+        socket("muzzle", (0, -0.25, 0.55))
+    elif variant == "guided-missile-rack":
+        for side in (-1, 1):
+            box(f"pod_{side}", (0.2, 0.7, 0.26), (side * 0.15, -0.12, 0.4), OLIVE)
+            barrel(f"missile_tip_{side}", 0.065, 0.04, (side * 0.15, -0.49, 0.4), LIGHT)
+        box("seeker", (0.09, 0.09, 0.11), (0, -0.15, 0.59), DARK)
+        box("seeker_lens", (0.07, 0.015, 0.07), (0, -0.2, 0.59), LENS)
+        socket("muzzle", (0, -0.53, 0.4))
+    elif variant == "incendiary-launcher":
+        barrel("launcher", 0.13, 0.59, (0, -0.18, 0.4), DARK)
+        for side in (-1, 1):
+            cylinder(f"fuel_{side}", 0.09, 0.09, 0.32, 6, (side * 0.24, 0.02, 0.39), OLIVE)
+        barrel("muzzle_ring", 0.14, 0.04, (0, -0.5, 0.4), ORANGE)
+        socket("muzzle", (0, -0.53, 0.4))
+    elif variant == "siege-howitzer":
+        barrel("breech", 0.2, 0.32, (0, 0.07, 0.39), OLIVE, 0.85)
+        barrel("tube", 0.105, 0.86, (0, -0.29, 0.7), MID, 0.85)
+        barrel("brake", 0.15, 0.12, (0, -0.64, 1.0), DARK, 0.85)
+        box("recoil_jack", (0.1, 0.28, 0.17), (0.21, -0.03, 0.38), LIGHT)
+        socket("muzzle", (0, -0.69, 1.04))
+    else:
+        box("rack", (0.62, 0.55, 0.55), (0, -0.03, 0.48), OLIVE)
+        for row in range(3):
+            for col in range(3):
+                barrel(f"rocket_{row}_{col}", 0.068, 0.045, ((col - 1) * 0.18, -0.325, 0.3 + row * 0.18), DARK)
+        box("marking", (0.15, 0.026, 0.045), (0, -0.32, 0.78), ORANGE)
+        socket("muzzle", (0, -0.36, 0.48))

@@ -1,3 +1,4 @@
+import { mechAction } from "../../tactical/model/mech-action-command";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { attack, attackTile } from "../../tactical/model/attack-command";
@@ -1314,6 +1315,16 @@ export class TacticalHudView {
     }
     this.closeMenu();
     switch (choice.action) {
+      case "mech":
+        this.handlers.onCommand(
+          mechAction({
+            unitId,
+            action: choice.system,
+            ...(choice.tile ? { tile: choice.tile } : {}),
+            ...(choice.targetId ? { targetId: choice.targetId } : {}),
+          }),
+        );
+        break;
       case "move":
         this.moveTo(choice.tile);
         return;
@@ -1874,6 +1885,8 @@ export class TacticalHudView {
       // Resting on a grenade or a charge paints what it would reach
       // (#1132), and only then: a tile wheel that always painted a
       // radius-3 charge would swamp the weapons' own footprints.
+      if (rested?.action === "mech" && rested.system === "jump" && rested.tile)
+        return [rested.tile];
       if (rested?.action === "use-equipment") {
         return this.equipmentFootprint(rested.equipmentId, rested.tile);
       }

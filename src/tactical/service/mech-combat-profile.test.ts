@@ -69,11 +69,11 @@ describe("mechCombatProfile (#1132)", () => {
     }
   });
 
-  it("turns the starter's 20 plate into 6 per hit and 70 hit points, not into '20 armor'", () => {
+  it("turns the starter's 20 plate into 6 per hit and 45 hit points, not into '20 armor'", () => {
     const sheet = sheetOf(STARTER_LOADOUT);
     expect(sheet.armor).toBe(20);
     const profile = mechCombatProfile(sheet, UNIT_TUNING.mech);
-    expect(profile).toMatchObject({ maxHp: 70, armor: 6, move: 8, maxAp: 2 });
+    expect(profile).toMatchObject({ maxHp: 45, armor: 6, move: 8, maxAp: 2 });
     expect(profile.weapons.map((w) => w.name)).toEqual([
       "Autocannon",
       "Missile Pod",

@@ -346,6 +346,7 @@ function buildStatSheet(
       cumulativeUpgradeCost(chassis, chassisUpgradeLevel, upgrades),
   );
   return {
+    ...(chassis.hullHp === undefined ? {} : { hullHp: chassis.hullHp }),
     systems: mechSystemsOf([chassis, ...components.map((c) => c.part)]),
     armor: total.armor,
     mobility: total.mobility,

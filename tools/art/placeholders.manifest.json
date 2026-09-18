@@ -3298,108 +3298,6 @@
     "bytes": 26796
   },
   {
-    "id": "tdf.mech.chassis.courser",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-courser.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.2,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 348,
-    "bytes": 35732
-  },
-  {
-    "id": "tdf.mech.chassis.surveyor",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-surveyor.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.49,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 320,
-    "bytes": 35660
-  },
-  {
-    "id": "tdf.mech.chassis.crucible",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-crucible.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.2,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 404,
-    "bytes": 46208
-  },
-  {
-    "id": "tdf.mech.legs.all-terrain",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-legs-all-terrain.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.36,
-    "sockets": [
-      "socket_chassis"
-    ],
-    "quality": "final",
-    "triangles": 496,
-    "bytes": 50332
-  },
-  {
-    "id": "tdf.mech.legs.sprint",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-legs-sprint.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.54,
-    "sockets": [
-      "socket_chassis"
-    ],
-    "quality": "final",
-    "triangles": 472,
-    "bytes": 47444
-  },
-  {
-    "id": "tdf.mech.legs.anchor",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-legs-anchor.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.36,
-    "sockets": [
-      "socket_chassis"
-    ],
-    "quality": "final",
-    "triangles": 520,
-    "bytes": 53428
-  },
-  {
     "id": "tdf.mech.arms.assault-l",
     "category": "units",
     "path": "assets/models/units/tdf-mech-arms-assault-l.glb",
@@ -3670,5 +3568,107 @@
     "quality": "final",
     "triangles": 228,
     "bytes": 25212
+  },
+  {
+    "id": "tdf.mech.chassis.courser",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-courser.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.21,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 372,
+    "bytes": 38768
+  },
+  {
+    "id": "tdf.mech.chassis.surveyor",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-surveyor.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.49,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 344,
+    "bytes": 38692
+  },
+  {
+    "id": "tdf.mech.chassis.crucible",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-crucible.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.21,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 428,
+    "bytes": 49244
+  },
+  {
+    "id": "tdf.mech.legs.all-terrain",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-legs-all-terrain.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.36,
+    "sockets": [
+      "socket_chassis"
+    ],
+    "quality": "final",
+    "triangles": 496,
+    "bytes": 50360
+  },
+  {
+    "id": "tdf.mech.legs.sprint",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-legs-sprint.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.54,
+    "sockets": [
+      "socket_chassis"
+    ],
+    "quality": "final",
+    "triangles": 472,
+    "bytes": 47472
+  },
+  {
+    "id": "tdf.mech.legs.anchor",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-legs-anchor.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.36,
+    "sockets": [
+      "socket_chassis"
+    ],
+    "quality": "final",
+    "triangles": 576,
+    "bytes": 58148
   }
 ]

@@ -49,6 +49,35 @@ describe("complete mech roster", () => {
     },
   );
 
+  it("spans fragile scouts near 40 HP through plated breachers near 120 HP", () => {
+    const hp = MECH_BLUEPRINTS.map((loadout) => {
+      const result = validateLoadout(
+        loadout,
+        PARTS,
+        MECH_RATING_TUNING,
+        UPGRADE_TUNING,
+      );
+      if (!result.ok) throw new Error(loadout.name);
+      return mechCombatProfile(result.value, UNIT_TUNING.mech).maxHp;
+    });
+    expect(Math.min(...hp)).toBeGreaterThanOrEqual(38);
+    expect(Math.min(...hp)).toBeLessThanOrEqual(45);
+    expect(Math.max(...hp)).toBeGreaterThanOrEqual(115);
+    expect(Math.max(...hp)).toBeLessThanOrEqual(125);
+    // Changing the frame alone must make a substantial survival tradeoff.
+    const frames = ["chassis-courser", "chassis-bulwark"].map((chassisId) => {
+      const result = validateLoadout(
+        { ...STARTER_LOADOUT, chassisId },
+        PARTS,
+        MECH_RATING_TUNING,
+        UPGRADE_TUNING,
+      );
+      if (!result.ok) throw new Error(chassisId);
+      return mechCombatProfile(result.value, UNIT_TUNING.mech).maxHp;
+    });
+    expect(frames[1]! - frames[0]!).toBeGreaterThan(60);
+  });
+
   it("lets every part fit into at least one complete working machine", () => {
     const baseline = {
       ...STARTER_LOADOUT,

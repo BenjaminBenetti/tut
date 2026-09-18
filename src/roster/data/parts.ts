@@ -42,6 +42,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
   // at a price that hurts to lose.
   {
     id: "chassis-vanguard",
+    hullHp: 35,
     traits: { heatCapacity: 20 },
     name: "Vanguard",
     slot: "chassis",
@@ -62,6 +63,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "chassis-courser",
+    hullHp: 28,
     traits: { heatCapacity: 22 },
     name: "Courser",
     slot: "chassis",
@@ -82,6 +84,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "chassis-bulwark",
+    hullHp: 80,
     traits: { heatCapacity: 28 },
     name: "Bulwark",
     slot: "chassis",
@@ -102,6 +105,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "chassis-atlas",
+    hullHp: 75,
     traits: { heatCapacity: 32 },
     name: "Atlas",
     slot: "chassis",

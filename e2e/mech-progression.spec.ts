@@ -134,6 +134,13 @@ test("all six blueprints assemble; a purchased Jump Scout deploys, jumps and ven
     "data-tactical-playing",
     "true",
   );
+  await page.keyboard.down("Shift");
+  await expect(
+    page.locator(
+      `.tut-status-chip[data-unit-id="${scout.id}"] [data-field="status-charge"]`,
+    ),
+  ).toHaveText("heat 5 / 22");
+  await page.keyboard.up("Shift");
   await openUnitWheel(page, scout.id);
   await wheelItem(page, "reload").click();
   await expect

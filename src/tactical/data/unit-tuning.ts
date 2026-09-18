@@ -114,7 +114,7 @@ export const UNIT_TUNING: UnitTuning = {
   },
   mech: {
     baseHp: 50,
-    hpPerArmor: 1,
+    hpPerArmor: 0.5,
     armorFactor: 0.3,
     maxAp: 2,
     baseMove: 3,

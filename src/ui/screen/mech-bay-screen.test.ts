@@ -298,8 +298,8 @@ describe("MechBayScreen", () => {
     expect(sheetField("totalCost")).toBe("¢2,850");
     expect(sheetField("weight")).toBe("60");
     // The Combat block is the field's own numbers (#1132): the starter's
-    // sheet armor of 20 is 6 per hit and 70 hit points on the ground.
-    expect(sheetField("combat-hp")).toBe("70");
+    // sheet armor of 20 is 6 per hit and 45 hit points on the ground.
+    expect(sheetField("combat-hp")).toBe("45");
     expect(sheetField("combat-armor")).toBe("6");
     expect(sheetField("combat-move")).toBe("8");
     expect(root.querySelector('#stat-sheet [data-field="armor"]')).toBeNull();

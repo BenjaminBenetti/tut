@@ -82,12 +82,13 @@ export class LoadoutUnitModelSource implements UnitModelSource {
 // ===========================================
 
 /**
- * Re-parents every leaf of `root` (meshes and socket empties alike)
+ * Re-parents the leaves of `root` (meshes and socket empties alike)
  * directly under a new group, keeping each one's world transform, so
  * the result has the flat shape of an authored unit GLB. Node names are
- * kept: a duplicate name across two parts (both arms have a
- * `shoulder`) is left as the reference assemblies leave it, since the
- * rig groups by prefix rather than by exact name.
+ * kept. Socket-mounted arms retain their whole subtree, including the gun,
+ * and other leaves retain their anatomical role so back equipment cannot
+ * become an arm merely because it has a barrel. Duplicate mesh names
+ * remain inside their owning arm, with the authored shoulder as pivot.
  *
  * @param root - The assembled hierarchy; emptied and discarded.
  * @returns A flat group named as the root was.
@@ -96,14 +97,22 @@ export function flattenModel(root: Object3D): Group {
   root.updateWorldMatrix(true, true);
   const flat = new Group();
   flat.name = root.name;
-  const leaves: Object3D[] = [];
-  root.traverse((node) => {
-    if (node !== root && node.children.length === 0) {
-      leaves.push(node);
+  const pieces: Object3D[] = [];
+  /** Keeps each socket-mounted arm and its weapon intact; flattens other parts. */
+  const collect = (node: Object3D, inheritedRole?: string): void => {
+    const role =
+      (node.userData.motion_role as string | undefined) ?? inheritedRole;
+    if (role === "arm-l" || role === "arm-r") {
+      node.userData.motion_joint = true;
+      pieces.push(node);
+    } else if (node !== root && node.children.length === 0) {
+      if (role) node.userData.motion_role = role;
+      pieces.push(node);
+    } else {
+      for (const child of node.children) collect(child, role);
     }
-  });
-  for (const leaf of leaves) {
-    flat.attach(leaf);
-  }
+  };
+  collect(root);
+  for (const piece of pieces) flat.attach(piece);
   return flat;
 }

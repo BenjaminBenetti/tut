@@ -51,6 +51,8 @@ export interface MechWeapon extends WeaponMechanics {
 }
 
 export interface MechStatSheet {
+  /** Structural hit points supplied by the chassis. */
+  readonly hullHp?: number;
   readonly systems?: MechSystems;
   /** Total protective bulk. */
   readonly armor: number;

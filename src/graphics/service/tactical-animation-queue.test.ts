@@ -973,3 +973,52 @@ describe("TacticalAnimationQueue blast", () => {
     expect(instantScene.objects.get("unit-3")!.scale.x).toBeLessThan(0.05);
   });
 });
+
+describe("brace playback", () => {
+  it("deploys over time, retracts before moving, and leaves a skipped move stowed", () => {
+    const s = scene();
+    const motion = {
+      braceAmount: 0,
+      brace: (amount: number): void => {
+        motion.braceAmount = amount;
+      },
+      walk: vi.fn(),
+      attack: vi.fn(),
+      reset: vi.fn(),
+    };
+    s.unitMotion = () => motion;
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const brace: TacticalEvent = {
+      type: "tactical:mech-system-used",
+      payload: { unitId: "unit-1", action: "brace" },
+    };
+    queue.enqueue([brace]);
+    queue.update(0.175);
+    expect(motion.braceAmount).toBeCloseTo(0.5);
+    queue.update(0.175);
+    expect(motion.braceAmount).toBe(1);
+    const start = s.objects.get("unit-1")!.position.clone();
+    queue.enqueue([MOVE]);
+    queue.update(0.175);
+    expect(motion.braceAmount).toBeCloseTo(0.5);
+    expect(s.objects.get("unit-1")!.position).toEqual(start);
+    expect(motion.walk).not.toHaveBeenCalled();
+    queue.update(0.2);
+    expect(motion.braceAmount).toBe(0);
+    expect(motion.walk).toHaveBeenCalled();
+    queue.skip();
+    expect(s.objects.get("unit-1")!.position.x).toBeCloseTo(
+      tileTopCentre(MOVE.payload.to).x,
+    );
+    queue.enqueue([brace]);
+    queue.skip();
+    expect(motion.braceAmount).toBe(1);
+    queue.enqueue([MOVE]);
+    queue.skip();
+    expect(motion.braceAmount).toBe(0);
+  });
+});

@@ -112,6 +112,8 @@ interface MechPartBase {
 
 /** The frame every other part is fitted onto. Declares the mech's carrying capacity. */
 export interface ChassisPart extends MechPartBase {
+  /** Structural hit points before fitted armour; omitted by legacy catalogues. */
+  readonly hullHp?: number;
   readonly slot: "chassis";
   readonly capacity: ChassisCapacity;
 }

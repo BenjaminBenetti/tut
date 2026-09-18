@@ -50,6 +50,9 @@ def build_chassis(variant):
         box("antenna", (0.035, 0.035, 0.52), (-0.32, 0.28, 1.23), DARK)
     socket("arm_l", (-width / 2 - 0.15, 0, 0.82))
     socket("arm_r", (width / 2 + 0.15, 0, 0.82))
+    # Load-bearing riser closes the gap between the torso and every back module.
+    box("back_mount_riser", (0.26, 0.24, 0.3), (0, 0.22, 1.055), DARK)
+    box("back_mount_plate", (0.32, 0.28, 0.06), (0, 0.22, 1.18), LIGHT)
     socket("back", (0, 0.22, 1.2))
 
 
@@ -60,20 +63,22 @@ def build_legs(variant):
     height = 1.43 if sprint else 1.25
     for side in (-1, 1):
         x = side * 0.29
+        limb = "l" if side < 0 else "r"
         foot_width = 0.23 if sprint else 0.39
-        armour(f"foot_{side}", (foot_width, 0.59, 0.14), (x, -0.09, 0.07), DARK, chamfer=0.018)
+        armour(f"foot_{limb}", (foot_width, 0.59, 0.14), (x, -0.09, 0.07), DARK, chamfer=0.018)
         for toe in (-1, 1):
-            box(f"toe_{side}_{toe}", (foot_width * 0.35, 0.14, 0.09), (x + toe * foot_width * 0.25, -0.4, 0.045), LIGHT)
-        armour(f"shin_{side}", (0.19 if sprint else 0.29, 0.22, 0.55), (x, 0.035, 0.43), MID, rot=(-0.16 if sprint else 0, 0, 0), chamfer=0.02)
-        cylinder(f"knee_{side}", 0.12, 0.12, 0.29, 8, (x, -0.02, 0.73), DARK, rot=(0, math.pi / 2, 0))
-        armour(f"thigh_{side}", (0.23, 0.3, height - 0.7), (x, 0.04, (height + 0.7) / 2), MID, chamfer=0.02)
-        box(f"piston_{side}", (0.055, 0.055, 0.57), (x + side * 0.15, 0.08, 0.86), LIGHT)
-        box(f"mark_{side}", (0.09, 0.02, 0.12), (x, -0.16, 1.0), ORANGE)
+            box(f"toe_{limb}_{toe}", (foot_width * 0.35, 0.14, 0.09), (x + toe * foot_width * 0.25, -0.4, 0.045), LIGHT)
+        armour(f"shin_{limb}", (0.19 if sprint else 0.29, 0.22, 0.55), (x, 0.035, 0.43), MID, rot=(-0.16 if sprint else 0, 0, 0), chamfer=0.02)
+        cylinder(f"knee_{limb}", 0.12, 0.12, 0.29, 8, (x, -0.02, 0.73), DARK, rot=(0, math.pi / 2, 0))
+        armour(f"thigh_{limb}", (0.23, 0.3, height - 0.7), (x, 0.04, (height + 0.7) / 2), MID, chamfer=0.02)
+        box(f"shin_piston_{limb}", (0.055, 0.055, 0.57), (x + side * 0.15, 0.08, 0.86), LIGHT)
+        box(f"thigh_mark_{limb}", (0.09, 0.02, 0.12), (x, -0.16, 1.0), ORANGE)
         if anchor:
-            box(f"folded_spade_{side}", (0.12, 0.48, 0.45), (x + side * 0.24, 0.06, 0.31), OLIVE)
-            box(f"spade_edge_{side}", (0.15, 0.52, 0.055), (x + side * 0.24, 0.06, 0.11), LIGHT)
+            cylinder(f"shin_brace_hinge_{limb}", 0.075, 0.075, 0.26, 8, (x + side * 0.17, 0.06, 0.5), DARK, rot=(0, math.pi / 2, 0))
+            box(f"brace_{limb}_spade", (0.12, 0.48, 0.45), (x + side * 0.24, 0.06, 0.31), OLIVE)
+            box(f"brace_{limb}_edge", (0.15, 0.52, 0.055), (x + side * 0.24, 0.06, 0.11), LIGHT)
         elif not sprint:
-            box(f"heel_pivot_{side}", (0.15, 0.14, 0.15), (x, 0.25, 0.18), OLIVE)
+            box(f"heel_pivot_{limb}", (0.15, 0.14, 0.15), (x, 0.25, 0.18), OLIVE)
     armour("hip", (0.82, 0.43, 0.22), (0, 0, height), DARK, chamfer=0.025)
     box("pelvis", (0.35, 0.09, 0.16), (0, -0.25, height), OLIVE)
     socket("chassis", (0, 0, height + 0.11))

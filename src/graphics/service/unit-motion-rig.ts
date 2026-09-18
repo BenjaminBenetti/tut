@@ -26,6 +26,8 @@ export class UnitMotionRig implements UnitMotion {
   private readonly body: Joint;
   private readonly legs: Joint[] = [];
   private readonly arms: Joint[] = [];
+  private readonly braces: Joint[] = [];
+  private deployed = 0;
   private readonly figures: Joint[] = [];
   private readonly height: number;
   private readonly infantry: boolean;
@@ -54,6 +56,17 @@ export class UnitMotionRig implements UnitMotion {
     // These Blender exports face +Z (their muzzle/head nodes confirm it).
     // Tactical facings use -Z, so normalize the clone after building pivots.
     model.rotateY(Math.PI);
+  }
+
+  /** The pose the queue retracts before the mech takes its first step. */
+  get braceAmount(): number {
+    return this.deployed;
+  }
+
+  /** Plants the spades outwards and down, retaining that pose through firing. */
+  brace(amount: number): void {
+    this.deployed = Math.max(0, Math.min(1, amount));
+    this.reset();
   }
 
   /** Alternating strides; mechs take a full left/right cycle over two tiles. */
@@ -112,16 +125,22 @@ export class UnitMotionRig implements UnitMotion {
     }
   }
 
-  /** Clears only this rig's offsets; world placement and selection stay intact. */
+  /** Clears gait and recoil offsets, retaining brace deployment and world placement. */
   reset(): void {
     for (const joint of [
       this.body,
       ...this.legs,
       ...this.arms,
       ...this.figures,
+      ...this.braces,
     ]) {
       joint.object.position.copy(joint.rest);
       joint.object.rotation.set(0, 0, 0);
+    }
+    for (const brace of this.braces) {
+      const side = brace.phase === 0 ? -1 : 1;
+      brace.object.rotation.z = side * this.deployed * this.tuning.braceSwing;
+      brace.object.scale.y = 1 + this.deployed * this.tuning.braceExtension;
     }
   }
 
@@ -199,8 +218,14 @@ export class UnitMotionRig implements UnitMotion {
     const legGroups = new Map<string, Object3D[]>();
     const armGroups = new Map<string, Object3D[]>();
     for (const part of [...body.children]) {
+      const role = part.userData.motion_role as string | undefined;
+      if (role === "body" || role === "back") continue;
+      if (role === "arm-l" || role === "arm-r") {
+        armGroups.set(role.slice(-1), [part]);
+        continue;
+      }
       const leg =
-        /^(?:leg_([lr]\d)|(?:foot|toe|heel|shin|knee|thigh|hip_joint|claw).*_([lr]))/.exec(
+        /^(?:leg_([lr]\d)|(?:foot|toe|heel|shin|knee|thigh|hip_joint|claw|brace|nozzle).*_([lr]))/.exec(
           part.name,
         );
       if (leg) {
@@ -228,7 +253,19 @@ export class UnitMotionRig implements UnitMotion {
       useAuthoredJoint(parts, at);
       const phase =
         (key.startsWith("r") ? Math.PI : 0) + Number(key[1] ?? 0) * Math.PI;
-      this.legs.push(pivot(body, parts, `motion-leg-${key}`, at, phase));
+      const leg = pivot(body, parts, `motion-leg-${key}`, at, phase);
+      this.legs.push(leg);
+      const spades = leg.object.children.filter((part) =>
+        part.name.startsWith(`brace_${key}_`),
+      );
+      if (spades.length) {
+        const box = bounds(spades);
+        const hinge = box.getCenter(new Vector3());
+        hinge.y = box.max.y;
+        this.braces.push(
+          pivot(leg.object, spades, `motion-brace-${key}`, hinge, phase),
+        );
+      }
     }
     for (const [key, parts] of armGroups) {
       const box = bounds(parts);

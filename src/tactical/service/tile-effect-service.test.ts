@@ -22,7 +22,15 @@ import {
   riggedRng,
   unitAt,
 } from "./tactical-fixtures.test-helper";
-import { burn, ignite, perceivedEffects } from "./tile-effect-service";
+import { createMoveHandler } from "./move-handler";
+import { move } from "../model/move-command";
+import { UNIT_MOVED } from "../model/unit-moved-event";
+import {
+  burn,
+  ignite,
+  perceivedEffects,
+  createHazardReaction,
+} from "./tile-effect-service";
 
 const at = (x: number, z: number): TileCoord => ({ x, y: 0, z });
 const FIRE = { kind: "fire", chance: 1, falloff: 0.5 } as const;
@@ -297,5 +305,101 @@ describe("burn with a unit on a 2×2 block (#1130)", () => {
     );
     expect(burns.map((b) => b.effectId)).toEqual(["f1", "f2"]);
     expect(burns.every((b) => b.targetId === "b")).toBe(true);
+  });
+});
+
+describe("fire during movement", () => {
+  it.each(["tdf", "bugs"] as const)(
+    "burns %s on every step through fire, even when it finishes outside",
+    (team) => {
+      const unit = unitAt("walker", "infantry", at(0, 0), { team, hp: 100 });
+      const mission = missionWith(openField().build(), [unit], {
+        phase: team === "tdf" ? "player" : "bugs",
+        effects: [fire("one", at(1, 0), 4), fire("two", at(2, 0), 4)],
+      });
+      const seenHp: number[] = [];
+      const handler = createMoveHandler(
+        createHazardReaction(HAZARD_TUNING, COMBAT_TUNING, (state) => {
+          seenHp.push(state.units[0]!.hp);
+          return { state, events: [] };
+        }),
+      );
+      const run = (): ReturnType<typeof handler> =>
+        handler(
+          mission,
+          move(unit.id, [at(1, 0), at(2, 0), at(3, 0)]),
+          ctxWith(riggedRng(true)),
+        );
+      const result = run();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.events.map((event) => event.type)).toEqual([
+        UNIT_MOVED,
+        EFFECT_DAMAGED,
+        UNIT_MOVED,
+        EFFECT_DAMAGED,
+        UNIT_MOVED,
+      ]);
+      expect(seenHp[0]).toBeLessThan(100);
+      expect(seenHp[1]).toBeLessThan(seenHp[0]!);
+      expect(seenHp[2]).toBe(seenHp[1]);
+      expect(result.value.state.units[0]?.pos).toEqual(at(3, 0));
+      expect(result.value.state.effects).toEqual(mission.effects);
+      expect(mission.units[0]?.hp).toBe(100);
+      expect(run()).toEqual(result);
+    },
+  );
+
+  it("stops on a lethal fire before the next reaction or path step", () => {
+    const mission = missionWith(
+      openField().build(),
+      [unitAt("u", "infantry", at(0, 0), { hp: 1 })],
+      {
+        effects: [fire("fire", at(1, 0), 4)],
+      },
+    );
+    const handler = createMoveHandler(
+      createHazardReaction(HAZARD_TUNING, COMBAT_TUNING, () => {
+        throw new Error("dead units cannot provoke overwatch");
+      }),
+    );
+    const result = handler(
+      mission,
+      move("u", [at(1, 0), at(2, 0), at(3, 0)]),
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.events.map((event) => event.type)).toEqual([
+      UNIT_MOVED,
+      EFFECT_DAMAGED,
+      UNIT_DIED,
+    ]);
+    expect(result.value.state.units[0]).toMatchObject({
+      hp: 0,
+      pos: at(1, 0),
+      ap: 1,
+    });
+  });
+
+  it("burns a large footprint once per overlapping fire and ignores smoke", () => {
+    const block = blockUnitAt("brute", at(2, 2));
+    const mission = missionWith(openField().build(), [block], {
+      effects: [
+        fire("under-edge", at(3, 3), 4),
+        { id: "smoke", kind: "smoke", tile: at(2, 2), phasesLeft: 4 },
+      ],
+    });
+    const result = createHazardReaction(HAZARD_TUNING, COMBAT_TUNING)(
+      mission,
+      block.id,
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toMatchObject({
+      type: EFFECT_DAMAGED,
+      payload: { effectId: "under-edge" },
+    });
+    expect(result.state.effects).toEqual(mission.effects);
   });
 });

@@ -9,6 +9,7 @@ import { StatSheetView } from "./stat-sheet-view";
 
 /** A sheet like the starter mech's: armor 20, two weapons. */
 const SHEET: MechStatSheet = {
+  hullHp: 35,
   armor: 20,
   mobility: 5,
   heat: -1,
@@ -52,8 +53,8 @@ describe("StatSheetView", () => {
     view.update(ok(SHEET));
     const profile = mechCombatProfile(SHEET, UNIT_TUNING.mech);
     // What the unit factory would freeze, not the part sums: 20 plate
-    // is 6 per hit and 70 hit points, never "20 armor".
-    expect(field("combat-hp").textContent).toBe("70");
+    // is 6 per hit and 45 hit points, never "20 armor".
+    expect(field("combat-hp").textContent).toBe("45");
     expect(field("combat-armor").textContent).toBe("6");
     expect(field("combat-move").textContent).toBe(String(profile.move));
     expect(field("combat-ap").textContent).toBe("2");

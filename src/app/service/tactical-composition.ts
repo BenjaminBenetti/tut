@@ -76,7 +76,10 @@ import {
 import { registryStructureCatalogue } from "../../tactical/service/structure-catalogue";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
-import { createBurnStep } from "../../tactical/service/tile-effect-service";
+import {
+  createBurnStep,
+  createHazardReaction,
+} from "../../tactical/service/tile-effect-service";
 import type { FinishedMissionSource } from "../../tactical/service/tactical-mission-resolver";
 import { TacticalMissionResolver } from "../../tactical/service/tactical-mission-resolver";
 import {
@@ -279,14 +282,15 @@ export function shippedTacticalHandlers(
     radar: RADAR_TUNING,
     turret: TURRET_TUNING,
   };
+  const movementReaction = createHazardReaction(
+    HAZARD_TUNING,
+    COMBAT_TUNING,
+    createOverwatchReaction(COMBAT_TUNING, attackDeps),
+  );
   const actions: TacticalHandlers = {
-    [MECH_ACTION]: createMechActionHandler(
-      createOverwatchReaction(COMBAT_TUNING, attackDeps),
-    ),
+    [MECH_ACTION]: createMechActionHandler(movementReaction),
     [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
-    [MOVE]: createMoveHandler(
-      createOverwatchReaction(COMBAT_TUNING, attackDeps),
-    ),
+    [MOVE]: createMoveHandler(movementReaction),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
     [USE_EQUIPMENT]: createUseEquipmentHandler(equipment),

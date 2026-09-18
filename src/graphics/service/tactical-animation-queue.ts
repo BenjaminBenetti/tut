@@ -1,3 +1,4 @@
+import { MECH_SYSTEM_USED } from "../../tactical/model/mech-system-used-event";
 import type { UnitMotion } from "../model/unit-motion";
 import type { Camera, DataTexture, Object3D, Texture } from "three";
 import {
@@ -687,6 +688,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   /** The animation for one event, or undefined when there is nothing to show. */
   private start(event: TacticalEvent): Animation | undefined {
     switch (event.type) {
+      case MECH_SYSTEM_USED:
+        return event.payload.action === "brace"
+          ? this.deployBrace(event.payload.unitId)
+          : undefined;
       case UNIT_MOVED:
         return this.walk(
           event.payload.unitId,
@@ -731,6 +736,26 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
   }
 
+  /** Extends stabilisers before returning control, retaining the planted pose. */
+  private deployBrace(unitId: UnitId): Animation | undefined {
+    const motion = this.scene.unitMotion?.(unitId);
+    if (!motion?.brace) return undefined;
+    let elapsed = 0;
+    const duration = Math.max(0.35, this.timing.stepSeconds * 2);
+    const from = motion.braceAmount ?? 0;
+    return {
+      name: `brace:${unitId}`,
+      advance: (seconds) => {
+        elapsed += seconds;
+        const progress = Math.min(1, elapsed / duration);
+        const smooth = progress * progress * (3 - 2 * progress);
+        motion.brace?.(from + (1 - from) * smooth);
+        return elapsed >= duration ? elapsed - duration : undefined;
+      },
+      finish: () => motion.brace?.(1),
+    };
+  }
+
   /** Walks the path with a facing and limb stride, landing exactly on the last tile. */
   private walk(
     unitId: UnitId,
@@ -761,7 +786,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       ? Math.max(0.7, this.timing.stepSeconds * 3)
       : this.timing.stepSeconds;
     let elapsed = 0;
-    const total = stepSeconds * points.length;
+    const deployed = motion?.braceAmount ?? 0;
+    const retractSeconds =
+      deployed > 0 ? Math.max(0.35, this.timing.stepSeconds * 2) : 0;
+    const total = retractSeconds + stepSeconds * points.length;
     const from = {
       x: object.position.x,
       y: object.position.y,
@@ -772,6 +800,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       faceTowards(object, previous, end);
       object.position.set(end.x, end.y, end.z);
       this.walkedTiles.set(unitId, walkedBefore + points.length);
+      motion?.brace?.(0);
       motion?.reset();
     };
     return {
@@ -779,7 +808,15 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       advance: (seconds) => {
         const leftover = Math.max(0, elapsed + seconds - total);
         elapsed = Math.min(total, elapsed + seconds);
-        const progress = elapsed / stepSeconds;
+        if (elapsed < retractSeconds) {
+          const progress = elapsed / retractSeconds;
+          motion?.brace?.(
+            deployed * (1 - progress * progress * (3 - 2 * progress)),
+          );
+          return undefined;
+        }
+        if (deployed > 0) motion?.brace?.(0);
+        const progress = (elapsed - retractSeconds) / stepSeconds;
         const index = Math.min(points.length - 1, Math.floor(progress));
         const local = Math.min(1, progress - index);
         const start = index === 0 ? from : points[index - 1]!;

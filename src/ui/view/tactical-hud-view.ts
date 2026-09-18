@@ -2073,17 +2073,33 @@ export class TacticalHudView {
       if (anchor === undefined) {
         continue;
       }
-      // One gauge per weapon with a pool: a mech's two guns heat
-      // separately, and the chip says so rather than showing the first.
+      // Modern mechs share one rising heat pool; older templates and
+      // squads retain their individual weapon charge gauges.
+      const template = mission.templates[unit.templateId];
+      const systems = template?.systems;
       const gauge = chargeRegisterFor(unit.kind).gauge;
-      const charges = (
-        mission.templates[unit.templateId]?.weapons ?? []
-      ).flatMap((weapon) => {
-        const left = chargesLeft(unit, weapon);
-        return weapon.charges === undefined || left === undefined
-          ? []
-          : [{ label: weapon.name, gauge, value: left, max: weapon.charges }];
-      });
+      const charges = systems
+        ? [
+            {
+              label: "Reactor",
+              gauge: "heat",
+              value: unit.heat ?? 0,
+              max: systems.heatCapacity,
+            },
+          ]
+        : (template?.weapons ?? []).flatMap((weapon) => {
+            const left = chargesLeft(unit, weapon);
+            return weapon.charges === undefined || left === undefined
+              ? []
+              : [
+                  {
+                    label: weapon.name,
+                    gauge,
+                    value: left,
+                    max: weapon.charges,
+                  },
+                ];
+          });
       chips.push({
         unitId: unit.id,
         anchor,

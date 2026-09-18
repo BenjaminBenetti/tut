@@ -23,7 +23,7 @@ import {
 import { createMoveHandler } from "./move-handler";
 import { movementPathCost, pathTo } from "./movement-service";
 import { reloadHandler } from "./reload-handler";
-import { burn } from "./tile-effect-service";
+import { burn, createHazardReaction } from "./tile-effect-service";
 import { overwatchReaction, refreshSides } from "./turn-service";
 import { unitCanSee, withVision } from "./vision-service";
 import {
@@ -573,4 +573,37 @@ describe("specialist weapon targeting", () => {
       previewAttack(initial, "mech", "bug", COMBAT_TUNING),
     );
   });
+});
+
+it("jumping clears crossed flames but burns immediately on a burning landing", () => {
+  const base = battle(
+    { jumpRange: 5, jumpHeight: 2, jumpHeat: 5 },
+    {},
+    { hp: 100 },
+  );
+  const handler = createMechActionHandler(
+    createHazardReaction(HAZARD_TUNING, COMBAT_TUNING),
+  );
+  const crossed = {
+    id: "crossed",
+    kind: "fire" as const,
+    tile: { x: 2, y: 0, z: 3 },
+    phasesLeft: 4,
+  };
+  const landed = { ...crossed, id: "landed", tile: { x: 4, y: 0, z: 3 } };
+  for (const effects of [[crossed], [crossed, landed]]) {
+    const result = handler(
+      { ...base, effects },
+      mechAction({ unitId: "mech", action: "jump", tile: landed.tile }),
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) continue;
+    const burns = result.value.events.filter(
+      (event) => event.type === "tactical:effect-damaged",
+    );
+    expect(burns).toHaveLength(effects.length - 1);
+    if (effects.length === 2)
+      expect(burns[0]).toMatchObject({ payload: { effectId: "landed" } });
+  }
 });

@@ -1,3 +1,5 @@
+import type { Rng } from "../../core/model/rng";
+import { NO_REACTION, type StepReaction } from "../model/step-reaction";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { PassMask } from "../../mapgen/model/pass-mask";
 import { TileIndex } from "../../mapgen/service/tile-index";
@@ -138,11 +140,9 @@ export function ignite(
  *     phasesLeft − 1 ──► 0 ──► removed, EffectEnded
  * ```
  *
- * "Your turn starts in the fire" is the rule, not "you ended in it":
- * a side that walks into a fire during its own phase pays at the start
- * of its next, and can walk out during this one. That is the XCOM
- * shape, and it is what lets a player light a fire under a swarmer and
- * see it burn before the swarmer moves.
+ * Entry damage is handled separately by `createHazardReaction`: moving
+ * through fire burns immediately, while remaining in it burns again at
+ * the next friendly phase. Only this phase hook ages effects.
  *
  * Damage rolls in the combat tuning's band around the effect's damage,
  * less armor the effect cannot penetrate, from `ctx.rng.fork("hazard")`
@@ -189,30 +189,9 @@ export function burn(
       ) {
         continue;
       }
-      const armor = state.templates[unit.templateId]?.armor ?? 0;
-      const band = damageRange(profile, armor, combat);
-      const damage = rng.nextInt(band[0], band[1]);
-      const hp = Math.max(0, unit.hp - damage);
-      state = {
-        ...state,
-        units: state.units.map((u): Unit =>
-          u.id === unit.id ? { ...u, hp } : u,
-        ),
-      };
-      events.push({
-        type: EFFECT_DAMAGED,
-        payload: {
-          effectId: effect.id,
-          kind: effect.kind,
-          targetId: unit.id,
-          targetKind: "unit",
-          damage,
-          hp,
-        },
-      });
-      if (hp === 0) {
-        events.push(downedEvent(unit));
-      }
+      const hurt = burnUnit(state, unit, effect, profile, combat, rng);
+      state = hurt.state;
+      events.push(...hurt.events);
     }
     if (acting === "bugs" && rule.damage > 0) {
       for (const spawner of state.spawners) {
@@ -262,6 +241,101 @@ export function createBurnStep(
   combat: CombatTuning,
 ): PhaseStep {
   return (mission, ctx) => burn(mission, ctx, hazards, combat);
+}
+
+// ===========================================
+// Movement hazards
+// ===========================================
+
+/**
+ * Burns a mover once per fire under its landed footprint after each step,
+ * then lets surviving units provoke the next reaction (usually overwatch).
+ * Jumping invokes this only at the landing tile. Smoke is harmless, clocks
+ * do not advance, and a lethal burn stops both reactions and further steps.
+ */
+export function createHazardReaction(
+  hazards: HazardTuning,
+  combat: CombatTuning,
+  next: StepReaction = NO_REACTION,
+): StepReaction {
+  return (mission, unitId, ctx) => {
+    let state = mission;
+    const events: TacticalEvent[] = [];
+    const rng = ctx.rng.fork("hazard-entry");
+    for (const effect of mission.effects) {
+      const unit = state.units.find((candidate) => candidate.id === unitId);
+      if (!unit || unit.hp <= 0) break;
+      const rule = hazards.effects[effect.kind];
+      if (
+        rule.damage <= 0 ||
+        !footprintContains(
+          unit.pos,
+          unitFootprintSize(state, unit),
+          effect.tile,
+        )
+      )
+        continue;
+      const hurt = burnUnit(
+        state,
+        unit,
+        effect,
+        {
+          range: 1,
+          accuracy: 100,
+          damage: rule.damage,
+          armorPen: rule.armorPen,
+        },
+        combat,
+        rng,
+      );
+      state = hurt.state;
+      events.push(...hurt.events);
+    }
+    if ((state.units.find((unit) => unit.id === unitId)?.hp ?? 0) > 0) {
+      const reaction = next(state, unitId, ctx);
+      state = reaction.state;
+      events.push(...reaction.events);
+    }
+    return { state, events };
+  };
+}
+
+/** Applies one armour-aware burn and its damage/death events to a living unit. */
+function burnUnit(
+  state: TacticalState,
+  unit: Unit,
+  effect: TileEffect,
+  profile: WeaponProfile,
+  combat: CombatTuning,
+  rng: Rng,
+): TacticalApplied<TacticalState> {
+  const armor = state.templates[unit.templateId]?.armor ?? 0;
+  const band = damageRange(profile, armor, combat);
+  const damage = rng.nextInt(band[0], band[1]);
+  const hp = Math.max(0, unit.hp - damage);
+  const events: TacticalEvent[] = [
+    {
+      type: EFFECT_DAMAGED,
+      payload: {
+        effectId: effect.id,
+        kind: effect.kind,
+        targetId: unit.id,
+        targetKind: "unit",
+        damage,
+        hp,
+      },
+    },
+  ];
+  if (hp === 0) events.push(downedEvent(unit));
+  return {
+    state: {
+      ...state,
+      units: state.units.map((candidate) =>
+        candidate.id === unit.id ? { ...candidate, hp } : candidate,
+      ),
+    },
+    events,
+  };
 }
 
 // ===========================================

@@ -4,6 +4,7 @@ import type { MechPart } from "../model/mech-part";
 export const ADVANCED_PARTS: readonly MechPart[] = [
   {
     id: "chassis-surveyor",
+    hullHp: 40,
     name: "Surveyor",
     slot: "chassis",
     tier: 2,
@@ -31,6 +32,7 @@ export const ADVANCED_PARTS: readonly MechPart[] = [
   },
   {
     id: "chassis-crucible",
+    hullHp: 60,
     name: "Crucible",
     slot: "chassis",
     tier: 3,

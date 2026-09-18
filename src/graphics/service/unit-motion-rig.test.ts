@@ -5,6 +5,8 @@ import type { Object3D } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { describe, expect, it } from "vitest";
 import type { ModelAssetId } from "../../content/data/model-ids";
+import { MECH_BLUEPRINTS } from "../../roster/data/mech-blueprints";
+import { STARTER_PARTS } from "../../roster/data/parts";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { mechAssemblyFor } from "../data/part-model-table";
@@ -264,4 +266,107 @@ describe("unit motion on a mech assembled from its loadout (#1115)", () => {
       expect(Math.sign(muzzle.z)).toBe(Math.sign(expected.z));
     }
   });
+});
+
+describe("progression mech articulation", () => {
+  const models: ModelLoader = {
+    load: loadModel,
+    preload: () => Promise.resolve(),
+  };
+  const assembler = new MechAssembler({ models });
+
+  it.each(MECH_BLUEPRINTS)(
+    "walks both legs of $name while keeping the back weapon on the torso",
+    async (loadout) => {
+      const model = flattenModel(
+        await assembler.assemble(mechAssemblyFor(loadout)),
+      );
+      const mesh = new UnitMesh("actor", model, "tdf.mech.assembled-a");
+      const back = model
+        .getObjectByName("motion-body")!
+        .children.filter((part) => part.userData.motion_role === "back");
+      expect(back.length).toBeGreaterThan(0);
+      const relative = back.map((part) => part.position.clone());
+      mesh.motion!.walk(0.5);
+      expect(model.getObjectByName("motion-leg-l")!.rotation.x).toBeGreaterThan(
+        0.2,
+      );
+      expect(model.getObjectByName("motion-leg-r")!.rotation.x).toBeLessThan(
+        -0.2,
+      );
+      expect(back.map((part) => part.position)).toEqual(relative);
+      if (loadout.legsId === "legs-jumper") {
+        expect(model.getObjectByName("nozzle_l")?.parent?.name).toBe(
+          "motion-leg-l",
+        );
+        expect(model.getObjectByName("nozzle_tip_r")?.parent?.name).toBe(
+          "motion-leg-r",
+        );
+      }
+      mesh.motion!.attack(0.35, false);
+      expect(back.map((part) => part.position)).toEqual(relative);
+      expect(model.getObjectByName("motion-arm-r")!.children).toHaveLength(1);
+    },
+  );
+
+  it("deploys both anchor spades, retains them through recoil, then restores them for walking", async () => {
+    const model = flattenModel(
+      await assembler.assemble(
+        mechAssemblyFor({ ...STARTER_LOADOUT, legsId: "legs-anchor" }),
+      ),
+    );
+    const mesh = new UnitMesh("actor", model, "tdf.mech.assembled-a");
+    const rest = pose(model);
+    const left = model.getObjectByName("motion-brace-l")!;
+    const right = model.getObjectByName("motion-brace-r")!;
+    expect(left.parent?.name).toBe("motion-leg-l");
+    mesh.motion!.brace!(0.5);
+    expect(left.rotation.z).toBeLessThan(0);
+    expect(right.rotation.z).toBeGreaterThan(0);
+    const partial = right.rotation.z;
+    mesh.motion!.brace!(1);
+    expect(right.rotation.z).toBeGreaterThan(partial);
+    const deployed = pose(model);
+    mesh.motion!.attack(0.35, false);
+    mesh.motion!.reset();
+    expect(pose(model)).toEqual(deployed);
+    mesh.motion!.brace!(0);
+    expect(pose(model)).toEqual(rest);
+    mesh.motion!.walk(0.5);
+    expect(left.parent!.rotation.x).toBeGreaterThan(0.2);
+    expect(left.rotation.z).toBeCloseTo(0);
+  });
+
+  it.each(STARTER_PARTS.filter((part) => part.slot === "chassis"))(
+    "connects every back module to $name's mounting hardware",
+    async (chassis) => {
+      for (const weapon of STARTER_PARTS.filter(
+        (part) => part.slot === "back-weapon",
+      )) {
+        const model = flattenModel(
+          await assembler.assemble(
+            mechAssemblyFor({
+              ...STARTER_LOADOUT,
+              chassisId: chassis.id,
+              backWeaponId: weapon.id,
+            }),
+          ),
+        );
+        const hardware = new Box3();
+        const mount = new Box3();
+        model.traverse((node) => {
+          if (node.name.startsWith("back_mount"))
+            hardware.union(new Box3().setFromObject(node));
+          if (node.name === "mount" && node.userData.motion_role === "back")
+            mount.union(new Box3().setFromObject(node));
+        });
+        expect(hardware.isEmpty(), chassis.id).toBe(false);
+        expect(mount.isEmpty(), weapon.id).toBe(false);
+        expect(
+          hardware.intersectsBox(mount),
+          `${chassis.id} / ${weapon.id}`,
+        ).toBe(true);
+      }
+    },
+  );
 });

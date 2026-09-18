@@ -82,6 +82,9 @@ export function freezeDraft(
         : {}),
     })),
     hooks: freezeHooks(draft),
+    ...(draft.infestation === undefined
+      ? {}
+      : { infestation: draft.infestation }),
     ...(draft.dropships.length === 0
       ? {}
       : {
@@ -117,7 +120,12 @@ function materialise(
     z: coord.z,
     surface,
     pass:
-      prop === undefined && !dropship ? definition.defaultPass : PassMask.NONE,
+      prop === undefined && !dropship
+        ? definition.defaultPass &
+          (ownership.buildingId === undefined
+            ? PassMask.ALL
+            : PassMask.INFANTRY)
+        : PassMask.NONE,
     walls: draft.wallsAt(coord),
     coverProvided:
       prop === undefined

@@ -30,7 +30,9 @@ export function propModelVariation(
   if (!modelId) return undefined;
   // Saved one-tile cars retain the old compact art, never a larger visual hull.
   const variants =
-    propTiles(prop).length > 1 ? PROP_MODEL_VARIANTS[prop.kind] : undefined;
+    prop.kind !== "car" || propTiles(prop).length > 1
+      ? PROP_MODEL_VARIANTS[prop.kind]
+      : undefined;
   const choice =
     variants?.[
       hashSeed(

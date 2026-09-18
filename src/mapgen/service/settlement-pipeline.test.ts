@@ -26,6 +26,7 @@ describe("settlement pipeline", () => {
       "water",
       "roads",
       "dropship-sites",
+      "infestation-plan",
       "lots",
       "elevation",
       "buildings",

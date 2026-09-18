@@ -65,6 +65,7 @@ describe("generateTacticalMap", () => {
       "water",
       "roads",
       "dropship-sites",
+      "infestation-plan",
       "lots",
       "elevation",
       "buildings",

@@ -1,11 +1,16 @@
 import type { InfestationTuning } from "../model/infestation-tuning";
 
-/** Infestation keeps some clean ground and intact shelter even on an overrun map. */
+/** Colonies claim districts and connect them with feeding lanes before lots are assigned. */
 export const INFESTATION_TUNING: InfestationTuning = {
-  groundShare: 0.7,
-  patchFrequency: 0.16,
-  nestShare: 0.025,
-  wallDamageShare: 0.65,
-  roofDamageShare: 0.6,
-  hookClearance: 3,
+  columnsPerColony: 680,
+  minimumColonySpacing: 10,
+  baseRadius: 3,
+  radiusPerLevel: 1.05,
+  baseClearingRadius: 1.2,
+  clearingRadiusPerLevel: 0.32,
+  growthThreshold: 0.16,
+  corridorWidth: 1.5,
+  noiseFrequency: 0.19,
+  hookClearance: 1,
+  propsPerGrowthTile: 0.055,
 };

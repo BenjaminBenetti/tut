@@ -196,6 +196,7 @@ test("captures a mission with fog of war for review", async ({ page }) => {
       explored: m.vision.tdf.explored.length,
       visible: m.vision.tdf.visible.length,
       bugs: m.units.filter((u) => u.team === "bugs").length,
+      tdfUnits: m.units.filter((u) => u.team === "tdf").length,
       spottedBugs: m.vision.tdf.spotted.length,
     };
   });
@@ -213,7 +214,7 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   // rather than reading the attribute once and finding it absent (#650).
   await expect(body).toHaveAttribute(
     "data-tactical-units",
-    String(3 + known.spottedBugs),
+    String(known.tdfUnits + known.spottedBugs),
   );
 
   await page.waitForTimeout(400);

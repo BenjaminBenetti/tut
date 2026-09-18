@@ -1,3 +1,4 @@
+import { InfestationPlanPass } from "../generator/infestation-plan-pass";
 import { InfestationPass } from "../generator/infestation-pass";
 import { BuildingPass } from "../generator/building-pass";
 import { CoastalRoadPass } from "../generator/coastal-road-pass";
@@ -40,6 +41,7 @@ export function createSettlementPasses(): GenerationPass[] {
     new WaterPass(),
     new RoadPass(),
     new DropshipSitePass(),
+    new InfestationPlanPass(),
     new LotPass(),
     new ElevationPass(),
     new BuildingPass(),
@@ -86,6 +88,7 @@ export function createCrashSitePasses(): GenerationPass[] {
     new WaterPass(),
     new CraterPass(),
     new DropshipSitePass("elevation"),
+    new InfestationPlanPass(),
     new DebrisPass(),
     new SlopePass(),
     new RampPass(),

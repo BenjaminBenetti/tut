@@ -1,9 +1,14 @@
-/** Proportions at level ten; lower levels scale them linearly. */
+/** Ecological layout, growth and damage scales for the infestation generator. */
 export interface InfestationTuning {
-  readonly groundShare: number;
-  readonly patchFrequency: number;
-  readonly nestShare: number;
-  readonly wallDamageShare: number;
-  readonly roofDamageShare: number;
+  readonly columnsPerColony: number;
+  readonly minimumColonySpacing: number;
+  readonly baseRadius: number;
+  readonly radiusPerLevel: number;
+  readonly baseClearingRadius: number;
+  readonly clearingRadiusPerLevel: number;
+  readonly growthThreshold: number;
+  readonly corridorWidth: number;
+  readonly noiseFrequency: number;
   readonly hookClearance: number;
+  readonly propsPerGrowthTile: number;
 }

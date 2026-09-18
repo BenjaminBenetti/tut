@@ -94,6 +94,7 @@ import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
 import type { TilePicker } from "../model/tile-picker";
 import { UnexploredFog } from "./unexplored-fog";
+import { InfestationGroundMaterials } from "../service/infestation-ground-materials";
 import { NaturalMaterialTransitions } from "../service/natural-material-transitions";
 import {
   type PARAMETERISED_TERRAIN_MODELS,
@@ -375,6 +376,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   private maxLevel: number | undefined;
   private readonly unexploredFog: UnexploredFog;
   private readonly naturalMaterials: NaturalMaterialTransitions;
+  private readonly infestationMaterials: InfestationGroundMaterials;
 
   // ===========================================
   // Constructor
@@ -400,6 +402,8 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.root.name = "tactical-map";
     this.disposables.push(this.unitBox);
     this.unexploredFog = new UnexploredFog(map);
+    this.infestationMaterials = new InfestationGroundMaterials(map);
+    this.disposables.push(this.infestationMaterials);
     this.naturalMaterials = new NaturalMaterialTransitions(map);
     this.disposables.push(this.naturalMaterials);
     this.buildTiles();
@@ -566,6 +570,17 @@ export class TacticalMapView implements Disposable, TilePicker {
     const placements = resolveMapModels(this.map, this.index);
     await models.preload(mapModelIds(placements));
     await this.naturalMaterials.prepare(models);
+    await this.infestationMaterials.prepare(this.textures);
+    for (const column of this.placeholders.get(TILES_GROUND) ?? []) {
+      if (!(column instanceof Mesh) || !column.name.includes(":tile:infested:"))
+        continue;
+      const mesh = column as Mesh;
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map((material) =>
+            this.infestationMaterials.material(material, true),
+          )
+        : this.infestationMaterials.material(mesh.material, true);
+    }
     const categories: readonly [string, readonly ModelPlacement[]][] = [
       ["tiles", placements.tiles],
       ["foundations", placements.foundations],
@@ -627,6 +642,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         roof?: PitchedRoofAppearance;
         terrain?: { appearance: TerrainSlopeAppearance; tile: Tile };
         naturalSurface?: Tile["surface"];
+        infested?: boolean;
       }
     >();
     for (const placement of placements) {
@@ -666,6 +682,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           ladder,
           roof,
           terrain,
+          infested: tile?.surface === "infested",
           naturalSurface:
             tile?.buildingId === undefined ? tile?.surface : undefined,
         });
@@ -718,12 +735,27 @@ export class TacticalMapView implements Disposable, TilePicker {
         const prototypeMaterial = Array.isArray(part.material)
           ? part.material[0]
           : part.material;
-        const originalMaterial =
+        const cutawayMaterial =
           this.ghostUniforms !== undefined &&
           takesGhostCutaway(batch.modelId) &&
           prototypeMaterial !== undefined
             ? this.ghostMaterial(prototypeMaterial)
             : part.material;
+        const colonyModel = /infested|breached|prop\.ruin-|prop\.rubble-/.test(
+          batch.modelId,
+        );
+        const shellMaterial = colonyModel
+          ? Array.isArray(cutawayMaterial)
+            ? cutawayMaterial.map((m) =>
+                this.infestationMaterials.chitinMaterial(m),
+              )
+            : this.infestationMaterials.chitinMaterial(cutawayMaterial)
+          : cutawayMaterial;
+        const originalMaterial = batch.infested
+          ? Array.isArray(cutawayMaterial)
+            ? cutawayMaterial.map((m) => this.infestationMaterials.material(m))
+            : this.infestationMaterials.material(cutawayMaterial)
+          : shellMaterial;
         const naturalSurface = batch.naturalSurface ?? batch.ramp?.surface;
         const material =
           naturalSurface === undefined

@@ -1,3 +1,4 @@
+import type { InfestationPlan } from "./infestation-plan";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { IdGenerator } from "../../core/model/id-generator";
@@ -95,6 +96,8 @@ export class MapDraft {
   /** Scratch provenance: yard allocation, distinct from vegetation/street/interior props. */
   readonly yardPropIds = new Set<string>();
   readonly dropships: DropshipSite[] = [];
+  /** Colony districts planned before settlement parcels. Absent on clean maps. */
+  infestation?: InfestationPlan;
   /** The production site pass ran; missing sites must not silently become legacy blobs. */
   requiresDropships = false;
   readonly hooks: DraftHooks = {
@@ -223,6 +226,17 @@ export class MapDraft {
   /** Marks or clears the column as road. */
   setRoad(x: number, z: number, isRoad = true): void {
     this.roadMask[this.columnIndex(x, z)] = isRoad ? 1 : 0;
+  }
+
+  /** Whether a colony has claimed this land for its nest clearing. */
+  isInfestationReserved(x: number, z: number): boolean {
+    return (
+      this.infestation?.zones.some(
+        (zone) =>
+          Math.hypot(x - zone.centre.x, z - zone.centre.z) <=
+          zone.clearingRadius,
+      ) ?? false
+    );
   }
 
   /**

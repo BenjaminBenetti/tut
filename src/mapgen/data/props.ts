@@ -8,6 +8,17 @@ import type { PropDefinition } from "../model/prop";
 /** Well-known prop kinds (ADR 0004 §4.4). Biomes may add more in data. */
 export const PropKindIds = {
   INFESTED_NEST: "infested-nest",
+  INFESTED_HIVE: "infested-hive",
+  INFESTED_BROOD: "infested-brood",
+  INFESTED_RIBS: "infested-ribs",
+  INFESTED_VENT: "infested-vent",
+  INFESTED_SPINES: "infested-spines",
+  INFESTED_EGGS: "infested-eggs",
+  INFESTED_RUBBLE: "infested-rubble",
+  INFESTED_RUIN: "infested-ruin",
+  INFESTED_DEBRIS: "infested-debris",
+  INFESTED_ARCH: "infested-arch",
+  INFESTED_SHELTER: "infested-shelter",
   CAR: "car",
   CRATE: "crate",
   BARRIER: "barrier",
@@ -76,6 +87,26 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
  * tier: they are the ground, and no weapon on the arsenal moves it.
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
+  ...[
+    { id: PropKindIds.INFESTED_HIVE, w: 2, d: 2, high: true },
+    { id: PropKindIds.INFESTED_BROOD, w: 2, d: 2, high: true },
+    { id: PropKindIds.INFESTED_RIBS, w: 2, d: 1, high: false },
+    { id: PropKindIds.INFESTED_VENT, w: 1, d: 1, high: true },
+    { id: PropKindIds.INFESTED_SPINES, w: 1, d: 1, high: true },
+    { id: PropKindIds.INFESTED_EGGS, w: 2, d: 2, high: false },
+    { id: PropKindIds.INFESTED_RUBBLE, w: 2, d: 1, high: false },
+    { id: PropKindIds.INFESTED_RUIN, w: 1, d: 1, high: true },
+    { id: PropKindIds.INFESTED_DEBRIS, w: 1, d: 1, high: false },
+    { id: PropKindIds.INFESTED_ARCH, w: 2, d: 1, high: true },
+    { id: PropKindIds.INFESTED_SHELTER, w: 2, d: 1, high: true },
+  ].map(({ id, w, d, high }): PropDefinition => ({
+    id,
+    footprint: { w, d },
+    cover: high ? CoverLevel.HIGH : CoverLevel.LOW,
+    blocksLos: high,
+    demolition: high ? 2 : 1,
+    placements: ["infestation"],
+  })),
   {
     id: PropKindIds.INFESTED_NEST,
     cover: CoverLevel.HIGH,

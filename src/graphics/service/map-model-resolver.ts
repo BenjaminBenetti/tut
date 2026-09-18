@@ -1,5 +1,8 @@
 import { infestModel } from "./infested-model-resolver";
-import { hashSeed } from "../../core/service/seed-hash";
+import {
+  infestationGround,
+  resolveInfestationDetails,
+} from "./infestation-detail-resolver";
 import type { InteriorFloorAppearance } from "../model/interior-floor-style";
 import type { BusinessSignAppearance } from "../model/business-sign-appearance";
 import { resolveInteriorFloors } from "./interior-floor-resolver";
@@ -182,7 +185,7 @@ export function resolveMapModels(
 ): MapModelPlacements {
   const roads = resolveRoadAppearances(map, index);
   const walls = resolveWalls(map, index).map((placement) =>
-    infestModel(placement, map.recipe),
+    infestModel(placement, map),
   );
   const ramps = resolveRampModels(map, index, roads);
   const connectors = [...ramps, ...resolveLadderModels(map, index, walls)];
@@ -206,7 +209,8 @@ export function resolveMapModels(
       ...resolveDropshipModels(map),
       ...resolveStreetDetails(map, index),
       ...resolveStreetSurfaces(map, index),
-    ].map((placement) => infestModel(placement, map.recipe)),
+      ...resolveInfestationDetails(map, index),
+    ].map((placement) => infestModel(placement, map)),
     connectors,
   };
 }
@@ -392,19 +396,14 @@ function fitSurface(
       cross: SIDEWALK_VARIANTS.straight,
     });
   }
+  if (tile.surface === SurfaceIds.INFESTED) return infestationGround(map, tile);
   const modelId = surfaceModel(tile.surface);
   if (modelId === undefined) {
     return undefined;
   }
   return {
     modelId,
-    turns:
-      tile.surface === SurfaceIds.STAIRS
-        ? stairsTurns(tile, map)
-        : tile.surface === SurfaceIds.INFESTED
-          ? ((hashSeed(`${map.recipe.seed}:resin:${tile.x}:${tile.z}`) %
-              4) as Rotation)
-          : 0,
+    turns: tile.surface === SurfaceIds.STAIRS ? stairsTurns(tile, map) : 0,
   };
 }
 

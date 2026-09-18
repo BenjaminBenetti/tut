@@ -12,6 +12,94 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "prop.tree-oak-dead": {
+    category: "props",
+    path: "assets/models/props/prop-tree-oak-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.81,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.tree-pine-dead": {
+    category: "props",
+    path: "assets/models/props/prop-tree-pine-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.03,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.tree-palm-dead": {
+    category: "props",
+    path: "assets/models/props/prop-tree-palm-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.87,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.tree-tropical-almond-dead": {
+    category: "props",
+    path: "assets/models/props/prop-tree-tropical-almond-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.89,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.tree-oil-palm-dead": {
+    category: "props",
+    path: "assets/models/props/prop-tree-oil-palm-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.17,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.tree-tuart-dead": {
+    category: "props",
+    path: "assets/models/props/prop-tree-tuart-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.23,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.banksia-dead": {
+    category: "props",
+    path: "assets/models/props/prop-banksia-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.37,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.grass-tree-dead": {
+    category: "props",
+    path: "assets/models/props/prop-grass-tree-dead.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.65,
+    sockets: [],
+    quality: "final",
+  },
   "building.carapace-wall-ridge": {
     category: "buildings",
     path: "assets/models/buildings/building-carapace-wall-ridge.glb",

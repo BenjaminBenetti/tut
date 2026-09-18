@@ -1,10 +1,13 @@
 import { hashSeed } from "../../core/service/seed-hash";
+import type { ModelAssetId } from "../../content/data/model-ids";
 import type { Direction } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
 import type { KnownPropKindId } from "../../mapgen/data/props";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { Prop } from "../../mapgen/model/prop";
 import type { Tile } from "../../mapgen/model/tile";
+import type { SurfaceId } from "../../mapgen/model/surface";
+import { DEAD_TREE_MODELS } from "../data/dead-tree-models";
 import { ENVIRONMENT_DETAIL_STYLE } from "../data/environment-detail-style";
 import { INTERIOR_FURNITURE_STYLE } from "../data/interior-furniture-style";
 import { PROP_MODEL_VARIANTS } from "../data/prop-model-variants";
@@ -43,6 +46,16 @@ export function propModelVariation(
     modelId: choice?.modelId ?? modelId,
     turns: ((prop.rotation + (choice?.turns ?? 0)) % 4) as Rotation,
   };
+}
+
+/** Every tree rooted in actual infestation loses its foliage, including the patch's fringe. */
+export function propSurfaceModel(
+  modelId: ModelAssetId,
+  surface: SurfaceId,
+): ModelAssetId {
+  return surface === SurfaceIds.INFESTED
+    ? (DEAD_TREE_MODELS[modelId] ?? modelId)
+    : modelId;
 }
 
 /**

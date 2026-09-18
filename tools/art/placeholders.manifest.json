@@ -4312,5 +4312,117 @@
     "quality": "final",
     "triangles": 2898,
     "bytes": 158960
+  },
+  {
+    "id": "prop.tree-oak-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-oak-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.81,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1100,
+    "bytes": 76136
+  },
+  {
+    "id": "prop.tree-pine-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-pine-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.03,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1934,
+    "bytes": 132452
+  },
+  {
+    "id": "prop.tree-palm-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-palm-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.87,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1262,
+    "bytes": 88348
+  },
+  {
+    "id": "prop.tree-tropical-almond-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-tropical-almond-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.89,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1214,
+    "bytes": 83984
+  },
+  {
+    "id": "prop.tree-oil-palm-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-oil-palm-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.17,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2316,
+    "bytes": 158572
+  },
+  {
+    "id": "prop.tree-tuart-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-tuart-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.23,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 818,
+    "bytes": 57168
+  },
+  {
+    "id": "prop.banksia-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-banksia-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1076,
+    "bytes": 73944
+  },
+  {
+    "id": "prop.grass-tree-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-grass-tree-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.65,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1044,
+    "bytes": 72444
   }
 ]

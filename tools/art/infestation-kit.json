@@ -574,5 +574,69 @@
     "category": "buildings",
     "file": "building-carapace-spine-buttress.glb",
     "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-oak-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-oak",
+    "category": "props",
+    "file": "prop-tree-oak-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-pine-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-pine",
+    "category": "props",
+    "file": "prop-tree-pine-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-palm-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-palm",
+    "category": "props",
+    "file": "prop-tree-palm-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-tropical-almond-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-tropical-almond",
+    "category": "props",
+    "file": "prop-tree-tropical-almond-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-oil-palm-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-oil-palm",
+    "category": "props",
+    "file": "prop-tree-oil-palm-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-tuart-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-tuart",
+    "category": "props",
+    "file": "prop-tree-tuart-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.banksia-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "banksia",
+    "category": "props",
+    "file": "prop-banksia-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.grass-tree-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "grass-tree",
+    "category": "props",
+    "file": "prop-grass-tree-dead.glb",
+    "footprint": "1x1"
   }
 ]

@@ -321,6 +321,14 @@ export const MODEL_IDS = [
   "building.carapace-wall-end",
   "building.carapace-wall-broken",
   "building.carapace-spine-buttress",
+  "prop.tree-oak-dead",
+  "prop.tree-pine-dead",
+  "prop.tree-palm-dead",
+  "prop.tree-tropical-almond-dead",
+  "prop.tree-oil-palm-dead",
+  "prop.tree-tuart-dead",
+  "prop.banksia-dead",
+  "prop.grass-tree-dead",
 ] as const;
 
 /** A registered model id. */

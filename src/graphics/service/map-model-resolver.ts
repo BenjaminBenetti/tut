@@ -55,6 +55,7 @@ import {
   propAppearanceOffset,
   propAppearanceScale,
   propModelVariation,
+  propSurfaceModel,
 } from "./prop-appearance-resolver";
 
 // ===========================================
@@ -563,7 +564,7 @@ function resolveProps(
     const bounds = propBounds(prop);
     const offset = propAppearanceOffset(prop, tile, appearance.turns);
     placements.push({
-      modelId: appearance.modelId,
+      modelId: propSurfaceModel(appearance.modelId, tile.surface),
       level: tile.y,
       position: {
         x: bounds.x + bounds.w / 2 + offset.x,

@@ -166,4 +166,4 @@ New missions derive these systems from both existing and new saved loadouts. A r
 
 The progression kit adds 23 validated GLBs (including a dedicated Courser), matching thumbnails, and three review renders per model in `docs/design/renders/`. Utilities use the existing nonvisual fitting slots.
 
-Review captures: [Beam Crucible in the bay](mech-progression-crucible.png) and [Siege Battery in the bay](mech-progression-siege.png).
+Review captures: [Beam Crucible in the bay](mech-progression-crucible.png), [Siege Battery in the bay](mech-progression-siege.png), [Anchor braces deployed](mech-anchor-deployed.png), and [Anchor legs walking](mech-anchor-walking.png).

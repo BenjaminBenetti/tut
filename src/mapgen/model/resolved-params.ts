@@ -11,6 +11,8 @@ import type { SettlementDefinition } from "./settlement-definition";
  * Passes read this; they never see raw ids or preset names.
  */
 export interface ResolvedMapGenParams {
+  /** Validated whole infestation band, defaulting to zero. */
+  readonly infestation: number;
   readonly archetype: MapArchetype;
   readonly width: number;
   readonly depth: number;

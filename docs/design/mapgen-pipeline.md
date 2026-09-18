@@ -4,7 +4,7 @@ How a `MapRecipe` becomes a `TacticalMap`. Salvaged from the Map Generation Spec
 
 ```
  MapRecipe ─► hashSeed ─► Rng ─► PipelineMapGenerator(createSettlementPasses())
-   terrain ─► water ─► roads ─► lots ─► buildings ─► interiors ─► props ─► ramps ─► hooks ─► connectivity
+   terrain ─► water ─► roads ─► lots ─► buildings ─► interiors ─► props ─► ramps ─► hooks ─► infestation ─► connectivity
    ─► freezeDraft ─► validateTacticalMap (throws MapGenerationError) ─► TacticalMap
 ```
 
@@ -20,9 +20,12 @@ How a `MapRecipe` becomes a `TacticalMap`. Salvaged from the Map Generation Spec
 | ramps | union-find over ground (`service/ground-components`); ramp per one-level step between components; spacing ramps | 2-level steps stay cliffs |
 | hooks | `HookPlacer` registry; deploy (largest ground component, edge band); egg spawners (≥ 12 from deploy, ≥ 6 apart, half indoors, `HATCH_SPACE_MIN` 6 reachable tiles within `hatchRadius`, checked lazily in draw order); edge spawns (strict spacing first, relaxed only for zones that do not fit); extraction = deploy | placers share one `snapshotDraft` |
 | connectivity | per hook × class: freeze, check, 0-1 BFS for cheapest repairs (prop / door / ramp), else relocate | I7 guarantee |
+| infestation | runs after rooftop/yard placement, before connectivity; seeded noise ranks eligible natural ground into expanding patches; spike nests occupy open approaches; mirrored wall edges become gaps or half walls and pitched roofs lose sections | integer 0–10, default 0 is a no-op; protect hook neighbourhoods, landing sites and connectors; tuning in `data/infestation-tuning`; also applies to crash sites |
 
 Entry: `service/generate-tactical-map.ts`. Adapter: `service/mission-map-recipe-adapter.ts` plus
 `data/hook-kind-defaults.ts`. Metrics: `service/map-metrics.ts` (`computeMapMetrics`).
 Hatch BFS: `service/hatch-space.ts`. Wide sweep: `MAPGEN_WIDE=1 pnpm exec vitest run generation-wide-sweep`.
+
+Infestation is frozen into a mission's map parameters at offer time, in completed ten-point overworld bands. The pass consumes its own RNG fork, preserving every baseline pass's draws. At level 10 it paints 70% of eligible natural ground; roads, pavement, water, interiors and shaped terrain transitions retain their original surfaces. Asset substitutions are stable per placement, reaching all supported cars, lamps and wall types at level 10. See [the infestation kit](kits/infestation.md) for art and review renders.
 
 Elevation layers, half walls, the crash-site archetype and map scale are recorded in ADR 0008, ADR 0004 and ADR 0009. Tuning knobs and their measured effect are in `tactical-tuning.md`.

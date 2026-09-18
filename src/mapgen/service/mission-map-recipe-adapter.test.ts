@@ -50,6 +50,21 @@ function unwrap<T>(
 }
 
 describe("missionToMapRecipe", () => {
+  it("preserves infestation in the serializable recipe and leaves legacy missions clean", () => {
+    const infested = unwrap(
+      missionToMapRecipe(
+        mission({}, { infestation: 4 }),
+        INFESTATION_CLEARANCE,
+        registries,
+      ),
+    );
+    expect(infested.params.infestation).toBe(4);
+    expect(JSON.parse(JSON.stringify(infested))).toEqual(infested);
+    const legacy = unwrap(
+      missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries),
+    );
+    expect(legacy.params.infestation ?? 0).toBe(0);
+  });
   it("carries the mission's seed and site parameters into the recipe", () => {
     const recipe = unwrap(
       missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries),

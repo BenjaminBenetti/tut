@@ -3296,5 +3296,133 @@
     "quality": "final",
     "triangles": 284,
     "bytes": 26796
+  },
+  {
+    "id": "prop.infested-nest",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-nest.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.27,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 208,
+    "bytes": 25584
+  },
+  {
+    "id": "prop.car-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-car-infested.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.89,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 220,
+    "bytes": 26876
+  },
+  {
+    "id": "prop.car-compact-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-car-compact-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.86,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 220,
+    "bytes": 26888
+  },
+  {
+    "id": "prop.lamp-post-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-lamp-post-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 248,
+    "bytes": 30900
+  },
+  {
+    "id": "building.wall-solid-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-solid-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 372,
+    "bytes": 42544
+  },
+  {
+    "id": "building.wall-window-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-window-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 488,
+    "bytes": 55624
+  },
+  {
+    "id": "building.wall-door-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-door-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 484,
+    "bytes": 53456
+  },
+  {
+    "id": "building.wall-half-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-half-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 328,
+    "bytes": 38796
+  },
+  {
+    "id": "tile.ground.infested",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-ground-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.07,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 52,
+    "bytes": 5676
   }
 ]

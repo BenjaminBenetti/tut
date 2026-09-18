@@ -1,4 +1,45 @@
 import { expect, test } from "@playwright/test";
+import {
+  assertNoAssetFallback,
+  drawnFrame,
+  watchAssetFallback,
+} from "./capture-frame.helper";
+
+/** Infestation is shareable, visibly changes the map, and can be reset to the clean baseline. */
+test("Map Lab generates and reloads infestation levels", async ({ page }) => {
+  watchAssetFallback(page);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await page.goto(
+    "/mapgen-preview.html?seed=infestation-review&biome=temperate&settlement=town&size=small&infestation=4&models=1",
+  );
+  await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
+  await expect(page.locator("#infestation")).toHaveValue("4");
+  await expect(page.locator("#notes")).toContainText("Infestation 4/10");
+  await expect(page.locator("#ascii")).toContainText("%");
+  await page.locator("#infestation").fill("10");
+  await page.locator("#infestation").dispatchEvent("change");
+  await expect(page).toHaveURL(/infestation=10/);
+  await page.reload();
+  await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
+  await expect(page.locator("#infestation")).toHaveValue("10");
+  await expect(page.locator("#notes")).toContainText("Infestation 10/10");
+  await expect(page.locator("#status")).toBeEmpty();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-models-ready",
+    "true",
+  );
+  await drawnFrame(page);
+  assertNoAssetFallback(page, "infested map");
+  await page.screenshot({ path: "test-results/infestation-level-10.png" });
+  await page.locator("#infestation").fill("0");
+  await page.locator("#infestation").dispatchEvent("change");
+  await expect(page.locator("#ascii")).not.toContainText("%");
+  expect(errors).toEqual([]);
+});
 
 /**
  * The map generation preview page generates a fixed seed on load, renders

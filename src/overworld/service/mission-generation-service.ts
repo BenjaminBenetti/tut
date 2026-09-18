@@ -1,3 +1,4 @@
+import { mapInfestationLevel } from "../../content/model/map-infestation";
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { Rng } from "../../core/model/rng";
 import type { MapSizeId } from "../../content/model/map-size-id";
@@ -291,6 +292,7 @@ function createMission(
     cityId: city.id,
     difficulty,
     mapParams: {
+      infestation: mapInfestationLevel(city.infestation),
       biome: city.biome ?? region.biome,
       settlement: city.scale,
       size: mapSizeFor(difficulty, rule),

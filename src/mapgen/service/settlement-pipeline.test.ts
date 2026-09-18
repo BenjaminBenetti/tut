@@ -39,6 +39,7 @@ describe("settlement pipeline", () => {
       "hooks",
       "rooftop-props",
       "yard-arrangements",
+      "infestation",
       "connectivity",
     ]);
     expect(() => {

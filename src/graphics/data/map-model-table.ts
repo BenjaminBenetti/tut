@@ -24,6 +24,7 @@ import type { WallKind } from "../../mapgen/model/wall";
  * through `surfaceModelFor`, which falls back rather than throwing.
  */
 export const SURFACE_MODELS: Readonly<Record<KnownSurfaceId, ModelAssetId>> = {
+  [SurfaceIds.INFESTED]: "tile.ground.infested",
   [SurfaceIds.GRASS]: "tile.ground.grass",
   [SurfaceIds.DIRT]: "tile.ground.dirt",
   [SurfaceIds.SAND]: "tile.ground.sand",
@@ -120,6 +121,7 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
+  [PropKindIds.INFESTED_NEST]: "prop.infested-nest",
   [PropKindIds.ROOFTOP_HVAC]: "prop.rooftop-hvac",
   [PropKindIds.ROOFTOP_WATER_TANK]: "prop.rooftop-water-tank",
   [PropKindIds.CAR]: "prop.car-compact",

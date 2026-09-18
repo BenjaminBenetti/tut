@@ -1,3 +1,5 @@
+import { infestModel } from "./infested-model-resolver";
+import { hashSeed } from "../../core/service/seed-hash";
 import type { InteriorFloorAppearance } from "../model/interior-floor-style";
 import type { BusinessSignAppearance } from "../model/business-sign-appearance";
 import { resolveInteriorFloors } from "./interior-floor-resolver";
@@ -179,7 +181,9 @@ export function resolveMapModels(
   index: TileIndex = new TileIndex(map),
 ): MapModelPlacements {
   const roads = resolveRoadAppearances(map, index);
-  const walls = resolveWalls(map, index);
+  const walls = resolveWalls(map, index).map((placement) =>
+    infestModel(placement, map.recipe),
+  );
   const ramps = resolveRampModels(map, index, roads);
   const connectors = [...ramps, ...resolveLadderModels(map, index, walls)];
   const roofs = resolvePitchedRoofModels(map, index);
@@ -202,7 +206,7 @@ export function resolveMapModels(
       ...resolveDropshipModels(map),
       ...resolveStreetDetails(map, index),
       ...resolveStreetSurfaces(map, index),
-    ],
+    ].map((placement) => infestModel(placement, map.recipe)),
     connectors,
   };
 }
@@ -339,9 +343,14 @@ function resolveTiles(
     }
     const drop = tile.surface === SurfaceIds.WATER ? WATER_RECESS : 0;
     // A slab is pivoted at its centre and sits half a thickness below the
-    // top; the stairs model is pivoted at its base and stands on it (#766).
+    // top; stairs stand on it (#766). Resin's base-pivoted slab sits a
+    // full thickness below it, leaving only its shallow veins proud.
     const lift =
-      tile.surface === SurfaceIds.STAIRS ? 0 : GROUND_SLAB_THICKNESS / 2;
+      tile.surface === SurfaceIds.STAIRS
+        ? 0
+        : tile.surface === SurfaceIds.INFESTED
+          ? GROUND_SLAB_THICKNESS
+          : GROUND_SLAB_THICKNESS / 2;
     placements.push({
       modelId: fitted.modelId,
       level: tile.y,
@@ -389,7 +398,13 @@ function fitSurface(
   }
   return {
     modelId,
-    turns: tile.surface === SurfaceIds.STAIRS ? stairsTurns(tile, map) : 0,
+    turns:
+      tile.surface === SurfaceIds.STAIRS
+        ? stairsTurns(tile, map)
+        : tile.surface === SurfaceIds.INFESTED
+          ? ((hashSeed(`${map.recipe.seed}:resin:${tile.x}:${tile.z}`) %
+              4) as Rotation)
+          : 0,
   };
 }
 

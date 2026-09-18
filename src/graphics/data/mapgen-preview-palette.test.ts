@@ -13,7 +13,7 @@ import {
 } from "./mapgen-preview-palette";
 
 /**
- * Style guide §4.3 environment tokens. World surfaces may only use these:
+ * Style guide §4.3 environment tokens; infestation uses the §4.2 flesh token.
  * the palette is what a player sees until a map cell resolves to a model
  * (#474), so a drifted hex is a drifted game.
  */
@@ -62,7 +62,7 @@ describe("mapgen preview palette", () => {
     }
   });
 
-  it("paints every world surface with a style guide environment token", () => {
+  it("paints world surfaces with environment tokens and infestation with bug flesh", () => {
     const env = new Set(Object.values(ENV_TOKENS));
     const worldColours = [
       ...Object.entries(SURFACE_COLOURS),
@@ -71,6 +71,10 @@ describe("mapgen preview palette", () => {
       ...Object.entries(CONNECTOR_COLOURS),
     ];
     for (const [key, colour] of worldColours) {
+      if (key === "infested") {
+        expect(colour).toBe(0x73452e);
+        continue;
+      }
       expect(env.has(colour), `${key} = #${colour.toString(16)}`).toBe(true);
     }
   });

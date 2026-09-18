@@ -44,8 +44,8 @@ export const WALL_THICKNESS = 0.08;
 
 /**
  * World-surface colours for the tactical scene and the map generation
- * preview, keyed by the ids mapgen emits. Every value is a style guide §4.3
- * environment token, because until a map cell resolves to a model (#474)
+ * preview, keyed by the ids mapgen emits. Values use style guide §4.3
+ * environment tokens, with §4.2 bug flesh for infested ground, because until a map cell resolves to a model (#474)
  * these boxes are what a player actually sees.
  *
  * Nothing here may use a §4.4 UI colour or one of the four overlay colours
@@ -55,6 +55,7 @@ export const WALL_THICKNESS = 0.08;
  * supposed to mean "you".
  */
 export const SURFACE_COLOURS: Readonly<Record<string, number>> = {
+  infested: 0x73452e,
   grass: 0x5e7a3a,
   dirt: 0x7a6045,
   sand: 0xd9b87a,

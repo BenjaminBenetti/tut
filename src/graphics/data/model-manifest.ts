@@ -12,6 +12,106 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "tile.ground.infested": {
+    category: "tiles",
+    path: "assets/models/tiles/tile-ground-infested.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.07,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.infested-nest": {
+    category: "props",
+    path: "assets/models/props/prop-infested-nest.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.27,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.car-infested": {
+    category: "props",
+    path: "assets/models/props/prop-car-infested.glb",
+    footprint: {
+      w: 2,
+      d: 1,
+    },
+    height: 0.89,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.car-compact-infested": {
+    category: "props",
+    path: "assets/models/props/prop-car-compact-infested.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.86,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.lamp-post-infested": {
+    category: "props",
+    path: "assets/models/props/prop-lamp-post-infested.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.55,
+    sockets: [],
+    quality: "final",
+  },
+  "building.wall-solid-infested": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-solid-infested.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.wall-window-infested": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-infested.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.wall-door-infested": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-infested.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+  "building.wall-half-infested": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-half-infested.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+
   "tdf.turret": {
     category: "units",
     path: "assets/models/units/tdf-turret.glb",

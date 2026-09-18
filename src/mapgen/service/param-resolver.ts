@@ -44,7 +44,14 @@ export function resolveMapGenParams(
   const settlement = registries.settlements.get(params.settlement);
   validateHooks(params);
   const slopeShare = resolveSlopeShare(params.slopeShare);
+  const infestation = params.infestation ?? 0;
+  if (!Number.isInteger(infestation) || infestation < 0 || infestation > 10) {
+    throw new Error(
+      `infestation must be an integer in 0..10, got ${String(infestation)}`,
+    );
+  }
   return {
+    infestation,
     archetype: params.archetype,
     width,
     depth,

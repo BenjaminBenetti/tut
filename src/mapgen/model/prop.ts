@@ -30,7 +30,13 @@ export interface Prop {
 
 /** Where a prop may be selected; vegetation is explicit planting, excluding random yard clutter. */
 export type PropPlacement =
-  "ground" | "vegetation" | "road" | "interior" | "yard" | "roof";
+  | "ground"
+  | "vegetation"
+  | "road"
+  | "interior"
+  | "yard"
+  | "roof"
+  | "infestation";
 
 /**
  * Describes one prop kind. Graphics maps `id` to a mesh through its own

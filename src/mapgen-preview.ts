@@ -1,3 +1,4 @@
+import { mapInfestationLevel } from "./content/model/map-infestation";
 import { TEXTURE_MANIFEST } from "./graphics/data/texture-manifest";
 import { ManifestTextureLoader } from "./graphics/service/manifest-texture-loader";
 import "./ui/style/theme.css";
@@ -44,6 +45,7 @@ const DEFAULT_STATE: PreviewControlsState = {
   size: "medium",
   archetype: "settlement",
   slopeShare: 1,
+  infestation: 0,
 };
 
 /** A percent from the URL as a 0–1 share; missing or malformed means all slope. */
@@ -83,6 +85,7 @@ function stateFromUrl(): PreviewControlsState {
       DEFAULT_STATE.archetype,
     // `?slope=` is a percent, the way the slider shows it (#799).
     slopeShare: clampShare(query.get("slope")),
+    infestation: mapInfestationLevel(Number(query.get("infestation")) * 10),
   };
 }
 
@@ -120,6 +123,7 @@ function writeUrl(state: PreviewControlsState): void {
     size: state.size,
     archetype: state.archetype,
     slope: String(Math.round(state.slopeShare * 100)),
+    infestation: String(state.infestation ?? 0),
   });
   if (state.placeProfile !== undefined) query.set("place", state.placeProfile);
   if (new URLSearchParams(window.location.search).get("models") === "1") {
@@ -204,6 +208,7 @@ async function main(): Promise<void> {
         size: state.size,
         hooks: DEFAULT_MISSION_HOOKS,
         slopeShare: state.slopeShare,
+        infestation: state.infestation ?? 0,
       },
     };
     const started = performance.now();

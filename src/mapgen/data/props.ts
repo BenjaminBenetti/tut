@@ -7,6 +7,7 @@ import type { PropDefinition } from "../model/prop";
 
 /** Well-known prop kinds (ADR 0004 §4.4). Biomes may add more in data. */
 export const PropKindIds = {
+  INFESTED_NEST: "infested-nest",
   CAR: "car",
   CRATE: "crate",
   BARRIER: "barrier",
@@ -75,6 +76,13 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
  * tier: they are the ground, and no weapon on the arsenal moves it.
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
+  {
+    id: PropKindIds.INFESTED_NEST,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    demolition: 2,
+    placements: ["infestation"],
+  },
   {
     id: PropKindIds.PRODUCE_BIN,
     demolition: 1,

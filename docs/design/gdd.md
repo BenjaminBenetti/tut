@@ -210,6 +210,8 @@ A dev build (Vite's development mode — `pnpm dev`, and the Playwright server) 
 ## 7. Map generation (M1.5)
 
 - Deterministic from a seed plus parameters: **biome** (temperate, snowy, desert, coastal…), **settlement scale** (rural, small town, big city), **mission type hooks**.
+- **Infestation** is an integer map parameter from **0–10**, copied from the city's infestation when a mission is offered: `floor(city infestation / 10)`, so 40–49 gives level 4 and 100 gives level 10. Omitted values in older recipes mean zero. Level 0 preserves baseline generation exactly. Increasing levels expand connected resin ground patches, swap more cars, lamps and walls to infested art, add craggy spike nests, and remove more wall and non-walkable roof sections. Floors, stairs, entrances, landing areas and mission hooks remain usable.
+- **Infested ground** costs player units **2 movement points** per tile and bugs **0.5**, against the usual 1. Pathfinding, movement overlays, command validation, AP spending and bug AI all use these costs. A multi-tile unit uses the most expensive destination cell: bugs gain the bonus when their whole footprint is on growth. Nests provide high cover, block sight and movement, and can be demolished. Map Lab exposes the 0–10 infestation slider and saves it in shared URLs.
 - Output is a 3D tile grid: ground height, floor type, walls, cover objects, buildings with floors and stairs/ladders, roads, props.
 - Placement hooks: deploy zones, objectives (eggs, hive cores, crash sites), edge spawn zones, extraction.
 - Ships with a standalone preview harness so maps can be tuned without playing missions.

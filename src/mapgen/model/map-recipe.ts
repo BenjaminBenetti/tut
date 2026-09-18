@@ -66,6 +66,8 @@ export interface HookRequirement {
 
 /** Everything except the seed that shapes a map. */
 export interface MapGenParams {
+  /** Whole infestation band, 0–10. Omitted recipes retain the clean baseline. */
+  readonly infestation?: number;
   readonly archetype: MapArchetype;
   readonly biome: BiomeId;
   /** City-specific environment and art; absent preserves the biome defaults. */

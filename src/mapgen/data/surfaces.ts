@@ -7,6 +7,7 @@ import type { SurfaceDefinition } from "../model/surface";
 
 /** Well-known surface ids (ADR 0004 §4.2). Biomes may add more in data. */
 export const SurfaceIds = {
+  INFESTED: "infested",
   GRASS: "grass",
   DIRT: "dirt",
   SAND: "sand",
@@ -32,6 +33,7 @@ export type KnownSurfaceId = (typeof SurfaceIds)[keyof typeof SurfaceIds];
  * roofs are infantry-only; water admits nobody.
  */
 export const SURFACE_DEFINITIONS: readonly SurfaceDefinition[] = [
+  { id: SurfaceIds.INFESTED, defaultPass: PassMask.ALL, isInterior: false },
   { id: SurfaceIds.GRASS, defaultPass: PassMask.ALL, isInterior: false },
   { id: SurfaceIds.DIRT, defaultPass: PassMask.ALL, isInterior: false },
   { id: SurfaceIds.SAND, defaultPass: PassMask.ALL, isInterior: false },

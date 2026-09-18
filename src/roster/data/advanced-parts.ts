@@ -265,11 +265,12 @@ export const ADVANCED_PARTS: readonly MechPart[] = [
       weight: 9,
     },
     description:
-      "Concentrated heat melts armour at close range. Requires serious cooling.",
+      "A piercing heat lance burns through targets along its full short firing line. Requires serious cooling.",
     weapon: {
       range: 4,
       armorPen: 8,
       energy: true,
+      beam: true,
     },
   },
   {
@@ -312,7 +313,7 @@ export const ADVANCED_PARTS: readonly MechPart[] = [
       weight: 16,
     },
     description:
-      "A narrow energy beam strikes everything along its firing line, including allies.",
+      "A narrow beam continues beyond the aimed tile to full range, striking enemies and allies along its firing line.",
     weapon: {
       range: 12,
       armorPen: 4,

@@ -485,6 +485,45 @@ describe("specialist weapon targeting", () => {
     );
   });
 
+  it("a nearby beam aim hits enemies and allies behind it, matching its preview and visual endpoint", () => {
+    const base = battle({}, { beam: true, damage: 4 });
+    const ally = unitAt("ally", "infantry", { x: 7, y: 0, z: 3 });
+    const mission = { ...base, units: [...base.units, ally] };
+    const tile = { x: 3, y: 0, z: 3 };
+    const preview = previewTileAttack(mission, "mech", tile, COMBAT_TUNING);
+    if (!preview.ok) throw new Error("expected beam preview");
+    expect(preview.value.blast?.victims.map(({ id }) => id)).toEqual([
+      "bug",
+      "ally",
+    ]);
+    const hit = ATTACK(
+      mission,
+      attackTile("mech", tile),
+      ctxWith(riggedRng(true)),
+    );
+    if (!hit.ok) throw new Error("expected beam hit");
+    expect(hit.value.state.units.map(({ hp }) => hp)).toEqual([10, 97, 7]);
+    expect(
+      hit.value.events.find(
+        (event) => event.type === "tactical:blast-resolved",
+      ),
+    ).toMatchObject({
+      payload: {
+        impact: tile,
+        beamEnd: { x: 7, y: 0, z: 3 },
+        victims: [{ targetId: "bug" }, { targetId: "ally" }],
+      },
+    });
+    const miss = ATTACK(
+      mission,
+      attackTile("mech", tile),
+      ctxWith(riggedRng(false)),
+    );
+    expect(miss.ok && miss.value.state.units.map(({ hp }) => hp)).toEqual([
+      10, 100, 10,
+    ]);
+  });
+
   it("smoke deals zero damage, blocks both sides' sight, and expires without burning units", () => {
     const initial = battle(
       {},

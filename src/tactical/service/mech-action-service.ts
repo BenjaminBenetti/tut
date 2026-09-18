@@ -1,6 +1,5 @@
 import { err, ok } from "../../core/model/result";
 import type { Result } from "../../core/model/result";
-import { allows } from "../../mapgen/model/pass-mask";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type {
   MechActionCommand,
@@ -18,7 +17,8 @@ import { NO_REACTION } from "../model/step-reaction";
 import type { TacticalEvent } from "../model/tactical-event";
 import { actingUnit } from "./acting-unit";
 import { unitFootprintTiles } from "./footprint-service";
-import { occupiedKeys } from "./movement-service";
+import { jumpApex, jumpObstruction } from "./mech-jump-service";
+import { buildMoveGraph, occupiedKeys } from "./movement-service";
 import { systemsRefusal } from "./mech-weapon-service";
 import { unitCanSee } from "./vision-service";
 
@@ -96,30 +96,15 @@ export function validateMechAction(
     const landing = index.getAt(tile);
     if (
       !landing ||
-      landing.buildingId ||
-      !allows(landing.pass, passMaskFor(unit.passClass)) ||
+      !buildMoveGraph(mission.map).reachability.canOccupy(
+        landing,
+        passMaskFor(unit.passClass),
+      ) ||
       occupiedKeys(mission, index, unit.id).has(index.keyOf(landing))
     )
-      return refuse("Jump needs an unoccupied outdoor landing");
-    // Never tunnel through a taller building: the arc clears one storey above either end.
-    const steps = Math.max(
-      Math.abs(tile.x - unit.pos.x),
-      Math.abs(tile.z - unit.pos.z),
-    );
-    const clearance = Math.max(tile.y, unit.pos.y) + (systems.jumpHeight ?? 0);
-    for (let step = 1; step < steps; step++) {
-      const x = Math.round(unit.pos.x + ((tile.x - unit.pos.x) * step) / steps);
-      const z = Math.round(unit.pos.z + ((tile.z - unit.pos.z) * step) / steps);
-      if (
-        index
-          .column(x, z)
-          .some(
-            (surface) =>
-              surface.y >= clearance || surface.buildingId !== undefined,
-          )
-      )
-        return refuse("A building or high terrain blocks the jump arc");
-    }
+      return refuse("Jump needs an unoccupied outdoor or flat-roof landing");
+    const obstruction = jumpObstruction(mission.map, index, unit.pos, tile);
+    if (obstruction) return refuse(obstruction);
   }
   return ok(unit);
 }
@@ -189,6 +174,7 @@ export function createMechActionHandler(
           to: tile,
           path: [tile],
           jump: true,
+          jumpApex: jumpApex(unit.pos, tile),
         },
       });
       const reaction = react(state, unit.id, ctx);

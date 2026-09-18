@@ -53,9 +53,18 @@ export class ReachabilityService {
 
   /**
    * Builds the connector adjacency once. Connectors whose endpoints do not
-   * exist are ignored here; the validator reports them.
+   * exist are ignored here; the validator reports them. The optional occupancy
+   * policy extends standability for tactical capabilities (ADR 0010); connector
+   * masks and wall rules still apply unchanged.
    */
-  constructor(index: TileIndex, connectors: readonly Connector[]) {
+  constructor(
+    index: TileIndex,
+    connectors: readonly Connector[],
+    private readonly occupancy: (
+      tile: Tile,
+      unitClass: UnitClass,
+    ) => boolean = (tile, unitClass) => allows(tile.pass, unitClass),
+  ) {
     this.index = index;
     const links = new Map<number, ConnectorLink[]>();
     for (const connector of connectors) {
@@ -74,12 +83,17 @@ export class ReachabilityService {
   // Public Methods
   // ===========================================
 
+  /** Whether a tile supports this class under the injected traversal policy. */
+  canOccupy(tile: Tile, unitClass: UnitClass): boolean {
+    return this.occupancy(tile, unitClass);
+  }
+
   /**
    * True when a unit of the class may move directly from one tile to the
    * other under the §5 rule.
    */
   canStep(from: Tile, to: Tile, unitClass: UnitClass): boolean {
-    if (!allows(from.pass, unitClass) || !allows(to.pass, unitClass)) {
+    if (!this.canOccupy(from, unitClass) || !this.canOccupy(to, unitClass)) {
       return false;
     }
     if (Math.abs(from.y - to.y) <= 1) {
@@ -104,7 +118,7 @@ export class ReachabilityService {
    * All have the normal flat movement cost (ADR 0008 §2.3).
    */
   neighbours(from: Tile, unitClass: UnitClass): Tile[] {
-    if (!allows(from.pass, unitClass)) {
+    if (!this.canOccupy(from, unitClass)) {
       return [];
     }
     const result: Tile[] = [];
@@ -114,7 +128,7 @@ export class ReachabilityService {
         const to = this.index.get(next.x, from.y + dy, next.z);
         if (
           to !== undefined &&
-          allows(to.pass, unitClass) &&
+          this.canOccupy(to, unitClass) &&
           !this.wallBlocks(from, to, direction, unitClass)
         ) {
           result.push(to);
@@ -124,7 +138,7 @@ export class ReachabilityService {
     for (const link of this.links.get(this.index.keyOf(from)) ?? []) {
       if (
         allows(link.pass, unitClass) &&
-        allows(link.to.pass, unitClass) &&
+        this.canOccupy(link.to, unitClass) &&
         !result.includes(link.to)
       ) {
         result.push(link.to);
@@ -146,7 +160,7 @@ export class ReachabilityService {
     const frontier: Tile[] = [];
     for (const origin of origins) {
       const tile = this.index.getAt(origin);
-      if (tile === undefined || !allows(tile.pass, unitClass)) {
+      if (tile === undefined || !this.canOccupy(tile, unitClass)) {
         continue;
       }
       const key = this.index.keyOf(tile);
@@ -177,7 +191,7 @@ export class ReachabilityService {
       .map((coord) => this.index.getAt(coord))
       .filter(
         (tile): tile is Tile =>
-          tile !== undefined && allows(tile.pass, unitClass),
+          tile !== undefined && this.canOccupy(tile, unitClass),
       );
     const first = members[0];
     if (first === undefined) {

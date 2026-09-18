@@ -698,6 +698,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
           event.payload.path,
           event.payload.to,
           event.payload.jump ?? false,
+          event.payload.jumpApex,
         );
       case ATTACK_RESOLVED:
         return this.attack(
@@ -756,12 +757,13 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     };
   }
 
-  /** Walks the path with a facing and limb stride, landing exactly on the last tile. */
+  /** Walks with a limb stride or jets vertically into the validated flight corridor, then lands on the final tile. */
   private walk(
     unitId: UnitId,
     path: readonly TileCoord[],
     to: TileCoord,
     jump = false,
+    jumpApex?: number,
   ): Animation | undefined {
     const object = this.scene.unitObject(unitId);
     // Where this unit's feet go on a tile: its footprint's centre when
@@ -783,7 +785,11 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     const motion = this.scene.unitMotion?.(unitId);
     const walkedBefore = this.walkedTiles.get(unitId) ?? 0;
     const stepSeconds = jump
-      ? Math.max(0.7, this.timing.stepSeconds * 3)
+      ? Math.max(
+          0.9,
+          Math.hypot(end.x - object.position.x, end.z - object.position.z) *
+            0.09,
+        )
       : this.timing.stepSeconds;
     let elapsed = 0;
     const deployed = motion?.braceAmount ?? 0;
@@ -823,13 +829,29 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         const target = points[index]!;
         faceTowards(object, start, target);
         if (!jump) motion?.walk(walkedBefore + progress);
-        object.position.set(
-          start.x + (target.x - start.x) * local,
-          start.y +
-            (target.y - start.y) * local +
-            (jump ? Math.sin(Math.PI * local) * 1.6 : 0),
-          start.z + (target.z - start.z) * local,
-        );
+        if (jump) {
+          const apex =
+            jumpApex === undefined
+              ? Math.max(start.y, target.y) + 1.6
+              : standAt({ ...to, y: jumpApex }).y;
+          const across = Math.max(0, Math.min(1, (local - 0.2) / 0.6));
+          const smooth = across * across * (3 - 2 * across);
+          const rise = Math.min(1, local / 0.2);
+          const fall = Math.max(0, (local - 0.8) / 0.2);
+          object.position.set(
+            start.x + (target.x - start.x) * smooth,
+            local < 0.2
+              ? start.y + (apex - start.y) * Math.sin((rise * Math.PI) / 2)
+              : apex + (target.y - apex) * (1 - Math.cos((fall * Math.PI) / 2)),
+            start.z + (target.z - start.z) * smooth,
+          );
+        } else {
+          object.position.set(
+            start.x + (target.x - start.x) * local,
+            start.y + (target.y - start.y) * local,
+            start.z + (target.z - start.z) * local,
+          );
+        }
         if (elapsed >= total) {
           finish();
           return leftover;
@@ -1254,11 +1276,20 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       });
     }
 
+    const beamGround = impact.beamEnd
+      ? (this.scene.tileWorldPosition(impact.beamEnd) ??
+        tileTopCentre(impact.beamEnd))
+      : undefined;
+    const beamAim = beamGround
+      ? { x: beamGround.x, y: beamGround.y + aim.y - ground.y, z: beamGround.z }
+      : aim;
     const parts: ScheduledPart[] = [
       {
         at: 0,
         start: () =>
-          impact.beam ? this.beam(muzzle, aim) : this.shot(muzzle, aim, melee),
+          impact.beam
+            ? this.beam(muzzle, beamAim)
+            : this.shot(muzzle, aim, melee),
       },
     ];
     if (impact.hit && !impact.beam && !impact.smoke) {

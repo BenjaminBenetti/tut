@@ -13,6 +13,8 @@ export const UNIT_MOVED = "tactical:unit-moved";
 export interface UnitMovedPayload {
   /** Render a jump arc rather than a walking step. */
   readonly jump?: boolean;
+  /** Absolute flight altitude in map layers, shared with obstacle validation. */
+  readonly jumpApex?: number;
   readonly unitId: UnitId;
   readonly from: TileCoord;
   readonly to: TileCoord;

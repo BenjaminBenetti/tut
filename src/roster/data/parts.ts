@@ -165,7 +165,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "legs-jumper",
-    traits: { jumpRange: 5, jumpHeight: 2, jumpHeat: 5 },
+    traits: { jumpRange: 12, jumpHeight: 8, jumpHeat: 5 },
     name: "Jumper Legs",
     slot: "legs",
     tier: 2,
@@ -180,7 +180,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 12,
     },
     description:
-      "Hydraulic jump assist. Power hungry, but it clears rubble in a single bound.",
+      "Jump jets cross up to 12 tiles and climb four storeys onto clear flat roofs. Costs 1 AP and 5 heat.",
   },
 
   // ===========================================

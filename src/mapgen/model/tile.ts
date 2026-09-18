@@ -27,7 +27,8 @@ export interface Tile extends TileCoord {
   readonly surface: SurfaceId;
   /**
    * Who may stand here. Denormalised by the finalize pass from surface,
-   * props, landed aircraft, walls and buildings; tactical never re-derives it.
+   * props, landed aircraft, walls and buildings. ADR 0010 adds an explicit
+   * tactical roof-occupancy policy without changing this static map contract.
    */
   readonly pass: PassMask;
   /** Thin walls on this tile's edges, mirrored on the neighbour (I3). */

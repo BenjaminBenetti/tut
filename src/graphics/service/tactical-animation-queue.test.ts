@@ -1,4 +1,4 @@
-import { Object3D, Texture } from "three";
+import { Box3, Object3D, Texture } from "three";
 import { describe, expect, it, vi } from "vitest";
 
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -884,6 +884,44 @@ describe("TacticalAnimationQueue blast", () => {
     expect(queue.root.children).toHaveLength(0);
   });
 
+  it("rises before traversing a roof and descends vertically onto its landing", () => {
+    const view = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: view,
+      sprites,
+      timing: TIMING,
+    });
+    const to = { x: 12, y: 8, z: 0 };
+    queue.enqueue(
+      [
+        {
+          type: "tactical:unit-moved",
+          payload: {
+            unitId: "unit-1",
+            from: { x: 0, y: 0, z: 0 },
+            to,
+            path: [to],
+            jump: true,
+            jumpApex: 10,
+          },
+        },
+      ],
+      () => undefined,
+    );
+    const actor = view.objects.get("unit-1")!;
+    queue.update(0.108);
+    expect(actor.position.x).toBeCloseTo(tileTopCentre({ x: 0, y: 0, z: 0 }).x);
+    expect(actor.position.y).toBeGreaterThan(3);
+    queue.update(0.432);
+    expect(actor.position.x).toBeCloseTo(tileTopCentre({ x: 6, y: 0, z: 0 }).x);
+    expect(actor.position.y).toBeCloseTo(
+      tileTopCentre({ x: 6, y: 10, z: 0 }).y,
+    );
+    queue.update(0.54);
+    expect(actor.position).toMatchObject(tileTopCentre(to));
+    expect(queue.root.children).toHaveLength(0);
+  });
+
   it("draws a continuous beam without an explosion and disposes it when skipped", () => {
     const queue = new TacticalAnimationQueue({
       scene: scene(),
@@ -894,13 +932,21 @@ describe("TacticalAnimationQueue blast", () => {
       [
         {
           ...BLAST,
-          payload: { ...BLAST.payload, beam: true, radius: 0, victims: [] },
+          payload: {
+            ...BLAST.payload,
+            beam: true,
+            beamEnd: { x: 12, y: 0, z: 0 },
+            radius: 0,
+            victims: [],
+          },
         },
       ],
       () => undefined,
     );
     queue.update(0.05);
     expect(named(queue, "vfx.mech-beam")).toEqual(["vfx.mech-beam"]);
+    const beam = queue.root.getObjectByName("vfx.mech-beam")!;
+    expect(new Box3().setFromObject(beam).max.x).toBeGreaterThan(12);
     expect(named(queue, "vfx.blast")).toEqual([]);
     queue.skip();
     expect(queue.root.children).toHaveLength(0);

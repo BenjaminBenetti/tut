@@ -773,6 +773,7 @@ export function blastPreview(
     impact,
     index,
     origin,
+    origin ? weaponReach(profile.range, origin, impact, tuning) : profile.range,
   );
   const victims = blastVictims(mission, footprint, exclude).map(
     ({ target, distance }) => ({
@@ -1021,12 +1022,14 @@ export function resolveBlastAt(
   const profile = weapon.profile;
   const index = new TileIndex(mission.map);
   const radius = blastRadiusOf(profile);
+  const origin = mission.units.find((unit) => unit.id === attackerId)?.pos;
   const footprint = weaponFootprint(
     mission.map,
     profile,
     impact,
     index,
-    mission.units.find((unit) => unit.id === attackerId)?.pos,
+    origin,
+    origin ? weaponReach(profile.range, origin, impact, tuning) : profile.range,
   );
   let state = mission;
   const events: TacticalEvent[] = [];
@@ -1060,7 +1063,12 @@ export function resolveBlastAt(
         aimedAtTile: aim.aimedAtTile,
         weaponRange: profile.range,
         victims,
-        ...(profile.beam ? { beam: true } : {}),
+        ...(profile.beam
+          ? {
+              beam: true,
+              beamEnd: footprint.at(-1)?.tile ?? impact,
+            }
+          : {}),
         ...(profile.aoeEffect?.kind === "smoke" ? { smoke: true } : {}),
         ...(aim.source === undefined ? {} : { source: aim.source }),
         ...(aim.delivery === undefined ? {} : { delivery: aim.delivery }),

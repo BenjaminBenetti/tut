@@ -22,38 +22,9 @@ def barrel(name, radius, length, at, token=DARK, tilt=math.pi / 2):
 
 
 def build_chassis(variant):
-    """Light scout, sensor platform or radiator torso, with compatible arm and back sockets."""
-    heavy = variant == "crucible"
-    width = 1.02 if heavy else 0.8
-    armour("torso", (width, 0.62, 0.94), (0, 0, 0.47), MID, chamfer=0.035)
-    armour("breastplate", (width * 0.7, 0.13, 0.52), (0, -0.36, 0.49), LIGHT, chamfer=0.025)
-    box("service_panel", (0.29, 0.025, 0.25), (0.12, -0.435, 0.4), OLIVE)
-    armour("cockpit", (0.38, 0.38, 0.3), (0, -0.04, 1.01), MID, chamfer=0.035)
-    box("visor", (0.29, 0.025, 0.085), (0, -0.245, 1.025), LENS)
-    box("brow", (0.44, 0.1, 0.045), (0, -0.2, 1.18), DARK)
-    box("id_flash", (0.075, 0.026, 0.18), (-0.25, -0.435, 0.5), ORANGE)
-    for side in (-1, 1):
-        cylinder(f"shoulder_{side}", 0.12, 0.12, 0.16, 8, (side * (width / 2 + 0.06), 0, 0.82), DARK, rot=(0, math.pi / 2, 0))
-        if heavy:
-            box(f"radiator_bank_{side}", (0.23, 0.48, 0.73), (side * 0.59, 0.12, 0.5), DARK)
-            for fin in range(5):
-                box(f"fin_{side}_{fin}", (0.3, 0.53, 0.045), (side * 0.59, 0.12, 0.23 + fin * 0.13), LIGHT)
-            box(f"coolant_pipe_{side}", (0.07, 0.08, 0.85), (side * 0.38, 0.37, 0.55), OLIVE)
-        elif variant == "surveyor":
-            box(f"optic_pylon_{side}", (0.08, 0.12, 0.52), (side * 0.45, 0.14, 1.06), DARK)
-            box(f"sensor_panel_{side}", (0.31, 0.16, 0.22), (side * 0.45, 0.14, 1.32), OLIVE)
-            box(f"sensor_lens_{side}", (0.2, 0.02, 0.09), (side * 0.45, 0.049, 1.32), LENS)
-        else:
-            armour(f"swept_shoulder_{side}", (0.25, 0.4, 0.19), (side * 0.42, 0.05, 0.94), OLIVE, rot=(0, side * 0.22, 0), chamfer=0.025)
-            box(f"rear_vent_{side}", (0.13, 0.08, 0.42), (side * 0.25, 0.35, 0.5), DARK)
-    if variant == "surveyor":
-        box("antenna", (0.035, 0.035, 0.52), (-0.32, 0.28, 1.23), DARK)
-    socket("arm_l", (-width / 2 - 0.15, 0, 0.82))
-    socket("arm_r", (width / 2 + 0.15, 0, 0.82))
-    # Load-bearing riser closes the gap between the torso and every back module.
-    box("back_mount_riser", (0.26, 0.24, 0.3), (0, 0.22, 1.055), DARK)
-    box("back_mount_plate", (0.32, 0.28, 0.06), (0, 0.22, 1.18), LIGHT)
-    socket("back", (0, 0.22, 1.2))
+    """Build the dedicated scout, sensor or heat-core silhouette."""
+    from mech_chassis_parts import build_chassis as chassis
+    chassis(variant)
 
 
 def build_legs(variant):

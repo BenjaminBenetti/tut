@@ -23,46 +23,15 @@ from mech_a_parts import _place, armour  # noqa: E402
 
 
 def build_chassis_bulwark() -> None:
-    """Bulwark: heavy, wide, layered front plates, recessed cockpit."""
-    armour("torso", (1.2, 0.8, 1.0), (0, 0, 0.5), "tdf-grey-mid", chamfer=0.04)
-    armour("plate_low", (0.9, 0.1, 0.34), (0, -0.44, 0.3), "tdf-grey-light", chamfer=0.02)
-    armour("plate_high", (0.7, 0.1, 0.3), (0, -0.44, 0.7), "tdf-grey-light", chamfer=0.02)
-    for side in (-1, 1):
-        s = "l" if side < 0 else "r"
-        armour(f"pad_{s}", (0.3, 0.14, 0.5), (side * 0.43, -0.4, 0.5), "tdf-olive", chamfer=0.02)
-        cylinder(f"shoulder_joint_{s}", 0.12, 0.12, 0.14, 8, (side * 0.82, 0, 0.88), "tdf-grey-dark", rot=(0, math.pi / 2, 0))
-    armour("shoulders", (1.5, 0.7, 0.34), (0, 0, 0.94), "tdf-grey-dark", chamfer=0.035)
-    armour("back_plate", (0.8, 0.12, 0.7), (0, 0.44, 0.5), "tdf-grey-dark", chamfer=0.02)
-    armour("cockpit", (0.4, 0.4, 0.26), (0, 0, 1.22), "tdf-grey-mid", chamfer=0.03)
-    box("cockpit_brow", (0.46, 0.12, 0.05), (0, -0.2, 1.33), "tdf-grey-dark")
-    box("visor", (0.26, 0.02, 0.06), (0, -0.21, 1.22), "tdf-visor")
-    box("marking", (0.16, 0.02, 0.1), (-0.4, -0.45, 0.62), "tdf-orange")
-    box("hazard", (0.12, 0.02, 0.3), (0.5, -0.41, 0.4), "tdf-orange-dim")
-    box("back_mount", (0.24, 0.24, 0.08), (0.3, 0.3, 1.1), "tdf-grey-dark")
-    socket("arm_l", (-0.8, 0, 0.88))
-    socket("arm_r", (0.8, 0, 0.88))
-    socket("back", (0.3, 0.3, 1.1))
+    """Build the rounded Bulwark siege carapace."""
+    from mech_chassis_parts import build_chassis
+    build_chassis("bulwark")
 
 
 def build_chassis_atlas() -> None:
-    """Atlas: tall high-capacity torso with twin reactor cylinders on the back."""
-    armour("torso", (1.0, 0.75, 1.15), (0, 0, 0.575), "tdf-grey-mid", chamfer=0.035)
-    armour("chest_plate", (0.6, 0.08, 0.6), (0, -0.4, 0.5), "tdf-olive", chamfer=0.02)
-    armour("shoulders", (1.36, 0.6, 0.3), (0, 0, 1.05), "tdf-grey-dark", chamfer=0.03)
-    for side in (-1, 1):
-        s = "l" if side < 0 else "r"
-        armour(f"pad_{s}", (0.3, 0.62, 0.34), (side * 0.55, 0, 1.07), "tdf-olive", chamfer=0.025)
-        cylinder(f"shoulder_joint_{s}", 0.1, 0.1, 0.14, 8, (side * 0.74, 0, 1.0), "tdf-grey-dark", rot=(0, math.pi / 2, 0))
-        cylinder(f"reactor_{s}", 0.16, 0.16, 0.7, 8, (side * 0.3, 0.5, 0.7), "tdf-grey-dark")
-        cylinder(f"reactor_cap_{s}", 0.1, 0.1, 0.06, 8, (side * 0.3, 0.5, 1.08), "tdf-orange")
-    armour("cockpit", (0.44, 0.44, 0.32), (0, -0.05, 1.35), "tdf-grey-mid", chamfer=0.03)
-    box("visor", (0.32, 0.02, 0.08), (0, -0.28, 1.37), "tdf-visor")
-    box("marking", (0.2, 0.02, 0.12), (-0.3, -0.39, 0.75), "tdf-orange")
-    box("back_mount", (0.24, 0.24, 0.08), (0, 0.05, 1.22), "tdf-grey-dark")
-    socket("arm_l", (-0.72, 0, 1.0))
-    socket("arm_r", (0.72, 0, 1.0))
-    socket("back", (0, 0.05, 1.22))
-
+    """Build the Atlas industrial yoke and recessed cab."""
+    from mech_chassis_parts import build_chassis
+    build_chassis("atlas")
 
 # ===========================================
 # Leg variants: pivot on the ground, socket_chassis on top
@@ -222,4 +191,4 @@ def build_assembled_b() -> None:
     _place(lambda: build_arm_brace(-1), arm_l)
     _place(lambda: build_arm_brace(1), arm_r)
     _place(build_railgun, (arm_r[0] + 0.12, arm_r[1] - 0.52, arm_r[2] - 0.68))
-    _place(build_mortar, (chassis[0] + 0.3, chassis[1] + 0.3, chassis[2] + 1.1))
+    _place(build_mortar, (chassis[0] + 0.72, chassis[1] + 0.18, chassis[2] + 1.13))

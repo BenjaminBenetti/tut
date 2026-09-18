@@ -1,8 +1,9 @@
-import { allows } from "../../mapgen/model/pass-mask";
+import { allows, PassMask } from "../../mapgen/model/pass-mask";
 import type { UnitClass } from "../../mapgen/model/pass-mask";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { mechCanOccupyRoof } from "./mech-rooftop-service";
 import { ReachabilityService } from "../../mapgen/service/reachability-service";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalState } from "../model/tactical-state";
@@ -59,7 +60,13 @@ export function buildMoveGraph(map: TacticalMap): MoveGraph {
   const index = new TileIndex(map);
   return {
     index,
-    reachability: new ReachabilityService(index, map.connectors),
+    reachability: new ReachabilityService(
+      index,
+      map.connectors,
+      (tile, unitClass) =>
+        allows(tile.pass, unitClass) ||
+        (unitClass === PassMask.MECH && mechCanOccupyRoof(map, tile)),
+    ),
   };
 }
 
@@ -96,7 +103,7 @@ export function footprintFits(
   const tiles: Tile[] = [];
   for (const coord of footprintTiles(anchor, size)) {
     const tile = graph.index.getAt(coord);
-    if (tile === undefined || !allows(tile.pass, unitClass)) {
+    if (tile === undefined || !graph.reachability.canOccupy(tile, unitClass)) {
       return false;
     }
     tiles.push(tile);

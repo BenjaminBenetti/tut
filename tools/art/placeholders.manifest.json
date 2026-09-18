@@ -588,52 +588,6 @@
     "bytes": 20176
   },
   {
-    "id": "tdf.mech.assembled-a",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-assembled-a.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 2.88,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back",
-      "socket_chassis",
-      "socket_muzzle",
-      "socket_muzzle_2",
-      "socket_weapon",
-      "socket_weapon_2"
-    ],
-    "quality": "final",
-    "triangles": 2212,
-    "bytes": 209428
-  },
-  {
-    "id": "tdf.mech.assembled-b",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-assembled-b.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 2.79,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back",
-      "socket_chassis",
-      "socket_muzzle",
-      "socket_muzzle_2",
-      "socket_weapon",
-      "socket_weapon_2"
-    ],
-    "quality": "final",
-    "triangles": 1784,
-    "bytes": 167436
-  },
-  {
     "id": "tdf.mech.chassis-a",
     "category": "units",
     "path": "assets/models/units/tdf-mech-chassis-a.glb",
@@ -648,44 +602,8 @@
       "socket_back"
     ],
     "quality": "final",
-    "triangles": 472,
-    "bytes": 47816
-  },
-  {
-    "id": "tdf.mech.chassis.atlas",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-atlas.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.51,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 468,
-    "bytes": 43632
-  },
-  {
-    "id": "tdf.mech.chassis.bulwark",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-bulwark.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.36,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 468,
-    "bytes": 45596
+    "triangles": 464,
+    "bytes": 45156
   },
   {
     "id": "tdf.mech.legs-a",
@@ -3570,60 +3488,6 @@
     "bytes": 25212
   },
   {
-    "id": "tdf.mech.chassis.courser",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-courser.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.21,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 372,
-    "bytes": 38768
-  },
-  {
-    "id": "tdf.mech.chassis.surveyor",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-surveyor.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.49,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 344,
-    "bytes": 38692
-  },
-  {
-    "id": "tdf.mech.chassis.crucible",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-crucible.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.21,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "final",
-    "triangles": 428,
-    "bytes": 49244
-  },
-  {
     "id": "tdf.mech.legs.all-terrain",
     "category": "units",
     "path": "assets/models/units/tdf-mech-legs-all-terrain.glb",
@@ -3670,5 +3534,141 @@
     "quality": "final",
     "triangles": 576,
     "bytes": 58148
+  },
+  {
+    "id": "tdf.mech.chassis.courser",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-courser.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.21,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 540,
+    "bytes": 51152
+  },
+  {
+    "id": "tdf.mech.chassis.bulwark",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-bulwark.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.36,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 760,
+    "bytes": 69828
+  },
+  {
+    "id": "tdf.mech.chassis.atlas",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-atlas.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.28,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 576,
+    "bytes": 54300
+  },
+  {
+    "id": "tdf.mech.chassis.surveyor",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-surveyor.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.77,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 580,
+    "bytes": 55116
+  },
+  {
+    "id": "tdf.mech.chassis.crucible",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-crucible.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.23,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 1124,
+    "bytes": 99824
+  },
+  {
+    "id": "tdf.mech.assembled-a",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-assembled-a.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.86,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back",
+      "socket_chassis",
+      "socket_muzzle",
+      "socket_muzzle_2",
+      "socket_weapon",
+      "socket_weapon_2"
+    ],
+    "quality": "final",
+    "triangles": 2204,
+    "bytes": 206900
+  },
+  {
+    "id": "tdf.mech.assembled-b",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-assembled-b.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.73,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back",
+      "socket_chassis",
+      "socket_muzzle",
+      "socket_muzzle_2",
+      "socket_weapon",
+      "socket_weapon_2"
+    ],
+    "quality": "final",
+    "triangles": 2076,
+    "bytes": 191820
   }
 ]

@@ -3,6 +3,7 @@ export interface MechTraits {
   readonly heatCapacity?: number;
   readonly sightBonus?: number;
   readonly jumpRange?: number;
+  /** Maximum landing elevation change in half-storey map layers. */
   readonly jumpHeight?: number;
   readonly jumpHeat?: number;
   readonly allTerrain?: boolean;

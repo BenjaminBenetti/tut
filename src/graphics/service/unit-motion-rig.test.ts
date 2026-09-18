@@ -354,7 +354,13 @@ describe("progression mech articulation", () => {
         );
         const hardware = new Box3();
         const mount = new Box3();
+        const cockpit = new Box3();
+        const equipment = new Box3();
         model.traverse((node) => {
+          if (node.name === "cockpit")
+            cockpit.union(new Box3().setFromObject(node));
+          if (node instanceof Mesh && node.userData.motion_role === "back")
+            equipment.union(new Box3().setFromObject(node));
           if (node.name.startsWith("back_mount"))
             hardware.union(new Box3().setFromObject(node));
           if (node.name === "mount" && node.userData.motion_role === "back")
@@ -362,6 +368,11 @@ describe("progression mech articulation", () => {
         });
         expect(hardware.isEmpty(), chassis.id).toBe(false);
         expect(mount.isEmpty(), weapon.id).toBe(false);
+        expect(cockpit.isEmpty(), chassis.id).toBe(false);
+        expect(
+          equipment.min.x,
+          `${chassis.id} / ${weapon.id} clears the cockpit`,
+        ).toBeGreaterThan(cockpit.max.x);
         expect(
           hardware.intersectsBox(mount),
           `${chassis.id} / ${weapon.id}`,

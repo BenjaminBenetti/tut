@@ -6,7 +6,7 @@ The colony pressure field also selects infested civilian assets. Cars keep their
 
 ## Art direction and scope
 
-The kit contains **64 models**, replacing the initial nine and adding **55**, against **226 baseline models**. The new additions are approximately one quarter of that catalogue. The kit includes six resin ground modules, 24 organic structures/details and 34 infested urban/ruin models.
+The kit contains **67 models**, replacing the initial nine and adding **58**, against **226 baseline models**. The new additions are approximately one quarter of that catalogue. The kit includes six resin ground modules, 24 organic structures/details, 34 infested urban/ruin models and three large carapace buildings.
 
 The palette follows the Crescent bugs: dark walnut and chestnut shells, irregular tan fracture edges, recessed flesh and restrained biological green. Nest mouths are hollow; spines use swept, fractured blades; layered shells have chipped rims and fissures. Vehicles have opened cabins, broken glazing, rust and growth emerging through their bodywork. Building pieces expose broken masonry and supports.
 
@@ -14,6 +14,7 @@ The user's request for substantially higher quality supersedes the initial 60/30
 
 ## Sources and reproduction
 
+- [Carapace buildings](infestation-carapace.md): enclosed shell lodges, brood halls and keeps for large colony cores.
 - [Organic kit](infestation-organic.md): all 30 organic models and individual build arguments.
 - `tools/art/models/infestation-organic-kit.py`: colony structures and terrain relief.
 - `tools/art/models/infestation-urban-kit.py`: invaded city objects and fractured architecture.
@@ -39,13 +40,15 @@ The ground uses one four-tile repeating PBR field projected in world coordinates
 
 Most ground uses the quiet base module; sparse ribs, cracks and root plates indicate feeding routes and nest areas. The textures contain no baked lighting. Ground remains **2× movement cost for TDF, ½× for bugs**, including infested slopes and indoor floors. Infantry-only building access is retained.
 
+The [carapace building review](infestation-carapace.md) shows the latest extension in generated maps, with the original approved comparison retained below.
+
 ## Review in Map Lab
 
 Compare the same seed at infestation **0, 4 and 10**, with models enabled:
 
 `/mapgen-preview.html?seed=infestation-review&biome=temperate&settlement=town&size=small&infestation=10&models=1`
 
-The same seed shows the transition from four intact buildings at level 0, to two colony clearings at level 4, to three connected colonies and two breached buildings at level 10. All three maps require zero connectivity repairs.
+The approved checkpoint before the carapace extension shows the transition from four intact buildings at level 0, to two colony clearings at level 4, to three connected colonies and two breached buildings at level 10. All three maps require zero connectivity repairs.
 
 | Baseline: 0 | Outbreak: 4 | Mature colonies: 10 |
 | --- | --- | --- |

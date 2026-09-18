@@ -226,6 +226,9 @@ class MapValidator {
         if (tile.blocksLos !== hull) {
           this.fail("I2", "Tile without a prop blocks line of sight", tile);
         }
+        if (tile.sightHeight !== undefined) {
+          this.fail("I2", "Tile without a prop carries a sight height", tile);
+        }
         continue;
       }
       const prop = propsById.get(tile.propId);
@@ -261,6 +264,16 @@ class MapValidator {
         this.fail(
           "I2",
           `blocksLos ${String(tile.blocksLos)} does not match ${prop.kind}`,
+          tile,
+        );
+      } else if (
+        tile.sightHeight !== definition.sightHeight ||
+        (tile.sightHeight !== undefined &&
+          (!Number.isInteger(tile.sightHeight) || tile.sightHeight <= 0))
+      ) {
+        this.fail(
+          "I2",
+          `sightHeight ${String(tile.sightHeight)} does not match a valid height for ${prop.kind}`,
           tile,
         );
       }

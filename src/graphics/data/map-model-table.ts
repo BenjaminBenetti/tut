@@ -121,6 +121,9 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
+  [PropKindIds.INFESTED_CARAPACE_LODGE]: "building.infested-carapace-lodge",
+  [PropKindIds.INFESTED_CARAPACE_HALL]: "building.infested-carapace-hall",
+  [PropKindIds.INFESTED_CARAPACE_KEEP]: "building.infested-carapace-keep",
   [PropKindIds.INFESTED_SHELTER]: "prop.bus-stop-infested",
   [PropKindIds.INFESTED_NEST]: "prop.infested-nest",
   [PropKindIds.INFESTED_HIVE]: "prop.infested-hive-spire",

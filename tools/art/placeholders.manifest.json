@@ -4200,5 +4200,47 @@
     "quality": "final",
     "triangles": 2576,
     "bytes": 86544
+  },
+  {
+    "id": "building.infested-carapace-lodge",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-infested-carapace-lodge.glb",
+    "footprint": {
+      "w": 3,
+      "d": 3
+    },
+    "height": 2.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 8634,
+    "bytes": 249612
+  },
+  {
+    "id": "building.infested-carapace-hall",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-infested-carapace-hall.glb",
+    "footprint": {
+      "w": 4,
+      "d": 3
+    },
+    "height": 3.08,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 11612,
+    "bytes": 349664
+  },
+  {
+    "id": "building.infested-carapace-keep",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-infested-carapace-keep.glb",
+    "footprint": {
+      "w": 4,
+      "d": 4
+    },
+    "height": 4.13,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 12154,
+    "bytes": 325852
   }
 ]

@@ -8,6 +8,8 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { PROP_MODEL_VARIANTS } from "../data/prop-model-variants";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { PROP_DEFINITIONS } from "../../mapgen/data/props";
+import { propModel } from "../data/map-model-table";
+import { propPlacementTiles } from "../../mapgen/service/prop-footprint";
 
 const baseline = new FixtureMapBuilder(8, 8, 1).fillGround().build();
 
@@ -70,9 +72,13 @@ describe("infested asset resolution", () => {
     for (const definition of PROP_DEFINITIONS.filter((d) =>
       d.id.startsWith("infested-"),
     )) {
-      for (const variant of PROP_MODEL_VARIANTS[definition.id] ?? []) {
-        const footprint = MODEL_MANIFEST[variant.modelId].footprint;
-        expect(footprint, variant.modelId).toEqual(
+      const models = [
+        propModel(definition.id)!,
+        ...(PROP_MODEL_VARIANTS[definition.id] ?? []).map((v) => v.modelId),
+      ];
+      for (const model of models) {
+        const footprint = MODEL_MANIFEST[model].footprint;
+        expect(footprint, model).toEqual(
           definition.footprint ?? { w: 1, d: 1 },
         );
       }
@@ -99,5 +105,28 @@ describe("infested asset resolution", () => {
     ).toBe(true);
     expect(JSON.stringify(map)).toBe(before);
     expect(resolveMapModels(map)).toEqual(models);
+  });
+
+  it("centres a turned brood hall on its whole footprint and keeps every cell as a fog owner", () => {
+    const kind = "infested-carapace-hall";
+    const anchor = { x: 2, y: 0, z: 2 };
+    const definition = PROP_DEFINITIONS.find((d) => d.id === kind)!;
+    const cells = propPlacementTiles(anchor, definition, 1);
+    const map = new FixtureMapBuilder(8, 8, 1)
+      .fillGround(0, "infested")
+      .prop(kind, anchor, 1, cells)
+      .build();
+    const hall = resolveMapModels(map).props.find(
+      (prop) => prop.modelId === "building.infested-carapace-hall",
+    );
+    expect(hall).toMatchObject({
+      position: { x: 3.5, z: 4 },
+      turns: 1,
+      occupiedTiles: cells,
+    });
+    expect(hall?.occupiedTiles).toHaveLength(12);
+    expect(hall?.part).toBeDefined();
+    expect(hall?.scaleX).toBeUndefined();
+    expect(hall?.scaleZ).toBeUndefined();
   });
 });

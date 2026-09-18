@@ -12,6 +12,39 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "building.infested-carapace-keep": {
+    category: "buildings",
+    path: "assets/models/buildings/building-infested-carapace-keep.glb",
+    footprint: {
+      w: 4,
+      d: 4,
+    },
+    height: 4.13,
+    sockets: [],
+    quality: "final",
+  },
+  "building.infested-carapace-hall": {
+    category: "buildings",
+    path: "assets/models/buildings/building-infested-carapace-hall.glb",
+    footprint: {
+      w: 4,
+      d: 3,
+    },
+    height: 3.08,
+    sockets: [],
+    quality: "final",
+  },
+  "building.infested-carapace-lodge": {
+    category: "buildings",
+    path: "assets/models/buildings/building-infested-carapace-lodge.glb",
+    footprint: {
+      w: 3,
+      d: 3,
+    },
+    height: 2.37,
+    sockets: [],
+    quality: "final",
+  },
   "building.wall-door-panel-infested": {
     category: "buildings",
     path: "assets/models/buildings/building-wall-door-panel-infested.glb",

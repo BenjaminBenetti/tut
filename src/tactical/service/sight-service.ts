@@ -90,7 +90,8 @@ export interface SightLine {
  *   corner hit    ──► any of the four edges meeting there, as above
  *
  *   height(t) = (from.y + EYE) + ((to.y + EYE) − (from.y + EYE)) · t
- *   walls and props fill [tile.y, tile.y + STOREY_LAYERS)
+ *   walls fill [tile.y, tile.y + STOREY_LAYERS)
+ *   props fill [tile.y, tile.y + (sightHeight ?? STOREY_LAYERS))
  * ```
  *
  * The endpoint tiles never block, a missing tile with only sky above it
@@ -227,6 +228,12 @@ function isSolidAt(
  * a wall — in the same place would stop (#679). Rock is opaque by nature
  * and a prop is opaque by tuning, but a sightline cannot tell the
  * difference, so neither should these two rules.
+ *
+ * Building-sized props declare an opaque height above their occupied
+ * tiles. Scan the whole column for those, since the ray may pass above
+ * the base tile's storey or beside another surface in that column. The
+ * nearest-storey rule is unchanged for props without an explicit height;
+ * walls and floor slabs keep their own rules.
  */
 function blocksSightAt(
   index: TileIndex,
@@ -234,8 +241,18 @@ function blocksSightAt(
   level: number,
   z: number,
 ): boolean {
+  const tile = tileAtHeight(index, x, level, z);
   return (
-    tileAtHeight(index, x, level, z)?.blocksLos === true ||
+    (tile?.blocksLos === true && tile.sightHeight === undefined) ||
+    index
+      .column(x, z)
+      .some(
+        (occupant) =>
+          occupant.blocksLos &&
+          occupant.sightHeight !== undefined &&
+          occupant.y <= level &&
+          level < occupant.y + occupant.sightHeight,
+      ) ||
     isSolidAt(index, x, level, z)
   );
 }
@@ -462,7 +479,7 @@ function wallBlocksAt(
   );
 }
 
-/** Tile whose storey of walls/props contains the sampled ray height. */
+/** Tile whose storey of walls or legacy props contains the sampled ray height. */
 function tileAtHeight(
   index: TileIndex,
   x: number,

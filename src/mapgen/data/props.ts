@@ -9,6 +9,9 @@ import type { PropDefinition } from "../model/prop";
 export const PropKindIds = {
   INFESTED_NEST: "infested-nest",
   INFESTED_HIVE: "infested-hive",
+  INFESTED_CARAPACE_LODGE: "infested-carapace-lodge",
+  INFESTED_CARAPACE_HALL: "infested-carapace-hall",
+  INFESTED_CARAPACE_KEEP: "infested-carapace-keep",
   INFESTED_BROOD: "infested-brood",
   INFESTED_RIBS: "infested-ribs",
   INFESTED_VENT: "infested-vent",
@@ -87,6 +90,33 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
  * tier: they are the ground, and no weapon on the arsenal moves it.
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
+  {
+    id: PropKindIds.INFESTED_CARAPACE_LODGE,
+    footprint: { w: 3, d: 3 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    demolition: 2,
+    placements: ["infestation"],
+  },
+  {
+    id: PropKindIds.INFESTED_CARAPACE_HALL,
+    footprint: { w: 4, d: 3 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 5,
+    demolition: 2,
+    placements: ["infestation"],
+  },
+  {
+    id: PropKindIds.INFESTED_CARAPACE_KEEP,
+    footprint: { w: 4, d: 4 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 6,
+    demolition: 2,
+    placements: ["infestation"],
+  },
   ...[
     { id: PropKindIds.INFESTED_HIVE, w: 2, d: 2, high: true },
     { id: PropKindIds.INFESTED_BROOD, w: 2, d: 2, high: true },

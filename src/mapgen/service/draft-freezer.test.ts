@@ -10,6 +10,7 @@ import type { MapRecipe } from "../model/map-recipe";
 import { PassMask } from "../model/pass-mask";
 import { createDefaultRegistries } from "./default-registries";
 import { freezeDraft } from "./draft-freezer";
+import { propPlacementTiles } from "./prop-footprint";
 import { TileIndex } from "./tile-index";
 
 const registries = createDefaultRegistries();
@@ -75,9 +76,28 @@ describe("freezeDraft", () => {
     expect(car?.pass).toBe(PassMask.NONE);
     expect(car?.coverProvided).toBe(CoverLevel.HIGH);
     expect(car?.blocksLos).toBe(true);
+    expect(car).not.toHaveProperty("sightHeight");
     expect(index.get(1, 0, 1)?.coverProvided).toBe(CoverLevel.NONE);
     expect(index.get(1, 0, 1)?.blocksLos).toBe(false);
     expect(map.props[0]?.rotation).toBe(3);
+  });
+
+  it("carries an explicit opaque height across the whole building-sized footprint", () => {
+    const d = new MapDraft(8, 8, new SequentialIdGenerator(), SurfaceIds.GRASS);
+    const kind = PropKindIds.INFESTED_CARAPACE_HALL;
+    const anchor = { x: 2, y: 0, z: 2 };
+    const cells = propPlacementTiles(anchor, registries.props.get(kind), 1);
+    d.addProp(kind, anchor, 1, cells);
+    const map = freezeDraft(d, recipe, registries);
+    const occupied = map.tiles.filter((tile) => tile.propId !== undefined);
+    expect(occupied).toHaveLength(12);
+    expect(occupied.every((tile) => tile.sightHeight === 5)).toBe(true);
+    expect(occupied.every((tile) => tile.blocksLos)).toBe(true);
+    expect(
+      map.tiles
+        .filter((tile) => tile.propId === undefined)
+        .every((tile) => !("sightHeight" in tile)),
+    ).toBe(true);
   });
 
   it("copies hooks and defaults extraction to the first deploy zone", () => {

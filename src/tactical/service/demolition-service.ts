@@ -45,7 +45,7 @@ export interface Demolition {
  *   for each footprint tile:
  *     prop on it, catalogue force ≤ force ──► every tile of the prop cleared:
  *                                             propId gone, pass ← surface default,
- *                                             cover NONE, blocksLos false; prop removed
+ *                                             cover NONE, blocksLos false, sightHeight gone
  *     wall on an edge, wall force ≤ force ──► edge cleared on this tile and mirrored
  *                                             on the neighbour (invariant I3)
  * ```
@@ -115,7 +115,7 @@ export function demolish(
       if (tile === undefined) {
         continue;
       }
-      const { propId: _gone, ...bare } = tile;
+      const { propId: _gone, sightHeight: _heightGone, ...bare } = tile;
       put({
         ...bare,
         pass: structures.surfacePass(tile.surface),

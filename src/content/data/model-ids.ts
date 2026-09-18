@@ -313,6 +313,9 @@ export const MODEL_IDS = [
   "building.wall-door-concrete-infested",
   "building.wall-door-plaster-infested",
   "building.wall-door-panel-infested",
+  "building.infested-carapace-lodge",
+  "building.infested-carapace-hall",
+  "building.infested-carapace-keep",
 ] as const;
 
 /** A registered model id. */

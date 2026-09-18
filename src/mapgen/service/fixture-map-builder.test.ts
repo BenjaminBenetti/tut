@@ -40,6 +40,24 @@ describe("FixtureMapBuilder", () => {
     expect(tile?.coverProvided).toBe(CoverLevel.HIGH);
     expect(tile?.propId).toBe(map.props[0]?.id);
     expect(map.props[0]?.rotation).toBe(1);
+    expect(tile).not.toHaveProperty("sightHeight");
+  });
+
+  it("copies a carapace structure's opaque height onto every occupied tile", () => {
+    const cells = Array.from({ length: 9 }, (_, i) => ({
+      x: 1 + (i % 3),
+      y: 0,
+      z: 1 + Math.floor(i / 3),
+    }));
+    const map = new FixtureMapBuilder(5, 5, 5)
+      .fillGround()
+      .prop(PropKindIds.INFESTED_CARAPACE_LODGE, { x: 1, y: 0, z: 1 }, 0, cells)
+      .build();
+    const occupied = map.tiles.filter((tile) => tile.propId !== undefined);
+    expect(occupied).toHaveLength(9);
+    expect(occupied.every((tile) => tile.sightHeight === 4)).toBe(true);
+    expect(occupied.every((tile) => tile.blocksLos)).toBe(true);
+    expect(map.tiles[0]).not.toHaveProperty("sightHeight");
   });
 
   it("defaults extraction to the first deploy zone", () => {

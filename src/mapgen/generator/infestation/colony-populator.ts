@@ -1,8 +1,11 @@
+import { CARAPACE_SITE_TUNING } from "../../data/carapace-site-tuning";
+import { placeCarapaceSite } from "./carapace-sites";
 import { INFESTATION_TUNING } from "../../data/infestation-tuning";
 import { PropKindIds } from "../../data/props";
 import { SurfaceIds } from "../../data/surfaces";
 import type { GenerationContext } from "../../model/generation-pass";
 import type { Rotation } from "../../model/prop";
+import type { MapDraft } from "../../model/map-draft";
 import type { TileCoord } from "../../model/tile-coord";
 import { infestationPressure } from "../../service/infestation-layout";
 import { propPlacementTiles } from "../../service/prop-footprint";
@@ -26,7 +29,20 @@ export function populateInfestationColonies(
   const plan = draft.infestation;
   if (plan === undefined) return 0;
   let count = 0;
+  let structures = 0;
+  const structureLimit = Math.ceil(
+    plan.zones.length * CARAPACE_SITE_TUNING.colonyShare,
+  );
   for (const zone of plan.zones) {
+    if (
+      zone.carapace !== undefined &&
+      structures < structureLimit &&
+      placeCarapaceSite(context, zone.carapace, protectedColumns)
+    ) {
+      count++;
+      structures++;
+      continue;
+    }
     const anchorKind =
       zone.maturity === "hive"
         ? PropKindIds.INFESTED_HIVE
@@ -41,6 +57,18 @@ export function populateInfestationColonies(
       { x: -2, z: 0 },
       { x: 0, z: -2 },
     ];
+    // A large shell can replace the old anchor; other colonies retain their
+    // mature hive by searching the rest of their existing clearing.
+    if (plan.zones.some((candidate) => candidate.carapace !== undefined)) {
+      const radius = Math.floor(zone.clearingRadius);
+      for (let z = -radius; z <= radius; z++)
+        for (let x = -radius; x <= radius; x++)
+          if (
+            Math.hypot(x, z) <= radius &&
+            !offsets.some((offset) => offset.x === x && offset.z === z)
+          )
+            offsets.push({ x, z });
+    }
     for (const offset of offsets) {
       const x = zone.centre.x + offset.x;
       const z = zone.centre.z + offset.z;
@@ -177,6 +205,7 @@ function place(
       draft.groundSurfaceAt(cell.x, cell.z) !== SurfaceIds.INFESTED ||
       draft.slopeAt(cell.x, cell.z) ||
       draft.propAt(cell) ||
+      withinCarapaceMargin(draft, cell) ||
       Object.keys(draft.wallsAt(cell)).length > 0
     )
       return false;
@@ -203,4 +232,19 @@ function place(
   if (approaches < 3) return false;
   draft.addProp(kind, tile, rotation, cells);
   return true;
+}
+
+/** Keeps later nests and debris out of every solid colony building's circulation ring. */
+function withinCarapaceMargin(draft: MapDraft, tile: TileCoord): boolean {
+  for (let z = tile.z - 1; z <= tile.z + 1; z++)
+    for (let x = tile.x - 1; x <= tile.x + 1; x++) {
+      if (!draft.inBounds(x, z)) continue;
+      if (
+        draft
+          .propAt(draft.groundCoord(x, z))
+          ?.kind.startsWith("infested-carapace-")
+      )
+        return true;
+    }
+  return false;
 }

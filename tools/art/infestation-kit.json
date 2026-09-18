@@ -510,5 +510,29 @@
     "category": "buildings",
     "file": "building-wall-door-panel-infested.glb",
     "footprint": "1x0"
+  },
+  {
+    "id": "building.infested-carapace-lodge",
+    "script": "infestation-carapace-kit.py",
+    "kind": "lodge",
+    "category": "buildings",
+    "file": "building-infested-carapace-lodge.glb",
+    "footprint": "3x3"
+  },
+  {
+    "id": "building.infested-carapace-hall",
+    "script": "infestation-carapace-kit.py",
+    "kind": "hall",
+    "category": "buildings",
+    "file": "building-infested-carapace-hall.glb",
+    "footprint": "4x3"
+  },
+  {
+    "id": "building.infested-carapace-keep",
+    "script": "infestation-carapace-kit.py",
+    "kind": "keep",
+    "category": "buildings",
+    "file": "building-infested-carapace-keep.glb",
+    "footprint": "4x4"
   }
 ]

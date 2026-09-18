@@ -13,6 +13,7 @@ import type { MapDraft } from "../model/map-draft";
 import { PassMask } from "../model/pass-mask";
 import type { ColumnCoord } from "../model/road";
 import { ValueNoise } from "../service/value-noise";
+import { planCarapaceSites } from "./infestation/carapace-sites";
 
 /** Plans a connected colony ecology before streetside parcels claim the land. */
 export class InfestationPlanPass implements GenerationPass {
@@ -102,9 +103,15 @@ export class InfestationPlanPass implements GenerationPass {
       }
     }
     draft.infestation = { level, zones, corridors, influence, ruins: [] };
+    const plannedZones = planCarapaceSites(context, zones);
+    draft.infestation = { ...draft.infestation, zones: plannedZones };
     // A colony's excavated clearing interrupts the old terrain. One-layer
     // depressions remain freely traversable and are resolved by the slope pass.
-    if (level >= 6) excavateClearings(draft, zones);
+    if (level >= 6)
+      excavateClearings(
+        draft,
+        plannedZones.filter((zone) => zone.carapace === undefined),
+      );
     diagnostics.note(
       `Infestation ecology: ${zones.length} reserved colonies, ${corridors.length} feeding corridors`,
     );

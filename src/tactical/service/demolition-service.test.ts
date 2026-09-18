@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { PropKindIds } from "../../mapgen/data/props";
+import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { PassMask } from "../../mapgen/model/pass-mask";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { DEMOLITION_TUNING } from "../data/demolition-tuning";
 import { demolish } from "./demolition-service";
+import { hasLineOfSight } from "./sight-service";
 import { fixtureAttackDeps, openField } from "./tactical-fixtures.test-helper";
 
 const at = (x: number, z: number): TileCoord => ({ x, y: 0, z });
@@ -64,6 +66,41 @@ describe("demolish", () => {
     expect(index.getAt(at(2, 2))!.pass).toBe(PassMask.ALL);
     expect(index.getAt(at(3, 2))!.pass).toBe(PassMask.ALL);
     expect(index.getAt(at(2, 2))!.propId).toBeUndefined();
+  });
+
+  it("demolishes an entire tall shell and reopens its elevated firing lane", () => {
+    const cells = Array.from({ length: 16 }, (_, i) =>
+      at(2 + (i % 4), 2 + Math.floor(i / 4)),
+    );
+    const from = { x: 0, y: 4, z: 3 };
+    const to = { x: 7, y: 4, z: 3 };
+    const map = openField()
+      .fillGround(0, SurfaceIds.INFESTED)
+      .tile(from, SurfaceIds.GRASS)
+      .tile(to, SurfaceIds.GRASS)
+      .prop(PropKindIds.INFESTED_CARAPACE_KEEP, at(2, 2), 0, cells)
+      .build();
+    expect(hasLineOfSight(map, from, to)).toBe(false);
+    const light = demolish(map, [at(5, 5)], 1, structures, DEMOLITION_TUNING);
+    expect(light.map).toBe(map);
+    const result = demolish(map, [at(5, 5)], 2, structures, DEMOLITION_TUNING);
+    expect(result.props).toHaveLength(1);
+    expect(result.map.props).toEqual([]);
+    expect(hasLineOfSight(result.map, from, to)).toBe(true);
+    expect(hasLineOfSight(result.map, to, from)).toBe(true);
+    const index = new TileIndex(result.map);
+    for (const cell of cells) {
+      expect(index.getAt(cell)).toMatchObject({
+        surface: SurfaceIds.INFESTED,
+        pass: PassMask.ALL,
+        blocksLos: false,
+        coverProvided: CoverLevel.NONE,
+      });
+      expect(index.getAt(cell)).not.toHaveProperty("propId");
+      expect(index.getAt(cell)).not.toHaveProperty("sightHeight");
+    }
+    expect(new TileIndex(map).getAt(at(5, 5))?.sightHeight).toBe(6);
+    expect(hasLineOfSight(map, from, to)).toBe(false);
   });
 
   it("knocks down a wall on both tiles that share it, once, at the kind's force", () => {

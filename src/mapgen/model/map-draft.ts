@@ -234,7 +234,9 @@ export class MapDraft {
       this.infestation?.zones.some(
         (zone) =>
           Math.hypot(x - zone.centre.x, z - zone.centre.z) <=
-          zone.clearingRadius,
+            zone.clearingRadius ||
+          (zone.carapace !== undefined &&
+            rectContains(zone.carapace.clearance, x, z)),
       ) ?? false
     );
   }

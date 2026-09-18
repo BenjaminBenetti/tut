@@ -119,14 +119,21 @@ describe("map model table", () => {
     expect(propModel("statue")).toBeUndefined();
   });
 
-  it("draws tiles from the tile and building kits, and props from the prop kit", () => {
+  it("draws terrain, colony buildings and ordinary props from their respective kits", () => {
     for (const [surface, id] of Object.entries(SURFACE_MODELS)) {
       expect(["tiles", "buildings"], `${surface} -> ${id}`).toContain(
         MODEL_MANIFEST[id].category,
       );
     }
-    for (const id of Object.values(PROP_MODELS)) {
-      expect(MODEL_MANIFEST[id].category).toBe("props");
+    const colonyBuildings = new Set<string>([
+      PropKindIds.INFESTED_CARAPACE_LODGE,
+      PropKindIds.INFESTED_CARAPACE_HALL,
+      PropKindIds.INFESTED_CARAPACE_KEEP,
+    ]);
+    for (const [kind, id] of Object.entries(PROP_MODELS)) {
+      expect(MODEL_MANIFEST[id].category, kind).toBe(
+        colonyBuildings.has(kind) ? "buildings" : "props",
+      );
     }
     for (const id of allWallModels) {
       expect(MODEL_MANIFEST[id].category).toBe("buildings");

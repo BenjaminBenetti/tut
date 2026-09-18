@@ -1,3 +1,5 @@
+import type { Rect } from "../../core/model/grid";
+import type { PropKindId, Rotation } from "./prop";
 import type { ColumnCoord } from "./road";
 
 /** A colony district reserved before parcels and buildings are generated. */
@@ -9,6 +11,8 @@ export interface InfestationZone {
   /** Nest clearing, unavailable to buildings and conventional landscaping. */
   readonly clearingRadius: number;
   readonly maturity: "outbreak" | "nest" | "hive";
+  /** Optional flat platform; final placement can decline it to preserve a mission route. */
+  readonly carapace?: CarapaceSite;
 }
 
 /** A branching feeding route between colonies; it can invade existing streets. */
@@ -33,4 +37,13 @@ export interface InfestationPlan {
   /** Row-major 0..1 growth pressure, quantized to hundredths, indexed z * width + x. */
   readonly influence: readonly number[];
   readonly ruins: readonly InfestationRuin[];
+}
+
+/** An early, bounded platform reservation for one solid colony building. */
+export interface CarapaceSite {
+  readonly kind: PropKindId;
+  readonly footprint: Rect;
+  readonly clearance: Rect;
+  readonly level: number;
+  readonly rotation: Rotation;
 }

@@ -35,6 +35,7 @@ interface MutableTile {
   propId?: string;
   coverProvided: CoverLevel;
   blocksLos: boolean;
+  sightHeight?: number;
   buildingId?: string;
   floorIndex?: number;
   roomId?: string;
@@ -185,11 +186,17 @@ export class FixtureMapBuilder {
     const cells = occupiedTiles ?? [coord];
     const tiles = cells.map((cell) => this.mustGet(cell));
     const id = this.id("p");
+    const definition = PROPS.get(kind);
     for (const tile of tiles) {
       tile.propId = id;
       tile.pass = PassMask.NONE;
-      tile.coverProvided = PROPS.get(kind).cover;
-      tile.blocksLos = PROPS.get(kind).blocksLos;
+      tile.coverProvided = definition.cover;
+      tile.blocksLos = definition.blocksLos;
+      if (definition.sightHeight === undefined) {
+        delete tile.sightHeight;
+      } else {
+        tile.sightHeight = definition.sightHeight;
+      }
     }
     this.props.push({
       id,

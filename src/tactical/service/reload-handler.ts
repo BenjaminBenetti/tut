@@ -57,6 +57,11 @@ export function reloadPools(
   unit: Unit,
 ): Result<Record<WeaponId, number>, TacticalError> {
   const template = mission.templates[unit.templateId];
+  if (template?.systems) {
+    return (unit.heat ?? 0) > 0
+      ? ok({})
+      : err({ kind: "systems-unavailable", reason: "Reactor is already cool" });
+  }
   const pools = (template?.weapons ?? []).filter(
     (weapon) => weapon.charges !== undefined,
   );
@@ -100,6 +105,9 @@ export const reloadHandler: TacticalHandler<ReloadCommand> = (
           ? {
               ...candidate,
               ap: candidate.ap - RELOAD_AP_COST,
+              ...(mission.templates[candidate.templateId]?.systems
+                ? { heat: 0 }
+                : {}),
               charges: { ...candidate.charges, ...full },
             }
           : candidate,

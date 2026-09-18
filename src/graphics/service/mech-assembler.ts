@@ -109,6 +109,16 @@ export class MechAssembler {
     this.tag(armLeft, "arms");
     this.tag(armWeapon, "arm-weapon");
     this.tag(backWeapon, "back-weapon");
+    // Preserve anatomical ownership through the tactical flattening pass.
+    for (const [part, role] of [
+      [legs, "legs"],
+      [chassis, "body"],
+      [armLeft, "arm-l"],
+      [armRight, "arm-r"],
+      [backWeapon, "back"],
+    ] as const) {
+      if (part) part.userData.motion_role = role;
+    }
     // Each part hangs on the nearest host that loaded, so one absent
     // part costs its own picture and not the mech's.
     this.attach(legs, root, undefined);

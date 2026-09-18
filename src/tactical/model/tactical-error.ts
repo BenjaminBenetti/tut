@@ -26,6 +26,7 @@ const MOVE_REJECTION_TEXT: Readonly<Record<MoveRejection, string>> = {
 
 /** Why a tactical command or mission start was rejected. Serializable. */
 export type TacticalError =
+  | { readonly kind: "systems-unavailable"; readonly reason: string }
   | { readonly kind: "no-active-mission" }
   | { readonly kind: "mission-active"; readonly missionId: string }
   | { readonly kind: "mission-not-found"; readonly missionId: string }
@@ -157,6 +158,8 @@ export type TacticalError =
 /** Human-readable text for a tactical error, for the status line and logs. */
 export function describeTacticalError(error: TacticalError): string {
   switch (error.kind) {
+    case "systems-unavailable":
+      return error.reason;
     case "no-active-mission":
       return "No mission is in progress";
     case "mission-active":
@@ -281,6 +284,7 @@ export function describeTacticalError(error: TacticalError): string {
 export const TACTICAL_ERROR_KINDS: Readonly<
   Record<TacticalError["kind"], true>
 > = {
+  "systems-unavailable": true,
   "no-active-mission": true,
   "mission-active": true,
   "mission-not-found": true,

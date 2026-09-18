@@ -3,13 +3,13 @@
 Shared by the per-model scripts (``tdf-mech-*.py``) and the assembled reference.
 Proportions follow the placeholder split (style guide §3, §6) so sockets stay
 where the mech bay expects them; the look follows ``docs/design/concepts/mech.png``
-and the mech-bay sheets: boxy chamfered armour, dark joints, olive panels,
+and mech_chassis_parts.py: tapered armour, dark joints, olive panels,
 orange markings, cyan visor slit.
 
 Blender axes: X right, Y back (+Y), Z up; the mech faces -Y. Three.js
 placeholder coordinates (x, y, z) map to Blender (x, -z, y).
 
-        socket_back ● (0.3, 1.05, -0.25)         chassis pivot = socket_chassis of legs
+        socket_back ● (0.65, 1.10, -0.18)         chassis pivot = socket_chassis of legs
    socket_arm_l ●─┐  ┌─● socket_arm_r          arm pivot = shoulder, hangs -Z, forearm -Y
                   └──┘                          weapon pivot = socket_weapon, points -Y
               legs: socket_chassis (0, 1.42, 0)
@@ -70,28 +70,9 @@ def build_legs() -> None:
 
 
 def build_chassis() -> None:
-    """Boxy torso, chest plate, shoulder blocks, cockpit with visor slit."""
-    armour("torso", (0.98, 0.7, 0.96), (0, 0, 0.5), "tdf-grey-mid", chamfer=0.035)
-    armour("chest_plate", (0.66, 0.08, 0.46), (0, -0.37, 0.46), "tdf-olive", chamfer=0.02)
-    box("chest_vent_l", (0.12, 0.02, 0.2), (-0.36, -0.36, 0.52), "tdf-grey-dark")
-    box("chest_vent_r", (0.12, 0.02, 0.2), (0.36, -0.36, 0.52), "tdf-grey-dark")
-    armour("back_plate", (0.78, 0.1, 0.66), (0, 0.38, 0.5), "tdf-grey-dark", chamfer=0.02)
-    armour("shoulders", (1.36, 0.58, 0.28), (0, 0, 0.92), "tdf-grey-dark", chamfer=0.03)
-    for side in (-1, 1):
-        s = "l" if side < 0 else "r"
-        armour(f"pad_{s}", (0.3, 0.6, 0.34), (side * 0.55, 0, 0.94), "tdf-olive", chamfer=0.025)
-        box(f"pad_mark_{s}", (0.1, 0.02, 0.08), (side * 0.55, -0.31, 0.98), "tdf-orange")
-        cylinder(f"shoulder_joint_{s}", 0.1, 0.1, 0.14, 8, (side * 0.74, 0, 0.85), "tdf-grey-dark", rot=(0, math.pi / 2, 0))
-    armour("cockpit", (0.42, 0.42, 0.3), (0, -0.05, 1.21), "tdf-grey-mid", chamfer=0.03)
-    box("visor", (0.3, 0.02, 0.07), (0, -0.27, 1.23), "tdf-visor")
-    box("cockpit_brow", (0.44, 0.1, 0.05), (0, -0.24, 1.32), "tdf-grey-dark")
-    box("hazard", (0.08, 0.02, 0.3), (0.42, -0.36, 0.4), "tdf-orange-dim")
-    box("marking", (0.18, 0.02, 0.12), (-0.3, -0.36, 0.62), "tdf-orange")
-    box("back_mount", (0.24, 0.24, 0.08), (0.3, 0.25, 1.06), "tdf-grey-dark")
-    socket("arm_l", (-0.72, 0, 0.85))
-    socket("arm_r", (0.72, 0, 0.85))
-    socket("back", (0.3, 0.25, 1.05))
-
+    """Build the compact Vanguard and its supported shoulder hardpoint."""
+    from mech_chassis_parts import build_chassis as chassis
+    chassis("vanguard")
 
 # ===========================================
 # Arms (Tracker): pivot at the shoulder socket, socket_weapon at the wrist
@@ -165,4 +146,4 @@ def build_assembled() -> None:
     _place(lambda: build_arm(-1), arm_l)
     _place(lambda: build_arm(1), arm_r)
     _place(build_autocannon, (arm_r[0] + 0.1, arm_r[1] - 0.47, arm_r[2] - 0.65))
-    _place(build_missile_pod, (chassis[0] + 0.3, chassis[1] + 0.25, chassis[2] + 1.05))
+    _place(build_missile_pod, (chassis[0] + 0.65, chassis[1] + 0.18, chassis[2] + 1.10))

@@ -121,6 +121,9 @@ function materialise(
     y: coord.y,
     z: coord.z,
     surface,
+    ...(definition.mechMoveCost === undefined
+      ? {}
+      : { mechMoveCost: definition.mechMoveCost }),
     pass:
       prop === undefined && !dropship
         ? definition.defaultPass &

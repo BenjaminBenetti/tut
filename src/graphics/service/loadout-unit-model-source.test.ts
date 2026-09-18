@@ -113,11 +113,14 @@ describe("LoadoutUnitModelSource (#1115)", () => {
     );
     expect(models.loads).not.toContain("tdf.mech.assembled-a");
     expect(mech.name).toBe(MECH_ROOT_NAME);
-    // Flat, like an authored GLB: the rig looks for limbs among the
-    // direct children.
-    expect(mech.children.every((child) => child.children.length === 0)).toBe(
-      true,
-    );
+    // Arms retain their socket-mounted weapons as one anatomical subtree.
+    const arms = mech.children.filter((child) => child.userData.motion_joint);
+    expect(arms).toHaveLength(2);
+    expect(
+      arms
+        .find((child) => child.userData.motion_role === "arm-r")
+        ?.getObjectByName("mesh:tdf.mech.weapon-arm.autocannon"),
+    ).toBeDefined();
     expect(names(mech)).toContain("mesh:tdf.mech.weapon-arm.autocannon");
     expect(names(mech)).toContain("socket_muzzle");
   });

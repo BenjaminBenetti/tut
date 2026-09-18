@@ -1,3 +1,4 @@
+import { ADVANCED_PARTS } from "./advanced-parts";
 import type { MechPart } from "../model/mech-part";
 
 /**
@@ -41,6 +42,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
   // at a price that hurts to lose.
   {
     id: "chassis-vanguard",
+    hullHp: 35,
+    traits: { heatCapacity: 20 },
     name: "Vanguard",
     slot: "chassis",
     tier: 1,
@@ -60,6 +63,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "chassis-courser",
+    hullHp: 28,
+    traits: { heatCapacity: 22 },
     name: "Courser",
     slot: "chassis",
     tier: 1,
@@ -79,6 +84,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "chassis-bulwark",
+    hullHp: 80,
+    traits: { heatCapacity: 28 },
     name: "Bulwark",
     slot: "chassis",
     tier: 1,
@@ -98,6 +105,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "chassis-atlas",
+    hullHp: 75,
+    traits: { heatCapacity: 32 },
     name: "Atlas",
     slot: "chassis",
     tier: 2,
@@ -156,6 +165,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "legs-jumper",
+    traits: { jumpRange: 12, jumpHeight: 8, jumpHeat: 5 },
     name: "Jumper Legs",
     slot: "legs",
     tier: 2,
@@ -170,7 +180,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 12,
     },
     description:
-      "Hydraulic jump assist. Power hungry, but it clears rubble in a single bound.",
+      "Jump jets cross up to 12 tiles and climb four storeys onto clear flat roofs. Costs 1 AP and 5 heat.",
   },
 
   // ===========================================
@@ -196,6 +206,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
   },
   {
     id: "arms-brace",
+    traits: { braceAccuracy: 5 },
     name: "Brace Arms",
     slot: "arms",
     tier: 1,
@@ -293,7 +304,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
     },
     description: "Light and precise. Draws heavily on the reactor.",
     // Precise means precise: one thing, nothing around it, nothing broken.
-    weapon: { range: 12, armorPen: 1 },
+    weapon: { range: 12, armorPen: 1, energy: true },
   },
   {
     id: "arm-weapon-railgun",
@@ -362,6 +373,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
     // The widest blast on the arsenal, and heavy enough to open a doorway (#1121).
     weapon: {
       range: 16,
+      minRange: 3,
+      indirect: true,
       armorPen: 0,
       aoe: { radius: 2, falloff: 0.4 },
       demoForce: 2,
@@ -460,4 +473,5 @@ export const STARTER_PARTS: readonly MechPart[] = [
     description:
       "A second, smaller reactor. Buys headroom for one more hungry weapon.",
   },
+  ...ADVANCED_PARTS,
 ];

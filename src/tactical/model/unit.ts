@@ -85,6 +85,18 @@ export const UNIT_STATUSES = [
  * ```
  */
 export interface Unit {
+  /** Shared thermal load; absent means cold (or a legacy charge-based mech). */
+  readonly heat?: number;
+  readonly braced?: boolean;
+  readonly movedThisTurn?: boolean;
+  readonly ablativeSpent?: number;
+  /** Turn number on which each weapon becomes ready again. */
+  readonly weaponReadyOnTurn?: Readonly<Record<WeaponId, number>>;
+  /** A friendly designation expires when the marking side next begins its turn. */
+  readonly designatedBy?: Team;
+  readonly designatedUntilTurn?: number;
+  /** The designating fitting's accuracy contribution for allied guided attacks. */
+  readonly designatedAccuracy?: number;
   readonly id: UnitId;
   readonly kind: UnitKind;
   readonly team: Team;

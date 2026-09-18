@@ -1,3 +1,4 @@
+import { MECH_BLUEPRINTS } from "../../roster/data/mech-blueprints";
 import "../../ui/style/theme.css";
 import "../../ui/style/screens.css";
 
@@ -229,6 +230,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
         "mech-bay",
         () =>
           new MechBayScreen({
+            blueprints: MECH_BLUEPRINTS,
             router,
             session: game.session,
             parts: game.content.parts,

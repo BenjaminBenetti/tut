@@ -1,3 +1,4 @@
+import { refreshMechSystems } from "./mech-heat-service";
 import { ok } from "../../core/model/result";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { CombatTuning } from "../model/combat-tuning";
@@ -17,7 +18,7 @@ import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { leaveOverwatch, spendOverwatchShot } from "./overwatch-status";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackDeps } from "./combat-service";
-import { rollAttack, validateTargeting } from "./combat-service";
+import { chargesLeft, rollAttack, validateTargeting } from "./combat-service";
 import { unitFootprintTiles } from "./footprint-service";
 import { missionOutcome } from "./mission-end-service";
 import { unitCanSee } from "./vision-service";
@@ -60,13 +61,27 @@ export type PhaseStep = (
 export const refreshSides: PhaseStep = (mission) => {
   const acting = TEAM_FOR_PHASE[mission.phase];
   const units = mission.units.map((unit): Unit => {
+    if (
+      (unit.designatedUntilTurn ?? Infinity) <= mission.turn &&
+      unit.designatedBy === acting
+    ) {
+      unit = {
+        ...unit,
+        designatedBy: undefined,
+        designatedUntilTurn: undefined,
+        designatedAccuracy: undefined,
+      };
+    }
     if (unit.hp <= 0) {
       return unit;
     }
     if (unit.team === acting) {
-      return unit.ap === unit.maxAp && !unit.status.includes("overwatch")
-        ? unit
-        : { ...leaveOverwatch(unit), ap: unit.maxAp };
+      return refreshMechSystems(
+        mission,
+        unit.ap === unit.maxAp && !unit.status.includes("overwatch")
+          ? unit
+          : { ...leaveOverwatch(unit), ap: unit.maxAp },
+      );
     }
     return unit.status.includes("suppressed")
       ? { ...unit, status: without(unit.status, "suppressed") }
@@ -242,25 +257,25 @@ export function overwatchReaction(
       break;
     }
     const watcher = findUnit(state, watcherId);
-    // A watcher shoots what it can see, by the one sight rule (#579).
-    //
-    // Every shipped template already has a weapon that reaches no
-    // further than its eyes (8 against 12, 10 against 14, 1 against 10)
-    // and `validateTargeting` refuses anything past weapon range, so
-    // today this turns no shot away. It is here so the rule is
-    // structural rather than an accident of two tuning numbers: give a
-    // sniper range 14 and sight 12 and the guard is already in place.
-    // `unit-tuning.test.ts` pins the relationship from the other side.
-    if (
-      watcher === undefined ||
-      !moverTiles.some((tile) => unitCanSee(state, watcher, tile, index))
-    ) {
-      continue;
-    }
-    const checked = validateTargeting(state, watcherId, movedUnitId, tuning);
-    if (!checked.ok) {
-      continue;
-    }
+    if (watcher === undefined) continue;
+    const personallyVisible = moverTiles.some((tile) =>
+      unitCanSee(state, watcher, tile, index),
+    );
+    // The first ready damaging gun reacts. Indirect fire delegates spotting
+    // to the same targeting validator as a commanded shot; direct fire still
+    // requires the watcher's own eyes, even when its gun outranges them.
+    const checked = (state.templates[watcher.templateId]?.weapons ?? [])
+      .filter(
+        (weapon) =>
+          weapon.profile.damage > 0 &&
+          chargesLeft(watcher, weapon) !== 0 &&
+          (weapon.profile.indirect === true || personallyVisible),
+      )
+      .map((weapon) =>
+        validateTargeting(state, watcherId, movedUnitId, tuning, weapon.id),
+      )
+      .find((result) => result.ok);
+    if (!checked?.ok) continue;
     const shot = rollAttack(
       state,
       checked.value,

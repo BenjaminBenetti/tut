@@ -19,6 +19,7 @@ import type { HazardTuning } from "../model/hazard-tuning";
  */
 export const HAZARD_TUNING: HazardTuning = {
   effects: {
+    smoke: { damage: 0, armorPen: 0, duration: 4 },
     fire: { damage: 4, armorPen: 2, duration: 4 },
   },
 };

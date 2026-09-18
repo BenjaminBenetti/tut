@@ -177,6 +177,19 @@ describe("TacticalSceneBuilder", () => {
     expect(builder.levels).toEqual([0]);
   });
 
+  it("restores a saved brace pose on placement and follows later state changes", async () => {
+    const { builder } = build();
+    const mech = { ...unit("m", "mech:mech-1", 1, 1), braced: true };
+    await builder.update([mech], TEMPLATES);
+    expect(builder.unitMotion("m")?.braceAmount).toBe(1);
+    builder.unitMotion("m")?.brace?.(0.5);
+    await builder.update([mech], TEMPLATES);
+    expect(builder.unitMotion("m")?.braceAmount).toBe(1);
+    await builder.update([{ ...mech, braced: false }], TEMPLATES);
+    expect(builder.unitMotion("m")?.braceAmount).toBe(0);
+    builder.dispose();
+  });
+
   it("loads one model per template and places each unit at its tile", async () => {
     const { builder, models } = build();
     await builder.update(

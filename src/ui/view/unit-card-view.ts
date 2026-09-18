@@ -184,6 +184,7 @@ export class UnitCardView {
       ["Weapon", "weapon", "attack"],
       ["Equipment", "equipment", "ability"],
       ["Armor", "armor", "armor"],
+      ["Heat", "heat", "warning"],
       ["Status", "status", "overwatch"],
     ] as const) {
       const term = doc.createElement("dt");
@@ -344,9 +345,38 @@ export class UnitCardView {
       })),
     );
     this.set("armor", formatWhole(template.armor));
+    for (const el of this.rows.get("heat") ?? []) {
+      el.hidden = !template.systems;
+    }
+    this.set(
+      "heat",
+      template.systems
+        ? `${String(unit.heat ?? 0)}/${String(template.systems.heatCapacity)} · cool ${String(template.systems.cooling)}/turn · idle +${String(template.systems.idleHeat)}`
+        : EMPTY_FIELD,
+    );
     this.set(
       "status",
-      unit.status.length === 0 ? EMPTY_FIELD : unit.status.join(", "),
+      [
+        ...unit.status,
+        ...(unit.braced ? ["braced"] : []),
+        ...(template.systems?.jumpRange
+          ? [`jump ${String(template.systems.jumpRange)}`]
+          : []),
+        ...(template.systems?.equipment?.includes("mech-coolant")
+          ? [
+              `coolant ${String(unit.equipment?.["mech-coolant"] ?? template.systems.coolantUses ?? 0)}/${String(template.systems.coolantUses ?? 0)}`,
+            ]
+          : []),
+        ...(template.systems?.equipment?.includes("mech-designator")
+          ? ["target designator"]
+          : []),
+        ...(unit.designatedBy ? ["designated"] : []),
+        ...(template.systems?.ablativeHits
+          ? [
+              `ablative ${String(Math.max(0, template.systems.ablativeHits - (unit.ablativeSpent ?? 0)))}/${String(template.systems.ablativeHits)}`,
+            ]
+          : []),
+      ].join(", ") || EMPTY_FIELD,
     );
     this.meter?.style.setProperty(
       "--value",

@@ -1,3 +1,7 @@
+import { MECH_BLUEPRINTS } from "../../../src/roster/data/mech-blueprints";
+import { mechAssemblyFor } from "../../../src/graphics/data/part-model-table";
+import { MechAssembler } from "../../../src/graphics/service/mech-assembler";
+import { flattenModel } from "../../../src/graphics/service/loadout-unit-model-source";
 /** Real-model preview of the production movement / combat queue, with deterministic stepping. */
 import {
   AmbientLight,
@@ -31,7 +35,8 @@ const ids = [
   "bug.brute",
 ] as const;
 const select = document.querySelector<HTMLSelectElement>("#model")!;
-for (const id of ids) select.add(new Option(id, id));
+const choices = [...ids, ...MECH_BLUEPRINTS.map((loadout) => loadout.name)];
+for (const id of choices) select.add(new Option(id, id));
 const scene = new Scene();
 scene.background = new Color(0x202633);
 scene.add(new AmbientLight(0xffffff, 2));
@@ -55,6 +60,18 @@ const prototypes = await Promise.all(
     async (id) => (await loader.loadAsync(`/${MODEL_MANIFEST[id].path}`)).scene,
   ),
 );
+const assembler = new MechAssembler({
+  models: {
+    load: async (id) =>
+      (await loader.loadAsync(`/${MODEL_MANIFEST[id].path}`)).scene,
+    preload: () => Promise.resolve(),
+  },
+});
+for (const loadout of MECH_BLUEPRINTS) {
+  prototypes.push(
+    flattenModel(await assembler.assemble(mechAssemblyFor(loadout))),
+  );
+}
 const textureLoader = new TextureLoader();
 const textures = new Map(
   await Promise.all(
@@ -77,9 +94,9 @@ function reset(): void {
   actor?.dispose();
   const index = Math.max(
     0,
-    ids.findIndex((id) => id === select.value),
+    choices.findIndex((id) => id === select.value),
   );
-  const id = ids[index]!;
+  const id = ids[index] ?? "tdf.mech.assembled-a";
   actor = new UnitMesh("actor", prototypes[index]!.clone(true), id);
   actor.setPose({ x: -2, y: 0, z: 0 }, "s");
   actor.setHighlight({ hovered: false, selected: true });
@@ -103,9 +120,31 @@ function reset(): void {
 }
 
 /** Plays the real tactical event while keeping controls and captures deterministic. */
-function play(action: "walk" | "attack"): void {
+function play(action: "walk" | "attack" | "brace" | "retract" | "jump"): void {
   reset();
-  if (action === "walk") {
+  if (action === "jump") {
+    queue.enqueue([
+      {
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "actor",
+          from: { x: -2, y: 0, z: 0 },
+          to: { x: 1, y: 0, z: 0 },
+          path: [{ x: 1, y: 0, z: 0 }],
+          jump: true,
+          jumpApex: 2,
+        },
+      },
+    ]);
+  } else if (action === "brace") {
+    queue.enqueue([
+      {
+        type: "tactical:mech-system-used",
+        payload: { unitId: "actor", action: "brace" },
+      },
+    ]);
+  } else if (action === "walk" || action === "retract") {
+    if (action === "retract") actor.motion?.brace?.(1);
     queue.enqueue([
       {
         type: "tactical:unit-moved",
@@ -142,8 +181,14 @@ function play(action: "walk" | "attack"): void {
 select.onchange = reset;
 document.querySelector<HTMLButtonElement>("#walk")!.onclick = () =>
   play("walk");
+document.querySelector<HTMLButtonElement>("#jump")!.onclick = () =>
+  play("jump");
 document.querySelector<HTMLButtonElement>("#attack")!.onclick = () =>
   play("attack");
+document.querySelector<HTMLButtonElement>("#brace")!.onclick = () =>
+  play("brace");
+document.querySelector<HTMLButtonElement>("#retract")!.onclick = () =>
+  play("retract");
 document.querySelector<HTMLButtonElement>("#reset")!.onclick = reset;
 document.querySelector<HTMLButtonElement>("#pause")!.onclick = () => {
   paused = !paused;
@@ -165,6 +210,11 @@ Object.assign(window, {
       reset();
     },
     play,
+    /** The rendered feet, for checking the curve alongside frame captures. */
+    position(): { x: number; y: number; z: number } {
+      const { x, y, z } = actor.object.position;
+      return { x, y, z };
+    },
     /** Advances precisely one sample before a screenshot. */
     step(seconds: number): void {
       queue.update(seconds);

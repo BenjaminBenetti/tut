@@ -3,6 +3,8 @@ import type { UnitMotionTuning } from "../model/unit-motion";
 /** Readable rigid-piece strides and attacks at tactical camera scale. */
 export const UNIT_MOTION_TUNING: UnitMotionTuning = {
   mechWalkCyclesPerTile: 0.5,
+  braceSwing: 0.75,
+  braceExtension: 0.45,
   bodyLift: 0.018,
   bodyRoll: 0.018,
   bugRoll: 0.045,

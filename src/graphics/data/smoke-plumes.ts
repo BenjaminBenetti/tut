@@ -42,3 +42,16 @@ export const FIRE_SMOKE: SmokePlumeOptions = {
   peakOpacity: 0.8,
   drift: 0.12,
 };
+
+/** Dense pale screen from a smoke launcher, kept distinct from fire and burnt machinery. */
+export const SCREEN_SMOKE: SmokePlumeOptions = {
+  puffs: 8,
+  colour: 0xb3bac0,
+  baseScale: 1.15,
+  growth: 0.6,
+  startHeight: 0.1,
+  rise: 1.8,
+  period: 3.8,
+  peakOpacity: 0.9,
+  drift: 0.1,
+};

@@ -1,3 +1,4 @@
+import type { WeaponMechanics } from "./mech-systems";
 // ===========================================
 // Area of effect
 // ===========================================
@@ -28,7 +29,7 @@ export interface AreaOfEffect {
 }
 
 /** What a blast can leave on the tiles it reaches. Closed; `fire` is the first. */
-export type AreaEffectKind = "fire";
+export type AreaEffectKind = "fire" | "smoke";
 
 /**
  * An effect a blast leaves on the ground (#1121): each tile in the
@@ -58,7 +59,7 @@ export interface AreaEffect {
  * three default to nothing, so a profile written before them fires
  * exactly as it did.
  */
-export interface WeaponProfile {
+export interface WeaponProfile extends WeaponMechanics {
   /**
    * Tiles the weapon reaches on level ground, Manhattan. Positive
    * integer; `1` is melee. Height adds to the distance a shot is held
@@ -168,6 +169,7 @@ export function blastRadiusOf(weapon: WeaponProfile): number {
  */
 export function canTargetTile(weapon: WeaponProfile): boolean {
   return (
+    weapon.beam === true ||
     weapon.aoe !== undefined ||
     weapon.aoeEffect !== undefined ||
     demoForceOf(weapon) > 0

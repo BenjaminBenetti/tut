@@ -1,3 +1,5 @@
+import { HAZARD_TUNING } from "../data/hazard-tuning";
+import { createBurnStep, createHazardReaction } from "./tile-effect-service";
 /// <reference types="node" />
 import { writeFileSync } from "node:fs";
 import { manhattanDistance } from "../../core/service/grid-math";
@@ -82,7 +84,11 @@ function rules(): TacticalHandlers {
   const actions: TacticalHandlers = {
     [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
     [MOVE]: createMoveHandler(
-      createOverwatchReaction(COMBAT_TUNING, attackDeps),
+      createHazardReaction(
+        HAZARD_TUNING,
+        COMBAT_TUNING,
+        createOverwatchReaction(COMBAT_TUNING, attackDeps),
+      ),
     ),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
@@ -94,6 +100,7 @@ function rules(): TacticalHandlers {
     [END_TURN]: createEndTurnHandler(
       [
         ...DEFAULT_PHASE_STEPS,
+        createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),
       ],

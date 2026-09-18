@@ -21,9 +21,28 @@ import type { ThumbnailId } from "./thumbnail-manifest";
  * the lookup returns `undefined` rather than a placeholder.
  */
 export const PART_THUMBNAILS: Readonly<Partial<Record<PartId, ThumbnailId>>> = {
+  "chassis-courser": "tdf.mech.chassis.courser",
+  "chassis-surveyor": "tdf.mech.chassis.surveyor",
+  "chassis-crucible": "tdf.mech.chassis.crucible",
+  "legs-all-terrain": "tdf.mech.legs.all-terrain",
+  "legs-sprint": "tdf.mech.legs.sprint",
+  "legs-anchor": "tdf.mech.legs.anchor",
+  "arms-assault": "tdf.mech.arms.assault-l",
+  "arms-marksman": "tdf.mech.arms.marksman-l",
+  "arms-conduit": "tdf.mech.arms.conduit-l",
+  "arm-weapon-scatter-cannon": "tdf.mech.weapon-arm.scatter-cannon",
+  "arm-weapon-pile-driver": "tdf.mech.weapon-arm.pile-driver",
+  "arm-weapon-heavy-autocannon": "tdf.mech.weapon-arm.heavy-autocannon",
+  "arm-weapon-thermal-lance": "tdf.mech.weapon-arm.thermal-lance",
+  "arm-weapon-siege-railgun": "tdf.mech.weapon-arm.siege-railgun",
+  "arm-weapon-beam-projector": "tdf.mech.weapon-arm.beam-projector",
+  "back-weapon-smoke-launcher": "tdf.mech.weapon-back.smoke-launcher",
+  "back-weapon-guided-missile-rack": "tdf.mech.weapon-back.guided-missile-rack",
+  "back-weapon-incendiary-launcher": "tdf.mech.weapon-back.incendiary-launcher",
+  "back-weapon-siege-howitzer": "tdf.mech.weapon-back.siege-howitzer",
+  "back-weapon-cluster-rocket-rack": "tdf.mech.weapon-back.cluster-rocket-rack",
+
   "chassis-vanguard": "tdf.mech.chassis-a",
-  // The Courser (#1130) wears the Vanguard's model and so its picture.
-  "chassis-courser": "tdf.mech.chassis-a",
   "chassis-bulwark": "tdf.mech.chassis.bulwark",
   "chassis-atlas": "tdf.mech.chassis.atlas",
   "legs-strider": "tdf.mech.legs-a",

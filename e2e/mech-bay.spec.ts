@@ -32,6 +32,10 @@ test("dragging a railgun onto the starter mech shows an overweight error in the 
   );
   const startingCost = await cost.textContent();
   const stage = page.locator("#mech-stage");
+  const weight = page.locator(
+    '#stat-sheet [data-field="weight"]:not([data-role="delta"])',
+  );
+  await expect(weight).toHaveText("40 / 40 t");
 
   // Resting on the card previews the swap before anything is fitted.
   const railgun = page.locator(
@@ -46,11 +50,15 @@ test("dragging a railgun onto the starter mech shows an overweight error in the 
   );
   await expect(verdict).toHaveAttribute("data-tone", "ok");
 
+  await expect(
+    page.locator('#stat-sheet [data-role="delta"][data-field="weight"]'),
+  ).toHaveText("→ 44 / 40 t");
   await railgun.dragTo(stage);
   await expect(
     page.locator('#mech-stage [data-row="arm-weapon"]'),
   ).toHaveAttribute("data-part-id", "arm-weapon-railgun");
   await expect(verdict).toHaveAttribute("data-tone", "danger");
+  await expect(weight).toHaveText("44 / 40 t");
   await expect(
     page.locator('#stat-sheet [data-role="errors"] li[data-code="overweight"]'),
   ).toBeVisible();
@@ -63,6 +71,7 @@ test("dragging a railgun onto the starter mech shows an overweight error in the 
     .dragTo(stage);
   await expect(verdict).toHaveAttribute("data-tone", "ok");
   await expect(cost).not.toHaveText(startingCost ?? "");
+  await expect(weight).toHaveText("44 / 70 t");
 
   await page.locator('[data-action="roster"]').click();
   await expect(body).toHaveAttribute("data-screen", "roster");

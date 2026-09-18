@@ -327,12 +327,14 @@ Full-height walls ship in **three material families** — brick, concrete and pa
 
 ### Part catalogue → models
 
+The [mech progression kit](mech-roster.md) (#1168) extends this table with 23 final meshes: a dedicated Courser, Surveyor and Crucible chassis; All-Terrain, Sprint and Anchor legs; mirrored Assault, Marksman and Conduit arms; six arm weapons and five back weapons. `part-model-table.ts` is the complete mapping. Each new mesh has a reproducible Blender script, thumbnail and three checked renders.
+
 The roster's starter part catalogue (`src/roster/data/parts.ts`) maps to mech part models like this; the mech bay assembles them at the sockets in §6. Utilities have no visual slot.
 
 | Part id | Model id |
 |---|---|
 | `chassis-vanguard` | `tdf.mech.chassis-a` |
-| `chassis-courser` | `tdf.mech.chassis-a` (shares the Vanguard's frame until it has its own, #1130) |
+| `chassis-courser` | `tdf.mech.chassis.courser` |
 | `chassis-bulwark` | `tdf.mech.chassis.bulwark` |
 | `chassis-atlas` | `tdf.mech.chassis.atlas` |
 | `legs-strider` | `tdf.mech.legs-a` |

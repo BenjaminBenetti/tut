@@ -16,6 +16,8 @@ export type SurfaceId = string;
  * own manifest; mapgen never references asset paths.
  */
 export interface SurfaceDefinition {
+  /** Movement points a mech spends entering this surface; absent means one. */
+  readonly mechMoveCost?: number;
   readonly id: SurfaceId;
   /** Who may stand on this surface before props, walls or buildings narrow it. */
   readonly defaultPass: PassMask;

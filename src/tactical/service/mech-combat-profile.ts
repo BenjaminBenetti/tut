@@ -10,7 +10,7 @@ import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 
 /**
  * The field numbers a validated stat sheet comes out as (#49, #1132):
- * `maxHp = baseHp + armor × hpPerArmor`; move is `baseMove + mobility`
+ * `maxHp = chassis hullHp + armor × hpPerArmor` (legacy sheets use baseHp); move is `baseMove + mobility`
  * clamped to the tuning's bounds; per-hit armor is `armor × armorFactor`;
  * each fitted weapon fires for its own firepower scaled by the tuning's
  * damage, at the base accuracy plus the sheet's modifier less the other
@@ -29,9 +29,12 @@ export function mechCombatProfile(
   tuning: MechUnitTuning,
 ): MechCombatProfile {
   return {
+    ...(sheet.systems === undefined ? {} : { systems: sheet.systems }),
     maxHp: Math.max(
       1,
-      Math.round(tuning.baseHp + sheet.armor * tuning.hpPerArmor),
+      Math.round(
+        (sheet.hullHp ?? tuning.baseHp) + sheet.armor * tuning.hpPerArmor,
+      ),
     ),
     maxAp: tuning.maxAp,
     move: clamp(
@@ -40,7 +43,7 @@ export function mechCombatProfile(
       tuning.maxMove,
     ),
     armor: Math.max(0, Math.round(sheet.armor * tuning.armorFactor)),
-    sightRange: tuning.sightRange,
+    sightRange: tuning.sightRange + (sheet.systems?.sightBonus ?? 0),
     weapons: mechWeapons(sheet, tuning),
   };
 }
@@ -86,6 +89,21 @@ function mechWeapons(
     id: weapon.id,
     name: weapon.name,
     profile: {
+      ...(weapon.heat === undefined
+        ? {}
+        : {
+            heat: Math.ceil(
+              weapon.heat *
+                (weapon.energy ? (sheet.systems?.energyHeatFactor ?? 1) : 1),
+            ),
+          }),
+      ...(weapon.energy ? { energy: true } : {}),
+      ...(weapon.indirect ? { indirect: true } : {}),
+      ...(weapon.minRange === undefined ? {} : { minRange: weapon.minRange }),
+      ...(weapon.requiresBrace ? { requiresBrace: true } : {}),
+      ...(weapon.guided ? { guided: true } : {}),
+      ...(weapon.beam ? { beam: true } : {}),
+      ...(weapon.cooldown === undefined ? {} : { cooldown: weapon.cooldown }),
       range: weapon.range,
       accuracy: clamp(
         Math.round(
@@ -96,7 +114,7 @@ function mechWeapons(
         0,
         100,
       ),
-      damage: Math.max(1, Math.round(weapon.firepower * tuning.weapon.damage)),
+      damage: Math.max(0, Math.round(weapon.firepower * tuning.weapon.damage)),
       armorPen: weapon.armorPen,
       // How the part lands is the part's own (#1121), carried through
       // as declared: a mortar's blast is not a tuning knob.
@@ -108,7 +126,7 @@ function mechWeapons(
         ? {}
         : { demoForce: weapon.demoForce }),
     },
-    charges: tuning.charges,
+    ...(sheet.systems === undefined ? { charges: tuning.charges } : {}),
   }));
 }
 

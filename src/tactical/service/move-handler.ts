@@ -1,3 +1,4 @@
+import { movedMech } from "./mech-heat-service";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import { err, ok } from "../../core/model/result";
@@ -21,11 +22,11 @@ import { UNIT_MOVED } from "../model/unit-moved-event";
 import { unitFootprintSize } from "./footprint-service";
 import {
   apCostOf,
+  pathMovementCost,
+  movementStepCost,
   buildMoveGraph,
   footprintCanStep,
   moveBudget,
-  movementStepCost,
-  pathMovementCost,
   searchMoves,
 } from "./movement-service";
 
@@ -71,12 +72,15 @@ export function createMoveHandler(
       return reject("empty-path");
     }
     const graph = buildMoveGraph(mission.map);
+    const submittedCost = pathMovementCost(mission, unit, path, graph);
+    // Missing footprint cells are rejected as unreachable below, not as a
+    // costly route; physical path length cannot bound accelerated bug moves.
     if (
-      pathMovementCost(mission, unit, path, graph) > moveBudget(mission, unit)
+      Number.isFinite(submittedCost) &&
+      submittedCost > moveBudget(mission, unit)
     ) {
       return reject("over-budget");
     }
-
     const search = searchMoves(mission, unit, graph);
     const unitClass = passMaskFor(unit.passClass);
     const size = unitFootprintSize(mission, unit);
@@ -126,7 +130,10 @@ export function createMoveHandler(
       ...state,
       units: state.units.map((candidate) =>
         candidate.id === unitId
-          ? { ...candidate, ap: Math.max(0, candidate.ap - apCost) }
+          ? {
+              ...movedMech(mission, candidate, apCost),
+              ap: Math.max(0, candidate.ap - apCost),
+            }
           : candidate,
       ),
     };
@@ -154,7 +161,7 @@ function placeUnit(
     ...mission,
     units: mission.units.map((unit) =>
       unit.id === unitId
-        ? { ...unit, pos, facing: facing ?? unit.facing }
+        ? { ...movedMech(mission, unit, 0), pos, facing: facing ?? unit.facing }
         : unit,
     ),
   };

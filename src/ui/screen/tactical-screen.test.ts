@@ -905,12 +905,12 @@ describe("TacticalScreen", () => {
   });
 
   it("a refused command names the unit in the banner, never its id (#1035)", () => {
-    // The whole path a player takes: select a mech that has not fired,
+    // The whole path a player takes: select a squad that has not fired,
     // press Reload, read the banner. Nothing is stubbed between the
     // keypress and the sentence.
     const state = inMission();
-    const mech = state.activeMission?.units.find((u) => u.kind === "mech");
-    if (!mech) throw new Error("fixture needs a mech");
+    const squad = state.activeMission?.units.find((u) => u.kind === "squad");
+    if (!squad) throw new Error("fixture needs a squad");
     const store = new RealDispatchStore(state);
     const host = new FakeHost();
     new TacticalScreen({
@@ -921,7 +921,7 @@ describe("TacticalScreen", () => {
       sceneHost: host,
     }).mount(root);
 
-    host.intents?.emit({ kind: "select-unit", unitId: mech.id });
+    host.intents?.emit({ kind: "select-unit", unitId: squad.id });
     host.intents?.emit({ kind: "action", action: "reload" });
 
     // The fixture exhibits the defect. Without this the test could pass
@@ -929,7 +929,7 @@ describe("TacticalScreen", () => {
     // and would then be asserting nothing at all.
     //
     // Against the rules' own wording rather than `store.lastError`,
-    // because #1062 stopped the bar offering Reload to a mech that has
+    // because #1062 stopped the bar offering Reload to a squad that has
     // nothing to reload — so this press is refused *before* dispatch and
     // the store never sees it. The guarantee under test is unchanged
     // (the id exists, and the player is not shown it); what moved is
@@ -938,14 +938,14 @@ describe("TacticalScreen", () => {
     // sight is one — and that is worth its own test rather than this
     // one quietly covering less than its name says.
     expect(
-      describeTacticalError({ kind: "charges-full", unitId: mech.id }),
+      describeTacticalError({ kind: "charges-full", unitId: squad.id }),
       "the rules' own message must carry the id, or there is nothing to hide",
-    ).toContain(mech.id);
+    ).toContain(squad.id);
 
     const status = root.querySelector(
       '#turn-banner [data-role="status"]',
     )?.textContent;
-    expect(status).not.toContain(mech.id);
+    expect(status).not.toContain(squad.id);
     // And it is the same name the card beside it is showing, so the two
     // lines on screen agree about which unit refused.
     const name = root.querySelector(

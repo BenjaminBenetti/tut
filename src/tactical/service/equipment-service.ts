@@ -461,7 +461,13 @@ export function createUseEquipmentHandler(
     };
     switch (definition.kind) {
       case "radar": {
-        const placed = placeRadar(billed, unit, tile, deps.radar, ctx.ids);
+        const placed = placeRadar(
+          billed,
+          unit,
+          tile,
+          definition.radar ?? deps.radar,
+          ctx.ids,
+        );
         return ok({ state: placed.state, events: [used, ...placed.events] });
       }
       case "turret": {

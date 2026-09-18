@@ -1,4 +1,8 @@
 import type {
+  MechSystems,
+  WeaponMechanics,
+} from "../../tactical/model/mech-systems";
+import type {
   AreaEffect,
   AreaOfEffect,
 } from "../../tactical/model/weapon-profile";
@@ -27,7 +31,7 @@ import type {
  * not know hit-chance formulae or damage scaling, and the tactical unit
  * factory converts it.
  */
-export interface MechWeapon {
+export interface MechWeapon extends WeaponMechanics {
   /** The slot it is fitted in, which is what names the attack: `"arm-weapon"`. */
   readonly id: string;
   /** The part's own name, e.g. `"Autocannon"` — what the player is offered. */
@@ -46,7 +50,18 @@ export interface MechWeapon {
   readonly demoForce?: number;
 }
 
+/** Carried equipment mass against the chassis limit, excluding the chassis itself. */
+export interface MechWeightBudget {
+  readonly used: number;
+  readonly limit: number;
+}
+
 export interface MechStatSheet {
+  /** Optional on older stored sheets; freshly derived sheets always include the fitting budget. */
+  readonly weightBudget?: MechWeightBudget;
+  /** Structural hit points supplied by the chassis. */
+  readonly hullHp?: number;
+  readonly systems?: MechSystems;
   /** Total protective bulk. */
   readonly armor: number;
   /** Tiles per action after every part's contribution. */

@@ -103,7 +103,9 @@ describe("STARTER_PARTS", () => {
     for (const part of componentParts) {
       const isWeapon = WEAPON_SLOTS.includes(part.slot);
       if (isWeapon) {
-        expect(part.stats.firepower, part.id).toBeGreaterThan(0);
+        expect(part.stats.firepower, part.id).toBeGreaterThanOrEqual(
+          part.weapon?.aoeEffect?.kind === "smoke" ? 0 : 1,
+        );
         expect(part.stats.power, part.id).toBeLessThan(0);
       } else {
         expect(part.stats.firepower, part.id).toBe(0);
@@ -183,7 +185,7 @@ describe("STARTER_PARTS", () => {
     chassisParts.forEach(check);
   });
 
-  it("makes every chassis the best at exactly one of armor, mobility, utility and price (#1130)", () => {
+  it("makes every chassis the best at exactly one of armor, mobility, utility, price, sight and cooling (#1130)", () => {
     // The four frames trade off against each other, and a player has to
     // be able to read which is which: the cheapest frame is nobody's
     // armor, the fastest nobody's capital ship. A chassis that wins two
@@ -193,6 +195,8 @@ describe("STARTER_PARTS", () => {
       ["mobility", (c) => c.stats.mobility],
       ["utility", (c) => c.capacity.utilitySlots],
       ["price", (c) => -c.cost],
+      ["sight", (c) => c.traits?.sightBonus ?? 0],
+      ["cooling", (c) => -c.stats.heat],
     ];
     const wins = new Map<string, string[]>(
       chassisParts.map((chassis) => [chassis.id, []]),

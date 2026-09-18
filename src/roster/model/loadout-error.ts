@@ -6,6 +6,7 @@ import type { PartSlot } from "./mech-part";
 
 /** Every way a loadout can fail validation. */
 export const LOADOUT_ERROR_CODES = [
+  "duplicate-active-utility",
   "missing-part",
   "wrong-slot",
   "unknown-part",

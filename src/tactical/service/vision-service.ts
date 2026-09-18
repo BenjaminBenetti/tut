@@ -1,3 +1,4 @@
+import { smokeBlocksSight } from "./obscuration-service";
 import type { GridPos } from "../../core/model/grid";
 import { gridPosEquals, manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -94,7 +95,8 @@ function eyeSees(
 ): boolean {
   return (
     manhattanDistance(eye, at) <= range &&
-    hasLineOfSight(mission.map, eye, at, index)
+    hasLineOfSight(mission.map, eye, at, index) &&
+    !smokeBlocksSight(mission, eye, at)
   );
 }
 
@@ -307,7 +309,7 @@ export function emptyVision(): Record<Team, SideVision> {
  * not seeing the squad inside until something moved.
  */
 function sameVantage(before: TacticalState, after: TacticalState): boolean {
-  if (before.map !== after.map) {
+  if (before.map !== after.map || before.effects !== after.effects) {
     return false;
   }
   if (before.units.length !== after.units.length) {

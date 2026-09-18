@@ -762,6 +762,42 @@ describe("TacticalHudView", () => {
     expect(chips()).toHaveLength(0);
   });
 
+  it("shows shared mech heat on Shift chips even when its weapons have no charges", () => {
+    const { hud, mission } = setup({ headAnchorFor: () => ({ x: 0, y: 0 }) });
+    const unit = mission.units.find((u) => u.id === "s1")!;
+    const template = mission.templates[unit.templateId]!;
+    const updated = {
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [unit.templateId]: {
+          ...template,
+          systems: {
+            heatCapacity: 28,
+            cooling: 4,
+            idleHeat: 0,
+            movementHeat: 0,
+          },
+        },
+      },
+      units: mission.units.map((u) =>
+        u.id === unit.id ? { ...u, kind: "mech" as const, heat: 17 } : u,
+      ),
+    };
+    hud.update(updated);
+    hud.handleIntent({ kind: "inspect", held: true });
+    const chip = (): Element | null =>
+      root.querySelector(
+        '.tut-status-chip[data-unit-id="s1"] [data-field="status-charge"]',
+      );
+    expect(chip()?.textContent).toBe("heat 17 / 28");
+    hud.update({
+      ...updated,
+      units: updated.units.map((u) => ({ ...u, heat: 0 })),
+    });
+    expect(chip()?.textContent).toBe("heat 0 / 28");
+  });
+
   it("names every pooled weapon's gauge in the unit's register on its chip", () => {
     const { hud, mission } = setup({
       headAnchorFor: () => ({ x: 0, y: 0 }),

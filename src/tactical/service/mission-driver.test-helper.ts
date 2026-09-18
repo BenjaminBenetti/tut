@@ -1,6 +1,5 @@
 import { manhattanDistance } from "../../core/service/grid-math";
 import { allows } from "../../mapgen/model/pass-mask";
-import { TileIndex } from "../../mapgen/service/tile-index";
 import type { UnitClass } from "../../mapgen/model/pass-mask";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -491,13 +490,16 @@ export function blockedTiles(
  */
 export function missionViolations(mission: TacticalState): string[] {
   const problems: string[] = [];
-  const index = new TileIndex(mission.map);
+  const graph = buildMoveGraph(mission.map);
+  const index = graph.index;
   for (const unit of mission.units) {
     const where = `${unit.id} at (${String(unit.pos.x)},${String(unit.pos.y)},${String(unit.pos.z)})`;
     const tile = index.getAt(unit.pos);
     if (tile === undefined) {
       problems.push(`${where} stands on no tile`);
-    } else if (!allows(tile.pass, passMaskFor(unit.passClass))) {
+    } else if (
+      !graph.reachability.canOccupy(tile, passMaskFor(unit.passClass))
+    ) {
       problems.push(`${where} stands where a ${unit.passClass} may not`);
     }
     if (unit.hp < 0 || unit.hp > unit.maxHp) {

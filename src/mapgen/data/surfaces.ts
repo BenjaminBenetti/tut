@@ -34,9 +34,24 @@ export type KnownSurfaceId = (typeof SurfaceIds)[keyof typeof SurfaceIds];
 export const SURFACE_DEFINITIONS: readonly SurfaceDefinition[] = [
   { id: SurfaceIds.GRASS, defaultPass: PassMask.ALL, isInterior: false },
   { id: SurfaceIds.DIRT, defaultPass: PassMask.ALL, isInterior: false },
-  { id: SurfaceIds.SAND, defaultPass: PassMask.ALL, isInterior: false },
-  { id: SurfaceIds.SNOW, defaultPass: PassMask.ALL, isInterior: false },
-  { id: SurfaceIds.ROCK, defaultPass: PassMask.ALL, isInterior: false },
+  {
+    id: SurfaceIds.SAND,
+    mechMoveCost: 2,
+    defaultPass: PassMask.ALL,
+    isInterior: false,
+  },
+  {
+    id: SurfaceIds.SNOW,
+    mechMoveCost: 2,
+    defaultPass: PassMask.ALL,
+    isInterior: false,
+  },
+  {
+    id: SurfaceIds.ROCK,
+    mechMoveCost: 2,
+    defaultPass: PassMask.ALL,
+    isInterior: false,
+  },
   { id: SurfaceIds.ROAD, defaultPass: PassMask.ALL, isInterior: false },
   { id: SurfaceIds.SIDEWALK, defaultPass: PassMask.ALL, isInterior: false },
   { id: SurfaceIds.WATER, defaultPass: PassMask.NONE, isInterior: false },

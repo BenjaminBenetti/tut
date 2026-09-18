@@ -37,6 +37,7 @@ import { StatSheetView } from "../view/stat-sheet-view";
 
 /** What the mech bay needs from the app. */
 export interface MechBayScreenDeps {
+  readonly blueprints?: readonly MechLoadout[];
   readonly router: ScreenRouter;
   readonly session: GameSession;
   /** The parts the palette offers and the validator resolves against. */
@@ -202,6 +203,32 @@ export class MechBayScreen implements Screen {
     const footer = doc.createElement("footer");
     footer.className = "tut-topbar tut-mech-bay__footer";
     this.saved.mount(footer);
+    if (this.deps.blueprints?.length) {
+      const select = doc.createElement("select");
+      select.className = "tut-input";
+      select.setAttribute("aria-label", "Example mech blueprints");
+      const prompt = doc.createElement("option");
+      prompt.value = "";
+      prompt.textContent = "Try a blueprint…";
+      select.appendChild(prompt);
+      for (const [index, blueprint] of this.deps.blueprints.entries()) {
+        const option = doc.createElement("option");
+        option.value = String(index);
+        option.textContent = blueprint.name;
+        select.appendChild(option);
+      }
+      const choose = (): void => {
+        const blueprint =
+          select.value === ""
+            ? undefined
+            : this.deps.blueprints?.[Number(select.value)];
+        if (blueprint) this.validate(blueprint);
+        select.value = "";
+      };
+      select.addEventListener("change", choose);
+      this.disposers.push(() => select.removeEventListener("change", choose));
+      footer.appendChild(select);
+    }
     layout.appendChild(footer);
     root.appendChild(layout);
     this.root = layout;
@@ -262,7 +289,7 @@ export class MechBayScreen implements Screen {
       this.deps.rating,
       this.deps.upgrades,
     );
-    this.sheet.update(this.result());
+    this.sheet.update(this.result(), this.description.sheet?.weightBudget);
     this.sheet.preview(undefined);
     this.stage.setLoadout(loadout, this.deps.parts);
     this.stage.setErrors(this.description.errors);

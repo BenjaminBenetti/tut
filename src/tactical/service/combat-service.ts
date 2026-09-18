@@ -1,3 +1,12 @@
+import { weaponFootprint } from "./weapon-footprint-service";
+import {
+  aimedWeapon,
+  weaponSystemRefusal,
+  weaponSeesTile,
+  systemsRefusal,
+  protectedDamage,
+  ablativeSpentAfter,
+} from "./mech-weapon-service";
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import type { WeaponReachTuning } from "../model/weapon-reach-tuning";
@@ -49,11 +58,11 @@ import type { AttackTerrain } from "./attack-formulae";
 import { damageRange, hitChance } from "./attack-formulae";
 import { findAttackTarget } from "./attack-target-service";
 import type { BlastTile } from "./blast-service";
-import { blastFootprint, blastVictims } from "./blast-service";
+import { blastVictims } from "./blast-service";
 import { demolish } from "./demolition-service";
 import { downedEvent } from "./downed-unit-event";
 import { endIfOver } from "./mission-end-service";
-import { coverAgainst, elevationBonus, hasLineOfSight } from "./sight-service";
+import { coverAgainst, elevationBonus } from "./sight-service";
 import { damageSpawner } from "./spawner-damage-service";
 import { ignite } from "./tile-effect-service";
 
@@ -295,7 +304,8 @@ function readyWeapon(
   if (chargesLeft(attacker, chosen) === 0) {
     return err({ kind: "no-charges", unitId: attacker.id });
   }
-  return ok(chosen);
+  const refusal = weaponSystemRefusal(mission, attacker, chosen);
+  return refusal ? err(refusal) : ok(chosen);
 }
 
 /**
@@ -369,10 +379,14 @@ export function validateTargeting(
     return err({ kind: "friendly-target", targetId });
   }
   const attackerTemplate = templateOf(mission, attacker);
-  const weapon = weaponOf(attackerTemplate.weapons, weaponId);
+  const baseWeapon = weaponOf(attackerTemplate.weapons, weaponId);
+  const weapon =
+    baseWeapon && aimedWeapon(mission, attacker, baseWeapon, target);
   if (weapon === undefined) {
     return err({ kind: "no-such-weapon", unitId: attackerId });
   }
+  const refusal = weaponSystemRefusal(mission, attacker, weapon);
+  if (refusal) return err(refusal);
   const index = new TileIndex(mission.map);
   const targetSize = target.footprint ?? 1;
   const { from, to } = closestTiles(
@@ -389,6 +403,12 @@ export function validateTargeting(
     targetSize,
   );
   const reach = weaponReach(weapon.profile.range, from, to, tuning);
+  if (terrain.distance < (weapon.profile.minRange ?? 0))
+    return err(
+      systemsRefusal(
+        `Minimum range is ${String(weapon.profile.minRange)} tiles`,
+      ),
+    );
   if (terrain.distance > reach) {
     return err({
       kind: "out-of-range",
@@ -396,7 +416,7 @@ export function validateTargeting(
       range: reach,
     });
   }
-  if (!hasLineOfSight(mission.map, from, to, index)) {
+  if (!weaponSeesTile(mission, attacker, weapon, from, to, index)) {
     return err({ kind: "no-line-of-sight", targetId });
   }
   return ok({
@@ -441,7 +461,7 @@ export function validateTileAttack(
   if (!chosen.ok) {
     return chosen;
   }
-  const weapon = chosen.value;
+  const weapon = aimedWeapon(mission, attacker, chosen.value);
   if (!canTargetTile(weapon.profile)) {
     return err({ kind: "no-area-weapon", unitId: attackerId });
   }
@@ -464,6 +484,12 @@ export function validateTileAttack(
   // The same reach rule as a shot at a unit (#1119): height buys reach,
   // and the distance held against it is three-dimensional.
   const reach = weaponReach(weapon.profile.range, from, impact, tuning);
+  if (terrain.distance < (weapon.profile.minRange ?? 0))
+    return err(
+      systemsRefusal(
+        `Minimum range is ${String(weapon.profile.minRange)} tiles`,
+      ),
+    );
   if (terrain.distance > reach) {
     return err({
       kind: "out-of-range",
@@ -471,7 +497,7 @@ export function validateTileAttack(
       range: reach,
     });
   }
-  if (!hasLineOfSight(mission.map, from, impact, index)) {
+  if (!weaponSeesTile(mission, attacker, weapon, from, impact, index)) {
     return err({ kind: "tile-out-of-sight", x: tile.x, y: tile.y, z: tile.z });
   }
   return ok({
@@ -574,7 +600,9 @@ export function weaponOptions(
   }
   return template.weapons.map((weapon) => {
     const charges = chargesLeft(unit, weapon);
-    const refusal = refuseWeapon(mission, unit, charges, tuning);
+    const refusal =
+      refuseWeapon(mission, unit, charges, tuning) ??
+      weaponSystemRefusal(mission, unit, weapon);
     return {
       weapon,
       charges,
@@ -663,11 +691,14 @@ export function previewAttack(
         new Set([attacker.id, target.id]),
         tuning,
         deps,
+        attacker.pos,
       )
     : undefined;
   return ok({
     hitChance: hitChance(weapon.profile, terrain, tuning),
-    damage: damageRange(weapon.profile, target.armor, tuning),
+    damage: damageRange(weapon.profile, target.armor, tuning).map((damage) =>
+      protectedDamage(mission, target.id, damage),
+    ) as [number, number],
     distance: terrain.distance,
     cover: terrain.cover,
     flanked: terrain.flanked,
@@ -714,6 +745,7 @@ export function previewTileAttack(
       new Set([attacker.id]),
       tuning,
       deps,
+      attacker.pos,
     ),
   });
 }
@@ -731,10 +763,18 @@ export function blastPreview(
   exclude: ReadonlySet<string>,
   tuning: CombatTuning,
   deps?: PreviewDeps,
+  origin?: TileCoord,
 ): BlastPreview {
   const index = new TileIndex(mission.map);
   const radius = blastRadiusOf(profile);
-  const footprint = blastFootprint(mission.map, impact, radius, index);
+  const footprint = weaponFootprint(
+    mission.map,
+    profile,
+    impact,
+    index,
+    origin,
+    origin ? weaponReach(profile.range, origin, impact, tuning) : profile.range,
+  );
   const victims = blastVictims(mission, footprint, exclude).map(
     ({ target, distance }) => ({
       id: target.id,
@@ -742,7 +782,9 @@ export function blastPreview(
       name: target.name,
       team: target.team,
       distance,
-      damage: blastDamageRange(profile, distance, target.armor, tuning),
+      damage: blastDamageRange(profile, distance, target.armor, tuning).map(
+        (damage) => protectedDamage(mission, target.id, damage),
+      ) as [number, number],
     }),
   );
   const force = demoForceOf(profile);
@@ -833,7 +875,8 @@ export function rollAttack(
   const chance = hitChance(weapon.profile, terrain, tuning);
   const band = damageRange(weapon.profile, target.armor, tuning);
   const hit = ctx.rng.chance(chance / 100);
-  const damage = hit ? ctx.rng.nextInt(band[0], band[1]) : 0;
+  const rawDamage = hit ? ctx.rng.nextInt(band[0], band[1]) : 0;
+  const damage = protectedDamage(mission, target.id, rawDamage);
   const targetHp = Math.max(0, target.hp - damage);
 
   // The attacker pays whatever the shot cost it, whatever it shot at.
@@ -853,7 +896,7 @@ export function rollAttack(
   const struck = applyDamage(
     billShot(mission, attacker, weapon, apAfter),
     target,
-    damage,
+    rawDamage,
     attacker.id,
   );
   events.push(...struck.events);
@@ -979,7 +1022,15 @@ export function resolveBlastAt(
   const profile = weapon.profile;
   const index = new TileIndex(mission.map);
   const radius = blastRadiusOf(profile);
-  const footprint = blastFootprint(mission.map, impact, radius, index);
+  const origin = mission.units.find((unit) => unit.id === attackerId)?.pos;
+  const footprint = weaponFootprint(
+    mission.map,
+    profile,
+    impact,
+    index,
+    origin,
+    origin ? weaponReach(profile.range, origin, impact, tuning) : profile.range,
+  );
   let state = mission;
   const events: TacticalEvent[] = [];
   const victims: BlastVictimHit[] = [];
@@ -991,16 +1042,17 @@ export function resolveBlastAt(
       spared,
     )) {
       const band = blastDamageRange(profile, distance, target.armor, tuning);
-      const damage = band[1] <= 0 ? 0 : ctx.rng.nextInt(band[0], band[1]);
+      const rawDamage = band[1] <= 0 ? 0 : ctx.rng.nextInt(band[0], band[1]);
+      const damage = protectedDamage(state, target.id, rawDamage);
       const hp = Math.max(0, target.hp - damage);
       victims.push({ targetId: target.id, kind: target.kind, damage, hp });
       spawnerHit ||= target.kind === "spawner";
-      const struck = applyDamage(state, target, damage, attackerId);
+      const struck = applyDamage(state, target, rawDamage, attackerId);
       state = struck.state;
       events.push(...struck.events);
     }
   }
-  if (aim.aimedAtTile || radius > 0) {
+  if (aim.aimedAtTile || radius > 0 || profile.beam) {
     events.push({
       type: BLAST_RESOLVED,
       payload: {
@@ -1011,6 +1063,13 @@ export function resolveBlastAt(
         aimedAtTile: aim.aimedAtTile,
         weaponRange: profile.range,
         victims,
+        ...(profile.beam
+          ? {
+              beam: true,
+              beamEnd: footprint.at(-1)?.tile ?? impact,
+            }
+          : {}),
+        ...(profile.aoeEffect?.kind === "smoke" ? { smoke: true } : {}),
         ...(aim.source === undefined ? {} : { source: aim.source }),
         ...(aim.delivery === undefined ? {} : { delivery: aim.delivery }),
       },
@@ -1089,6 +1148,17 @@ function billShot(
             ...unit,
             ap: apAfter,
             ...spendCharge(unit, weapon),
+            ...(mission.templates[unit.templateId]?.systems
+              ? { heat: (unit.heat ?? 0) + (weapon.profile.heat ?? 0) }
+              : {}),
+            ...(weapon.profile.cooldown
+              ? {
+                  weaponReadyOnTurn: {
+                    ...unit.weaponReadyOnTurn,
+                    [weapon.id]: mission.turn + weapon.profile.cooldown + 1,
+                  },
+                }
+              : {}),
           }
         : unit,
     ),
@@ -1114,7 +1184,10 @@ function applyDamage(
   if (damage <= 0) {
     return { state: mission, events: [] };
   }
-  const hp = Math.max(0, target.hp - damage);
+  const hp = Math.max(
+    0,
+    target.hp - protectedDamage(mission, target.id, damage),
+  );
   const events: TacticalEvent[] = [];
   const struck = mission.units.find((unit) => unit.id === target.id);
   if (target.hp > 0 && hp === 0 && struck !== undefined) {
@@ -1124,7 +1197,15 @@ function applyDamage(
     state: {
       ...mission,
       units: mission.units.map((unit): Unit =>
-        unit.id === target.id ? { ...unit, hp } : unit,
+        unit.id === target.id
+          ? {
+              ...unit,
+              hp,
+              ...(mission.templates[unit.templateId]?.systems?.ablativeHits
+                ? { ablativeSpent: ablativeSpentAfter(mission, unit, damage) }
+                : {}),
+            }
+          : unit,
       ),
     },
     events,

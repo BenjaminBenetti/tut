@@ -22,9 +22,9 @@ export interface UnitStatusChip {
   readonly charges: readonly UnitStatusCharge[];
 }
 
-/** One weapon's pool on a chip. */
+/** A shared reactor heat pool or individual weapon ammunition pool. */
 export interface UnitStatusCharge {
-  /** The weapon the pool belongs to. */
+  /** The weapon or reactor the pool belongs to. */
   readonly label: string;
   /** `ammo` or `heat`. */
   readonly gauge: string;
@@ -46,8 +46,7 @@ export interface UnitStatusCharge {
  * ```
  *        ┌ Hammerhead ──────────────────┐
  *        │ ████████████░░░░░   64 / 80  │   the bar, then the numbers
- *        │ Autocannon · heat 4 / 4      │   one line per pooled weapon
- *        │ Missile Pod · heat 2 / 4     │
+ *        │ heat 17 / 28                 │   one shared mech heat gauge
  *        └─────────────┬────────────────┘
  *                    (unit)
  * ```

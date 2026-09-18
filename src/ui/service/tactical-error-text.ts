@@ -201,6 +201,8 @@ export function describeRefusal(
   names: TacticalNames,
 ): string {
   switch (error.kind) {
+    case "systems-unavailable":
+      return error.reason;
     case "mission-active":
       return `${names.mission(error.missionId)} is already in progress`;
     case "mission-not-found":

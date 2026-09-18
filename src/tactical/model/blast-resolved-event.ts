@@ -48,6 +48,12 @@ export interface BlastResolvedPayload {
   readonly source?: string;
   /** How it arrived; absent means a shot. */
   readonly delivery?: BlastDelivery;
+  /** A continuous energy discharge rather than a flying shell. */
+  readonly beam?: boolean;
+  /** Last tile reached by the beam, beyond the aim point when unobstructed. */
+  readonly beamEnd?: TileCoord;
+  /** A harmless smoke screen: omit the fiery explosion and damage floaters. */
+  readonly smoke?: boolean;
   /**
    * Everything the blast reached other than the aimed target, whose own
    * damage is on the `AttackResolved` that precedes this. Impact tile

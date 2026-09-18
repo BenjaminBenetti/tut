@@ -4,7 +4,11 @@ export interface UnitMotion {
   walk(strides: number): void;
   /** Samples a firing recoil or melee swing from rest (0) back to rest (1). */
   attack(progress: number, melee: boolean): void;
-  /** Restores every animated part after completion, skipping or disposal. */
+  /** Current brace deployment, from stowed (0) to planted (1). */
+  readonly braceAmount?: number;
+  /** Sets the persistent brace pose, also used for deployment/retraction playback. */
+  brace?(amount: number): void;
+  /** Clears transient gait/recoil offsets, retaining persistent brace deployment. */
   reset(): void;
 }
 
@@ -12,6 +16,8 @@ export interface UnitMotion {
 export interface UnitMotionTuning {
   /** Full left/right gait cycles per tile travelled by a mech. */
   readonly mechWalkCyclesPerTile: number;
+  readonly braceSwing: number;
+  readonly braceExtension: number;
   readonly bodyLift: number;
   readonly bodyRoll: number;
   readonly bugRoll: number;

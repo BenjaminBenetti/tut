@@ -348,6 +348,7 @@ export class TacticalSceneBuilder
       this.positions.set(unit.id, unit.pos);
       if (existing) {
         existing.setPose(unit.pos, unit.facing);
+        existing.motion?.brace?.(unit.braced ? 1 : 0);
         // An arrival the queue never walked (instant mode, or a batch
         // that was skipped) is on the board now, not hidden.
         existing.setHidden(false);
@@ -749,6 +750,7 @@ export class TacticalSceneBuilder
         : DEFAULT_FOOTPRINT,
     );
     mesh.setPose(unit.pos, unit.facing);
+    mesh.motion?.brace?.(unit.braced ? 1 : 0);
     this.meshes.set(unit.id, mesh);
     this.modelIds.set(unit.id, template.modelId);
     this.heights.set(unit.id, measureHeight(mesh.object));

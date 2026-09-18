@@ -14,6 +14,31 @@
  * id here and an entry there in the same PR.
  */
 export const MODEL_IDS = [
+  // Mech progression kit (#1168)
+  "tdf.mech.chassis.courser",
+  "tdf.mech.chassis.surveyor",
+  "tdf.mech.chassis.crucible",
+  "tdf.mech.legs.all-terrain",
+  "tdf.mech.legs.sprint",
+  "tdf.mech.legs.anchor",
+  "tdf.mech.arms.assault-l",
+  "tdf.mech.arms.assault-r",
+  "tdf.mech.arms.marksman-l",
+  "tdf.mech.arms.marksman-r",
+  "tdf.mech.arms.conduit-l",
+  "tdf.mech.arms.conduit-r",
+  "tdf.mech.weapon-arm.scatter-cannon",
+  "tdf.mech.weapon-arm.pile-driver",
+  "tdf.mech.weapon-arm.heavy-autocannon",
+  "tdf.mech.weapon-arm.thermal-lance",
+  "tdf.mech.weapon-arm.siege-railgun",
+  "tdf.mech.weapon-arm.beam-projector",
+  "tdf.mech.weapon-back.smoke-launcher",
+  "tdf.mech.weapon-back.guided-missile-rack",
+  "tdf.mech.weapon-back.incendiary-launcher",
+  "tdf.mech.weapon-back.siege-howitzer",
+  "tdf.mech.weapon-back.cluster-rocket-rack",
+
   "prop.curb-drain",
   "prop.manhole",
   "prop.rooftop-water-tank",

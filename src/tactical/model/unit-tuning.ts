@@ -66,7 +66,7 @@ export interface InfantryUnitTuning {
 
 /** How a mech's tactical stats derive from its stat sheet (#49). */
 export interface MechUnitTuning {
-  /** Hit points before armor is counted. Positive integer. */
+  /** Fallback structural hit points for sheets without a chassis hull value. */
   readonly baseHp: number;
   /** Extra hit points per point of sheet `armor`. Non-negative. */
   readonly hpPerArmor: number;

@@ -88,6 +88,18 @@ describe("sheetPreview", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("previews a chassis capacity change without counting the frame's own mass as equipment", () => {
+    const next = describe_({
+      ...STARTER_LOADOUT,
+      chassisId: "chassis-bulwark",
+    });
+    const preview = sheetPreview(STARTER.sheet, next, UNIT_TUNING.mech);
+    expect(preview.weightBudget).toEqual({ used: 40, limit: 70 });
+    expect(
+      preview.deltas.find(({ field }) => field === "weight"),
+    ).toBeUndefined();
+  });
+
   it("carries only warnings when the draft itself has no sheet", () => {
     const broken = describe_({ ...STARTER_LOADOUT, legsId: "" });
     const preview = sheetPreview(undefined, STARTER, UNIT_TUNING.mech);

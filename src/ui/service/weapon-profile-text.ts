@@ -20,6 +20,17 @@ import { formatWhole } from "./format";
  */
 export function weaponProfileText(profile: WeaponProfile): string {
   const extras = [
+    ...(profile.heat === undefined
+      ? []
+      : [`heat +${formatWhole(profile.heat)}`]),
+    ...(profile.minRange ? [`min ${formatWhole(profile.minRange)}`] : []),
+    ...(profile.indirect ? ["indirect · allied sight"] : []),
+    ...(profile.requiresBrace ? ["requires brace"] : []),
+    ...(profile.guided ? ["guided"] : []),
+    ...(profile.beam ? ["line beam"] : []),
+    ...(profile.cooldown
+      ? [`recovery ${formatWhole(profile.cooldown)} turn`]
+      : []),
     ...(profile.aoe === undefined
       ? []
       : [`blast ${formatWhole(profile.aoe.radius)}`]),

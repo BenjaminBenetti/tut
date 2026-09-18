@@ -12,7 +12,7 @@ import type {
   TileEffect,
   TileEffectId,
 } from "../../tactical/model/tile-effect";
-import { FIRE_SMOKE } from "../data/smoke-plumes";
+import { FIRE_SMOKE, SCREEN_SMOKE } from "../data/smoke-plumes";
 import type { Disposable } from "../model/disposable";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import { createFalloffTexture } from "../service/falloff-texture";
@@ -192,7 +192,7 @@ export class TileEffectView implements FrameUpdatable, Disposable {
     const top = tileTop(effect.tile.y);
     root.position.set(effect.tile.x + 0.5, top, effect.tile.z + 0.5);
     const tongues: Mesh[] = [];
-    for (let i = 0; i < TONGUES; i++) {
+    for (let i = 0; i < (effect.kind === "smoke" ? 0 : TONGUES); i++) {
       const central = i === 0;
       const angle = (i / (TONGUES - 1)) * Math.PI * 2;
       const tongue = new Mesh(this.geometry, central ? this.core : this.body);
@@ -208,9 +208,10 @@ export class TileEffectView implements FrameUpdatable, Disposable {
     }
     const light = new PointLight(FLAME_BODY, LIGHT_INTENSITY, LIGHT_DISTANCE);
     light.position.set(0, TONGUE_HEIGHT, 0);
+    light.visible = effect.kind !== "smoke";
     root.add(light);
     const smoke = new SmokePlume(
-      FIRE_SMOKE,
+      effect.kind === "smoke" ? SCREEN_SMOKE : FIRE_SMOKE,
       this.smokeFalloff,
       FIRE_SMOKE_NAME,
     );

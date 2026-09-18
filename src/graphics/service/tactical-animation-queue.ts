@@ -1,9 +1,14 @@
+import { jumpArcPoint } from "../../tactical/service/jump-trajectory-service";
+import { MECH_SYSTEM_USED } from "../../tactical/model/mech-system-used-event";
 import type { UnitMotion } from "../model/unit-motion";
 import type { Camera, DataTexture, Object3D, Texture } from "three";
 import {
   AdditiveBlending,
   CanvasTexture,
+  CylinderGeometry,
   Group,
+  Mesh,
+  MeshBasicMaterial,
   NormalBlending,
   Sprite,
   SpriteMaterial,
@@ -684,11 +689,17 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   /** The animation for one event, or undefined when there is nothing to show. */
   private start(event: TacticalEvent): Animation | undefined {
     switch (event.type) {
+      case MECH_SYSTEM_USED:
+        return event.payload.action === "brace"
+          ? this.deployBrace(event.payload.unitId)
+          : undefined;
       case UNIT_MOVED:
         return this.walk(
           event.payload.unitId,
           event.payload.path,
           event.payload.to,
+          event.payload.jump ?? false,
+          event.payload.jumpApex,
         );
       case ATTACK_RESOLVED:
         return this.attack(
@@ -727,11 +738,33 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
   }
 
-  /** Walks the path with a facing and limb stride, landing exactly on the last tile. */
+  /** Extends stabilisers before returning control, retaining the planted pose. */
+  private deployBrace(unitId: UnitId): Animation | undefined {
+    const motion = this.scene.unitMotion?.(unitId);
+    if (!motion?.brace) return undefined;
+    let elapsed = 0;
+    const duration = Math.max(0.35, this.timing.stepSeconds * 2);
+    const from = motion.braceAmount ?? 0;
+    return {
+      name: `brace:${unitId}`,
+      advance: (seconds) => {
+        elapsed += seconds;
+        const progress = Math.min(1, elapsed / duration);
+        const smooth = progress * progress * (3 - 2 * progress);
+        motion.brace?.(from + (1 - from) * smooth);
+        return elapsed >= duration ? elapsed - duration : undefined;
+      },
+      finish: () => motion.brace?.(1),
+    };
+  }
+
+  /** Walks with a limb stride or follows one continuous jump arc through the validated corridor. */
   private walk(
     unitId: UnitId,
     path: readonly TileCoord[],
     to: TileCoord,
+    jump = false,
+    jumpApex?: number,
   ): Animation | undefined {
     const object = this.scene.unitObject(unitId);
     // Where this unit's feet go on a tile: its footprint's centre when
@@ -752,9 +785,18 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
     const motion = this.scene.unitMotion?.(unitId);
     const walkedBefore = this.walkedTiles.get(unitId) ?? 0;
-    const stepSeconds = this.timing.stepSeconds;
+    const stepSeconds = jump
+      ? Math.max(
+          0.9,
+          Math.hypot(end.x - object.position.x, end.z - object.position.z) *
+            0.09,
+        )
+      : this.timing.stepSeconds;
     let elapsed = 0;
-    const total = stepSeconds * points.length;
+    const deployed = motion?.braceAmount ?? 0;
+    const retractSeconds =
+      deployed > 0 ? Math.max(0.35, this.timing.stepSeconds * 2) : 0;
+    const total = retractSeconds + stepSeconds * points.length;
     const from = {
       x: object.position.x,
       y: object.position.y,
@@ -765,6 +807,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       faceTowards(object, previous, end);
       object.position.set(end.x, end.y, end.z);
       this.walkedTiles.set(unitId, walkedBefore + points.length);
+      motion?.brace?.(0);
       motion?.reset();
     };
     return {
@@ -772,18 +815,35 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       advance: (seconds) => {
         const leftover = Math.max(0, elapsed + seconds - total);
         elapsed = Math.min(total, elapsed + seconds);
-        const progress = elapsed / stepSeconds;
+        if (elapsed < retractSeconds) {
+          const progress = elapsed / retractSeconds;
+          motion?.brace?.(
+            deployed * (1 - progress * progress * (3 - 2 * progress)),
+          );
+          return undefined;
+        }
+        if (deployed > 0) motion?.brace?.(0);
+        const progress = (elapsed - retractSeconds) / stepSeconds;
         const index = Math.min(points.length - 1, Math.floor(progress));
         const local = Math.min(1, progress - index);
         const start = index === 0 ? from : points[index - 1]!;
         const target = points[index]!;
         faceTowards(object, start, target);
-        motion?.walk(walkedBefore + progress);
-        object.position.set(
-          start.x + (target.x - start.x) * local,
-          start.y + (target.y - start.y) * local,
-          start.z + (target.z - start.z) * local,
-        );
+        if (!jump) motion?.walk(walkedBefore + progress);
+        if (jump) {
+          const apex =
+            jumpApex === undefined
+              ? Math.max(start.y, target.y) + 1.6
+              : standAt({ ...to, y: jumpApex }).y;
+          const point = jumpArcPoint(start, target, apex, local);
+          object.position.set(point.x, point.y, point.z);
+        } else {
+          object.position.set(
+            start.x + (target.x - start.x) * local,
+            start.y + (target.y - start.y) * local,
+            start.z + (target.z - start.z) * local,
+          );
+        }
         if (elapsed >= total) {
           finish();
           return leftover;
@@ -1172,7 +1232,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       readonly label: string;
       readonly tone: number;
     }[] = [];
-    if (aimed) {
+    if (aimed && !impact.smoke) {
       const at =
         this.anchor(aimed.payload.targetId, 1, TEXT_MARGIN) ??
         this.spawnerTop(aimed.payload.targetId);
@@ -1187,6 +1247,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       }
     }
     for (const victim of impact.victims) {
+      if (impact.smoke) continue;
       const at =
         victim.kind === "unit"
           ? this.anchor(victim.targetId, 1, TEXT_MARGIN)
@@ -1207,10 +1268,23 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       });
     }
 
+    const beamGround = impact.beamEnd
+      ? (this.scene.tileWorldPosition(impact.beamEnd) ??
+        tileTopCentre(impact.beamEnd))
+      : undefined;
+    const beamAim = beamGround
+      ? { x: beamGround.x, y: beamGround.y + aim.y - ground.y, z: beamGround.z }
+      : aim;
     const parts: ScheduledPart[] = [
-      { at: 0, start: () => this.shot(muzzle, aim, melee) },
+      {
+        at: 0,
+        start: () =>
+          impact.beam
+            ? this.beam(muzzle, beamAim)
+            : this.shot(muzzle, aim, melee),
+      },
     ];
-    if (impact.hit) {
+    if (impact.hit && !impact.beam && !impact.smoke) {
       parts.push({
         at: landsAt,
         start: () => this.explosion(aim, impact.radius),
@@ -1270,6 +1344,50 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         inner.finish();
         cleanup();
       },
+    };
+  }
+
+  /** A short, continuous cyan beam across the complete firing lane. */
+  private beam(muzzle: Vec3 | undefined, aim: Vec3): Animation | undefined {
+    if (!muzzle) return undefined;
+    const start = new Vector3(muzzle.x, muzzle.y, muzzle.z);
+    const end = new Vector3(aim.x, aim.y, aim.z);
+    const direction = end.clone().sub(start);
+    const geometry = new CylinderGeometry(0.045, 0.045, direction.length(), 6);
+    const material = new MeshBasicMaterial({
+      color: 0x9eefff,
+      transparent: true,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    });
+    const beam = new Mesh(geometry, material);
+    beam.name = "vfx.mech-beam";
+    beam.position.copy(start).add(end).multiplyScalar(0.5);
+    beam.quaternion.setFromUnitVectors(
+      new Vector3(0, 1, 0),
+      direction.normalize(),
+    );
+    this.root.add(beam);
+    const duration =
+      this.timing.flashSeconds +
+      this.timing.tracerSeconds +
+      this.timing.impactSeconds;
+    let elapsed = 0;
+    const cleanup = (): void => {
+      beam.removeFromParent();
+      geometry.dispose();
+      material.dispose();
+    };
+    return {
+      name: "beam",
+      advance: (seconds) => {
+        elapsed += seconds;
+        material.opacity = Math.max(0, 1 - elapsed / duration);
+        if (elapsed < duration) return undefined;
+        cleanup();
+        return elapsed - duration;
+      },
+      finish: cleanup,
     };
   }
 

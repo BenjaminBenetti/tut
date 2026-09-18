@@ -130,13 +130,15 @@ describe("validateLoadout on a valid loadout", () => {
     const result = validateLoadout(VALID, CATALOGUE, TUNING, UPGRADE_TUNING);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value).toEqual({
+    expect(result.value).toMatchObject({
+      systems: { heatCapacity: 20, cooling: 6, idleHeat: 0, movementHeat: 0 },
       armor: 25,
       mobility: 7,
       heat: 1,
       accuracy: 5,
       firepower: 40,
       weight: 60,
+      weightBudget: { used: 40, limit: 40 },
       powerBalance: 10,
       totalCost: 1650,
       // 25 + 21 + 2.5 + 80 − 2 = 126.5 → 127

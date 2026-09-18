@@ -9,12 +9,14 @@ import { StatSheetView } from "./stat-sheet-view";
 
 /** A sheet like the starter mech's: armor 20, two weapons. */
 const SHEET: MechStatSheet = {
+  hullHp: 35,
   armor: 20,
   mobility: 5,
   heat: -1,
   accuracy: 0,
   firepower: 40,
   weight: 60,
+  weightBudget: { used: 40, limit: 40 },
   powerBalance: 0,
   totalCost: 2850,
   combatRating: 113,
@@ -52,8 +54,8 @@ describe("StatSheetView", () => {
     view.update(ok(SHEET));
     const profile = mechCombatProfile(SHEET, UNIT_TUNING.mech);
     // What the unit factory would freeze, not the part sums: 20 plate
-    // is 6 per hit and 70 hit points, never "20 armor".
-    expect(field("combat-hp").textContent).toBe("70");
+    // is 6 per hit and 45 hit points, never "20 armor".
+    expect(field("combat-hp").textContent).toBe("45");
     expect(field("combat-armor").textContent).toBe("6");
     expect(field("combat-move").textContent).toBe(String(profile.move));
     expect(field("combat-ap").textContent).toBe("2");
@@ -74,7 +76,7 @@ describe("StatSheetView", () => {
     expect(root.querySelector('[data-field="armor"]')).toBeNull();
     expect(root.querySelector('[data-field="mobility"]')).toBeNull();
     expect(root.querySelector('[data-field="firepower"]')).toBeNull();
-    expect(field("weight").textContent).toBe("60");
+    expect(field("weight").textContent).toBe("40 / 40 t");
     expect(field("combatRating").textContent).toBe("113");
     expect(field("totalCost").textContent).toBe("¢2,850");
     expect(field("verdict").dataset.tone).toBe("ok");
@@ -87,7 +89,9 @@ describe("StatSheetView", () => {
         { code: "overweight", slot: "chassis", detail: "Too heavy." },
         { code: "missing-part", slot: "legs", detail: "No legs." },
       ]),
+      { used: 54, limit: 40 },
     );
+    expect(field("weight").textContent).toBe("54 / 40 t");
     expect(field("combat-hp").textContent).toBe("—");
     expect(field("combat-weapons").textContent).toBe("—");
     expect(field("totalCost").textContent).toBe("—");

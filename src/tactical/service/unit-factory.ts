@@ -124,6 +124,9 @@ export function mechUnit(
   const template: UnitTemplate = {
     id: templateIdFor("mech", mech.id),
     name: mech.name,
+    ...(profile.systems === undefined
+      ? {}
+      : { systems: profile.systems, equipment: profile.systems.equipment }),
     maxHp: profile.maxHp,
     maxAp: profile.maxAp,
     move: profile.move,

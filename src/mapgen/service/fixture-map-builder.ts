@@ -121,6 +121,9 @@ export class FixtureMapBuilder {
       y: coord.y,
       z: coord.z,
       surface,
+      ...(definition?.mechMoveCost === undefined
+        ? {}
+        : { mechMoveCost: definition.mechMoveCost }),
       pass: definition?.defaultPass ?? PassMask.ALL,
       walls: {},
       coverProvided: Cover.NONE,

@@ -1,6 +1,9 @@
 import type { Result } from "../../core/model/result";
 import type { LoadoutError } from "../../roster/model/loadout-error";
-import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type {
+  MechStatSheet,
+  MechWeightBudget,
+} from "../../roster/model/mech-stat-sheet";
 import type { MechCombatProfile } from "../../tactical/model/mech-combat-profile";
 import type { MechUnitTuning } from "../../tactical/model/unit-tuning";
 import { mechCombatProfile } from "../../tactical/service/mech-combat-profile";
@@ -19,7 +22,7 @@ import { weaponProfileText } from "../service/weapon-profile-text";
  * `weapons` (#532), which the Combat block prints per weapon.
  */
 type BuildKey = {
-  [K in keyof MechStatSheet]: MechStatSheet[K] extends number ? K : never;
+  [K in keyof MechStatSheet]-?: MechStatSheet[K] extends number ? K : never;
 }[keyof MechStatSheet];
 
 /**
@@ -33,7 +36,7 @@ type BuildKey = {
 const BUILD_ROWS: readonly [BuildKey, string][] = [
   ["weight", "Weight"],
   ["powerBalance", "Power balance"],
-  ["heat", "Heat"],
+  ["heat", "Heat load"],
   ["combatRating", "Rating"],
   ["totalCost", "Total cost"],
 ];
@@ -77,7 +80,7 @@ const EMPTY = "—";
  *   │           Missile Pod                  │
  *   │           range 14 · acc 70 · dmg 22 … │
  *   │ BUILD                                  │   what constrains the
- *   │   Weight 60  Power balance 0  Heat −1  │   build
+ *   │   Weight 40 / 40 t  Power balance 0  Heat −1  │   build
  *   │   Rating 113  Total cost ¢2,850        │
  *   └────────────────────────────────────────┘
  * ```
@@ -152,6 +155,8 @@ export class StatSheetView {
     weapons.dataset.field = "combat-weapons";
     weapons.textContent = EMPTY;
     combat.append(weaponsTerm, weapons);
+    combat.append(...this.row(doc, "systems", "Systems"));
+    combat.append(...this.row(doc, "cooling", "Thermal"));
 
     const buildTitle = doc.createElement("div");
     buildTitle.className = "tut-label";
@@ -192,8 +197,11 @@ export class StatSheetView {
     this.warning = warning;
   }
 
-  /** Shows the field and build numbers on success, or dashes plus every error on failure. */
-  update(result: Result<MechStatSheet, LoadoutError[]>): void {
+  /** Shows the fitting budget alongside a valid sheet or the reasons a draft cannot be built. */
+  update(
+    result: Result<MechStatSheet, LoadoutError[]>,
+    weightBudget?: MechWeightBudget,
+  ): void {
     if (!this.verdict || !this.errors || !this.weapons) {
       return;
     }
@@ -205,6 +213,51 @@ export class StatSheetView {
         this.set(key, formatWhole(fields[key]));
       }
       this.setWeapons(profile);
+      const systems = profile.systems;
+      this.set(
+        "cooling",
+        systems
+          ? `capacity ${String(systems.heatCapacity)} · cool ${String(systems.cooling)}/turn · idle +${String(systems.idleHeat)} · move +${String(systems.movementHeat)}/AP`
+          : EMPTY,
+      );
+      this.set(
+        "systems",
+        systems
+          ? [
+              ...(systems.jumpRange
+                ? [
+                    `jump ${String(systems.jumpRange)} · height ${String(systems.jumpHeight)} · heat +${String(systems.jumpHeat)}`,
+                  ]
+                : []),
+              ...(systems.allTerrain ? ["all-terrain"] : []),
+              ...(systems.braceAccuracy
+                ? [`braced aim +${String(systems.braceAccuracy)}`]
+                : []),
+              ...(systems.stationaryAccuracy
+                ? [`stationary aim +${String(systems.stationaryAccuracy)}`]
+                : []),
+              ...(systems.energyHeatFactor && systems.energyHeatFactor < 1
+                ? [
+                    `energy heat −${String(Math.round(100 * (1 - systems.energyHeatFactor)))}%`,
+                  ]
+                : []),
+              ...(systems.ablativeHits
+                ? [
+                    `ablative ${String(systems.ablativeHits)} hits × ${String(systems.ablativeAbsorption)}`,
+                  ]
+                : []),
+              ...(systems.equipment ?? []).map(
+                (id) =>
+                  ({
+                    "mech-recon": "3 recon beacons",
+                    "mech-repair": "2 field repairs",
+                    "mech-coolant": `${String(systems.coolantUses ?? 0)} coolant doses`,
+                    "mech-designator": "target designation",
+                  })[id] ?? id,
+              ),
+            ].join(" · ") || EMPTY
+          : EMPTY,
+      );
       for (const [key] of BUILD_ROWS) {
         this.set(
           key,
@@ -213,6 +266,7 @@ export class StatSheetView {
             : formatWhole(sheet[key]),
         );
       }
+      this.setWeight(sheet.weightBudget);
       this.verdict.textContent = "Buildable";
       this.verdict.className = "tut-badge tut-badge--ok";
       this.verdict.dataset.tone = "ok";
@@ -223,6 +277,7 @@ export class StatSheetView {
     for (const el of this.fields.values()) {
       el.textContent = EMPTY;
     }
+    this.setWeight(weightBudget);
     this.weapons.replaceChildren();
     this.weapons.textContent = EMPTY;
     this.verdict.textContent = `Not buildable · ${formatWhole(result.error.length)} issue${result.error.length === 1 ? "" : "s"}`;
@@ -278,6 +333,14 @@ export class StatSheetView {
       el.textContent = formatDelta(delta.delta);
       el.dataset.tone = delta.tone;
       el.hidden = false;
+    }
+    if (preview.weightBudget) {
+      const el = this.deltas.get("weight");
+      if (el) {
+        el.textContent = `→ ${formatWeight(preview.weightBudget)}`;
+        el.dataset.tone = "neutral";
+        el.hidden = false;
+      }
     }
     for (const weapon of preview.weapons) {
       const block = this.root?.querySelector<HTMLElement>(
@@ -344,6 +407,16 @@ export class StatSheetView {
     return [term, cell];
   }
 
+  /** Keeps the capacity check visible even when another fitted part makes the draft invalid. */
+  private setWeight(budget: MechWeightBudget | undefined): void {
+    const el = this.fields.get("weight");
+    if (!el) return;
+    el.title = budget
+      ? "Carried equipment / chassis limit; chassis mass excluded"
+      : "";
+    if (budget) el.textContent = formatWeight(budget);
+  }
+
   /** Writes a field's text. */
   private set(key: string, text: string): void {
     const el = this.fields.get(key);
@@ -393,4 +466,9 @@ function combatFields(profile: MechCombatProfile): CombatFields {
     "combat-armor": profile.armor,
     "combat-sight": profile.sightRange,
   };
+}
+
+/** The same equipment tonnes and chassis limit used by fitting validation. */
+function formatWeight(budget: MechWeightBudget): string {
+  return `${formatWhole(budget.used)} / ${formatWhole(budget.limit)} t`;
 }

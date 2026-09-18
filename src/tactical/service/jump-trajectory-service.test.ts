@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PropKindIds } from "../../mapgen/data/props";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { TileIndex } from "../../mapgen/service/tile-index";
@@ -38,6 +39,63 @@ describe("continuous jump trajectory", () => {
     expect(crossing.y).toBeGreaterThan(2);
     expect(jumpArcPoint(FROM, TO, apex, t / 2).x).toBeGreaterThan(FROM.x);
   });
+
+  it.each([
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_RIDGE, blocked: true },
+    { kind: PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS, blocked: true },
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_BROKEN, blocked: false },
+    { kind: PropKindIds.BOULDER, blocked: false },
+  ])(
+    "respects the actual opaque height of $kind in a ground jump",
+    ({ kind, blocked }) => {
+      const map = new FixtureMapBuilder(16, 7, 5)
+        .fillGround()
+        .prop(kind, { x: 7, y: 0, z: 3 })
+        .build();
+      const index = new TileIndex(map);
+      for (const [from, to] of [
+        [FROM, TO],
+        [TO, FROM],
+      ] as const) {
+        const obstruction = jumpObstruction(map, index, from, to);
+        if (blocked) expect(obstruction).toContain("blocks the jump");
+        else expect(obstruction).toBeUndefined();
+      }
+    },
+  );
+
+  it.each([
+    { kind: PropKindIds.INFESTED_CARAPACE_WALL_RIDGE, height: 3 },
+    { kind: PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS, height: 4 },
+  ])(
+    "fits a legal elevated jump above the full $kind shell near either endpoint",
+    ({ kind, height }) => {
+      const from = { ...FROM, y: 2 };
+      const to = { ...TO, y: 2 };
+      const map = new FixtureMapBuilder(16, 7, 5)
+        .fillGround()
+        .tile(from, SurfaceIds.ROCK)
+        .tile(to, SurfaceIds.ROCK)
+        .prop(kind, { x: 2, y: 0, z: 3 })
+        .build();
+      const index = new TileIndex(map);
+      for (const [start, end] of [
+        [from, to],
+        [to, from],
+      ] as const) {
+        expect(jumpObstruction(map, index, start, end)).toBeUndefined();
+        const apex = jumpFlightApex(map, index, start, end);
+        for (const x of [1.5, 2.5]) {
+          const fraction = (x - start.x) / (end.x - start.x);
+          const point = jumpArcPoint(start, end, apex, jumpArcTime(fraction));
+          expect(point.x).toBeCloseTo(x);
+          expect(point.y).toBeGreaterThan(height);
+        }
+        expect(jumpArcPoint(start, end, apex, 0)).toEqual(start);
+        expect(jumpArcPoint(start, end, apex, 1)).toEqual(end);
+      }
+    },
+  );
 
   it.each([false, true])(
     "clears the roof edge and lands precisely when descending=%s",

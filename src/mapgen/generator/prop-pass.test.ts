@@ -65,6 +65,7 @@ function run(
     size: "medium",
     hooks: [],
     slopeShare: 1,
+    infestation: 0,
   };
   const recipe: MapRecipe = { seed, params };
   const { draft } = generator.run(params, new Mulberry32Rng(hashSeed(seed)));
@@ -265,6 +266,7 @@ describe("PropPass", () => {
         settlement,
         hooks: [],
         slopeShare: 1,
+        infestation: 0,
       },
       rng: new Mulberry32Rng(hashSeed("edge-trail")),
       draft,
@@ -306,6 +308,7 @@ describe("PropPass", () => {
           },
           hooks: [],
           slopeShare: 1,
+          infestation: 0,
         },
       });
       expect(draft.props.length).toBeGreaterThan(8);
@@ -367,6 +370,7 @@ describe("PropPass", () => {
           },
           hooks: [],
           slopeShare: 1,
+          infestation: 0,
         },
       });
       expect(draft.props).toHaveLength(1);
@@ -413,6 +417,7 @@ describe("PropPass", () => {
         settlement: { ...SETTLEMENT_DEFINITIONS.city, streetPropDensity: 20 },
         hooks: [],
         slopeShare: 1,
+        infestation: 0,
       },
     });
     expect(draft.props.length).toBeGreaterThan(0);

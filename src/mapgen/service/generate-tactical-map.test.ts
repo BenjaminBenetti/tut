@@ -65,6 +65,7 @@ describe("generateTacticalMap", () => {
       "water",
       "roads",
       "dropship-sites",
+      "infestation-plan",
       "lots",
       "elevation",
       "buildings",
@@ -78,6 +79,7 @@ describe("generateTacticalMap", () => {
       "hooks",
       "rooftop-props",
       "yard-arrangements",
+      "infestation",
       "connectivity",
     ]);
     expect(diagnostics.notes.length).toBeGreaterThan(passes.length);

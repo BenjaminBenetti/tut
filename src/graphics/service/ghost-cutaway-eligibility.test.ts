@@ -77,6 +77,21 @@ describe("takesGhostCutaway", () => {
     }
   });
 
+  it("fades individual carapace walls when their shells hide a visible unit", () => {
+    for (const kind of [
+      PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
+      PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP,
+      PropKindIds.INFESTED_CARAPACE_WALL_RIBBED,
+      PropKindIds.INFESTED_CARAPACE_WALL_CURVE,
+      PropKindIds.INFESTED_CARAPACE_WALL_FORK,
+      PropKindIds.INFESTED_CARAPACE_WALL_END,
+      PropKindIds.INFESTED_CARAPACE_WALL_BROKEN,
+      PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS,
+    ]) {
+      expect(takesGhostCutaway(PROP_MODELS[kind])).toBe(true);
+    }
+  });
+
   it("names only registered building models as solid, so a renamed slab cannot slip back into the cutaway", () => {
     for (const id of GHOST_SOLID_MODELS) {
       expect(MODEL_MANIFEST[id], `${id} registered`).toBeDefined();

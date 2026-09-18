@@ -1,3 +1,8 @@
+import { infestModel } from "./infested-model-resolver";
+import {
+  infestationGround,
+  resolveInfestationDetails,
+} from "./infestation-detail-resolver";
 import type { InteriorFloorAppearance } from "../model/interior-floor-style";
 import type { BusinessSignAppearance } from "../model/business-sign-appearance";
 import { resolveInteriorFloors } from "./interior-floor-resolver";
@@ -50,6 +55,7 @@ import {
   propAppearanceOffset,
   propAppearanceScale,
   propModelVariation,
+  propSurfaceModel,
 } from "./prop-appearance-resolver";
 
 // ===========================================
@@ -179,7 +185,9 @@ export function resolveMapModels(
   index: TileIndex = new TileIndex(map),
 ): MapModelPlacements {
   const roads = resolveRoadAppearances(map, index);
-  const walls = resolveWalls(map, index);
+  const walls = resolveWalls(map, index).map((placement) =>
+    infestModel(placement, map),
+  );
   const ramps = resolveRampModels(map, index, roads);
   const connectors = [...ramps, ...resolveLadderModels(map, index, walls)];
   const roofs = resolvePitchedRoofModels(map, index);
@@ -202,7 +210,8 @@ export function resolveMapModels(
       ...resolveDropshipModels(map),
       ...resolveStreetDetails(map, index),
       ...resolveStreetSurfaces(map, index),
-    ],
+      ...resolveInfestationDetails(map, index),
+    ].map((placement) => infestModel(placement, map)),
     connectors,
   };
 }
@@ -339,9 +348,14 @@ function resolveTiles(
     }
     const drop = tile.surface === SurfaceIds.WATER ? WATER_RECESS : 0;
     // A slab is pivoted at its centre and sits half a thickness below the
-    // top; the stairs model is pivoted at its base and stands on it (#766).
+    // top; stairs stand on it (#766). Resin's base-pivoted slab sits a
+    // full thickness below it, leaving only its shallow veins proud.
     const lift =
-      tile.surface === SurfaceIds.STAIRS ? 0 : GROUND_SLAB_THICKNESS / 2;
+      tile.surface === SurfaceIds.STAIRS
+        ? 0
+        : tile.surface === SurfaceIds.INFESTED
+          ? GROUND_SLAB_THICKNESS
+          : GROUND_SLAB_THICKNESS / 2;
     placements.push({
       modelId: fitted.modelId,
       level: tile.y,
@@ -383,6 +397,7 @@ function fitSurface(
       cross: SIDEWALK_VARIANTS.straight,
     });
   }
+  if (tile.surface === SurfaceIds.INFESTED) return infestationGround(map, tile);
   const modelId = surfaceModel(tile.surface);
   if (modelId === undefined) {
     return undefined;
@@ -549,7 +564,7 @@ function resolveProps(
     const bounds = propBounds(prop);
     const offset = propAppearanceOffset(prop, tile, appearance.turns);
     placements.push({
-      modelId: appearance.modelId,
+      modelId: propSurfaceModel(appearance.modelId, tile.surface),
       level: tile.y,
       position: {
         x: bounds.x + bounds.w / 2 + offset.x,

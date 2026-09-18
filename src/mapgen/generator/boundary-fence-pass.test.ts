@@ -50,6 +50,7 @@ function fixture(): GenerationContext {
       settlement: SETTLEMENT_DEFINITIONS.rural,
       hooks: [],
       slopeShare: 1,
+      infestation: 0,
     },
   };
 }
@@ -176,6 +177,7 @@ describe("BoundaryFencePass", () => {
           size: "medium",
           hooks: DEFAULT_MISSION_HOOKS,
           slopeShare: 1,
+          infestation: 0,
         },
       });
       const fences = map.props.filter((p) => p.kind === "fence");

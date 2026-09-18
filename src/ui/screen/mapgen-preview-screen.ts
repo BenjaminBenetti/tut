@@ -27,6 +27,8 @@ import { nextSeed } from "../service/seed-sequence";
 
 /** What the controls say to generate. */
 export interface PreviewControlsState {
+  /** Whole infestation band, corresponding to ten overworld points per level. */
+  readonly infestation?: number;
   readonly seed: string;
   readonly biome: BiomeId;
   readonly placeProfile?: PlaceProfileId;
@@ -103,6 +105,7 @@ export class MapgenPreviewScreen {
   private readonly stats: HTMLElement;
   private readonly slopeSlider: HTMLInputElement;
   private readonly slopeLabel: HTMLElement;
+  private readonly infestationSlider: HTMLInputElement;
   private readonly ascii: HTMLPreElement;
   private readonly notes: HTMLElement;
   private readonly status: HTMLElement;
@@ -180,6 +183,26 @@ export class MapgenPreviewScreen {
     form.appendChild(labelled(doc, "Place", this.placeSelect));
     form.appendChild(labelled(doc, "Settlement", this.settlementSelect));
     form.appendChild(labelled(doc, "Size", this.sizeSelect));
+
+    this.infestationSlider = el(doc, "input");
+    this.infestationSlider.type = "range";
+    this.infestationSlider.id = "infestation";
+    this.infestationSlider.min = "0";
+    this.infestationSlider.max = "10";
+    this.infestationSlider.step = "1";
+    this.infestationSlider.value = String(initial.infestation ?? 0);
+    const infestationLabel = el(doc, "span", "mapgen-level-label");
+    const describeInfestation = (): void => {
+      infestationLabel.textContent = `${this.infestationSlider.value}/10 (${Number(this.infestationSlider.value) * 10} overworld)`;
+    };
+    describeInfestation();
+    this.infestationSlider.addEventListener("input", describeInfestation);
+    this.infestationSlider.addEventListener("change", () =>
+      this.options.onGenerate(this.getState()),
+    );
+    form.appendChild(
+      labelled(doc, "Infestation", this.infestationSlider, infestationLabel),
+    );
 
     // Slope-to-cliff ratio for natural terrain edges (#799), as a percent.
     this.slopeSlider = el(doc, "input");
@@ -260,6 +283,7 @@ export class MapgenPreviewScreen {
       size: this.sizeSelect.value as MapSizePreset,
       archetype: this.archetype,
       slopeShare: Number(this.slopeSlider.value) / 100,
+      infestation: Number(this.infestationSlider.value),
     };
   }
 

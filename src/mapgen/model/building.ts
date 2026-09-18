@@ -38,6 +38,8 @@ export interface Entrance {
 
 /** Roof shape. Only flat roofs can be walkable. */
 export interface Roof {
+  /** Missing non-walkable roof sections; floor and connector support stays intact. */
+  readonly missingTiles?: readonly { readonly x: number; readonly z: number }[];
   readonly kind: "flat" | "pitched";
   /** True when `roof` tiles exist at `groundLevel + 2 * floors.length`. */
   readonly walkable: boolean;

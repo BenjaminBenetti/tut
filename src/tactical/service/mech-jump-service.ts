@@ -73,7 +73,7 @@ export function jumpFlightApex(
     : from.y + (dy + lift) ** 2 / (4 * lift);
 }
 
-/** Height of solid terrain, buildings and props; walls are checked at their crossed edge. */
+/** Uses declared opaque prop heights, or one storey for legacy props; walls are checked at their crossed edge. */
 function solidTop(map: TacticalMap, surface: Tile): number {
   const building = surface.buildingId
     ? map.buildings.find(({ id }) => id === surface.buildingId)
@@ -83,7 +83,11 @@ function solidTop(map: TacticalMap, surface: Tile): number {
       STOREY_LAYERS *
         (building.floors.length + (building.roof.kind === "pitched" ? 1 : 0))
     : surface.y;
-  return Math.max(roof, surface.y + (surface.blocksLos ? STOREY_LAYERS : 0));
+  return Math.max(
+    roof,
+    surface.y +
+      (surface.blocksLos ? (surface.sightHeight ?? STOREY_LAYERS) : 0),
+  );
 }
 
 /** Checks the whole flight corridor, including ceilings and roofs without surface tiles. */

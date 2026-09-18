@@ -15,6 +15,7 @@ import {
 } from "../../tactical/service/combat-service";
 import {
   apCostOf,
+  pathMovementCost,
   buildMoveGraph,
 } from "../../tactical/service/movement-service";
 import { hasLineOfSight } from "../../tactical/service/sight-service";
@@ -128,7 +129,13 @@ export class LurkerBehaviour implements BugBehaviour {
     const commands: TacticalCommand[] = [step];
 
     // After the move: attack if action points remain and the new tile flanks.
-    const apAfter = unit.ap - apCostOf(mission, unit, step.payload.path.length);
+    const apAfter =
+      unit.ap -
+      apCostOf(
+        mission,
+        unit,
+        pathMovementCost(mission, unit, step.payload.path),
+      );
     const moved: TacticalState = {
       ...mission,
       units: mission.units.map((u) =>

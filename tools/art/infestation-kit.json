@@ -1,0 +1,642 @@
+[
+  {
+    "id": "prop.infested-nest",
+    "script": "infestation-organic-kit.py",
+    "kind": "nest",
+    "category": "props",
+    "file": "prop-infested-nest.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-nest-large",
+    "script": "infestation-organic-kit.py",
+    "kind": "nest-large",
+    "category": "props",
+    "file": "prop-infested-nest-large.glb",
+    "footprint": "2x2"
+  },
+  {
+    "id": "prop.infested-nest-split",
+    "script": "infestation-organic-kit.py",
+    "kind": "nest-split",
+    "category": "props",
+    "file": "prop-infested-nest-split.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.infested-hive-spire",
+    "script": "infestation-organic-kit.py",
+    "kind": "hive-spire",
+    "category": "props",
+    "file": "prop-infested-hive-spire.glb",
+    "footprint": "2x2"
+  },
+  {
+    "id": "prop.infested-hive-crown",
+    "script": "infestation-organic-kit.py",
+    "kind": "hive-crown",
+    "category": "props",
+    "file": "prop-infested-hive-crown.glb",
+    "footprint": "2x2"
+  },
+  {
+    "id": "prop.infested-spine-tall",
+    "script": "infestation-organic-kit.py",
+    "kind": "spine-tall",
+    "category": "props",
+    "file": "prop-infested-spine-tall.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-spine-cluster",
+    "script": "infestation-organic-kit.py",
+    "kind": "spine-cluster",
+    "category": "props",
+    "file": "prop-infested-spine-cluster.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-spine-low",
+    "script": "infestation-organic-kit.py",
+    "kind": "spine-low",
+    "category": "props",
+    "file": "prop-infested-spine-low.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-shell-fan",
+    "script": "infestation-organic-kit.py",
+    "kind": "shell-fan",
+    "category": "props",
+    "file": "prop-infested-shell-fan.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-shell-ridge",
+    "script": "infestation-organic-kit.py",
+    "kind": "shell-ridge",
+    "category": "props",
+    "file": "prop-infested-shell-ridge.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-shell-barricade",
+    "script": "infestation-organic-kit.py",
+    "kind": "shell-barricade",
+    "category": "props",
+    "file": "prop-infested-shell-barricade.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.infested-arch",
+    "script": "infestation-organic-kit.py",
+    "kind": "arch",
+    "category": "props",
+    "file": "prop-infested-arch.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.infested-vent-tall",
+    "script": "infestation-organic-kit.py",
+    "kind": "vent-tall",
+    "category": "props",
+    "file": "prop-infested-vent-tall.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-vent-low",
+    "script": "infestation-organic-kit.py",
+    "kind": "vent-low",
+    "category": "props",
+    "file": "prop-infested-vent-low.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-egg-bed",
+    "script": "infestation-organic-kit.py",
+    "kind": "egg-bed",
+    "category": "props",
+    "file": "prop-infested-egg-bed.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-egg-clutch",
+    "script": "infestation-organic-kit.py",
+    "kind": "egg-clutch",
+    "category": "props",
+    "file": "prop-infested-egg-clutch.glb",
+    "footprint": "2x2"
+  },
+  {
+    "id": "prop.infested-tendril-node",
+    "script": "infestation-organic-kit.py",
+    "kind": "tendril-node",
+    "category": "props",
+    "file": "prop-infested-tendril-node.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-roots",
+    "script": "infestation-organic-kit.py",
+    "kind": "roots",
+    "category": "props",
+    "file": "prop-infested-roots.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-edge-growth",
+    "script": "infestation-organic-kit.py",
+    "kind": "edge-growth",
+    "category": "props",
+    "file": "prop-infested-edge-growth.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-carapace",
+    "script": "infestation-organic-kit.py",
+    "kind": "carapace",
+    "category": "props",
+    "file": "prop-infested-carapace.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-husk",
+    "script": "infestation-organic-kit.py",
+    "kind": "husk",
+    "category": "props",
+    "file": "prop-infested-husk.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.infested-resin-pool",
+    "script": "infestation-organic-kit.py",
+    "kind": "resin-pool",
+    "category": "props",
+    "file": "prop-infested-resin-pool.glb",
+    "footprint": "2x2"
+  },
+  {
+    "id": "prop.infested-burrow-ribs",
+    "script": "infestation-organic-kit.py",
+    "kind": "burrow-ribs",
+    "category": "props",
+    "file": "prop-infested-burrow-ribs.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.infested-feeder",
+    "script": "infestation-organic-kit.py",
+    "kind": "feeder",
+    "category": "props",
+    "file": "prop-infested-feeder.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "tile.ground.infested",
+    "script": "infestation-organic-kit.py",
+    "kind": "ground",
+    "category": "tiles",
+    "file": "tile-ground-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "tile.ground.infested-ribbed",
+    "script": "infestation-organic-kit.py",
+    "kind": "ground-ribbed",
+    "category": "tiles",
+    "file": "tile-ground-infested-ribbed.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "tile.ground.infested-cracked",
+    "script": "infestation-organic-kit.py",
+    "kind": "ground-cracked",
+    "category": "tiles",
+    "file": "tile-ground-infested-cracked.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "tile.ground.infested-veined",
+    "script": "infestation-organic-kit.py",
+    "kind": "ground-veined",
+    "category": "tiles",
+    "file": "tile-ground-infested-veined.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "tile.ground.infested-rooted",
+    "script": "infestation-organic-kit.py",
+    "kind": "ground-rooted",
+    "category": "tiles",
+    "file": "tile-ground-infested-rooted.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "tile.ground.infested-nest-floor",
+    "script": "infestation-organic-kit.py",
+    "kind": "ground-nest-floor",
+    "category": "tiles",
+    "file": "tile-ground-infested-nest-floor.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.car-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "car",
+    "category": "props",
+    "file": "prop-car-infested.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.car-compact-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "compact",
+    "category": "props",
+    "file": "prop-car-compact-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.lamp-post-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "lamp",
+    "category": "props",
+    "file": "prop-lamp-post-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.wall-solid-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "solid",
+    "category": "buildings",
+    "file": "building-wall-solid-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-window-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "window",
+    "category": "buildings",
+    "file": "building-wall-window-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-door-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "door",
+    "category": "buildings",
+    "file": "building-wall-door-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-half-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "half",
+    "category": "buildings",
+    "file": "building-wall-half-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "prop.car-hatchback-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "hatchback",
+    "category": "props",
+    "file": "prop-car-hatchback-infested.glb",
+    "footprint": "1x2"
+  },
+  {
+    "id": "prop.car-utility-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "utility",
+    "category": "props",
+    "file": "prop-car-utility-infested.glb",
+    "footprint": "1x2"
+  },
+  {
+    "id": "prop.bus-stop-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "bus-stop",
+    "category": "props",
+    "file": "prop-bus-stop-infested.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.dumpster-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "dumpster",
+    "category": "props",
+    "file": "prop-dumpster-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.barrier-concrete-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "barrier",
+    "category": "props",
+    "file": "prop-barrier-concrete-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.planter-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "planter",
+    "category": "props",
+    "file": "prop-planter-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.bench-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "bench",
+    "category": "props",
+    "file": "prop-bench-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.fence-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "fence",
+    "category": "props",
+    "file": "prop-fence-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.crate-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "crate",
+    "category": "props",
+    "file": "prop-crate-infested.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.wall-brick-breached",
+    "script": "infestation-urban-kit.py",
+    "kind": "brick-breached",
+    "category": "buildings",
+    "file": "building-wall-brick-breached.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-concrete-breached",
+    "script": "infestation-urban-kit.py",
+    "kind": "concrete-breached",
+    "category": "buildings",
+    "file": "building-wall-concrete-breached.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-plaster-breached",
+    "script": "infestation-urban-kit.py",
+    "kind": "plaster-breached",
+    "category": "buildings",
+    "file": "building-wall-plaster-breached.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-panel-breached",
+    "script": "infestation-urban-kit.py",
+    "kind": "panel-breached",
+    "category": "buildings",
+    "file": "building-wall-panel-breached.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "prop.ruin-corner",
+    "script": "infestation-urban-kit.py",
+    "kind": "corner",
+    "category": "props",
+    "file": "prop-ruin-corner.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.ruin-column",
+    "script": "infestation-urban-kit.py",
+    "kind": "column",
+    "category": "props",
+    "file": "prop-ruin-column.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.ruin-frame",
+    "script": "infestation-urban-kit.py",
+    "kind": "frame",
+    "category": "props",
+    "file": "prop-ruin-frame.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.roof-fragment",
+    "script": "infestation-urban-kit.py",
+    "kind": "roof",
+    "category": "props",
+    "file": "prop-roof-fragment.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.rubble-brick",
+    "script": "infestation-urban-kit.py",
+    "kind": "rubble-brick",
+    "category": "props",
+    "file": "prop-rubble-brick.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.rubble-concrete",
+    "script": "infestation-urban-kit.py",
+    "kind": "rubble-concrete",
+    "category": "props",
+    "file": "prop-rubble-concrete.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.rubble-timber",
+    "script": "infestation-urban-kit.py",
+    "kind": "rubble-timber",
+    "category": "props",
+    "file": "prop-rubble-timber.glb",
+    "footprint": "2x1"
+  },
+  {
+    "id": "prop.infested-pipe",
+    "script": "infestation-urban-kit.py",
+    "kind": "pipe",
+    "category": "props",
+    "file": "prop-infested-pipe.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.wall-window-concrete-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "window-concrete",
+    "category": "buildings",
+    "file": "building-wall-window-concrete-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-door-concrete-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "door-concrete",
+    "category": "buildings",
+    "file": "building-wall-door-concrete-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-window-plaster-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "window-plaster",
+    "category": "buildings",
+    "file": "building-wall-window-plaster-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-door-plaster-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "door-plaster",
+    "category": "buildings",
+    "file": "building-wall-door-plaster-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-window-panel-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "window-panel",
+    "category": "buildings",
+    "file": "building-wall-window-panel-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.wall-door-panel-infested",
+    "script": "infestation-urban-kit.py",
+    "kind": "door-panel",
+    "category": "buildings",
+    "file": "building-wall-door-panel-infested.glb",
+    "footprint": "1x0"
+  },
+  {
+    "id": "building.carapace-wall-ridge",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-ridge",
+    "category": "buildings",
+    "file": "building-carapace-wall-ridge.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-overlap",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-overlap",
+    "category": "buildings",
+    "file": "building-carapace-wall-overlap.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-ribbed",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-ribbed",
+    "category": "buildings",
+    "file": "building-carapace-wall-ribbed.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-curve",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-curve",
+    "category": "buildings",
+    "file": "building-carapace-wall-curve.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-fork",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-fork",
+    "category": "buildings",
+    "file": "building-carapace-wall-fork.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-end",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-end",
+    "category": "buildings",
+    "file": "building-carapace-wall-end.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-wall-broken",
+    "script": "infestation-carapace-kit.py",
+    "kind": "wall-broken",
+    "category": "buildings",
+    "file": "building-carapace-wall-broken.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "building.carapace-spine-buttress",
+    "script": "infestation-carapace-kit.py",
+    "kind": "spine-buttress",
+    "category": "buildings",
+    "file": "building-carapace-spine-buttress.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-oak-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-oak",
+    "category": "props",
+    "file": "prop-tree-oak-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-pine-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-pine",
+    "category": "props",
+    "file": "prop-tree-pine-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-palm-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-palm",
+    "category": "props",
+    "file": "prop-tree-palm-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-tropical-almond-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-tropical-almond",
+    "category": "props",
+    "file": "prop-tree-tropical-almond-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-oil-palm-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-oil-palm",
+    "category": "props",
+    "file": "prop-tree-oil-palm-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.tree-tuart-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "tree-tuart",
+    "category": "props",
+    "file": "prop-tree-tuart-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.banksia-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "banksia",
+    "category": "props",
+    "file": "prop-banksia-dead.glb",
+    "footprint": "1x1"
+  },
+  {
+    "id": "prop.grass-tree-dead",
+    "script": "infestation-dead-trees.py",
+    "kind": "grass-tree",
+    "category": "props",
+    "file": "prop-grass-tree-dead.glb",
+    "footprint": "1x1"
+  }
+]

@@ -214,6 +214,21 @@ function collectBlockedTiles(draft: MapDraft): ReadonlySet<number> {
     for (let z = clearance.z; z < clearance.z + clearance.d; z++)
       for (let x = clearance.x; x < clearance.x + clearance.w; x++)
         blocked.add(draft.tileKey(draft.groundCoord(x, z)));
+  // Colony chambers are a planned land use, just like human building interiors.
+  // Keep their passages clear before hooks choose mission positions and cover.
+  for (const zone of draft.infestation?.zones ?? []) {
+    const site = zone.carapace;
+    if (site === undefined) continue;
+    for (let z = site.clearance.z; z < site.clearance.z + site.clearance.d; z++)
+      for (
+        let x = site.clearance.x;
+        x < site.clearance.x + site.clearance.w;
+        x++
+      )
+        blocked.add(draft.tileKey(draft.groundCoord(x, z)));
+    for (const tile of site.gateways.flatMap((gate) => gate.approach))
+      blocked.add(draft.tileKey(draft.groundCoord(tile.x, tile.z)));
+  }
   for (const building of draft.buildings) {
     for (const entrance of building.entrances) {
       blocked.add(draft.tileKey(entrance.tile));

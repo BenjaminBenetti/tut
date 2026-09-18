@@ -1,3 +1,4 @@
+import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { allows, PassMask } from "../../mapgen/model/pass-mask";
 import type { UnitClass } from "../../mapgen/model/pass-mask";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
@@ -32,15 +33,15 @@ export interface MoveGraph {
 }
 
 /**
- * The result of a bounded search from a unit's tile: the steps to every
- * tile it can reach, the tiles themselves, and the tile each one was
- * first reached from, so a path can be read back.
+ * The result of a bounded search from a unit's tile: movement cost to every
+ * tile it can reach, the tiles themselves, and the predecessor on each
+ * cheapest route, so a path can be read back.
  */
 export interface MoveSearch {
-  /** Steps from the unit's own tile, which is present at `0`. */
+  /** Terrain-weighted cost from the unit's own tile, present at `0`. */
   readonly costs: ReadonlyMap<TileKey, number>;
   readonly tiles: ReadonlyMap<TileKey, Tile>;
-  /** Key of the tile each reached tile was entered from; absent for the origin. */
+  /** Predecessor key on the cheapest route; absent for the origin. */
   readonly parents: ReadonlyMap<TileKey, TileKey>;
 }
 
@@ -48,7 +49,7 @@ export interface MoveSearch {
 // Constants
 // ===========================================
 
-/** Steps one tile of movement costs; connectors cost the same as a flat step. */
+/** Cost of entering ordinary ground without a terrain modifier. */
 export const STEP_COST = 1;
 
 // ===========================================
@@ -188,9 +189,9 @@ export function footprintCanStep(
 // ===========================================
 
 /**
- * Tiles a unit may still walk this turn: `ap × move` (GDD §6.2, one
- * action per `move` tiles, a dash for two). `0` for a unit that is down
- * or whose template is missing.
+ * Weighted movement points available this turn: affordable actions × `move`.
+ * A fitted mech's thermal headroom can limit those actions below its AP.
+ * Returns `0` for a down unit or a missing movement template.
  */
 export function moveBudget(mission: TacticalState, unit: Unit): number {
   if (unit.hp <= 0) {
@@ -210,19 +211,21 @@ export function moveBudget(mission: TacticalState, unit: Unit): number {
 }
 
 /**
- * Action points a walk of `steps` tiles costs: one per started block of
- * `move` tiles, so a dash is two. `0` for no steps.
+ * Action points for a weighted walk: one per started block of `move`
+ * movement points, so a dash costs two. Returns `0` for no movement.
  */
 export function apCostOf(
   mission: TacticalState,
   unit: Unit,
-  steps: number,
+  movementPoints: number,
 ): number {
-  if (steps <= 0) {
+  if (movementPoints <= 0) {
     return 0;
   }
   const move = moveOf(mission, unit);
-  return move <= 0 ? Number.POSITIVE_INFINITY : Math.ceil(steps / move);
+  return move <= 0
+    ? Number.POSITIVE_INFINITY
+    : Math.ceil(movementPoints / move);
 }
 
 // ===========================================
@@ -231,13 +234,13 @@ export function apCostOf(
 
 /**
  * Every tile the unit can end a move on this turn, keyed by tile key with
- * the steps it takes; the unit's own tile is included at `0`. Empty for
- * an unknown unit. The traversal rule is mapgen's (ADR 0004 §5), so
- * infantry uses interiors, doors, stairs and ladders while mechs stay
- * outside and use ramps; living units of either team block their tiles.
+ * its cheapest terrain-weighted cost; the unit's tile is included at `0`.
+ * Empty for an unknown unit. Infantry uses interiors, doors and stairs;
+ * mechs use outdoor terrain, ramps and supported flat rooftops. Living
+ * units of either team block their complete footprints.
  *
  * ```
- *   origin ──BFS, uniform STEP_COST, bounded by moveBudget──► { key → steps }
+ *   origin ──weighted relaxation, bounded by moveBudget──► { key → cost }
  *            neighbours: reachability.neighbours(tile, class) minus occupied
  * ```
  */
@@ -254,7 +257,7 @@ export function reachable(
 }
 
 /**
- * A shortest legal path for the unit to the target this turn, as the
+ * A least-cost legal path for the unit to the target this turn, as the
  * tiles stepped through in order ending on the target (the origin is not
  * included), or `undefined` when the target is out of reach. The unit's
  * own tile gives `[]`. Deterministic: ties break in `DIRECTIONS` order,
@@ -299,8 +302,7 @@ export function pathTo(
  * A unit with a footprint (#1130) searches over anchors: a step is legal
  * only when its whole block makes it (`footprintCanStep`) and none of
  * the block's destination tiles is held by another unit. The costs are
- * still one per anchor step, so a brute's move is measured like anyone
- * else's.
+ * based on the most expensive destination footprint cell.
  */
 export function searchMoves(
   mission: TacticalState,
@@ -336,7 +338,7 @@ export function searchMoves(
     const currentKey = graph.index.keyOf(current);
     const currentCost = costs.get(currentKey) ?? 0;
     for (const next of graph.reachability.neighbours(current, unitClass)) {
-      const cost = currentCost + movementStepCost(mission, unit, next);
+      const cost = currentCost + movementStepCost(mission, unit, next, graph);
       const key = graph.index.keyOf(next);
       if (
         cost > budget ||
@@ -387,32 +389,65 @@ function findUnit(mission: TacticalState, unitId: UnitId): Unit | undefined {
   return mission.units.find((unit) => unit.id === unitId);
 }
 
-/** Tiles per move action from the unit's template; `0` when the template is missing. */
+/** Movement points per action from the template; `0` when the template is missing. */
 function moveOf(mission: TacticalState, unit: Unit): number {
   return mission.templates[unit.templateId]?.move ?? 0;
 }
 
-/** Terrain cost shared by pathfinding, command billing and previews. */
+/**
+ * One shared destination cost for previews, commands and AI. Infestation costs
+ * TDF units two points and bugs half a point. All-terrain fittings ignore only
+ * mech roughness; overlapping rubble and infestation use the larger cost.
+ * Multi-tile units pay their most expensive cell, so a bug needs its complete
+ * footprint on infested ground to gain the speed bonus.
+ */
 export function movementStepCost(
   mission: TacticalState,
   unit: Unit,
-  tile: Tile,
+  destination: TileCoord,
+  graph: MoveGraph = buildMoveGraph(mission.map),
 ): number {
-  return unit.kind === "mech" &&
-    !mission.templates[unit.templateId]?.systems?.allTerrain
-    ? Math.max(1, tile.mechMoveCost ?? 1)
-    : STEP_COST;
+  const roughMech =
+    unit.kind === "mech" &&
+    !mission.templates[unit.templateId]?.systems?.allTerrain;
+  return Math.max(
+    ...footprintTiles(destination, unitFootprintSize(mission, unit)).map(
+      (coord) => {
+        const tile = graph.index.getAt(coord);
+        if (tile === undefined) return Infinity;
+        const infestation =
+          tile.surface === SurfaceIds.INFESTED
+            ? unit.team === "bugs"
+              ? 0.5
+              : 2
+            : STEP_COST;
+        return roughMech
+          ? Math.max(infestation, tile.mechMoveCost ?? STEP_COST)
+          : infestation;
+      },
+    ),
+  );
 }
 
-/** Movement points actually spent along a chosen path. */
+/** Movement points actually spent along a chosen path, excluding its origin. */
+export function pathMovementCost(
+  mission: TacticalState,
+  unit: Unit,
+  path: readonly TileCoord[],
+  graph: MoveGraph = buildMoveGraph(mission.map),
+): number {
+  return path.reduce(
+    (total, tile) => total + movementStepCost(mission, unit, tile, graph),
+    0,
+  );
+}
+
+/** Compatibility name used by fitted-mech clients; shares the terrain and footprint calculation. */
 export function movementPathCost(
   mission: TacticalState,
   unit: Unit,
   path: readonly TileCoord[],
+  graph: MoveGraph = buildMoveGraph(mission.map),
 ): number {
-  const index = new TileIndex(mission.map);
-  return path.reduce((total, coord) => {
-    const tile = index.getAt(coord);
-    return total + (tile ? movementStepCost(mission, unit, tile) : Infinity);
-  }, 0);
+  return pathMovementCost(mission, unit, path, graph);
 }

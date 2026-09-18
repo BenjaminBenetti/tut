@@ -430,8 +430,12 @@ describe("resolveMapModels — props", () => {
   });
 
   it("maps every well-known prop kind to registered art", () => {
-    const b = field();
     const kinds = Object.values(PropKindIds);
+    const b = new FixtureMapBuilder(
+      8,
+      Math.ceil(kinds.length / 8),
+      1,
+    ).fillGround();
     kinds.forEach((kind, i) => {
       b.prop(kind, at(i % 8, Math.floor(i / 8)));
     });

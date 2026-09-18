@@ -351,6 +351,7 @@ describe("generateMissions", () => {
     expect(mid.expiresDay).toBe(12 + CLEARANCE.expiryDays + 2);
     expect(mid.ignorePenalty).toBe(CLEARANCE.ignorePenalty);
     expect(mid.mapParams).toEqual({
+      infestation: 5,
       biome: "desert",
       settlement: "city",
       size: mapSizeFor(mid.difficulty, RULE),
@@ -358,6 +359,7 @@ describe("generateMissions", () => {
     });
     expect(mid.mapParams.seed).toMatch(/^\d+$/);
     expect(full.mapParams.settlement).toBe("town");
+    expect(full.mapParams.infestation).toBe(10);
     expect(full.difficulty).toBeGreaterThanOrEqual(mid.difficulty);
     expect(result.events[0]).toEqual({
       type: MISSION_OFFERED,

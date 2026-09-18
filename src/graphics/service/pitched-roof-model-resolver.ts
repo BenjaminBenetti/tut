@@ -37,6 +37,12 @@ export function resolvePitchedRoofModels(
       for (let z = rect.z; z < rect.z + rect.d; z++) {
         for (let x = rect.x; x < rect.x + rect.w; x++) {
           const key = `${x},${z}`;
+          if (
+            building.roof.missingTiles?.some(
+              (tile) => tile.x === x && tile.z === z,
+            )
+          )
+            continue;
           if (covered.has(key)) continue;
           const tile = index
             .column(x, z)

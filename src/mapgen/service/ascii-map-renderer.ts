@@ -20,6 +20,7 @@ export interface AsciiRenderOptions {
 
 /** Glyph per surface id; unknown surfaces render as `?`. */
 const SURFACE_GLYPHS: Readonly<Record<string, string>> = {
+  infested: "%",
   grass: '"',
   dirt: ",",
   sand: ":",
@@ -51,7 +52,7 @@ const LADDER_GLYPH = "L";
 /** Human-readable legend for the glyphs, for the preview and debug output. */
 export const ASCII_LEGEND = [
   'surfaces  " grass  , dirt  : sand  * snow  ^ rock  = road  - sidewalk  ~ water',
-  "          _ floor  # roof  > stairs  . nothing  ? unknown",
+  "          _ floor  # roof  > stairs  % infested  . nothing  ? unknown",
   "props     O high cover  o low cover  i no cover",
   "links     / ramp (lower end)  \\ slope (lower tile)  L ladder (lower end)",
   "hooks     D deploy  E egg spawner  S edge spawn  X extraction  ! other",

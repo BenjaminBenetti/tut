@@ -43,6 +43,8 @@ export interface Tile extends TileCoord {
    * so a sight rule never needs the prop registry or a scene model.
    */
   readonly blocksLos: boolean;
+  /** Prop's opaque height in half-height layers; absent means one storey. */
+  readonly sightHeight?: number;
   /** Set on interior floor, stair and roof tiles. */
   readonly buildingId?: string;
   /** Floor number within the building, 0 for the ground floor. */

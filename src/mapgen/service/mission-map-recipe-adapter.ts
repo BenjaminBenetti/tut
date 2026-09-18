@@ -95,6 +95,9 @@ export function missionToMapRecipe(
       settlement,
       size,
       hooks,
+      ...(mission.mapParams.infestation === undefined
+        ? {}
+        : { infestation: mission.mapParams.infestation }),
       ...(isPlaceProfileId(mission.cityId)
         ? { placeProfile: mission.cityId }
         : {}),

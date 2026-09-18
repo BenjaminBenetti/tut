@@ -82,6 +82,9 @@ export function freezeDraft(
         : {}),
     })),
     hooks: freezeHooks(draft),
+    ...(draft.infestation === undefined
+      ? {}
+      : { infestation: draft.infestation }),
     ...(draft.dropships.length === 0
       ? {}
       : {
@@ -107,6 +110,8 @@ function materialise(
   ownership: TileOwnership,
 ): Tile {
   const prop = draft.propAt(coord);
+  const propDefinition =
+    prop === undefined ? undefined : registries.props.get(prop.kind);
   const dropship =
     ownership.buildingId === undefined &&
     draft.isDropshipHull(coord.x, coord.z);
@@ -120,15 +125,18 @@ function materialise(
       ? {}
       : { mechMoveCost: definition.mechMoveCost }),
     pass:
-      prop === undefined && !dropship ? definition.defaultPass : PassMask.NONE,
+      prop === undefined && !dropship
+        ? definition.defaultPass &
+          (ownership.buildingId === undefined
+            ? PassMask.ALL
+            : PassMask.INFANTRY)
+        : PassMask.NONE,
     walls: draft.wallsAt(coord),
-    coverProvided:
-      prop === undefined
-        ? CoverLevel.NONE
-        : registries.props.get(prop.kind).cover,
-    blocksLos:
-      dropship ||
-      (prop === undefined ? false : registries.props.get(prop.kind).blocksLos),
+    coverProvided: propDefinition?.cover ?? CoverLevel.NONE,
+    blocksLos: dropship || (propDefinition?.blocksLos ?? false),
+    ...(propDefinition?.sightHeight === undefined
+      ? {}
+      : { sightHeight: propDefinition.sightHeight }),
     ...(prop === undefined ? {} : { propId: prop.id }),
     ...(ownership.buildingId === undefined
       ? {}

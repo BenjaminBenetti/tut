@@ -30,7 +30,13 @@ export interface Prop {
 
 /** Where a prop may be selected; vegetation is explicit planting, excluding random yard clutter. */
 export type PropPlacement =
-  "ground" | "vegetation" | "road" | "interior" | "yard" | "roof";
+  | "ground"
+  | "vegetation"
+  | "road"
+  | "interior"
+  | "yard"
+  | "roof"
+  | "infestation";
 
 /**
  * Describes one prop kind. Graphics maps `id` to a mesh through its own
@@ -42,6 +48,8 @@ export interface PropDefinition {
   readonly cover: CoverLevel;
   /** True when the prop fully blocks line of sight through its tile. */
   readonly blocksLos: boolean;
+  /** Opaque height above the occupied tiles, in half-height layers; defaults to one storey. */
+  readonly sightHeight?: number;
   /** Contexts the prop pass may place this kind in. Never empty. */
   readonly placements: readonly PropPlacement[];
   /** Restricts the kind to these biomes; `undefined` means any biome. */

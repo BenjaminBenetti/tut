@@ -124,13 +124,15 @@ async function walkToward(
  * generated map, with the player's own vision deciding what is drawn.
  */
 test("captures a mission with fog of war for review", async ({ page }) => {
-  // A capture, not a gate. It costs about twenty seconds and its output
-  // is two files in docs/design, so it stays out of every CI run:
+  // This optional seven-turn SwiftShader capture can take several minutes
+  // once bugs enter view. Its output is two files in docs/design, so it
+  // stays out of every CI run:
   //   CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts
   test.skip(
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the fog screenshots",
   );
+  test.setTimeout(240_000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -196,6 +198,7 @@ test("captures a mission with fog of war for review", async ({ page }) => {
       explored: m.vision.tdf.explored.length,
       visible: m.vision.tdf.visible.length,
       bugs: m.units.filter((u) => u.team === "bugs").length,
+      tdfUnits: m.units.filter((u) => u.team === "tdf").length,
       spottedBugs: m.vision.tdf.spotted.length,
     };
   });
@@ -213,7 +216,7 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   // rather than reading the attribute once and finding it absent (#650).
   await expect(body).toHaveAttribute(
     "data-tactical-units",
-    String(3 + known.spottedBugs),
+    String(known.tdfUnits + known.spottedBugs),
   );
 
   await page.waitForTimeout(400);
@@ -257,7 +260,9 @@ test("captures a mission with fog of war for review", async ({ page }) => {
     await page.locator('#action-bar [data-action="end-turn"]').click();
     // The next walk's hooks are held until the bugs have finished
     // moving (#1130); before this the walk was simply attempted early.
-    await waitForBugPhasePlayed(page);
+    // The thirteen-bug phase takes about 83 seconds on software rendering;
+    // keep this capture's allowance local to its unusually long playback.
+    await waitForBugPhasePlayed(page, 120_000);
     await page.waitForTimeout(150);
   }
   // The walk is the whole point of the second shot, and it has already

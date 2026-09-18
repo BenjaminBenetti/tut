@@ -588,6 +588,52 @@
     "bytes": 20176
   },
   {
+    "id": "tdf.mech.assembled-a",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-assembled-a.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.86,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back",
+      "socket_chassis",
+      "socket_muzzle",
+      "socket_muzzle_2",
+      "socket_weapon",
+      "socket_weapon_2"
+    ],
+    "quality": "final",
+    "triangles": 2204,
+    "bytes": 206900
+  },
+  {
+    "id": "tdf.mech.assembled-b",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-assembled-b.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.73,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back",
+      "socket_chassis",
+      "socket_muzzle",
+      "socket_muzzle_2",
+      "socket_weapon",
+      "socket_weapon_2"
+    ],
+    "quality": "final",
+    "triangles": 2076,
+    "bytes": 191820
+  },
+  {
     "id": "tdf.mech.chassis-a",
     "category": "units",
     "path": "assets/models/units/tdf-mech-chassis-a.glb",
@@ -604,6 +650,42 @@
     "quality": "final",
     "triangles": 464,
     "bytes": 45156
+  },
+  {
+    "id": "tdf.mech.chassis.atlas",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-atlas.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.28,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 576,
+    "bytes": 54300
+  },
+  {
+    "id": "tdf.mech.chassis.bulwark",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-bulwark.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.36,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 760,
+    "bytes": 69828
   },
   {
     "id": "tdf.mech.legs-a",
@@ -3216,36 +3298,1148 @@
     "bytes": 26796
   },
   {
-    "id": "tdf.mech.arms.assault-l",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-arms-assault-l.glb",
+    "id": "prop.infested-nest",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-nest.glb",
     "footprint": {
-      "w": 0,
-      "d": 0
+      "w": 1,
+      "d": 1
     },
-    "height": 0.9,
-    "sockets": [
-      "socket_weapon"
-    ],
+    "height": 0.92,
+    "sockets": [],
     "quality": "final",
-    "triangles": 120,
-    "bytes": 14320
+    "triangles": 5606,
+    "bytes": 207088
   },
   {
-    "id": "tdf.mech.arms.assault-r",
+    "id": "prop.car-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-car-infested.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.86,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3992,
+    "bytes": 202348
+  },
+  {
+    "id": "prop.car-compact-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-car-compact-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.76,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3992,
+    "bytes": 201600
+  },
+  {
+    "id": "prop.lamp-post-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-lamp-post-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.46,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2810,
+    "bytes": 81656
+  },
+  {
+    "id": "building.wall-solid-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-solid-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3778,
+    "bytes": 119580
+  },
+  {
+    "id": "building.wall-window-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-window-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2528,
+    "bytes": 80192
+  },
+  {
+    "id": "building.wall-door-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-door-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.45,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 2480,
+    "bytes": 74196
+  },
+  {
+    "id": "building.wall-half-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-half-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 0.53,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2288,
+    "bytes": 91964
+  },
+  {
+    "id": "tile.ground.infested",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-ground-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 56,
+    "bytes": 7620
+  },
+  {
+    "id": "prop.infested-nest-large",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-nest-large.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 1.52,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 6630,
+    "bytes": 231800
+  },
+  {
+    "id": "prop.infested-nest-split",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-nest-split.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.79,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 7852,
+    "bytes": 224392
+  },
+  {
+    "id": "prop.infested-hive-spire",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-hive-spire.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 2.09,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 9814,
+    "bytes": 292836
+  },
+  {
+    "id": "prop.infested-hive-crown",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-hive-crown.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 1.34,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 11146,
+    "bytes": 366668
+  },
+  {
+    "id": "prop.infested-spine-tall",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-spine-tall.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.57,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2112,
+    "bytes": 80880
+  },
+  {
+    "id": "prop.infested-spine-cluster",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-spine-cluster.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.94,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3552,
+    "bytes": 154496
+  },
+  {
+    "id": "prop.infested-spine-low",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-spine-low.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.49,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2596,
+    "bytes": 105584
+  },
+  {
+    "id": "prop.infested-shell-fan",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-shell-fan.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.8,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 5534,
+    "bytes": 211616
+  },
+  {
+    "id": "prop.infested-shell-ridge",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-shell-ridge.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.53,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 6444,
+    "bytes": 248912
+  },
+  {
+    "id": "prop.infested-shell-barricade",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-shell-barricade.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.8,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 9080,
+    "bytes": 355012
+  },
+  {
+    "id": "prop.infested-arch",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-arch.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 1.54,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 8202,
+    "bytes": 191688
+  },
+  {
+    "id": "prop.infested-vent-tall",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-vent-tall.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.3,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 6430,
+    "bytes": 155116
+  },
+  {
+    "id": "prop.infested-vent-low",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-vent-low.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.45,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 4376,
+    "bytes": 111320
+  },
+  {
+    "id": "prop.infested-egg-bed",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-egg-bed.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 5724,
+    "bytes": 141032
+  },
+  {
+    "id": "prop.infested-egg-clutch",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-egg-clutch.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 0.79,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 11736,
+    "bytes": 320272
+  },
+  {
+    "id": "prop.infested-tendril-node",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-tendril-node.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.42,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 4814,
+    "bytes": 117008
+  },
+  {
+    "id": "prop.infested-roots",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-roots.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.06,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2492,
+    "bytes": 57996
+  },
+  {
+    "id": "prop.infested-edge-growth",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-edge-growth.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.12,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3084,
+    "bytes": 81076
+  },
+  {
+    "id": "prop.infested-carapace",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-carapace.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.42,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1550,
+    "bytes": 39988
+  },
+  {
+    "id": "prop.infested-husk",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-husk.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.23,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2484,
+    "bytes": 69420
+  },
+  {
+    "id": "prop.infested-resin-pool",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-resin-pool.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 0.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 5392,
+    "bytes": 125840
+  },
+  {
+    "id": "prop.infested-burrow-ribs",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-burrow-ribs.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.8,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2998,
+    "bytes": 147920
+  },
+  {
+    "id": "prop.infested-feeder",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-feeder.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 4956,
+    "bytes": 150832
+  },
+  {
+    "id": "tile.ground.infested-ribbed",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-ground-infested-ribbed.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.06,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 468,
+    "bytes": 13028
+  },
+  {
+    "id": "tile.ground.infested-cracked",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-ground-infested-cracked.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.06,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 76,
+    "bytes": 10024
+  },
+  {
+    "id": "tile.ground.infested-veined",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-ground-infested-veined.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 468,
+    "bytes": 14060
+  },
+  {
+    "id": "tile.ground.infested-rooted",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-ground-infested-rooted.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.06,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 332,
+    "bytes": 12752
+  },
+  {
+    "id": "tile.ground.infested-nest-floor",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-ground-infested-nest-floor.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.06,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 380,
+    "bytes": 18616
+  },
+  {
+    "id": "prop.car-hatchback-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-car-hatchback-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 2
+    },
+    "height": 0.86,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3992,
+    "bytes": 204488
+  },
+  {
+    "id": "prop.car-utility-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-car-utility-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 2
+    },
+    "height": 1.06,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 4946,
+    "bytes": 242324
+  },
+  {
+    "id": "prop.bus-stop-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-bus-stop-infested.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 1.99,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2636,
+    "bytes": 107640
+  },
+  {
+    "id": "prop.dumpster-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-dumpster-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.13,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2496,
+    "bytes": 82708
+  },
+  {
+    "id": "prop.barrier-concrete-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-barrier-concrete-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.61,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1384,
+    "bytes": 49148
+  },
+  {
+    "id": "prop.planter-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-planter-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.39,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2464,
+    "bytes": 71528
+  },
+  {
+    "id": "prop.bench-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-bench-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.81,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1708,
+    "bytes": 63668
+  },
+  {
+    "id": "prop.fence-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-fence-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2116,
+    "bytes": 64844
+  },
+  {
+    "id": "prop.crate-infested",
+    "category": "props",
+    "path": "assets/models/props/prop-crate-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1982,
+    "bytes": 75920
+  },
+  {
+    "id": "building.wall-brick-breached",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-brick-breached.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 4002,
+    "bytes": 136392
+  },
+  {
+    "id": "building.wall-concrete-breached",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-concrete-breached.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3918,
+    "bytes": 124184
+  },
+  {
+    "id": "building.wall-plaster-breached",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-plaster-breached.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 4078,
+    "bytes": 137896
+  },
+  {
+    "id": "building.wall-panel-breached",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-panel-breached.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3978,
+    "bytes": 133508
+  },
+  {
+    "id": "prop.ruin-corner",
+    "category": "props",
+    "path": "assets/models/props/prop-ruin-corner.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.32,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2402,
+    "bytes": 89564
+  },
+  {
+    "id": "prop.ruin-column",
+    "category": "props",
+    "path": "assets/models/props/prop-ruin-column.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.56,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2480,
+    "bytes": 77296
+  },
+  {
+    "id": "prop.ruin-frame",
+    "category": "props",
+    "path": "assets/models/props/prop-ruin-frame.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.81,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1688,
+    "bytes": 61624
+  },
+  {
+    "id": "prop.roof-fragment",
+    "category": "props",
+    "path": "assets/models/props/prop-roof-fragment.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.53,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1818,
+    "bytes": 61444
+  },
+  {
+    "id": "prop.rubble-brick",
+    "category": "props",
+    "path": "assets/models/props/prop-rubble-brick.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.51,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3534,
+    "bytes": 194660
+  },
+  {
+    "id": "prop.rubble-concrete",
+    "category": "props",
+    "path": "assets/models/props/prop-rubble-concrete.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.51,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 3278,
+    "bytes": 172552
+  },
+  {
+    "id": "prop.rubble-timber",
+    "category": "props",
+    "path": "assets/models/props/prop-rubble-timber.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.49,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2582,
+    "bytes": 113780
+  },
+  {
+    "id": "prop.infested-pipe",
+    "category": "props",
+    "path": "assets/models/props/prop-infested-pipe.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.83,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1832,
+    "bytes": 66116
+  },
+  {
+    "id": "building.wall-window-concrete-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-window-concrete-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2552,
+    "bytes": 83472
+  },
+  {
+    "id": "building.wall-door-concrete-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-door-concrete-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.45,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 2504,
+    "bytes": 77268
+  },
+  {
+    "id": "building.wall-window-plaster-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-window-plaster-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2616,
+    "bytes": 88640
+  },
+  {
+    "id": "building.wall-door-plaster-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-door-plaster-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.45,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 2568,
+    "bytes": 82436
+  },
+  {
+    "id": "building.wall-window-panel-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-window-panel-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2624,
+    "bytes": 92572
+  },
+  {
+    "id": "building.wall-door-panel-infested",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-door-panel-infested.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.45,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 2576,
+    "bytes": 86544
+  },
+  {
+    "id": "building.carapace-wall-ridge",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-ridge.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.88,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1794,
+    "bytes": 114692
+  },
+  {
+    "id": "building.carapace-wall-overlap",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-overlap.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.76,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1906,
+    "bytes": 122592
+  },
+  {
+    "id": "building.carapace-wall-ribbed",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-ribbed.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.85,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2548,
+    "bytes": 163840
+  },
+  {
+    "id": "building.carapace-wall-curve",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-curve.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.85,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1026,
+    "bytes": 69456
+  },
+  {
+    "id": "building.carapace-wall-fork",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-fork.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.8,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1588,
+    "bytes": 99368
+  },
+  {
+    "id": "building.carapace-wall-end",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-end.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.69,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1010,
+    "bytes": 68404
+  },
+  {
+    "id": "building.carapace-wall-broken",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-wall-broken.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.67,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1066,
+    "bytes": 62900
+  },
+  {
+    "id": "building.carapace-spine-buttress",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-carapace-spine-buttress.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.45,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2898,
+    "bytes": 158960
+  },
+  {
+    "id": "prop.tree-oak-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-oak-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.81,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1100,
+    "bytes": 76136
+  },
+  {
+    "id": "prop.tree-pine-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-pine-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.03,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1934,
+    "bytes": 132452
+  },
+  {
+    "id": "prop.tree-palm-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-palm-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.87,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1262,
+    "bytes": 88348
+  },
+  {
+    "id": "prop.tree-tropical-almond-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-tropical-almond-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.89,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1214,
+    "bytes": 83984
+  },
+  {
+    "id": "prop.tree-oil-palm-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-oil-palm-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.17,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 2316,
+    "bytes": 158572
+  },
+  {
+    "id": "prop.tree-tuart-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-tuart-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.23,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 818,
+    "bytes": 57168
+  },
+  {
+    "id": "prop.banksia-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-banksia-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1076,
+    "bytes": 73944
+  },
+  {
+    "id": "prop.grass-tree-dead",
+    "category": "props",
+    "path": "assets/models/props/prop-grass-tree-dead.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.65,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1044,
+    "bytes": 72444
+  },
+  {
+    "id": "tdf.mech.weapon-back.incendiary-launcher",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-arms-assault-r.glb",
+    "path": "assets/models/units/tdf-mech-weapon-back-incendiary-launcher.glb",
     "footprint": {
       "w": 0,
       "d": 0
     },
-    "height": 0.9,
+    "height": 0.65,
     "sockets": [
-      "socket_weapon"
+      "socket_muzzle"
     ],
     "quality": "final",
-    "triangles": 120,
-    "bytes": 14312
+    "triangles": 104,
+    "bytes": 12320
   },
   {
     "id": "tdf.mech.arms.marksman-l",
@@ -3280,180 +4474,20 @@
     "bytes": 16220
   },
   {
-    "id": "tdf.mech.arms.conduit-l",
+    "id": "tdf.mech.arms.assault-r",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-arms-conduit-l.glb",
+    "path": "assets/models/units/tdf-mech-arms-assault-r.glb",
     "footprint": {
       "w": 0,
       "d": 0
     },
-    "height": 0.91,
+    "height": 0.9,
     "sockets": [
       "socket_weapon"
-    ],
-    "quality": "final",
-    "triangles": 156,
-    "bytes": 18716
-  },
-  {
-    "id": "tdf.mech.arms.conduit-r",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-arms-conduit-r.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.91,
-    "sockets": [
-      "socket_weapon"
-    ],
-    "quality": "final",
-    "triangles": 156,
-    "bytes": 18704
-  },
-  {
-    "id": "tdf.mech.weapon-arm.scatter-cannon",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-arm-scatter-cannon.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.32,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 104,
-    "bytes": 12184
-  },
-  {
-    "id": "tdf.mech.weapon-arm.pile-driver",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-arm-pile-driver.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.35,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 82,
-    "bytes": 11628
-  },
-  {
-    "id": "tdf.mech.weapon-arm.heavy-autocannon",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-arm-heavy-autocannon.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.35,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 92,
-    "bytes": 10900
-  },
-  {
-    "id": "tdf.mech.weapon-arm.thermal-lance",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-arm-thermal-lance.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.32,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 112,
-    "bytes": 14592
-  },
-  {
-    "id": "tdf.mech.weapon-arm.siege-railgun",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-arm-siege-railgun.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.32,
-    "sockets": [
-      "socket_muzzle"
     ],
     "quality": "final",
     "triangles": 120,
-    "bytes": 16256
-  },
-  {
-    "id": "tdf.mech.weapon-arm.beam-projector",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-arm-beam-projector.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.35,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 84,
-    "bytes": 12260
-  },
-  {
-    "id": "tdf.mech.weapon-back.smoke-launcher",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-back-smoke-launcher.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.67,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 84,
-    "bytes": 10292
-  },
-  {
-    "id": "tdf.mech.weapon-back.guided-missile-rack",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-back-guided-missile-rack.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.74,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 112,
-    "bytes": 15000
-  },
-  {
-    "id": "tdf.mech.weapon-back.incendiary-launcher",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-back-incendiary-launcher.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.65,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "final",
-    "triangles": 104,
-    "bytes": 12320
+    "bytes": 14312
   },
   {
     "id": "tdf.mech.weapon-back.siege-howitzer",
@@ -3488,20 +4522,70 @@
     "bytes": 25212
   },
   {
-    "id": "tdf.mech.legs.all-terrain",
+    "id": "tdf.mech.arms.conduit-l",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-legs-all-terrain.glb",
+    "path": "assets/models/units/tdf-mech-arms-conduit-l.glb",
     "footprint": {
-      "w": 1,
-      "d": 1
+      "w": 0,
+      "d": 0
     },
-    "height": 1.36,
+    "height": 0.91,
     "sockets": [
-      "socket_chassis"
+      "socket_weapon"
     ],
     "quality": "final",
-    "triangles": 496,
-    "bytes": 50360
+    "triangles": 156,
+    "bytes": 18716
+  },
+  {
+    "id": "tdf.mech.weapon-arm.siege-railgun",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-weapon-arm-siege-railgun.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.32,
+    "sockets": [
+      "socket_muzzle"
+    ],
+    "quality": "final",
+    "triangles": 120,
+    "bytes": 16256
+  },
+  {
+    "id": "tdf.mech.weapon-arm.thermal-lance",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-weapon-arm-thermal-lance.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.32,
+    "sockets": [
+      "socket_muzzle"
+    ],
+    "quality": "final",
+    "triangles": 112,
+    "bytes": 14592
+  },
+  {
+    "id": "tdf.mech.chassis.surveyor",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-surveyor.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.77,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 580,
+    "bytes": 55116
   },
   {
     "id": "tdf.mech.legs.sprint",
@@ -3518,6 +4602,88 @@
     "quality": "final",
     "triangles": 472,
     "bytes": 47472
+  },
+  {
+    "id": "tdf.mech.chassis.crucible",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-crucible.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.23,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 1124,
+    "bytes": 99824
+  },
+  {
+    "id": "tdf.mech.weapon-arm.scatter-cannon",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-weapon-arm-scatter-cannon.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.32,
+    "sockets": [
+      "socket_muzzle"
+    ],
+    "quality": "final",
+    "triangles": 104,
+    "bytes": 12184
+  },
+  {
+    "id": "tdf.mech.weapon-arm.beam-projector",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-weapon-arm-beam-projector.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.35,
+    "sockets": [
+      "socket_muzzle"
+    ],
+    "quality": "final",
+    "triangles": 84,
+    "bytes": 12260
+  },
+  {
+    "id": "tdf.mech.legs.all-terrain",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-legs-all-terrain.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.36,
+    "sockets": [
+      "socket_chassis"
+    ],
+    "quality": "final",
+    "triangles": 496,
+    "bytes": 50360
+  },
+  {
+    "id": "tdf.mech.arms.assault-l",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-arms-assault-l.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.9,
+    "sockets": [
+      "socket_weapon"
+    ],
+    "quality": "final",
+    "triangles": 120,
+    "bytes": 14320
   },
   {
     "id": "tdf.mech.legs.anchor",
@@ -3554,121 +4720,83 @@
     "bytes": 51152
   },
   {
-    "id": "tdf.mech.chassis.bulwark",
+    "id": "tdf.mech.arms.conduit-r",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-bulwark.glb",
+    "path": "assets/models/units/tdf-mech-arms-conduit-r.glb",
     "footprint": {
       "w": 0,
       "d": 0
     },
-    "height": 1.36,
+    "height": 0.91,
     "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
+      "socket_weapon"
     ],
     "quality": "final",
-    "triangles": 760,
-    "bytes": 69828
+    "triangles": 156,
+    "bytes": 18704
   },
   {
-    "id": "tdf.mech.chassis.atlas",
+    "id": "tdf.mech.weapon-arm.pile-driver",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-atlas.glb",
+    "path": "assets/models/units/tdf-mech-weapon-arm-pile-driver.glb",
     "footprint": {
       "w": 0,
       "d": 0
     },
-    "height": 1.28,
+    "height": 0.35,
     "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
+      "socket_muzzle"
     ],
     "quality": "final",
-    "triangles": 576,
-    "bytes": 54300
+    "triangles": 82,
+    "bytes": 11628
   },
   {
-    "id": "tdf.mech.chassis.surveyor",
+    "id": "tdf.mech.weapon-back.smoke-launcher",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-surveyor.glb",
+    "path": "assets/models/units/tdf-mech-weapon-back-smoke-launcher.glb",
     "footprint": {
       "w": 0,
       "d": 0
     },
-    "height": 1.77,
+    "height": 0.67,
     "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
+      "socket_muzzle"
     ],
     "quality": "final",
-    "triangles": 580,
-    "bytes": 55116
+    "triangles": 84,
+    "bytes": 10292
   },
   {
-    "id": "tdf.mech.chassis.crucible",
+    "id": "tdf.mech.weapon-back.guided-missile-rack",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-crucible.glb",
+    "path": "assets/models/units/tdf-mech-weapon-back-guided-missile-rack.glb",
     "footprint": {
       "w": 0,
       "d": 0
     },
-    "height": 1.23,
+    "height": 0.74,
     "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
+      "socket_muzzle"
     ],
     "quality": "final",
-    "triangles": 1124,
-    "bytes": 99824
+    "triangles": 112,
+    "bytes": 15000
   },
   {
-    "id": "tdf.mech.assembled-a",
+    "id": "tdf.mech.weapon-arm.heavy-autocannon",
     "category": "units",
-    "path": "assets/models/units/tdf-mech-assembled-a.glb",
+    "path": "assets/models/units/tdf-mech-weapon-arm-heavy-autocannon.glb",
     "footprint": {
-      "w": 1,
-      "d": 1
+      "w": 0,
+      "d": 0
     },
-    "height": 2.86,
+    "height": 0.35,
     "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back",
-      "socket_chassis",
-      "socket_muzzle",
-      "socket_muzzle_2",
-      "socket_weapon",
-      "socket_weapon_2"
+      "socket_muzzle"
     ],
     "quality": "final",
-    "triangles": 2204,
-    "bytes": 206900
-  },
-  {
-    "id": "tdf.mech.assembled-b",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-assembled-b.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 2.73,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back",
-      "socket_chassis",
-      "socket_muzzle",
-      "socket_muzzle_2",
-      "socket_weapon",
-      "socket_weapon_2"
-    ],
-    "quality": "final",
-    "triangles": 2076,
-    "bytes": 191820
+    "triangles": 92,
+    "bytes": 10900
   }
 ]

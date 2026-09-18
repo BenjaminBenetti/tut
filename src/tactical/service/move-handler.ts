@@ -22,7 +22,7 @@ import { UNIT_MOVED } from "../model/unit-moved-event";
 import { unitFootprintSize } from "./footprint-service";
 import {
   apCostOf,
-  movementPathCost,
+  pathMovementCost,
   movementStepCost,
   buildMoveGraph,
   footprintCanStep,
@@ -38,7 +38,7 @@ import {
  * Builds the `Move` handler (#325): walks the unit along the command's
  * path one step at a time, letting `react` answer each step (overwatch,
  * #328) and ending the walk early if the mover goes down; spends
- * `ceil(steps taken / move)` action points and turns the unit to face
+ * `ceil(terrain cost taken / move)` action points and turns the unit to face
  * its last step. Emits one `UnitMoved` per step, with any reaction's
  * events after the step that provoked them. Pure and deterministic.
  *
@@ -71,11 +71,16 @@ export function createMoveHandler(
     if (path.length === 0) {
       return reject("empty-path");
     }
-    if (path.length > moveBudget(mission, unit)) {
+    const graph = buildMoveGraph(mission.map);
+    const submittedCost = pathMovementCost(mission, unit, path, graph);
+    // Missing footprint cells are rejected as unreachable below, not as a
+    // costly route; physical path length cannot bound accelerated bug moves.
+    if (
+      Number.isFinite(submittedCost) &&
+      submittedCost > moveBudget(mission, unit)
+    ) {
       return reject("over-budget");
     }
-
-    const graph = buildMoveGraph(mission.map);
     const search = searchMoves(mission, unit, graph);
     const unitClass = passMaskFor(unit.passClass);
     const size = unitFootprintSize(mission, unit);
@@ -100,8 +105,6 @@ export function createMoveHandler(
       previous = tile;
     }
 
-    if (movementPathCost(mission, unit, path) > moveBudget(mission, unit))
-      return reject("over-budget");
     let state = mission;
     const events: TacticalEvent[] = [];
     let from: TileCoord = unit.pos;
@@ -114,7 +117,7 @@ export function createMoveHandler(
         payload: { unitId, from, to, path: [to] },
       });
       from = to;
-      taken += movementStepCost(mission, unit, step);
+      taken += movementStepCost(mission, unit, step, graph);
       const reaction = react(state, unitId, ctx);
       state = reaction.state;
       events.push(...reaction.events);

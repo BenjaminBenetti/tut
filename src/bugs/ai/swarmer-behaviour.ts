@@ -7,6 +7,7 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import {
   apCostOf,
+  pathMovementCost,
   buildMoveGraph,
 } from "../../tactical/service/movement-service";
 import { SWARMER_TUNING } from "../data/swarmer-tuning";
@@ -121,7 +122,13 @@ export class SwarmerBehaviour implements BugBehaviour {
     const commands: TacticalCommand[] = [step];
 
     // After closing: bite if the run left an action point and something is in reach.
-    const apAfter = unit.ap - apCostOf(mission, unit, step.payload.path.length);
+    const apAfter =
+      unit.ap -
+      apCostOf(
+        mission,
+        unit,
+        pathMovementCost(mission, unit, step.payload.path),
+      );
     const moved: TacticalState = {
       ...mission,
       units: mission.units.map((u) =>

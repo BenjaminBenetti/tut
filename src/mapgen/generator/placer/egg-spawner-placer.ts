@@ -19,6 +19,7 @@ import {
   isOpenGround,
   isPassableGround,
 } from "../../service/draft-queries";
+import { infestationPressure } from "../../service/infestation-layout";
 import {
   distanceToDeploy,
   hatchSpace,
@@ -112,11 +113,14 @@ export class EggSpawnerPlacer implements HookPlacer {
       return;
     }
     const placed: TileCoord[] = [];
-    let remaining = rng.shuffle(pool);
+    let remaining = favourColonyMargins(rng.shuffle(pool), draft);
     for (let i = 0; i < requirement.count; i++) {
       if (remaining.length === 0) {
-        remaining = rng.shuffle(
-          pool.filter((c) => !placed.some((p) => sameColumn(p, c.coord))),
+        remaining = favourColonyMargins(
+          rng.shuffle(
+            pool.filter((c) => !placed.some((p) => sameColumn(p, c.coord))),
+          ),
+          draft,
         );
         if (remaining.length === 0) {
           break;
@@ -188,6 +192,24 @@ export class EggSpawnerPlacer implements HookPlacer {
 // ===========================================
 // Helpers
 // ===========================================
+
+/** Breeding objectives favour colony margins, leaving their centre for the large hive structure. */
+function favourColonyMargins(
+  candidates: Candidate[],
+  draft: MapDraft,
+): Candidate[] {
+  if (draft.infestation === undefined) return candidates;
+  const suitability = (candidate: Candidate): number =>
+    Math.floor(
+      (1 -
+        Math.abs(
+          infestationPressure(draft, candidate.coord.x, candidate.coord.z) -
+            0.72,
+        )) *
+        10,
+    );
+  return candidates.sort((a, b) => suitability(b) - suitability(a));
+}
 
 /** Interior floor tiles and open ground away from the map edge. */
 function collectCandidates(draft: MapDraft): Candidate[] {

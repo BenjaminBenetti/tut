@@ -25,6 +25,8 @@ export type MissionId = string;
  * overworld importing `mapgen/`.
  */
 export interface MissionMapParams {
+  /** City infestation at mission creation, expressed as a whole map band (0–10). */
+  readonly infestation?: number;
   /** Biome of the host region. */
   readonly biome: BiomeId;
   /** How built-up the site is. */

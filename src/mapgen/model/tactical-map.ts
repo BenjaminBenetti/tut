@@ -1,3 +1,4 @@
+import type { InfestationPlan } from "./infestation-plan";
 import type { Building } from "./building";
 import type { Connector } from "./connector";
 import type { PlacementHooks } from "./hook";
@@ -41,6 +42,8 @@ export interface TacticalMap {
   readonly connectors: readonly Connector[];
   readonly props: readonly Prop[];
   readonly hooks: PlacementHooks;
+  /** Colony layout and growth pressure; absent for level-zero and legacy maps. */
+  readonly infestation?: InfestationPlan;
   /** Optional for existing saves and hand-built fixtures; generated boarding hooks own the start tiles. */
   readonly dropships?: readonly DropshipSite[];
 }

@@ -48,26 +48,34 @@ async function settledFeet(page: Page, unitId: string) {
  * scale everything else on the map is drawn at. Derived rather than
  * assumed so this survives a camera or map-scale change (#829, ADR 0009).
  *
- * The layer a column's ground sits on varies with the terrain, so this
- * searches the layers for a pair that both project rather than assuming
- * one: a tile that is not there projects to nothing.
+ * Colony grading and natural slopes can put adjacent columns on different
+ * layers. Search a neighbourhood for a same-level pair; a missing tile
+ * projects to nothing, and unequal elevations would distort the measurement.
  */
 async function tilePitch(page: Page, x: number, z: number) {
-  const project = (tile: { x: number; y: number; z: number }) =>
-    page.evaluate(
-      (t) => (globalThis as HookGlobal).__tutTactical__?.tileScreenPosition(t),
-      tile,
-    );
-  for (let y = 0; y <= MAX_LAYER; y++) {
-    const [here, next] = await Promise.all([
-      project({ x, y, z }),
-      project({ x: x + 1, y, z }),
-    ]);
-    if (here && next) {
-      return Math.hypot(here.x - next.x, here.y - next.y);
-    }
-  }
-  return undefined;
+  return page.evaluate(
+    ({ x, z, maxLayer }) => {
+      const hooks = (globalThis as HookGlobal).__tutTactical__;
+      if (!hooks) return undefined;
+      for (let dx = -4; dx <= 4; dx++) {
+        for (let dz = -4; dz <= 4; dz++) {
+          for (let y = 0; y <= maxLayer; y++) {
+            const here = hooks.tileScreenPosition({ x: x + dx, y, z: z + dz });
+            const next = hooks.tileScreenPosition({
+              x: x + dx + 1,
+              y,
+              z: z + dz,
+            });
+            if (here && next) {
+              return Math.hypot(here.x - next.x, here.y - next.y);
+            }
+          }
+        }
+      }
+      return undefined;
+    },
+    { x, z, maxLayer: MAX_LAYER },
+  );
 }
 
 /**
@@ -134,7 +142,7 @@ test("clicking a unit on the tactical map selects it and arms its actions", asyn
 
   const feet = await settledFeet(page, "unit-1");
   expect(feet, "unit-1 never settled on screen").toBeDefined();
-  // Any column near the middle of the map; the search finds its layer.
+  // Search near the map centre for adjacent tiles sharing an elevation.
   const pitch = await tilePitch(page, 20, 20);
   expect(pitch, "could not measure the tile pitch").toBeDefined();
 

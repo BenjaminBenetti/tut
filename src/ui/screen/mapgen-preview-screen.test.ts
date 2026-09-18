@@ -27,6 +27,33 @@ function result(props: number): PreviewResult {
 }
 
 describe("MapgenPreviewScreen", () => {
+  it("exposes whole infestation bands and their overworld equivalent", () => {
+    const root = document.createElement("div");
+    const onGenerate = vi.fn();
+    const screen = new MapgenPreviewScreen(
+      root,
+      {
+        seed: "infestation",
+        biome: "temperate",
+        settlement: "town",
+        size: "small",
+        archetype: "settlement",
+        slopeShare: 1,
+        infestation: 4,
+      },
+      { onGenerate, onLevelChange: vi.fn() },
+    );
+    const input = root.querySelector<HTMLInputElement>("#infestation")!;
+    expect(input.value).toBe("4");
+    expect(input.closest("label")?.textContent).toContain("40 overworld");
+    input.value = "10";
+    input.dispatchEvent(new Event("input"));
+    input.dispatchEvent(new Event("change"));
+    expect(screen.getState().infestation).toBe(10);
+    expect(onGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ infestation: 10 }),
+    );
+  });
   it("steps the seed with the Next button and generates", () => {
     const onGenerate = vi.fn();
     const root = document.createElement("div");

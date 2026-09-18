@@ -72,6 +72,7 @@ describe("crash-site archetype (prototype)", () => {
           settlement: SETTLEMENT_DEFINITIONS.rural,
           hooks: [],
           slopeShare: 1,
+          infestation: 0,
         },
         rng: new Mulberry32Rng(hashSeed(`bowl-${String(seed)}`)),
         draft,

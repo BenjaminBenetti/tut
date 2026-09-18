@@ -75,9 +75,52 @@ describe("freezeDraft", () => {
     expect(car?.pass).toBe(PassMask.NONE);
     expect(car?.coverProvided).toBe(CoverLevel.HIGH);
     expect(car?.blocksLos).toBe(true);
+    expect(car).not.toHaveProperty("sightHeight");
     expect(index.get(1, 0, 1)?.coverProvided).toBe(CoverLevel.NONE);
     expect(index.get(1, 0, 1)?.blocksLos).toBe(false);
     expect(map.props[0]?.rotation).toBe(3);
+  });
+
+  it("freezes each carapace wall's own height while broken walls stay transparent", () => {
+    const d = draft();
+    d.addProp(
+      PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
+      { x: 0, y: 0, z: 0 },
+      1,
+    );
+    d.addProp(
+      PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS,
+      { x: 1, y: 0, z: 0 },
+      2,
+    );
+    d.addProp(
+      PropKindIds.INFESTED_CARAPACE_WALL_BROKEN,
+      { x: 2, y: 0, z: 0 },
+      3,
+    );
+    const map = freezeDraft(d, recipe, registries);
+    const index = new TileIndex(map);
+    expect(index.get(0, 0, 0)).toMatchObject({
+      sightHeight: 3,
+      blocksLos: true,
+      coverProvided: CoverLevel.HIGH,
+    });
+    expect(index.get(1, 0, 0)).toMatchObject({
+      sightHeight: 4,
+      blocksLos: true,
+      coverProvided: CoverLevel.HIGH,
+    });
+    expect(index.get(2, 0, 0)).toMatchObject({
+      blocksLos: false,
+      coverProvided: CoverLevel.LOW,
+    });
+    expect(index.get(2, 0, 0)).not.toHaveProperty("sightHeight");
+    expect(map.props).toHaveLength(3);
+    expect(
+      map.tiles
+        .filter((tile) => tile.propId === undefined)
+        .every((tile) => !("sightHeight" in tile)),
+    ).toBe(true);
   });
 
   it("copies hooks and defaults extraction to the first deploy zone", () => {

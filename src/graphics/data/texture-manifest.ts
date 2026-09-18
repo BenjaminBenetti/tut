@@ -29,6 +29,28 @@ export interface TextureAssetEntry {
 
 /** Every texture, keyed by id. */
 export const TEXTURE_MANIFEST = {
+  "infestation.resin-albedo": {
+    path: "assets/textures/infestation/colony-resin-albedo.png",
+    width: 1024,
+    height: 1024,
+    colorSpace: "srgb",
+    label: "Continuous colony resin albedo",
+  },
+  "infestation.resin-normal": {
+    path: "assets/textures/infestation/colony-resin-normal.png",
+    width: 1024,
+    height: 1024,
+    colorSpace: "linear",
+    label: "Continuous colony resin normal",
+  },
+  "infestation.resin-roughness": {
+    path: "assets/textures/infestation/colony-resin-roughness.png",
+    width: 1024,
+    height: 1024,
+    colorSpace: "linear",
+    label: "Continuous colony resin roughness",
+  },
+
   "business.grocery.0": {
     path: "assets/textures/business-signs/names/grocery-0.png",
     width: 1024,

@@ -214,6 +214,7 @@ function fits(
       const surface = draft.groundSurfaceAt(x, z);
       if (
         draft.isRoad(x, z) ||
+        draft.isInfestationReserved(x, z) ||
         surface === SurfaceIds.WATER ||
         surface === SurfaceIds.SIDEWALK
       ) {

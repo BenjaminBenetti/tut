@@ -24,6 +24,7 @@ import type { WallKind } from "../../mapgen/model/wall";
  * through `surfaceModelFor`, which falls back rather than throwing.
  */
 export const SURFACE_MODELS: Readonly<Record<KnownSurfaceId, ModelAssetId>> = {
+  [SurfaceIds.INFESTED]: "tile.ground.infested",
   [SurfaceIds.GRASS]: "tile.ground.grass",
   [SurfaceIds.DIRT]: "tile.ground.dirt",
   [SurfaceIds.SAND]: "tile.ground.sand",
@@ -120,6 +121,30 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
+  [PropKindIds.INFESTED_CARAPACE_WALL_RIDGE]: "building.carapace-wall-ridge",
+  [PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP]:
+    "building.carapace-wall-overlap",
+  [PropKindIds.INFESTED_CARAPACE_WALL_RIBBED]: "building.carapace-wall-ribbed",
+  [PropKindIds.INFESTED_CARAPACE_WALL_CURVE]: "building.carapace-wall-curve",
+  [PropKindIds.INFESTED_CARAPACE_WALL_FORK]: "building.carapace-wall-fork",
+  [PropKindIds.INFESTED_CARAPACE_WALL_END]: "building.carapace-wall-end",
+  [PropKindIds.INFESTED_CARAPACE_WALL_BROKEN]: "building.carapace-wall-broken",
+  [PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS]:
+    "building.carapace-spine-buttress",
+
+  [PropKindIds.INFESTED_SHELTER]: "prop.bus-stop-infested",
+  [PropKindIds.INFESTED_NEST]: "prop.infested-nest",
+  [PropKindIds.INFESTED_HIVE]: "prop.infested-hive-spire",
+  [PropKindIds.INFESTED_BROOD]: "prop.infested-nest-large",
+  [PropKindIds.INFESTED_RIBS]: "prop.infested-burrow-ribs",
+  [PropKindIds.INFESTED_VENT]: "prop.infested-vent-tall",
+  [PropKindIds.INFESTED_SPINES]: "prop.infested-spine-tall",
+  [PropKindIds.INFESTED_EGGS]: "prop.infested-egg-clutch",
+  [PropKindIds.INFESTED_RUBBLE]: "prop.rubble-brick",
+  [PropKindIds.INFESTED_RUIN]: "prop.ruin-corner",
+  [PropKindIds.INFESTED_DEBRIS]: "prop.roof-fragment",
+  [PropKindIds.INFESTED_ARCH]: "prop.infested-arch",
+
   [PropKindIds.ROOFTOP_HVAC]: "prop.rooftop-hvac",
   [PropKindIds.ROOFTOP_WATER_TANK]: "prop.rooftop-water-tank",
   [PropKindIds.CAR]: "prop.car-compact",

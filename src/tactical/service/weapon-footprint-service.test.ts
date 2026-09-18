@@ -56,6 +56,25 @@ describe("continuous beam geometry", () => {
     ).toBe(7);
   });
 
+  it("includes every shallow-angle tile crossing, even a short corner sliver", () => {
+    const map = new FixtureMapBuilder(20, 20, 4).fillGround().build();
+    const tiles = weaponFootprint(
+      map,
+      BEAM,
+      { x: 9, y: 0, z: 6 },
+      new TileIndex(map),
+      ORIGIN,
+    );
+    expect(tiles.map(({ tile }) => ({ x: tile.x, z: tile.z }))).toContainEqual({
+      x: 2,
+      z: 4,
+    });
+    expect(tiles.map(({ tile }) => ({ x: tile.x, z: tile.z }))).toContainEqual({
+      x: 8,
+      z: 5,
+    });
+  });
+
   it("uses the normal diagonal range metric, with no duplicate or shooter tiles", () => {
     const map = new FixtureMapBuilder(20, 20, 4).fillGround().build();
     const tiles = weaponFootprint(

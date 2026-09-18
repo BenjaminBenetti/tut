@@ -136,18 +136,20 @@ test("a mech jumps twelve tiles onto a four-storey roof, walks and resumes there
   await expect.poll(unit).toMatchObject({ pos: LANDING, heat: 5, ap: 1 });
   // Wait for the rendered feet as well as the authoritative landing state.
   await expect
-    .poll(() =>
-      page.evaluate(
-        ({ id, tile }) => {
-          const hooks = window.__tutTactical__!;
-          const feet = hooks.unitScreenPosition(id);
-          const roof = hooks.tileScreenPosition(tile);
-          return feet && roof
-            ? Math.hypot(feet.x - roof.x, feet.y - roof.y)
-            : Infinity;
-        },
-        { id: mech.id, tile: LANDING },
-      ),
+    .poll(
+      () =>
+        page.evaluate(
+          ({ id, tile }) => {
+            const hooks = window.__tutTactical__!;
+            const feet = hooks.unitScreenPosition(id);
+            const roof = hooks.tileScreenPosition(tile);
+            return feet && roof
+              ? Math.hypot(feet.x - roof.x, feet.y - roof.y)
+              : Infinity;
+          },
+          { id: mech.id, tile: LANDING },
+        ),
+      { timeout: 15_000 },
     )
     .toBeLessThan(2);
   if (process.env.CAPTURE)

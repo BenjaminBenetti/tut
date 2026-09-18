@@ -897,7 +897,7 @@ describe("TacticalAnimationQueue blast", () => {
           payload: { ...BLAST.payload, beam: true, radius: 0, victims: [] },
         },
       ],
-      () => {},
+      () => undefined,
     );
     queue.update(0.05);
     expect(named(queue, "vfx.mech-beam")).toEqual(["vfx.mech-beam"]);
@@ -924,7 +924,7 @@ describe("TacticalAnimationQueue blast", () => {
           },
         },
       ],
-      () => {},
+      () => undefined,
     );
     queue.update(0.16);
     expect(named(queue, "vfx.blast")).toEqual([]);

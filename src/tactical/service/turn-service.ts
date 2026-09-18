@@ -269,7 +269,7 @@ export function overwatchReaction(
         (weapon) =>
           weapon.profile.damage > 0 &&
           chargesLeft(watcher, weapon) !== 0 &&
-          (weapon.profile.indirect || personallyVisible),
+          (weapon.profile.indirect === true || personallyVisible),
       )
       .map((weapon) =>
         validateTargeting(state, watcherId, movedUnitId, tuning, weapon.id),

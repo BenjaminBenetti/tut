@@ -16,6 +16,7 @@ const SHEET: MechStatSheet = {
   accuracy: 0,
   firepower: 40,
   weight: 60,
+  weightBudget: { used: 40, limit: 40 },
   powerBalance: 0,
   totalCost: 2850,
   combatRating: 113,
@@ -75,7 +76,7 @@ describe("StatSheetView", () => {
     expect(root.querySelector('[data-field="armor"]')).toBeNull();
     expect(root.querySelector('[data-field="mobility"]')).toBeNull();
     expect(root.querySelector('[data-field="firepower"]')).toBeNull();
-    expect(field("weight").textContent).toBe("60");
+    expect(field("weight").textContent).toBe("40 / 40 t");
     expect(field("combatRating").textContent).toBe("113");
     expect(field("totalCost").textContent).toBe("¢2,850");
     expect(field("verdict").dataset.tone).toBe("ok");
@@ -88,7 +89,9 @@ describe("StatSheetView", () => {
         { code: "overweight", slot: "chassis", detail: "Too heavy." },
         { code: "missing-part", slot: "legs", detail: "No legs." },
       ]),
+      { used: 54, limit: 40 },
     );
+    expect(field("weight").textContent).toBe("54 / 40 t");
     expect(field("combat-hp").textContent).toBe("—");
     expect(field("combat-weapons").textContent).toBe("—");
     expect(field("totalCost").textContent).toBe("—");

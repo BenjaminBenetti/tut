@@ -50,7 +50,15 @@ export interface MechWeapon extends WeaponMechanics {
   readonly demoForce?: number;
 }
 
+/** Carried equipment mass against the chassis limit, excluding the chassis itself. */
+export interface MechWeightBudget {
+  readonly used: number;
+  readonly limit: number;
+}
+
 export interface MechStatSheet {
+  /** Optional on older stored sheets; freshly derived sheets always include the fitting budget. */
+  readonly weightBudget?: MechWeightBudget;
   /** Structural hit points supplied by the chassis. */
   readonly hullHp?: number;
   readonly systems?: MechSystems;

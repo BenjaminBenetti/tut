@@ -138,6 +138,7 @@ describe("validateLoadout on a valid loadout", () => {
       accuracy: 5,
       firepower: 40,
       weight: 60,
+      weightBudget: { used: 40, limit: 40 },
       powerBalance: 10,
       totalCost: 1650,
       // 25 + 21 + 2.5 + 80 − 2 = 126.5 → 127

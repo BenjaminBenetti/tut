@@ -120,9 +120,23 @@ function reset(): void {
 }
 
 /** Plays the real tactical event while keeping controls and captures deterministic. */
-function play(action: "walk" | "attack" | "brace" | "retract"): void {
+function play(action: "walk" | "attack" | "brace" | "retract" | "jump"): void {
   reset();
-  if (action === "brace") {
+  if (action === "jump") {
+    queue.enqueue([
+      {
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "actor",
+          from: { x: -2, y: 0, z: 0 },
+          to: { x: 1, y: 0, z: 0 },
+          path: [{ x: 1, y: 0, z: 0 }],
+          jump: true,
+          jumpApex: 2,
+        },
+      },
+    ]);
+  } else if (action === "brace") {
     queue.enqueue([
       {
         type: "tactical:mech-system-used",
@@ -167,6 +181,8 @@ function play(action: "walk" | "attack" | "brace" | "retract"): void {
 select.onchange = reset;
 document.querySelector<HTMLButtonElement>("#walk")!.onclick = () =>
   play("walk");
+document.querySelector<HTMLButtonElement>("#jump")!.onclick = () =>
+  play("jump");
 document.querySelector<HTMLButtonElement>("#attack")!.onclick = () =>
   play("attack");
 document.querySelector<HTMLButtonElement>("#brace")!.onclick = () =>
@@ -194,6 +210,11 @@ Object.assign(window, {
       reset();
     },
     play,
+    /** The rendered feet, for checking the curve alongside frame captures. */
+    position(): { x: number; y: number; z: number } {
+      const { x, y, z } = actor.object.position;
+      return { x, y, z };
+    },
     /** Advances precisely one sample before a screenshot. */
     step(seconds: number): void {
       queue.update(seconds);

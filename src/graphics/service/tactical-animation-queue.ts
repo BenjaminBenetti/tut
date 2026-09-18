@@ -1,3 +1,4 @@
+import { jumpArcPoint } from "../../tactical/service/jump-trajectory-service";
 import { MECH_SYSTEM_USED } from "../../tactical/model/mech-system-used-event";
 import type { UnitMotion } from "../model/unit-motion";
 import type { Camera, DataTexture, Object3D, Texture } from "three";
@@ -757,7 +758,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     };
   }
 
-  /** Walks with a limb stride or jets vertically into the validated flight corridor, then lands on the final tile. */
+  /** Walks with a limb stride or follows one continuous jump arc through the validated corridor. */
   private walk(
     unitId: UnitId,
     path: readonly TileCoord[],
@@ -834,17 +835,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
             jumpApex === undefined
               ? Math.max(start.y, target.y) + 1.6
               : standAt({ ...to, y: jumpApex }).y;
-          const across = Math.max(0, Math.min(1, (local - 0.2) / 0.6));
-          const smooth = across * across * (3 - 2 * across);
-          const rise = Math.min(1, local / 0.2);
-          const fall = Math.max(0, (local - 0.8) / 0.2);
-          object.position.set(
-            start.x + (target.x - start.x) * smooth,
-            local < 0.2
-              ? start.y + (apex - start.y) * Math.sin((rise * Math.PI) / 2)
-              : apex + (target.y - apex) * (1 - Math.cos((fall * Math.PI) / 2)),
-            start.z + (target.z - start.z) * smooth,
-          );
+          const point = jumpArcPoint(start, target, apex, local);
+          object.position.set(point.x, point.y, point.z);
         } else {
           object.position.set(
             start.x + (target.x - start.x) * local,

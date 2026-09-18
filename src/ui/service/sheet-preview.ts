@@ -1,4 +1,7 @@
-import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type {
+  MechStatSheet,
+  MechWeightBudget,
+} from "../../roster/model/mech-stat-sheet";
 import type { LoadoutDescription } from "../../roster/service/loadout-validation-service";
 import type { MechUnitTuning } from "../../tactical/model/unit-tuning";
 import { mechCombatProfile } from "../../tactical/service/mech-combat-profile";
@@ -35,6 +38,8 @@ export interface WeaponPreview {
  * result would not be buildable if it would not.
  */
 export interface SheetPreview {
+  /** The complete proposed budget, so changing chassis previews its new limit too. */
+  readonly weightBudget?: MechWeightBudget;
   readonly deltas: readonly StatDelta[];
   readonly weapons: readonly WeaponPreview[];
   readonly warnings: readonly string[];
@@ -111,6 +116,11 @@ export function sheetPreview(
     }
   }
   return {
+    ...(next.sheet.weightBudget &&
+    (next.sheet.weightBudget.used !== current.weightBudget?.used ||
+      next.sheet.weightBudget.limit !== current.weightBudget?.limit)
+      ? { weightBudget: next.sheet.weightBudget }
+      : {}),
     deltas,
     weapons: weaponPreviews(current, next.sheet, tuning),
     warnings,
@@ -145,7 +155,7 @@ function fieldValues(
     "combat-move": profile.move,
     "combat-armor": profile.armor,
     "combat-sight": profile.sightRange,
-    weight: sheet.weight,
+    weight: sheet.weightBudget?.used ?? sheet.weight,
     powerBalance: sheet.powerBalance,
     heat: sheet.heat,
     combatRating: sheet.combatRating,

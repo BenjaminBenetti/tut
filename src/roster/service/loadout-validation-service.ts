@@ -354,6 +354,7 @@ function buildStatSheet(
     accuracy: total.accuracy,
     firepower: total.firepower,
     weight: total.weight,
+    weightBudget: { used: fitted.weight, limit: chassis.capacity.maxWeight },
     powerBalance: chassis.capacity.powerOutput + fitted.power,
     totalCost,
     combatRating: computeCombatRating(total, rating),

@@ -1,6 +1,9 @@
 import type { Result } from "../../core/model/result";
 import type { LoadoutError } from "../../roster/model/loadout-error";
-import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type {
+  MechStatSheet,
+  MechWeightBudget,
+} from "../../roster/model/mech-stat-sheet";
 import type { MechCombatProfile } from "../../tactical/model/mech-combat-profile";
 import type { MechUnitTuning } from "../../tactical/model/unit-tuning";
 import { mechCombatProfile } from "../../tactical/service/mech-combat-profile";
@@ -77,7 +80,7 @@ const EMPTY = "—";
  *   │           Missile Pod                  │
  *   │           range 14 · acc 70 · dmg 22 … │
  *   │ BUILD                                  │   what constrains the
- *   │   Weight 60  Power balance 0  Heat −1  │   build
+ *   │   Weight 40 / 40 t  Power balance 0  Heat −1  │   build
  *   │   Rating 113  Total cost ¢2,850        │
  *   └────────────────────────────────────────┘
  * ```
@@ -194,8 +197,11 @@ export class StatSheetView {
     this.warning = warning;
   }
 
-  /** Shows the field and build numbers on success, or dashes plus every error on failure. */
-  update(result: Result<MechStatSheet, LoadoutError[]>): void {
+  /** Shows the fitting budget alongside a valid sheet or the reasons a draft cannot be built. */
+  update(
+    result: Result<MechStatSheet, LoadoutError[]>,
+    weightBudget?: MechWeightBudget,
+  ): void {
     if (!this.verdict || !this.errors || !this.weapons) {
       return;
     }
@@ -260,6 +266,7 @@ export class StatSheetView {
             : formatWhole(sheet[key]),
         );
       }
+      this.setWeight(sheet.weightBudget);
       this.verdict.textContent = "Buildable";
       this.verdict.className = "tut-badge tut-badge--ok";
       this.verdict.dataset.tone = "ok";
@@ -270,6 +277,7 @@ export class StatSheetView {
     for (const el of this.fields.values()) {
       el.textContent = EMPTY;
     }
+    this.setWeight(weightBudget);
     this.weapons.replaceChildren();
     this.weapons.textContent = EMPTY;
     this.verdict.textContent = `Not buildable · ${formatWhole(result.error.length)} issue${result.error.length === 1 ? "" : "s"}`;
@@ -325,6 +333,14 @@ export class StatSheetView {
       el.textContent = formatDelta(delta.delta);
       el.dataset.tone = delta.tone;
       el.hidden = false;
+    }
+    if (preview.weightBudget) {
+      const el = this.deltas.get("weight");
+      if (el) {
+        el.textContent = `→ ${formatWeight(preview.weightBudget)}`;
+        el.dataset.tone = "neutral";
+        el.hidden = false;
+      }
     }
     for (const weapon of preview.weapons) {
       const block = this.root?.querySelector<HTMLElement>(
@@ -391,6 +407,16 @@ export class StatSheetView {
     return [term, cell];
   }
 
+  /** Keeps the capacity check visible even when another fitted part makes the draft invalid. */
+  private setWeight(budget: MechWeightBudget | undefined): void {
+    const el = this.fields.get("weight");
+    if (!el) return;
+    el.title = budget
+      ? "Carried equipment / chassis limit; chassis mass excluded"
+      : "";
+    if (budget) el.textContent = formatWeight(budget);
+  }
+
   /** Writes a field's text. */
   private set(key: string, text: string): void {
     const el = this.fields.get(key);
@@ -440,4 +466,9 @@ function combatFields(profile: MechCombatProfile): CombatFields {
     "combat-armor": profile.armor,
     "combat-sight": profile.sightRange,
   };
+}
+
+/** The same equipment tonnes and chassis limit used by fitting validation. */
+function formatWeight(budget: MechWeightBudget): string {
+  return `${formatWhole(budget.used)} / ${formatWhole(budget.limit)} t`;
 }

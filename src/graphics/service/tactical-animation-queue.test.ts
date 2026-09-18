@@ -884,7 +884,7 @@ describe("TacticalAnimationQueue blast", () => {
     expect(queue.root.children).toHaveLength(0);
   });
 
-  it("rises before traversing a roof and descends vertically onto its landing", () => {
+  it("moves forward while rising and falling along one continuous roof-jump arc", () => {
     const view = scene();
     const queue = new TacticalAnimationQueue({
       scene: view,
@@ -910,13 +910,16 @@ describe("TacticalAnimationQueue blast", () => {
     );
     const actor = view.objects.get("unit-1")!;
     queue.update(0.108);
-    expect(actor.position.x).toBeCloseTo(tileTopCentre({ x: 0, y: 0, z: 0 }).x);
-    expect(actor.position.y).toBeGreaterThan(3);
+    expect(actor.position.x).toBeGreaterThan(
+      tileTopCentre({ x: 0, y: 0, z: 0 }).x,
+    );
+    expect(actor.position.y).toBeGreaterThan(
+      tileTopCentre({ x: 0, y: 0, z: 0 }).y,
+    );
     queue.update(0.432);
     expect(actor.position.x).toBeCloseTo(tileTopCentre({ x: 6, y: 0, z: 0 }).x);
-    expect(actor.position.y).toBeCloseTo(
-      tileTopCentre({ x: 6, y: 10, z: 0 }).y,
-    );
+    expect(actor.position.y).toBeGreaterThan(tileTopCentre(to).y);
+    expect(actor.position.y).toBeLessThan(tileTopCentre({ ...to, y: 10 }).y);
     queue.update(0.54);
     expect(actor.position).toMatchObject(tileTopCentre(to));
     expect(queue.root.children).toHaveLength(0);

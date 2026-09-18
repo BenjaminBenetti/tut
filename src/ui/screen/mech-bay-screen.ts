@@ -289,7 +289,7 @@ export class MechBayScreen implements Screen {
       this.deps.rating,
       this.deps.upgrades,
     );
-    this.sheet.update(this.result());
+    this.sheet.update(this.result(), this.description.sheet?.weightBudget);
     this.sheet.preview(undefined);
     this.stage.setLoadout(loadout, this.deps.parts);
     this.stage.setErrors(this.description.errors);

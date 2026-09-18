@@ -17,7 +17,7 @@ import { NO_REACTION } from "../model/step-reaction";
 import type { TacticalEvent } from "../model/tactical-event";
 import { actingUnit } from "./acting-unit";
 import { unitFootprintTiles } from "./footprint-service";
-import { jumpApex, jumpObstruction } from "./mech-jump-service";
+import { jumpFlightApex, jumpObstruction } from "./mech-jump-service";
 import { buildMoveGraph, occupiedKeys } from "./movement-service";
 import { systemsRefusal } from "./mech-weapon-service";
 import { unitCanSee } from "./vision-service";
@@ -174,7 +174,12 @@ export function createMechActionHandler(
           to: tile,
           path: [tile],
           jump: true,
-          jumpApex: jumpApex(unit.pos, tile),
+          jumpApex: jumpFlightApex(
+            mission.map,
+            new TileIndex(mission.map),
+            unit.pos,
+            tile,
+          ),
         },
       });
       const reaction = react(state, unit.id, ctx);

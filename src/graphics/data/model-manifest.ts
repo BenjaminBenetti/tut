@@ -2670,6 +2670,50 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "prop.sensor-mast": {
+    category: "props",
+    path: "assets/models/props/prop-sensor-mast.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.0,
+    sockets: [],
+    quality: "placeholder",
+  },
+  "prop.dispersal-stack": {
+    category: "props",
+    path: "assets/models/props/prop-dispersal-stack.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.2,
+    sockets: [],
+    quality: "placeholder",
+  },
+  "prop.battery-emplacement": {
+    category: "props",
+    path: "assets/models/props/prop-battery-emplacement.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.95,
+    sockets: [],
+    quality: "placeholder",
+  },
+  "prop.strongroom": {
+    category: "props",
+    path: "assets/models/props/prop-strongroom.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.15,
+    sockets: [],
+    quality: "placeholder",
+  },
   "prop.rooftop-water-tank": {
     category: "props",
     path: "assets/models/props/prop-rooftop-water-tank.glb",

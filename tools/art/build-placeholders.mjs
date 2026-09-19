@@ -523,8 +523,100 @@ function buildGenerator(mf) {
   ]);
 }
 
+/**
+ * A sensor array's signature roof piece (#1175): a mast with a dish
+ * tilted at the sky and an orange feed.
+ * @param {MaterialFactory} mf - Material factory.
+ * @returns {Object3D} Root node.
+ */
+function buildSensorMast(mf) {
+  const plate = mf.get("tdf-grey-mid");
+  const dark = mf.get("tdf-grey-dark");
+  const trim = mf.get("tdf-orange");
+  return group("root", [
+    box(dark, [0.7, 0.14, 0.7], [0, 0.07, 0], { name: "base" }),
+    box(plate, [0.14, 1.2, 0.14], [0, 0.74, 0], { name: "mast" }),
+    box(dark, [0.5, 0.06, 0.5], [0, 1.3, 0], { name: "gimbal" }),
+    ellipsoid(plate, 0.5, [1, 0.32, 1], [0, 1.55, 0], { name: "dish" }),
+    box(trim, [0.08, 0.3, 0.08], [0, 1.85, 0], { name: "feed" }),
+  ]);
+}
+
+/**
+ * A repellent dispersal's signature roof piece (#1175): twin tanks and
+ * a tall stack with an orange cap.
+ * @param {MaterialFactory} mf - Material factory.
+ * @returns {Object3D} Root node.
+ */
+function buildDispersalStack(mf) {
+  const plate = mf.get("tdf-grey-mid");
+  const dark = mf.get("tdf-grey-dark");
+  const trim = mf.get("tdf-orange");
+  return group("root", [
+    box(dark, [0.9, 0.12, 0.7], [0, 0.06, 0], { name: "skid" }),
+    box(plate, [0.34, 1.0, 0.34], [-0.24, 0.62, 0.12], { name: "tank_a" }),
+    box(plate, [0.34, 1.0, 0.34], [0.24, 0.62, 0.12], { name: "tank_b" }),
+    box(dark, [0.7, 0.08, 0.1], [0, 0.9, 0.12], { name: "manifold" }),
+    box(dark, [0.18, 2.0, 0.18], [0, 1.12, -0.22], { name: "stack" }),
+    box(trim, [0.26, 0.12, 0.26], [0, 2.14, -0.22], { name: "stack_cap" }),
+  ]);
+}
+
+/**
+ * A defensive battery's signature roof piece (#1175): an emplacement
+ * ring, a turret block and a long barrel.
+ * @param {MaterialFactory} mf - Material factory.
+ * @returns {Object3D} Root node.
+ */
+function buildBatteryEmplacement(mf) {
+  const plate = mf.get("tdf-grey-mid");
+  const dark = mf.get("tdf-grey-dark");
+  const trim = mf.get("tdf-orange");
+  return group("root", [
+    box(dark, [0.9, 0.2, 0.9], [0, 0.1, 0], { name: "ring" }),
+    box(plate, [0.56, 0.36, 0.56], [0, 0.38, 0], { name: "turret" }),
+    box(dark, [0.9, 0.14, 0.14], [0.36, 0.6, 0], { name: "barrel" }),
+    box(trim, [0.12, 0.18, 0.18], [0.78, 0.6, 0], { name: "muzzle" }),
+    box(dark, [0.2, 0.3, 0.2], [-0.14, 0.75, 0], { name: "sight" }),
+  ]);
+}
+
+/**
+ * A bank's signature roof piece (#1175): a strongroom with a barred
+ * door, a lock plate and an aerial.
+ * @param {MaterialFactory} mf - Material factory.
+ * @returns {Object3D} Root node.
+ */
+function buildStrongroom(mf) {
+  const concrete = mf.get("env-concrete");
+  const dark = mf.get("tdf-grey-dark");
+  const trim = mf.get("tdf-orange");
+  return group("root", [
+    box(concrete, [0.9, 0.9, 0.9], [0, 0.45, 0], { name: "vault" }),
+    box(dark, [0.44, 0.6, 0.04], [0, 0.4, 0.46], { name: "door" }),
+    box(trim, [0.14, 0.14, 0.03], [0.1, 0.46, 0.49], { name: "lock" }),
+    box(dark, [0.06, 0.24, 0.06], [-0.32, 1.02, -0.32], { name: "aerial" }),
+  ]);
+}
+
+/** The installations' signature roof pieces (#1175): id, height, builder. */
+const SIGNATURE_PROPS = [
+  ["sensor-mast", 2.0, buildSensorMast],
+  ["dispersal-stack", 2.2, buildDispersalStack],
+  ["battery-emplacement", 0.95, buildBatteryEmplacement],
+  ["strongroom", 1.15, buildStrongroom],
+];
+
 /** @type {ModelDef[]} */
 const MODEL_DEFS = [
+  ...SIGNATURE_PROPS.map(([id, height, build]) => ({
+    id: `prop.${id}`,
+    category: "props",
+    file: `prop-${id}.glb`,
+    footprint: { w: 1, d: 1 },
+    height,
+    build,
+  })),
   {
     id: "tdf.turret",
     category: "units",

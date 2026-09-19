@@ -188,7 +188,13 @@ function defenceRow(
       : status === "failed"
         ? `Lost the ${name}`
         : `Defend the ${name}`;
-  row.append(iconGlyph(doc, icon), label);
+  // The label over its progress line, not beside it: "2 / 3 generators
+  // · wave 3 / 5" is wider than the rail leaves, and beside the label it
+  // squeezed every word onto its own line and ran off the panel.
+  const text = doc.createElement("span");
+  text.className = "tut-hud__defence";
+  text.appendChild(label);
+  row.append(iconGlyph(doc, icon), text);
   if (progress !== undefined) {
     const detail = doc.createElement("span");
     detail.className = "tut-mono tut-dim";
@@ -211,7 +217,7 @@ function defenceRow(
       );
     }
     detail.textContent = parts.join(" · ");
-    row.appendChild(detail);
+    text.appendChild(detail);
   }
   return row;
 }

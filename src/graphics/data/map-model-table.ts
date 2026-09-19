@@ -147,6 +147,10 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
 
   [PropKindIds.ROOFTOP_HVAC]: "prop.rooftop-hvac",
   [PropKindIds.ROOFTOP_WATER_TANK]: "prop.rooftop-water-tank",
+  [PropKindIds.SENSOR_MAST]: "prop.sensor-mast",
+  [PropKindIds.DISPERSAL_STACK]: "prop.dispersal-stack",
+  [PropKindIds.BATTERY_EMPLACEMENT]: "prop.battery-emplacement",
+  [PropKindIds.STRONGROOM]: "prop.strongroom",
   [PropKindIds.CAR]: "prop.car-compact",
   [PropKindIds.CRATE]: "prop.crate",
   [PropKindIds.BARRIER]: "prop.barrier-concrete",

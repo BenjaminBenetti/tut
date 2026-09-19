@@ -9,6 +9,7 @@ import { CoverLevel } from "../model/cover";
 import { createDefaultRegistries } from "../service/default-registries";
 import { freezeDraft } from "../service/draft-freezer";
 import { generateTacticalMap } from "../service/generate-tactical-map";
+import { roofQuota } from "./rooftop-prop-pass";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { createSettlementPasses } from "../service/settlement-pipeline";
 import { TileIndex } from "../service/tile-index";
@@ -76,6 +77,58 @@ describe("rooftop service groups", () => {
       expect(validateTacticalMap(map, createDefaultRegistries())).toEqual([]);
     },
   );
+
+  it.each([
+    ["sensor-array", "sensor-mast"],
+    ["repellent-dispersal", "dispersal-stack"],
+    ["defensive-battery", "battery-emplacement"],
+    ["bank", "strongroom"],
+  ] as const)(
+    "crowns a %s landmark with its %s, however small its roof (#1175)",
+    (landmark, signature) => {
+      const map = generateTacticalMap({
+        seed: `landmark-roof-${landmark}`,
+        params: {
+          archetype: "settlement",
+          biome: "temperate",
+          settlement: "town",
+          size: "small",
+          hooks: DEFAULT_MISSION_HOOKS,
+          landmark,
+        },
+      });
+      const building = map.buildings.find((b) => b.kind === landmark);
+      expect(building).toBeDefined();
+      const index = new TileIndex(map);
+      const crown = map.props.filter(
+        (prop) =>
+          prop.kind === signature &&
+          index.getAt(prop.tile)?.buildingId === building?.id,
+      );
+      expect(crown).toHaveLength(1);
+      expect(index.getAt(crown[0]!.tile)?.surface).toBe("roof");
+      // The signature piece is the landmark's alone.
+      expect(map.props.filter((prop) => prop.kind === signature)).toHaveLength(
+        1,
+      );
+      expect(validateTacticalMap(map, createDefaultRegistries())).toEqual([]);
+    },
+  );
+
+  it("gives a roof under the tile quota nothing, unless the style sets a floor (#1175)", () => {
+    const plant = {
+      props: ["a", "b"],
+      tilesPerProp: 40,
+      maxProps: 2,
+      spacing: 2,
+    };
+    expect(roofQuota(plant, 36)).toBe(0);
+    expect(roofQuota(plant, 80)).toBe(2);
+    expect(roofQuota(plant, 200)).toBe(2);
+    const crowned = { ...plant, minProps: 1 };
+    expect(roofQuota(crowned, 36)).toBe(1);
+    expect(roofQuota(crowned, 80)).toBe(2);
+  });
 
   it("keeps existing roads, buildings, hooks and ground placement geometry independent of the rooftop pass", () => {
     const recipe: MapRecipe = {

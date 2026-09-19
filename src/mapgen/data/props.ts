@@ -74,6 +74,10 @@ export const PropKindIds = {
   CACTUS: "cactus",
   ROOFTOP_HVAC: "rooftop-hvac",
   ROOFTOP_WATER_TANK: "rooftop-water-tank",
+  SENSOR_MAST: "sensor-mast",
+  DISPERSAL_STACK: "dispersal-stack",
+  BATTERY_EMPLACEMENT: "battery-emplacement",
+  STRONGROOM: "strongroom",
 } as const;
 
 /** One of the well-known prop kind ids. */
@@ -334,6 +338,37 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   {
     id: PropKindIds.ROOFTOP_WATER_TANK,
     demolition: 2,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  // The signature pieces an installation's landmark wears on its roof
+  // (#1175): one per installation kind, so the building the player is
+  // defending reads as the thing they built.
+  {
+    id: PropKindIds.SENSOR_MAST,
+    demolition: 3,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.DISPERSAL_STACK,
+    demolition: 3,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.BATTERY_EMPLACEMENT,
+    demolition: 3,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.STRONGROOM,
+    demolition: 3,
     cover: CoverLevel.HIGH,
     blocksLos: true,
     placements: ["roof"],

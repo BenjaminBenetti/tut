@@ -73,6 +73,7 @@ class FakeStore implements CampaignStore {
       mechsDestroyed: [],
       mechDamage: [],
       creditsAwarded: 600,
+      techPointsAwarded: 0,
       infestationDelta: -20,
     };
     this.state = {

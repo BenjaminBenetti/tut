@@ -7,7 +7,7 @@ import { isRecord } from "../../core/model/record-guard";
 
 /**
  * Shallow structural check that decoded data is a `GameState`: the root
- * carries `meta`, `overworld`, `roster` and `economy`, and each slice has
+ * carries `meta`, `overworld`, `roster`, `economy` and `tech`, and each slice has
  * the fields every reader touches first. It catches a pasted file that
  * is a valid envelope of something else; it does not validate domain
  * invariants, which belong to the domains and their migrations. The one
@@ -18,14 +18,15 @@ import { isRecord } from "../../core/model/record-guard";
  *   { meta: { seed, rng, ids, createdAt },
  *     overworld: { day, map: { cities: [{ population }] }, ... },
  *     roster: { squads[], mechs[], savedLoadouts[], graveyard[] },
- *     economy: { credits, ledger[] } }
+ *     economy: { credits, ledger[], techPoints },
+ *     tech: { unlocked[] } }
  * ```
  */
 export function isGameStateShape(value: unknown): value is GameState {
   if (!isRecord(value)) {
     return false;
   }
-  const { meta, overworld, roster, economy } = value;
+  const { meta, overworld, roster, economy, tech } = value;
   return (
     isRecord(meta) &&
     typeof meta.seed === "number" &&
@@ -44,7 +45,10 @@ export function isGameStateShape(value: unknown): value is GameState {
     Array.isArray(roster.graveyard) &&
     isRecord(economy) &&
     typeof economy.credits === "number" &&
-    Array.isArray(economy.ledger)
+    Array.isArray(economy.ledger) &&
+    typeof economy.techPoints === "number" &&
+    isRecord(tech) &&
+    Array.isArray(tech.unlocked)
   );
 }
 

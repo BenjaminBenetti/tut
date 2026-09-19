@@ -19,6 +19,23 @@ describe("MissionDetailsView", () => {
   const field = (name: string): string =>
     root.querySelector(`[data-field="detail-${name}"]`)?.textContent ?? "";
 
+  it("names the tech reward and a reported carcass (#1171)", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const base = missionAt("mission-1", "cairo", 7, 4);
+    const mission = {
+      ...base,
+      rewards: { ...base.rewards, techPoints: 23 },
+      mapParams: { ...base.mapParams, techCarcass: { techPoints: 5 } },
+    };
+    view.update(campaignOnDay(4, [mission]), mission);
+    expect(field("tech")).toBe("+23 TP");
+    expect(field("carcass")).toBe("Reported · +5 TP");
+  });
+
   it("is hidden until a mission is shown, then fills the briefing", () => {
     const view = new MissionDetailsView(
       { missionTypes: MISSION_TYPES },
@@ -34,6 +51,8 @@ describe("MissionDetailsView", () => {
     expect(field("city")).toBe("Cairo");
     expect(field("difficulty")).toBe("D4");
     expect(field("reward")).toBe("¢1,200");
+    expect(field("tech")).toBe("+0 TP");
+    expect(field("carcass")).toBe("None reported");
     expect(field("days-left")).toBe("3 d");
     expect(field("biome")).toBe("Desert");
     expect(field("settlement")).toBe("town");

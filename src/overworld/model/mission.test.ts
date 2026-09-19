@@ -14,7 +14,7 @@ const SAMPLE: Mission = {
     size: "medium",
     seed: "mission-4:map",
   },
-  rewards: { credits: 1500 },
+  rewards: { credits: 1500, techPoints: 0 },
   createdDay: 3,
   expiresDay: 8,
   ignorePenalty: 10,

@@ -7,6 +7,7 @@ import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import type { Mission } from "../../overworld/model/mission";
 import { HOOK_KIND_DEFAULTS } from "../data/hook-kind-defaults";
+import { HookKinds } from "../model/hook";
 import type { MapDimensions } from "../model/map-recipe";
 import type { HookRequirement, MapRecipe } from "../model/map-recipe";
 import type { MapGenRegistries } from "../model/registries";
@@ -59,6 +60,7 @@ const MAP_EDGE_MARGIN = 2;
  * ```
  *   Mission.mapParams { biome, settlement, size, seed }
  *   MissionType.requiredHooks [{ kind, count, countPerDifficulty }]
+ *   + { kind: "tech-carcass", count: 1 } when mapParams.techCarcass is set (#1171)
  *          │  × difficulty, + HOOK_KIND_DEFAULTS[kind]
  *          ▼
  *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks } }
@@ -81,7 +83,10 @@ export function missionToMapRecipe(
   }
   const dimensions = registries.mapSizes.get(size);
   const hooks: HookRequirement[] = [];
-  for (const requirement of missionType.requiredHooks) {
+  for (const requirement of [
+    ...missionType.requiredHooks,
+    ...carcassHooks(mission),
+  ]) {
     if (!registries.hookPlacers.has(requirement.kind)) {
       return err({ kind: "unknown-hook-kind", id: requirement.kind });
     }
@@ -122,6 +127,17 @@ export function scaledHookCount(
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * The tech carcass hook a mission carries (#1171): one when the mission
+ * was generated with `techCarcass`, none otherwise. It is the mission's
+ * rather than the type's, so it joins the type's requirements here.
+ */
+function carcassHooks(mission: Mission): readonly MissionHookRequirement[] {
+  return mission.mapParams.techCarcass === undefined
+    ? []
+    : [{ kind: HookKinds.TECH_CARCASS, count: 1 }];
+}
 
 /** Completes a content requirement with the kind's mapgen defaults. */
 function toHookRequirement(

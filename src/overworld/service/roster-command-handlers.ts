@@ -3,6 +3,7 @@ import type { IdGenerator } from "../../core/model/id-generator";
 import { err, ok } from "../../core/model/result";
 import type { TransactionService } from "../../economy/model/transaction-service";
 import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
+import type { PartAvailability } from "../../roster/model/part-availability";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import { describeRosterError } from "../../roster/model/roster-error";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
@@ -61,6 +62,11 @@ export interface RosterHandlerDeps {
    * id generator, so ledger ids share the campaign's counters.
    */
   readonly transactionsFor: (ids: IdGenerator) => TransactionService;
+  /**
+   * What the tech tree lets a build use, read off the campaign's tech
+   * slice for one command (#1171).
+   */
+  readonly availabilityFor: (state: CampaignState) => PartAvailability;
 }
 
 /** One handler per roster command, ready to register. */
@@ -94,13 +100,17 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
   deps: RosterHandlerDeps,
 ): RosterCommandHandlers<TState> {
   /** The service deps for one command. */
-  const serviceDeps = (ids: IdGenerator): Parameters<typeof hireSquad>[4] => ({
+  const serviceDeps = (
+    state: CampaignState,
+    ids: IdGenerator,
+  ): Parameters<typeof hireSquad>[4] => ({
     squadTypes: deps.squadTypes,
     parts: deps.parts,
     rating: deps.rating,
     upgrades: deps.upgrades,
     transactions: deps.transactionsFor(ids),
     ids,
+    availability: deps.availabilityFor(state),
   });
 
   return {
@@ -112,7 +122,7 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
           command.payload.typeId,
           command.payload.name,
           state.overworld.day,
-          serviceDeps(ctx.ids),
+          serviceDeps(state, ctx.ids),
         ),
       ),
     reinforceSquad: (state, command, ctx) =>
@@ -123,13 +133,17 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
           command.payload.squadId,
           command.payload.soldiers,
           state.overworld.day,
-          serviceDeps(ctx.ids),
+          serviceDeps(state, ctx.ids),
         ),
       ),
     saveLoadout: (state, command, ctx) =>
       lift(
         state,
-        saveLoadout(state, command.payload.loadout, serviceDeps(ctx.ids)),
+        saveLoadout(
+          state,
+          command.payload.loadout,
+          serviceDeps(state, ctx.ids),
+        ),
       ),
     deleteLoadout: (state, command) =>
       lift(state, deleteLoadout(state, command.payload.name)),
@@ -141,7 +155,7 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
           command.payload.loadoutName,
           command.payload.mechName,
           state.overworld.day,
-          serviceDeps(ctx.ids),
+          serviceDeps(state, ctx.ids),
         ),
       ),
     repairMech: (state, command, ctx) =>

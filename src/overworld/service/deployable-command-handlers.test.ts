@@ -64,7 +64,8 @@ const BASE: CampaignState = {
     hives: [],
   },
   roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
-  economy: { credits: 10_000, ledger: [] },
+  economy: { credits: 10_000, ledger: [], techPoints: 0 },
+  tech: { unlocked: [] },
 };
 
 const DEPS: DeployableHandlerDeps = {
@@ -204,7 +205,8 @@ describe("deployable handlers through the dispatcher", () => {
   it("leaves the campaign untouched, counters included, on an unaffordable build", () => {
     const poor: CampaignState = {
       ...BASE,
-      economy: { credits: 10, ledger: [] },
+      economy: { credits: 10, ledger: [], techPoints: 0 },
+      tech: { unlocked: [] },
     };
     const outcome = dispatcher().process(
       poor,

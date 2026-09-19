@@ -11,6 +11,7 @@ import type { PlaceableUnit } from "../../tactical/model/place-unit-command";
 import { placeUnit } from "../../tactical/model/place-unit-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
 import { extract } from "../../tactical/model/extract-command";
+import { harvestCarcass } from "../../tactical/model/harvest-carcass-command";
 import { interact } from "../../tactical/model/interact-command";
 import type { RankTuning } from "../../roster/model/rank";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
@@ -1368,6 +1369,9 @@ export class TacticalHudView {
         break;
       case "interact":
         this.handlers.onCommand(interact(unitId, choice.objectiveId));
+        break;
+      case "harvest":
+        this.handlers.onCommand(harvestCarcass(unitId, choice.carcassId));
         break;
       case "extract":
         this.handlers.onCommand(extract(unitId));

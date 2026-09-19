@@ -34,8 +34,26 @@ export interface TutTestHooks {
   startTacticalMission(missionId: string): string | undefined;
 }
 
+/**
+ * What the tech tree's graph exposes to the Playwright specs in a dev
+ * build (#1171): where a node's pedestal is on screen, so a spec can
+ * click the model rather than the label, and a way to select or centre
+ * a node without finding it first.
+ */
+export interface TutTechHooks {
+  /** CSS pixels from the graph container's top-left, or undefined for an unknown node. */
+  nodeScreenPosition(nodeId: string): Vec2 | undefined;
+  /** Selects `nodeId` as a click on its pedestal would. */
+  select(nodeId: string): void;
+  /** Pans the camera onto `nodeId`. */
+  focus(nodeId: string): void;
+  /** The camera's zoom, in pixels per world unit. */
+  zoom(): number;
+}
+
 declare global {
   interface Window {
     __tut__?: TutTestHooks;
+    __tutTech__?: TutTechHooks;
   }
 }

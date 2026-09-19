@@ -11,6 +11,7 @@ import { LedgerTransactionService } from "./transaction-service";
 
 const TUNING: EconomyTuning = {
   startingCredits: 1000,
+  startingTechPoints: 0,
   baseStipend: 500,
   stipendFloor: 50,
 };

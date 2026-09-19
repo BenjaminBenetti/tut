@@ -144,6 +144,8 @@ export type MissionOptions = Partial<
     | "outcome"
     | "difficulty"
     | "threat"
+    | "carcasses"
+    | "log"
   >
 >;
 
@@ -173,6 +175,7 @@ export function missionWith(
     log: [],
     radars: [],
     charges: [],
+    carcasses: [],
     commandSeq: 0,
     ...options,
   };

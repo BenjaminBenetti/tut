@@ -7,6 +7,15 @@ export function formatCredits(credits: number): string {
   return `¢${Math.round(credits).toLocaleString("en-US")}`;
 }
 
+/**
+ * Tech points as a whole number with the short unit: `42 TP` (#1171).
+ * No prefix glyph: credits are money and get `¢`; tech points are a
+ * count and read as one.
+ */
+export function formatTechPoints(points: number): string {
+  return `${Math.round(points).toLocaleString("en-US")} TP`;
+}
+
 /** A whole-number readout for gauges such as threat: `42`. */
 export function formatWhole(value: number): string {
   return String(Math.round(value));

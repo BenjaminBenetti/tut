@@ -13,7 +13,7 @@ import {
   withInfestation,
 } from "../model/city";
 import type { EarthMap } from "../model/earth-map";
-import type { Mission } from "../model/mission";
+import type { Mission, MissionId, MissionMapParams } from "../model/mission";
 import type {
   MissionTuning,
   MissionTypeGenerationRule,
@@ -221,6 +221,7 @@ export function expireMissions(
  *     for type in MISSION_TYPE_IDS:
  *       p = offerChance(city.infestation, rule[type])
  *       p > 0 and rng.chance(p) ──► mission { difficulty, rewards, expiry, mapParams }
+ *                                    └─ rng.fork(`carcass:${id}`) ──► mapParams.techCarcass?
  *                                    ──► MissionOffered, next city
  * ```
  *
@@ -297,11 +298,38 @@ function createMission(
       settlement: city.scale,
       size: mapSizeFor(difficulty, rule),
       seed: String(mapSeed),
+      ...techCarcassFor(id, difficulty, deps),
     },
-    rewards: { credits: difficulty * type.rewardPerDifficulty },
+    rewards: {
+      credits: difficulty * type.rewardPerDifficulty,
+      techPoints:
+        type.techRewardBase + difficulty * type.techRewardPerDifficulty,
+    },
     createdDay: state.day,
     expiresDay: state.day + type.expiryDays + intelDays,
     ignorePenalty: type.ignorePenalty,
+  };
+}
+
+/**
+ * Rolls whether the mission carries a tech carcass (#1171) on a fork
+ * keyed by the mission id, so the roll neither consumes a draw from the
+ * campaign RNG (older golden sequences are untouched) nor repeats across
+ * missions. Returns the field to spread, or nothing.
+ */
+function techCarcassFor(
+  id: MissionId,
+  difficulty: number,
+  deps: MissionGenerationDeps,
+): Pick<MissionMapParams, "techCarcass"> {
+  const tuning = deps.tuning.techCarcass;
+  if (!deps.rng.fork(`carcass:${id}`).chance(tuning.chance)) {
+    return {};
+  }
+  return {
+    techCarcass: {
+      techPoints: tuning.basePoints + tuning.pointsPerDifficulty * difficulty,
+    },
   };
 }
 

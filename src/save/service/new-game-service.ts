@@ -9,6 +9,7 @@ import { createInitialOverworldState } from "../../overworld/service/overworld-s
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { StarterRosterSpec } from "../../roster/model/starter-roster-spec";
 import { createInitialRosterState } from "../../roster/service/roster-state-factory";
+import { createInitialTechState } from "../../tech/service/tech-state-factory";
 import type { GameState } from "../model/game-state";
 import type { NewGameOptions } from "./game-state-factory";
 import { createNewGameMeta } from "./game-state-factory";
@@ -60,7 +61,7 @@ export const OPENING_INFESTATION_STREAM = "new-game:infestation";
  *          │   (seeded map,          (squads, mechs)    (starting credits)
  *          │    day 1, threat)
  *          ▼
- *   GameState { meta (rng, ids written back), overworld, roster, economy }
+ *   GameState { meta (rng, ids written back), overworld, roster, economy, tech }
  * ```
  *
  * The starter roster and balance are granted, not bought, so the ledger
@@ -83,12 +84,16 @@ export function createNewGame(
     ids,
     squadTypes: deps.squadTypes,
   });
-  const economy = createInitialEconomyState(deps.economyTuning.startingCredits);
+  const economy = createInitialEconomyState(
+    deps.economyTuning.startingCredits,
+    deps.economyTuning.startingTechPoints,
+  );
 
   return {
     meta: { ...meta, rng: rng.getState(), ids: ids.getState() },
     overworld,
     roster,
     economy,
+    tech: createInitialTechState(),
   };
 }

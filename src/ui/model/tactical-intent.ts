@@ -165,14 +165,28 @@ export interface TacticalTestHooks {
    * @param level - Highest engine layer to draw, or undefined for all.
    */
   applyHeightCut(level: number | undefined): void;
+  /**
+   * The tech carcasses on the map and whether each is stripped (#1171),
+   * so a spec can walk a squad to one through `tileScreenPosition` and
+   * find Harvest on the wheel. A mission with none returns `[]`.
+   */
+  carcasses(): readonly {
+    readonly id: string;
+    readonly pos: TileCoord;
+    readonly harvested: boolean;
+  }[];
 }
 
 /**
  * The part of {@link TacticalTestHooks} the input controller can supply
  * on its own. The scene host completes it: the height cut is the
- * scene's, and the controller has no handle on the map view.
+ * scene's, the carcasses the mission's, and the controller has a handle
+ * on neither.
  */
-export type TacticalInputHooks = Omit<TacticalTestHooks, "applyHeightCut">;
+export type TacticalInputHooks = Omit<
+  TacticalTestHooks,
+  "applyHeightCut" | "carcasses"
+>;
 
 declare global {
   interface Window {

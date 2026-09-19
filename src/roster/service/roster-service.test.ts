@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
+import { ALL_PARTS_AVAILABLE } from "../model/part-availability";
 import type { EconomyState } from "../../economy/model/economy-state";
 import { CREDITS_CHANGED } from "../../economy/model/economy-event";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
@@ -78,8 +79,9 @@ function setup(credits = 10_000): {
     upgrades: UPGRADE_TUNING,
     transactions: new LedgerTransactionService(ids),
     ids,
+    availability: ALL_PARTS_AVAILABLE,
   };
-  const economy: EconomyState = { credits, ledger: [] };
+  const economy: EconomyState = { credits, ledger: [], techPoints: 0 };
   const slices = { roster: ROSTER, economy };
   return {
     deps,
@@ -426,6 +428,34 @@ describe("buildMech", () => {
     expect(error.errors).toEqual([
       expect.objectContaining({ code: "unknown-part", slot: "arm-weapon" }),
     ]);
+  });
+
+  it("refuses a template that fits a part the tech tree has not unlocked (#1171)", () => {
+    const { deps, slices, snapshot } = setup();
+    const gated: RosterServiceDeps = {
+      ...deps,
+      availability: { isAvailable: (id) => id !== STARTER_LOADOUT.legsId },
+    };
+    const error = expectErr(
+      buildMech(slices, STARTER_LOADOUT.name, "X", DAY, gated),
+    );
+    expect(error).toMatchObject({ code: "invalid-loadout" });
+    if (error.code !== "invalid-loadout") return;
+    expect(error.errors).toEqual([
+      expect.objectContaining({ code: "part-locked", slot: "legs" }),
+    ]);
+    expect(deps.ids.getState().counters).toEqual({});
+    expect(slices).toEqual(snapshot);
+  });
+
+  it("saves a template with a locked part, since saving is free and the lock is checked at build (#1171)", () => {
+    const { deps, slices } = setup();
+    const gated: RosterServiceDeps = {
+      ...deps,
+      availability: { isAvailable: () => false },
+    };
+    const loadout: MechLoadout = { ...STARTER_LOADOUT, name: "Later" };
+    expect(saveLoadout(slices, loadout, gated).ok).toBe(true);
   });
 
   it("rejects an unaffordable build without drawing an id", () => {

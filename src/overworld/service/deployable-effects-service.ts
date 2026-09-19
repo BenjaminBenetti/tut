@@ -1,5 +1,5 @@
 import type { Applied } from "../../core/model/domain-event";
-import type { CreditsChangedEvent } from "../../economy/model/economy-event";
+import type { EconomyEvent } from "../../economy/model/economy-event";
 import type { EconomyState } from "../../economy/model/economy-state";
 import type { TransactionService } from "../../economy/model/transaction-service";
 import type { CampaignState } from "../model/campaign-state";
@@ -37,7 +37,7 @@ export interface UpkeepDeps {
 
 /** Everything the upkeep tick can emit: status changes plus each ledger entry. */
 export type UpkeepEvent =
-  DeployableOfflineEvent | DeployableOnlineEvent | CreditsChangedEvent;
+  DeployableOfflineEvent | DeployableOnlineEvent | EconomyEvent;
 
 // ===========================================
 // Modifiers

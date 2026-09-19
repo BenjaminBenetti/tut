@@ -9,6 +9,10 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision } from "../../tactical/model/tactical-state";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Spawner, SpawnerId } from "../../tactical/model/tactical-state";
+import type {
+  TechCarcass,
+  TechCarcassId,
+} from "../../tactical/model/tech-carcass";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import type {
   UnitTemplate,
@@ -71,6 +75,14 @@ export interface TacticalSceneBuilderOptions {
  */
 export const SPAWNER_MODEL_ID = "bug.egg-spawner";
 
+/**
+ * Model every tech carcass is drawn with (#1171). One id for the same
+ * reason as the spawner's; a harvested carcass is removed from the
+ * scene rather than dimmed, so what is on the board is what can still
+ * be stripped.
+ */
+export const CARCASS_MODEL_ID = "bug.tech-carcass";
+
 /** Templates by id, as the mission state stores them. */
 export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
 
@@ -100,6 +112,10 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *   updateSpawners(spawners)
  *     ├─ destroyed or gone ──► mesh.dispose()
  *     └─ new               ──► models.load(SPAWNER_MODEL_ID) ──► UnitMesh
+ *
+ *   updateCarcasses(carcasses)                                   (#1171)
+ *     ├─ harvested or gone ──► mesh.dispose()
+ *     └─ new               ──► models.load(CARCASS_MODEL_ID) ──► UnitMesh, not pickable
  *
  *   pickUnit(ndc)    ──► raycast the unit meshes    ──► nearest hit's unit
  *   pickSpawner(ndc) ──► raycast the spawner meshes ──► nearest hit's spawner
@@ -176,6 +192,10 @@ export class TacticalSceneBuilder
   private readonly targetToSpawner = new Map<Object3D, SpawnerId>();
   /** Spawners the latest `updateSpawners` asked for, for the same reason as `wanted`. */
   private readonly wantedSpawners = new Set<SpawnerId>();
+  private readonly carcassesGroup: Group;
+  private readonly carcassMeshes = new Map<TechCarcassId, UnitMesh>();
+  /** Carcasses the latest `updateCarcasses` asked for, for the same reason as `wanted` (#1171). */
+  private readonly wantedCarcasses = new Set<TechCarcassId>();
   private readonly raycaster = new Raycaster();
   private hovered: UnitId | undefined;
   private selected: UnitId | undefined;
@@ -209,11 +229,14 @@ export class TacticalSceneBuilder
     this.unitsGroup.name = "units";
     this.spawnersGroup = new Group();
     this.spawnersGroup.name = "spawners";
+    this.carcassesGroup = new Group();
+    this.carcassesGroup.name = "carcasses";
     this.root = new Group();
     this.root.name = "tactical-scene";
     this.root.add(
       this.mapView.root,
       this.spawnersGroup,
+      this.carcassesGroup,
       this.effects.root,
       this.charges.root,
       this.unitsGroup,
@@ -404,6 +427,16 @@ export class TacticalSceneBuilder
     return [...this.wantedSpawners];
   }
 
+  /** Ids of the tech carcasses currently drawn or loading, in insertion order (#1171). */
+  carcassIds(): readonly TechCarcassId[] {
+    return [...this.wantedCarcasses];
+  }
+
+  /** A carcass's base in world space, or undefined while it is loading or gone. */
+  carcassWorldPosition(carcassId: TechCarcassId): Vec3 | undefined {
+    return this.carcassMeshes.get(carcassId)?.worldPosition();
+  }
+
   /**
    * Brings the map in step with a mission whose map has changed (#1121):
    * every prop and wall the new map no longer has is collapsed out of
@@ -488,6 +521,33 @@ export class TacticalSceneBuilder
     await Promise.all(loads);
   }
 
+  /**
+   * Brings the drawn tech carcasses in step with `carcasses` (#1171). A
+   * carcass that is harvested — or gone from the list — is removed, the
+   * way a destroyed spawner is; the rest are placed once and never
+   * move. Resolves when every new model has loaded. Carcasses are not
+   * pickable: the player clicks the tile they lie on, and the wheel
+   * finds them there.
+   */
+  async updateCarcasses(carcasses: readonly TechCarcass[]): Promise<void> {
+    const lying = carcasses.filter((carcass) => !carcass.harvested);
+    const keep = new Set(lying.map((carcass) => carcass.id));
+    for (const id of [...this.wantedCarcasses]) {
+      if (!keep.has(id)) {
+        this.removeCarcass(id);
+      }
+    }
+    const loads: Promise<void>[] = [];
+    for (const carcass of lying) {
+      if (this.wantedCarcasses.has(carcass.id)) {
+        continue;
+      }
+      this.wantedCarcasses.add(carcass.id);
+      loads.push(this.placeCarcass(carcass));
+    }
+    await Promise.all(loads);
+  }
+
   /** Shows friendly scanners and location-only radar contacts through the fog. */
   async updateRadar(
     radars: readonly Radar[],
@@ -530,6 +590,10 @@ export class TacticalSceneBuilder
       this.removeSpawner(id);
     }
     this.wantedSpawners.clear();
+    for (const id of [...this.carcassMeshes.keys()]) {
+      this.removeCarcass(id);
+    }
+    this.wantedCarcasses.clear();
     this.effects.dispose();
     this.charges.dispose();
     this.mapView.dispose();
@@ -777,6 +841,29 @@ export class TacticalSceneBuilder
     }
     this.spawnersGroup.add(mesh.object);
     this.applySpawnerHighlights();
+  }
+
+  /** Loads the carcass model and lays it on its tile; a load that outlives its carcass is dropped. */
+  private async placeCarcass(carcass: TechCarcass): Promise<void> {
+    const model = await this.models.load(CARCASS_MODEL_ID);
+    if (!this.wantedCarcasses.has(carcass.id)) {
+      return;
+    }
+    const mesh = new UnitMesh(carcass.id, model);
+    // A carcass lies where it fell; north is as good a rest pose as any.
+    mesh.setPose(carcass.pos, "n");
+    this.carcassMeshes.set(carcass.id, mesh);
+    this.carcassesGroup.add(mesh.object);
+  }
+
+  /** Takes a carcass off the board and frees its mesh. */
+  private removeCarcass(carcassId: TechCarcassId): void {
+    this.wantedCarcasses.delete(carcassId);
+    const mesh = this.carcassMeshes.get(carcassId);
+    if (mesh) {
+      mesh.dispose();
+      this.carcassMeshes.delete(carcassId);
+    }
   }
 
   /** Forgets a spawner: its mesh, pick targets and any pending load. */

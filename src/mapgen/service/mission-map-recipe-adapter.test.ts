@@ -32,7 +32,7 @@ function mission(
       seed: "mission-1-map",
       ...params,
     },
-    rewards: { credits: 1500 },
+    rewards: { credits: 1500, techPoints: 0 },
     createdDay: 1,
     expiresDay: 6,
     ignorePenalty: 10,
@@ -65,6 +65,37 @@ describe("missionToMapRecipe", () => {
     );
     expect(legacy.params.infestation ?? 0).toBe(0);
   });
+  it("asks for one tech-carcass hook only when the mission carries a carcass (#1171)", () => {
+    const plain = unwrap(
+      missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries),
+    );
+    expect(
+      plain.params.hooks.some((h) => h.kind === HookKinds.TECH_CARCASS),
+    ).toBe(false);
+    const priced = unwrap(
+      missionToMapRecipe(
+        mission({}, { techCarcass: { techPoints: 14 } }),
+        INFESTATION_CLEARANCE,
+        registries,
+      ),
+    );
+    const carcass = priced.params.hooks.filter(
+      (h) => h.kind === HookKinds.TECH_CARCASS,
+    );
+    expect(carcass).toHaveLength(1);
+    expect(carcass[0]).toMatchObject({
+      count: 1,
+      requiredPass: PassMask.INFANTRY,
+      maxNearestDistanceFromDeploy: 30,
+    });
+    expect(carcass[0]?.minDistanceFromDeploy).toBeGreaterThan(0);
+    // The type's own hooks are untouched by the addition.
+    expect(priced.params.hooks.slice(0, plain.params.hooks.length)).toEqual(
+      plain.params.hooks,
+    );
+    expect(JSON.parse(JSON.stringify(priced))).toEqual(priced);
+  });
+
   it("carries the mission's seed and site parameters into the recipe", () => {
     const recipe = unwrap(
       missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries),

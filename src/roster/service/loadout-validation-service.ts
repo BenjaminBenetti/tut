@@ -14,6 +14,8 @@ import type {
 import { isChassisPart } from "../model/mech-part";
 import type { MechRatingTuning } from "../model/mech-rating-tuning";
 import type { MechStatSheet, MechWeapon } from "../model/mech-stat-sheet";
+import type { PartAvailability } from "../model/part-availability";
+import { ALL_PARTS_AVAILABLE } from "../model/part-availability";
 import type { PartCatalogue } from "../model/part-catalogue";
 import type { UpgradeTuning } from "../model/upgrade-tuning";
 import {
@@ -99,18 +101,24 @@ export interface LoadoutDescription {
  * resolve, and are skipped entirely when the chassis itself is missing
  * since there is no capacity to check against. A loadout with more
  * utilities than slots is still weighed in full.
+ *
+ * `availability` is what the tech tree has unlocked (#1171); a resolved
+ * part it refuses is a `part-locked` error. It defaults to everything,
+ * which is what a template check that is not a purchase wants.
  */
 export function validateLoadout(
   loadout: MechLoadout,
   catalogue: PartCatalogue,
   rating: MechRatingTuning,
   upgrades: UpgradeTuning,
+  availability: PartAvailability = ALL_PARTS_AVAILABLE,
 ): Result<MechStatSheet, LoadoutError[]> {
   const { sheet, errors } = describeLoadout(
     loadout,
     catalogue,
     rating,
     upgrades,
+    availability,
   );
   if (errors.length > 0 || sheet === undefined) {
     return err([...errors]);
@@ -137,6 +145,7 @@ export function describeLoadout(
   catalogue: PartCatalogue,
   rating: MechRatingTuning,
   upgrades: UpgradeTuning,
+  availability: PartAvailability = ALL_PARTS_AVAILABLE,
 ): LoadoutDescription {
   const resolved = resolveLoadout(loadout, catalogue);
   const errors = [...resolved.errors];
@@ -145,6 +154,7 @@ export function describeLoadout(
       ...checkCapacity(resolved.chassis, resolved.components, upgrades),
     );
   }
+  errors.push(...checkAvailability(resolved, availability));
   const sheet =
     resolved.chassis === undefined || resolved.errors.length > 0
       ? undefined
@@ -256,6 +266,36 @@ function resolvePart(
 /** The upgrade level a loadout records for a part; absent means 0. */
 function upgradeLevelOf(loadout: MechLoadout, id: PartId): number {
   return loadout.upgrades?.[id] ?? 0;
+}
+
+/**
+ * One `part-locked` error per resolved part the tech tree has not
+ * unlocked (#1171). Runs after resolution so a locked part still counts
+ * towards the sheet: the bay can print what the build would weigh while
+ * saying why it cannot be bought yet.
+ */
+function checkAvailability(
+  resolved: ResolvedLoadout,
+  availability: PartAvailability,
+): LoadoutError[] {
+  const fitted: readonly MechPart[] = [
+    ...(resolved.chassis === undefined ? [] : [resolved.chassis]),
+    ...resolved.components.map((component) => component.part),
+  ];
+  const seen = new Set<PartId>();
+  const errors: LoadoutError[] = [];
+  for (const part of fitted) {
+    if (seen.has(part.id) || availability.isAvailable(part.id)) {
+      continue;
+    }
+    seen.add(part.id);
+    errors.push({
+      code: "part-locked",
+      slot: part.slot,
+      detail: `"${part.name}" has not been unlocked on the tech tree.`,
+    });
+  }
+  return errors;
 }
 
 // ===========================================

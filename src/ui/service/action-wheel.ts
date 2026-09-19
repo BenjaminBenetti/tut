@@ -56,6 +56,11 @@ import {
 import type { HealPreview } from "../../tactical/model/heal-preview";
 import type { TacticalNames } from "./tactical-error-text";
 import { describeRefusal } from "./tactical-error-text";
+import type { TechCarcass } from "../../tactical/model/tech-carcass";
+import {
+  reachableCarcasses,
+  validateHarvest,
+} from "../../tactical/service/harvest-service";
 
 // ===========================================
 // Types
@@ -117,6 +122,8 @@ export type WheelChoice =
   | { readonly action: "overwatch" }
   | { readonly action: "reload" }
   | { readonly action: "interact"; readonly objectiveId: string }
+  /** Strip a tech carcass in reach (#1171). */
+  | { readonly action: "harvest"; readonly carcassId: string }
   | { readonly action: "extract" }
   | { readonly action: "back"; readonly targetId: string };
 
@@ -153,6 +160,9 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "no-equipment": "not carried",
     "equipment-spent": "none left",
     "nothing-to-heal": "nobody to heal",
+    "not-a-squad": "squads only",
+    "carcass-already-harvested": "already stripped",
+    "carcass-out-of-reach": "out of reach",
   };
 
 /** The ring's words for a repair kit with nothing to mend; the medkit's are in `SHORT_REASONS`. */
@@ -190,7 +200,10 @@ const COMFORTABLE_HIT_CHANCE = 50;
  *                      the tile the enemy stands on (#1143)
  *   spawner   ──► Attack (as at an enemy, at the spawner's tile) · Interact
  *                 (if this one is in reach) · Overwatch · Reload
- *   own unit  ──► Overwatch · Reload · Interact · Board
+ *   own unit  ──► Overwatch · Reload · Interact · Harvest (a carcass in
+ *                 reach, #1171) · Board
+ *   a tile with a carcass on it also carries Harvest, closed with the
+ *   reason when the unit cannot strip it
  * ```
  *
  * Closed entries stay on the ring, marked, with the reason as their
@@ -409,6 +422,8 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
     }
     case "interact":
       return { action, objectiveId: argument };
+    case "harvest":
+      return { action, carcassId: argument };
     case "back":
       return { action, targetId: argument };
     case "overwatch":
@@ -456,6 +471,15 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   items.push(tileAttackItem(tile, unit, ctx));
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
+  }
+  // A carcass lying on the clicked tile (#1171): Harvest is on the ring
+  // whenever the tile holds one, closed with the rules' reason when
+  // the unit cannot strip it, so a mech that clicks it learns why.
+  const carcass = ctx.mission.carcasses.find(
+    (candidate) => !candidate.harvested && sameTile(candidate.pos, tile),
+  );
+  if (carcass !== undefined) {
+    items.push(harvestItem(carcass, unit, ctx));
   }
   // The dish where a scanner may go (#1132), the turret beside it, and
   // a medkit or a repair kit where it would land (#1138): none is an
@@ -867,6 +891,14 @@ function selfPage(unit: Unit, ctx: WheelContext): WheelPage {
   if (objective !== undefined) {
     items.push(interactItem(objective.objective.id, unit, ctx));
   }
+  const carcass = reachableCarcasses(
+    ctx.mission,
+    unit.id,
+    ctx.deps.objectiveTuning,
+  )[0];
+  if (carcass !== undefined) {
+    items.push(harvestItem(carcass.carcass, unit, ctx));
+  }
   if (isDropshipTile(ctx.mission, unit.pos)) {
     items.push(boardItem(unit, ctx));
   }
@@ -1038,6 +1070,38 @@ function interactItem(
   return refusal === undefined
     ? { id, label: "Interact", icon: "interact" }
     : closed(id, "Interact", "interact", refusal, ctx);
+}
+
+/**
+ * Strip one tech carcass (#1171), open with its worth as the detail, or
+ * closed with why not. `validateHarvest` is the handler's own check, so
+ * the ring and the command cannot disagree.
+ */
+function harvestItem(
+  carcass: TechCarcass,
+  unit: Unit,
+  ctx: WheelContext,
+): RadialMenuItem {
+  const checked = validateHarvest(
+    ctx.mission,
+    unit.id,
+    carcass.id,
+    ctx.deps.objectiveTuning,
+  );
+  const id = itemId("harvest", carcass.id);
+  return checked.ok
+    ? {
+        id,
+        label: "Harvest",
+        icon: "interact",
+        detail: `${String(carcass.techPoints)} tech`,
+      }
+    : closed(id, "Harvest", "interact", checked.error, ctx);
+}
+
+/** True when both coordinates name the same tile, level included. */
+function sameTile(a: TileCoord, b: TileCoord): boolean {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
 /** Board the drop ship — what Extract is to the player (#1112). */

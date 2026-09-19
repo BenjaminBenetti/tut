@@ -1,6 +1,6 @@
 # Mech roster and progression guide
 
-Approved by the user on 2026-09-18; implementation tracked in #1168. This is the guide for mech development and the future research tree. Research unlocks are a separate project: all implemented parts remain available for credits until then.
+Approved by the user on 2026-09-18; implementation tracked in #1168. This is the guide for mech development and the future research tree. Research landed in #1171: tier 1 parts are always purchasable, and every tier 2 and 3 part is gated behind one node of the tech tree (`src/tech/data/tech-tree.ts`, GDD §5.5.1), bought with tech points that missions pay.
 
 ## Design principles
 

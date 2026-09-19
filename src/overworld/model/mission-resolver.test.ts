@@ -19,7 +19,7 @@ const MISSION: Mission = {
     size: "medium",
     seed: "mission-4:map",
   },
-  rewards: { credits: 1500 },
+  rewards: { credits: 1500, techPoints: 0 },
   createdDay: 3,
   expiresDay: 8,
   ignorePenalty: 10,
@@ -83,6 +83,7 @@ class CoinFlipResolver implements MissionResolver {
       mechsDestroyed: [],
       mechDamage: [],
       creditsAwarded: won ? mission.rewards.credits : 0,
+      techPointsAwarded: 0,
       infestationDelta: won ? -mission.difficulty * 5 : 0,
     };
   }

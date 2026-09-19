@@ -108,6 +108,7 @@ const RESULT: MissionResult = {
     { mechId: "mech-2", damage: 35, kills: 1, xp: 10 },
   ],
   creditsAwarded: 900,
+  techPointsAwarded: 0,
   infestationDelta: -20,
 };
 
@@ -516,6 +517,33 @@ describe("MissionResultsScreen payout prominence", () => {
     }).mount(root);
     return root;
   }
+
+  it("lists the tech points beside the credits (#1171)", () => {
+    const panel = mountWith({ techPointsAwarded: 23 });
+    const line = panel.querySelector<HTMLElement>(
+      '[data-field="rewards"] [data-field="tech-points"]',
+    );
+    expect(line?.textContent).toBe("23 TP");
+    expect(line?.previousElementSibling?.textContent).toBe("Tech points");
+  });
+
+  it("says how much of the tech came off a carcass when any did", () => {
+    const panel = mountWith({ techPointsAwarded: 28, techPointsHarvested: 5 });
+    expect(panel.querySelector('[data-field="tech-points"]')?.textContent).toBe(
+      "28 TP (5 harvested from a carcass)",
+    );
+  });
+
+  it("names a harvest as lost with the squad on a lost mission", () => {
+    const panel = mountWith({
+      outcome: "lost",
+      techPointsAwarded: 0,
+      techPointsHarvested: 5,
+    });
+    expect(panel.querySelector('[data-field="tech-points"]')?.textContent).toBe(
+      "0 TP (5 harvested from a carcass, lost with the squad)",
+    );
+  });
 
   /** Index of a `data-field` block among the panel's children, in reading order. */
   function orderOf(container: HTMLElement, field: string): number {

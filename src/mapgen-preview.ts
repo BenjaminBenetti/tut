@@ -302,6 +302,9 @@ async function main(): Promise<void> {
           applyHeightCut: (level) => {
             view?.setMaxLevel(level);
           },
+          // The preview's mission is built from hooks alone (#339) and
+          // prices no carcass, so there is nothing to report.
+          carcasses: () => [],
         };
         // Always reaches a terminal state, which is the point (#688).
         // `data-app-state` says the page mounted and a frame drew; it

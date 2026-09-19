@@ -52,7 +52,7 @@ function setup(
       savedLoadouts: [STARTER_LOADOUT],
       graveyard: [],
     },
-    economy: { credits, ledger: [] },
+    economy: { credits, ledger: [], techPoints: 0 },
   };
   return {
     deps,

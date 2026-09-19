@@ -17,6 +17,8 @@ export const HookKinds = {
   EGG_SPAWNER: "egg-spawner",
   EDGE_SPAWN: "edge-spawn",
   EXTRACTION: "extraction",
+  /** A harvestable dead bug worth tech points (#1171); at most one a map. */
+  TECH_CARCASS: "tech-carcass",
 } as const;
 
 /** Scalar metadata a hook or requirement may carry, e.g. `hatchRadius`. */

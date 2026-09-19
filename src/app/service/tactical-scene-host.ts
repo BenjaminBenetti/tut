@@ -233,6 +233,14 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
         builder.setLayerFocus(undefined);
         builder.setMaxLevel(level);
       },
+      // The carcasses are the mission's, which the host holds and the
+      // input controller does not (#1171).
+      carcasses: () =>
+        (this.attached?.mission.carcasses ?? []).map((carcass) => ({
+          id: carcass.id,
+          pos: carcass.pos,
+          harvested: carcass.harvested,
+        })),
     });
     this.attached = {
       rig,
@@ -517,6 +525,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       );
       document.body.dataset.tacticalSpawners = String(
         attached.builder.spawnerIds().length,
+      );
+      document.body.dataset.tacticalCarcasses = String(
+        attached.builder.carcassIds().length,
       );
       document.body.dataset.tacticalEffects = String(
         attached.builder.effectIds().length,

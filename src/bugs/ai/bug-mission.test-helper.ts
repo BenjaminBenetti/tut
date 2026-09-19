@@ -72,7 +72,7 @@ export function campaignWithMission(
       size: "small",
       seed: mapSeed,
     },
-    rewards: { credits: 1500 },
+    rewards: { credits: 1500, techPoints: 0 },
     createdDay: 4,
     expiresDay: 9,
     ignorePenalty: 10,

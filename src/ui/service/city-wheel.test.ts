@@ -30,7 +30,7 @@ const mission = (id: string, cityId: string, expiresDay: number): Mission => ({
     size: "medium",
     seed: id,
   },
-  rewards: { credits: 1200 },
+  rewards: { credits: 1200, techPoints: 0 },
   createdDay: 1,
   expiresDay,
   ignorePenalty: 10,

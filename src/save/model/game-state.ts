@@ -4,6 +4,7 @@ import type { EconomyState } from "../../economy/model/economy-state";
 import type { OverworldState } from "../../overworld/model/overworld-state";
 import type { RosterState } from "../../roster/model/roster-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { TechState } from "../../tech/model/tech-state";
 
 /**
  * Schema version of `GameState`. Bump it whenever the shape changes and
@@ -48,8 +49,12 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `25`: every installation carries its `level` and every city whether
  *   the player has `detected` its infestation (#1155). Older installations
  *   are level 1; older cities are detected exactly when infested.
+ * - `26`: tech points and the tech tree (#1171): `economy.techPoints`, the
+ *   `tech` slice, `missions[].rewards.techPoints`,
+ *   `lastMissionResult.techPointsAwarded` and `activeMission.carcasses`.
+ *   Older saves have earned and unlocked nothing.
  */
-export const GAME_STATE_SCHEMA_VERSION = 25;
+export const GAME_STATE_SCHEMA_VERSION = 26;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.
@@ -73,7 +78,8 @@ export interface GameMeta {
  *   ├── meta            seed, rng, ids, createdAt
  *   ├── overworld       day, earth map, threat, missions, events, deployables
  *   ├── roster          squads, mechs, saved loadouts, graveyard
- *   ├── economy         credits, ledger
+ *   ├── economy         credits, ledger, tech points
+ *   ├── tech            unlocked tech nodes
  *   └── activeMission?  (M2) tactical state while a mission is live
  * ```
  *
@@ -88,8 +94,10 @@ export interface GameState {
   readonly overworld: OverworldState;
   /** Squads, mechs, saved loadouts and the graveyard (GDD §5.7, §5.8). */
   readonly roster: RosterState;
-  /** Credits and the transaction ledger (GDD §5.5). */
+  /** Credits, the transaction ledger and tech points (GDD §5.5). */
   readonly economy: EconomyState;
+  /** Which nodes of the tech tree are unlocked (GDD §5.5.1, #1171). */
+  readonly tech: TechState;
   /**
    * Tactical state while a mission is being played (M2); absent between
    * missions. Set by the tactical mission start and cleared when the

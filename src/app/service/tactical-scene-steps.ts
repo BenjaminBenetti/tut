@@ -9,6 +9,7 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { PlacedCharge } from "../../tactical/model/equipment";
+import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import { perceivedEffects } from "../../tactical/service/tile-effect-service";
@@ -16,6 +17,7 @@ import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import {
+  perceivedCarcasses,
   perceivedSpawners,
   perceivedUnits,
 } from "../../tactical/service/vision-service";
@@ -43,6 +45,8 @@ export interface PerceivedStage {
   update(units: readonly Unit[], templates: UnitTemplateLookup): Promise<void>;
   /** Places the egg spawners that should be on the board. */
   updateSpawners(spawners: readonly Spawner[]): Promise<void>;
+  /** Lays the tech carcasses that should be on the board (#1171). */
+  updateCarcasses(carcasses: readonly TechCarcass[]): Promise<void>;
   /** Draws the fires on ground this side knows (#1121). */
   updateEffects(effects: readonly TileEffect[]): void;
   /** Draws the breaching charges set and waiting (#1132). */
@@ -99,6 +103,7 @@ export interface PhasedQueue {
  *   then, together:
  *     update(perceivedUnits)               spotted enemies only
  *     updateSpawners(perceivedSpawners)    explored spawners only
+ *     updateCarcasses(perceivedCarcasses)  explored carcasses only (#1171)
  *     updateEffects(perceivedEffects)      fires on explored ground
  *     updateCharges(charges)               set breaching charges (#1132)
  * ```
@@ -131,6 +136,7 @@ export async function drawPerceived(
   await Promise.all([
     stage.update(perceivedUnits(mission, "tdf"), mission.templates),
     stage.updateSpawners(perceivedSpawners(mission, "tdf")),
+    stage.updateCarcasses(perceivedCarcasses(mission, "tdf")),
     stage.updateRadar(
       mission.radars.filter((radar) => radar.team === "tdf"),
       radarContacts(mission, "tdf"),

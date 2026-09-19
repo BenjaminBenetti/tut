@@ -28,7 +28,7 @@ const MISSION: Mission = {
     size: "small",
     seed: "1",
   },
-  rewards: { credits: 1200 },
+  rewards: { credits: 1200, techPoints: 0 },
   createdDay: 1,
   expiresDay: 6,
   ignorePenalty: 10,

@@ -123,6 +123,17 @@ export type TacticalError =
       readonly range: number;
     }
   | { readonly kind: "no-objective-in-reach"; readonly unitId: string }
+  // Stripping a tech carcass (#1171): only an infantry squad can, only
+  // once, and only from beside it.
+  | { readonly kind: "not-a-squad"; readonly unitId: string }
+  | { readonly kind: "unknown-carcass"; readonly carcassId: string }
+  | { readonly kind: "carcass-already-harvested"; readonly carcassId: string }
+  | {
+      readonly kind: "carcass-out-of-reach";
+      readonly carcassId: string;
+      readonly distance: number;
+      readonly range: number;
+    }
   | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
   | { readonly kind: "not-extractable"; readonly unitId: string }
   | { readonly kind: "mission-not-over"; readonly missionId: string }
@@ -244,6 +255,14 @@ export function describeTacticalError(error: TacticalError): string {
       return `Objective is ${String(error.distance)} tiles away; charges reach ${String(error.range)}`;
     case "no-objective-in-reach":
       return `Unit "${error.unitId}" has no objective within reach`;
+    case "not-a-squad":
+      return `Unit "${error.unitId}" is not an infantry squad; only a squad can harvest`;
+    case "unknown-carcass":
+      return `No tech carcass "${error.carcassId}" is in this mission`;
+    case "carcass-already-harvested":
+      return `Tech carcass "${error.carcassId}" has already been stripped`;
+    case "carcass-out-of-reach":
+      return `Tech carcass is ${String(error.distance)} tiles away; harvesting reaches ${String(error.range)}`;
     case "not-in-extraction-zone":
       return `Unit "${error.unitId}" is not standing in the extraction zone`;
     case "not-extractable":
@@ -327,6 +346,10 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "objective-target-missing": true,
   "objective-out-of-reach": true,
   "no-objective-in-reach": true,
+  "not-a-squad": true,
+  "unknown-carcass": true,
+  "carcass-already-harvested": true,
+  "carcass-out-of-reach": true,
   "not-in-extraction-zone": true,
   "not-extractable": true,
   "mission-not-over": true,

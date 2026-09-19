@@ -142,7 +142,7 @@ function startedMission(seed: number, mapSeed: string): TacticalState {
       size: "small",
       seed: mapSeed,
     },
-    rewards: { credits: 300 },
+    rewards: { credits: 300, techPoints: 0 },
     createdDay: 1,
     expiresDay: 6,
     ignorePenalty: 10,

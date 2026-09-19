@@ -59,6 +59,7 @@ export interface MissionHookRequirement {
  *   │ id: "infestation-clearance"│◄──────│ typeId                    │
  *   │ difficultyBand 1..10       │       │ difficulty (within band)  │
  *   │ rewardPerDifficulty        │──────►│ rewards.credits           │
+ *   │ techRewardBase/PerDifficulty──────►│ rewards.techPoints        │
  *   │ expiryDays                 │──────►│ expiresDay                │
  *   │ ignorePenalty              │──────►│ ignorePenalty             │
  *   └────────────────────────────┘       └───────────────────────────┘
@@ -75,6 +76,10 @@ export interface MissionType {
   readonly difficultyBand: DifficultyBand;
   /** Credits awarded per point of difficulty on success. */
   readonly rewardPerDifficulty: number;
+  /** Tech points every success pays regardless of difficulty (#1171). */
+  readonly techRewardBase: number;
+  /** Tech points added per point of difficulty on success (#1171). */
+  readonly techRewardPerDifficulty: number;
   /** Base days a generated mission stays available before it expires. */
   readonly expiryDays: number;
   /** Infestation added to the host city when the mission expires unplayed. */

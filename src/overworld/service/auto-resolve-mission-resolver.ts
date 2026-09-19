@@ -18,7 +18,11 @@ import {
   deployedMechs,
   deployedSquads,
 } from "./force-rating-service";
-import { creditsFor, infestationDeltaFor } from "./mission-reward-service";
+import {
+  creditsFor,
+  infestationDeltaFor,
+  techPointsFor,
+} from "./mission-reward-service";
 
 // ===========================================
 // Dependencies
@@ -160,6 +164,7 @@ export class AutoResolveMissionResolver implements MissionResolver {
       mechsDestroyed,
       mechDamage,
       creditsAwarded: creditsFor(outcome, mission, tuning),
+      techPointsAwarded: techPointsFor(outcome, mission, tuning),
       infestationDelta: infestationDeltaFor(outcome, mission, tuning),
     };
   }

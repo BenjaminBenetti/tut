@@ -132,6 +132,8 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   [HookKinds.EGG_SPAWNER]: 0x9cff3d,
   [HookKinds.EDGE_SPAWN]: 0xe0453c,
   [HookKinds.EXTRACTION]: 0x7fd1ff,
+  // A dead thing worth something: bone against the spawner's live green (#1171).
+  [HookKinds.TECH_CARCASS]: 0xd9c9a3,
 };
 
 /** Warning yellow for hook kinds the palette does not know. */

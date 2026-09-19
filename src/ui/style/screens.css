@@ -370,7 +370,7 @@
  */
 .tut-list > li.tut-missions__row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 1.1rem 3ch 7ch 4ch;
+  grid-template-columns: minmax(0, 1fr) 1.1rem 3ch 7ch 6ch 4ch;
   align-items: center;
   gap: var(--space-2);
   cursor: pointer;
@@ -389,6 +389,12 @@
 .tut-missions__row:focus-visible {
   outline: 2px solid var(--ui-accent);
   outline-offset: -2px;
+}
+
+/* A reported carcass takes a second line under the whole row (#1171). */
+.tut-missions__row .tut-missions__carcass {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 .tut-mission-details [data-field="description"] {
@@ -499,6 +505,19 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+.tut-mech-bay__part-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+/* A part the tree has not unlocked (#1171): dimmed, and its lock says why. */
+.tut-list > li.tut-mech-bay__part[data-locked="true"] .tut-mech-bay__part-body,
+.tut-list > li.tut-mech-bay__part[data-locked="true"] .tut-mech-bay__thumb {
+  opacity: 0.6;
+}
+.tut-mech-bay__lock {
+  color: var(--ui-warn);
 }
 .tut-mech-bay__part-name {
   font-family: var(--font-mono);
@@ -984,9 +1003,10 @@
  * Buttons and badges never break inside their boxes (#291). The bar's
  * status line is the one flexible item: it truncates with an ellipsis
  * rather than pushing the buttons onto a second line. Below 1024 px the
- * stat labels go and the gaps tighten so day, credits, threat, the
- * outcome badge and three buttons fit in 800 px, the narrowest window
- * the overworld supports.
+ * stat labels go and the gaps tighten so day, credits, tech, threat, the
+ * outcome badge and four buttons fit in 800 px, the narrowest window
+ * the overworld supports: the bar's own gap drops to 4 px and only
+ * neighbouring stats keep 8 px between them (#1171).
  */
 
 .tut-btn,
@@ -1013,8 +1033,12 @@
 
 @media (max-width: 1023px) {
   .tut-topbar {
-    gap: var(--space-2);
+    gap: var(--space-1);
     padding: 0 var(--space-2);
+  }
+
+  .tut-topbar__stat + .tut-topbar__stat {
+    margin-left: var(--space-1);
   }
 
   .tut-topbar__stat .tut-label {
@@ -1777,4 +1801,185 @@
 }
 .tut-radar-key {
   color: var(--ui-danger);
+}
+
+/* ===========================================
+   Tech tree screen (#1171)
+   =========================================== */
+/*
+ * The tree is a web drawn in three under the bar: the stage holds the
+ * canvas, a label layer floats over it and the detail panel sits on
+ * the right. Labels are positioned by the graph host every frame the
+ * camera moves; they never take pointer events themselves, so a wheel
+ * or a drag over one still reaches the canvas, and only the label
+ * buttons opt back in.
+ *
+ *   ┌ #tech-tree-bar ─────────────────────────────────────────────┐
+ *   ├ stage (canvas + labels) ───────────────┬ #tech-tree-detail ─┤
+ *   │                                        │                    │
+ *   └────────────────────────────────────────┴────────────────────┘
+ */
+#ui > .tut-tech-tree {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ui-bg, #0b0e12);
+}
+.tut-tech-tree__bar {
+  grid-row: 1;
+}
+.tut-tech-tree__body {
+  grid-row: 2;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+/* `clip`, not `hidden`: a hidden overflow is still a scroll container,
+   and anything that scrolls a label into view would drag every label
+   off its pedestal while the canvas beside them stayed put. */
+.tut-tech-tree__stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+}
+.tut-tech-tree__stage > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.tut-tech-tree__labels {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+.tut-tech-tree__family {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 2px var(--space-2);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ui-info);
+  background: color-mix(in srgb, var(--ui-bg) 70%, transparent);
+  border: var(--line) solid var(--ui-line);
+  white-space: nowrap;
+  transform-origin: 50% 0;
+  transform: translate(-50%, 0) translate(-1000px, -1000px);
+}
+.tut-tech-tree__node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border: var(--line) solid var(--ui-line);
+  background: color-mix(in srgb, var(--ui-panel) 85%, transparent);
+  color: var(--ui-text);
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  white-space: nowrap;
+  transform-origin: 50% 0;
+  transform: translate(-50%, 0) translate(-1000px, -1000px);
+}
+.tut-tech-tree__node:hover {
+  border-color: var(--ui-text-dim);
+}
+.tut-tech-tree__node[data-selected="true"] {
+  border-color: var(--ui-info);
+  box-shadow: 0 0 0 1px var(--ui-info);
+}
+.tut-tech-tree__node[data-status="unlocked"] {
+  border-left: 3px solid var(--ui-ok);
+}
+.tut-tech-tree__node[data-status="available"] {
+  border-left: 3px solid var(--ui-accent);
+}
+.tut-tech-tree__node[data-status="locked"] {
+  color: var(--ui-text-dim);
+}
+.tut-tech-tree__node-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.tut-tech-tree__node-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 10px;
+}
+.tut-tech-tree__node-line .tut-badge {
+  font-size: 9px;
+  padding: 0 var(--space-1);
+}
+.tut-tech-tree__hint {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  pointer-events: none;
+}
+.tut-tech-tree__detail {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3);
+  border-left: var(--line) solid var(--ui-line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tut-tech-tree__empty,
+.tut-tech-tree__detail-note {
+  margin: 0;
+  font-size: 12px;
+}
+.tut-tech-tree__detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tut-tech-tree__detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.tut-tech-tree__detail-name {
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+.tut-tech-tree__detail .tut-badge {
+  align-self: flex-start;
+}
+.tut-tech-tree__unlocks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ui-info);
+}
+.tut-tech-tree__reason {
+  margin: 0;
+  font-size: 11px;
+}
+.tut-tech-tree__detail .tut-btn {
+  justify-content: center;
+}
+@media (max-width: 1023px) {
+  .tut-tech-tree__body {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
 }

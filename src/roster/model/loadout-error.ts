@@ -13,6 +13,7 @@ export const LOADOUT_ERROR_CODES = [
   "overweight",
   "over-power-budget",
   "too-many-utilities",
+  "part-locked",
 ] as const;
 
 /**
@@ -26,6 +27,7 @@ export const LOADOUT_ERROR_CODES = [
  * | `overweight`         | fitted parts weigh more than the chassis can bear    |
  * | `over-power-budget`  | fitted parts draw more power than is supplied        |
  * | `too-many-utilities` | more utilities than the chassis has slots for        |
+ * | `part-locked`        | the part exists but the tech tree has not unlocked it |
  */
 export type LoadoutErrorCode = (typeof LOADOUT_ERROR_CODES)[number];
 

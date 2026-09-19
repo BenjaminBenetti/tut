@@ -6,6 +6,7 @@ describe("EconomyState", () => {
   it("round-trips through JSON with a populated ledger", () => {
     const state: EconomyState = {
       credits: 4700,
+      techPoints: 0,
       ledger: [
         { id: "txn-1", day: 1, amount: 500, kind: "stipend", ref: "earth" },
         { id: "txn-2", day: 1, amount: -800, kind: "purchase", ref: "squad-3" },
@@ -21,6 +22,7 @@ describe("EconomyState", () => {
     const startingCredits = 5000;
     const state: EconomyState = {
       credits: 4700,
+      techPoints: 0,
       ledger: [
         { id: "txn-1", day: 1, amount: 500, kind: "stipend", ref: "earth" },
         { id: "txn-2", day: 1, amount: -800, kind: "purchase", ref: "squad-3" },

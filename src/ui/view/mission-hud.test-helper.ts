@@ -131,6 +131,7 @@ export function hudMission(
     log: [],
     radars: [],
     charges: [],
+    carcasses: [],
     commandSeq: 0,
     ...overrides,
   };

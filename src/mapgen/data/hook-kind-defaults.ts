@@ -35,4 +35,12 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
     },
     [HookKinds.EDGE_SPAWN]: { requiredPass: Pass.INFANTRY },
     [HookKinds.EXTRACTION]: { requiredPass: Pass.ALL },
+    [HookKinds.TECH_CARCASS]: {
+      requiredPass: Pass.INFANTRY,
+      // A detour, not a march: far enough that stripping it costs a turn
+      // or two of the route, near enough that a squad can get there and
+      // still make the drop ship (#1171).
+      minDistanceFromDeploy: 8,
+      maxNearestDistanceFromDeploy: 30,
+    },
   };

@@ -6,6 +6,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
+import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import type { Unit, UnitId } from "../../tactical/model/unit";
@@ -37,6 +38,7 @@ class StageRecorder {
   vision: SideVision | undefined;
   units: readonly Unit[] = [];
   spawners: readonly Spawner[] = [];
+  carcasses: readonly TechCarcass[] = [];
   effects: readonly TileEffect[] = [];
 
   /** Records the map handed to the scene (#1121). */
@@ -81,6 +83,13 @@ class StageRecorder {
   updateSpawners(spawners: readonly Spawner[]): Promise<void> {
     this.calls.push("updateSpawners");
     this.spawners = spawners;
+    return Promise.resolve();
+  }
+
+  /** Records the carcasses the scene was asked to draw (#1171). */
+  updateCarcasses(carcasses: readonly TechCarcass[]): Promise<void> {
+    this.calls.push("updateCarcasses");
+    this.carcasses = carcasses;
     return Promise.resolve();
   }
 }
@@ -195,8 +204,43 @@ describe("drawPerceived", () => {
       "updateCharges",
       "update",
       "updateSpawners",
+      "updateCarcasses",
       "updateRadar",
     ]);
+  });
+
+  it("draws only the carcasses on ground the player has explored (#1171)", async () => {
+    const base = missionWith(
+      MAP,
+      [unitAt("s1", "infantry", { x: 0, y: 0, z: 0 })],
+      {
+        carcasses: [
+          {
+            id: "near",
+            pos: { x: 1, y: 0, z: 1 },
+            techPoints: 5,
+            harvested: false,
+          },
+          {
+            id: "dark",
+            pos: { x: 7, y: 0, z: 7 },
+            techPoints: 5,
+            harvested: false,
+          },
+        ],
+      },
+    );
+    // Nobody has looked yet: an empty explored set hides both.
+    const stage = new StageRecorder();
+    await drawPerceived(stage, base);
+    expect(stage.carcasses).toEqual([]);
+    // A real look from (0,0) on an open field lights the near one and
+    // leaves the far corner dark.
+    const seen = withVision({ state: base, events: [] }).state;
+    const lit = new StageRecorder();
+    await drawPerceived(lit, seen);
+    expect(lit.carcasses.map((c) => c.id)).toContain("near");
+    expect(lit.carcasses.map((c) => c.id)).not.toContain("dark");
   });
 });
 

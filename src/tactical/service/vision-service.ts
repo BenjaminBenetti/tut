@@ -11,6 +11,7 @@ import type {
   VisionTileKey,
 } from "../model/tactical-state";
 import { NO_VISION, TEAMS_BY_VISION } from "../model/tactical-state";
+import type { TechCarcass } from "../model/tech-carcass";
 import type { Team, Unit, UnitId } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
@@ -392,6 +393,22 @@ export function perceivedSpawners(
   const explored = new Set(mission.vision[team]?.explored ?? []);
   return mission.spawners.filter((spawner) =>
     explored.has(index.keyOf(spawner.pos)),
+  );
+}
+
+/**
+ * The tech carcasses on ground `team` has explored (#1171), the way
+ * `perceivedSpawners` answers for spawners: a carcass lies still, so
+ * once seen it stays known.
+ */
+export function perceivedCarcasses(
+  mission: TacticalState,
+  team: Team,
+  index: TileIndex = new TileIndex(mission.map),
+): readonly TechCarcass[] {
+  const explored = new Set(mission.vision[team]?.explored ?? []);
+  return mission.carcasses.filter((carcass) =>
+    explored.has(index.keyOf(carcass.pos)),
   );
 }
 

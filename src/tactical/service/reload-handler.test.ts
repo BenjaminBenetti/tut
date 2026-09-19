@@ -73,6 +73,7 @@ function mission(
     seed: 1,
     map: new FixtureMapBuilder(4, 4, 1).fillGround().build(),
     effects: [],
+    carcasses: [],
     units,
     templates: TEMPLATES,
     difficulty: 1,

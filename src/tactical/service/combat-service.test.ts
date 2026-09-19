@@ -155,6 +155,7 @@ function mission(
     seed: 1,
     map: fixtureMap(),
     effects: [],
+    carcasses: [],
     units,
     templates: TEMPLATES,
     difficulty: 1,

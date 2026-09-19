@@ -30,6 +30,7 @@ import { createNewGame } from "../../save/service/new-game-service";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
+import { CARCASS_HARVESTED } from "../model/carcass-harvested-event";
 import { MISSION_ENDED } from "../model/mission-ended-event";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import type { Objective } from "../model/tactical-state";
@@ -277,6 +278,70 @@ describe("tacticalMissionResult", () => {
         TUNING.clearancePerDifficulty * 3
       ),
     });
+  });
+
+  it("tallies harvested tech points off the log: kept on a win or an extraction, gone on a loss (#1171)", () => {
+    const priced: Mission = {
+      ...mission(3),
+      rewards: { credits: 1000, techPoints: 20 },
+    };
+    const harvestLog = [
+      {
+        type: CARCASS_HARVESTED,
+        payload: { unitId: "unit-1", carcassId: "carcass-1", techPoints: 12 },
+      },
+      {
+        type: CARCASS_HARVESTED,
+        payload: { unitId: "unit-1", carcassId: "carcass-2", techPoints: 5 },
+      },
+    ] as const;
+    const resolve = (
+      outcome: "won" | "extracted" | "lost",
+      log: readonly TacticalState["log"][number][],
+    ) =>
+      tacticalMissionResult(
+        {
+          tactical: missionWith(
+            MAP,
+            outcome === "lost"
+              ? [squadUnit("unit-1", "squad-1", 0), bugUnit("unit-2")]
+              : [bugUnit("unit-2")],
+            {
+              objectives: outcome === "won" ? DONE : OPEN,
+              extracted:
+                outcome === "lost"
+                  ? []
+                  : [squadUnit("unit-1", "squad-1", SQUAD_HP)],
+              outcome,
+              log,
+            },
+          ),
+          mission: priced,
+          deployment: deployment(["squad-1"]),
+          state: resolutionState([squad("squad-1")]),
+        },
+        DEPS,
+      );
+
+    const won = resolve("won", harvestLog);
+    expect(won.techPointsAwarded).toBe(20 + 17);
+    expect(won.techPointsHarvested).toBe(17);
+
+    const extracted = resolve("extracted", harvestLog);
+    expect(extracted.techPointsAwarded).toBe(
+      Math.floor(20 * TUNING.extractedRewardFraction) + 17,
+    );
+    expect(extracted.techPointsHarvested).toBe(17);
+
+    const lost = resolve("lost", harvestLog);
+    expect(lost.techPointsAwarded).toBe(0);
+    // Still reported: the debrief can say what was stripped and lost.
+    expect(lost.techPointsHarvested).toBe(17);
+
+    // Nothing harvested: the field is absent, as it was before #1171.
+    const quiet = resolve("won", []);
+    expect(quiet.techPointsAwarded).toBe(20);
+    expect(quiet).not.toHaveProperty("techPointsHarvested");
   });
 
   it("extracts with partial losses: a quarter of the credits, no infestation change", () => {

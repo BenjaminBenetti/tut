@@ -28,6 +28,7 @@ import { UNIT_PLACED } from "../../tactical/model/unit-placed-event";
 import { RELOAD } from "../../tactical/model/reload-command";
 import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
 import { EXTRACT, extract } from "../../tactical/model/extract-command";
+import { HARVEST_CARCASS } from "../../tactical/model/harvest-carcass-command";
 import { INTERACT } from "../../tactical/model/interact-command";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
@@ -147,6 +148,7 @@ describe("composeTactical", () => {
       RELOAD,
       USE_EQUIPMENT,
       INTERACT,
+      HARVEST_CARCASS,
       EXTRACT,
       ABANDON_MISSION,
       // The development tools' placement is registered in every build

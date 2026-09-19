@@ -31,6 +31,7 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { EXTRACT } from "../../tactical/model/extract-command";
+import { HARVEST_CARCASS } from "../../tactical/model/harvest-carcass-command";
 import { INTERACT } from "../../tactical/model/interact-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
@@ -58,6 +59,7 @@ import {
   createInteractHandler,
 } from "../../tactical/service/objective-service";
 import { createAbandonMissionHandler } from "../../tactical/service/abandon-mission-handler";
+import { createHarvestHandler } from "../../tactical/service/harvest-service";
 import type {
   DebugMechSource,
   PlaceUnitDeps,
@@ -295,6 +297,7 @@ export function shippedTacticalHandlers(
     [RELOAD]: reloadHandler,
     [USE_EQUIPMENT]: createUseEquipmentHandler(equipment),
     [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
+    [HARVEST_CARCASS]: createHarvestHandler(OBJECTIVE_TUNING),
     [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
     [ABANDON_MISSION]: createAbandonMissionHandler(),
     [PLACE_UNIT]: createPlaceUnitHandler(placement),

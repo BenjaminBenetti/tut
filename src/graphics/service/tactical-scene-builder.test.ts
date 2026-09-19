@@ -26,7 +26,9 @@ import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import { LAYER_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
+import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import {
+  CARCASS_MODEL_ID,
   SPAWNER_MODEL_ID,
   TacticalSceneBuilder,
 } from "./tactical-scene-builder";
@@ -389,6 +391,60 @@ describe("TacticalSceneBuilder", () => {
     builder.dispose();
     expect(parent.children).toHaveLength(0);
     expect(builder.unitIds()).toEqual([]);
+  });
+});
+
+// ===========================================
+// Tech carcasses (#1171)
+// ===========================================
+
+describe("TacticalSceneBuilder carcasses", () => {
+  /** A carcass lying at the tile, or one already stripped. */
+  function carcass(
+    id: string,
+    x: number,
+    z: number,
+    harvested = false,
+  ): TechCarcass {
+    return { id, pos: { x, y: 0, z }, techPoints: 10, harvested };
+  }
+
+  it("draws one model per unharvested carcass and loads the carcass model", async () => {
+    const { builder, models } = build();
+    await builder.updateCarcasses([carcass("c1", 1, 1), carcass("c2", 4, 4)]);
+    expect(builder.carcassIds()).toEqual(["c1", "c2"]);
+    expect(models.loads).toEqual([CARCASS_MODEL_ID, CARCASS_MODEL_ID]);
+    expect(builder.carcassWorldPosition("c1")).toBeDefined();
+  });
+
+  it("never draws a harvested carcass, and removes one stripped later", async () => {
+    const { builder } = build();
+    await builder.updateCarcasses([
+      carcass("c1", 1, 1),
+      carcass("c2", 4, 4, true),
+    ]);
+    expect(builder.carcassIds()).toEqual(["c1"]);
+    await builder.updateCarcasses([carcass("c1", 1, 1, true)]);
+    expect(builder.carcassIds()).toEqual([]);
+    expect(builder.carcassWorldPosition("c1")).toBeUndefined();
+  });
+
+  it("lays it on its own tile, where the tile picker still finds the tile", async () => {
+    const { builder } = build();
+    await builder.updateCarcasses([carcass("c1", 2, 3)]);
+    const at = builder.carcassWorldPosition("c1");
+    const tile = builder.tileWorldPosition({ x: 2, y: 0, z: 3 });
+    expect(at).toBeDefined();
+    expect(tile).toBeDefined();
+    expect(at?.x).toBeCloseTo(tile?.x ?? -1);
+    expect(at?.z).toBeCloseTo(tile?.z ?? -1);
+  });
+
+  it("dispose takes the carcasses down with everything else", async () => {
+    const { builder } = build();
+    await builder.updateCarcasses([carcass("c1", 1, 1)]);
+    builder.dispose();
+    expect(builder.carcassIds()).toEqual([]);
   });
 });
 

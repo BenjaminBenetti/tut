@@ -11,7 +11,11 @@ import type { GameState } from "../../save/model/game-state";
 import type { IconId } from "../data/icon-manifest";
 import { iconUrl } from "../data/icon-manifest";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
-import { formatCredits, formatWhole } from "../service/format";
+import {
+  formatCredits,
+  formatTechPoints,
+  formatWhole,
+} from "../service/format";
 
 // ===========================================
 // Types
@@ -230,7 +234,14 @@ export class MissionListView {
     row.dataset.cityId = mission.cityId;
     row.dataset.action = "select-mission";
     row.tabIndex = 0;
-    for (const field of ["city", "type", "difficulty", "reward", "days-left"]) {
+    for (const field of [
+      "city",
+      "type",
+      "difficulty",
+      "reward",
+      "tech",
+      "days-left",
+    ]) {
       const cell = doc.createElement("span");
       cell.dataset.field = field;
       cell.className =
@@ -241,6 +252,14 @@ export class MissionListView {
             : "tut-data";
       row.appendChild(cell);
     }
+    // A carcass on the map is worth advertising (#1171): a second line
+    // under the row, shown only when the offer reports one.
+    const carcass = doc.createElement("span");
+    carcass.className = "tut-badge tut-badge--info tut-missions__carcass";
+    carcass.dataset.field = "carcass";
+    carcass.title = "Tech carcass reported";
+    carcass.hidden = true;
+    row.appendChild(carcass);
     return row;
   }
 
@@ -259,10 +278,22 @@ export class MissionListView {
       city: city?.name ?? mission.cityId,
       difficulty: `D${formatWhole(mission.difficulty)}`,
       reward: formatCredits(mission.rewards.credits),
+      tech: `+${formatTechPoints(mission.rewards.techPoints)}`,
       "days-left": `${formatWhole(mission.expiresDay - day)} d`,
     };
+    const carcass = mission.mapParams.techCarcass;
     for (const cell of row.querySelectorAll<HTMLElement>("[data-field]")) {
       const field = cell.dataset.field ?? "";
+      if (field === "carcass") {
+        const text = carcass
+          ? `Tech carcass reported · +${formatTechPoints(carcass.techPoints)}`
+          : "";
+        if (cell.textContent !== text) {
+          cell.textContent = text;
+        }
+        cell.hidden = carcass === undefined;
+        continue;
+      }
       if (field === "type") {
         // The glyph carries it; the name stays in the tooltip, so the
         // information is still there for anyone who wants it.

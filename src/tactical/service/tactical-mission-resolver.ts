@@ -18,11 +18,13 @@ import type { MissionRewardTuning } from "../../overworld/service/mission-reward
 import {
   creditsFor,
   infestationDeltaFor,
+  techPointsFor,
 } from "../../overworld/service/mission-reward-service";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type { TacticalError } from "../model/tactical-error";
 import type { TacticalState } from "../model/tactical-state";
+import { CARCASS_HARVESTED } from "../model/carcass-harvested-event";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId, UnitKind } from "../model/unit";
@@ -103,6 +105,8 @@ export interface TacticalResolveDeps {
  *   log UnitDied { killerId } ──► kills credited to the killer's squad or mech,
  *                                 each worth its template's xpValue (#1130)
  *   outcome ──► creditsFor / infestationDeltaFor, the auto-resolver's scale
+ *   log CarcassHarvested { techPoints } ──► summed into techPointsFor as
+ *                                 harvested; techPointsHarvested says so (#1171)
  * ```
  *
  * A unit that extracted is read exactly as it walked off the map, so a
@@ -171,6 +175,7 @@ export function tacticalMissionResult(
     }
   }
 
+  const harvested = techPointsHarvested(tactical);
   return {
     missionId: mission.id,
     cityId: mission.cityId,
@@ -180,9 +185,28 @@ export function tacticalMissionResult(
     mechsDestroyed,
     mechDamage,
     creditsAwarded: creditsFor(outcome, mission, deps.tuning),
+    techPointsAwarded: techPointsFor(outcome, mission, deps.tuning, harvested),
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
     ...leftBehindField(tactical, roster),
+    ...(harvested > 0 ? { techPointsHarvested: harvested } : {}),
   };
+}
+
+/**
+ * Whole tech points the squads stripped from carcasses this mission
+ * (#1171), summed off the log's `CarcassHarvested` events. Read from the
+ * log rather than the carcass records so a mission whose carcass was
+ * harvested and then lost still tallies what was stripped, and
+ * `techPointsFor` alone decides whether the outcome keeps it.
+ */
+function techPointsHarvested(tactical: TacticalState): number {
+  let harvested = 0;
+  for (const event of tactical.log) {
+    if (event.type === CARCASS_HARVESTED) {
+      harvested += Math.max(0, event.payload.techPoints);
+    }
+  }
+  return harvested;
 }
 
 /**

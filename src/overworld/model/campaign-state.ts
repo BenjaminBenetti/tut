@@ -2,6 +2,7 @@ import type { IdGeneratorState } from "../../core/model/id-generator";
 import type { RngState } from "../../core/model/rng";
 import type { EconomyState } from "../../economy/model/economy-state";
 import type { RosterState } from "../../roster/model/roster-state";
+import type { TechState } from "../../tech/model/tech-state";
 import type { OverworldState } from "./overworld-state";
 
 // ===========================================
@@ -29,7 +30,8 @@ export interface CampaignMeta {
  * ```
  *   save/GameState ──satisfies──► overworld/CampaignState
  *   { meta, overworld, roster,     { meta: { rng, ids },
- *     economy, activeMission? }      overworld, roster, economy }
+ *     economy, tech,                 overworld, roster, economy, tech }
+ *     activeMission? }
  * ```
  */
 export interface CampaignState {
@@ -37,4 +39,6 @@ export interface CampaignState {
   readonly overworld: OverworldState;
   readonly roster: RosterState;
   readonly economy: EconomyState;
+  /** Which tech nodes are unlocked (#1171). */
+  readonly tech: TechState;
 }

@@ -1561,6 +1561,14 @@ export const MODEL_MANIFEST = {
     sockets: ["socket_hatch"],
     quality: "final",
   },
+  "bug.tech-carcass": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-tech-carcass.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.8,
+    sockets: [],
+    quality: "final",
+  },
   "prop.barrier-concrete": {
     category: "props",
     path: "assets/models/props/barrier-concrete.glb",

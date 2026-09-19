@@ -13,6 +13,7 @@ import type {
   PartStats,
 } from "../model/mech-part";
 import type { MechRatingTuning } from "../model/mech-rating-tuning";
+import type { PartAvailability } from "../model/part-availability";
 import { StaticPartCatalogue } from "../repository/static-part-catalogue";
 import {
   computeCombatRating,
@@ -348,6 +349,51 @@ describe("validateLoadout capacity errors", () => {
 // ===========================================
 // Combat rating
 // ===========================================
+
+// ===========================================
+// Availability
+// ===========================================
+
+describe("validateLoadout availability (#1171)", () => {
+  const LOCKED_GUN: PartAvailability = {
+    isAvailable: (id) => id !== "gun",
+  };
+
+  it("reports part-locked for each fitted part the tech tree refuses, once", () => {
+    const result = validateLoadout(
+      { ...VALID, utilityIds: ["chip", "chip"] },
+      CATALOGUE,
+      TUNING,
+      UPGRADE_TUNING,
+      { isAvailable: (id) => id !== "gun" && id !== "chip" },
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual([
+      expect.objectContaining({ code: "part-locked", slot: "arm-weapon" }),
+      expect.objectContaining({ code: "part-locked", slot: "utility" }),
+    ]);
+    expect(result.error[0]?.detail).toContain("gun");
+  });
+
+  it("still sums the sheet so the bay can price a locked build", () => {
+    const { sheet, errors } = describeLoadout(
+      VALID,
+      CATALOGUE,
+      TUNING,
+      UPGRADE_TUNING,
+      LOCKED_GUN,
+    );
+    expect(errors.map((e) => e.code)).toEqual(["part-locked"]);
+    expect(sheet?.totalCost).toBe(1650);
+  });
+
+  it("defaults to everything available", () => {
+    expect(validateLoadout(VALID, CATALOGUE, TUNING, UPGRADE_TUNING).ok).toBe(
+      true,
+    );
+  });
+});
 
 describe("computeCombatRating", () => {
   it("weights each stat by the tuning", () => {

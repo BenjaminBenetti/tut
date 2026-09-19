@@ -15,6 +15,9 @@ import type { MissionTuning } from "../model/mission-tuning";
  *   (30 %): a fresh foothold at low threat is a skirmish, an overrun city
  *   late in the campaign a last stand.
  * - Maps grow with difficulty: small up to 3, medium from 4, large from 8.
+ * - About a third of missions carry a tech carcass worth 10 + 2 × difficulty
+ *   tech points (#1171), roughly a quarter of the campaign's tech income
+ *   when every one is harvested.
  */
 export const MISSION_TUNING: MissionTuning = {
   rules: {
@@ -27,5 +30,10 @@ export const MISSION_TUNING: MissionTuning = {
       mediumFromDifficulty: 4,
       largeFromDifficulty: 8,
     },
+  },
+  techCarcass: {
+    chance: 0.35,
+    basePoints: 10,
+    pointsPerDifficulty: 2,
   },
 };

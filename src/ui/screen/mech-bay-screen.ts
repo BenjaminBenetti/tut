@@ -10,6 +10,8 @@ import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { MechPart } from "../../roster/model/mech-part";
 import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type { PartAvailability } from "../../roster/model/part-availability";
+import { ALL_PARTS_AVAILABLE } from "../../roster/model/part-availability";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import {
@@ -19,6 +21,8 @@ import {
 import type { LoadoutDescription } from "../../roster/service/loadout-validation-service";
 import { describeLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
+import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import { createPartAvailability } from "../../tech/service/part-availability-service";
 import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import type { GameSession } from "../model/game-session";
 import type { MechPreviewHost } from "../model/mech-preview-host";
@@ -42,6 +46,8 @@ export interface MechBayScreenDeps {
   readonly session: GameSession;
   /** The parts the palette offers and the validator resolves against. */
   readonly parts: PartCatalogue;
+  /** The tree that decides which parts above tier 1 are purchasable (#1171). */
+  readonly tech: TechCatalogue;
   /** Combat-rating weights for the sheet. */
   readonly rating: MechRatingTuning;
   /**
@@ -81,7 +87,7 @@ const DEFAULT_MECH_NAME = "Mech";
  * header's status line.
  *
  * ```
- *   ┌ #mech-bay-bar  MECH BAY  ¢5,000 ── status ── [mech name][Build ¢2,850] [Roster] ┐
+ *   ┌ #mech-bay-bar  MECH BAY  ¢5,000 ── status ── [mech name][Build ¢2,850] [Tech tree] [Roster] ┐
  *   ├──────────────┬────────────────────────────────────┬─────────────────────────────┤
  *   │ #part-palette│ #mech-stage                        │ #stat-sheet                 │
  *   │ search       │        ┌ BACK WEAPON ┐             │ Combat  HP 70  +6           │
@@ -95,7 +101,8 @@ const DEFAULT_MECH_NAME = "Mech";
  *
  *   palette.onHover(part)  ──► fitPart(draft, part) ──► describeLoadout ──► sheet.preview(deltas)
  *   palette drag ──► stage drop ──► fitPart(draft, part, slot) ──► validate(draft')
- *   validate(draft) ──► describeLoadout ──► sheet, stage badges, preview host, Build button
+ *   validate(draft) ──► describeLoadout(availability) ──► sheet, stage badges, preview host, Build button
+ *   store.subscribe ──► createPartAvailability(tech, parts, state.tech) ──► palette locks, re-validate
  *   [Save]  ──► store.dispatch(saveLoadout(draft))
  *   [Build] ──► store.dispatch(saveLoadout(draft)) then store.dispatch(buildMech(draft.name, mechName))
  *   store.subscribe ──► credits, saved list, Build button
@@ -123,6 +130,10 @@ export class MechBayScreen implements Screen {
   private mechName: HTMLInputElement | undefined;
   private draft: MechLoadout | undefined;
   private description: LoadoutDescription | undefined;
+  /** What the tree has unlocked, recomputed once per store change. */
+  private availability: PartAvailability = ALL_PARTS_AVAILABLE;
+  /** The unlocked node ids the availability was built from, to skip a rebuild that would change nothing. */
+  private availabilityKey: string | undefined;
   private unsubscribe: Unsubscribe | undefined;
   private readonly disposers: (() => void)[] = [];
 
@@ -288,6 +299,7 @@ export class MechBayScreen implements Screen {
       this.deps.parts,
       this.deps.rating,
       this.deps.upgrades,
+      this.availability,
     );
     this.sheet.update(this.result(), this.description.sheet?.weightBudget);
     this.sheet.preview(undefined);
@@ -325,6 +337,7 @@ export class MechBayScreen implements Screen {
       this.deps.parts,
       this.deps.rating,
       this.deps.upgrades,
+      this.availability,
     );
     this.sheet.preview(
       sheetPreview(this.description.sheet, next, this.deps.unitTuning.mech),
@@ -420,7 +433,45 @@ export class MechBayScreen implements Screen {
         : "—";
     }
     this.saved.update(state?.roster.savedLoadouts ?? []);
+    this.refreshAvailability(state);
     this.refreshButtons(state);
+  }
+
+  /**
+   * Rebuilds what the tree has unlocked when the unlocked set changed
+   * (#1171): marks the palette's locked parts and re-validates the
+   * draft, so a `part-locked` error appears or clears with the tree.
+   * With no campaign every part is offered, as the editor always did.
+   */
+  private refreshAvailability(state: GameState | undefined): void {
+    const key = state?.tech.unlocked.join(",") ?? "";
+    if (key === this.availabilityKey) {
+      return;
+    }
+    this.availabilityKey = key;
+    this.availability = state
+      ? createPartAvailability(this.deps.tech, this.deps.parts, state.tech)
+      : ALL_PARTS_AVAILABLE;
+    this.palette.setLocked(this.lockedParts());
+    if (this.draft) {
+      this.validate(this.draft);
+    }
+  }
+
+  /**
+   * Every part the availability refuses, with the name of the node that
+   * unlocks it, found by scanning the tree once.
+   */
+  private lockedParts(): ReadonlyMap<string, string> {
+    const locked = new Map<string, string>();
+    for (const node of this.deps.tech.listNodes()) {
+      for (const partId of node.unlocks) {
+        if (!this.availability.isAvailable(partId)) {
+          locked.set(partId, node.name);
+        }
+      }
+    }
+    return locked;
   }
 
   /**
@@ -478,12 +529,25 @@ export class MechBayScreen implements Screen {
     this.listen(build, () => {
       this.build();
     });
+    const techTree = this.createButton(doc, "tech-tree", "Tech tree", false);
+    this.listen(techTree, () => {
+      this.deps.router.navigate("tech-tree");
+    });
     const roster = this.createButton(doc, "roster", "Roster", false);
     this.listen(roster, () => {
       this.deps.router.navigate("roster");
     });
 
-    bar.append(title, credits, spacer, status, mechName, build, roster);
+    bar.append(
+      title,
+      credits,
+      spacer,
+      status,
+      mechName,
+      build,
+      techTree,
+      roster,
+    );
     this.credits = credits;
     this.status = status;
     this.buildButton = build;

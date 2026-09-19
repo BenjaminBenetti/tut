@@ -10,6 +10,10 @@ import type { MissionTypeId } from "../model/mission-type-id";
 //
 //   • rewardPerDifficulty 300 → a difficulty-5 clearance pays 1500,
 //     roughly three days of full stipend or three fresh rifle squads.
+//   • techRewardBase 8 + techRewardPerDifficulty 3 → a difficulty-5
+//     clearance pays 23 tech points, so the 728-point tech tree spans
+//     about 25 missions on the campaign's difficulty ramp (#1171; the
+//     pacing check lives in tech/data/tech-tree.test.ts).
 //   • expiryDays 5 is the base; generation (#61) adds an intel bonus.
 //   • ignorePenalty 10 is on the 0–100 city infestation scale; new
 //     campaigns seed cities at 10–30, so ignoring a mission hurts but is
@@ -25,6 +29,8 @@ export const INFESTATION_CLEARANCE: MissionType = {
     "Bugs have seeded a city with egg spawners. Deploy, destroy every spawner, and extract before the swarm digs in.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
+  techRewardBase: 8,
+  techRewardPerDifficulty: 3,
   expiryDays: 5,
   ignorePenalty: 10,
   requiredHooks: [

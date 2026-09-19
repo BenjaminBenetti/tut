@@ -54,7 +54,8 @@ const BASE: CampaignState = {
     hives: [],
   },
   roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
-  economy: { credits: 1000, ledger: [] },
+  economy: { credits: 1000, ledger: [], techPoints: 0 },
+  tech: { unlocked: [] },
 };
 
 const DEPS: EventHandlerDeps = {
@@ -126,7 +127,8 @@ describe("ResolveEvent through the dispatcher", () => {
   it("leaves the campaign untouched, counters included, on an unaffordable choice", () => {
     const poor: CampaignState = {
       ...BASE,
-      economy: { credits: 10, ledger: [] },
+      economy: { credits: 10, ledger: [], techPoints: 0 },
+      tech: { unlocked: [] },
     };
     const outcome = dispatcher().process(
       poor,

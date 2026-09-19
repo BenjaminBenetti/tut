@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { Rng } from "../../core/model/rng";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
-import { CREDITS_CHANGED } from "../../economy/model/economy-event";
+import {
+  CREDITS_CHANGED,
+  TECH_POINTS_CHANGED,
+} from "../../economy/model/economy-event";
+import { TechPointTreasury } from "../../economy/service/tech-point-service";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
@@ -57,7 +61,7 @@ const MISSION: Mission = {
     size: "small",
     seed: "1",
   },
-  rewards: { credits: 900 },
+  rewards: { credits: 900, techPoints: 0 },
   createdDay: 3,
   expiresDay: 8,
   ignorePenalty: 10,
@@ -137,7 +141,8 @@ function campaign(
       savedLoadouts: [],
       graveyard: [],
     },
-    economy: { credits: 1000, ledger: [] },
+    economy: { credits: 1000, ledger: [], techPoints: 0 },
+    tech: { unlocked: [] },
   };
 }
 
@@ -156,6 +161,8 @@ const WIN: MissionResult = {
   mechsDestroyed: [],
   mechDamage: [{ mechId: "mech-1", damage: 30, kills: 2 }],
   creditsAwarded: 900,
+  techPointsAwarded: 17,
+  techPointsHarvested: 5,
   infestationDelta: -20,
 };
 
@@ -168,6 +175,7 @@ const LOSS: MissionResult = {
   mechsDestroyed: ["mech-1"],
   mechDamage: [{ mechId: "mech-1", damage: 80 }],
   creditsAwarded: 0,
+  techPointsAwarded: 0,
   infestationDelta: 5,
 };
 
@@ -196,6 +204,7 @@ function deps(resolver: MissionResolver): LaunchMissionDeps {
     resolver,
     rosterTuning: ROSTER_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
+    techPoints: new TechPointTreasury(),
   };
 }
 
@@ -387,6 +396,7 @@ describe("createLaunchMissionHandler", () => {
     expect(next.roster.graveyard).toEqual([]);
 
     expect(next.economy.credits).toBe(1900);
+    expect(next.economy.techPoints).toBe(17);
     expect(next.economy.ledger).toHaveLength(1);
     expect(next.economy.ledger[0]).toMatchObject({
       kind: "reward",
@@ -413,11 +423,16 @@ describe("createLaunchMissionHandler", () => {
       UNIT_DAMAGED,
       UNIT_DAMAGED,
       CREDITS_CHANGED,
+      TECH_POINTS_CHANGED,
       CITY_INFESTATION_CHANGED,
     ]);
     expect(result.value.events[0]).toEqual({
       type: MISSION_RESOLVED,
       payload: { result: WIN },
+    });
+    expect(result.value.events[4]).toEqual({
+      type: TECH_POINTS_CHANGED,
+      payload: { before: 0, after: 17, amount: 17, ref: "mission-1", day: DAY },
     });
     expect(state.roster.squads[0]?.strength).toBe(5);
     expect(state.economy.credits).toBe(1000);

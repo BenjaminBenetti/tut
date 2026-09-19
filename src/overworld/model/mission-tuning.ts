@@ -52,4 +52,27 @@ export interface MissionTypeGenerationRule {
 export interface MissionTuning {
   /** One rule per shipped mission type; a type without a rule fails to compile. */
   readonly rules: Readonly<Record<MissionTypeId, MissionTypeGenerationRule>>;
+  /** How often a generated mission carries a tech carcass and what it is worth (#1171). */
+  readonly techCarcass: TechCarcassTuning;
+}
+
+// ===========================================
+// Tech carcass
+// ===========================================
+
+/**
+ * The tech carcass roll (#1171), made once per generated mission:
+ *
+ * ```
+ *   rng.fork(`carcass:${missionId}`).chance(chance)
+ *     ──► techPoints = basePoints + pointsPerDifficulty × difficulty
+ * ```
+ */
+export interface TechCarcassTuning {
+  /** Probability a generated mission carries a carcass. `0..1`. */
+  readonly chance: number;
+  /** Tech points a carcass is worth at difficulty 0. */
+  readonly basePoints: number;
+  /** Tech points added per point of mission difficulty. */
+  readonly pointsPerDifficulty: number;
 }

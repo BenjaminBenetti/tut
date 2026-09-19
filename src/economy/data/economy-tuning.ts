@@ -26,4 +26,9 @@ export const ECONOMY_TUNING: EconomyTuning = {
    * income. Placeholder at a tenth of `baseStipend`.
    */
   stipendFloor: 50,
+  /**
+   * A campaign opens with the tier 1 catalogue and nothing banked: the
+   * first unlock is earned on the first mission (#1171).
+   */
+  startingTechPoints: 0,
 };

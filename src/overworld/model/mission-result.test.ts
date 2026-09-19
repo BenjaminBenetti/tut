@@ -15,6 +15,7 @@ const SAMPLE: MissionResult = {
   mechsDestroyed: [],
   mechDamage: [{ mechId: "mech-2", damage: 35 }],
   creditsAwarded: 1500,
+  techPointsAwarded: 0,
   infestationDelta: -25,
 };
 

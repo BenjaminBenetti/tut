@@ -82,7 +82,8 @@ function campaign(
       ...(options.outcome === undefined ? {} : { outcome: options.outcome }),
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
-    economy: { credits: 100, ledger: options.ledger ?? [] },
+    economy: { credits: 100, ledger: options.ledger ?? [], techPoints: 0 },
+    tech: { unlocked: [] },
   };
 }
 

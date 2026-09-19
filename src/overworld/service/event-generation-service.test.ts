@@ -79,7 +79,8 @@ function campaign(
       hives: [],
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
-    economy: { credits: overrides.credits ?? 5000, ledger: [] },
+    economy: { credits: overrides.credits ?? 5000, ledger: [], techPoints: 0 },
+    tech: { unlocked: [] },
   };
 }
 

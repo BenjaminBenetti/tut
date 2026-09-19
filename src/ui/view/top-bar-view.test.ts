@@ -69,6 +69,8 @@ describe("TopBarView", () => {
     expect(field("day").textContent).toBe("—");
     expect(button("advance-day").disabled).toBe(true);
     expect(button("roster").disabled).toBe(true);
+    expect(button("tech-tree").disabled).toBe(true);
+    expect(field("techPoints").textContent).toBe("—");
     expect(button("main-menu").disabled).toBe(false);
   });
 
@@ -78,6 +80,7 @@ describe("TopBarView", () => {
     view.update(withThreat(newGame(), 50));
     expect(field("day").textContent).toBe("1");
     expect(field("credits").textContent).toBe("¢5,000");
+    expect(field("techPoints").textContent).toBe("0 TP");
     expect(field("threat").textContent).toBe("50");
     expect(field("threat-tone").dataset.tone).toBe("warn");
     expect(field("threat-tone").className).toContain("tut-badge--warn");
@@ -186,6 +189,32 @@ describe("TopBarView", () => {
     expect(button("roster").disabled).toBe(false);
     button("roster").click();
     expect(onRoster).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the tech point balance and follows it across updates (#1171)", () => {
+    const view = new TopBarView({ onAdvanceDay: vi.fn(), onMainMenu: vi.fn() });
+    view.mount(root);
+    const base = newGame();
+    view.update({ ...base, economy: { ...base.economy, techPoints: 42 } });
+    const node = field("techPoints");
+    expect(node.textContent).toBe("42 TP");
+    expect(node.closest(".tut-topbar__stat")?.textContent).toContain("Tech");
+    view.update({ ...base, economy: { ...base.economy, techPoints: 1024 } });
+    expect(field("techPoints")).toBe(node);
+    expect(node.textContent).toBe("1,024 TP");
+  });
+
+  it("enables Tech only when an onTechTree handler is given, and calls it", () => {
+    const onTechTree = vi.fn();
+    const view = new TopBarView({
+      onAdvanceDay: vi.fn(),
+      onMainMenu: vi.fn(),
+      onTechTree,
+    });
+    view.mount(root);
+    expect(button("tech-tree").disabled).toBe(false);
+    button("tech-tree").click();
+    expect(onTechTree).toHaveBeenCalledTimes(1);
   });
 
   it("offers Resume mission only while a mission is in progress (#468)", () => {

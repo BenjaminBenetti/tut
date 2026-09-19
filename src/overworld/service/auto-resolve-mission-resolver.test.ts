@@ -73,7 +73,7 @@ function mission(difficulty: number): Mission {
       size: "medium",
       seed: "s",
     },
-    rewards: { credits: 1000 },
+    rewards: { credits: 1000, techPoints: 0 },
     createdDay: 1,
     expiresDay: 6,
     ignorePenalty: 10,

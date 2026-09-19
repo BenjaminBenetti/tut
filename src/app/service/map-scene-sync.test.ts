@@ -53,7 +53,7 @@ const MISSION: Mission = {
     size: "medium",
     seed: "s",
   },
-  rewards: { credits: 1500 },
+  rewards: { credits: 1500, techPoints: 0 },
   createdDay: 1,
   expiresDay: 9,
   ignorePenalty: 10,

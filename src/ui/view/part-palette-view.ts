@@ -65,6 +65,9 @@ const DRAG_TYPE = "text/plain";
  *   │ ┌────┐ Railgun            [Fitted] │ ◄─ draggable, tabindex
  *   │ │ img│ ARM WEAPON · T2 · ¢1,200    │
  *   │ └────┘                             │
+ *   │ ┌────┐ Siege Railgun          🔒   │ ◄─ data-locked: not bought, so not draggable
+ *   │ │ img│ ARM WEAPON · T3 · ¢4,000    │
+ *   │ └────┘                             │
  *   │ …                                  │
  *   └────────────────────────────────────┘
  * ```
@@ -160,8 +163,9 @@ export class PartPaletteView {
       }
     });
     this.listen(list, "dblclick", (event) => {
-      const part = this.partOf(this.cardOf(event.target));
-      if (part) {
+      const card = this.cardOf(event.target);
+      const part = this.partOf(card);
+      if (card && part && !isLocked(card)) {
         this.handlers.onFit(part);
       }
     });
@@ -169,8 +173,9 @@ export class PartPaletteView {
       if ((event as KeyboardEvent).key !== "Enter") {
         return;
       }
-      const part = this.partOf(this.cardOf(event.target));
-      if (part) {
+      const card = this.cardOf(event.target);
+      const part = this.partOf(card);
+      if (card && part && !isLocked(card)) {
         event.preventDefault();
         this.handlers.onFit(part);
       }
@@ -179,6 +184,12 @@ export class PartPaletteView {
       const card = this.cardOf(event.target);
       const part = this.partOf(card);
       if (!card || !part) {
+        return;
+      }
+      if (isLocked(card)) {
+        // The card is not draggable, but a drag can still start on a
+        // child that is; refuse it here so nothing leaves the palette.
+        event.preventDefault();
         return;
       }
       const transfer = (event as DragEvent).dataTransfer;
@@ -218,6 +229,34 @@ export class PartPaletteView {
       if (badge) {
         badge.hidden = !on;
       }
+    }
+  }
+
+  /**
+   * Marks the cards whose part the tech tree has not unlocked (#1171):
+   * `locked` maps each such part id to the name of the node that would
+   * unlock it. A locked card cannot be dragged, double-clicked or
+   * Entered onto the mech (Executive Director, 2026-09-19): it stays
+   * listed, dimmed, with its lock saying where to go. A draft loaded
+   * from an older template may still hold the part; the sheet reports
+   * that.
+   */
+  setLocked(locked: ReadonlyMap<string, string>): void {
+    for (const [id, card] of this.cards) {
+      const nodeName = locked.get(id);
+      const on = nodeName !== undefined;
+      card.dataset.locked = on ? "true" : "false";
+      card.draggable = !on;
+      card.setAttribute("aria-disabled", on ? "true" : "false");
+      const lock = card.querySelector<HTMLElement>('[data-role="lock"]');
+      if (lock) {
+        lock.hidden = !on;
+        lock.title = on ? `Unlock ${nodeName} on the tech tree` : "";
+      }
+      const part = this.parts.getPart(id);
+      card.title = on
+        ? `Unlock ${nodeName} on the tech tree`
+        : (part?.description ?? "");
     }
   }
 
@@ -304,7 +343,7 @@ export class PartPaletteView {
     return chip;
   }
 
-  /** One draggable card: picture, name, slot · tier · price, and the fitted badge. */
+  /** One draggable card: picture, name, slot · tier · price, the fitted badge and the lock. */
   private card(doc: Document, part: MechPart): HTMLElement {
     const card = doc.createElement("li");
     card.className = "tut-mech-bay__part";
@@ -313,6 +352,8 @@ export class PartPaletteView {
     card.dataset.partId = part.id;
     card.dataset.slot = part.slot;
     card.dataset.fitted = "false";
+    card.dataset.locked = "false";
+    card.setAttribute("aria-disabled", "false");
     card.title = part.description;
     card.setAttribute("aria-label", `${part.name}, ${SLOT_LABELS[part.slot]}`);
 
@@ -333,7 +374,16 @@ export class PartPaletteView {
     badge.textContent = "Fitted";
     badge.hidden = true;
 
-    card.append(this.thumbnail(doc, part), body, badge);
+    const lock = iconGlyph(doc, "lock");
+    lock.classList.add("tut-mech-bay__lock");
+    lock.dataset.role = "lock";
+    lock.hidden = true;
+
+    const marks = doc.createElement("span");
+    marks.className = "tut-mech-bay__part-marks";
+    marks.append(badge, lock);
+
+    card.append(this.thumbnail(doc, part), body, marks);
     this.cards.set(part.id, card);
     return card;
   }
@@ -394,4 +444,13 @@ export class PartPaletteView {
       target.removeEventListener(event, handler);
     });
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** Whether a card's part is still locked on the tech tree. */
+function isLocked(card: HTMLElement): boolean {
+  return card.dataset.locked === "true";
 }

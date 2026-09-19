@@ -18,7 +18,11 @@ import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
-import { formatCredits, formatWhole } from "../service/format";
+import {
+  formatCredits,
+  formatTechPoints,
+  formatWhole,
+} from "../service/format";
 
 // ===========================================
 // Types
@@ -411,6 +415,7 @@ export class MissionResultsScreen implements Screen {
     rewards.dataset.promoted = promoted ? "true" : "false";
     for (const [label, field, value] of [
       ["Credits", "credits", formatCredits(result.creditsAwarded)],
+      ["Tech points", "tech-points", this.techPointsLine(result)],
       [
         "Infestation",
         "infestation-delta",
@@ -427,7 +432,11 @@ export class MissionResultsScreen implements Screen {
       // rise shouted in the winning green would be the screen lying
       // pleasantly. So the sign picks the colour.
       const valence =
-        field === "credits" || result.infestationDelta <= 0 ? "good" : "bad";
+        field === "credits" ||
+        field === "tech-points" ||
+        result.infestationDelta <= 0
+          ? "good"
+          : "bad";
       detail.className = promoted
         ? `tut-mono tut-mission-results__payout-value tut-mission-results__payout-value--${valence}`
         : "tut-mono";
@@ -436,6 +445,24 @@ export class MissionResultsScreen implements Screen {
       rewards.append(term, detail);
     }
     return rewards;
+  }
+
+  /**
+   * The tech points line (#1171): the total, and how much of it a squad
+   * stripped from a carcass on the map when any was. A lost mission
+   * brings nothing home, so a harvest there is named as lost with it
+   * rather than counted.
+   */
+  private techPointsLine(result: MissionResult): string {
+    const total = formatTechPoints(result.techPointsAwarded);
+    if (result.techPointsHarvested === undefined) {
+      return total;
+    }
+    const harvested = formatWhole(result.techPointsHarvested);
+    if (result.outcome === "lost") {
+      return `${total} (${harvested} harvested from a carcass, lost with the squad)`;
+    }
+    return `${total} (${harvested} harvested from a carcass)`;
   }
 
   /**

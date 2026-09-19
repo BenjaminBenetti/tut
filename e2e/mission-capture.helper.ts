@@ -24,6 +24,21 @@ export async function launchMission(
   seed: string,
   fixture?: MissionMapFixture,
 ): Promise<void> {
+  await reachFirstMission(page, seed, fixture);
+  await deployAndLaunch(page);
+}
+
+/**
+ * The first half of {@link launchMission}: a new campaign on `seed`,
+ * advanced until a mission is on offer, with `fixture` applied to it.
+ * Split out so a spec can stage something else on the offer (a tech
+ * carcass, #1171) through the autosave before deploying.
+ */
+export async function reachFirstMission(
+  page: Page,
+  seed: string,
+  fixture?: MissionMapFixture,
+): Promise<void> {
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
@@ -77,6 +92,16 @@ export async function launchMission(
     await page.locator('[data-action="continue"]').click();
     await expect(body).toHaveAttribute("data-screen", "overworld");
   }
+}
+
+/**
+ * The second half of {@link launchMission}: opens the first offer,
+ * deploys the whole starter force and launches, landing on the tactical
+ * screen with its canvas up.
+ */
+export async function deployAndLaunch(page: Page): Promise<void> {
+  const body = page.locator("body");
+  const rows = page.locator('[data-role="mission-list"] [data-mission-id]');
   await rows.first().click();
   await page
     .locator('[data-role="mission-details"] [data-action="plan-deployment"]')

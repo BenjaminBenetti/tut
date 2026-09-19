@@ -61,7 +61,7 @@ function setup(credits = 1000): {
       savedLoadouts: [],
       graveyard: [],
     },
-    economy: { credits, ledger: [] },
+    economy: { credits, ledger: [], techPoints: 0 },
   };
   return {
     deps,

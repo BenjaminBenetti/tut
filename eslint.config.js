@@ -24,6 +24,7 @@ const SIMULATION_DOMAINS = [
   "tactical",
   "bugs",
   "mapgen",
+  "tech",
 ];
 
 const simulationFiles = SIMULATION_DOMAINS.map(

@@ -3,6 +3,7 @@ import { DeployPlacer } from "./deploy-placer";
 import { EdgeSpawnPlacer } from "./edge-spawn-placer";
 import { EggSpawnerPlacer } from "./egg-spawner-placer";
 import { ExtractionPlacer } from "./extraction-placer";
+import { TechCarcassPlacer } from "./tech-carcass-placer";
 
 // ===========================================
 // Default hook placers
@@ -18,4 +19,5 @@ export const DEFAULT_HOOK_PLACERS: readonly HookPlacer[] = [
   new EggSpawnerPlacer(),
   new EdgeSpawnPlacer(),
   new ExtractionPlacer(),
+  new TechCarcassPlacer(),
 ];

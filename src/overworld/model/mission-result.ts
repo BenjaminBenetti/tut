@@ -74,6 +74,7 @@ export interface MechDamageReport {
  *                 ├─ squadCasualties / squadsWiped ──► roster (#64)
  *                 ├─ mechDamage / mechsDestroyed ────► roster (#64)
  *                 ├─ creditsAwarded ─────────────────► economy (#53)
+ *                 ├─ techPointsAwarded ──────────────► economy (#1171)
  *                 ├─ infestationDelta ───────────────► host city
  *                 └─ intel? ─────────────────────────► reserved (#52 sensor array)
  * ```
@@ -110,6 +111,16 @@ export interface MissionResult {
   readonly mechDamage: readonly MechDamageReport[];
   /** Whole credits paid out, `>= 0`; usually `rewards.credits` on a win and `0` on a loss. */
   readonly creditsAwarded: number;
+  /**
+   * Whole tech points paid out, `>= 0` (#1171): the outcome's share of
+   * `rewards.techPoints` plus whatever was harvested on the map.
+   */
+  readonly techPointsAwarded: number;
+  /**
+   * The part of `techPointsAwarded` that came from harvesting a tech
+   * carcass (#1171), so the debrief can say so. Absent when nothing was.
+   */
+  readonly techPointsHarvested?: number;
   /**
    * Signed integer added to the host city's infestation; negative on a
    * successful clearance. The applier clamps to the city's bounds.

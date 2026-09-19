@@ -8,6 +8,7 @@ import type { Team, Unit, UnitId } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 import type { PlacedCharge } from "./equipment";
 import type { Radar } from "./radar";
+import type { TechCarcass } from "./tech-carcass";
 
 // ===========================================
 // Ids and unions
@@ -158,6 +159,7 @@ export const NO_VISION: SideVision = {
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
  *   ├── objectives[], spawners[]
+ *   ├── carcasses[]           tech carcasses on the map, stripped or not (#1171)
  *   ├── effects[]             fires burning on tiles, each with a clock (#1121)
  *   ├── charges[]             breaching charges waiting to go off (#1132)
  *   ├── edgeSpawn             when the next edge wave arrives
@@ -189,6 +191,11 @@ export interface TacticalState {
   readonly phase: TacticalPhase;
   readonly objectives: readonly Objective[];
   readonly spawners: readonly Spawner[];
+  /**
+   * Tech carcasses on the map (#1171), harvested or not, in hook order.
+   * Empty on most missions: the offer decides whether one lies here.
+   */
+  readonly carcasses: readonly TechCarcass[];
   /**
    * Tile effects burning on the map (#1121), in the order they were lit.
    * Each acts at the start of every phase against the side whose phase

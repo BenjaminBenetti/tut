@@ -99,7 +99,8 @@ function campaign(
       hives: [],
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
-    economy: { credits, ledger: [] },
+    economy: { credits, ledger: [], techPoints: 0 },
+    tech: { unlocked: [] },
   };
 }
 

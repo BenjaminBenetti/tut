@@ -103,9 +103,12 @@ describe("world biome save expansion", () => {
         effects: [],
         // v21 → v22 (#1132): no charge was set in an older mission.
         charges: [],
+        // v25 → v26 (#1171): nothing was harvested in an older mission.
+        carcasses: [],
       });
       expect(next.overworld.missions).toBe(before.overworld.missions);
-      expect(next.economy).toBe(before.economy);
+      // v25 → v26 (#1171): an older campaign has earned no tech points.
+      expect(next.economy).toEqual({ ...before.economy, techPoints: 0 });
       expect(JSON.stringify(before)).toBe(serialized);
     },
   );

@@ -981,6 +981,102 @@ describe("actionWheel on an enemy", () => {
   });
 });
 
+describe("actionWheel with a tech carcass (#1171)", () => {
+  const withCarcass = (harvested = false): TacticalState =>
+    hudMission({
+      carcasses: [
+        {
+          id: "carcass-1",
+          pos: { x: 2, y: 0, z: 1 },
+          techPoints: 12,
+          harvested,
+        },
+      ],
+    });
+
+  it("offers Harvest on the squad's own ring only when a carcass is in reach and unharvested", () => {
+    const beside = actionWheel(
+      { kind: "unit", unitId: "s1" },
+      contextFor(withCarcass(), "s1"),
+    );
+    expect(
+      beside.items.find((item) => item.id === "harvest:carcass-1"),
+    ).toEqual({
+      id: "harvest:carcass-1",
+      label: "Harvest",
+      icon: "interact",
+      detail: "12 tech",
+    });
+    // s2 stands at (1,3): three tiles off, out of reach.
+    const far = actionWheel(
+      { kind: "unit", unitId: "s2" },
+      contextFor(withCarcass(), "s2"),
+    );
+    expect(ids(far).some((id) => id.startsWith("harvest:"))).toBe(false);
+    const stripped = actionWheel(
+      { kind: "unit", unitId: "s1" },
+      contextFor(withCarcass(true), "s1"),
+    );
+    expect(ids(stripped).some((id) => id.startsWith("harvest:"))).toBe(false);
+    expect(
+      ids(
+        actionWheel(
+          { kind: "unit", unitId: "s1" },
+          contextFor(hudMission(), "s1"),
+        ),
+      ).some((id) => id.startsWith("harvest:")),
+    ).toBe(false);
+  });
+
+  it("puts Harvest on the carcass's tile, closed with the rules' reason when the unit cannot strip it", () => {
+    const tile = { x: 2, y: 0, z: 1 };
+    const open = actionWheel(
+      { kind: "tile", tile },
+      contextFor(withCarcass(), "s1"),
+    );
+    const entry = open.items.find((item) => item.id === "harvest:carcass-1");
+    expect(entry?.label).toBe("Harvest");
+    expect(entry?.disabled).not.toBe(true);
+    const spent = actionWheel(
+      { kind: "tile", tile },
+      contextFor(withCarcass(), "s2"),
+    );
+    expect(
+      spent.items.find((item) => item.id === "harvest:carcass-1"),
+    ).toMatchObject({
+      disabled: true,
+      detail: "no AP",
+    });
+    const mech = withVision({
+      state: {
+        ...withCarcass(),
+        units: [
+          ...withCarcass().units,
+          hudUnit("m1", "tdf", "rifle", 2, 2, { kind: "mech" }),
+        ],
+      },
+      events: [],
+    }).state;
+    const claw = actionWheel({ kind: "tile", tile }, contextFor(mech, "m1"));
+    expect(
+      claw.items.find((item) => item.id === "harvest:carcass-1"),
+    ).toMatchObject({
+      disabled: true,
+      detail: "squads only",
+    });
+    // Another tile carries no Harvest at all.
+    const elsewhere = actionWheel(
+      { kind: "tile", tile: { x: 2, y: 0, z: 3 } },
+      contextFor(withCarcass(), "s1"),
+    );
+    expect(ids(elsewhere).some((id) => id.startsWith("harvest:"))).toBe(false);
+    expect(parseWheelChoice("harvest:carcass-1")).toEqual({
+      action: "harvest",
+      carcassId: "carcass-1",
+    });
+  });
+});
+
 describe("actionWheel on the unit itself", () => {
   it("offers what it can do where it stands", () => {
     const mission = hudMission({ extraction: [{ x: 1, y: 0, z: 1 }] });

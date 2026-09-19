@@ -109,6 +109,7 @@ export const MODEL_IDS = [
   // Props
   "tdf.dropship",
   "bug.egg-spawner",
+  "bug.tech-carcass",
   "prop.barrier-concrete",
   "prop.bench",
   "prop.boulder",

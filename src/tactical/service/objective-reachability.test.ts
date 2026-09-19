@@ -60,7 +60,7 @@ function mission(seed: string, settlement: string, size: string): Mission {
       size,
       seed,
     } as Mission["mapParams"],
-    rewards: { credits: 1000 },
+    rewards: { credits: 1000, techPoints: 0 },
     createdDay: 1,
     expiresDay: 9,
     ignorePenalty: 10,

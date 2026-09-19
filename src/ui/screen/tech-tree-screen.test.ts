@@ -23,12 +23,19 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
+import type { TechNodeId } from "../../tech/model/tech-node";
 import { TECH_FAMILY_IDS } from "../../tech/model/tech-node";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
+import type { TechNodeStatus } from "../../tech/service/tech-status-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
+import type {
+  TechGraphHost,
+  TechGraphListener,
+} from "../model/tech-graph-host";
+import type { TechGraphLayout } from "../model/tech-graph-layout";
 import { TechTreeScreen } from "./tech-tree-screen";
 
 type NavigateMock = Mock<(id: ScreenId) => void>;
@@ -80,6 +87,7 @@ class RealStore implements CampaignStore {
     registerTechCommands(this.dispatcher, {
       catalogue: TECH,
       techPoints: new TechPointTreasury(),
+      devTools: true,
     });
   }
   getState(): GameState {
@@ -144,10 +152,48 @@ const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   clear: () => undefined,
 });
 
+/** Records what the screen asks of a graph host, drawing nothing, and can speak back. */
+class FakeGraphHost implements TechGraphHost {
+  container: HTMLElement | undefined;
+  layout: TechGraphLayout | undefined;
+  listener: TechGraphListener | undefined;
+  statuses: ReadonlyMap<TechNodeId, TechNodeStatus> = new Map();
+  readonly selections: (TechNodeId | undefined)[] = [];
+  readonly focused: TechNodeId[] = [];
+  released = 0;
+
+  attach(
+    container: HTMLElement,
+    layout: TechGraphLayout,
+    listener: TechGraphListener,
+  ): void {
+    this.container = container;
+    this.layout = layout;
+    this.listener = listener;
+  }
+
+  setStatuses(statuses: ReadonlyMap<TechNodeId, TechNodeStatus>): void {
+    this.statuses = statuses;
+  }
+
+  setSelected(nodeId: TechNodeId | undefined): void {
+    this.selections.push(nodeId);
+  }
+
+  focus(nodeId: TechNodeId): void {
+    this.focused.push(nodeId);
+  }
+
+  release(): void {
+    this.released += 1;
+  }
+}
+
 /** Mounts the screen over `store`. */
 function mountWith(
   store: CampaignStore | undefined,
   root: HTMLElement,
+  extras: { graph?: TechGraphHost; devTools?: { grantPoints: number } } = {},
 ): { navigate: NavigateMock; screen: TechTreeScreen } {
   const navigate: NavigateMock = vi.fn();
   const router: ScreenRouter = {
@@ -160,6 +206,7 @@ function mountWith(
     session: sessionWith(store),
     tech: TECH,
     parts: PARTS,
+    ...extras,
   });
   screen.mount(root);
   return { navigate, screen };
@@ -183,106 +230,209 @@ describe("TechTreeScreen", () => {
     if (!el) throw new Error(`missing ${selector}`);
     return el;
   };
-  const card = (nodeId: string): HTMLElement => q(`[data-node="${nodeId}"]`);
-  const unlockButton = (nodeId: string): HTMLButtonElement =>
-    q(`[data-node="${nodeId}"] [data-action="unlock"]`);
-  const reason = (nodeId: string): HTMLElement =>
-    q(`[data-node="${nodeId}"] [data-field="reason"]`);
+  const label = (nodeId: string): HTMLElement => q(`[data-node="${nodeId}"]`);
+  const detail = (): HTMLElement => q("#tech-tree-detail");
+  const unlockButton = (): HTMLButtonElement =>
+    q('#tech-tree-detail [data-action="unlock"]');
+  const reason = (): HTMLElement =>
+    q('#tech-tree-detail [data-field="reason"]');
   const balance = (): string =>
     q('#tech-tree-bar [data-field="techPoints"]').textContent ?? "";
   const status = (): HTMLElement => q('#tech-tree-bar [data-role="status"]');
 
-  it("draws one column per family in tree order with every node under its tier", () => {
+  it("floats a label per family in tree order and one per node over the stage", () => {
     mountWith(new RealStore(fixture()), root);
     expect(q('[data-screen="tech-tree"]')).toBeDefined();
+    const stage = q('[data-role="tech-graph"]');
     const families = [
-      ...root.querySelectorAll<HTMLElement>("[data-family]"),
+      ...stage.querySelectorAll<HTMLElement>("[data-family]"),
     ].map((column) => column.dataset.family);
     expect(families).toEqual([...TECH_FAMILY_IDS]);
-    expect(root.querySelectorAll("[data-node]")).toHaveLength(
+    expect(q('[data-family="mobility"]').textContent).toBe(
+      TECH_FAMILIES.mobility.name,
+    );
+    expect(stage.querySelectorAll("[data-node]")).toHaveLength(
       TECH_NODES.length,
     );
-    // Each card sits in its family's column, in the row of its tier.
-    for (const node of TECH_NODES) {
-      const column = card(node.id).closest<HTMLElement>("[data-family]");
-      expect(column?.dataset.family).toBe(node.family);
-      const row = card(node.id).closest<HTMLElement>("[data-tier]");
-      expect(row?.dataset.tier).toBe(String(node.tier));
-    }
-    // The family's name and description head the column.
-    const mobility = q('[data-family="mobility"]');
-    expect(mobility.textContent).toContain(TECH_FAMILIES.mobility.name);
-    expect(mobility.textContent).toContain(TECH_FAMILIES.mobility.description);
-  });
-
-  it("shows each card's name, cost, description and the parts it unlocks", () => {
-    mountWith(new RealStore(fixture()), root);
-    const jump = card("tech.jump-jets");
+    const jump = label("tech.jump-jets");
     expect(jump.querySelector('[data-field="name"]')?.textContent).toBe(
       "Jump Jets",
     );
     expect(jump.querySelector('[data-field="cost"]')?.textContent).toBe(
       "18 TP",
     );
-    expect(jump.querySelector('[data-field="description"]')?.textContent).toBe(
-      TECH.getNode("tech.jump-jets")?.description,
+    expect(q('[data-role="controls-hint"]').textContent).toContain(
+      "wheel zoom",
     );
-    const unlocks = [
-      ...jump.querySelectorAll<HTMLElement>('[data-field="unlocks"] li'),
-    ];
-    expect(unlocks.map((item) => item.dataset.partId)).toEqual(["legs-jumper"]);
-    expect(unlocks.map((item) => item.textContent)).toEqual(["Jumper Legs"]);
   });
 
-  it("classifies every card against the pool and the tree, and shows the balance", () => {
+  it("attaches the graph to the stage with the layout, tints it from the state and releases it on unmount", () => {
+    const graph = new FakeGraphHost();
+    const { screen } = mountWith(new RealStore(fixture()), root, { graph });
+    expect(graph.container?.dataset.role).toBe("tech-graph");
+    expect(graph.layout?.nodes).toHaveLength(TECH_NODES.length);
+    expect(graph.statuses.get("tech.all-terrain")).toBe("unlocked");
+    expect(graph.statuses.get("tech.jump-jets")).toBe("available");
+    expect(graph.statuses.get("tech.sprint-frame")).toBe("unaffordable");
+    expect(graph.statuses.get("tech.siege-railgun")).toBe("locked");
+    screen.unmount();
+    expect(graph.released).toBe(1);
+  });
+
+  it("moves the labels where the host says the pedestals and plinths are", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(fixture()), root, { graph });
+    graph.listener?.framed({
+      nodes: [{ id: "tech.jump-jets", x: 120.25, y: 80 }],
+      families: [{ id: "mobility", x: 40, y: 20 }],
+      zoom: 64,
+    });
+    expect(label("tech.jump-jets").style.transform).toContain(
+      "120.3px, 80.0px",
+    );
+    expect(label("tech.jump-jets").style.transform).toContain("scale(1.000)");
+    expect(q('[data-family="mobility"]').style.transform).toContain(
+      "40.0px, 20.0px",
+    );
+    // Pulled back, the labels shrink with the graph, but never below 70 %.
+    graph.listener?.framed({
+      nodes: [{ id: "tech.jump-jets", x: 0, y: 0 }],
+      families: [],
+      zoom: 48,
+    });
+    expect(label("tech.jump-jets").style.transform).toContain("scale(0.750)");
+    graph.listener?.framed({
+      nodes: [{ id: "tech.jump-jets", x: 0, y: 0 }],
+      families: [],
+      zoom: 10,
+    });
+    expect(label("tech.jump-jets").style.transform).toContain("scale(0.700)");
+  });
+
+  it("classifies every label against the pool and the tree, and shows the balance", () => {
     mountWith(new RealStore(fixture()), root);
     expect(balance()).toBe("20 TP");
-    expect(card("tech.all-terrain").dataset.status).toBe("unlocked");
-    expect(unlockButton("tech.all-terrain").hidden).toBe(true);
-
-    expect(card("tech.jump-jets").dataset.status).toBe("available");
-    expect(unlockButton("tech.jump-jets").disabled).toBe(false);
-    expect(reason("tech.jump-jets").hidden).toBe(true);
-
-    expect(card("tech.sprint-frame").dataset.status).toBe("unaffordable");
-    expect(unlockButton("tech.sprint-frame").disabled).toBe(true);
-    expect(reason("tech.sprint-frame").textContent).toBe("Need 20 more TP");
-
-    expect(card("tech.siege-railgun").dataset.status).toBe("locked");
-    expect(unlockButton("tech.siege-railgun").disabled).toBe(true);
-    expect(reason("tech.siege-railgun").textContent).toBe("Requires Railgun");
+    expect(label("tech.all-terrain").dataset.status).toBe("unlocked");
+    expect(label("tech.jump-jets").dataset.status).toBe("available");
+    expect(label("tech.sprint-frame").dataset.status).toBe("unaffordable");
+    expect(label("tech.siege-railgun").dataset.status).toBe("locked");
+    for (const nodeId of ["tech.all-terrain", "tech.siege-railgun"]) {
+      expect(
+        label(nodeId).querySelector('[data-role="status"]')?.textContent,
+      ).toBe(nodeId === "tech.all-terrain" ? "Unlocked" : "Locked");
+    }
   });
 
-  it("Unlock dispatches the command: the balance drops and the card flips to unlocked", () => {
+  it("the detail panel is empty until a pick, then shows the node, its parts and why it cannot be bought", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(fixture()), root, { graph });
+    expect(detail().dataset.selectedNode).toBeUndefined();
+    expect(q('#tech-tree-detail [data-role="empty"]').hidden).toBe(false);
+
+    graph.listener?.picked("tech.sprint-frame");
+    expect(detail().dataset.selectedNode).toBe("tech.sprint-frame");
+    expect(detail().dataset.status).toBe("unaffordable");
+    expect(q('#tech-tree-detail [data-field="family"]').textContent).toBe(
+      "Mobility",
+    );
+    expect(q('#tech-tree-detail [data-field="name"]').textContent).toBe(
+      "Sprint Frame",
+    );
+    expect(q('#tech-tree-detail [data-field="cost"]').textContent).toBe(
+      "40 TP",
+    );
+    expect(q('#tech-tree-detail [data-field="description"]').textContent).toBe(
+      TECH.getNode("tech.sprint-frame")?.description,
+    );
+    const unlocks = [
+      ...root.querySelectorAll<HTMLElement>(
+        '#tech-tree-detail [data-field="unlocks"] li',
+      ),
+    ];
+    expect(unlocks.map((item) => item.dataset.partId)).toEqual(["legs-sprint"]);
+    expect(unlocks.map((item) => item.textContent)).toEqual(["Sprint Legs"]);
+    expect(reason().textContent).toBe("Need 20 more TP");
+    expect(unlockButton().disabled).toBe(true);
+    expect(graph.selections).toEqual(["tech.sprint-frame"]);
+    expect(label("tech.sprint-frame").dataset.selected).toBe("true");
+
+    graph.listener?.picked("tech.siege-railgun");
+    expect(reason().textContent).toBe("Requires Railgun");
+    expect(label("tech.sprint-frame").dataset.selected).toBe("false");
+
+    // A click on empty ground clears the selection.
+    graph.listener?.picked(undefined);
+    expect(detail().dataset.selectedNode).toBeUndefined();
+    expect(graph.selections.at(-1)).toBeUndefined();
+  });
+
+  it("a label click selects its node too", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(fixture()), root, { graph });
+    label("tech.all-terrain").click();
+    expect(detail().dataset.selectedNode).toBe("tech.all-terrain");
+    expect(detail().dataset.status).toBe("unlocked");
+    expect(unlockButton().hidden).toBe(true);
+    expect(graph.selections).toEqual(["tech.all-terrain"]);
+  });
+
+  it("Unlock dispatches the command: the balance drops, the label and the graph flip to unlocked", () => {
     const store = new RealStore(fixture());
-    mountWith(store, root);
-    unlockButton("tech.jump-jets").click();
+    const graph = new FakeGraphHost();
+    mountWith(store, root, { graph });
+    label("tech.jump-jets").click();
+    expect(unlockButton().disabled).toBe(false);
+    unlockButton().click();
     expect(store.getState().tech.unlocked).toContain("tech.jump-jets");
     expect(store.getState().economy.techPoints).toBe(2);
     expect(balance()).toBe("2 TP");
-    expect(card("tech.jump-jets").dataset.status).toBe("unlocked");
-    expect(unlockButton("tech.jump-jets").hidden).toBe(true);
+    expect(label("tech.jump-jets").dataset.status).toBe("unlocked");
+    expect(graph.statuses.get("tech.jump-jets")).toBe("unlocked");
+    expect(unlockButton().hidden).toBe(true);
     // The pool is now too small for the other tier 2 rungs.
-    expect(card("tech.railgun").dataset.status).toBe("unaffordable");
-    expect(reason("tech.railgun").textContent).toBe("Need 16 more TP");
+    expect(label("tech.railgun").dataset.status).toBe("unaffordable");
+    label("tech.railgun").click();
+    expect(reason().textContent).toBe("Need 16 more TP");
     expect(status().hidden).toBe(true);
   });
 
   it("a rejected command lands in the status line", () => {
     mountWith(new RejectingStore(fixture()), root);
-    unlockButton("tech.jump-jets").click();
+    label("tech.jump-jets").click();
+    unlockButton().click();
     expect(status().hidden).toBe(false);
     expect(status().textContent).toBe("Not enough TP");
   });
 
-  it("without a campaign shows dashes and disables every Unlock", () => {
+  it("without a campaign shows dashes, locks every label and disables Unlock", () => {
     mountWith(undefined, root);
     expect(balance()).toBe("—");
-    for (const button of root.querySelectorAll<HTMLButtonElement>(
-      '[data-action="unlock"]',
-    )) {
-      expect(button.disabled).toBe(true);
+    for (const node of root.querySelectorAll<HTMLElement>("[data-node]")) {
+      expect(node.dataset.status).toBe("locked");
     }
+    label("tech.jump-jets").click();
+    expect(unlockButton().disabled).toBe(true);
+    expect(reason().textContent).toBe("No active campaign.");
+  });
+
+  it("builds no Free TP button unless the dev tools are given, and then grants the pool", () => {
+    mountWith(new RealStore(fixture()), root);
+    expect(root.querySelector('[data-action="free-tech-points"]')).toBeNull();
+
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    const store = new RealStore(fixture());
+    mountWith(store, root, { devTools: { grantPoints: 10 } });
+    const free = q<HTMLButtonElement>('[data-action="free-tech-points"]');
+    expect(free.textContent).toBe("Free TP (+10)");
+    free.click();
+    expect(store.getState().economy.techPoints).toBe(30);
+    expect(balance()).toBe("30 TP");
+    // Sprint Frame (40) is now within reach of one more press.
+    expect(label("tech.sprint-frame").dataset.status).toBe("unaffordable");
+    free.click();
+    expect(label("tech.sprint-frame").dataset.status).toBe("available");
   });
 
   it("navigates to the mech bay and the overworld, and unmount detaches everything", () => {

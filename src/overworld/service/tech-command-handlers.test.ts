@@ -8,9 +8,14 @@ import { TECH_NODES, TIER_2_COST } from "../../tech/data/tech-tree";
 import { TECH_UNLOCKED } from "../../tech/model/tech-event";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import type { CampaignState } from "../model/campaign-state";
+import { grantTechPoints } from "../model/grant-tech-points-command";
 import { UNLOCK_TECH, unlockTech } from "../model/unlock-tech-command";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
-import { registerTechCommands } from "./tech-command-handlers";
+import {
+  DEV_TOOLS_DISABLED,
+  INVALID_GRANT,
+  registerTechCommands,
+} from "./tech-command-handlers";
 
 const BASE: CampaignState = {
   meta: {
@@ -33,7 +38,7 @@ const BASE: CampaignState = {
   tech: { unlocked: [] },
 };
 
-function dispatcher() {
+function dispatcher(devTools?: boolean) {
   const d = createOverworldCommandDispatcher<CampaignState>();
   registerTechCommands(d, {
     catalogue: new StaticTechCatalogue(
@@ -41,6 +46,7 @@ function dispatcher() {
       Object.values(TECH_FAMILIES),
     ),
     techPoints: new TechPointTreasury(),
+    ...(devTools === undefined ? {} : { devTools }),
   });
   return d;
 }
@@ -73,5 +79,38 @@ describe("registerTechCommands", () => {
     if (result.ok) return;
     expect(result.error.code).toBe("tech-prerequisite-locked");
     expect(result.error.message).toContain("tech.railgun");
+  });
+
+  describe("GrantTechPoints (#1171)", () => {
+    it("in a dev build earns the amount on the current day and touches nothing else", () => {
+      const result = dispatcher(true).process(BASE, grantTechPoints(10));
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.state).toEqual({
+        ...BASE,
+        economy: { ...BASE.economy, techPoints: 40 },
+      });
+      expect(result.value.events.map((e) => e.type)).toEqual([
+        TECH_POINTS_CHANGED,
+      ]);
+    });
+
+    it("is refused outside a dev build, and by default", () => {
+      for (const d of [dispatcher(), dispatcher(false)]) {
+        const result = d.process(BASE, grantTechPoints(10));
+        expect(result.ok).toBe(false);
+        if (result.ok) return;
+        expect(result.error.code).toBe(DEV_TOOLS_DISABLED);
+      }
+    });
+
+    it("refuses a grant that is not a positive whole number", () => {
+      for (const amount of [0, -5, 2.5, Number.NaN]) {
+        const result = dispatcher(true).process(BASE, grantTechPoints(amount));
+        expect(result.ok).toBe(false);
+        if (result.ok) return;
+        expect(result.error.code).toBe(INVALID_GRANT);
+      }
+    });
   });
 });

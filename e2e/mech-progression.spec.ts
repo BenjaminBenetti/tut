@@ -37,14 +37,26 @@ async function researchEverything(page: Page): Promise<void> {
   await expect(
     page.locator('#tech-tree-bar [data-field="techPoints"]'),
   ).toHaveText("1,000 TP");
-  const jumpJets = page.locator('[data-node="tech.jump-jets"]');
-  await jumpJets.locator('[data-action="unlock"]').click();
-  await expect(jumpJets).toHaveAttribute("data-status", "unlocked");
-  const available = page.locator(
-    '[data-node][data-status="available"] [data-action="unlock"]',
-  );
+  // The web is three: a node is selected through the dev hook rather
+  // than by finding its pedestal on screen, and Unlock lives in the
+  // detail panel (#1171).
+  const detail = page.locator("#tech-tree-detail");
+  const unlock = detail.locator('[data-action="unlock"]');
+  const buy = async (nodeId: string): Promise<void> => {
+    await page.evaluate((id) => window.__tutTech__?.select(id), nodeId);
+    await expect(detail).toHaveAttribute("data-selected-node", nodeId);
+    await unlock.click();
+    await expect(page.locator(`[data-node="${nodeId}"]`)).toHaveAttribute(
+      "data-status",
+      "unlocked",
+    );
+  };
+  await buy("tech.jump-jets");
+  const available = page.locator('[data-node][data-status="available"]');
   while ((await available.count()) > 0) {
-    await available.first().click();
+    const nodeId = await available.first().getAttribute("data-node");
+    if (nodeId === null) break;
+    await buy(nodeId);
   }
   await expect(page.locator('[data-node][data-status="unlocked"]')).toHaveCount(
     TECH_NODES.length,

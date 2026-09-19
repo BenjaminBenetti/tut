@@ -8,6 +8,8 @@ import { unlockTech } from "../../tech/service/unlock-service";
 import type { CampaignState } from "../model/campaign-state";
 import type { CommandDispatcher } from "../model/command-dispatcher";
 import type { CommandHandler, CommandOutcome } from "../model/command-handler";
+import type { GrantTechPointsCommand } from "../model/grant-tech-points-command";
+import { GRANT_TECH_POINTS } from "../model/grant-tech-points-command";
 import type { UnlockTechCommand } from "../model/unlock-tech-command";
 import { UNLOCK_TECH } from "../model/unlock-tech-command";
 
@@ -20,7 +22,22 @@ export interface TechHandlerDeps {
   readonly catalogue: TechCatalogue;
   /** The one door tech points move through. */
   readonly techPoints: TechPointService;
+  /**
+   * Whether this is a dev build (#1171). Enables `GrantTechPoints`;
+   * false — the default — registers the handler refusing, so the
+   * command exists everywhere and does something only where it should.
+   */
+  readonly devTools?: boolean;
 }
+
+/** The reference a granted pool is recorded under. */
+export const DEV_GRANT_REF = "dev:grant";
+
+/** The code a production build refuses `GrantTechPoints` with. */
+export const DEV_TOOLS_DISABLED = "dev-tools-disabled";
+
+/** The code a grant of nothing, or of less, is refused with. */
+export const INVALID_GRANT = "invalid-grant";
 
 // ===========================================
 // Public Functions
@@ -46,12 +63,61 @@ export function createUnlockTechHandler<TState extends CampaignState>(
     );
 }
 
+/**
+ * The dev build's free points (#1171): earns `amount` through the
+ * treasury on the current day, or refuses when the build is not a dev
+ * build or the amount is not a positive whole number.
+ *
+ * ```
+ *   devTools off ──► err(dev-tools-disabled)
+ *   amount ≤ 0   ──► err(invalid-grant)
+ *   otherwise    ──► economy' = earn(amount, "dev:grant", day)
+ * ```
+ */
+export function createGrantTechPointsHandler<TState extends CampaignState>(
+  deps: TechHandlerDeps,
+): CommandHandler<TState, GrantTechPointsCommand> {
+  return (state, command) => {
+    if (deps.devTools !== true) {
+      return err(
+        commandError(
+          DEV_TOOLS_DISABLED,
+          "Free tech points are a development tool; this build has none.",
+        ),
+      );
+    }
+    const amount = command.payload.amount;
+    if (!Number.isInteger(amount) || amount <= 0) {
+      return err(
+        commandError(
+          INVALID_GRANT,
+          `A grant must be a positive whole number of tech points, not ${String(amount)}.`,
+        ),
+      );
+    }
+    const applied = deps.techPoints.earn(
+      state.economy,
+      amount,
+      DEV_GRANT_REF,
+      state.overworld.day,
+    );
+    return ok({
+      state: { ...state, economy: applied.state },
+      events: applied.events,
+    });
+  };
+}
+
 /** Registers the tech handlers on `dispatcher`. Called once at the composition root. */
 export function registerTechCommands<TState extends CampaignState>(
   dispatcher: CommandDispatcher<TState>,
   deps: TechHandlerDeps,
 ): void {
   dispatcher.register(UNLOCK_TECH, createUnlockTechHandler<TState>(deps));
+  dispatcher.register(
+    GRANT_TECH_POINTS,
+    createGrantTechPointsHandler<TState>(deps),
+  );
 }
 
 // ===========================================

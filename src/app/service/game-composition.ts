@@ -37,6 +37,8 @@ import type { MissionTypeCatalogue } from "../../overworld/service/mission-gener
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { registerTechCommands } from "../../overworld/service/tech-command-handlers";
+import { TECH_DEV_TOOLS } from "../../tech/data/tech-dev-tools";
+import type { TechDevTools } from "../../tech/model/tech-dev-tools";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
@@ -153,6 +155,11 @@ export interface GameComposition {
    * otherwise, and then no screen renders anything of them.
    */
   readonly devTools: DevTools | undefined;
+  /**
+   * The tech tree's development tools (#1171), in a dev build; undefined
+   * otherwise, and then the tree renders no Free TP button.
+   */
+  readonly techDevTools: TechDevTools | undefined;
 }
 
 // ===========================================
@@ -215,7 +222,11 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     availabilityFor: (state) =>
       createPartAvailability(content.tech, content.parts, state.tech),
   });
-  registerTechCommands(dispatcher, { catalogue: content.tech, techPoints });
+  registerTechCommands(dispatcher, {
+    catalogue: content.tech,
+    techPoints,
+    devTools: deps.devTools === true,
+  });
   const tickDeps = composeTickDeps(deps.debug);
   registerDeployableCommands(dispatcher, {
     catalogue: tickDeps.catalogue,
@@ -301,6 +312,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     tactical,
     autoResolve,
     devTools: tactical.devTools,
+    techDevTools: deps.devTools === true ? TECH_DEV_TOOLS : undefined,
   };
 }
 

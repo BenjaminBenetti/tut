@@ -38,7 +38,7 @@ Single player, browser only, no server.
  ├───────────────────────────────────────────────────────────────┤
  │  save/         root GameState, serialize / deserialize / migrate│
  ├───────────────────────────────────────────────────────────────┤
- │  overworld/  tactical/  mapgen/  roster/  bugs/  economy/ content│
+ │  overworld/ tactical/ mapgen/ roster/ bugs/ economy/ tech/ content│
  │  (simulation — pure TS, deterministic, no DOM, no three.js)     │
  ├───────────────────────────────────────────────────────────────┤
  │  core/         rng, ids, events, math, grid, result types       │
@@ -57,8 +57,9 @@ Follow `/<domain>/<type>/<file>` under `src/`. Types are things like `model`, `s
 | `core` | Seeded RNG, id generation, event bus, vector/grid math, shared types |
 | `save` | Save slots, serialization, versioned migrations |
 | `overworld` | Earth map model, cities/regions, time tick, infestation sim, threat, missions & events generation, deployables |
-| `economy` | Credits, prices, income, transactions |
+| `economy` | Credits, prices, income, transactions; tech points and their treasury (#1171) |
 | `roster` | Squads, mechs, parts, loadouts, validation, permadeath bookkeeping |
+| `tech` | The tech tree: nodes, families, unlocking, which parts the tree has made purchasable (ADR 0011) |
 | `tactical` | Tile grid runtime, units on map, turn engine, actions, cover/LOS, spawners, resolution |
 | `bugs` | Bug species data and AI behaviours |
 | `mapgen` | Procedural map generator, biomes, buildings, placement hooks, preview harness; pass order in `mapgen-pipeline.md` |
@@ -70,7 +71,7 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 
 ## 5. Key contracts
 
-- **Root game state**: one serializable object `GameState { meta, overworld, roster, economy, activeMission? }`.
+- **Root game state**: one serializable object `GameState { meta, overworld, roster, economy, tech, activeMission? }`.
 - **Command pattern**: presentation issues commands (`AdvanceDay`, `PurchasePart`, `MoveUnit`, `FireWeapon`). Simulation services validate and apply commands, returning a new state and a list of domain events for presentation to animate.
 - **Mission resolver interface**: `MissionResolver.resolve(mission, deployment, state) → MissionResult`. M1 ships an `AutoResolveMissionResolver`; M2 ships the tactical one. The overworld doesn't care which.
 - **Map contract**: `TacticalMap { width, depth, levels, tiles[], buildings[], hooks{deployZones, objectives, edgeSpawns, extraction} }`. Map generation produces it; tactical consumes it; graphics renders it. Full contract and invariants: [ADR 0004](../adr/0004-tactical-map-contract.md).
@@ -113,3 +114,5 @@ Any change to §2, §3, or a new library goes in `docs/adr/NNNN-title.md` with c
 | [0007](../adr/0007-in-world-ui-is-dom-anchored-to-world-points.md) | In-world UI is DOM anchored to projected world points |
 | [0008](../adr/0008-half-height-elevation-layers.md) | Elevation is measured in half-height layers; a one-layer step is a free walk |
 | [0009](../adr/0009-map-scale-for-tactical-room.md) | Map scale opens up for tactical room: knobs not a multiplier, interiors as structures, map-aware zoom |
+| [0010](../adr/0010-mech-rooftop-mobility.md) | Jump jets and mech roof occupancy |
+| [0011](../adr/0011-tech-points-and-the-tech-tree.md) | Tech points are a second resource; the tech tree gates parts above tier 1 |

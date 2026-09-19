@@ -14,7 +14,7 @@ import type { ResolvedMapGenParams } from "../model/resolved-params";
 /** The registries parameter resolution needs. */
 export type ParamResolverRegistries = Pick<
   MapGenRegistries,
-  "biomes" | "settlements" | "mapSizes" | "placeProfiles"
+  "biomes" | "settlements" | "mapSizes" | "placeProfiles" | "buildingTemplates"
 >;
 
 /**
@@ -43,6 +43,12 @@ export function resolveMapGenParams(
   const biome = registries.biomes.get(params.biome);
   const settlement = registries.settlements.get(params.settlement);
   validateHooks(params);
+  if (
+    params.landmark !== undefined &&
+    !registries.buildingTemplates.has(params.landmark)
+  ) {
+    throw new Error(`Unknown landmark building kind "${params.landmark}"`);
+  }
   const slopeShare = resolveSlopeShare(params.slopeShare);
   const infestation = params.infestation ?? 0;
   if (!Number.isInteger(infestation) || infestation < 0 || infestation > 10) {
@@ -64,6 +70,7 @@ export function resolveMapGenParams(
           },
     settlement,
     hooks: params.hooks,
+    ...(params.landmark === undefined ? {} : { landmark: params.landmark }),
     slopeShare,
   };
 }

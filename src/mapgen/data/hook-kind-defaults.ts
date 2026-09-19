@@ -43,4 +43,11 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
       minDistanceFromDeploy: 8,
       maxNearestDistanceFromDeploy: 30,
     },
+    [HookKinds.GENERATOR]: {
+      requiredPass: Pass.INFANTRY,
+      // Far enough that the squad walks to its post before the first wave
+      // lands, near enough that it gets there with turns to dig in (#1175).
+      minDistanceFromDeploy: 6,
+      maxNearestDistanceFromDeploy: 30,
+    },
   };

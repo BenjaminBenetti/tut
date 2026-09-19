@@ -1,5 +1,8 @@
 import type { BuildingTemplate } from "../model/building-template";
-import type { KnownBuildingKindId } from "./building-kind-ids";
+import type {
+  InstallationBuildingKindId,
+  KnownBuildingKindId,
+} from "./building-kind-ids";
 import { BUILDING_ROOM_PROGRAMS } from "./building-room-programs";
 import { ARCHITECTURAL_PLANS } from "./architectural-plans";
 import { SHOP_INTERIOR_VARIANTS } from "./shop-interiors";
@@ -9,8 +12,8 @@ import { SHOP_INTERIOR_VARIANTS } from "./shop-interiors";
 // ===========================================
 
 /**
- * The four M1.5 building kinds, keyed by id so a kind id without a
- * template fails to compile. Numbers are starting points; tune them in
+ * The M1.5 building kinds and the four installations (#1175), keyed by
+ * id so a kind id without a template fails to compile. Numbers are starting points; tune them in
  * the preview harness, not in the pass.
  *
  * `windowDensity` is rolled per wall segment, and a segment is 2 m × 3 m,
@@ -110,4 +113,42 @@ export const BUILDING_TEMPLATES: Readonly<
       roomPrograms: BUILDING_ROOM_PROGRAMS.tower,
     },
   },
+  // The installations (#1175): a landmark in a defend mission, so one
+  // storey and a flat roof the squad can hold from, few windows so the
+  // fight stays outside around the generators, and a footprint every
+  // scale's lots can carry.
+  "sensor-array": installationTemplate("sensor-array"),
+  "repellent-dispersal": installationTemplate("repellent-dispersal"),
+  "defensive-battery": installationTemplate("defensive-battery"),
+  bank: installationTemplate("bank"),
 };
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The shell the four installations share (#1175). They differ in
+ * dressing, not in structure: an industrial floor plan of workshop and
+ * storage bays, the depot frontage, a walkable roof.
+ */
+function installationTemplate(
+  id: InstallationBuildingKindId,
+): BuildingTemplate {
+  return {
+    id,
+    footprintWidth: { min: 6, max: 12 },
+    footprintDepth: { min: 6, max: 10 },
+    floors: { min: 1, max: 1 },
+    roof: "flat",
+    roofWalkable: true,
+    windowDensity: 0.2,
+    scales: ["rural", "town", "city"],
+    interior: {
+      roomSize: { min: 5, max: 8 },
+      corridorWidth: 0,
+      architecture: ARCHITECTURAL_PLANS[id],
+      roomPrograms: BUILDING_ROOM_PROGRAMS[id],
+    },
+  };
+}

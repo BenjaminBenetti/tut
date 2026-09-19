@@ -40,6 +40,8 @@ const HOOK_GLYPHS: Readonly<Record<string, string>> = {
   [HookKinds.EGG_SPAWNER]: "E",
   [HookKinds.EDGE_SPAWN]: "S",
   [HookKinds.EXTRACTION]: "X",
+  [HookKinds.TECH_CARCASS]: "C",
+  [HookKinds.GENERATOR]: "G",
 };
 
 const EMPTY_GLYPH = ".";
@@ -55,7 +57,7 @@ export const ASCII_LEGEND = [
   "          _ floor  # roof  > stairs  % infested  . nothing  ? unknown",
   "props     O high cover  o low cover  i no cover",
   "links     / ramp (lower end)  \\ slope (lower tile)  L ladder (lower end)",
-  "hooks     D deploy  E egg spawner  S edge spawn  X extraction  ! other",
+  "hooks     D deploy  E egg spawner  S edge spawn  X extraction  C tech carcass  G generator  ! other",
   "north is up; x grows to the right, z grows downward",
   "y counts half-height layers; two layers make one storey",
 ].join("\n");

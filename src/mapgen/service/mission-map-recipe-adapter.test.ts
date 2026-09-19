@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { INFESTATION_CLEARANCE } from "../../content/data/mission-types";
+import {
+  DEFEND_INSTALLATION,
+  INFESTATION_CLEARANCE,
+} from "../../content/data/mission-types";
 import type { MissionType } from "../../content/model/mission-type";
 import type { Mission } from "../../overworld/model/mission";
 import { HookKinds } from "../model/hook";
@@ -94,6 +97,55 @@ describe("missionToMapRecipe", () => {
       plain.params.hooks,
     );
     expect(JSON.parse(JSON.stringify(priced))).toEqual(priced);
+  });
+
+  it("names the installation as the landmark and asks for its generators only for a defence (#1175)", () => {
+    const plain = unwrap(
+      missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries),
+    );
+    expect(plain.params.landmark).toBeUndefined();
+    expect(plain.params.hooks.some((h) => h.kind === HookKinds.GENERATOR)).toBe(
+      false,
+    );
+    const defended = unwrap(
+      missionToMapRecipe(
+        mission({
+          typeId: "defend-installation",
+          defence: {
+            installation: "repellent-dispersal",
+            deployableId: "dep-1",
+            generators: 4,
+            waves: 5,
+          },
+        }),
+        DEFEND_INSTALLATION,
+        registries,
+      ),
+    );
+    expect(defended.params.landmark).toBe("repellent-dispersal");
+    const generators = defended.params.hooks.filter(
+      (h) => h.kind === HookKinds.GENERATOR,
+    );
+    expect(generators).toHaveLength(1);
+    expect(generators[0]).toMatchObject({
+      count: 4,
+      requiredPass: PassMask.INFANTRY,
+      maxNearestDistanceFromDeploy: 30,
+    });
+    expect(generators[0]?.minDistanceFromDeploy).toBeGreaterThan(0);
+    expect(
+      defended.params.hooks.some((h) => h.kind === HookKinds.EGG_SPAWNER),
+    ).toBe(false);
+    expect(JSON.parse(JSON.stringify(defended))).toEqual(defended);
+    // And the generator accepts it: the landmark is on the map, its
+    // generators around it.
+    const map = generateTacticalMap(defended, { registries });
+    expect(map.buildings.some((b) => b.kind === "repellent-dispersal")).toBe(
+      true,
+    );
+    expect(
+      map.hooks.objectives.filter((h) => h.kind === HookKinds.GENERATOR),
+    ).toHaveLength(4);
   });
 
   it("carries the mission's seed and site parameters into the recipe", () => {

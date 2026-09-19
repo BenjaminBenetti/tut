@@ -2,6 +2,20 @@ import type { BuildingRoomProgram } from "../model/building-room-program";
 import type { KnownBuildingKindId } from "./building-kind-ids";
 import { RoomKindIds as Room } from "./room-kind-ids";
 
+/** The programme the four installations share (#1175). */
+const INSTALLATION_PROGRAM = {
+  ground: {
+    arrival: Room.WORKSHOP,
+    primary: [Room.OFFICE, Room.STORAGE],
+    repeat: [Room.STORAGE],
+  },
+  upper: {
+    arrival: Room.STORAGE,
+    primary: [Room.WORKSHOP],
+    repeat: [Room.STORAGE],
+  },
+} as const;
+
 /** Room uses by building and storey; geometry and furnishing stay separate. */
 export const BUILDING_ROOM_PROGRAMS: Readonly<
   Record<
@@ -82,4 +96,9 @@ export const BUILDING_ROOM_PROGRAMS: Readonly<
       repeat: [Room.OFFICE, Room.OFFICE, Room.MEETING],
     },
   },
+  // Installations (#1175): a workshop keeps the plant running, storage feeds it.
+  "sensor-array": INSTALLATION_PROGRAM,
+  "repellent-dispersal": INSTALLATION_PROGRAM,
+  "defensive-battery": INSTALLATION_PROGRAM,
+  bank: INSTALLATION_PROGRAM,
 };

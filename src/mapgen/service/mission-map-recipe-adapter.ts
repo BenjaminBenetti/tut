@@ -1,4 +1,5 @@
 import { isPlaceProfileId } from "../../content/model/place-profile-id";
+import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import type {
   MissionHookRequirement,
   MissionType,
@@ -61,9 +62,11 @@ const MAP_EDGE_MARGIN = 2;
  *   Mission.mapParams { biome, settlement, size, seed }
  *   MissionType.requiredHooks [{ kind, count, countPerDifficulty }]
  *   + { kind: "tech-carcass", count: 1 } when mapParams.techCarcass is set (#1171)
+ *   + { kind: "generator", count: defence.generators } and the installation's
+ *     building kind as the landmark when the mission is a defence (#1175)
  *          │  × difficulty, + HOOK_KIND_DEFAULTS[kind]
  *          ▼
- *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks } }
+ *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks, landmark? } }
  * ```
  */
 export function missionToMapRecipe(
@@ -86,6 +89,7 @@ export function missionToMapRecipe(
   for (const requirement of [
     ...missionType.requiredHooks,
     ...carcassHooks(mission),
+    ...generatorHooks(mission),
   ]) {
     if (!registries.hookPlacers.has(requirement.kind)) {
       return err({ kind: "unknown-hook-kind", id: requirement.kind });
@@ -106,6 +110,12 @@ export function missionToMapRecipe(
       ...(isPlaceProfileId(mission.cityId)
         ? { placeProfile: mission.cityId }
         : {}),
+      ...(mission.defence === undefined
+        ? {}
+        : {
+            landmark:
+              INSTALLATION_SITES[mission.defence.installation].buildingKind,
+          }),
     },
   });
 }
@@ -137,6 +147,17 @@ function carcassHooks(mission: Mission): readonly MissionHookRequirement[] {
   return mission.mapParams.techCarcass === undefined
     ? []
     : [{ kind: HookKinds.TECH_CARCASS, count: 1 }];
+}
+
+/**
+ * The generator hooks a defence carries (#1175): one per generator of
+ * the installation under attack, none for any other mission. Like the
+ * carcass they are the mission's, not the type's.
+ */
+function generatorHooks(mission: Mission): readonly MissionHookRequirement[] {
+  return mission.defence === undefined
+    ? []
+    : [{ kind: HookKinds.GENERATOR, count: mission.defence.generators }];
 }
 
 /** Completes a content requirement with the kind's mapgen defaults. */

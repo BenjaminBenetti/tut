@@ -71,6 +71,11 @@ export const BUILDING_FRONTAGE_STYLES: Readonly<
     wallUtility: WALL_AC,
     entrances: BUSINESS_ENTRANCES.offices,
   },
+  // Installations (#1175) read as depots until each gets its own kit.
+  "sensor-array": { entrances: BUSINESS_ENTRANCES.depot },
+  "repellent-dispersal": { entrances: BUSINESS_ENTRANCES.depot },
+  "defensive-battery": { entrances: BUSINESS_ENTRANCES.depot },
+  bank: { entrances: BUSINESS_ENTRANCES.offices },
 };
 
 /** Flush guard and sill planter, below the head of the existing window aperture. */

@@ -171,6 +171,84 @@ function checkShell(draft: MapDraft, building: Building, label: string): void {
 
 const SEEDS = 8;
 
+describe("BuildingPass landmark (#1175)", () => {
+  it("raises the recipe's landmark on the lot nearest the centre, once, at every scale", () => {
+    for (const settlement of SETTLEMENT_SCALES) {
+      for (const seed of ["lm-1", "lm-2", "lm-3"]) {
+        const draft = generator.run(
+          {
+            archetype: "settlement",
+            biome: "temperate",
+            settlement,
+            size: "medium",
+            hooks: [],
+            landmark: "defensive-battery",
+          },
+          new Mulberry32Rng(hashSeed(`${settlement}-${seed}`)),
+        ).draft;
+        const landmarks = draft.buildings.filter(
+          (b) => b.kind === "defensive-battery",
+        );
+        expect(landmarks, `${settlement}/${seed}`).toHaveLength(1);
+        const landmark = landmarks[0]!;
+        expect(landmark.floors, `${settlement}/${seed}`).toHaveLength(1);
+        checkShell(draft, landmark, `${settlement}/${seed}`);
+        // No other lot that could have held it is nearer the centre.
+        const centre = { x: draft.width / 2, z: draft.depth / 2 };
+        const distance = (b: Building) => {
+          const r = b.footprint[0]!;
+          return (
+            Math.abs(r.x + r.w / 2 - centre.x) +
+            Math.abs(r.z + r.d / 2 - centre.z)
+          );
+        };
+        const lotOf = (b: Building) =>
+          draft.lots.find((lot) => {
+            const r = b.footprint[0]!;
+            return (
+              r.x >= lot.rect.x &&
+              r.z >= lot.rect.z &&
+              r.x + r.w <= lot.rect.x + lot.rect.w &&
+              r.z + r.d <= lot.rect.z + lot.rect.d
+            );
+          })!;
+        const lotCentreDistance = (b: Building) => {
+          const r = lotOf(b).rect;
+          return (
+            Math.abs(r.x + r.w / 2 - centre.x) +
+            Math.abs(r.z + r.d / 2 - centre.z)
+          );
+        };
+        for (const other of draft.buildings) {
+          if (other === landmark) continue;
+          const lot = lotOf(other).rect;
+          const along = other.entrances[0]!.side;
+          const fits =
+            along === "n" || along === "s"
+              ? lot.w >= 6 && lot.d >= 6
+              : lot.d >= 6 && lot.w >= 6;
+          if (fits) {
+            expect(
+              lotCentreDistance(other),
+              `${settlement}/${seed}: ${other.id} nearer than the landmark`,
+            ).toBeGreaterThanOrEqual(lotCentreDistance(landmark));
+          }
+        }
+        expect(distance(landmark)).toBeLessThan(draft.width);
+      }
+    }
+  });
+
+  it("leaves the biome's choices alone without a landmark", () => {
+    const draft = run("temperate", "town", "no-landmark");
+    expect(
+      draft.buildings.some((b) =>
+        KNOWN_BUILDING_KIND_IDS.slice(5).includes(b.kind as never),
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("BuildingPass", () => {
   it("raises a valid shell for every template on its own lot", () => {
     for (const kind of KNOWN_BUILDING_KIND_IDS) {

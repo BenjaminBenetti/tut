@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
+import { ALL_PARTS_AVAILABLE } from "../model/part-availability";
 import type { EconomyState } from "../../economy/model/economy-state";
 import { CREDITS_CHANGED } from "../../economy/model/economy-event";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
@@ -78,8 +79,9 @@ function setup(credits = 10_000): {
     upgrades: UPGRADE_TUNING,
     transactions: new LedgerTransactionService(ids),
     ids,
+    availability: ALL_PARTS_AVAILABLE,
   };
-  const economy: EconomyState = { credits, ledger: [] };
+  const economy: EconomyState = { credits, ledger: [], techPoints: 0 };
   const slices = { roster: ROSTER, economy };
   return {
     deps,

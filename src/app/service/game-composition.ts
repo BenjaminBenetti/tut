@@ -1,4 +1,5 @@
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
+import { TechPointTreasury } from "../../economy/service/tech-point-service";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
@@ -35,6 +36,12 @@ import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
+import { registerTechCommands } from "../../overworld/service/tech-command-handlers";
+import { TECH_FAMILIES } from "../../tech/data/tech-families";
+import { TECH_NODES } from "../../tech/data/tech-tree";
+import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
+import { createPartAvailability } from "../../tech/service/part-availability-service";
 import type { DevTools, TacticalComposition } from "./tactical-composition";
 import { composeTactical } from "./tactical-composition";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
@@ -115,6 +122,8 @@ export interface GameContent {
   readonly missionTypes: MissionTypeCatalogue;
   /** Copy and choices for the event dialog. */
   readonly eventTypes: EventTypeCatalogue;
+  /** The tech tree (#1171): nodes, families and what each unlocks. */
+  readonly tech: TechCatalogue;
 }
 
 /** The simulation-facing services screens are handed. */
@@ -167,7 +176,8 @@ export interface GameComposition {
  * Command handlers are registered on `dispatcher` here: the roster
  * commands (#63), the deployable commands (#65), `AdvanceDay` (#68), which
  * runs the default tick pipeline over the shipped content, #70's events,
- * the tactical rules (#342), and the mission lifecycle (#341):
+ * `UnlockTech` (#1171), the tactical rules (#342), and the mission
+ * lifecycle (#341):
  *
  * ```
  *   StartMission  ──► TacticalMissionResolver.beginMission ──► activeMission
@@ -196,11 +206,16 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     eventTypes: new DataEventTypeCatalogue(
       EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
     ),
+    tech: new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES)),
   };
+  const techPoints = new TechPointTreasury();
   registerRosterCommands(dispatcher, {
     ...content,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
+    availabilityFor: (state) =>
+      createPartAvailability(content.tech, content.parts, state.tech),
   });
+  registerTechCommands(dispatcher, { catalogue: content.tech, techPoints });
   const tickDeps = composeTickDeps(deps.debug);
   registerDeployableCommands(dispatcher, {
     catalogue: tickDeps.catalogue,
@@ -265,6 +280,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     resolver,
     rosterTuning: content.rosterTuning,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
+    techPoints,
   });
   dispatcher.register(LAUNCH_MISSION, launch);
   registerStartMission(dispatcher, {

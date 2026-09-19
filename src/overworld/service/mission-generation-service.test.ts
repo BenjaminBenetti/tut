@@ -41,6 +41,7 @@ const ALWAYS: MissionTuning = {
   rules: {
     "infestation-clearance": { ...RULE, chanceAtThreshold: 1, chanceAtMax: 1 },
   },
+  techCarcass: MISSION_TUNING.techCarcass,
 };
 
 /** A rule that never offers. */
@@ -48,6 +49,7 @@ const NEVER: MissionTuning = {
   rules: {
     "infestation-clearance": { ...RULE, chanceAtThreshold: 0, chanceAtMax: 0 },
   },
+  techCarcass: MISSION_TUNING.techCarcass,
 };
 
 /**
@@ -144,7 +146,7 @@ function missionAt(cityId: string, expiresDay: number, penalty = 10): Mission {
       size: "small",
       seed: "1",
     },
-    rewards: { credits: 900 },
+    rewards: { credits: 900, techPoints: 0 },
     createdDay: expiresDay - 5,
     expiresDay,
     ignorePenalty: penalty,

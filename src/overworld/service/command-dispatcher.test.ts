@@ -40,7 +40,8 @@ const BASE: CampaignState = {
     hives: [],
   },
   roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
-  economy: { credits: 5000, ledger: [] },
+  economy: { credits: 5000, ledger: [], techPoints: 0 },
+  tech: { unlocked: [] },
 };
 
 /** Bumps the day and reports it; touches neither rng nor ids. */

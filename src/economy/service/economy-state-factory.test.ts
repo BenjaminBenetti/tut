@@ -7,14 +7,23 @@ import { createInitialEconomyState } from "./economy-state-factory";
 describe("createInitialEconomyState", () => {
   it("starts with the given credits and an empty ledger", () => {
     const state = createInitialEconomyState(1234);
-    expect(state).toEqual({ credits: 1234, ledger: [] });
+    expect(state).toEqual({ credits: 1234, ledger: [], techPoints: 0 });
+  });
+
+  it("banks the given starting tech points", () => {
+    expect(createInitialEconomyState(1234, 7).techPoints).toBe(7);
+    expect(() => createInitialEconomyState(1234, -1)).toThrow(RangeError);
   });
 
   it("accepts the default tuning value and zero", () => {
     expect(
       createInitialEconomyState(ECONOMY_TUNING.startingCredits).credits,
     ).toBe(ECONOMY_TUNING.startingCredits);
-    expect(createInitialEconomyState(0)).toEqual({ credits: 0, ledger: [] });
+    expect(createInitialEconomyState(0)).toEqual({
+      credits: 0,
+      ledger: [],
+      techPoints: 0,
+    });
   });
 
   it("is deterministic and JSON-serializable", () => {

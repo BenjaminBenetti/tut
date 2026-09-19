@@ -39,6 +39,19 @@ export interface MissionMapParams {
    * text; mapgen hashes it.
    */
   readonly seed: string;
+  /**
+   * A harvestable tech carcass on the map (#1171): a dead bug rich in
+   * tech points that an infantry squad can strip. Decided once when the
+   * mission is generated so the offer can advertise it; absent means
+   * the map has none.
+   */
+  readonly techCarcass?: TechCarcassParams;
+}
+
+/** What a mission's tech carcass is worth. */
+export interface TechCarcassParams {
+  /** Whole tech points a squad earns by harvesting it. */
+  readonly techPoints: number;
 }
 
 // ===========================================
@@ -46,12 +59,14 @@ export interface MissionMapParams {
 // ===========================================
 
 /**
- * What a mission pays on success. Credits only in M1; an object rather
- * than a number so later rewards (parts, intel) are additive fields.
+ * What a mission pays on success. An object rather than a number so
+ * later rewards (parts, intel) are additive fields.
  */
 export interface MissionRewards {
   /** Whole credits awarded for a won mission. */
   readonly credits: number;
+  /** Whole tech points awarded for a won mission (#1171). */
+  readonly techPoints: number;
 }
 
 // ===========================================

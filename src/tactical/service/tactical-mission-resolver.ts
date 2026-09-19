@@ -18,6 +18,7 @@ import type { MissionRewardTuning } from "../../overworld/service/mission-reward
 import {
   creditsFor,
   infestationDeltaFor,
+  techPointsFor,
 } from "../../overworld/service/mission-reward-service";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
@@ -180,6 +181,7 @@ export function tacticalMissionResult(
     mechsDestroyed,
     mechDamage,
     creditsAwarded: creditsFor(outcome, mission, deps.tuning),
+    techPointsAwarded: techPointsFor(outcome, mission, deps.tuning),
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
     ...leftBehindField(tactical, roster),
   };

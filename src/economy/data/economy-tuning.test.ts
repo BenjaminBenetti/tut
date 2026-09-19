@@ -4,8 +4,14 @@ import { ECONOMY_TUNING } from "./economy-tuning";
 
 describe("economy tuning", () => {
   it("uses non-negative whole credits everywhere", () => {
-    const { startingCredits, baseStipend, stipendFloor } = ECONOMY_TUNING;
-    for (const value of [startingCredits, baseStipend, stipendFloor]) {
+    const { startingCredits, baseStipend, stipendFloor, startingTechPoints } =
+      ECONOMY_TUNING;
+    for (const value of [
+      startingCredits,
+      baseStipend,
+      stipendFloor,
+      startingTechPoints,
+    ]) {
       expect(Number.isInteger(value)).toBe(true);
       expect(value).toBeGreaterThanOrEqual(0);
     }

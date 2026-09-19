@@ -14,7 +14,7 @@ describe("createNewGameMeta", () => {
     expect(a.rng.seed).toBe(42);
     expect(a.ids).toEqual({ counters: {} });
     expect(a.createdAt).toBe("t");
-    expect(GAME_STATE_SCHEMA_VERSION).toBe(25);
+    expect(GAME_STATE_SCHEMA_VERSION).toBe(26);
   });
 
   it("normalises the seed to an unsigned 32-bit integer", () => {

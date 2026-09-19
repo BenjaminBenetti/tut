@@ -19,7 +19,7 @@ function mission(credits: number, difficulty = 4): Mission {
       size: "medium",
       seed: "s",
     },
-    rewards: { credits },
+    rewards: { credits, techPoints: 0 },
     createdDay: 1,
     expiresDay: 5,
     ignorePenalty: 3,

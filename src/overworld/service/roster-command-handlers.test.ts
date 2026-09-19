@@ -19,6 +19,7 @@ import {
   SQUAD_REINFORCED,
 } from "../../roster/model/roster-event";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
+import { ALL_PARTS_AVAILABLE } from "../../roster/model/part-availability";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { CampaignState } from "../model/campaign-state";
 import type { CommandDispatcher } from "../model/command-dispatcher";
@@ -87,7 +88,8 @@ const BASE: CampaignState = {
     savedLoadouts: [STARTER_LOADOUT],
     graveyard: [],
   },
-  economy: { credits: 20_000, ledger: [] },
+  economy: { credits: 20_000, ledger: [], techPoints: 0 },
+  tech: { unlocked: [] },
 };
 
 const DEPS: RosterHandlerDeps = {
@@ -97,6 +99,7 @@ const DEPS: RosterHandlerDeps = {
   rosterTuning: ROSTER_TUNING,
   upgrades: UPGRADE_TUNING,
   transactionsFor: (ids) => new LedgerTransactionService(ids),
+  availabilityFor: () => ALL_PARTS_AVAILABLE,
 };
 
 /** A dispatcher with only the roster commands registered. */
@@ -268,7 +271,8 @@ describe("roster handlers through the dispatcher", () => {
   it("leaves the campaign untouched, counters included, on an unaffordable build", () => {
     const poor: CampaignState = {
       ...BASE,
-      economy: { credits: 10, ledger: [] },
+      economy: { credits: 10, ledger: [], techPoints: 0 },
+      tech: { unlocked: [] },
     };
     const outcome = dispatcher().process(
       poor,

@@ -108,6 +108,7 @@ const RESULT: MissionResult = {
     { mechId: "mech-2", damage: 35, kills: 1, xp: 10 },
   ],
   creditsAwarded: 900,
+  techPointsAwarded: 0,
   infestationDelta: -20,
 };
 

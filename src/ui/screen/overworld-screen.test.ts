@@ -562,7 +562,7 @@ describe("OverworldScreen", () => {
       size: "medium",
       seed: "9",
     },
-    rewards: { credits: difficulty * 300 },
+    rewards: { credits: difficulty * 300, techPoints: 0 },
     createdDay: 1,
     expiresDay,
     ignorePenalty: 10,

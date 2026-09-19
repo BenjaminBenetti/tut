@@ -9,6 +9,7 @@ import { MECH_ID_PREFIX } from "../model/mech";
 import type { MechLoadout } from "../model/mech-loadout";
 import type { MechRatingTuning } from "../model/mech-rating-tuning";
 import type { MechStatSheet } from "../model/mech-stat-sheet";
+import type { PartAvailability } from "../model/part-availability";
 import type { PartCatalogue } from "../model/part-catalogue";
 import type { RosterError } from "../model/roster-error";
 import type { RosterApplied } from "../model/roster-event";
@@ -45,6 +46,8 @@ export interface RosterServiceDeps {
   readonly transactions: TransactionService;
   /** Issues squad and mech ids. */
   readonly ids: IdGenerator;
+  /** Which parts the tech tree lets a build use today (#1171). */
+  readonly availability: PartAvailability;
 }
 
 /** The two slices every roster command reads and returns. */
@@ -251,14 +254,16 @@ export function deleteLoadout(
 /**
  * Builds a mech named `mechName` from the saved template `loadoutName`,
  * charging the stat sheet's `totalCost` as a `purchase` against the new
- * mech's id (GDD §5.8). The template is re-validated at build time so a
- * catalogue change since it was saved cannot produce an unbuildable
- * mech. Rejects without drawing an id or touching either slice.
+ * mech's id (GDD §5.8). The template is re-validated at build time,
+ * against what the tech tree has unlocked (#1171), so a catalogue change
+ * since it was saved cannot produce an unbuildable mech and a locked
+ * part cannot be bought through an old template. Rejects without
+ * drawing an id or touching either slice.
  *
  * ```
- *   loadoutName ──► saved? ──► valid? ──► affordable? ──► mech + MechBuilt
- *                     │           │            │
- *              unknown-loadout  invalid-loadout  insufficient-credits
+ *   loadoutName ──► saved? ──► valid & unlocked? ──► affordable? ──► mech + MechBuilt
+ *                     │               │                   │
+ *              unknown-loadout  invalid-loadout    insufficient-credits
  * ```
  */
 export function buildMech(
@@ -283,6 +288,7 @@ export function buildMech(
     deps.parts,
     deps.rating,
     deps.upgrades,
+    deps.availability,
   );
   if (!validated.ok) {
     return err({

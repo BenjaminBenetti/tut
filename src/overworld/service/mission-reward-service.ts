@@ -53,6 +53,39 @@ export function creditsFor(
 }
 
 /**
+ * Whole tech points paid for the outcome (#1171): the mission's reward
+ * on a win, a fraction on extraction, nothing on a loss, plus whatever
+ * the squads harvested from a tech carcass. The harvest is kept on
+ * every outcome but a loss: a squad that stripped the carcass and
+ * extracted brings it home, one that was wiped does not.
+ *
+ * ```
+ *   won       ──► mission.rewards.techPoints + harvested
+ *   extracted ──► ⌊techPoints × extractedRewardFraction⌋ + harvested
+ *   lost      ──► 0
+ * ```
+ */
+export function techPointsFor(
+  outcome: MissionOutcome,
+  mission: Mission,
+  tuning: Pick<MissionRewardTuning, "extractedRewardFraction">,
+  harvested = 0,
+): number {
+  switch (outcome) {
+    case "won":
+      return mission.rewards.techPoints + harvested;
+    case "extracted":
+      return (
+        Math.floor(
+          mission.rewards.techPoints * tuning.extractedRewardFraction,
+        ) + harvested
+      );
+    case "lost":
+      return 0;
+  }
+}
+
+/**
  * Signed infestation change for the host city: clearance on a win, a
  * penalty on a loss, nothing either way on an extraction. The applier
  * clamps it to the city's bounds.

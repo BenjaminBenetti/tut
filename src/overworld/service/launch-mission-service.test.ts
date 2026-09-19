@@ -4,6 +4,7 @@ import type { Rng } from "../../core/model/rng";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { CREDITS_CHANGED } from "../../economy/model/economy-event";
+import { TechPointTreasury } from "../../economy/service/tech-point-service";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
@@ -57,7 +58,7 @@ const MISSION: Mission = {
     size: "small",
     seed: "1",
   },
-  rewards: { credits: 900 },
+  rewards: { credits: 900, techPoints: 0 },
   createdDay: 3,
   expiresDay: 8,
   ignorePenalty: 10,
@@ -137,7 +138,8 @@ function campaign(
       savedLoadouts: [],
       graveyard: [],
     },
-    economy: { credits: 1000, ledger: [] },
+    economy: { credits: 1000, ledger: [], techPoints: 0 },
+    tech: { unlocked: [] },
   };
 }
 
@@ -156,6 +158,7 @@ const WIN: MissionResult = {
   mechsDestroyed: [],
   mechDamage: [{ mechId: "mech-1", damage: 30, kills: 2 }],
   creditsAwarded: 900,
+  techPointsAwarded: 0,
   infestationDelta: -20,
 };
 
@@ -168,6 +171,7 @@ const LOSS: MissionResult = {
   mechsDestroyed: ["mech-1"],
   mechDamage: [{ mechId: "mech-1", damage: 80 }],
   creditsAwarded: 0,
+  techPointsAwarded: 0,
   infestationDelta: 5,
 };
 
@@ -196,6 +200,7 @@ function deps(resolver: MissionResolver): LaunchMissionDeps {
     resolver,
     rosterTuning: ROSTER_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
+    techPoints: new TechPointTreasury(),
   };
 }
 

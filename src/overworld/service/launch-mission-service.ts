@@ -3,6 +3,7 @@ import { commandError } from "../../core/model/command-error";
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
+import type { TechPointService } from "../../economy/model/tech-point-service";
 import type { TransactionService } from "../../economy/model/transaction-service";
 import type { CasualtyReport } from "../../roster/model/casualty-report";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
@@ -39,6 +40,8 @@ export interface LaunchMissionDeps {
    * id generator, so reward ledger ids share the campaign's counters.
    */
   readonly transactionsFor: (ids: IdGenerator) => TransactionService;
+  /** The one door tech points move through (#1171). */
+  readonly techPoints: TechPointService;
 }
 
 /** What a valid launch resolved to: the mission and its host city. */
@@ -218,6 +221,16 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
         .earn(economy, result.creditsAwarded, "reward", mission.id, day);
       economy = paid.state;
       events.push(...paid.events);
+    }
+    if (result.techPointsAwarded > 0) {
+      const earned = deps.techPoints.earn(
+        economy,
+        result.techPointsAwarded,
+        mission.id,
+        day,
+      );
+      economy = earned.state;
+      events.push(...earned.events);
     }
 
     const cities = state.overworld.map.cities.map((candidate): City => {

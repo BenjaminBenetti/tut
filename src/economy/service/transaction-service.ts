@@ -120,6 +120,7 @@ export class LedgerTransactionService implements TransactionService {
       ref,
     };
     const next: EconomyState = {
+      ...state,
       credits: state.credits + signedAmount,
       ledger: [...state.ledger, transaction],
     };

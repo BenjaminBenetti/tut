@@ -1,5 +1,6 @@
 import type { EconomyEvent } from "../../economy/model/economy-event";
 import type { RosterEvent } from "../../roster/model/roster-event";
+import type { TechEvent } from "../../tech/model/tech-event";
 import type { CampaignApplied, CampaignEvent } from "./campaign-event";
 
 // ===========================================
@@ -44,6 +45,8 @@ export interface OverworldEventMap {
   readonly economy: EconomyEvent;
   /** Every roster event, as one group (GDD §5.7): roster commands (#63) run through this dispatcher. */
   readonly roster: RosterEvent;
+  /** Every tech event, as one group (#1171): `UnlockTech` runs through this dispatcher. */
+  readonly tech: TechEvent;
 }
 
 // ===========================================

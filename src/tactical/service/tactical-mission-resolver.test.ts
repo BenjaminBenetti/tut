@@ -115,7 +115,7 @@ function mission(difficulty = 3, credits = 1000): Mission {
       size: "medium",
       seed: "s",
     },
-    rewards: { credits },
+    rewards: { credits, techPoints: 0 },
     createdDay: 1,
     expiresDay: 5,
     ignorePenalty: 3,
@@ -271,6 +271,7 @@ describe("tacticalMissionResult", () => {
       mechsDestroyed: [],
       mechDamage: [],
       creditsAwarded: 1000,
+      techPointsAwarded: 0,
       infestationDelta: -(
         TUNING.clearanceBase +
         TUNING.clearancePerDifficulty * 3

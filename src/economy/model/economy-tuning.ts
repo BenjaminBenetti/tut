@@ -11,4 +11,6 @@ export interface EconomyTuning {
   readonly baseStipend: number;
   /** Smallest daily stipend, paid even when Earth is nearly overrun. */
   readonly stipendFloor: number;
+  /** Tech points a new campaign begins with (#1171). */
+  readonly startingTechPoints: number;
 }

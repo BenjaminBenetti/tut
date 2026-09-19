@@ -32,7 +32,7 @@ function mission(
       seed: "mission-1-map",
       ...params,
     },
-    rewards: { credits: 1500 },
+    rewards: { credits: 1500, techPoints: 0 },
     createdDay: 1,
     expiresDay: 6,
     ignorePenalty: 10,

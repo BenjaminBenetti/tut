@@ -401,6 +401,7 @@ describe("the lifting adapter recomputes vision", () => {
       overworld: {} as MissionCampaignState["overworld"],
       roster: {} as MissionCampaignState["roster"],
       economy: {} as MissionCampaignState["economy"],
+      tech: { unlocked: [] },
       activeMission: mission,
     };
   }
@@ -531,6 +532,7 @@ describe("vision across a seeded replay", () => {
       overworld: {} as MissionCampaignState["overworld"],
       roster: {} as MissionCampaignState["roster"],
       economy: {} as MissionCampaignState["economy"],
+      tech: { unlocked: [] },
       activeMission: mission,
     };
   }

@@ -430,6 +430,34 @@ describe("buildMech", () => {
     ]);
   });
 
+  it("refuses a template that fits a part the tech tree has not unlocked (#1171)", () => {
+    const { deps, slices, snapshot } = setup();
+    const gated: RosterServiceDeps = {
+      ...deps,
+      availability: { isAvailable: (id) => id !== STARTER_LOADOUT.legsId },
+    };
+    const error = expectErr(
+      buildMech(slices, STARTER_LOADOUT.name, "X", DAY, gated),
+    );
+    expect(error).toMatchObject({ code: "invalid-loadout" });
+    if (error.code !== "invalid-loadout") return;
+    expect(error.errors).toEqual([
+      expect.objectContaining({ code: "part-locked", slot: "legs" }),
+    ]);
+    expect(deps.ids.getState().counters).toEqual({});
+    expect(slices).toEqual(snapshot);
+  });
+
+  it("saves a template with a locked part, since saving is free and the lock is checked at build (#1171)", () => {
+    const { deps, slices } = setup();
+    const gated: RosterServiceDeps = {
+      ...deps,
+      availability: { isAvailable: () => false },
+    };
+    const loadout: MechLoadout = { ...STARTER_LOADOUT, name: "Later" };
+    expect(saveLoadout(slices, loadout, gated).ok).toBe(true);
+  });
+
   it("rejects an unaffordable build without drawing an id", () => {
     const { deps, slices, snapshot } = setup(STARTER_COST - 1);
     expect(

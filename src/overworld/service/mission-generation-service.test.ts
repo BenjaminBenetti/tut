@@ -349,6 +349,10 @@ describe("generateMissions", () => {
     expect(mid.rewards.credits).toBe(
       mid.difficulty * CLEARANCE.rewardPerDifficulty,
     );
+    expect(mid.rewards.techPoints).toBe(
+      CLEARANCE.techRewardBase +
+        mid.difficulty * CLEARANCE.techRewardPerDifficulty,
+    );
     expect(mid.createdDay).toBe(12);
     expect(mid.expiresDay).toBe(12 + CLEARANCE.expiryDays + 2);
     expect(mid.ignorePenalty).toBe(CLEARANCE.ignorePenalty);
@@ -358,6 +362,9 @@ describe("generateMissions", () => {
       settlement: "city",
       size: mapSizeFor(mid.difficulty, RULE),
       seed: mid.mapParams.seed,
+      ...(mid.mapParams.techCarcass === undefined
+        ? {}
+        : { techCarcass: mid.mapParams.techCarcass }),
     });
     expect(mid.mapParams.seed).toMatch(/^\d+$/);
     expect(full.mapParams.settlement).toBe("town");
@@ -367,6 +374,57 @@ describe("generateMissions", () => {
       type: MISSION_OFFERED,
       payload: { mission: mid },
     });
+  });
+
+  it("rolls a tech carcass per mission on its own stream, worth the tuned points (#1171)", () => {
+    const state = fixtureState({ day: 12, threat: 40 });
+    const never: MissionTuning = {
+      ...ALWAYS,
+      techCarcass: { ...ALWAYS.techCarcass, chance: 0 },
+    };
+    const always: MissionTuning = {
+      ...ALWAYS,
+      techCarcass: { chance: 1, basePoints: 10, pointsPerDifficulty: 2 },
+    };
+    const none = generateMissions(state, deps(3, never));
+    for (const mission of none.state.missions) {
+      expect(mission.mapParams).not.toHaveProperty("techCarcass");
+    }
+    const all = generateMissions(state, deps(3, always));
+    expect(all.state.missions.length).toBeGreaterThan(0);
+    for (const mission of all.state.missions) {
+      expect(mission.mapParams.techCarcass).toEqual({
+        techPoints: 10 + 2 * mission.difficulty,
+      });
+    }
+    // The roll is a fork, so it perturbs nothing else the generator draws.
+    expect(
+      all.state.missions.map((m) => [m.id, m.difficulty, m.mapParams.seed]),
+    ).toEqual(
+      none.state.missions.map((m) => [m.id, m.difficulty, m.mapParams.seed]),
+    );
+  });
+
+  it("carries a carcass on roughly the tuned share of missions over many days", () => {
+    let carcasses = 0;
+    let offers = 0;
+    for (let seed = 1; seed <= 200; seed += 1) {
+      const result = generateMissions(
+        fixtureState({ day: seed }),
+        deps(seed, ALWAYS),
+      );
+      for (const mission of result.state.missions) {
+        offers += 1;
+        if (mission.mapParams.techCarcass !== undefined) carcasses += 1;
+      }
+    }
+    expect(offers).toBeGreaterThan(100);
+    expect(carcasses / offers).toBeGreaterThan(
+      MISSION_TUNING.techCarcass.chance - 0.12,
+    );
+    expect(carcasses / offers).toBeLessThan(
+      MISSION_TUNING.techCarcass.chance + 0.12,
+    );
   });
 
   it("uses a city's local biome for new missions without rewriting existing offers", () => {

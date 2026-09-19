@@ -3,11 +3,15 @@ import { describe, expect, it } from "vitest";
 import { AUTO_RESOLVE_TUNING } from "../data/auto-resolve-tuning";
 import type { Mission } from "../model/mission";
 import { MISSION_OUTCOMES } from "../model/mission-result";
-import { creditsFor, infestationDeltaFor } from "./mission-reward-service";
+import {
+  creditsFor,
+  infestationDeltaFor,
+  techPointsFor,
+} from "./mission-reward-service";
 
 const T = AUTO_RESOLVE_TUNING;
 
-function mission(credits: number, difficulty = 4): Mission {
+function mission(credits: number, difficulty = 4, techPoints = 0): Mission {
   return {
     id: "mission-1",
     typeId: "infestation-clearance",
@@ -19,7 +23,7 @@ function mission(credits: number, difficulty = 4): Mission {
       size: "medium",
       seed: "s",
     },
-    rewards: { credits, techPoints: 0 },
+    rewards: { credits, techPoints },
     createdDay: 1,
     expiresDay: 5,
     ignorePenalty: 3,
@@ -43,6 +47,26 @@ describe("creditsFor", () => {
       expect(Number.isInteger(paid)).toBe(true);
       expect(paid).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe("techPointsFor", () => {
+  it("pays the reward in full for a win, a floored fraction for an extraction and nothing for a loss (#1171)", () => {
+    const m = mission(0, 4, 23);
+    expect(techPointsFor("won", m, T)).toBe(23);
+    expect(techPointsFor("extracted", m, T)).toBe(
+      Math.floor(23 * T.extractedRewardFraction),
+    );
+    expect(techPointsFor("lost", m, T)).toBe(0);
+  });
+
+  it("brings a harvest home on a win or an extraction but not a loss", () => {
+    const m = mission(0, 4, 20);
+    expect(techPointsFor("won", m, T, 12)).toBe(32);
+    expect(techPointsFor("extracted", m, T, 12)).toBe(
+      Math.floor(20 * T.extractedRewardFraction) + 12,
+    );
+    expect(techPointsFor("lost", m, T, 12)).toBe(0);
   });
 });
 

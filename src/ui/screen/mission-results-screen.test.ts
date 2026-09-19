@@ -518,6 +518,22 @@ describe("MissionResultsScreen payout prominence", () => {
     return root;
   }
 
+  it("lists the tech points beside the credits (#1171)", () => {
+    const panel = mountWith({ techPointsAwarded: 23 });
+    const line = panel.querySelector<HTMLElement>(
+      '[data-field="rewards"] [data-field="tech-points"]',
+    );
+    expect(line?.textContent).toBe("23 TP");
+    expect(line?.previousElementSibling?.textContent).toBe("Tech points");
+  });
+
+  it("says how much of the tech came off a carcass when any did", () => {
+    const panel = mountWith({ techPointsAwarded: 28, techPointsHarvested: 5 });
+    expect(panel.querySelector('[data-field="tech-points"]')?.textContent).toBe(
+      "28 TP (5 harvested from a carcass)",
+    );
+  });
+
   /** Index of a `data-field` block among the panel's children, in reading order. */
   function orderOf(container: HTMLElement, field: string): number {
     const blocks = [...container.querySelectorAll("[data-field]")];

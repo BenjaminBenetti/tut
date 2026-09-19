@@ -370,7 +370,7 @@
  */
 .tut-list > li.tut-missions__row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 1.1rem 3ch 7ch 4ch;
+  grid-template-columns: minmax(0, 1fr) 1.1rem 3ch 7ch 6ch 4ch;
   align-items: center;
   gap: var(--space-2);
   cursor: pointer;
@@ -389,6 +389,12 @@
 .tut-missions__row:focus-visible {
   outline: 2px solid var(--ui-accent);
   outline-offset: -2px;
+}
+
+/* A reported carcass takes a second line under the whole row (#1171). */
+.tut-missions__row .tut-missions__carcass {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 .tut-mission-details [data-field="description"] {
@@ -499,6 +505,19 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+.tut-mech-bay__part-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+/* A part the tree has not unlocked (#1171): dimmed, and its lock says why. */
+.tut-list > li.tut-mech-bay__part[data-locked="true"] .tut-mech-bay__part-body,
+.tut-list > li.tut-mech-bay__part[data-locked="true"] .tut-mech-bay__thumb {
+  opacity: 0.6;
+}
+.tut-mech-bay__lock {
+  color: var(--ui-warn);
 }
 .tut-mech-bay__part-name {
   font-family: var(--font-mono);
@@ -1777,4 +1796,109 @@
 }
 .tut-radar-key {
   color: var(--ui-danger);
+}
+
+/* ===========================================
+   Tech tree screen (#1171)
+   =========================================== */
+#ui > .tut-tech-tree {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ui-bg, #0b0e12);
+}
+.tut-tech-tree__bar {
+  grid-row: 1;
+}
+.tut-tech-tree__body {
+  grid-row: 2;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3);
+  display: grid;
+  /* One column per family; a narrow window wraps the rest below. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+  align-content: start;
+}
+.tut-tech-tree__family {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tut-tech-tree__family-note {
+  margin: 0;
+  font-size: 12px;
+}
+.tut-tech-tree__tier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tut-tech-tree__tier-label {
+  font-size: 10px;
+}
+/* Tier 3 follows tier 2: the arrow between the rows says so. */
+.tut-tech-tree__arrow {
+  text-align: center;
+  font-size: 12px;
+  line-height: 1;
+}
+.tut-tech-tree__tier[data-tier="3"] {
+  margin-left: var(--space-3);
+}
+.tut-tech-tree__node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+}
+.tut-tech-tree__node[data-status="unlocked"] {
+  box-shadow: inset 2px 0 0 var(--ui-ok);
+}
+.tut-tech-tree__node[data-status="available"] {
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+.tut-tech-tree__node[data-status="locked"] .tut-tech-tree__node-name,
+.tut-tech-tree__node[data-status="locked"] .tut-tech-tree__node-note {
+  color: var(--ui-text-dim);
+}
+.tut-tech-tree__node-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.tut-tech-tree__node-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.tut-tech-tree__node-note {
+  margin: 0;
+  font-size: 12px;
+}
+.tut-tech-tree__unlocks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ui-info);
+}
+.tut-tech-tree__node-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+.tut-tech-tree__reason {
+  flex: 1 1 auto;
+  font-size: 11px;
+}
+.tut-tech-tree__node-foot .tut-btn {
+  margin-left: auto;
 }

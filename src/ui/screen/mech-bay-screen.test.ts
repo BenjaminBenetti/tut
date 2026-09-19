@@ -15,6 +15,9 @@ import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
+import { registerTechCommands } from "../../overworld/service/tech-command-handlers";
+import { unlockTech } from "../../overworld/model/unlock-tech-command";
+import { TechPointTreasury } from "../../economy/service/tech-point-service";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
@@ -27,6 +30,9 @@ import {
 import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
+import { TECH_FAMILIES } from "../../tech/data/tech-families";
+import { TECH_NODES } from "../../tech/data/tech-tree";
+import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
@@ -48,6 +54,19 @@ type NavigateMock = Mock<(id: ScreenId) => void>;
 // ===========================================
 
 const PARTS = new StaticPartCatalogue(STARTER_PARTS);
+
+/** The real tree, so a tier 2 part is locked until its node is bought. */
+const TECH = new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES));
+
+/**
+ * The campaign with every node bought (#1171), for the tests about
+ * weight, chips and prices: they fit tier 2 parts and are not about
+ * the tree.
+ */
+const researched = (): GameState => {
+  const base = newGame();
+  return { ...base, tech: { unlocked: TECH_NODES.map((node) => node.id) } };
+};
 
 /** Every part the palette lists. */
 const PARTS_TOTAL = STARTER_PARTS.length;
@@ -110,6 +129,10 @@ class RealStore implements CampaignStore {
       upgrades: UPGRADE_TUNING,
       transactionsFor: (ids) => new LedgerTransactionService(ids),
       availabilityFor: () => ALL_PARTS_AVAILABLE,
+    });
+    registerTechCommands(this.dispatcher, {
+      catalogue: TECH,
+      techPoints: new TechPointTreasury(),
     });
   }
   getState(): GameState {
@@ -203,6 +226,7 @@ function mountWith(
     router,
     session: sessionWith(store),
     parts: PARTS,
+    tech: TECH,
     rating: MECH_RATING_TUNING,
     unitTuning: UNIT_TUNING,
     upgrades: UPGRADE_TUNING,
@@ -423,7 +447,7 @@ describe("MechBayScreen", () => {
   });
 
   it("re-validates on every drop: a heavy gun shows an overweight error on the chassis badge and in the sheet", () => {
-    mountWith(newGame(), root);
+    mountWith(researched(), root);
     drop("arm-weapon-railgun");
     expect(errorCodes()).toEqual(["overweight"]);
     expect(sheetField("weight")).toBe("44 / 40 t");
@@ -458,7 +482,7 @@ describe("MechBayScreen", () => {
   });
 
   it("changing the chassis rebuilds the utility chips to its slot count and keeps the rest", () => {
-    mountWith(newGame(), root);
+    mountWith(researched(), root);
     drop("chassis-atlas");
     expect(fittedId("chassis")).toBe("chassis-atlas");
     expect(fittedId("arm-weapon")).toBe(STARTER_LOADOUT.armWeaponId);
@@ -739,7 +763,7 @@ describe("MechBayScreen", () => {
       // An over-weight mech is still the mech the player is looking at,
       // and the frame it goes invalid is the one they need to see it on.
       const preview = new FakePreviewHost();
-      mountWith(newGame(), root, false, preview);
+      mountWith(researched(), root, false, preview);
       drop("arm-weapon-railgun");
       expect(errorCodes()).toEqual(["overweight"]);
       expect(preview.shown.at(-1)?.armWeaponId).toBe("arm-weapon-railgun");
@@ -774,6 +798,82 @@ describe("MechBayScreen", () => {
       screen.unmount();
       expect(preview.releases).toBe(1);
       expect(root.querySelector("#mech-stage")).toBeNull();
+    });
+  });
+  // ===========================================
+  // Tech lock (#1171)
+  // ===========================================
+
+  describe("tech lock", () => {
+    it("marks every part above tier 1 locked until its node is bought, naming the node", () => {
+      mountWith(newGame(), root);
+      const jumper = card("legs-jumper");
+      expect(jumper.dataset.locked).toBe("true");
+      const lock = jumper.querySelector<HTMLElement>('[data-role="lock"]');
+      expect(lock?.hidden).toBe(false);
+      expect(lock?.title).toBe("Unlock Jump Jets on the tech tree");
+      expect(jumper.title).toBe("Unlock Jump Jets on the tech tree");
+      // Tier 1 needs no node.
+      const starter = card(STARTER_LOADOUT.legsId);
+      expect(starter.dataset.locked).toBe("false");
+      expect(
+        starter.querySelector<HTMLElement>('[data-role="lock"]')?.hidden,
+      ).toBe(true);
+      // Every locked card is a part the tree names, and vice versa.
+      const locked = [
+        ...root.querySelectorAll<HTMLElement>(
+          '#part-palette [data-locked="true"]',
+        ),
+      ].map((el) => el.dataset.partId);
+      const named = TECH_NODES.flatMap((node) => [...node.unlocks]);
+      expect(locked.sort()).toEqual([...named].sort());
+    });
+
+    it("a locked part still fits the draft, but the sheet lists part-locked and Build is disabled", () => {
+      mountWith(newGame(), root);
+      drop("legs-jumper");
+      expect(fittedId("legs")).toBe("legs-jumper");
+      expect(errorCodes()).toContain("part-locked");
+      const line = q('#stat-sheet [data-code="part-locked"]');
+      expect(line.dataset.slot).toBe("legs");
+      expect(line.textContent).toContain("Jumper Legs");
+      expect(q('#stat-sheet [data-field="verdict"]').dataset.tone).toBe(
+        "danger",
+      );
+      expect(button("build-mech").disabled).toBe(true);
+      expect(button("build-mech").title).toBe("Fix the loadout first");
+    });
+
+    it("buying the node through the store clears the lock and the error", () => {
+      const base = newGame();
+      const state = { ...base, economy: { ...base.economy, techPoints: 18 } };
+      const { store } = mountWith(state, root, true);
+      drop("legs-jumper");
+      // The starter Vanguard is full to the tonne, so the heavier legs
+      // are overweight too; only the lock is under test here.
+      expect(errorCodes()).toContain("part-locked");
+      expect(card("legs-jumper").dataset.locked).toBe("true");
+      const outcome = store?.dispatch(unlockTech("tech.jump-jets"));
+      expect(outcome?.ok).toBe(true);
+      expect(card("legs-jumper").dataset.locked).toBe("false");
+      expect(card("legs-jumper").title).toBe(
+        PARTS.getPart("legs-jumper")?.description,
+      );
+      expect(errorCodes()).not.toContain("part-locked");
+      expect(fittedId("legs")).toBe("legs-jumper");
+    });
+
+    it("without a campaign nothing is locked", () => {
+      mountWith(undefined, root);
+      expect(
+        root.querySelectorAll('#part-palette [data-locked="true"]'),
+      ).toHaveLength(0);
+    });
+
+    it("the bar offers the tech tree", () => {
+      const { navigate } = mountWith(newGame(), root);
+      button("tech-tree").click();
+      expect(navigate).toHaveBeenCalledWith("tech-tree");
     });
   });
 });

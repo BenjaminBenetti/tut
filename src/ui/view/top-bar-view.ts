@@ -1,6 +1,10 @@
 import type { IconId } from "../data/icon-manifest";
 import type { GameState } from "../../save/model/game-state";
-import { formatCredits, formatWhole } from "../service/format";
+import {
+  formatCredits,
+  formatTechPoints,
+  formatWhole,
+} from "../service/format";
 import { threatTone } from "../service/threat-band";
 import { iconGlyph } from "./icon-glyph";
 
@@ -16,6 +20,8 @@ export interface TopBarViewHandlers {
   readonly onMainMenu: () => void;
   /** The player asked for the roster screen; absent when no roster screen is reachable. */
   readonly onRoster?: () => void;
+  /** The player asked for the tech tree (#1171); absent when no tech tree screen is reachable. */
+  readonly onTechTree?: () => void;
   /**
    * Back into a mission that is still in progress (#468). Omitted where
    * the bar has no tactical screen to return to.
@@ -28,13 +34,13 @@ export interface TopBarViewHandlers {
 // ===========================================
 
 /**
- * The overworld's status strip: day, credits and threat on the left, the
- * campaign's navigation and Advance Day on the right. Built once in
- * `mount`; `update` rewrites only the text and colour band of the values
- * that can change, so a tick never rebuilds the bar.
+ * The overworld's status strip: day, credits, tech points and threat on
+ * the left, the campaign's navigation and Advance Day on the right.
+ * Built once in `mount`; `update` rewrites only the text and colour
+ * band of the values that can change, so a tick never rebuilds the bar.
  *
  * ```
- *   ┌ DAY 4 │ ¢5,120 │ THREAT 42 ▮warn ─────── status ── [Roster] [Main menu] [ADVANCE DAY] ┐
+ *   ┌ DAY 4 │ ¢5,120 │ TECH 42 TP │ THREAT 42 ▮warn ── status ── [Roster] [Tech] [Main menu] [ADVANCE DAY] ┐
  * ```
  */
 export class TopBarView {
@@ -46,6 +52,7 @@ export class TopBarView {
   private root: HTMLElement | undefined;
   private day: HTMLElement | undefined;
   private credits: HTMLElement | undefined;
+  private techPoints: HTMLElement | undefined;
   private threat: HTMLElement | undefined;
   private threatBadge: HTMLElement | undefined;
   private outcome: HTMLElement | undefined;
@@ -76,6 +83,7 @@ export class TopBarView {
 
     const day = this.createStat(doc, "Day", "day", "day");
     const credits = this.createStat(doc, "Credits", "credits", "credits");
+    const techPoints = this.createStat(doc, "Tech", "techPoints", "ability");
     const threat = this.createStat(doc, "Threat", "threat", "threat");
     const badge = doc.createElement("span");
     badge.className = "tut-badge";
@@ -106,6 +114,8 @@ export class TopBarView {
     resume.hidden = true;
     const roster = this.createButton(doc, "roster", "Roster", false);
     roster.disabled = this.handlers.onRoster === undefined;
+    const techTree = this.createButton(doc, "tech-tree", "Tech", false);
+    techTree.disabled = this.handlers.onTechTree === undefined;
     const menu = this.createButton(doc, "main-menu", "Main menu", false);
     const advance = this.createButton(doc, "advance-day", "Advance day", true);
     advance.disabled = true;
@@ -113,12 +123,14 @@ export class TopBarView {
     bar.append(
       day.stat,
       credits.stat,
+      techPoints.stat,
       threat.stat,
       outcome,
       spacer,
       status,
       resume,
       roster,
+      techTree,
       menu,
       advance,
     );
@@ -129,6 +141,9 @@ export class TopBarView {
     if (this.handlers.onRoster) {
       this.listen(roster, this.handlers.onRoster);
     }
+    if (this.handlers.onTechTree) {
+      this.listen(techTree, this.handlers.onTechTree);
+    }
     if (this.handlers.onResumeMission) {
       this.listen(resume, this.handlers.onResumeMission);
     }
@@ -136,6 +151,7 @@ export class TopBarView {
     this.root = bar;
     this.day = day.value;
     this.credits = credits.value;
+    this.techPoints = techPoints.value;
     this.threat = threat.value;
     this.threatBadge = badge;
     this.outcome = outcome;
@@ -151,13 +167,20 @@ export class TopBarView {
    * an answer Advance Day is disabled too (GDD §5.4).
    */
   update(state: GameState | undefined): void {
-    if (!this.day || !this.credits || !this.threat || !this.threatBadge) {
+    if (
+      !this.day ||
+      !this.credits ||
+      !this.techPoints ||
+      !this.threat ||
+      !this.threatBadge
+    ) {
       return;
     }
     this.setResumeVisible(state?.activeMission !== undefined);
     if (!state) {
       this.day.textContent = "—";
       this.credits.textContent = "—";
+      this.techPoints.textContent = "—";
       this.threat.textContent = "—";
       this.threatBadge.hidden = true;
       this.setOutcome(undefined);
@@ -167,6 +190,7 @@ export class TopBarView {
     const { overworld, economy } = state;
     this.setText(this.day, formatWhole(overworld.day));
     this.setText(this.credits, formatCredits(economy.credits));
+    this.setText(this.techPoints, formatTechPoints(economy.techPoints));
     this.setText(this.threat, formatWhole(overworld.threat));
     const tone = threatTone(overworld.threat);
     this.threatBadge.hidden = false;
@@ -210,6 +234,7 @@ export class TopBarView {
     this.root = undefined;
     this.day = undefined;
     this.credits = undefined;
+    this.techPoints = undefined;
     this.threat = undefined;
     this.threatBadge = undefined;
     this.outcome = undefined;

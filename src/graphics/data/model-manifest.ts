@@ -1565,9 +1565,9 @@ export const MODEL_MANIFEST = {
     category: "bugs",
     path: "assets/models/bugs/bug-tech-carcass.glb",
     footprint: { w: 1, d: 1 },
-    height: 1.4,
+    height: 0.8,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "prop.barrier-concrete": {
     category: "props",

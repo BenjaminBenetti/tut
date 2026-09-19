@@ -146,6 +146,15 @@ test("tech points, the tech tree and locked parts (#1171)", async ({
     "data-locked",
     "true",
   );
+  // A locked card is not draggable; an unlocked one is.
+  await expect(palette.locator('[data-part-id="legs-sprint"]')).toHaveAttribute(
+    "draggable",
+    "false",
+  );
+  await expect(palette.locator('[data-part-id="legs-jumper"]')).toHaveAttribute(
+    "draggable",
+    "true",
+  );
   await page.screenshot({
     path: "docs/design/mech-bay-locked-parts.png",
     fullPage: true,

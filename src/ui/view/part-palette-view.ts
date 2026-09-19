@@ -65,7 +65,7 @@ const DRAG_TYPE = "text/plain";
  *   │ ┌────┐ Railgun            [Fitted] │ ◄─ draggable, tabindex
  *   │ │ img│ ARM WEAPON · T2 · ¢1,200    │
  *   │ └────┘                             │
- *   │ ┌────┐ Siege Railgun          🔒   │ ◄─ data-locked: its tech node is not bought
+ *   │ ┌────┐ Siege Railgun          🔒   │ ◄─ data-locked: not bought, so not draggable
  *   │ │ img│ ARM WEAPON · T3 · ¢4,000    │
  *   │ └────┘                             │
  *   │ …                                  │
@@ -163,8 +163,9 @@ export class PartPaletteView {
       }
     });
     this.listen(list, "dblclick", (event) => {
-      const part = this.partOf(this.cardOf(event.target));
-      if (part) {
+      const card = this.cardOf(event.target);
+      const part = this.partOf(card);
+      if (card && part && !isLocked(card)) {
         this.handlers.onFit(part);
       }
     });
@@ -172,8 +173,9 @@ export class PartPaletteView {
       if ((event as KeyboardEvent).key !== "Enter") {
         return;
       }
-      const part = this.partOf(this.cardOf(event.target));
-      if (part) {
+      const card = this.cardOf(event.target);
+      const part = this.partOf(card);
+      if (card && part && !isLocked(card)) {
         event.preventDefault();
         this.handlers.onFit(part);
       }
@@ -182,6 +184,12 @@ export class PartPaletteView {
       const card = this.cardOf(event.target);
       const part = this.partOf(card);
       if (!card || !part) {
+        return;
+      }
+      if (isLocked(card)) {
+        // The card is not draggable, but a drag can still start on a
+        // child that is; refuse it here so nothing leaves the palette.
+        event.preventDefault();
         return;
       }
       const transfer = (event as DragEvent).dataTransfer;
@@ -227,14 +235,19 @@ export class PartPaletteView {
   /**
    * Marks the cards whose part the tech tree has not unlocked (#1171):
    * `locked` maps each such part id to the name of the node that would
-   * unlock it. A locked card keeps its drag and fit behaviour — a draft
-   * may hold it — and says on its lock where to go.
+   * unlock it. A locked card cannot be dragged, double-clicked or
+   * Entered onto the mech (Executive Director, 2026-09-19): it stays
+   * listed, dimmed, with its lock saying where to go. A draft loaded
+   * from an older template may still hold the part; the sheet reports
+   * that.
    */
   setLocked(locked: ReadonlyMap<string, string>): void {
     for (const [id, card] of this.cards) {
       const nodeName = locked.get(id);
       const on = nodeName !== undefined;
       card.dataset.locked = on ? "true" : "false";
+      card.draggable = !on;
+      card.setAttribute("aria-disabled", on ? "true" : "false");
       const lock = card.querySelector<HTMLElement>('[data-role="lock"]');
       if (lock) {
         lock.hidden = !on;
@@ -340,6 +353,7 @@ export class PartPaletteView {
     card.dataset.slot = part.slot;
     card.dataset.fitted = "false";
     card.dataset.locked = "false";
+    card.setAttribute("aria-disabled", "false");
     card.title = part.description;
     card.setAttribute("aria-label", `${part.name}, ${SLOT_LABELS[part.slot]}`);
 
@@ -430,4 +444,13 @@ export class PartPaletteView {
       target.removeEventListener(event, handler);
     });
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** Whether a card's part is still locked on the tech tree. */
+function isLocked(card: HTMLElement): boolean {
+  return card.dataset.locked === "true";
 }

@@ -68,6 +68,25 @@ const researched = (): GameState => {
   return { ...base, tech: { unlocked: TECH_NODES.map((node) => node.id) } };
 };
 
+/**
+ * A fresh campaign whose first template carries Jumper Legs, a tier 2
+ * part its tree has not unlocked: the one way a locked part reaches
+ * the draft now that the palette refuses it.
+ */
+const withLockedLegs = (state: GameState = newGame()): GameState => {
+  const [first, ...rest] = state.roster.savedLoadouts;
+  if (first === undefined) {
+    return state;
+  }
+  return {
+    ...state,
+    roster: {
+      ...state.roster,
+      savedLoadouts: [{ ...first, legsId: "legs-jumper" }, ...rest],
+    },
+  };
+};
+
 /** Every part the palette lists. */
 const PARTS_TOTAL = STARTER_PARTS.length;
 
@@ -348,7 +367,7 @@ describe("MechBayScreen", () => {
   // ===========================================
 
   it("lists every catalogue part as a draggable card with its picture, slot, tier and price", () => {
-    mountWith(newGame(), root);
+    mountWith(researched(), root);
     const cards = [
       ...root.querySelectorAll<HTMLElement>("#part-palette [data-part-id]"),
     ];
@@ -422,7 +441,7 @@ describe("MechBayScreen", () => {
 
   it("fits a part dropped on the stage into its slot and re-validates", () => {
     const preview = new FakePreviewHost();
-    mountWith(newGame(), root, false, preview);
+    mountWith(researched(), root, false, preview);
     const before = preview.shown.length;
     drop("legs-jumper");
     expect(fittedId("legs")).toBe("legs-jumper");
@@ -433,7 +452,7 @@ describe("MechBayScreen", () => {
   });
 
   it("lights the slot a dragged part is made for while the drag lasts", () => {
-    mountWith(newGame(), root);
+    mountWith(researched(), root);
     const stage = q("#mech-stage");
     card("legs-jumper").dispatchEvent(
       new Event("dragstart", { bubbles: true }),
@@ -494,7 +513,7 @@ describe("MechBayScreen", () => {
   });
 
   it("fits a card on Enter and on a double-click, for the keyboard and the impatient", () => {
-    mountWith(newGame(), root);
+    mountWith(researched(), root);
     card("legs-bastion").dispatchEvent(
       new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
     );
@@ -696,7 +715,7 @@ describe("MechBayScreen", () => {
   });
 
   it("disables Save and Build while the draft is invalid", () => {
-    mountWith(newGame(), root, true);
+    mountWith(researched(), root, true);
     drop("arm-weapon-railgun");
     expect(button("save-loadout").disabled).toBe(true);
     expect(button("build-mech").disabled).toBe(true);
@@ -829,9 +848,32 @@ describe("MechBayScreen", () => {
       expect(locked.sort()).toEqual([...named].sort());
     });
 
-    it("a locked part still fits the draft, but the sheet lists part-locked and Build is disabled", () => {
+    it("a locked card is not draggable and refuses a drag, Enter and a double-click (2026-09-19)", () => {
       mountWith(newGame(), root);
+      const jumper = card("legs-jumper");
+      expect(jumper.draggable).toBe(false);
+      expect(jumper.getAttribute("aria-disabled")).toBe("true");
+      const legsBefore = fittedId("legs");
+      const start = new Event("dragstart", { bubbles: true, cancelable: true });
+      jumper.dispatchEvent(start);
+      expect(start.defaultPrevented).toBe(true);
+      expect(q("#mech-stage").dataset.dragging).toBeUndefined();
       drop("legs-jumper");
+      jumper.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+      jumper.dispatchEvent(new Event("dblclick", { bubbles: true }));
+      expect(fittedId("legs")).toBe(legsBefore);
+      expect(errorCodes()).not.toContain("part-locked");
+      // An unlocked tier 1 card beside it still fits.
+      card("legs-bastion").dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+      expect(fittedId("legs")).toBe("legs-bastion");
+    });
+
+    it("a template that already holds a locked part seeds the draft, and the sheet lists part-locked with Build disabled", () => {
+      mountWith(withLockedLegs(), root);
       expect(fittedId("legs")).toBe("legs-jumper");
       expect(errorCodes()).toContain("part-locked");
       const line = q('#stat-sheet [data-code="part-locked"]');
@@ -844,18 +886,23 @@ describe("MechBayScreen", () => {
       expect(button("build-mech").title).toBe("Fix the loadout first");
     });
 
-    it("buying the node through the store clears the lock and the error", () => {
+    it("buying the node through the store clears the lock, the error and the card's drag refusal", () => {
       const base = newGame();
-      const state = { ...base, economy: { ...base.economy, techPoints: 18 } };
+      const state = withLockedLegs({
+        ...base,
+        economy: { ...base.economy, techPoints: 18 },
+      });
       const { store } = mountWith(state, root, true);
-      drop("legs-jumper");
       // The starter Vanguard is full to the tonne, so the heavier legs
       // are overweight too; only the lock is under test here.
       expect(errorCodes()).toContain("part-locked");
       expect(card("legs-jumper").dataset.locked).toBe("true");
+      expect(card("legs-jumper").draggable).toBe(false);
       const outcome = store?.dispatch(unlockTech("tech.jump-jets"));
       expect(outcome?.ok).toBe(true);
       expect(card("legs-jumper").dataset.locked).toBe("false");
+      expect(card("legs-jumper").draggable).toBe(true);
+      expect(card("legs-jumper").getAttribute("aria-disabled")).toBe("false");
       expect(card("legs-jumper").title).toBe(
         PARTS.getPart("legs-jumper")?.description,
       );

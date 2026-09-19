@@ -512,6 +512,9 @@
   gap: var(--space-1);
 }
 /* A part the tree has not unlocked (#1171): dimmed, and its lock says why. */
+.tut-list > li.tut-mech-bay__part[data-locked="true"] {
+  cursor: not-allowed;
+}
 .tut-list > li.tut-mech-bay__part[data-locked="true"] .tut-mech-bay__part-body,
 .tut-list > li.tut-mech-bay__part[data-locked="true"] .tut-mech-bay__thumb {
   opacity: 0.6;

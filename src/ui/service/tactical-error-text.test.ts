@@ -87,6 +87,10 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "unknown-unit-type", unitKind: "bug", id: ID },
   { kind: "tile-blocked", x: 1, y: 0, z: 2 },
   { kind: "tile-occupied", x: 1, y: 0, z: 2 },
+  { kind: "not-a-squad", unitId: ID },
+  { kind: "unknown-carcass", carcassId: ID },
+  { kind: "carcass-already-harvested", carcassId: ID },
+  { kind: "carcass-out-of-reach", carcassId: ID, distance: 3, range: 1 },
 ];
 
 describe("describeRefusal", () => {

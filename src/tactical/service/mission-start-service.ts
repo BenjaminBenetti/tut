@@ -34,6 +34,7 @@ import type {
   TacticalState,
 } from "../model/tactical-state";
 import { DEFAULT_HATCH_RADIUS, FIRST_TURN } from "../model/tactical-state";
+import type { TechCarcass } from "../model/tech-carcass";
 import { TURN_STARTED } from "../model/turn-started-event";
 import { emptyVision, initialVision } from "./vision-service";
 import type { PassClass, Unit } from "../model/unit";
@@ -70,6 +71,7 @@ export interface MissionStartDeps {
 /** Id prefixes the mission start issues. */
 export const SPAWNER_ID_PREFIX = "spawner";
 export const OBJECTIVE_ID_PREFIX = "objective";
+export const CARCASS_ID_PREFIX = "carcass";
 
 /** Label of the mission-seed fork the garrison's sites are drawn from. */
 export const GARRISON_RNG_LABEL = "garrison-turrets";
@@ -89,6 +91,7 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *   deployment ──► squadUnit / mechUnit ──► units on deploy-zone tiles
  *                                          (mechs on mech-passable ones first)
  *   map.hooks.objectives (egg-spawner) ──► spawners + destroy-spawner objectives
+ *   map.hooks.objectives (tech-carcass) ──► carcasses, worth mapParams.techCarcass (#1171)
  *   map.hooks.extraction               ──► extraction tiles
  *   options.garrisonTurrets            ──► garrison turrets on random clear tiles (#1155)
  *                                                               │
@@ -184,6 +187,11 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     phase: "player",
     objectives,
     spawners,
+    carcasses: carcassesFrom(
+      map,
+      deps.ids,
+      mission.mapParams.techCarcass?.techPoints ?? 0,
+    ),
     // Nothing burns until something is fired (#1121).
     effects: [],
     edgeSpawn: { nextTurn: deps.spawnTuning.firstWaveTurn, wave: 0 },
@@ -368,6 +376,31 @@ function spawnersFrom(
       hp: tuning.spawnerHp,
       timer: hatchInterval(difficulty, tuning),
       destroyed: false,
+    }));
+}
+
+// ===========================================
+// Tech carcasses
+// ===========================================
+
+/**
+ * One carcass per tech-carcass hook, on the hook's first tile, worth
+ * what the offer decided (#1171). A hook the offer did not price is
+ * worth nothing; an offer with no hook yields no carcass, since the
+ * adapter only asks for the hook when the offer has one.
+ */
+function carcassesFrom(
+  map: TacticalMap,
+  ids: IdGenerator,
+  techPoints: number,
+): TechCarcass[] {
+  return map.hooks.objectives
+    .filter((hook) => hook.kind === HookKinds.TECH_CARCASS)
+    .map((hook): TechCarcass => ({
+      id: ids.nextId(CARCASS_ID_PREFIX),
+      pos: coordOf(firstTile(hook)),
+      techPoints,
+      harvested: false,
     }));
 }
 

@@ -405,6 +405,63 @@ describe("startTacticalMission", () => {
     ).toBe(tactical.spawners.length + tactical.objectives.length);
   });
 
+  it("lays one tech carcass per tech-carcass hook, worth what the offer decided, and none without (#1171)", () => {
+    const plain = campaign();
+    const bare = unwrap(
+      startTacticalMission(
+        plain.state,
+        plain.mission.id,
+        plain.deployment,
+        deps(),
+      ),
+    ).activeMission;
+    if (!bare) throw new Error("no mission");
+    expect(
+      bare.map.hooks.objectives.some((h) => h.kind === HookKinds.TECH_CARCASS),
+    ).toBe(false);
+    expect(bare.carcasses).toEqual([]);
+
+    const priced = campaign();
+    const mission: Mission = {
+      ...priced.mission,
+      mapParams: {
+        ...priced.mission.mapParams,
+        techCarcass: { techPoints: 16 },
+      },
+    };
+    const state: GameState = {
+      ...priced.state,
+      overworld: { ...priced.state.overworld, missions: [mission] },
+    };
+    const tactical = unwrap(
+      startTacticalMission(state, mission.id, priced.deployment, deps()),
+    ).activeMission;
+    if (!tactical) throw new Error("no mission");
+    const hooks = tactical.map.hooks.objectives.filter(
+      (h) => h.kind === HookKinds.TECH_CARCASS,
+    );
+    expect(hooks).toHaveLength(1);
+    expect(tactical.carcasses).toEqual([
+      {
+        id: expect.stringMatching(/^carcass/) as string,
+        pos: {
+          x: hooks[0]!.tiles[0]!.x,
+          y: hooks[0]!.tiles[0]!.y,
+          z: hooks[0]!.tiles[0]!.z,
+        },
+        techPoints: 16,
+        harvested: false,
+      },
+    ]);
+    // Spawners and objectives are untouched by the extra hook.
+    expect(tactical.spawners).toHaveLength(
+      tactical.map.hooks.objectives.filter(
+        (h) => h.kind === HookKinds.EGG_SPAWNER,
+      ).length,
+    );
+    expect(tactical.objectives).toHaveLength(tactical.spawners.length);
+  });
+
   it("is deterministic and survives a JSON round trip", () => {
     const { state, mission, deployment } = campaign();
     const a = unwrap(

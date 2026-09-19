@@ -288,6 +288,14 @@ export function describeRefusal(
       // A catalogue id, not an entity id, but it is still an id and
       // the menu that sent it already knows what it asked for (#1136).
       return `No ${error.unitKind} of that type can be placed`;
+    case "not-a-squad":
+      return `${names.unit(error.unitId)} cannot harvest; only an infantry squad can`;
+    case "unknown-carcass":
+      return "There is no tech carcass there";
+    case "carcass-already-harvested":
+      return "That tech carcass has already been stripped";
+    case "carcass-out-of-reach":
+      return `The tech carcass is ${String(error.distance)} tiles away; harvesting reaches ${String(error.range)}`;
     default:
       // Every remaining kind names nothing, so the developer wording is
       // already the player's. The test guards that claim.

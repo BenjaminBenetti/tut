@@ -960,4 +960,23 @@ describe("TacticalSceneBuilder marks under the storey cut (#1134)", () => {
     builder.setLayerFocus(uncut);
     expect(builder.radarCounts().contacts).toBe(2);
   });
+
+  it("withholds an objective marker on a peeled floor and redraws it when the view rises (#1173)", () => {
+    const { builder } = tetherScene();
+    const markers = [
+      { objectiveId: "o-low", pos: groundFloor },
+      { objectiveId: "o-high", pos: firstFloor },
+    ];
+    builder.updateObjectiveMarkers(markers);
+    expect(builder.objectiveMarkerCount()).toBe(2);
+    builder.setLayerFocus(cutToGround);
+    expect(builder.objectiveMarkerCount()).toBe(1);
+    // A refresh from state while cut keeps the rule.
+    builder.updateObjectiveMarkers(markers);
+    expect(builder.objectiveMarkerCount()).toBe(1);
+    builder.setLayerFocus(uncut);
+    expect(builder.objectiveMarkerCount()).toBe(2);
+    builder.dispose();
+    expect(builder.objectiveMarkerCount()).toBe(0);
+  });
 });

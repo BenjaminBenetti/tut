@@ -1,6 +1,6 @@
 # ADR 0006: Fog of war is per-side knowledge in the mission state
 
-- **Status:** Accepted (Tech Lead); §2.4 amended 2026-09-05 on the Director's #748 ruling. Shipped across six PRs and in tags `v0.2.2`/`v0.2.3`; `SideVision` reached its current shape in #722, recorded here in #732. Retrospective: it sat at Proposed while the whole of it was implemented, which is the failure this line now fixes.
+- **Status:** Accepted (Tech Lead); §2.4 amended 2026-09-05 on the Director's #748 ruling and 2026-09-19 for the objective marker (#1173). Shipped across six PRs and in tags `v0.2.2`/`v0.2.3`; `SideVision` reached its current shape in #722, recorded here in #732. Retrospective: it sat at Proposed while the whole of it was implemented, which is the failure this line now fixes.
 - **Date:** 2026-09-04
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#514, band 4 item 11): *"No line of sight system! This is one of the core things that makes XCOM good! We need the fog of war!"*
@@ -130,6 +130,17 @@ and is in view by the end of it is placed at the start of its walk before the
 batch plays, so the walk animates instead of the unit appearing at its
 destination. The object exists only for that batch, for a unit the player is
 about to see anyway; a unit that stays unspotted is never placed.
+
+A second bounded exception, for objectives (#1173, GDD §6.2.1): an open
+objective whose nest stands on a tile outside `visible` is marked by a
+location-only blip, the way a radar contact is (`objectiveMarkers` in
+`tactical/service`, drawn by `ObjectiveMarkerView`). The blip is not the
+spawner: the model is still withheld until the tile is explored, the blip
+carries no health or timer, and it is computed from state so it goes when the
+tile is in view or the nest falls. The map view's own hook slabs stay off in a
+mission for the reason this section gives — a slab is drawn from the map's
+hooks, not from what the player knows, and would have stayed under a nest
+already destroyed.
 
 Terrain, walls, connectors and props are **always drawn**, in three states:
 visible at full colour, explored-but-not-visible dimmed, and unexplored

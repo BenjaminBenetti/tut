@@ -38,9 +38,11 @@ import type {
 } from "../../tactical/model/tile-effect";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import { ChargeView } from "../view/charge-view";
+import { ObjectiveMarkerView } from "../view/objective-marker-view";
 import { RadarView } from "../view/radar-view";
 import { TurretView } from "../view/turret-view";
 import type { PlacedCharge } from "../../tactical/model/equipment";
+import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import {
   DEFAULT_FOOTPRINT,
@@ -160,12 +162,15 @@ export class TacticalSceneBuilder
   private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
   private readonly radarView: RadarView;
+  /** White diamonds over the objectives the player cannot see (#1173). */
+  private readonly objectiveView = new ObjectiveMarkerView();
   /** Sweeping guns and smoking husks for turrets (#1138); ticked as `turretUpdatable`. */
   private readonly turretView: TurretView;
   /** What was last asked for, kept so a change of storey can redraw it through the cut (#1134). */
   private lastCharges: readonly PlacedCharge[] = [];
   private lastRadars: readonly Radar[] = [];
   private lastContacts: readonly RadarContact[] = [];
+  private lastMarkers: readonly ObjectiveMarker[] = [];
   private readonly unitModels: UnitModelSource;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
@@ -218,9 +223,10 @@ export class TacticalSceneBuilder
       options.unitModels ??
       new LoadoutUnitModelSource({ models: options.models });
     this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
-    // No objective markers in a mission: the spawner model appears when
-    // its tile is explored, and a marker under it would show through
-    // the fog first (ADR 0006 §2.4).
+    // The map view's own hook slabs stay off in a mission: the objective
+    // is marked through the fog by `ObjectiveMarkerView` instead (#1173),
+    // a blip from state rather than a slab from the map's hooks, so it
+    // goes when the nest is seen or falls (ADR 0006 §2.4).
     this.mapView = new TacticalMapView(options.map, this.ghostUniforms, {
       objectiveMarkers: false,
       textures: options.textures,
@@ -242,6 +248,7 @@ export class TacticalSceneBuilder
       this.unitsGroup,
       this.tethers.root,
       this.radarView.root,
+      this.objectiveView.root,
       this.turretView.root,
     );
   }
@@ -303,6 +310,7 @@ export class TacticalSceneBuilder
     // Intel marks and charge markers on a peeled floor go with it (#1134).
     this.charges.updateCharges(this.shownCharges());
     void this.radarView.updateRadar(this.lastRadars, this.shownContacts());
+    this.objectiveView.updateMarkers(this.shownMarkers());
   }
 
   /**
@@ -558,6 +566,23 @@ export class TacticalSceneBuilder
     await this.radarView.updateRadar(radars, this.shownContacts());
   }
 
+  /**
+   * Marks the open objectives the player cannot see with a white diamond
+   * through the fog (#1173); one on a peeled floor waits for the view to
+   * rise, like a radar blip (#1134).
+   *
+   * @param markers - Where every fogged, open objective stands.
+   */
+  updateObjectiveMarkers(markers: readonly ObjectiveMarker[]): void {
+    this.lastMarkers = markers;
+    this.objectiveView.updateMarkers(this.shownMarkers());
+  }
+
+  /** Counts the objective marker blips actually placed in the scene (#1173). */
+  objectiveMarkerCount(): number {
+    return this.objectiveView.count();
+  }
+
   /** What the frame loop ticks so scanner dishes turn and dead ones smoke (#1130); the host adds it to its updatables. */
   get radarUpdatable(): FrameUpdatable {
     return this.radarView;
@@ -581,6 +606,7 @@ export class TacticalSceneBuilder
   /** Frees the map, every unit mesh and detaches the root. */
   dispose(): void {
     this.radarView.dispose();
+    this.objectiveView.dispose();
     this.turretView.dispose();
     for (const id of [...this.meshes.keys()]) {
       this.remove(id);
@@ -936,6 +962,11 @@ export class TacticalSceneBuilder
   /** The radar contacts the storey view still shows (#1134). */
   private shownContacts(): RadarContact[] {
     return this.lastContacts.filter((contact) => !this.isCut(contact.pos));
+  }
+
+  /** The objective markers the storey view still shows (#1134, #1173). */
+  private shownMarkers(): ObjectiveMarker[] {
+    return this.lastMarkers.filter((marker) => !this.isCut(marker.pos));
   }
 }
 

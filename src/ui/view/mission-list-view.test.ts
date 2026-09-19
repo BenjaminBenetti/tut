@@ -32,6 +32,37 @@ describe("MissionListView", () => {
   const cell = (row: HTMLElement, field: string): string =>
     row.querySelector(`[data-field="${field}"]`)?.textContent ?? "";
 
+  it("shows the tech reward, and tags a mission whose map reports a carcass (#1171)", () => {
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
+    );
+    view.mount(root);
+    const plain = missionAt("mission-1", "cairo", 6, 2);
+    const rich = missionAt("mission-2", "lagos", 9, 5);
+    view.update(
+      campaignOnDay(4, [
+        { ...plain, rewards: { ...plain.rewards, techPoints: 23 } },
+        {
+          ...rich,
+          rewards: { ...rich.rewards, techPoints: 40 },
+          mapParams: { ...rich.mapParams, techCarcass: { techPoints: 5 } },
+        },
+      ]),
+      NONE,
+    );
+    const [first, second] = rows();
+    expect(cell(first!, "tech")).toBe("+23 TP");
+    expect(
+      first?.querySelector<HTMLElement>('[data-field="carcass"]')?.hidden,
+    ).toBe(true);
+    expect(cell(second!, "tech")).toBe("+40 TP");
+    const tag = second?.querySelector<HTMLElement>('[data-field="carcass"]');
+    expect(tag?.hidden).toBe(false);
+    expect(tag?.textContent).toBe("Tech carcass reported · +5 TP");
+    expect(tag?.title).toBe("Tech carcass reported");
+  });
+
   it("shows the empty state until missions exist", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },
@@ -72,6 +103,10 @@ describe("MissionListView", () => {
     expect(glyph?.textContent).toBe("");
     expect(cell(first!, "difficulty")).toBe("D2");
     expect(cell(first!, "reward")).toBe("¢600");
+    expect(cell(first!, "tech")).toBe("+0 TP");
+    expect(
+      first?.querySelector<HTMLElement>('[data-field="carcass"]')?.hidden,
+    ).toBe(true);
     expect(cell(first!, "days-left")).toBe("2 d");
     expect(second?.dataset.missionId).toBe("mission-2");
     expect(

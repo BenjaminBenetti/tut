@@ -1,9 +1,56 @@
 import { expect, test, type Page } from "@playwright/test";
+import type { GameState } from "../src/save/model/game-state";
 import type { TacticalState } from "../src/tactical/model/tactical-state";
+import { TECH_NODES } from "../src/tech/data/tech-tree";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { openTileWheel, openUnitWheel, wheelItem } from "./action-wheel.helper";
 import { tacticalModelsReady } from "./capture-frame.helper";
 import { settleForShot } from "./mission-capture.helper";
+
+const SAVE_KEY = "tut:save:autosave";
+
+/**
+ * Buys the whole tech tree (#1171): every blueprint but the starter's
+ * fits tier 2 and 3 parts, which the tree gates, so the bay would call
+ * them all "Not buildable". Grants a pool through the autosave, resumes,
+ * and unlocks Jump Jets first — the part the Jump Scout stands on —
+ * then every other card as it becomes available, tier 2 before tier 3.
+ */
+async function researchEverything(page: Page): Promise<void> {
+  const envelope = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)!) as { state: GameState },
+    SAVE_KEY,
+  );
+  const funded: GameState = {
+    ...envelope.state,
+    economy: { ...envelope.state.economy, techPoints: 1000 },
+  };
+  await page.evaluate(
+    ({ key, saved }) => {
+      localStorage.setItem(key, JSON.stringify(saved));
+    },
+    { key: SAVE_KEY, saved: { ...envelope, state: funded } },
+  );
+  await page.reload();
+  await page.locator('[data-action="continue"]').click();
+  await page.locator('#top-bar [data-action="tech-tree"]').click();
+  await expect(
+    page.locator('#tech-tree-bar [data-field="techPoints"]'),
+  ).toHaveText("1,000 TP");
+  const jumpJets = page.locator('[data-node="tech.jump-jets"]');
+  await jumpJets.locator('[data-action="unlock"]').click();
+  await expect(jumpJets).toHaveAttribute("data-status", "unlocked");
+  const available = page.locator(
+    '[data-node][data-status="available"] [data-action="unlock"]',
+  );
+  while ((await available.count()) > 0) {
+    await available.first().click();
+  }
+  await expect(page.locator('[data-node][data-status="unlocked"]')).toHaveCount(
+    TECH_NODES.length,
+  );
+  await page.locator('#tech-tree-bar [data-action="overworld"]').click();
+}
 
 /** The current autosaved battlefield, after the command pipeline has persisted it. */
 async function missionOf(page: Page): Promise<TacticalState> {
@@ -26,6 +73,11 @@ test("all six blueprints assemble; a purchased Jump Scout deploys, jumps and ven
   await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-field="seed"]').fill("4242");
   await page.locator('[data-action="new-game"]').click();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-screen",
+    "overworld",
+  );
+  await researchEverything(page);
   await page.locator('#top-bar [data-action="roster"]').click();
   await page.locator('[data-action="mech-bay"]').click();
   await expect(page.locator("#part-palette [data-part-id]")).toHaveCount(48);

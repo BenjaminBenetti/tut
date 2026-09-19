@@ -13,6 +13,7 @@ export type ScreenId =
   | "overworld"
   | "roster"
   | "mech-bay"
+  | "tech-tree"
   | "game-over"
   | "deployment"
   | "mission-results"
@@ -24,6 +25,7 @@ export const SCREEN_IDS: readonly ScreenId[] = [
   "overworld",
   "roster",
   "mech-bay",
+  "tech-tree",
   "game-over",
   "deployment",
   "mission-results",

@@ -177,6 +177,9 @@ export class OverworldScreen implements Screen {
       onRoster: () => {
         this.deps.router.navigate("roster");
       },
+      onTechTree: () => {
+        this.deps.router.navigate("tech-tree");
+      },
       // A mission left through the HUD's Overworld button is still in
       // progress; without this the campaign is stuck, because the only
       // ways into the tactical screen are Launch and Continue (#468).

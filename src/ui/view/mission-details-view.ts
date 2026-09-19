@@ -3,7 +3,11 @@ import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
-import { formatCredits, formatWhole } from "../service/format";
+import {
+  formatCredits,
+  formatTechPoints,
+  formatWhole,
+} from "../service/format";
 
 // ===========================================
 // Types
@@ -26,6 +30,8 @@ const FIELDS = [
   "city",
   "difficulty",
   "reward",
+  "tech",
+  "carcass",
   "days-left",
   "biome",
   "settlement",
@@ -40,6 +46,8 @@ const LABELS: Readonly<Record<Field, string>> = {
   city: "City",
   difficulty: "Difficulty",
   reward: "Reward",
+  tech: "Tech reward",
+  carcass: "Tech carcass",
   "days-left": "Days left",
   biome: "Biome",
   settlement: "Settlement",
@@ -157,6 +165,10 @@ export class MissionDetailsView {
       city: city?.name ?? mission.cityId,
       difficulty: `D${formatWhole(mission.difficulty)}`,
       reward: formatCredits(mission.rewards.credits),
+      tech: `+${formatTechPoints(mission.rewards.techPoints)}`,
+      carcass: mission.mapParams.techCarcass
+        ? `Reported · +${formatTechPoints(mission.mapParams.techCarcass.techPoints)}`
+        : "None reported",
       "days-left": `${formatWhole(mission.expiresDay - state.overworld.day)} d`,
       biome: BIOME_INFO[mission.mapParams.biome].name,
       settlement: mission.mapParams.settlement,

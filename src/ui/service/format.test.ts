@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCredits, formatPopulation, formatWhole } from "./format";
+import {
+  formatCredits,
+  formatTechPoints,
+  formatPopulation,
+  formatWhole,
+} from "./format";
 
 describe("format", () => {
   it("prefixes credits with ¢ and groups thousands", () => {
@@ -24,5 +29,13 @@ describe("format", () => {
     expect(formatPopulation(850)).toBe("850");
     expect(formatPopulation(0)).toBe("0");
     expect(formatPopulation(-3)).toBe("0");
+  });
+});
+
+describe("formatTechPoints", () => {
+  it("prints a whole count with the TP unit and thousands separators (#1171)", () => {
+    expect(formatTechPoints(0)).toBe("0 TP");
+    expect(formatTechPoints(42)).toBe("42 TP");
+    expect(formatTechPoints(1024.4)).toBe("1,024 TP");
   });
 });

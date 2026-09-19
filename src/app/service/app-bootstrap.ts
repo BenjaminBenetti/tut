@@ -49,6 +49,7 @@ import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { DomMechPreviewHost } from "./mech-preview-host";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
+import { TechTreeScreen } from "../../ui/screen/tech-tree-screen";
 import { NoticeBarView } from "../../ui/view/notice-bar-view";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
@@ -85,7 +86,7 @@ const MAP_VIEWPORT_ID = "map-viewport";
  * ```
  *   document
  *     ├── #app / #map-viewport  ◀── SceneService (overworld map, camera rig, input, picking)
- *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen / RosterScreen / MechBayScreen
+ *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen / RosterScreen / MechBayScreen / TechTreeScreen
  *                                        │                        └── composeGame(): session (GameStore),
  *                                        │                            saves, autosave, createCampaign
  *                                        └── body[data-screen]
@@ -234,12 +235,23 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             router,
             session: game.session,
             parts: game.content.parts,
+            tech: game.content.tech,
             rating: game.content.rating,
             unitTuning: game.content.unitTuning,
             upgrades: game.content.upgrades,
             preview: new DomMechPreviewHost({
               baseUrl: import.meta.env.BASE_URL,
             }),
+          }),
+      ],
+      [
+        "tech-tree",
+        () =>
+          new TechTreeScreen({
+            router,
+            session: game.session,
+            tech: game.content.tech,
+            parts: game.content.parts,
           }),
       ],
       [

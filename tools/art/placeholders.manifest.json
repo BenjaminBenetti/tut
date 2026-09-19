@@ -184,6 +184,20 @@
     "bytes": 295136
   },
   {
+    "id": "bug.tech-carcass",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-tech-carcass.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.4,
+    "sockets": [],
+    "quality": "placeholder",
+    "triangles": 11264,
+    "bytes": 295136
+  },
+  {
     "id": "building.floor",
     "category": "buildings",
     "path": "assets/models/buildings/floor.glb",

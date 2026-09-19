@@ -1,6 +1,13 @@
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 
 // ===========================================
+// Triggers
+// ===========================================
+
+/** Which state a mission type's daily offer roll reads; see `MissionTypeGenerationRule.trigger`. */
+export type MissionTrigger = "city-infestation" | "region-installation";
+
+// ===========================================
 // Per-type rule
 // ===========================================
 
@@ -23,7 +30,19 @@ import type { MissionTypeId } from "../../content/model/mission-type-id";
  * ```
  */
 export interface MissionTypeGenerationRule {
-  /** City infestation below which this type is never offered. `0..100`. */
+  /**
+   * What the daily roll is made against (#1175):
+   *
+   * | trigger               | rolled per | infestation read        | needs                      |
+   * |-----------------------|------------|-------------------------|----------------------------|
+   * | `city-infestation`    | city       | the city's own          | the city detected, free    |
+   * | `region-installation` | region     | the region's mean       | a built installation there |
+   *
+   * A region-triggered type still attaches to a city: the most
+   * infested detected city in the region without a mission of its own.
+   */
+  readonly trigger: MissionTrigger;
+  /** Infestation (city or region mean, per `trigger`) below which this type is never offered. `0..100`. */
   readonly minInfestation: number;
   /** Daily offer chance at exactly `minInfestation`. `0..1`. */
   readonly chanceAtThreshold: number;
@@ -54,6 +73,35 @@ export interface MissionTuning {
   readonly rules: Readonly<Record<MissionTypeId, MissionTypeGenerationRule>>;
   /** How often a generated mission carries a tech carcass and what it is worth (#1171). */
   readonly techCarcass: TechCarcassTuning;
+  /** How many waves a defend-installation mission sends (#1175). */
+  readonly defence: InstallationDefenceTuning;
+}
+
+// ===========================================
+// Installation defence
+// ===========================================
+
+/**
+ * The wave count frozen into a defend-installation offer (#1175), a
+ * linear function of the host region's mean infestation, capped:
+ *
+ * ```
+ *   waves = min(maxWaves, baseWaves + floor(wavesPerInfestationPoint × regionInfestation))
+ *
+ *   maxWaves  ┤                    ●━━━━━━━━
+ *             │               ╱
+ *   baseWaves ┤━━━━━━━━●━━━━╱
+ *             └────────┴────────┴────────► region mean infestation
+ *             0    minInfestation        100
+ * ```
+ */
+export interface InstallationDefenceTuning {
+  /** Waves at zero regional infestation; the least a defend mission ever sends. */
+  readonly baseWaves: number;
+  /** Extra waves per point of regional infestation, floored. */
+  readonly wavesPerInfestationPoint: number;
+  /** Most waves a defend mission sends. At least `baseWaves`. */
+  readonly maxWaves: number;
 }
 
 // ===========================================

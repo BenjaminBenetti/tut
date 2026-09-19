@@ -43,6 +43,41 @@ export const INFESTATION_CLEARANCE: MissionType = {
 };
 
 /**
+ * The first M3 type (#1175): waves of bugs against the generators of an
+ * installation the player built (GDD §5.4, §5.6). The generators come
+ * from the offer rather than from here — `Mission.defence` says how
+ * many, read from the installation's site — so the hook list names only
+ * what every defend map shares: a deploy zone, edge spawn zones for the
+ * waves (three at difficulty 1 growing to four at 6, so a late wave can
+ * come from a third side) and the extraction. No egg spawners: the
+ * threat walks in from the edge on the clock, it does not hatch.
+ *
+ * Numbers against the clearance: the same credits per difficulty and
+ * a little more tech, since the bugs come to the force and every one is
+ * a carcass; a shorter expiry, because the installation is under threat
+ * now; a heavier ignore penalty, since a region the bugs push into
+ * unopposed is one they dig into.
+ */
+export const DEFEND_INSTALLATION: MissionType = {
+  id: "defend-installation",
+  name: "Defend Installation",
+  description:
+    "The swarm is moving on an installation you built. Hold the generators through every wave, then bring the force home.",
+  difficultyBand: { min: 1, max: 10 },
+  rewardPerDifficulty: 300,
+  techRewardBase: 10,
+  techRewardPerDifficulty: 3,
+  expiryDays: 3,
+  ignorePenalty: 15,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "edge-spawn", count: 3, countPerDifficulty: 0.2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "medium",
+};
+
+/**
  * Every mission type keyed by id. Typed as a record over the closed
  * `MissionTypeId` union so a new id without a definition (or a definition
  * whose key and `id` disagree, see the data test) fails at compile time
@@ -50,4 +85,5 @@ export const INFESTATION_CLEARANCE: MissionType = {
  */
 export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   "infestation-clearance": INFESTATION_CLEARANCE,
+  "defend-installation": DEFEND_INSTALLATION,
 };

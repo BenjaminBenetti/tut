@@ -5,33 +5,17 @@ import type { DeployableLevel } from "./deployable-level";
 // ===========================================
 
 /**
- * Key of a deployable type in `overworld/data/deployable-types.ts`. A
- * closed union rather than a plain string so the data record is checked
- * for completeness by the compiler: adding a member here without a
- * matching entry in `DEPLOYABLE_TYPES` fails to build.
+ * Key of a deployable type in `overworld/data/deployable-types.ts`. The
+ * union itself lives in `content/model` (ADR 0002 §2.1) since #1175,
+ * when map generation and the tactical rules began reading it; it is
+ * re-exported here so the overworld's own imports need not change.
  */
-export type DeployableTypeId =
-  "defensive-battery" | "repellent-dispersal" | "sensor-array" | "bank";
-
-/**
- * Runtime list of every `DeployableTypeId`, in a fixed order, for
- * validation and for tests that must cover each type. The `satisfies`
- * check rejects a stray member; the data test checks the list is complete.
- */
-export const DEPLOYABLE_TYPE_IDS = [
-  "defensive-battery",
-  "repellent-dispersal",
-  "sensor-array",
-  "bank",
-] as const satisfies readonly DeployableTypeId[];
-
-/**
- * Narrows an arbitrary string (from a save file or a build command, for
- * instance) to a `DeployableTypeId`.
- */
-export function isDeployableTypeId(value: string): value is DeployableTypeId {
-  return (DEPLOYABLE_TYPE_IDS as readonly string[]).includes(value);
-}
+export type { DeployableTypeId } from "../../content/model/deployable-type-id";
+export {
+  DEPLOYABLE_TYPE_IDS,
+  isDeployableTypeId,
+} from "../../content/model/deployable-type-id";
+import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 
 // ===========================================
 // Effects

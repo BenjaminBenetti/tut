@@ -4,7 +4,9 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { MISSION_DIFFICULTY_RANGE } from "../../content/model/mission-type";
+import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import { MISSION_TUNING } from "../data/mission-tuning";
+import type { Deployable } from "../model/deployable";
 import { MAX_INFESTATION } from "../model/city";
 import type { EarthMap } from "../model/earth-map";
 import type { Mission } from "../model/mission";
@@ -26,6 +28,7 @@ import {
   generateMissions,
   mapSizeFor,
   offerChance,
+  wavesFor,
 } from "./mission-generation-service";
 
 // ===========================================
@@ -34,23 +37,60 @@ import {
 
 const RULE: MissionTypeGenerationRule =
   MISSION_TUNING.rules["infestation-clearance"];
+const DEFEND_RULE: MissionTypeGenerationRule =
+  MISSION_TUNING.rules["defend-installation"];
 const CLEARANCE = MISSION_TYPES["infestation-clearance"];
 
-/** A rule that offers to every eligible city, every day. */
+/** A rule that offers to every eligible city, every day; the defend type never. */
 const ALWAYS: MissionTuning = {
   rules: {
     "infestation-clearance": { ...RULE, chanceAtThreshold: 1, chanceAtMax: 1 },
+    "defend-installation": {
+      ...DEFEND_RULE,
+      chanceAtThreshold: 0,
+      chanceAtMax: 0,
+    },
   },
   techCarcass: MISSION_TUNING.techCarcass,
+  defence: MISSION_TUNING.defence,
 };
 
 /** A rule that never offers. */
 const NEVER: MissionTuning = {
   rules: {
     "infestation-clearance": { ...RULE, chanceAtThreshold: 0, chanceAtMax: 0 },
+    "defend-installation": {
+      ...DEFEND_RULE,
+      chanceAtThreshold: 0,
+      chanceAtMax: 0,
+    },
   },
   techCarcass: MISSION_TUNING.techCarcass,
+  defence: MISSION_TUNING.defence,
 };
+
+/** Every eligible region is offered a defend mission every day; the clearance never. */
+const ALWAYS_DEFEND: MissionTuning = {
+  rules: {
+    "infestation-clearance": { ...RULE, chanceAtThreshold: 0, chanceAtMax: 0 },
+    "defend-installation": {
+      ...DEFEND_RULE,
+      chanceAtThreshold: 1,
+      chanceAtMax: 1,
+    },
+  },
+  techCarcass: MISSION_TUNING.techCarcass,
+  defence: MISSION_TUNING.defence,
+};
+
+/** A built installation in `regionId`. */
+function installation(
+  id: string,
+  regionId: string,
+  typeId: DeployableTypeId = "sensor-array",
+): Deployable {
+  return { id, typeId, regionId, level: 1, builtDay: 1, online: true };
+}
 
 /**
  * Two regions, four cities:
@@ -487,5 +527,167 @@ describe("generateMissions", () => {
     expect(() =>
       generateMissions(state, deps(1, ALWAYS, { east: 1.5 })),
     ).toThrow(/non-negative integer/);
+  });
+});
+
+// ===========================================
+// Defend installation (#1175)
+// ===========================================
+
+describe("wavesFor", () => {
+  it("adds a wave per twenty points of regional infestation and caps", () => {
+    const tuning = MISSION_TUNING.defence;
+    expect(wavesFor(0, tuning)).toBe(tuning.baseWaves);
+    expect(wavesFor(40, tuning)).toBe(tuning.baseWaves + 2);
+    expect(wavesFor(60, tuning)).toBe(tuning.baseWaves + 3);
+    expect(wavesFor(100, tuning)).toBe(tuning.maxWaves);
+    expect(wavesFor(1000, tuning)).toBe(tuning.maxWaves);
+  });
+
+  it("never sends fewer than one wave", () => {
+    expect(
+      wavesFor(0, { baseWaves: 0, wavesPerInfestationPoint: 0, maxWaves: 0 }),
+    ).toBe(1);
+  });
+});
+
+describe("generateMissions — defend installation", () => {
+  it("offers nothing to a region without an installation, however infested", () => {
+    const { state, events } = generateMissions(
+      fixtureState(),
+      deps(1, ALWAYS_DEFEND),
+    );
+    expect(events).toEqual([]);
+    expect(state.missions).toEqual([]);
+  });
+
+  it("offers a defend mission to an installed region above the threshold, on its worst city", () => {
+    const { state, events } = generateMissions(
+      fixtureState({ deployables: [installation("dep-1", "east", "bank")] }),
+      deps(1, ALWAYS_DEFEND),
+    );
+    expect(events.map((e) => e.type)).toEqual([MISSION_OFFERED]);
+    const [mission] = state.missions;
+    expect(mission?.typeId).toBe("defend-installation");
+    expect(mission?.cityId).toBe("full");
+    expect(mission?.defence).toEqual({
+      installation: "bank",
+      deployableId: "dep-1",
+      generators: 3,
+      waves: wavesFor(75, MISSION_TUNING.defence),
+    });
+    expect(mission?.mapParams.settlement).toBe("town");
+    expect(mission?.expiresDay).toBe(
+      5 + MISSION_TYPES["defend-installation"].expiryDays,
+    );
+  });
+
+  it("offers nothing to an installed region below the regional threshold", () => {
+    const { events } = generateMissions(
+      fixtureState({ deployables: [installation("dep-1", "west")] }),
+      deps(1, ALWAYS_DEFEND),
+    );
+    expect(events).toEqual([]);
+  });
+
+  it("falls back to the next city when the worst one already has a mission", () => {
+    const { state } = generateMissions(
+      fixtureState({
+        deployables: [installation("dep-1", "east")],
+        missions: [missionAt("full", 9)],
+      }),
+      deps(1, ALWAYS_DEFEND),
+    );
+    const offered = state.missions.filter((m) => m.typeId === "defend-installation");
+    expect(offered.map((m) => m.cityId)).toEqual(["mid"]);
+  });
+
+  it("offers at most one defend mission per region per day", () => {
+    const { state } = generateMissions(
+      fixtureState({
+        deployables: [
+          installation("dep-1", "east", "bank"),
+          installation("dep-2", "east", "sensor-array"),
+        ],
+      }),
+      deps(1, ALWAYS_DEFEND),
+    );
+    expect(state.missions).toHaveLength(1);
+  });
+
+  it("picks which installation is attacked on a fork keyed by the mission id", () => {
+    const state = fixtureState({
+      deployables: [
+        installation("dep-1", "east", "bank"),
+        installation("dep-2", "east", "sensor-array"),
+        installation("dep-3", "east", "defensive-battery"),
+      ],
+    });
+    const picks = new Set<string>();
+    for (let seed = 1; seed <= 40; seed++) {
+      const { state: next } = generateMissions(state, deps(seed, ALWAYS_DEFEND));
+      picks.add(next.missions[0]?.defence?.deployableId ?? "none");
+    }
+    expect([...picks].sort()).toEqual(["dep-1", "dep-2", "dep-3"]);
+    const a = generateMissions(state, deps(7, ALWAYS_DEFEND));
+    const b = generateMissions(state, deps(7, ALWAYS_DEFEND));
+    expect(a).toEqual(b);
+  });
+
+  it("does not give a city both a clearance and a defend mission on the same day", () => {
+    const both: MissionTuning = {
+      ...ALWAYS,
+      rules: {
+        ...ALWAYS.rules,
+        "defend-installation": ALWAYS_DEFEND.rules["defend-installation"],
+      },
+    };
+    const { state } = generateMissions(
+      fixtureState({ deployables: [installation("dep-1", "east")] }),
+      deps(1, both),
+    );
+    const cities = state.missions.map((m) => m.cityId);
+    expect(new Set(cities).size).toBe(cities.length);
+    expect(state.missions.some((m) => m.typeId === "defend-installation")).toBe(
+      false,
+    );
+  });
+
+  it("draws exactly what it drew before when no region has an installation", () => {
+    const before = generateMissions(fixtureState(), deps(3, ALWAYS));
+    const withDefend: MissionTuning = {
+      ...ALWAYS,
+      rules: {
+        ...ALWAYS.rules,
+        "defend-installation": ALWAYS_DEFEND.rules["defend-installation"],
+      },
+    };
+    const after = generateMissions(fixtureState(), deps(3, withDefend));
+    expect(after).toEqual(before);
+  });
+
+  it("offers roughly in proportion to the tuned chance over many days", () => {
+    const state = fixtureState({
+      deployables: [installation("dep-1", "east")],
+    });
+    const tuning: MissionTuning = {
+      ...ALWAYS_DEFEND,
+      rules: {
+        ...ALWAYS_DEFEND.rules,
+        "defend-installation": {
+          ...DEFEND_RULE,
+          chanceAtThreshold: 0.1,
+          chanceAtMax: 0.1,
+        },
+      },
+    };
+    let offered = 0;
+    const days = 2000;
+    for (let seed = 0; seed < days; seed++) {
+      offered += generateMissions(state, deps(seed, tuning)).state.missions
+        .length;
+    }
+    expect(offered / days).toBeGreaterThan(0.07);
+    expect(offered / days).toBeLessThan(0.13);
   });
 });

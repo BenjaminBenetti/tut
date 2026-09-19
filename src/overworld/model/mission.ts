@@ -1,4 +1,6 @@
 import type { BiomeId } from "../../content/model/biome-id";
+import type { DeployableTypeId } from "../../content/model/deployable-type-id";
+import type { DeployableId } from "./deployable";
 import type { MapSizeId } from "../../content/model/map-size-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { SettlementScale } from "../../content/model/settlement-scale";
@@ -52,6 +54,32 @@ export interface MissionMapParams {
 export interface TechCarcassParams {
   /** Whole tech points a squad earns by harvesting it. */
   readonly techPoints: number;
+}
+
+// ===========================================
+// Installation defence
+// ===========================================
+
+/**
+ * What a defend-installation mission (#1175) is defending and for how
+ * long, frozen when the mission is offered so the briefing, the map and
+ * the waves can never disagree.
+ *
+ * ```
+ *   region deployables ──rng.fork(`defence:${id}`)──► deployableId, installation
+ *   INSTALLATION_SITES[installation].generators ───► generators
+ *   region mean infestation ─────────────────────► waves (mission tuning)
+ * ```
+ */
+export interface InstallationDefence {
+  /** Which kind of installation is under attack; picks the landmark building. */
+  readonly installation: DeployableTypeId;
+  /** The specific installation the offer was rolled for, for the map cue. */
+  readonly deployableId: DeployableId;
+  /** Generators the map stands around the landmark; every one is an objective. */
+  readonly generators: number;
+  /** Bug waves that will land before the mission can be completed. At least one. */
+  readonly waves: number;
 }
 
 // ===========================================
@@ -110,6 +138,12 @@ export interface Mission {
   readonly difficulty: number;
   /** Parameters for generating the tactical map. */
   readonly mapParams: MissionMapParams;
+  /**
+   * What a defend-installation mission is holding (#1175). Present
+   * exactly when `typeId` is `"defend-installation"`; a clearance has
+   * none, and an older save's missions have none either.
+   */
+  readonly defence?: InstallationDefence;
   /** What success pays. */
   readonly rewards: MissionRewards;
   /** Overworld day the mission appeared. */

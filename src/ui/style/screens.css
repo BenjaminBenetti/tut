@@ -1003,9 +1003,10 @@
  * Buttons and badges never break inside their boxes (#291). The bar's
  * status line is the one flexible item: it truncates with an ellipsis
  * rather than pushing the buttons onto a second line. Below 1024 px the
- * stat labels go and the gaps tighten so day, credits, threat, the
- * outcome badge and three buttons fit in 800 px, the narrowest window
- * the overworld supports.
+ * stat labels go and the gaps tighten so day, credits, tech, threat, the
+ * outcome badge and four buttons fit in 800 px, the narrowest window
+ * the overworld supports: the bar's own gap drops to 4 px and only
+ * neighbouring stats keep 8 px between them (#1171).
  */
 
 .tut-btn,
@@ -1032,8 +1033,12 @@
 
 @media (max-width: 1023px) {
   .tut-topbar {
-    gap: var(--space-2);
+    gap: var(--space-1);
     padding: 0 var(--space-2);
+  }
+
+  .tut-topbar__stat + .tut-topbar__stat {
+    margin-left: var(--space-1);
   }
 
   .tut-topbar__stat .tut-label {

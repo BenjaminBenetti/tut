@@ -1,11 +1,44 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import type { GameState } from "../src/save/model/game-state";
+
+const SAVE_KEY = "tut:save:autosave";
+
+/**
+ * Marks the railgun's tech node bought in the autosave and resumes
+ * (#1171): the tree gates every tier 2 part, and this spec is about the
+ * drop sequence, not the lock the bay would otherwise show on the
+ * railgun.
+ */
+async function unlockRailgun(page: Page): Promise<void> {
+  const envelope = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)!) as { state: GameState },
+    SAVE_KEY,
+  );
+  const researched: GameState = {
+    ...envelope.state,
+    tech: { ...envelope.state.tech, unlocked: ["tech.railgun"] },
+  };
+  await page.evaluate(
+    ({ key, saved }) => {
+      localStorage.setItem(key, JSON.stringify(saved));
+    },
+    { key: SAVE_KEY, saved: { ...envelope, state: researched } },
+  );
+  await page.reload();
+  await page.locator('[data-action="continue"]').click();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-screen",
+    "overworld",
+  );
+}
 
 /**
  * The mech bay's drag-and-drop path in a real browser (#1145): a palette
  * card dragged onto the stage fits its part, the chassis badge shows the
  * overweight error, and dragging a heavier frame on clears it. The
  * jsdom specs dispatch synthetic drag events; this is the one place the
- * browser's own `DataTransfer` and drop sequence run.
+ * browser's own `DataTransfer` and drop sequence run. The railgun is a
+ * tier 2 part, so its node is bought first (#1171).
  */
 test("dragging a railgun onto the starter mech shows an overweight error in the mech bay", async ({
   page,
@@ -20,6 +53,7 @@ test("dragging a railgun onto the starter mech shows an overweight error in the 
   await expect(body).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
+  await unlockRailgun(page);
   await page.locator('#top-bar [data-action="roster"]').click();
   await expect(body).toHaveAttribute("data-screen", "roster");
   await page.locator('[data-action="mech-bay"]').click();

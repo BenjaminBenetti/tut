@@ -34,16 +34,20 @@ export interface TechGraphLayoutTuning {
 
 /**
  * Tuned so that with six families, four tier 2 nodes on a family's
- * sector sit clear of the next family's, and two tier 3 children of
- * one node sit clear of their neighbour's: at these radii the closest
- * pair of nodes on either ring is 3 units apart, which at the starting
- * zoom is room for a label beside a label.
+ * sector sit clear of the next family's at the same spacing they sit
+ * from each other: a sector is 2π · 24 / 6 ≈ 25 units of arc, the four
+ * nodes span 18 of it, and 7 remain to the neighbouring family. Tier 3
+ * keeps a ring of its own 6 units further out, where two children of
+ * one node sit 3 apart and 4.5 from the next node's children.
+ *
+ * The tier 2 spacing was 3 on a ring of 12; the Executive Director
+ * found that tight and asked for twice the gap (#1171).
  */
 export const TECH_GRAPH_LAYOUT_TUNING: TechGraphLayoutTuning = {
   familyRadius: 6,
-  tier2Radius: 12,
-  tier3Radius: 18,
-  tier2Spacing: 3,
+  tier2Radius: 24,
+  tier3Radius: 30,
+  tier2Spacing: 6,
   tier3Spacing: 3,
   margin: 3,
 };

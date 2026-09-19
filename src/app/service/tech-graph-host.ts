@@ -64,12 +64,13 @@ interface Attached {
 // ===========================================
 
 /**
- * Starting zoom, in pixels per world unit: the tier 2 ring fills a
- * laptop window's width with the tier 3 ring just past its edge, so
- * the first thing seen is the shape of the whole web and the first
- * thing to do is pan or zoom into a family.
+ * Starting zoom, in pixels per world unit: the tier 2 ring (48 units
+ * across) fills a laptop window's width with the tier 3 ring just past
+ * its edge, so the first thing seen is the shape of the whole web and
+ * the first thing to do is pan or zoom into a family. The rig sizes its
+ * own floor to the graph's extent, so this sits inside the range.
  */
-const INITIAL_ZOOM = 48;
+const INITIAL_ZOOM = 24;
 
 /** World units of relief the zoom range allows for: the tallest model on its pedestal. */
 const GRAPH_HEIGHT = 3;
@@ -155,6 +156,11 @@ export class DomTechGraphHost implements TechGraphHost {
       depth: layout.radius * 2,
       height: GRAPH_HEIGHT,
     });
+    // The constructor clamps the zoom to the default range, which
+    // bottoms out above INITIAL_ZOOM; the graph's own range, sized to
+    // its extent just now, reaches further out, so the zoom is set
+    // again inside it.
+    rig.zoomBy(INITIAL_ZOOM / rig.getState().zoom);
     const cameraInput = new CameraInputController(rig);
     const picking = new PickingController<TechNodeId>(builder, rig, {
       onSelected: (id) => {

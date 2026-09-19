@@ -89,6 +89,18 @@ describe("layoutTechGraph", () => {
     }
   });
 
+  it("keeps tier 2 nodes twice a pedestal's width apart, across families too (#1171)", () => {
+    const tier2 = layout.nodes.filter((node) => node.tier === 2);
+    for (const a of tier2) {
+      for (const b of tier2) {
+        if (a === b) continue;
+        expect(distance(a, b), `${a.id} vs ${b.id}`).toBeGreaterThanOrEqual(
+          5.9,
+        );
+      }
+    }
+  });
+
   it("is deterministic", () => {
     expect(layoutTechGraph(CATALOGUE)).toEqual(layout);
   });

@@ -198,7 +198,7 @@ describe("radar contacts", () => {
     ]);
   });
 
-  it("uses a 30-tile circle, includes hidden units and nests across floors, and deduplicates overlapping scans", () => {
+  it("uses a 30-tile circle, includes hidden units across floors, deduplicates overlapping scans and leaves the nest to the objective marker (#1173)", () => {
     const base = radioMission();
     const positions = [
       { x: 31, y: 0, z: 1 },
@@ -233,10 +233,12 @@ describe("radar contacts", () => {
         },
       ],
     };
+    // The nest at (17, 4, 1) is in range and unseen, and is not reported:
+    // an open objective is always marked white, so a red square on it
+    // would only be a duplicate.
     expect(radarContacts(mission, "tdf")).toEqual([
       { kind: "unit", pos: positions[0] },
       { kind: "unit", pos: positions[1] },
-      { kind: "structure", pos: mission.spawners[0]?.pos },
     ]);
     expect(radarContacts(mission, "bugs")).toEqual([]);
     expect(viewFor(mission, "bugs").radars).toEqual([]);
@@ -264,7 +266,7 @@ describe("radar contacts", () => {
       events: [],
     }).state;
     const beforeVision = JSON.stringify(mission.vision);
-    expect(radarContacts(mission, "tdf")).toHaveLength(2);
+    expect(radarContacts(mission, "tdf")).toEqual([{ kind: "unit", pos }]);
     expect(perceivedUnits(mission, "tdf").map((u) => u.id)).toEqual(["radio"]);
     expect(perceivedSpawners(mission, "tdf")).toEqual([]);
     expect(previewAttack(mission, "radio", "bug", COMBAT_TUNING).ok).toBe(
@@ -297,7 +299,7 @@ describe("radar contacts", () => {
     }).state;
     expect(radarContacts(spotted, "tdf")).toEqual([]);
     // Scanners remain autonomous after the deploying squad extracts.
-    expect(radarContacts({ ...mission, units: [bug] }, "tdf")).toHaveLength(2);
+    expect(radarContacts({ ...mission, units: [bug] }, "tdf")).toHaveLength(1);
   });
 });
 

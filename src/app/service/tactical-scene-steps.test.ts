@@ -6,6 +6,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
+import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
@@ -40,6 +41,7 @@ class StageRecorder {
   spawners: readonly Spawner[] = [];
   carcasses: readonly TechCarcass[] = [];
   effects: readonly TileEffect[] = [];
+  markers: readonly ObjectiveMarker[] = [];
 
   /** Records the map handed to the scene (#1121). */
   applyMap(_map: TacticalMap): void {
@@ -50,6 +52,12 @@ class StageRecorder {
   updateRadar(): Promise<void> {
     this.calls.push("updateRadar");
     return Promise.resolve();
+  }
+
+  /** Records the objective markers handed to the scene (#1173). */
+  updateObjectiveMarkers(markers: readonly ObjectiveMarker[]): void {
+    this.calls.push("updateObjectiveMarkers");
+    this.markers = markers;
   }
 
   /** Records the vision handed to the scene. */
@@ -202,6 +210,7 @@ describe("drawPerceived", () => {
       "setVision",
       "updateEffects",
       "updateCharges",
+      "updateObjectiveMarkers",
       "update",
       "updateSpawners",
       "updateCarcasses",
@@ -241,6 +250,48 @@ describe("drawPerceived", () => {
     await drawPerceived(lit, seen);
     expect(lit.carcasses.map((c) => c.id)).toContain("near");
     expect(lit.carcasses.map((c) => c.id)).not.toContain("dark");
+  });
+
+  it("marks the open objective in the fog and withholds its model until explored (#1173)", async () => {
+    const dark = { x: 7, y: 0, z: 7 };
+    const base = missionWith(
+      MAP,
+      [unitAt("s1", "infantry", { x: 0, y: 0, z: 0 })],
+      {
+        spawners: [
+          {
+            id: "nest",
+            pos: dark,
+            hp: 20,
+            destroyed: false,
+            timer: 3,
+            hatchRadius: 3,
+          },
+        ],
+        objectives: [
+          {
+            id: "o",
+            kind: "destroy-spawner",
+            targetId: "nest",
+            complete: false,
+          },
+        ],
+      },
+    );
+    const seen = withVision({ state: base, events: [] }).state;
+    const stage = new StageRecorder();
+    await drawPerceived(stage, seen);
+    // Nobody has seen the corner: no spawner model, but its whereabouts are marked.
+    expect(stage.spawners).toEqual([]);
+    expect(stage.markers).toEqual([{ objectiveId: "o", pos: dark }]);
+    // Destroyed and complete: the mission moves on and the mark goes.
+    const done = new StageRecorder();
+    await drawPerceived(done, {
+      ...seen,
+      spawners: [{ ...seen.spawners[0]!, destroyed: true, hp: 0 }],
+      objectives: [{ ...seen.objectives[0]!, complete: true }],
+    });
+    expect(done.markers).toEqual([]);
   });
 });
 

@@ -3,7 +3,6 @@ import { err, ok } from "../../core/model/result";
 import type { Result } from "../../core/model/result";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
 import type { Radar, RadarContact, RadarTuning } from "../model/radar";
 import { radarIsActive } from "../model/radar";
 import { RADAR_BURNED_OUT } from "../model/radar-burned-out-event";
@@ -195,11 +194,17 @@ export const drainRadarBatteries: PhaseStep = (mission) => {
 // ===========================================
 
 /**
- * Red location blips for living, unseen enemies inside any friendly,
+ * Red location blips for living, unseen enemy units inside any friendly,
  * still-running scanner's horizontal circle. Scans cross walls and
  * floors, update from current positions, and never change sight,
  * explored terrain, targeting, or the other side's intel. A burnt-out
  * scanner (#1130) contributes nothing.
+ *
+ * Nests are not reported here: since #1173 an open objective in the fog
+ * is always marked (`objectiveMarkers`), so a radar square on top of it
+ * would only duplicate the white diamond. `RadarContact.kind` keeps its
+ * `"structure"` member for the day a structure that is not the
+ * objective needs finding.
  */
 export function radarContacts(
   mission: TacticalState,
@@ -216,7 +221,7 @@ export function radarContacts(
         radar.range ** 2,
     );
   const spotted = new Set(mission.vision[team].spotted);
-  const contacts: RadarContact[] = mission.units
+  return mission.units
     .filter(
       (unit) =>
         unit.team !== team &&
@@ -224,21 +229,5 @@ export function radarContacts(
         !spotted.has(unit.id) &&
         scanned(unit.pos),
     )
-    .map((unit) => ({ kind: "unit", pos: unit.pos }));
-  if (team === "tdf") {
-    const index = new TileIndex(mission.map);
-    const visible = new Set(mission.vision[team].visible);
-    contacts.push(
-      ...mission.spawners
-        .filter(
-          (s) =>
-            !s.destroyed &&
-            s.hp > 0 &&
-            !visible.has(index.keyOf(s.pos)) &&
-            scanned(s.pos),
-        )
-        .map((s): RadarContact => ({ kind: "structure", pos: s.pos })),
-    );
-  }
-  return contacts;
+    .map((unit): RadarContact => ({ kind: "unit", pos: unit.pos }));
 }

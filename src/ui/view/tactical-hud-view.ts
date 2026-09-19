@@ -505,7 +505,9 @@ export class TacticalHudView {
     radarTitle.textContent = "Radar contacts";
     const radarKey = doc.createElement("div");
     radarKey.className = "tut-radar-key";
-    radarKey.textContent = "● Units · □ Structures";
+    // Nests are marked white through the fog on their own (#1173); the
+    // radar reports units.
+    radarKey.textContent = "● Hidden units";
     radarLegend.append(radarTitle, radarKey);
     radarLegend.hidden = true;
     panels.appendChild(radarLegend);

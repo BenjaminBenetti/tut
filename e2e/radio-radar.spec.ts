@@ -122,6 +122,9 @@ test("radio squads deploy persistent scanners that mark hidden units and nests",
   await expect(body).toHaveAttribute("data-tactical-radar-contacts", "0");
   await expect(body).toHaveAttribute("data-tactical-units", "1");
   await expect(body).toHaveAttribute("data-tactical-spawners", "0");
+  // The nest is unexplored, so no model; but it is the objective, so it
+  // is marked through the fog before any scanner is down (#1173).
+  await expect(body).toHaveAttribute("data-tactical-objective-markers", "1");
   await page.evaluate(
     (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
     radioId,
@@ -131,7 +134,10 @@ test("radio squads deploy persistent scanners that mark hidden units and nests",
   await expect(wheelItem(page, "deploy-radar:7,0,8")).toBeEnabled();
   await wheelItem(page, "deploy-radar:7,0,8").click();
   await expect(body).toHaveAttribute("data-tactical-radars", "1");
-  await expect(body).toHaveAttribute("data-tactical-radar-contacts", "2");
+  // The hidden bug only: the nest keeps its white marker rather than
+  // gaining a red square on top of it (#1173).
+  await expect(body).toHaveAttribute("data-tactical-radar-contacts", "1");
+  await expect(body).toHaveAttribute("data-tactical-objective-markers", "1");
   await expect(body).toHaveAttribute("data-tactical-units", "1");
   await expect(body).toHaveAttribute("data-tactical-spawners", "0");
   await expect(page.locator('[data-role="radar-legend"]')).toBeVisible();
@@ -154,7 +160,8 @@ test("radio squads deploy persistent scanners that mark hidden units and nests",
   await page.locator('[data-action="continue"]').click();
   await expect(body).toHaveAttribute("data-tactical-ready", "true");
   await expect(body).toHaveAttribute("data-tactical-radars", "1");
-  await expect(body).toHaveAttribute("data-tactical-radar-contacts", "2");
+  await expect(body).toHaveAttribute("data-tactical-radar-contacts", "1");
+  await expect(body).toHaveAttribute("data-tactical-objective-markers", "1");
   await expect(body).toHaveAttribute("data-tactical-spawners", "0");
   await page.mouse.move(900, 450);
   await page.mouse.wheel(0, 700);

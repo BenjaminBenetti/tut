@@ -25,6 +25,8 @@ import { LAYER_HEIGHT } from "../../graphics/data/mapgen-preview-palette";
 import type { MapExtent } from "../../graphics/service/camera-math";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import { radarContacts } from "../../tactical/service/radar-service";
+import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
+import { objectiveMarkers } from "../../tactical/service/objective-marker-service";
 
 // ===========================================
 // Types
@@ -56,6 +58,8 @@ export interface PerceivedStage {
     radars: readonly Radar[],
     contacts: readonly RadarContact[],
   ): Promise<void>;
+  /** Marks the open objectives this side cannot see with a white diamond (#1173). */
+  updateObjectiveMarkers(markers: readonly ObjectiveMarker[]): void;
 }
 
 /**
@@ -106,6 +110,7 @@ export interface PhasedQueue {
  *     updateCarcasses(perceivedCarcasses)  explored carcasses only (#1171)
  *     updateEffects(perceivedEffects)      fires on explored ground
  *     updateCharges(charges)               set breaching charges (#1132)
+ *     updateObjectiveMarkers(objectiveMarkers)  white diamonds on fogged nests (#1173)
  * ```
  *
  * Two rules live here, and both are silent when broken. The scene draws
@@ -130,6 +135,9 @@ export async function drawPerceived(
   stage.updateEffects(perceivedEffects(mission, "tdf"));
   // A set charge is the player's own, on ground it stood on to set it.
   stage.updateCharges(mission.charges);
+  // The objective is the mission: its whereabouts are the one thing the
+  // fog never withholds, as a location-only blip (#1173).
+  stage.updateObjectiveMarkers(objectiveMarkers(mission, "tdf"));
   // Units and spawners are both just models on tiles, and a spawner is
   // the mission's objective, so it appears with the force rather than
   // after it (#484).

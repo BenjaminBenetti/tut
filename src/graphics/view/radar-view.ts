@@ -1,12 +1,5 @@
 import type { Object3D } from "three";
-import {
-  CircleGeometry,
-  DoubleSide,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  RingGeometry,
-} from "three";
+import { Group } from "three";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import { radarIsActive } from "../../tactical/model/radar";
 import type { Disposable } from "../model/disposable";
@@ -14,6 +7,7 @@ import type { FrameUpdatable } from "../model/frame-updatable";
 import type { ModelLoader } from "../model/model-loader";
 import { RADAR_SMOKE } from "../data/smoke-plumes";
 import { createFalloffTexture } from "../service/falloff-texture";
+import { IntelBlipPainter, RADAR_BLIP_COLOUR } from "./intel-blip-painter";
 import { SmokePlume } from "./smoke-plume";
 import { tileTopCentre } from "./tactical-map-view";
 
@@ -77,18 +71,8 @@ export class RadarView implements FrameUpdatable, Disposable {
   private readonly contacts = new Group();
   private readonly scanners = new Map<string, DrawnScanner>();
   private wanted = new Set<string>();
-  private readonly dot = new CircleGeometry(0.16, 20);
-  private readonly unitHalo = new RingGeometry(0.25, 0.31, 24);
-  private readonly structureHalo = new RingGeometry(0.3, 0.41, 4);
-  private readonly material = new MeshBasicMaterial({
-    color: 0xe0453c,
-    side: DoubleSide,
-    depthTest: false,
-    depthWrite: false,
-    transparent: true,
-    opacity: 0.95,
-    toneMapped: false,
-  });
+  /** Paints every contact red; the objective marker view paints the same mark white (#1173). */
+  private readonly blips = new IntelBlipPainter(RADAR_BLIP_COLOUR);
   /** Soft disc every smoke puff is cut from; owned here, shared by every plume. */
   private readonly smokeFalloff = createFalloffTexture();
 
@@ -133,20 +117,13 @@ export class RadarView implements FrameUpdatable, Disposable {
     }
     this.contacts.clear();
     for (const contact of contacts) {
-      const blip = new Group();
-      blip.name = `radar-contact-${contact.kind}`;
-      const at = tileTopCentre(contact.pos);
-      blip.position.set(at.x, at.y + 0.12, at.z);
-      for (const geometry of [
-        this.dot,
-        contact.kind === "structure" ? this.structureHalo : this.unitHalo,
-      ]) {
-        const mark = new Mesh(geometry, this.material);
-        mark.rotation.x = -Math.PI / 2;
-        mark.renderOrder = 20;
-        blip.add(mark);
-      }
-      this.contacts.add(blip);
+      this.contacts.add(
+        this.blips.paint(
+          contact.pos,
+          contact.kind === "structure" ? "diamond" : "round",
+          `radar-contact-${contact.kind}`,
+        ),
+      );
     }
     await Promise.all(radars.map((radar) => this.place(radar)));
   }
@@ -173,10 +150,7 @@ export class RadarView implements FrameUpdatable, Disposable {
     this.contacts.clear();
     this.root.clear();
     this.root.removeFromParent();
-    this.dot.dispose();
-    this.unitHalo.dispose();
-    this.structureHalo.dispose();
-    this.material.dispose();
+    this.blips.dispose();
     this.smokeFalloff.dispose();
   }
 

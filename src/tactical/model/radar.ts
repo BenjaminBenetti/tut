@@ -29,7 +29,12 @@ export interface Radar {
   readonly turnsLeft: number;
 }
 
-/** Location-only intel: no species, health, or attack target is disclosed. */
+/**
+ * Location-only intel: no species, health, or attack target is disclosed.
+ * Scanners report `"unit"` contacts; the objective nests are marked
+ * through the fog on their own since #1173 (`ObjectiveMarker`), so no
+ * rule issues a `"structure"` contact today.
+ */
 export interface RadarContact {
   readonly kind: "unit" | "structure";
   readonly pos: TileCoord;

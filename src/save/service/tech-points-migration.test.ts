@@ -76,7 +76,7 @@ describe("ADD_TECH_POINTS", () => {
     );
   });
 
-  it("is the last registered step and reaches the current schema", () => {
+  it("is registered and reaches the current schema", () => {
     const runner = new MigrationRunner(
       GAME_STATE_MIGRATIONS,
       GAME_STATE_SCHEMA_VERSION,
@@ -88,7 +88,7 @@ describe("ADD_TECH_POINTS", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error(result.error.message);
-    expect(result.value.schemaVersion).toBe(26);
-    expect(GAME_STATE_MIGRATIONS.at(-1)).toBe(ADD_TECH_POINTS);
+    expect(result.value.schemaVersion).toBe(GAME_STATE_SCHEMA_VERSION);
+    expect(GAME_STATE_MIGRATIONS).toContain(ADD_TECH_POINTS);
   });
 });

@@ -649,6 +649,24 @@ const ADD_TURRETS: Migration = {
   },
 };
 
+/**
+ * v26 → v27 (#1175): defend-installation missions. An offer may carry
+ * `defence`, an active mission a `defend-generators` objective, units
+ * of kind `generator` and an `edgeSpawn.totalWaves`, and a result a
+ * `defence` field. Every one is optional and reads as its absence meant
+ * before, and no v26 save can hold any of them, so there is nothing to
+ * rewrite: the step stamps the save as read by rules that know the
+ * shapes.
+ */
+const ADD_DEFEND_INSTALLATION: Migration = {
+  from: 26,
+  to: 27,
+  apply(state) {
+    if (!isRecord(state)) throw new Error("v26 state is not an object");
+    return state;
+  },
+};
+
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
@@ -675,4 +693,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_CITY_POPULATION,
   ADD_DEPLOYABLE_LEVELS,
   ADD_TECH_POINTS,
+  ADD_DEFEND_INSTALLATION,
 ];

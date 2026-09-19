@@ -12,10 +12,7 @@
  * briefing name them.
  */
 export type DeployableTypeId =
-  | "defensive-battery"
-  | "repellent-dispersal"
-  | "sensor-array"
-  | "bank";
+  "defensive-battery" | "repellent-dispersal" | "sensor-array" | "bank";
 
 /**
  * Every deployable type id, in a fixed order. Used for iteration, for

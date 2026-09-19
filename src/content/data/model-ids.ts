@@ -68,6 +68,7 @@ export const MODEL_IDS = [
   "tdf.infantry.radio",
   "tdf.radar-scanner",
   "tdf.turret",
+  "tdf.generator",
   "tdf.infantry.rifle",
   "tdf.infantry.rocket",
   "tdf.infantry.sniper",

@@ -281,7 +281,10 @@ function chargeAction(
     return undefined;
   }
   const objective = mission.objectives.find(
-    (candidate) => candidate.targetId === target.id && !candidate.complete,
+    (candidate) =>
+      candidate.kind === "destroy-spawner" &&
+      candidate.targetId === target.id &&
+      !candidate.complete,
   );
   if (objective === undefined) {
     return undefined;
@@ -524,6 +527,9 @@ export function missionViolations(mission: TacticalState): string[] {
     }
   }
   for (const objective of mission.objectives) {
+    if (objective.kind !== "destroy-spawner") {
+      continue;
+    }
     if (!mission.spawners.some((s) => s.id === objective.targetId)) {
       problems.push(`${objective.id} tracks missing "${objective.targetId}"`);
     }

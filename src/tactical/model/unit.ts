@@ -20,9 +20,11 @@ export const UNIT_ID_PREFIX = "unit";
  * What a token is: a squad of ~5 figures, one mech, one bug (GDD §6.1),
  * or a deployed turret (#1138) — a piece of equipment an engineer put
  * down that fights as a unit: it is shot at, it sees, it fires on
- * overwatch, and it is never given an order.
+ * overwatch, and it is never given an order — or a generator (#1175),
+ * the installation's plant the squad defends: it is shot at and it
+ * sees, but it neither moves nor fires.
  */
-export type UnitKind = "squad" | "mech" | "bug" | "turret";
+export type UnitKind = "squad" | "mech" | "bug" | "turret" | "generator";
 
 /** Every `UnitKind`, in a fixed order. */
 export const UNIT_KINDS = [
@@ -30,6 +32,7 @@ export const UNIT_KINDS = [
   "mech",
   "bug",
   "turret",
+  "generator",
 ] as const satisfies readonly UnitKind[];
 
 /** Which side a unit fights for. */
@@ -166,8 +169,9 @@ export function passMaskFor(passClass: PassClass): UnitClass {
  * tile and fires by rule. The strip does not list it, Tab does not
  * cycle onto it, the wheel does not open for it, and its standing
  * neither keeps the mission open nor counts at the debrief — it is
- * equipment the force left behind, not a member of it.
+ * equipment the force left behind, not a member of it. A generator
+ * (#1175) is the same to every one of those rules.
  */
 export function isAutonomous(unit: Pick<Unit, "kind">): boolean {
-  return unit.kind === "turret";
+  return unit.kind === "turret" || unit.kind === "generator";
 }

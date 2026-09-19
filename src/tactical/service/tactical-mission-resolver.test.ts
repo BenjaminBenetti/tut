@@ -28,6 +28,7 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
+import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { CARCASS_HARVESTED } from "../model/carcass-harvested-event";
@@ -806,6 +807,7 @@ describe("TacticalMissionResolver", () => {
         unitTuning: UNIT_TUNING,
         spawnTuning: SPAWN_TUNING,
         garrison: GARRISON_TUNING,
+        generator: GENERATOR_TUNING,
         ids,
         registries: createDefaultRegistries(),
       }),
@@ -893,5 +895,80 @@ describe("TacticalMissionResolver", () => {
     expect(result.infestationDelta).toBeLessThan(0);
     expect(result.squadCasualties).toEqual([]);
     expect(result.mechDamage).toEqual([]);
+  });
+});
+
+// ===========================================
+// Defences (#1175)
+// ===========================================
+
+describe("tacticalMissionResult on a defence (#1175)", () => {
+  const DEFENCE: Objective = {
+    id: "objective-1",
+    kind: "defend-generators",
+    installation: "repellent-dispersal",
+    targetIds: ["gen-1", "gen-2"],
+    complete: false,
+    failed: false,
+  };
+  const generator = (id: string, hp: number): Unit => ({
+    ...unitAt(id, "infantry", at(4, 4), { hp }),
+    kind: "generator",
+    sourceId: "generator",
+  });
+
+  function resolve(units: readonly Unit[], wave: number) {
+    const tactical: TacticalState = missionWith(MAP, units, {
+      objectives: [DEFENCE],
+      extracted: [squadUnit("unit-1", "squad-1", SQUAD_HP)],
+      edgeSpawn: { nextTurn: 20, wave, totalWaves: 3 },
+      outcome: "extracted",
+    });
+    return tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(3),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+  }
+
+  it("reports the installation held while a generator still runs", () => {
+    const result = resolve([generator("gen-1", 0), generator("gen-2", 5)], 1);
+    expect(result.defence).toEqual({
+      installation: "repellent-dispersal",
+      held: true,
+    });
+  });
+
+  it("reports the installation lost once every generator is wrecked", () => {
+    const result = resolve([generator("gen-1", 0), generator("gen-2", 0)], 3);
+    expect(result.defence).toEqual({
+      installation: "repellent-dispersal",
+      held: false,
+    });
+    // A generator is not roster: nothing is reported destroyed or lost.
+    expect(result.mechsDestroyed).toEqual([]);
+    expect(result.squadCasualties).toEqual([]);
+  });
+
+  it("carries no defence field on a clearance", () => {
+    const tactical: TacticalState = missionWith(
+      MAP,
+      [squadUnit("unit-1", "squad-1", SQUAD_HP)],
+      { objectives: DONE, outcome: "won" },
+    );
+    const result = tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(3),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+    expect("defence" in result).toBe(false);
   });
 });

@@ -147,7 +147,8 @@ export function wavesFor(
   tuning: InstallationDefenceTuning,
 ): number {
   const raw =
-    tuning.baseWaves + Math.floor(tuning.wavesPerInfestationPoint * infestation);
+    tuning.baseWaves +
+    Math.floor(tuning.wavesPerInfestationPoint * infestation);
   return Math.max(1, Math.min(tuning.maxWaves, raw));
 }
 

@@ -303,6 +303,7 @@ describe("edgeWave", () => {
             unitIds: bugs.map((b) => b.id),
             source: "edge",
             sourceId: hook.id,
+            wave: 1,
           },
         },
       ]);
@@ -492,5 +493,46 @@ describe("hatching a species on a 2×2 block (#1130)", () => {
         }
       }
     }
+  });
+});
+
+// ===========================================
+// Counted waves (#1175)
+// ===========================================
+
+describe("edgeWave with a wave total (#1175)", () => {
+  it("sends a wave on its turn whether or not the last one is dead, stamped with its number", () => {
+    const mission = missionWith(
+      fieldWithEdges(),
+      [unitAt("survivor", "infantry", at(3, 6), { team: "bugs" })],
+      {
+        phase: "bugs",
+        turn: 7,
+        edgeSpawn: { nextTurn: 7, wave: 1, totalWaves: 3 },
+      },
+    );
+    const result = edgeWave(mission, ctxFor(3), DEPS);
+    expect(result.state.edgeSpawn).toEqual({
+      nextTurn: 11,
+      wave: 2,
+      totalWaves: 3,
+    });
+    expect(bugsOf(result.state).length).toBeGreaterThan(1);
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toMatchObject({
+      type: BUGS_SPAWNED,
+      payload: { source: "edge", wave: 2, totalWaves: 3 },
+    });
+  });
+
+  it("falls quiet once every promised wave has landed, leaving the schedule alone", () => {
+    const mission = missionWith(fieldWithEdges(), [], {
+      phase: "bugs",
+      turn: 15,
+      edgeSpawn: { nextTurn: 15, wave: 3, totalWaves: 3 },
+    });
+    const result = edgeWave(mission, ctxFor(3), DEPS);
+    expect(result.state).toBe(mission);
+    expect(result.events).toEqual([]);
   });
 });

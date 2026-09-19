@@ -33,6 +33,8 @@ import type {
 } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import { isAutonomous } from "../../tactical/model/unit";
+import type { DefendGeneratorsObjective } from "../../tactical/model/tactical-state";
+import { defenceProgress } from "../../tactical/service/defence-service";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import {
   enemyAttackTargets,
@@ -2205,10 +2207,15 @@ export class TacticalHudView {
         : undefined,
     );
     const inReach = this.interactTarget();
+    const defence = mission.objectives.find(
+      (objective): objective is DefendGeneratorsObjective =>
+        objective.kind === "defend-generators",
+    );
     this.objectives.update(
       mission.objectives,
       mission.spawners,
       inReach?.objective.id,
+      defence === undefined ? undefined : defenceProgress(mission, defence),
     );
     // The rail names units through the same resolver as the card, the
     // banner and the log (#1040).

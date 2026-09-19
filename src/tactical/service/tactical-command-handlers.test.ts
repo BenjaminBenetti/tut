@@ -23,6 +23,7 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
+import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { attack } from "../model/attack-command";
 import type { EndTurnCommand } from "../model/end-turn-command";
@@ -114,6 +115,7 @@ function inMission(): GameState {
       unitTuning: UNIT_TUNING,
       spawnTuning: SPAWN_TUNING,
       garrison: GARRISON_TUNING,
+      generator: GENERATOR_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

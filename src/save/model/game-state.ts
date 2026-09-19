@@ -53,8 +53,12 @@ import type { TechState } from "../../tech/model/tech-state";
  *   `tech` slice, `missions[].rewards.techPoints`,
  *   `lastMissionResult.techPointsAwarded` and `activeMission.carcasses`.
  *   Older saves have earned and unlocked nothing.
+ * - `27`: defend-installation missions (#1175): `missions[].defence`, a
+ *   `defend-generators` objective, `generator` units and
+ *   `activeMission.edgeSpawn.totalWaves`, `lastMissionResult.defence`.
+ *   All optional; older saves hold none.
  */
-export const GAME_STATE_SCHEMA_VERSION = 26;
+export const GAME_STATE_SCHEMA_VERSION = 27;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

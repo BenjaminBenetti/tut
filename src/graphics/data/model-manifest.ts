@@ -1157,6 +1157,17 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "placeholder",
   },
+  "tdf.generator": {
+    category: "units",
+    path: "assets/models/units/tdf-generator.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.1,
+    sockets: [],
+    quality: "placeholder",
+  },
   "tdf.radar-scanner": {
     category: "props",
     path: "assets/models/props/tdf-radar-scanner.glb",

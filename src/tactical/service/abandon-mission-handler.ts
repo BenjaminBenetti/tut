@@ -9,6 +9,9 @@ import type { Unit, UnitId } from "../model/unit";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import { objectivesComplete } from "./mission-end-service";
 
+import { isGenerator } from "../model/generator";
+import { objectiveComplete } from "./defence-service";
+
 // ===========================================
 // Types
 // ===========================================
@@ -71,7 +74,7 @@ export function leaveMissionSummary(
     sourceId: unit.sourceId,
   }));
   const objectivesOpen = mission.objectives.filter(
-    (objective) => !objective.complete,
+    (objective) => !objectiveComplete(mission, objective),
   ).length;
   const outcome: MissionOutcome =
     objectivesComplete(mission) && mission.extracted.length > 0
@@ -138,5 +141,9 @@ export function createAbandonMissionHandler(): TacticalHandler<AbandonMissionCom
 
 /** The player's units still alive on the map. */
 function standingUnits(mission: TacticalState): readonly Unit[] {
-  return mission.units.filter((unit) => unit.team === "tdf" && unit.hp > 0);
+  // A generator is the installation's, not the force's (#1175): it is
+  // neither stranded nor written off when the squad leaves.
+  return mission.units.filter(
+    (unit) => unit.team === "tdf" && unit.hp > 0 && !isGenerator(unit),
+  );
 }

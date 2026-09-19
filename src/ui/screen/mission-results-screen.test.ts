@@ -662,3 +662,56 @@ describe("MissionResultsScreen payout prominence", () => {
     ).toBe(cleanCredits);
   });
 });
+
+// ===========================================
+// Defences (#1175)
+// ===========================================
+
+describe("MissionResultsScreen on a defence (#1175)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  function taglineFor(
+    outcome: MissionResult["outcome"],
+    held: boolean,
+  ): string {
+    const state = afterMission();
+    const store = new FakeStore({
+      ...state,
+      overworld: {
+        ...state.overworld,
+        lastMissionResult: {
+          ...RESULT,
+          outcome,
+          defence: { installation: "bank", held },
+        },
+      },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
+    }).mount(root);
+    return root.querySelector('[data-field="tagline"]')?.textContent ?? "";
+  }
+
+  it("says the installation held on a win", () => {
+    expect(taglineFor("won", true)).toBe(
+      "The bank held through every wave. The force is coming home with full rewards.",
+    );
+  });
+
+  it("says the installation is still running on an early extraction", () => {
+    expect(taglineFor("extracted", true)).toContain("bank still running");
+  });
+
+  it("says the installation is lost when the generators fell, however the force fared", () => {
+    expect(taglineFor("extracted", false)).toContain("bank is lost");
+    expect(taglineFor("lost", false)).toContain("bank is lost");
+  });
+});

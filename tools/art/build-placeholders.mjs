@@ -491,6 +491,38 @@ function buildTurret(mf) {
   ]);
 }
 
+/**
+ * The installation's generator (#1175): a squat plant block on a skid,
+ * an exhaust stack at one corner and an orange service panel on the
+ * front, so it reads as ours and as a machine rather than a crate.
+ * Pivot at the base centre; 1.1 tall to the top of the stack; the
+ * panel faces +Z (forward, ADR 0004 §3).
+ *
+ * ```
+ *            ▌ stack (0.12 square, to y 1.1)
+ *      ┌─────┴──┐
+ *      │  body  │  0.76 × 0.6 × 0.6, y 0.16..0.76
+ *      │ [panel]│  orange, on +Z
+ *    ┌─┴────────┴─┐  skid 0.9 × 0.16 × 0.74
+ * ```
+ *
+ * @param {MaterialFactory} mf - Material factory.
+ * @returns {Object3D} The generator.
+ */
+function buildGenerator(mf) {
+  const plate = mf.get("tdf-grey-mid");
+  const dark = mf.get("tdf-grey-dark");
+  const trim = mf.get("tdf-orange");
+  return group("root", [
+    box(dark, [0.9, 0.16, 0.74], [0, 0.08, 0], { name: "skid" }),
+    box(plate, [0.76, 0.6, 0.6], [0, 0.46, 0], { name: "body" }),
+    box(trim, [0.4, 0.28, 0.04], [0, 0.46, 0.32], { name: "panel" }),
+    box(dark, [0.7, 0.06, 0.54], [0, 0.79, 0], { name: "lid" }),
+    box(dark, [0.12, 0.34, 0.12], [0.26, 0.93, -0.18], { name: "stack" }),
+    box(trim, [0.16, 0.04, 0.16], [0.26, 1.08, -0.18], { name: "stack_cap" }),
+  ]);
+}
+
 /** @type {ModelDef[]} */
 const MODEL_DEFS = [
   {
@@ -500,6 +532,14 @@ const MODEL_DEFS = [
     footprint: { w: 1, d: 1 },
     height: 0.9,
     build: buildTurret,
+  },
+  {
+    id: "tdf.generator",
+    category: "units",
+    file: "tdf-generator.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.1,
+    build: buildGenerator,
   },
   ...["straight", "corner", "t", "cross"].map((shape) => ({
     id: `tile.city.road-${shape}`,

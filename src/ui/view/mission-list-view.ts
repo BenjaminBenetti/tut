@@ -336,6 +336,7 @@ export class MissionListView {
  */
 const TYPE_ICONS: Readonly<Record<MissionTypeId, IconId>> = {
   "infestation-clearance": "infestation",
+  "defend-installation": "defend",
 };
 
 // ===========================================

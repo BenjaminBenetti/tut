@@ -598,7 +598,9 @@ describe("generateMissions — defend installation", () => {
       }),
       deps(1, ALWAYS_DEFEND),
     );
-    const offered = state.missions.filter((m) => m.typeId === "defend-installation");
+    const offered = state.missions.filter(
+      (m) => m.typeId === "defend-installation",
+    );
     expect(offered.map((m) => m.cityId)).toEqual(["mid"]);
   });
 
@@ -625,7 +627,10 @@ describe("generateMissions — defend installation", () => {
     });
     const picks = new Set<string>();
     for (let seed = 1; seed <= 40; seed++) {
-      const { state: next } = generateMissions(state, deps(seed, ALWAYS_DEFEND));
+      const { state: next } = generateMissions(
+        state,
+        deps(seed, ALWAYS_DEFEND),
+      );
       picks.add(next.missions[0]?.defence?.deployableId ?? "none");
     }
     expect([...picks].sort()).toEqual(["dep-1", "dep-2", "dep-3"]);

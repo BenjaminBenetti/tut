@@ -41,6 +41,11 @@ export function objectiveMarkers(
   const spawners = new Map(mission.spawners.map((s) => [s.id, s]));
   const markers: ObjectiveMarker[] = [];
   for (const objective of open) {
+    // A generator is a unit of ours, lit from the first turn (#1175);
+    // only a spawner hides in the fog and needs the blip.
+    if (objective.kind !== "destroy-spawner") {
+      continue;
+    }
     const spawner = spawners.get(objective.targetId);
     if (
       spawner === undefined ||

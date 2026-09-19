@@ -25,6 +25,7 @@ import type { Mech } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { GarrisonTuning } from "../model/garrison-tuning";
+import type { GeneratorTuning } from "../model/generator";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type { MissionStartOptions } from "../model/mission-start-options";
 import type { TacticalError } from "../model/tactical-error";
@@ -43,7 +44,7 @@ import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
 import type { SpawnTuning } from "../model/spawn-tuning";
 import type { UnitTuning } from "../model/unit-tuning";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
-import { mechUnit, squadUnit } from "./unit-factory";
+import { generatorUnit, mechUnit, squadUnit } from "./unit-factory";
 import { placeGarrisonTurrets } from "./garrison-service";
 import { hatchInterval } from "./spawn-service";
 
@@ -66,6 +67,8 @@ export interface MissionStartDeps {
   readonly registries: MapGenRegistries;
   /** The turret a region's garrison stands and how the start spreads them (#1155). */
   readonly garrison: GarrisonTuning;
+  /** What a defence's generators are made of (#1175). */
+  readonly generator: GeneratorTuning;
 }
 
 /** Id prefixes the mission start issues. */
@@ -167,12 +170,32 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     deps.spawnTuning,
     mission.difficulty,
   );
-  const objectives = spawners.map((spawner): Objective => ({
+  const objectives: Objective[] = spawners.map((spawner): Objective => ({
     id: deps.ids.nextId(OBJECTIVE_ID_PREFIX),
     kind: "destroy-spawner",
     targetId: spawner.id,
     complete: false,
   }));
+  // A defence stands its generators up on the generator hooks and holds
+  // them as one objective (#1175); its waves are counted, not endless.
+  const generators =
+    mission.defence === undefined
+      ? []
+      : generatorsFrom(map, deps.ids, deps.generator);
+  if (mission.defence !== undefined) {
+    objectives.push({
+      id: deps.ids.nextId(OBJECTIVE_ID_PREFIX),
+      kind: "defend-generators",
+      installation: mission.defence.installation,
+      targetIds: generators.map((build) => build.unit.id),
+      complete: false,
+      failed: false,
+    });
+  }
+  const templates = { ...placed.value.templates };
+  for (const build of generators) {
+    templates[build.template.id] = build.template;
+  }
 
   const seed = hashSeed(recipe.value.seed);
   const tactical: Omit<TacticalState, "vision"> = {
@@ -181,8 +204,8 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     difficulty: mission.difficulty,
     threat: state.overworld.threat,
     map,
-    units: placed.value.units,
-    templates: placed.value.templates,
+    units: [...placed.value.units, ...generators.map((build) => build.unit)],
+    templates,
     turn: FIRST_TURN,
     phase: "player",
     objectives,
@@ -194,7 +217,13 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     ),
     // Nothing burns until something is fired (#1121).
     effects: [],
-    edgeSpawn: { nextTurn: deps.spawnTuning.firstWaveTurn, wave: 0 },
+    edgeSpawn: {
+      nextTurn: deps.spawnTuning.firstWaveTurn,
+      wave: 0,
+      ...(mission.defence === undefined
+        ? {}
+        : { totalWaves: mission.defence.waves }),
+    },
     extraction: map.hooks.extraction.tiles.map(coordOf),
     extracted: [],
     // The mission does begin on turn 1 in the player phase, so it says so
@@ -402,6 +431,33 @@ function carcassesFrom(
       techPoints,
       harvested: false,
     }));
+}
+
+// ===========================================
+// Generators
+// ===========================================
+
+/**
+ * One generator per generator hook, in hook order (#1175), facing the
+ * board's centre like everything else that stands still. The map
+ * placed the hooks on open ground the squad can reach, so nothing here
+ * can fail to stand.
+ */
+function generatorsFrom(
+  map: TacticalMap,
+  ids: IdGenerator,
+  tuning: GeneratorTuning,
+): UnitBuild[] {
+  return map.hooks.objectives
+    .filter((hook) => hook.kind === HookKinds.GENERATOR)
+    .map((hook) => {
+      const pos = coordOf(firstTile(hook));
+      return generatorUnit(
+        tuning,
+        { pos, facing: facingToward(pos, map) },
+        ids,
+      );
+    });
 }
 
 /** The hook's first tile; hooks always carry at least one. */

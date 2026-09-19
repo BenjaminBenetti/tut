@@ -182,7 +182,9 @@ function iconFor(kind: PlaceableUnit["kind"]): "squad" | "mech" | "egg" {
       return "mech";
     case "squad":
     case "turret":
-      // A turret is never listed (#1138); it would read as infantry.
+    case "generator":
+      // A turret is never listed (#1138), nor a generator (#1175); they
+      // would read as infantry.
       return "squad";
   }
 }

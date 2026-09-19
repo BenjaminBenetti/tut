@@ -110,6 +110,8 @@ export type TacticalError =
   | { readonly kind: "takes-no-orders"; readonly unitId: string }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
   | { readonly kind: "objective-complete"; readonly objectiveId: string }
+  // Held, not worked (#1175): a defence has nothing to interact with.
+  | { readonly kind: "objective-not-interactive"; readonly objectiveId: string }
   | { readonly kind: "objective-not-yours"; readonly unitId: string }
   | {
       readonly kind: "objective-target-missing";
@@ -247,6 +249,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":
       return `Objective "${error.objectiveId}" is already done`;
+    case "objective-not-interactive":
+      return `Objective "${error.objectiveId}" is held, not worked`;
     case "objective-not-yours":
       return `Unit "${error.unitId}" is not on the side whose objective that is`;
     case "objective-target-missing":
@@ -342,6 +346,7 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "takes-no-orders": true,
   "objective-not-found": true,
   "objective-complete": true,
+  "objective-not-interactive": true,
   "objective-not-yours": true,
   "objective-target-missing": true,
   "objective-out-of-reach": true,

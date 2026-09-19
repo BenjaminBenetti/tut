@@ -1666,6 +1666,20 @@
     "bytes": 12348
   },
   {
+    "id": "tdf.generator",
+    "category": "units",
+    "path": "assets/models/units/tdf-generator.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.1,
+    "sockets": [],
+    "quality": "placeholder",
+    "triangles": 72,
+    "bytes": 12276
+  },
+  {
     "id": "tdf.infantry.rifle",
     "category": "units",
     "path": "assets/models/units/tdf-infantry-rifle.glb",

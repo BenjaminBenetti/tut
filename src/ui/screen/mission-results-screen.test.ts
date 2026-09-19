@@ -534,6 +534,17 @@ describe("MissionResultsScreen payout prominence", () => {
     );
   });
 
+  it("names a harvest as lost with the squad on a lost mission", () => {
+    const panel = mountWith({
+      outcome: "lost",
+      techPointsAwarded: 0,
+      techPointsHarvested: 5,
+    });
+    expect(panel.querySelector('[data-field="tech-points"]')?.textContent).toBe(
+      "0 TP (5 harvested from a carcass, lost with the squad)",
+    );
+  });
+
   /** Index of a `data-field` block among the panel's children, in reading order. */
   function orderOf(container: HTMLElement, field: string): number {
     const blocks = [...container.querySelectorAll("[data-field]")];

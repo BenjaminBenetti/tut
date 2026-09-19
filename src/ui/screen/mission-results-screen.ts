@@ -449,14 +449,20 @@ export class MissionResultsScreen implements Screen {
 
   /**
    * The tech points line (#1171): the total, and how much of it a squad
-   * stripped from a carcass on the map when any was.
+   * stripped from a carcass on the map when any was. A lost mission
+   * brings nothing home, so a harvest there is named as lost with it
+   * rather than counted.
    */
   private techPointsLine(result: MissionResult): string {
     const total = formatTechPoints(result.techPointsAwarded);
     if (result.techPointsHarvested === undefined) {
       return total;
     }
-    return `${total} (${formatWhole(result.techPointsHarvested)} harvested from a carcass)`;
+    const harvested = formatWhole(result.techPointsHarvested);
+    if (result.outcome === "lost") {
+      return `${total} (${harvested} harvested from a carcass, lost with the squad)`;
+    }
+    return `${total} (${harvested} harvested from a carcass)`;
   }
 
   /**

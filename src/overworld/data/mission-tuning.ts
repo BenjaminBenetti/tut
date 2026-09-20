@@ -42,7 +42,7 @@ export const MISSION_TUNING: MissionTuning = {
       trigger: "region-installation",
       minInfestation: 40,
       chanceAtThreshold: 0.05,
-      chanceAtMax: 0.2,
+      chanceAtMax: 0.25,
       infestationWeight: 0.8,
       threatWeight: 0.2,
       mediumFromDifficulty: 3,

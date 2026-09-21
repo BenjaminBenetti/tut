@@ -11,7 +11,15 @@ JevKey=your-key
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173
 ```
 
-Run these in separate terminals:
+Start both services together:
+
+```sh
+./run.sh
+```
+
+Open `http://localhost:5173`. Ctrl+C stops both services; if either exits, the script stops the other too. Run `pnpm install` first on a fresh checkout.
+
+Alternatively, run these in separate terminals:
 
 ```sh
 pnpm dev:relay

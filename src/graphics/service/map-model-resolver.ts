@@ -1,3 +1,4 @@
+import { BUILDING_FURNITURE_CLEARANCE } from "../data/interior-furniture-style";
 import { infestModel } from "./infested-model-resolver";
 import {
   infestationGround,
@@ -485,19 +486,22 @@ function resolveWalls(
   index: TileIndex,
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
+  const buildingKinds = new Map(map.buildings.map((b) => [b.id, b.kind]));
   for (const tile of map.tiles) {
     for (const side of DIRECTIONS) {
       const kind = tile.walls[side];
       if (kind === undefined || neighbourDrawsWall(tile, side, index)) {
         continue;
       }
+      const buildingId = localWallBuildingId(tile, side, kind, index);
       placements.push({
         modelId: wallModel(
           kind,
           wallFamilyForWall(
             kind,
-            localWallBuildingId(tile, side, kind, index),
+            buildingId,
             map.recipe.params.placeProfile,
+            buildingId ? buildingKinds.get(buildingId) : undefined,
           ),
         ),
         level: tile.y,
@@ -555,6 +559,7 @@ function resolveProps(
   index: TileIndex,
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
+  const buildingKinds = new Map(map.buildings.map((b) => [b.id, b.kind]));
   for (const prop of map.props) {
     const tile = index.getAt(prop.tile);
     const appearance = propModelVariation(prop, map.recipe.seed);
@@ -562,7 +567,15 @@ function resolveProps(
       continue;
     }
     const bounds = propBounds(prop);
-    const offset = propAppearanceOffset(prop, tile, appearance.turns);
+    const buildingKind = tile.buildingId
+      ? buildingKinds.get(tile.buildingId)
+      : undefined;
+    const offset = propAppearanceOffset(
+      prop,
+      tile,
+      appearance.turns,
+      buildingKind ? BUILDING_FURNITURE_CLEARANCE[buildingKind] : undefined,
+    );
     placements.push({
       modelId: propSurfaceModel(appearance.modelId, tile.surface),
       level: tile.y,

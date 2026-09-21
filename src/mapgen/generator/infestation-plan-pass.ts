@@ -58,7 +58,11 @@ export class InfestationPlanPass implements GenerationPass {
     const influence: number[] = [];
     for (let z = 0; z < draft.depth; z++) {
       for (let x = 0; x < draft.width; x++) {
-        if (!landAt(context, x, z) || draft.isLandingReserved(x, z)) {
+        if (
+          !landAt(context, x, z) ||
+          draft.isLandingReserved(x, z) ||
+          draft.isSiteReserved(x, z)
+        ) {
           influence.push(0);
           continue;
         }
@@ -173,7 +177,8 @@ function clearLand(
     for (let dx = -radius; dx <= radius; dx++)
       if (
         !landAt(context, x + dx, z + dz) ||
-        draft.isLandingReserved(x + dx, z + dz)
+        draft.isLandingReserved(x + dx, z + dz) ||
+        draft.isSiteReserved(x + dx, z + dz)
       )
         return false;
   return true;
@@ -277,6 +282,7 @@ function excavateClearings(
         if (
           !draft.inBounds(x, z) ||
           draft.isLandingReserved(x, z) ||
+          draft.isSiteReserved(x, z) ||
           draft.groundLevelAt(x, z) !== base ||
           draft.groundSurfaceAt(x, z) === SurfaceIds.WATER
         )

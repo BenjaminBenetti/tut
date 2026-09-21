@@ -77,6 +77,16 @@ export interface MapGenParams {
   /** From the mission type definition. */
   readonly hooks: readonly HookRequirement[];
   /**
+   * A building kind the map must contain, raised on the lot nearest the
+   * board's centre so it reads as the landmark (#1175). Hooks that gather
+   * around a building, such as generators, look for it by kind. Must name
+   * a registered building template; absent leaves the biome's weights to
+   * decide every lot.
+   */
+  readonly landmark?: string;
+  /** Registered authored site, reserved before ordinary settlement lots. */
+  readonly site?: string;
+  /**
    * Share of natural terrain edges that become walkable slopes rather
    * than cliffs, 0–1 (#799). Decided per connected run of edge tiles so a
    * corner is never left without its straights. Defaults to 1: every

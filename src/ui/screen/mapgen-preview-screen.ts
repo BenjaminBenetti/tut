@@ -1,3 +1,4 @@
+import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import {
   PLACE_PROFILE_IDS,
   isPlaceProfileId,
@@ -30,6 +31,8 @@ export interface PreviewControlsState {
   /** Whole infestation band, corresponding to ten overworld points per level. */
   readonly infestation?: number;
   readonly seed: string;
+  /** Authored installation compound selected for review. */
+  readonly site?: string;
   readonly biome: BiomeId;
   readonly placeProfile?: PlaceProfileId;
   readonly settlement: SettlementScale;
@@ -99,6 +102,7 @@ export class MapgenPreviewScreen {
   private readonly biomeSelect: HTMLSelectElement;
   private readonly placeSelect: HTMLSelectElement;
   private readonly settlementSelect: HTMLSelectElement;
+  private readonly siteSelect: HTMLSelectElement;
   private readonly sizeSelect: HTMLSelectElement;
   private readonly levelSlider: HTMLInputElement;
   private readonly levelLabel: HTMLSpanElement;
@@ -178,6 +182,20 @@ export class MapgenPreviewScreen {
       SETTLEMENT_SCALES,
       initial.settlement,
     );
+    this.siteSelect = select(
+      doc,
+      "site",
+      ["", ...Object.keys(INSTALLATION_SITES)],
+      initial.site ?? "",
+    );
+    for (const option of this.siteSelect.options) {
+      option.textContent =
+        option.value === ""
+          ? "None"
+          : INSTALLATION_SITES[option.value as keyof typeof INSTALLATION_SITES]
+              .name;
+    }
+    form.appendChild(labelled(doc, "Installation", this.siteSelect));
     this.sizeSelect = select(doc, "size", MAP_SIZE_PRESETS, initial.size);
     form.appendChild(labelled(doc, "Biome", this.biomeSelect));
     form.appendChild(labelled(doc, "Place", this.placeSelect));
@@ -275,6 +293,7 @@ export class MapgenPreviewScreen {
   getState(): PreviewControlsState {
     return {
       seed: this.seedInput.value.trim() || "seed",
+      ...(this.siteSelect.value === "" ? {} : { site: this.siteSelect.value }),
       biome: this.biomeSelect.value as BiomeId,
       ...(isPlaceProfileId(this.placeSelect.value)
         ? { placeProfile: this.placeSelect.value }

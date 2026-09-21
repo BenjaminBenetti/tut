@@ -201,6 +201,7 @@ function place(
     if (
       !draft.inBounds(cell.x, cell.z) ||
       draft.isLandingReserved(cell.x, cell.z) ||
+      draft.isSiteReserved(cell.x, cell.z) ||
       draft.isCovered(cell.x, cell.z) ||
       protectedColumns.has(cell.z * draft.width + cell.x) ||
       draft.groundLevelAt(cell.x, cell.z) !== tile.y ||

@@ -1,3 +1,6 @@
+import { INSTALLATION_SITES } from "./content/data/installation-sites";
+import { HookKinds } from "./mapgen/model/hook";
+import { PassMask } from "./mapgen/model/pass-mask";
 import { mapInfestationLevel } from "./content/model/map-infestation";
 import { TEXTURE_MANIFEST } from "./graphics/data/texture-manifest";
 import { ManifestTextureLoader } from "./graphics/service/manifest-texture-loader";
@@ -71,6 +74,7 @@ function stateFromUrl(): PreviewControlsState {
   return {
     ...(isPlaceProfileId(place) ? { placeProfile: place } : {}),
     seed: query.get("seed") ?? DEFAULT_STATE.seed,
+    ...(query.has("site") ? { site: query.get("site")! } : {}),
     biome:
       (query.get("biome") as PreviewControlsState["biome"] | null) ??
       DEFAULT_STATE.biome,
@@ -125,6 +129,7 @@ function writeUrl(state: PreviewControlsState): void {
     slope: String(Math.round(state.slopeShare * 100)),
     infestation: String(state.infestation ?? 0),
   });
+  if (state.site !== undefined) query.set("site", state.site);
   if (state.placeProfile !== undefined) query.set("place", state.placeProfile);
   if (new URLSearchParams(window.location.search).get("models") === "1") {
     query.set("models", "1");
@@ -206,7 +211,24 @@ async function main(): Promise<void> {
           : { placeProfile: state.placeProfile }),
         settlement: state.settlement,
         size: state.size,
-        hooks: DEFAULT_MISSION_HOOKS,
+        ...(state.site === undefined ? {} : { site: state.site }),
+        hooks:
+          state.site === undefined
+            ? DEFAULT_MISSION_HOOKS
+            : [
+                ...DEFAULT_MISSION_HOOKS.filter(
+                  (hook) => hook.kind !== HookKinds.EGG_SPAWNER,
+                ),
+                {
+                  kind: HookKinds.GENERATOR,
+                  count:
+                    INSTALLATION_SITES[
+                      state.site as keyof typeof INSTALLATION_SITES
+                    ]?.generators ?? 0,
+                  requiredPass: PassMask.INFANTRY,
+                  minDistanceFromDeploy: 6,
+                },
+              ],
         slopeShare: state.slopeShare,
         infestation: state.infestation ?? 0,
       },

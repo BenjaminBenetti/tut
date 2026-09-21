@@ -71,6 +71,43 @@ export const BUILDING_FRONTAGE_STYLES: Readonly<
     wallUtility: WALL_AC,
     entrances: BUSINESS_ENTRANCES.offices,
   },
+  // Installation entrances use the same modular frontage kit as other buildings.
+  "sensor-array": {
+    entrances: [
+      {
+        modelId: "building.installation-sensor-array-entry",
+        width: 3,
+        mountHeight: 1.08,
+      },
+    ],
+  },
+  "repellent-dispersal": {
+    entrances: [
+      {
+        modelId: "building.installation-repellent-dispersal-entry",
+        width: 3,
+        mountHeight: 1.08,
+      },
+    ],
+  },
+  "defensive-battery": {
+    entrances: [
+      {
+        modelId: "building.installation-defensive-battery-entry",
+        width: 3,
+        mountHeight: 1.08,
+      },
+    ],
+  },
+  bank: {
+    entrances: [
+      {
+        modelId: "building.installation-bank-entry",
+        width: 3,
+        mountHeight: 1.08,
+      },
+    ],
+  },
 };
 
 /** Flush guard and sill planter, below the head of the existing window aperture. */

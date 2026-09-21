@@ -35,7 +35,7 @@ import {
   clumpScore,
   footprintDistance,
   huntableEnemies,
-  landingSite,
+  huntSite,
   moveTowards,
   overwatchScore,
   reachableTiles,
@@ -220,7 +220,7 @@ export class BruteBehaviour implements BugBehaviour {
     unit: Unit,
     ctx: BehaviourContext,
   ): readonly TacticalCommand[] {
-    const site = recalledSite(mission, unit) ?? landingSite(mission, unit.pos);
+    const site = recalledSite(mission, unit) ?? huntSite(mission, unit.pos);
     const remembered = rememberedEnemy(mission, unit);
     if (site === undefined) {
       return remembered === undefined

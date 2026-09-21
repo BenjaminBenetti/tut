@@ -55,6 +55,8 @@ export const WALL_THICKNESS = 0.08;
  * supposed to mean "you".
  */
 export const SURFACE_COLOURS: Readonly<Record<string, number>> = {
+  paving: 0xa7a297,
+  hardstand: 0x3a3d42,
   infested: 0x73452e,
   grass: 0x5e7a3a,
   dirt: 0x7a6045,
@@ -134,6 +136,8 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   [HookKinds.EXTRACTION]: 0x7fd1ff,
   // A dead thing worth something: bone against the spawner's live green (#1171).
   [HookKinds.TECH_CARCASS]: 0xd9c9a3,
+  // Something of ours to hold: TDF amber, apart from the drop-zone green (#1175).
+  [HookKinds.GENERATOR]: 0xffb347,
 };
 
 /** Warning yellow for hook kinds the palette does not know. */

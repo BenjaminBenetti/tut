@@ -1,5 +1,6 @@
 /** Finishes assigned to whole rooms, so the floor reinforces the room's purpose. */
-export type InteriorFloorFinish = "timber" | "carpet" | "ceramic" | "concrete";
+export type InteriorFloorFinish =
+  "timber" | "carpet" | "ceramic" | "concrete" | "marble" | "steel";
 
 /** A room's stable finish and subdued colour variation. */
 export interface InteriorFloorAppearance {

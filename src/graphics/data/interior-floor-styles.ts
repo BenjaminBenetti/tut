@@ -7,6 +7,8 @@ import type {
 export const INTERIOR_FLOOR_STYLES: Readonly<
   Record<InteriorFloorFinish, InteriorFloorStyle>
 > = {
+  marble: { colours: [0xe6e0d2, 0xdad8ce], seam: 0x405c53, roughness: 0.3 },
+  steel: { colours: [0x657174, 0x707b7b], seam: 0x3d4b50, roughness: 0.65 },
   timber: { colours: [0x8b7050, 0x967b5b], seam: 0x68543e, roughness: 0.88 },
   carpet: { colours: [0x65746a, 0x727b80], seam: 0x59665e, roughness: 1 },
   ceramic: { colours: [0xc3beb0, 0xb7c0bc], seam: 0x96988d, roughness: 0.72 },
@@ -38,4 +40,9 @@ export const ROOM_FLOOR_FINISHES: Readonly<
   kitchen: "ceramic",
   bathroom: "ceramic",
   workshop: "concrete",
+  "control-room": "carpet",
+  "pump-room": "concrete",
+  armory: "steel",
+  "banking-hall": "marble",
+  vault: "concrete",
 };

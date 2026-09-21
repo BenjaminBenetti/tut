@@ -1,3 +1,4 @@
+import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -28,6 +29,7 @@ import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { UnitBuild } from "../../tactical/service/unit-factory";
 import {
   bugUnit,
+  generatorUnit,
   mechUnit,
   squadUnit,
 } from "../../tactical/service/unit-factory";
@@ -114,6 +116,17 @@ export function previewUnits(map: TacticalMap): PreviewUnits {
     builds.push(bugUnit(PREVIEW_SWARMER, { pos: bugTile, facing: "s" }, deps));
   }
 
+  for (const hook of map.hooks.objectives) {
+    if (hook.kind === HookKinds.GENERATOR && hook.tiles[0] !== undefined) {
+      builds.push(
+        generatorUnit(
+          GENERATOR_TUNING,
+          { pos: hook.tiles[0], facing: "s" },
+          deps.ids,
+        ),
+      );
+    }
+  }
   const templates: Record<string, UnitTemplate> = {};
   for (const build of builds) {
     templates[build.template.id] = build.template;

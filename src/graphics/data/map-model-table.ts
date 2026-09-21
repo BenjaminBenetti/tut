@@ -24,6 +24,8 @@ import type { WallKind } from "../../mapgen/model/wall";
  * through `surfaceModelFor`, which falls back rather than throwing.
  */
 export const SURFACE_MODELS: Readonly<Record<KnownSurfaceId, ModelAssetId>> = {
+  [SurfaceIds.PAVING]: "tile.city.sidewalk",
+  [SurfaceIds.HARDSTAND]: "tile.city.road-lane",
   [SurfaceIds.INFESTED]: "tile.ground.infested",
   [SurfaceIds.GRASS]: "tile.ground.grass",
   [SurfaceIds.DIRT]: "tile.ground.dirt",
@@ -121,6 +123,18 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
+  "installation-radar": "installation.radar",
+  "installation-cannon": "installation.cannon",
+  "pump-unit": "installation.pump",
+  "marble-pillar": "prop.bank-marble-pillar",
+  "blast-barrier": "prop.battery-blast-barrier",
+  "installation-sensor": "installation.sensor",
+  "installation-pump-house": "installation.pump-house",
+  "installation-battery": "installation.battery",
+  "installation-tanks": "installation.tanks",
+  "installation-spray-tower": "installation.spray-tower",
+  "installation-bank": "installation.bank",
+
   [PropKindIds.INFESTED_CARAPACE_WALL_RIDGE]: "building.carapace-wall-ridge",
   [PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP]:
     "building.carapace-wall-overlap",
@@ -147,6 +161,10 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
 
   [PropKindIds.ROOFTOP_HVAC]: "prop.rooftop-hvac",
   [PropKindIds.ROOFTOP_WATER_TANK]: "prop.rooftop-water-tank",
+  [PropKindIds.SENSOR_MAST]: "prop.sensor-mast",
+  [PropKindIds.DISPERSAL_STACK]: "prop.dispersal-stack",
+  [PropKindIds.BATTERY_EMPLACEMENT]: "prop.battery-emplacement",
+  [PropKindIds.STRONGROOM]: "prop.strongroom",
   [PropKindIds.CAR]: "prop.car-compact",
   [PropKindIds.CRATE]: "prop.crate",
   [PropKindIds.BARRIER]: "prop.barrier-concrete",
@@ -199,11 +217,26 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
 // ===========================================
 
 /**
- * The material a wall face is built from (#510). Three families of
- * identical geometry, so a block of buildings stops reading as one
- * extruded material; which one a building draws in is `wallFamilyFor`.
+ * The material and relief kit of a wall face. All families share edge length,
+ * storey height and opening clearance; `wallFamilyFor` selects the building kit.
  */
-export type WallFamily = "brick" | "concrete" | "panel" | "plaster";
+export type WallFamily =
+  | "brick"
+  | "concrete"
+  | "panel"
+  | "plaster"
+  | "bank-stone"
+  | "battery-steel"
+  | "sensor-panel"
+  | "dispersal-panel";
+
+/** Building uses can select an authored kit without changing the ordinary seeded palette. */
+export const BUILDING_WALL_FAMILIES: Readonly<Record<string, WallFamily>> = {
+  bank: "bank-stone",
+  "defensive-battery": "battery-steel",
+  "sensor-array": "sensor-panel",
+  "repellent-dispersal": "dispersal-panel",
+};
 
 /** Civic edges have their own geometry; buildings never draw this family. */
 export type WallPlacementFamily = WallFamily | "road";
@@ -252,6 +285,26 @@ export const WALL_MODELS: Readonly<
     window: "building.wall-window-panel",
     door: "building.wall-door-panel",
   },
+  "bank-stone": {
+    solid: "building.installation-bank-wall-solid",
+    window: "building.installation-bank-wall-window",
+    door: "building.installation-bank-wall-door",
+  },
+  "battery-steel": {
+    solid: "building.installation-battery-wall-solid",
+    window: "building.installation-battery-wall-window",
+    door: "building.installation-battery-wall-door",
+  },
+  "sensor-panel": {
+    solid: "building.installation-sensor-wall-solid",
+    window: "building.installation-sensor-wall-window",
+    door: "building.installation-sensor-wall-door",
+  },
+  "dispersal-panel": {
+    solid: "building.installation-dispersal-wall-solid",
+    window: "building.installation-dispersal-wall-window",
+    door: "building.installation-dispersal-wall-door",
+  },
   plaster: {
     solid: "building.wall-plaster",
     window: "building.wall-window-plaster",
@@ -272,6 +325,10 @@ export const HALF_WALL_MODELS: Readonly<
   panel: "building.wall-half-concrete",
   plaster: "building.wall-half-concrete",
   road: "building.viaduct-parapet",
+  "bank-stone": "building.wall-half-concrete",
+  "battery-steel": "building.wall-half-concrete",
+  "sensor-panel": "building.wall-half-concrete",
+  "dispersal-panel": "building.wall-half-concrete",
 };
 
 /** The brick half wall, kept for the brick family's own parapets. */
@@ -311,7 +368,8 @@ export function wallModel(
 }
 
 /**
- * The family a building draws in: one per `buildingId`, so a building
+ * Authored building uses select their own kit; other buildings choose one
+ * family per `buildingId`, so a building
  * is a single material rather than a patchwork. Lagos uses the warm
  * rendered kit through every storey, including untagged ground walls.
  * Unprofiled maps keep brick where a wall
@@ -328,7 +386,12 @@ export function wallModel(
 export function wallFamilyFor(
   buildingId: string | undefined,
   placeProfile?: PlaceProfileId,
+  buildingKind?: string,
 ): WallFamily {
+  const authored = buildingKind
+    ? BUILDING_WALL_FAMILIES[buildingKind]
+    : undefined;
+  if (authored) return authored;
   if (placeProfile === "lagos") return "plaster";
   if (buildingId === undefined) {
     return "brick";
@@ -351,9 +414,10 @@ export function wallFamilyForWall(
   kind: WallKind,
   buildingId: string | undefined,
   placeProfile?: PlaceProfileId,
+  buildingKind?: string,
 ): WallPlacementFamily {
   if (buildingId === undefined && kind === "half") {
     return "road";
   }
-  return wallFamilyFor(buildingId, placeProfile);
+  return wallFamilyFor(buildingId, placeProfile, buildingKind);
 }

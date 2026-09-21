@@ -1,3 +1,4 @@
+import { MISSION_SITES } from "../data/mission-sites";
 import { PLACE_PROFILES } from "../data/place-profiles";
 import { BIOME_DEFINITIONS } from "../data/biomes";
 import { BUILDING_TEMPLATES } from "../data/building-templates";
@@ -22,6 +23,7 @@ import { createRegistry } from "../../core/service/definition-registry";
  */
 export function createDefaultRegistries(): MapGenRegistries {
   return {
+    missionSites: createRegistry("mission site", Object.values(MISSION_SITES)),
     surfaces: createRegistry("surface", SURFACE_DEFINITIONS),
     props: createRegistry("prop", PROP_DEFINITIONS),
     biomes: createRegistry("biome", Object.values(BIOME_DEFINITIONS)),

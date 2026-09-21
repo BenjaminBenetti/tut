@@ -4,6 +4,8 @@ import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
 import { isAutonomous } from "../model/unit";
 
+import { objectiveComplete } from "./defence-service";
+
 // ===========================================
 // Outcome
 // ===========================================
@@ -69,7 +71,9 @@ export function missionOutcome(
 export function objectivesComplete(mission: TacticalState): boolean {
   return (
     mission.objectives.length > 0 &&
-    mission.objectives.every((objective) => objective.complete)
+    mission.objectives.every((objective) =>
+      objectiveComplete(mission, objective),
+    )
   );
 }
 

@@ -15,6 +15,7 @@ import type { SquadType } from "../../roster/model/squad-type";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { createMech } from "../../roster/service/mech-factory";
+import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { TURRET_TUNING } from "../data/turret-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import type { BugUnitSource } from "../model/bug-unit-source";
@@ -24,6 +25,7 @@ import { constructionOf } from "./construction-service";
 import {
   bugUnit,
   mechUnit,
+  generatorUnit,
   squadUnit,
   templateIdFor,
   turretUnit,
@@ -571,5 +573,50 @@ describe("turretUnit", () => {
     // read as organic, and the repair kit would pass it over.
     expect(constructionOf(first.template, first.unit.kind)).toBe("mechanical");
     expect(constructionOf({}, "turret")).toBe("organic");
+  });
+});
+
+// ===========================================
+// Generators (#1175)
+// ===========================================
+
+describe("generatorUnit", () => {
+  it("builds an unarmed, orderless TDF generator, every generator sharing one template", () => {
+    const ids = new SequentialIdGenerator();
+    const first = generatorUnit(GENERATOR_TUNING, AT, ids);
+    const second = generatorUnit(
+      GENERATOR_TUNING,
+      { ...AT, pos: { x: 4, y: 0, z: 4 } },
+      ids,
+    );
+    expect(first.template).toMatchObject({
+      id: templateIdFor("generator", "generator"),
+      name: GENERATOR_TUNING.name,
+      maxHp: GENERATOR_TUNING.maxHp,
+      maxAp: 0,
+      move: 0,
+      armor: GENERATOR_TUNING.armor,
+      sightRange: GENERATOR_TUNING.sightRange,
+      passClass: "infantry",
+      modelId: "tdf.generator",
+      construction: "mechanical",
+      weapons: [],
+    });
+    expect(second.template).toEqual(first.template);
+    expect(first.unit).toMatchObject({
+      kind: "generator",
+      team: "tdf",
+      sourceId: "generator",
+      templateId: first.template.id,
+      pos: AT.pos,
+      facing: "n",
+      hp: GENERATOR_TUNING.maxHp,
+      maxHp: GENERATOR_TUNING.maxHp,
+      ap: 0,
+      maxAp: 0,
+      status: [],
+    });
+    expect(first.unit.id).not.toBe(second.unit.id);
+    expect(constructionOf(first.template, first.unit.kind)).toBe("mechanical");
   });
 });

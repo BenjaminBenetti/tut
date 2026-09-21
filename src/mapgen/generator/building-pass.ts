@@ -18,6 +18,7 @@ import type { ResolvedMapGenParams } from "../model/resolved-params";
 import type { IntRange } from "../model/settlement-definition";
 import type { TileCoord } from "../model/tile-coord";
 import type { WallKind } from "../model/wall";
+import { propPlacementTiles } from "../service/prop-footprint";
 
 // ===========================================
 // Constants
@@ -73,7 +74,8 @@ export class BuildingPass implements GenerationPass {
   /**
    * Plans one building per lot that can hold a template, guarantees a
    * multi-storey building wherever the settlement allows one (verticality
-   * is a pillar), then raises the shells.
+   * is a pillar) and the recipe's landmark where it names one (#1175),
+   * then raises the shells.
    */
   run(context: GenerationContext): void {
     const { draft, params, rng, registries, diagnostics } = context;
@@ -94,8 +96,25 @@ export class BuildingPass implements GenerationPass {
       planned.push({ lot, rng: lotRng, plan });
     }
     ensureMultiStorey(planned, params, registries, diagnostics);
+    ensureLandmark(planned, params, registries, diagnostics);
     for (const { lot, rng: lotRng, plan } of planned) {
       draft.buildings.push(raiseShell(draft, lot, plan, lotRng));
+      // Roof fixtures are known before the interior pass chooses stairs and
+      // ladder landings. They occupy the same ordinary roof tiles as later plant.
+      for (const piece of lot.building?.roofEquipment ?? []) {
+        const tile = {
+          x: plan.footprint.x + piece.x,
+          y: lot.level + plan.floorCount * STOREY_LAYERS,
+          z: plan.footprint.z + piece.z,
+        };
+        const rotation = piece.rotation ?? 0;
+        draft.addProp(
+          piece.kind,
+          tile,
+          rotation,
+          propPlacementTiles(tile, registries.props.get(piece.kind), rotation),
+        );
+      }
     }
     diagnostics.note(
       `${draft.buildings.length} buildings on ${draft.lots.length} lots` +
@@ -109,9 +128,9 @@ export class BuildingPass implements GenerationPass {
 // ===========================================
 
 /**
- * Chooses a template that fits the lot and the scale, then a footprint
- * flush with the frontage edge and a floor count inside both the
- * template's and the settlement's ranges.
+ * Realizes an authored lot exactly; otherwise chooses a fitting weighted
+ * template, frontage-aligned footprint and floor count within the template
+ * and settlement ranges.
  */
 function planBuilding(
   lot: Lot,
@@ -119,6 +138,13 @@ function planBuilding(
   registries: GenerationContext["registries"],
   rng: Rng,
 ): BuildingPlan | undefined {
+  if (lot.building !== undefined) {
+    return {
+      template: registries.buildingTemplates.get(lot.building.template),
+      footprint: lot.rect,
+      floorCount: lot.building.floors,
+    };
+  }
   const candidates = fittingTemplates(lot, params, registries);
   if (candidates.length === 0) {
     return undefined;
@@ -197,6 +223,7 @@ function ensureMultiStorey(
     return;
   }
   for (const entry of planned) {
+    if (entry.lot.building !== undefined) continue;
     const tall = fittingTemplates(entry.lot, params, registries)
       .map((c) => c.template)
       .filter((t) => t.floors.max >= want)
@@ -214,6 +241,77 @@ function ensureMultiStorey(
     );
     return;
   }
+}
+
+/**
+ * Guarantees the recipe's landmark building (#1175): the lot nearest the
+ * board's centre that can hold the landmark template is re-planned with
+ * it, so a defend-installation map always has its installation, and has
+ * it where the waves converge from every edge. Runs after
+ * `ensureMultiStorey` so the tall building it may have chosen is not the
+ * one it takes where possible. Authored lots keep their requested buildings;
+ * a map with one ordinary lot keeps the landmark over extra verticality.
+ *
+ * ```
+ *   lots that fit the landmark, by |lot centre − map centre| ascending
+ *     └─ first ──► sizePlan(lot, landmark, rng.fork("landmark"))
+ * ```
+ */
+function ensureLandmark(
+  planned: { lot: Lot; rng: Rng; plan: BuildingPlan }[],
+  params: ResolvedMapGenParams,
+  registries: GenerationContext["registries"],
+  diagnostics: DiagnosticSink,
+): void {
+  if (params.landmark === undefined) {
+    return;
+  }
+  const template = registries.buildingTemplates.get(params.landmark);
+  if (planned.some((p) => p.plan.template.id === template.id)) {
+    return;
+  }
+  const centre = { x: params.width / 2, z: params.depth / 2 };
+  const fits = planned
+    .filter(({ lot }) => lot.building === undefined && lotHolds(lot, template))
+    .sort(
+      (a, b) =>
+        distanceToCentre(a.lot, centre) - distanceToCentre(b.lot, centre) ||
+        a.lot.id.localeCompare(b.lot.id),
+    );
+  const entry = fits[0];
+  if (entry === undefined) {
+    diagnostics.note(`no lot can hold the landmark ${template.id}`);
+    return;
+  }
+  entry.plan = sizePlan(
+    entry.lot,
+    template,
+    params,
+    entry.rng.fork("landmark"),
+  );
+  diagnostics.note(
+    `re-planned ${entry.lot.id} as the landmark ${template.id}`,
+    { x: entry.lot.rect.x, y: entry.lot.level, z: entry.lot.rect.z },
+  );
+}
+
+/** True when the template's smallest footprint fits the lot as it faces. */
+function lotHolds(lot: Lot, template: BuildingTemplate): boolean {
+  const alongLot = frontageIsNorthSouth(lot.frontage) ? lot.rect.w : lot.rect.d;
+  const deepLot = frontageIsNorthSouth(lot.frontage) ? lot.rect.d : lot.rect.w;
+  return (
+    template.footprintWidth.min <= alongLot &&
+    template.footprintDepth.min <= deepLot
+  );
+}
+
+/** Manhattan distance from the lot's centre to a point. */
+function distanceToCentre(lot: Lot, centre: { x: number; z: number }): number {
+  const { rect } = lot;
+  return (
+    Math.abs(rect.x + rect.w / 2 - centre.x) +
+    Math.abs(rect.z + rect.d / 2 - centre.z)
+  );
 }
 
 /**
@@ -258,7 +356,7 @@ function frontageIsNorthSouth(frontage: Direction): boolean {
 // ===========================================
 
 /**
- * Emits floor tiles, perimeter walls and the door, marks the footprint
+ * Emits floor tiles, perimeter walls and requested doors, marks the footprint
  * covered and returns the building record.
  */
 function raiseShell(
@@ -291,6 +389,9 @@ function raiseShell(
     draft.setCovered(x, z);
   });
   const entrance = openDoor(draft, lot, footprint);
+  const additionalEntrances = (lot.building?.additionalEntrances ?? [])
+    .filter((side) => side !== lot.frontage)
+    .map((side) => openDoor(draft, { ...lot, frontage: side }, footprint));
   return {
     id,
     kind: template.id,
@@ -301,7 +402,7 @@ function raiseShell(
       kind: template.roof,
       walkable: template.roof === "flat" && template.roofWalkable,
     },
-    entrances: [entrance],
+    entrances: [entrance, ...additionalEntrances],
     connectorIds: [],
   };
 }

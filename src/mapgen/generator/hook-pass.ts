@@ -1,3 +1,4 @@
+import { placeSiteObjectives } from "./placer/site-objective-placer";
 import type {
   DraftCapability,
   GenerationContext,
@@ -54,10 +55,15 @@ export class HookPass implements GenerationPass {
         a.placer.priority - b.placer.priority || a.position - b.position,
     );
     for (const job of jobs) {
-      job.placer.place(job.requirement, {
-        ...context,
-        rng: rng.fork(`${job.requirement.kind}-${job.position}`),
-      });
+      const placed = placeSiteObjectives(job.requirement, context);
+      if (placed === job.requirement.count && placed > 0) continue;
+      job.placer.place(
+        { ...job.requirement, count: job.requirement.count - placed },
+        {
+          ...context,
+          rng: rng.fork(`${job.requirement.kind}-${job.position}`),
+        },
+      );
     }
     const hooks = context.draft.hooks;
     diagnostics.note(

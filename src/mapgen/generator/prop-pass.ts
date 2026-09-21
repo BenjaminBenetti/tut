@@ -289,6 +289,7 @@ function placeVegetation(
   }
   const free = (x: number, z: number): boolean =>
     isOpenGround(draft, x, z) &&
+    !draft.isSiteReserved(x, z) &&
     !blocked.has(draft.tileKey(draft.groundCoord(x, z))) &&
     draft.propAt(draft.groundCoord(x, z)) === undefined;
   let placed = 0;
@@ -553,7 +554,11 @@ function placeYardClutter(
   const yards: ColumnCoord[] = [];
   for (let z = 0; z < draft.depth; z++) {
     for (let x = 0; x < draft.width; x++) {
-      if (isOpenGround(draft, x, z) && touchesBuildingOrSidewalk(draft, x, z)) {
+      if (
+        isOpenGround(draft, x, z) &&
+        !draft.isSiteReserved(x, z) &&
+        touchesBuildingOrSidewalk(draft, x, z)
+      ) {
         yards.push({ x, z });
       }
     }

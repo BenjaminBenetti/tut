@@ -65,7 +65,10 @@ export function damageSpawner(
   ];
   const cleared = destroyed
     ? mission.objectives.filter(
-        (objective) => objective.targetId === spawner.id && !objective.complete,
+        (objective) =>
+          objective.kind === "destroy-spawner" &&
+          objective.targetId === spawner.id &&
+          !objective.complete,
       )
     : [];
   for (const objective of cleared) {

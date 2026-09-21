@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { Unit } from "../../tactical/model/unit";
+import { HookKinds } from "../../mapgen/model/hook";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import {
   missionWith,
@@ -13,6 +14,8 @@ import {
   distanceScore,
   exposureScore,
   huntableEnemies,
+  huntSite,
+  landingSite,
   overwatchScore,
   tileDistance,
 } from "./utility";
@@ -177,5 +180,88 @@ describe("huntableEnemies (#1155)", () => {
     ]);
     expect(ids(huntableEnemies(mission, bug))).toEqual(["near"]);
     expect(huntableEnemies(field([]), bug)).toEqual([]);
+  });
+});
+
+// ===========================================
+// Generators (#1175)
+// ===========================================
+
+describe("huntableEnemies with generators on the board (#1175)", () => {
+  const at = (x: number, z: number) => ({ x, y: 0, z });
+  const kindAt = (
+    kind: Unit["kind"],
+    id: string,
+    x: number,
+    z: number,
+  ): Unit => ({
+    ...unitAt(id, "infantry", at(x, z)),
+    kind,
+  });
+  const bug = unitAt("bug", "infantry", at(0, 0), { team: "bugs" });
+  const field = (units: readonly Unit[]) =>
+    missionWith(new FixtureMapBuilder(10, 10, 2).fillGround().build(), [
+      bug,
+      ...units,
+    ]);
+  const ids = (units: readonly Unit[]) => units.map((u) => u.id);
+
+  it("keeps every generator it sees, however far, beside the crew and the nearest turret", () => {
+    const mission = field([
+      unitAt("squad", "infantry", at(1, 0)),
+      kindAt("turret", "near-turret", 2, 0),
+      kindAt("turret", "far-turret", 8, 8),
+      kindAt("generator", "far-gen", 9, 9),
+      kindAt("generator", "gen", 5, 5),
+    ]);
+    expect(ids(huntableEnemies(mission, bug))).toEqual([
+      "squad",
+      "near-turret",
+      "far-gen",
+      "gen",
+    ]);
+  });
+
+  it("skips a wrecked generator", () => {
+    const mission = field([
+      { ...kindAt("generator", "down", 3, 3), hp: 0 },
+      kindAt("generator", "up", 6, 6),
+    ]);
+    expect(ids(huntableEnemies(mission, bug))).toEqual(["up"]);
+  });
+});
+
+describe("huntSite (#1175)", () => {
+  const at = (x: number, z: number) => ({ x, y: 0, z });
+  const map = new FixtureMapBuilder(12, 12, 2)
+    .fillGround()
+    .deploy([at(11, 11)])
+    .objective(HookKinds.GENERATOR, [at(2, 2)])
+    .objective(HookKinds.GENERATOR, [at(8, 8)])
+    .build();
+
+  it("heads for the nearest generator hook that still has a generator on it", () => {
+    const mission = missionWith(map, []);
+    expect(huntSite(mission, at(0, 0))).toEqual(at(2, 2));
+    expect(huntSite(mission, at(9, 9))).toEqual(at(8, 8));
+  });
+
+  it("passes a hook whose generator has been wrecked", () => {
+    const wrecked = {
+      ...unitAt("gen-1", "infantry", at(2, 2), { hp: 0 }),
+      kind: "generator" as const,
+    };
+    const mission = missionWith(map, [wrecked]);
+    expect(huntSite(mission, at(0, 0))).toEqual(at(8, 8));
+  });
+
+  it("falls back to the landing zone on a map with no generator hooks", () => {
+    const plain = new FixtureMapBuilder(12, 12, 2)
+      .fillGround()
+      .deploy([at(11, 11)])
+      .build();
+    const mission = missionWith(plain, []);
+    expect(huntSite(mission, at(0, 0))).toEqual(landingSite(mission, at(0, 0)));
+    expect(huntSite(mission, at(0, 0))).toEqual(at(11, 11));
   });
 });

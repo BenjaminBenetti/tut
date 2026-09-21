@@ -1,3 +1,4 @@
+import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { MechId } from "../../roster/model/mech";
 import type { SquadId } from "../../roster/model/squad";
 import type { CityId } from "./city";
@@ -139,4 +140,12 @@ export interface MissionResult {
    * Absent when nobody was.
    */
   readonly leftBehind?: readonly string[];
+  /** For a defence (#1175): which installation, and whether a generator still ran at the end. */
+  readonly defence?: MissionResultDefence;
+}
+
+/** How a defend-installation mission left its installation (#1175). */
+export interface MissionResultDefence {
+  readonly installation: DeployableTypeId;
+  readonly held: boolean;
 }

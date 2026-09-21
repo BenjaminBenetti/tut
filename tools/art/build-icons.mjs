@@ -53,6 +53,8 @@ const ICONS = {
   infestation:
     '<circle cx="12" cy="14" r="5"/><path d="M12 9 V19"/><path d="M9 5 L12 8 L15 5"/><path d="M7 12 L3 9 M7 15 H3 M7 18 L3 21 M17 12 L21 9 M17 15 H21 M17 18 L21 21"/>',
   egg: '<path d="M12 2 C7 8 5 12 5 16 A7 7 0 0 0 19 16 C19 12 17 8 12 2 Z"/>',
+  defend:
+    '<path d="M12 2 L20 5 V11 C20 16 16.5 20 12 22 C7.5 20 4 16 4 11 V5 Z"/><path d="M12 7 V17"/><path d="M8 12 H16"/>',
   warning:
     '<path d="M12 3 L22 20 H2 Z"/><path d="M12 10 V14"/><path d="M12 17 V17.5"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11 V17"/><path d="M12 7.5 V8"/>',

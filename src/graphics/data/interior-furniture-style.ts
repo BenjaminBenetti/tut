@@ -1,6 +1,14 @@
 import { PropKindIds as Prop } from "../../mapgen/data/props";
 import type { InteriorFurnitureStyle } from "../model/interior-furniture-style";
 
+/** Maximum relief depth of authored wall kits, plus 5 mm of visual clearance. */
+export const BUILDING_FURNITURE_CLEARANCE: Readonly<Record<string, number>> = {
+  bank: 0.15,
+  "defensive-battery": 0.15,
+  "sensor-array": 0.1,
+  "repellent-dispersal": 0.185,
+};
+
 /**
  * Rear extents measured from the shipped GLBs, guarded by the furniture asset
  * tests. Shallow wall furniture moves straight back until it clears the wall's

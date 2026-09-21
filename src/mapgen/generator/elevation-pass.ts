@@ -230,6 +230,7 @@ function freeColumns(draft: MapDraft): boolean[] {
       if (
         draft.isRoad(x, z) ||
         draft.isLandingReserved(x, z) ||
+        draft.isSiteReserved(x, z) ||
         draft.isInfestationReserved(x, z) ||
         surface === SurfaceIds.SIDEWALK ||
         surface === SurfaceIds.WATER ||

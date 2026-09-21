@@ -41,6 +41,7 @@ import { RELOAD } from "../../tactical/model/reload-command";
 import type { AttackDeps } from "../../tactical/service/combat-service";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
+import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
 import { createTurretStep } from "../../tactical/service/turret-service";
 import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
@@ -58,6 +59,7 @@ import {
   createExtractHandler,
   createInteractHandler,
 } from "../../tactical/service/objective-service";
+import { createDefenceStep } from "../../tactical/service/defence-service";
 import { createAbandonMissionHandler } from "../../tactical/service/abandon-mission-handler";
 import { createHarvestHandler } from "../../tactical/service/harvest-service";
 import type {
@@ -207,6 +209,7 @@ export function composeTactical(
     ids,
     registries,
     garrison: GARRISON_TUNING,
+    generator: GENERATOR_TUNING,
   });
   return {
     handlers,
@@ -319,6 +322,9 @@ export function shippedTacticalHandlers(
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),
+        // After the wave lands, so the count it just made is the one
+        // the defence is judged on (#1175).
+        createDefenceStep(),
       ],
       bugPhase,
     ),

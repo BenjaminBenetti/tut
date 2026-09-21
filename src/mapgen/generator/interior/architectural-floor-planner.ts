@@ -67,6 +67,13 @@ export function planArchitecturalFloor(
   const width = horizontal ? footprint.w : footprint.d;
   const depth = horizontal ? footprint.d : footprint.w;
   if (width < 6 || depth < 6) return undefined;
+  // A deep public hall still needs a real service room behind it. Compact
+  // lots use the generic partitioner instead of overlapping zero-depth rooms.
+  if (
+    policy.style === "retail" &&
+    depth < policy.minimumPublicDepth + policy.serviceDepth.min
+  )
+    return undefined;
   if (
     policy.style === "industrial" &&
     (width < 2 * policy.serviceWidth.min + 4 ||

@@ -277,8 +277,10 @@ function resolveSource(
       });
     }
     case "turret":
+    case "generator":
       // A turret is deployed by an engineer, never placed by the menu
-      // (#1138): there is no catalogue of turrets to pick from.
+      // (#1138): there is no catalogue of turrets to pick from. A
+      // generator is the map's (#1175), stood up at mission start.
       return unknown();
     case "mech": {
       const source = deps.mechs.find((entry) => entry.id === id);

@@ -307,11 +307,20 @@ export function describeEvent(
       };
     case "tactical:bugs-spawned":
       return {
-        text: `${formatWhole(event.payload.unitIds.length)} bugs ${
+        text: `${waveLabel(event.payload.wave, event.payload.totalWaves)}${formatWhole(event.payload.unitIds.length)} bugs ${
           event.payload.source === "spawner" ? "hatched" : "arrived at the edge"
         }`,
         icon: "egg",
         tone: "bug",
+      };
+    case "tactical:generator-destroyed":
+      return {
+        text:
+          event.payload.killerId === undefined
+            ? `${nameOf(event.payload.generatorId)} destroyed`
+            : `${nameOf(event.payload.generatorId)} destroyed by ${nameOf(event.payload.killerId)}`,
+        icon: "warning",
+        tone: "danger",
       };
     case "tactical:unit-placed":
       // The development tools did this, and the log says so (#1136):
@@ -323,13 +332,19 @@ export function describeEvent(
         tone: "dim",
       };
     case "tactical:objective-updated":
-      return {
-        text: event.payload.complete
-          ? `Objective complete: ${names.objective(event.payload.objectiveId)}`
-          : `Objective updated: ${names.objective(event.payload.objectiveId)}`,
-        icon: event.payload.complete ? "check" : "mission",
-        tone: event.payload.complete ? "ok" : "accent",
-      };
+      return event.payload.failed === true
+        ? {
+            text: `Objective failed: ${names.objective(event.payload.objectiveId)}`,
+            icon: "warning",
+            tone: "danger",
+          }
+        : {
+            text: event.payload.complete
+              ? `Objective complete: ${names.objective(event.payload.objectiveId)}`
+              : `Objective updated: ${names.objective(event.payload.objectiveId)}`,
+            icon: event.payload.complete ? "check" : "mission",
+            tone: event.payload.complete ? "ok" : "accent",
+          };
     case "tactical:mission-ended":
       return {
         text: `Mission ${event.payload.outcome}`,
@@ -382,6 +397,8 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:turret-destroyed":
       // Above the turret, as a death is above the unit that died.
       return event.payload.turretId;
+    case "tactical:generator-destroyed":
+      return event.payload.generatorId;
     case "tactical:charge-placed":
       return event.payload.charge.ownerId;
     case "tactical:units-healed":
@@ -424,6 +441,23 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
 function structureName(kind: string): string {
   const words = kind.replace(/-/g, " ");
   return `${/^[aeiou]/.test(words) ? "an" : "a"} ${words}`;
+}
+
+/**
+ * The wave prefix of an edge arrival (#1175): "Wave 3 of 5: " when the
+ * mission counts its waves, "Wave 3: " when it does not, nothing for a
+ * hatch.
+ */
+function waveLabel(
+  wave: number | undefined,
+  totalWaves: number | undefined,
+): string {
+  if (wave === undefined) {
+    return "";
+  }
+  return totalWaves === undefined
+    ? `Wave ${formatWhole(wave)}: `
+    : `Wave ${formatWhole(wave)} of ${formatWhole(totalWaves)}: `;
 }
 
 /** What a wall of this kind is called when it falls. */

@@ -29,6 +29,7 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
+import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { FIRST_TURN } from "../model/tactical-state";
 import { GARRISON_TURRET_SOURCE_ID } from "../model/turret";
@@ -60,6 +61,7 @@ function deps(): MissionStartDeps {
     unitTuning: UNIT_TUNING,
     spawnTuning: SPAWN_TUNING,
     garrison: GARRISON_TUNING,
+    generator: GENERATOR_TUNING,
     ids: new SequentialIdGenerator(),
     registries: createDefaultRegistries(),
   };
@@ -382,9 +384,11 @@ describe("startTacticalMission", () => {
       expect(spawner.timer).toBe(SPAWN_TUNING.hatchInterval);
       expect(spawner.destroyed).toBe(false);
     });
-    expect(tactical.objectives.map((o) => o.targetId)).toEqual(
-      tactical.spawners.map((s) => s.id),
-    );
+    expect(
+      tactical.objectives.map((o) =>
+        o.kind === "destroy-spawner" ? o.targetId : o.kind,
+      ),
+    ).toEqual(tactical.spawners.map((s) => s.id));
     expect(
       tactical.objectives.every(
         (o) => o.kind === "destroy-spawner" && !o.complete,
@@ -680,6 +684,80 @@ describe("startTacticalMission", () => {
  * that, and that test asserts it is *not* `no-deploy-room`. This one is
  * the map letting the side down: a legal deployment the zone cannot seat.
  */
+describe("startTacticalMission on a defence (#1175)", () => {
+  /** The clearance fixture turned into a defence of a repellent dispersal. */
+  function defence(seed = 7) {
+    const base = campaign(seed);
+    const mission: Mission = {
+      ...base.mission,
+      typeId: "defend-installation",
+      defence: {
+        installation: "repellent-dispersal",
+        deployableId: "deployable-1",
+        generators: 4,
+        waves: 5,
+      },
+    };
+    const state: GameState = {
+      ...base.state,
+      overworld: { ...base.state.overworld, missions: [mission] },
+    };
+    return { state, mission, deployment: base.deployment };
+  }
+
+  it("stands one generator on every generator hook and tracks them under one defend objective", () => {
+    const { state, mission, deployment } = defence();
+    const tactical = unwrap(
+      startTacticalMission(state, mission.id, deployment, deps()),
+    ).activeMission;
+    if (!tactical) throw new Error("no mission");
+    const hooks = tactical.map.hooks.objectives.filter(
+      (hook) => hook.kind === HookKinds.GENERATOR,
+    );
+    expect(hooks).toHaveLength(4);
+    const generators = tactical.units.filter(
+      (unit) => unit.kind === "generator",
+    );
+    expect(generators).toHaveLength(4);
+    generators.forEach((generator, i) => {
+      const tile = hooks[i]!.tiles[0]!;
+      expect(generator.pos).toEqual({ x: tile.x, y: tile.y, z: tile.z });
+      expect(generator.team).toBe("tdf");
+      expect(generator.hp).toBe(GENERATOR_TUNING.maxHp);
+      expect(generator.ap).toBe(0);
+      expect(tactical.templates[generator.templateId]?.weapons).toEqual([]);
+    });
+    expect(tactical.objectives).toEqual([
+      {
+        id: expect.stringMatching(/^objective/) as string,
+        kind: "defend-generators",
+        installation: "repellent-dispersal",
+        targetIds: generators.map((generator) => generator.id),
+        complete: false,
+        failed: false,
+      },
+    ]);
+    expect(tactical.spawners).toEqual([]);
+    expect(tactical.edgeSpawn.totalWaves).toBe(5);
+    // The installation itself stands on the map: a building of the
+    // installation's kind, so the player defends something they built.
+    expect(tactical.map.recipe.params.site).toBe("repellent-dispersal");
+  });
+
+  it("leaves a clearance without a wave total, generators or an authored site", () => {
+    const { state, mission, deployment } = campaign();
+    const tactical = unwrap(
+      startTacticalMission(state, mission.id, deployment, deps()),
+    ).activeMission;
+    if (!tactical) throw new Error("no mission");
+    expect(tactical.edgeSpawn.totalWaves).toBeUndefined();
+    expect(tactical.units.some((unit) => unit.kind === "generator")).toBe(
+      false,
+    );
+    expect(tactical.map.recipe.params.site).toBeUndefined();
+  });
+});
+
 describe("startTacticalMission: refusals no fixture had reached", () => {
   it("reports a map recipe the adapter cannot resolve", () => {
     const { state, mission, deployment } = campaign();

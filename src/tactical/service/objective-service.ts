@@ -63,6 +63,12 @@ export const plantCharges: ObjectiveInteraction = (
   unit,
   tuning,
 ) => {
+  if (objective.kind !== "destroy-spawner") {
+    return err({
+      kind: "objective-not-interactive",
+      objectiveId: objective.id,
+    });
+  }
   const spawner = mission.spawners.find(
     (candidate) => candidate.id === objective.targetId,
   );
@@ -87,10 +93,19 @@ export const plantCharges: ObjectiveInteraction = (
 };
 
 /** The interaction each objective kind ships with (GDD §6.3: M2 clears egg spawners). */
+/**
+ * A defence is held, not worked (#1175): nothing a squad does to a
+ * generator advances it, so the interaction refuses and the wheel
+ * never offers it.
+ */
+export const holdTheLine: ObjectiveInteraction = (_mission, objective) =>
+  err({ kind: "objective-not-interactive", objectiveId: objective.id });
+
 export const DEFAULT_OBJECTIVE_INTERACTIONS: Readonly<
   Record<Objective["kind"], ObjectiveInteraction>
 > = {
   "destroy-spawner": plantCharges,
+  "defend-generators": holdTheLine,
 };
 
 // ===========================================
@@ -227,7 +242,7 @@ export function reachableObjectives(
   }
   const reachable: ReachableObjective[] = [];
   for (const objective of mission.objectives) {
-    if (objective.complete) {
+    if (objective.complete || objective.kind !== "destroy-spawner") {
       continue;
     }
     const spawner = mission.spawners.find(

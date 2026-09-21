@@ -78,21 +78,27 @@ export class LotPass implements GenerationPass {
   // Public Methods
   // ===========================================
 
-  /** Places lots along the road network up to the settlement's target. */
+  /** Adds the settlement's target of road-facing lots around any authored parcels. */
   run(context: GenerationContext): void {
     const { draft, params, rng, diagnostics } = context;
     const { settlement } = params;
-    const target = Math.max(
-      1,
-      Math.round(
-        rng.nextInt(
-          settlement.buildingCount.min,
-          settlement.buildingCount.max,
-        ) * areaFactor(draft.width, draft.depth),
-      ),
-    );
+    const target =
+      draft.lots.length +
+      Math.max(
+        1,
+        Math.round(
+          rng.nextInt(
+            settlement.buildingCount.min,
+            settlement.buildingCount.max,
+          ) * areaFactor(draft.width, draft.depth),
+        ),
+      );
     const anchors = rng.shuffle(collectAnchors(draft));
     const occupied = new Set<number>();
+    for (const { rect } of draft.lots)
+      for (let z = rect.z; z < rect.z + rect.d; z++)
+        for (let x = rect.x; x < rect.x + rect.w; x++)
+          occupied.add(z * draft.width + x);
     const setback = settlement.sidewalkWidth;
 
     for (const anchor of anchors) {
@@ -205,7 +211,11 @@ function fits(
       if (!draft.inBounds(x, z)) {
         continue;
       }
-      if (occupied.has(z * draft.width + x) || draft.isLandingReserved(x, z)) {
+      if (
+        occupied.has(z * draft.width + x) ||
+        draft.isLandingReserved(x, z) ||
+        draft.isSiteReserved(x, z)
+      ) {
         return false;
       }
       if (!rectContains(rect, x, z)) {

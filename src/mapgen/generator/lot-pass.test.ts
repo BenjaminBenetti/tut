@@ -10,6 +10,7 @@ import { SurfaceIds } from "../data/surfaces";
 import type { Lot } from "../model/lot";
 import type { MapDraft } from "../model/map-draft";
 import type { MapGenParams } from "../model/map-recipe";
+import type { GenerationPass } from "../model/generation-pass";
 import { createDefaultRegistries } from "../service/default-registries";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { areaFactor, LotPass } from "./lot-pass";
@@ -79,6 +80,47 @@ function expand(lot: Lot): { x: number; z: number; w: number; d: number } {
 const SEEDS = 10;
 
 describe("LotPass", () => {
+  it("adds settlement parcels without overlapping an already authored lot", () => {
+    let authored: Lot | undefined;
+    const stamp: GenerationPass = {
+      id: "authored-lot",
+      requires: ["roads"],
+      provides: [],
+      /** Reserve a suitable parcel before the ordinary settlement planner runs. */
+      run(context) {
+        new LotPass().run({ ...context, rng: new Mulberry32Rng(1) });
+        context.draft.lots.splice(1);
+        authored = context.draft.lots[0];
+      },
+    };
+    const lots: GenerationPass = {
+      ...new LotPass(),
+      /** Retry the same candidates to verify the existing parcel is respected. */
+      run(context) {
+        new LotPass().run({ ...context, rng: new Mulberry32Rng(1) });
+      },
+    };
+    const pipeline = new PipelineMapGenerator(
+      [new TerrainPass(), new WaterPass(), new RoadPass(), stamp, lots],
+      registries,
+    );
+    const { draft } = pipeline.run(
+      {
+        archetype: "settlement",
+        biome: "temperate",
+        settlement: "town",
+        size: "medium",
+        hooks: [],
+      },
+      new Mulberry32Rng(12),
+    );
+    expect(authored).toBeDefined();
+    expect(draft.lots[0]).toEqual(authored);
+    expect(draft.lots.length).toBeGreaterThan(1);
+    for (const lot of draft.lots.slice(1))
+      expect(rectsOverlap(expand(lot), expand(authored!))).toBe(false);
+  });
+
   it("places lots on free land beside the road corridor with gaps and margins", () => {
     for (const settlement of SETTLEMENT_SCALES) {
       for (const biome of BIOME_IDS) {

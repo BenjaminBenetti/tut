@@ -256,7 +256,9 @@ describe("composeGame", () => {
         ],
         spawners: [spawner],
         objectives: active.objectives
-          .filter((o) => o.targetId === spawner.id)
+          .filter(
+            (o) => o.kind === "destroy-spawner" && o.targetId === spawner.id,
+          )
           .map((o) => ({ ...o, complete: false })),
       },
     });

@@ -42,5 +42,11 @@ export const COMBAT_TUNING: CombatTuning = {
   damageSpread: 0.25,
   minDamage: 1,
   attackApCost: 1,
-  attackEndsTurn: { squad: false, mech: true, bug: true, turret: true },
+  attackEndsTurn: {
+    squad: false,
+    mech: true,
+    bug: true,
+    turret: true,
+    generator: true,
+  },
 };

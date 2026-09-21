@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { err, ok } from "../../core/model/result";
 import type { TacticalNames } from "../service/tactical-error-text";
+import type { DefenceProgress } from "../../tactical/service/defence-service";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { ActionBarView } from "./action-bar-view";
 import { TACTICAL_SHORTCUTS } from "../model/tactical-intent";
@@ -805,5 +806,155 @@ describe("playerUnits (#1138)", () => {
       ],
     };
     expect(playerUnits(mission).map((unit) => unit.id)).toEqual(["s1", "s2"]);
+  });
+});
+
+// ===========================================
+// Defences (#1175)
+// ===========================================
+
+describe("ObjectiveTrackerView on a defence (#1175)", () => {
+  const DEFENCE = {
+    id: "objective-d",
+    kind: "defend-generators" as const,
+    installation: "sensor-array" as const,
+    targetIds: ["gen-1", "gen-2", "gen-3"],
+    complete: false,
+    failed: false,
+  };
+  const progress = (
+    overrides: Partial<DefenceProgress> = {},
+  ): DefenceProgress => ({
+    standing: 2,
+    total: 3,
+    wave: 3,
+    totalWaves: 5,
+    bugsLeft: 4,
+    status: "open",
+    ...overrides,
+  });
+  const row = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('[data-objective-id="objective-d"]');
+  const detail = (): string =>
+    row()?.querySelector('[data-role="defence-progress"]')?.textContent ?? "";
+
+  it("names the installation, counts generators and waves, and never shows a unit id", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([DEFENCE], [], undefined, progress());
+    expect(row()?.textContent).toContain("Defend the sensor array");
+    expect(row()?.dataset.status).toBe("open");
+    expect(row()?.dataset.failed).toBe("false");
+    expect(detail()).toBe("2 / 3 generators · wave 3 / 5");
+    expect(row()?.textContent).not.toMatch(/gen-\d/);
+    expect(field("objective-summary")?.textContent).toBe("0 / 1");
+  });
+
+  it("counts the bugs left only once the last wave is in", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([DEFENCE], [], undefined, progress({ wave: 5, bugsLeft: 1 }));
+    expect(detail()).toBe("2 / 3 generators · wave 5 / 5 · 1 bug left");
+  });
+
+  it("reads Held once complete and Lost once failed, in the danger tone", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update(
+      [{ ...DEFENCE, complete: true }],
+      [],
+      undefined,
+      progress({ wave: 5, bugsLeft: 0, status: "complete" }),
+    );
+    expect(row()?.textContent).toContain("Held the sensor array");
+    expect(field("objective-summary")?.textContent).toContain(
+      "board the drop ship",
+    );
+    view.update(
+      [{ ...DEFENCE, failed: true }],
+      [],
+      undefined,
+      progress({ standing: 0, status: "failed" }),
+    );
+    expect(row()?.textContent).toContain("Lost the sensor array");
+    expect(row()?.dataset.failed).toBe("true");
+    expect(row()?.dataset.status).toBe("failed");
+  });
+
+  it("falls back to the stored flags when no progress is handed over", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([{ ...DEFENCE, failed: true }], []);
+    expect(row()?.dataset.status).toBe("failed");
+    expect(row()?.querySelector('[data-role="defence-progress"]')).toBeNull();
+  });
+});
+
+describe("event vocabulary for defences (#1175)", () => {
+  const names = { ...NAMES, objective: () => "the sensor array" };
+
+  it("counts an edge wave against the total, and leaves a hatch uncounted", () => {
+    const arrived = (wave?: number, totalWaves?: number) =>
+      describeEvent(
+        {
+          type: "tactical:bugs-spawned",
+          payload: {
+            unitIds: ["b1", "b2", "b3"],
+            source: "edge",
+            sourceId: "hook-1",
+            ...(wave === undefined ? {} : { wave }),
+            ...(totalWaves === undefined ? {} : { totalWaves }),
+          },
+        } as never,
+        names,
+      );
+    expect(arrived(3, 5)?.text).toBe("Wave 3 of 5: 3 bugs arrived at the edge");
+    expect(arrived(3)?.text).toBe("Wave 3: 3 bugs arrived at the edge");
+    expect(arrived()?.text).toBe("3 bugs arrived at the edge");
+  });
+
+  it("says a generator was destroyed, and by what when it is known", () => {
+    const unit = (id: string) => (id === "gen-1" ? "Generator" : "Brute");
+    const line = (killerId?: string) =>
+      describeEvent(
+        {
+          type: "tactical:generator-destroyed",
+          payload: {
+            generatorId: "gen-1",
+            pos: { x: 1, y: 0, z: 1 },
+            ...(killerId === undefined ? {} : { killerId }),
+          },
+        } as never,
+        { ...names, unit },
+      );
+    expect(line("b1")).toMatchObject({
+      text: "Generator destroyed by Brute",
+      icon: "warning",
+      tone: "danger",
+    });
+    expect(line()?.text).toBe("Generator destroyed");
+  });
+
+  it("reports a failed objective as failed, not updated", () => {
+    const line = describeEvent(
+      {
+        type: "tactical:objective-updated",
+        payload: { objectiveId: "objective-d", complete: false, failed: true },
+      } as never,
+      names,
+    );
+    expect(line).toMatchObject({
+      text: "Objective failed: the sensor array",
+      icon: "warning",
+      tone: "danger",
+    });
+    const held = describeEvent(
+      {
+        type: "tactical:objective-updated",
+        payload: { objectiveId: "objective-d", complete: true, failed: false },
+      } as never,
+      names,
+    );
+    expect(held?.text).toBe("Objective complete: the sensor array");
   });
 });

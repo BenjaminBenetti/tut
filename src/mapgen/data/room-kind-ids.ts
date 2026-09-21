@@ -32,6 +32,11 @@ export const RoomKindIds = {
   KITCHEN: "kitchen",
   BATHROOM: "bathroom",
   WORKSHOP: "workshop",
+  CONTROL_ROOM: "control-room",
+  PUMP_ROOM: "pump-room",
+  ARMORY: "armory",
+  BANKING_HALL: "banking-hall",
+  VAULT: "vault",
 } as const;
 
 /** One of the shipped room kind ids. */

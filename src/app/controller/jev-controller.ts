@@ -19,7 +19,11 @@ import {
   jevAct,
 } from "../../tactical/model/jev-command";
 import { endTurn } from "../../tactical/model/end-turn-command";
-import { jevFinished } from "../../tactical/service/jev-control-service";
+import {
+  jevFinished,
+  jevEndTurnPending,
+  manualTdfHasActions,
+} from "../../tactical/service/jev-control-service";
 import { missionOutcome } from "../../tactical/service/mission-end-service";
 import { JevRequestError } from "../service/jev-client";
 import type { JevTransport } from "../service/jev-client";
@@ -157,6 +161,12 @@ export class JevController implements JevInspector {
     while (!this.stopped && !this.paused) {
       const mission = this.mission();
       if (!mission || mission.outcome) return;
+      if (
+        mission.phase === "player" &&
+        !jevEndTurnPending(mission) &&
+        manualTdfHasActions(mission)
+      )
+        return;
       const externalBugs =
         mission.phase === "bugs" && mission.jev?.activation?.externalBugs;
       if (externalBugs && missionOutcome(mission) !== undefined) {
@@ -172,7 +182,7 @@ export class JevController implements JevInspector {
             (unit.ap > 0 && mission.jev?.entities[unit.id]?.enabled)),
       );
       if (!actor) {
-        if (externalBugs) {
+        if (externalBugs || jevEndTurnPending(mission)) {
           const ended = this.store.dispatch(endTurn());
           if (!ended.ok) return;
           continue;
@@ -284,7 +294,15 @@ export class JevController implements JevInspector {
     let candidates: readonly JevCandidate[] = snapshot.candidates;
     try {
       for (let depth = 0; depth < 8; depth++) {
-        const page = jevChoicePage(snapshot, candidates);
+        const page = jevChoicePage(
+          snapshot,
+          depth === 0 ? undefined : candidates,
+        );
+        const metadata = {
+          stage: page.stage,
+          requestBytes: new TextEncoder().encode(JSON.stringify(page.request))
+            .length,
+        };
         const started = performance.now();
         let exchange: JevExchange;
         try {
@@ -293,6 +311,7 @@ export class JevController implements JevInspector {
             controller.signal,
           );
           exchange = {
+            ...metadata,
             request: page.request,
             response: reply.raw,
             requestId: reply.requestId,
@@ -301,6 +320,7 @@ export class JevController implements JevInspector {
           };
         } catch (error) {
           exchange = {
+            ...metadata,
             request: page.request,
             elapsedMs: Math.round(performance.now() - started),
             error: error instanceof Error ? error.message : String(error),
@@ -314,13 +334,23 @@ export class JevController implements JevInspector {
           trace = this.update(id, { status: "cancelled" });
           break;
         }
+        if (
+          mode === "automatic" &&
+          this.mission()?.commandSeq !== snapshot.commandSeq
+        ) {
+          trace = this.update(id, { status: "stale" });
+          break;
+        }
         if (!exchange.answer) {
           trace = this.update(id, { status: "failed", detail: exchange.error });
           break;
         }
         if (page.groups) {
           const next = page.groups[exchange.answer.choice];
-          if (!next || next.length >= candidates.length)
+          if (
+            !next ||
+            (page.stage !== "action-type" && next.length >= candidates.length)
+          )
             throw new Error("Invalid Jev action group");
           candidates = next;
         } else {

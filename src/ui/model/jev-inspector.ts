@@ -8,6 +8,9 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 
 /** One actual HTTP exchange, including unsuccessful responses. */
 export interface JevExchange {
+  readonly stage: "action-type" | "action-group" | "action";
+  /** UTF-8 wire bytes, not a tokenizer estimate. */
+  readonly requestBytes: number;
   readonly request: JevRequest;
   readonly response?: unknown;
   readonly requestId?: string;

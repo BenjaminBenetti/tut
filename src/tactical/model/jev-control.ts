@@ -48,6 +48,8 @@ export interface JevControl {
     readonly phase: TacticalPhase;
     readonly finished: readonly string[];
     readonly externalBugs: boolean;
+    /** The player ended this turn; finish Jev TDF activations before opening the bug phase. */
+    readonly endTurnRequested?: boolean;
   };
   readonly decisions?: readonly {
     readonly unitId: string;

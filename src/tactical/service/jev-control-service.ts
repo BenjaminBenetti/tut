@@ -16,6 +16,7 @@ import type { TacticalCommand } from "../model/tactical-command";
 import type { TacticalHandlers } from "./tactical-command-handlers";
 import { applyTacticalCommand } from "./tactical-command-handlers";
 import { withVision } from "./vision-service";
+import { isAutonomous } from "../model/unit";
 
 /** Start a fresh serializable cursor when a phase changes, keeping the legacy path when no bug opts in. */
 export function startJevPhase(mission: TacticalState): TacticalState {
@@ -48,6 +49,41 @@ export function jevFinished(mission: TacticalState, unitId: string): boolean {
     activation?.turn === mission.turn &&
     activation.phase === mission.phase &&
     activation.finished.includes(unitId)
+  );
+}
+
+/** A saved End Turn request applies only to the player phase in which it was made. */
+export function jevEndTurnPending(mission: TacticalState): boolean {
+  const activation = mission.jev?.activation;
+  return (
+    mission.phase === "player" &&
+    activation?.turn === mission.turn &&
+    activation.phase === mission.phase &&
+    activation.endTurnRequested === true
+  );
+}
+
+/** Manual actors get their whole turn before Jev TDF units, unless End Turn was requested. */
+export function manualTdfHasActions(mission: TacticalState): boolean {
+  return mission.units.some(
+    (unit) =>
+      unit.team === "tdf" &&
+      unit.hp > 0 &&
+      unit.ap > 0 &&
+      !isAutonomous(unit) &&
+      !mission.jev?.entities[unit.id]?.enabled,
+  );
+}
+
+/** Remaining TDF activations that must complete before an explicitly requested End Turn. */
+export function pendingJevTdf(mission: TacticalState): boolean {
+  return mission.units.some(
+    (unit) =>
+      unit.team === "tdf" &&
+      unit.hp > 0 &&
+      unit.ap > 0 &&
+      mission.jev?.entities[unit.id]?.enabled &&
+      !jevFinished(mission, unit.id),
   );
 }
 

@@ -96,6 +96,7 @@ import type { UnitStatusChip } from "./unit-status-layer-view";
 import { UnitStatusLayerView } from "./unit-status-layer-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { chargeRegisterFor } from "../service/charge-register";
+import { jevEndTurnPending } from "../../tactical/service/jev-control-service";
 
 // ===========================================
 // Types
@@ -650,7 +651,9 @@ export class TacticalHudView {
     this.pointerGuard = undefined;
     this.stopFollowing?.();
     this.stopFollowing = undefined;
-    this.setInspecting(false);
+    this.inspecting = false;
+    this.stopInspecting?.();
+    this.stopInspecting = undefined;
     this.status.unmount();
     this.phases.unmount();
     this.actions.unmount();
@@ -752,7 +755,11 @@ export class TacticalHudView {
 
   /** Applies an intent from the input controller or the keyboard; drops all but Shift while a phase plays (#1130). */
   handleIntent(intent: TacticalIntent): void {
-    if (this.playbackLocked && intent.kind !== "inspect") {
+    if (
+      (this.playbackLocked ||
+        (this.mission && jevEndTurnPending(this.mission))) &&
+      intent.kind !== "inspect"
+    ) {
       return;
     }
     if (this.placeArmed(intent)) {
@@ -790,25 +797,34 @@ export class TacticalHudView {
   }
 
   /**
-   * Shows the status chips above every visible unit while `held`, and
-   * takes them away when not (Shift, on #1113's review). The chips are
+   * Shows full status chips while `held`, keeping only Jev labels when
+   * released (Shift, on #1113's review). The chips are
    * re-anchored once a frame while up, so they follow the camera and
    * the units, and re-filled on every refresh, so they follow the state.
    *
    * @param held - Whether Shift is down.
    */
   setInspecting(held: boolean): void {
-    if (held === this.inspecting) {
-      return;
-    }
     this.inspecting = held;
-    if (!held) {
+    this.followStatus();
+  }
+
+  /** Keep Jev labels anchored between inspections; stop the frame loop when neither is needed. */
+  private followStatus(): void {
+    const hasJev = this.view?.units.some(
+      (unit) =>
+        unit.team === "tdf" &&
+        unit.hp > 0 &&
+        this.mission?.jev?.entities[unit.id]?.enabled,
+    );
+    if (!this.inspecting && !hasJev) {
       this.stopInspecting?.();
       this.stopInspecting = undefined;
       this.status.hide();
       return;
     }
     this.drawStatus();
+    if (this.stopInspecting) return;
     const schedule =
       typeof requestAnimationFrame === "function"
         ? requestAnimationFrame
@@ -818,9 +834,6 @@ export class TacticalHudView {
     }
     let handle = 0;
     const tick = (): void => {
-      if (!this.inspecting) {
-        return;
-      }
       this.drawStatus();
       handle = schedule(tick);
     };
@@ -1630,7 +1643,12 @@ export class TacticalHudView {
     // A turret is never an actor (#1138): Tab walks the units the
     // player can give an order to.
     const actors = mission.units.filter(
-      (u) => u.team === team && u.hp > 0 && u.ap > 0 && !isAutonomous(u),
+      (u) =>
+        u.team === team &&
+        u.hp > 0 &&
+        u.ap > 0 &&
+        !isAutonomous(u) &&
+        !mission.jev?.entities[u.id]?.enabled,
     );
     if (actors.length === 0) {
       return;
@@ -1651,8 +1669,10 @@ export class TacticalHudView {
     if (mission?.phase !== "player") {
       return 0;
     }
-    return playerUnits(mission).filter((unit) => unit.hp > 0 && unit.ap > 0)
-      .length;
+    return playerUnits(mission).filter(
+      (unit) =>
+        unit.hp > 0 && unit.ap > 0 && !mission.jev?.entities[unit.id]?.enabled,
+    ).length;
   }
 
   /**
@@ -2082,7 +2102,9 @@ export class TacticalHudView {
     const names = namesFor(mission, this.campaign);
     const chips: UnitStatusChip[] = [];
     for (const unit of view.units) {
-      if (unit.hp <= 0) {
+      const jevControlled =
+        unit.team === "tdf" && mission.jev?.entities[unit.id]?.enabled === true;
+      if (unit.hp <= 0 || (!this.inspecting && !jevControlled)) {
         continue;
       }
       const anchor = anchorFor(unit.id);
@@ -2123,6 +2145,8 @@ export class TacticalHudView {
         team: unit.team,
         hp: unit.hp,
         maxHp: unit.maxHp,
+        jevControlled,
+        compact: !this.inspecting,
         charges,
       });
     }
@@ -2146,9 +2170,7 @@ export class TacticalHudView {
       );
     }
     this.followMenu();
-    if (this.inspecting) {
-      this.drawStatus();
-    }
+    this.followStatus();
     const mission = this.mission;
     if (!mission) {
       this.banner.update(undefined);
@@ -2237,7 +2259,7 @@ export class TacticalHudView {
         .actionLabel,
       aiming: this.mode === "attack",
       unspent: this.unspentCount(),
-      locked: this.playbackLocked,
+      locked: this.playbackLocked || jevEndTurnPending(mission),
     });
     this.handlers.onMarkBlast?.(this.consideredBlast());
     // Last, so the listener reads the state the refresh just settled.

@@ -1,4 +1,9 @@
-import { jevFinished, startJevPhase } from "./jev-control-service";
+import {
+  jevFinished,
+  startJevPhase,
+  jevEndTurnPending,
+  pendingJevTdf,
+} from "./jev-control-service";
 import { refreshMechSystems } from "./mech-heat-service";
 import { err, ok } from "../../core/model/result";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
@@ -125,6 +130,8 @@ export const DEFAULT_PHASE_STEPS: readonly PhaseStep[] = [refreshSides];
  *
  * `early` on the payload is informational. Commands after the mission
  * has ended are refused by the lifting adapter (`mission-over`).
+ * Pending Jev TDF actors keep the player phase open with a saved End Turn
+ * request; the app completes them and dispatches End Turn again afterward.
  */
 export function createEndTurnHandler(
   steps: readonly PhaseStep[] = DEFAULT_PHASE_STEPS,
@@ -134,6 +141,28 @@ export function createEndTurnHandler(
     const outcome = missionOutcome(mission);
     if (outcome !== undefined) {
       return ok(endMission(mission, outcome));
+    }
+    if (mission.phase === "player" && pendingJevTdf(mission)) {
+      if (jevEndTurnPending(mission))
+        return err({
+          kind: "systems-unavailable",
+          reason: "Jev units are finishing this turn",
+        });
+      const base =
+        mission.jev?.activation?.turn === mission.turn &&
+        mission.jev.activation.phase === mission.phase
+          ? mission
+          : startJevPhase(mission);
+      return ok({
+        state: {
+          ...base,
+          jev: {
+            ...base.jev!,
+            activation: { ...base.jev!.activation!, endTurnRequested: true },
+          },
+        },
+        events: [],
+      });
     }
     if (
       mission.phase === "bugs" &&

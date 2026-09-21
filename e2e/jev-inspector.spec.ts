@@ -41,7 +41,11 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     const request = route.request().postDataJSON() as JevRequest;
     requests.push(request);
     const ids = Object.keys(request.questions.action.criteria);
-    const choice = ids.includes("finish") ? "finish" : ids[0];
+    const choice = ids.includes("move")
+      ? "move"
+      : ids.includes("finish")
+        ? "finish"
+        : ids[0];
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -98,6 +102,16 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     "Preserve yourself and stay in cover.",
   );
   expect(requests[0]?.state.commander_prompt).toBe("Hold the extraction zone.");
+  expect(requests[0]?.questions.action.criteria).toHaveProperty("move");
+  expect(
+    Object.keys(requests[0].questions.action.criteria).some((id) =>
+      id.startsWith("action-"),
+    ),
+  ).toBe(false);
+  expect(requests.length).toBeGreaterThanOrEqual(2);
+  for (const request of requests.slice(1))
+    for (const option of Object.values(request.questions.action.criteria))
+      expect(option).toMatchObject({ action: "move" });
   const campaign = (JSON.parse(before!) as SaveEnvelope<GameState>).state;
   const observation = requests[0].state;
   const entities = [observation.actor, ...(observation.entities as unknown[])];
@@ -184,4 +198,100 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
   await page.mouse.wheel(0, -200);
   await expect.poll(() => cameraProjection(page)).not.toEqual(camera);
   expect(errors).toEqual([]);
+});
+
+/** The autosave is authoritative while the scene finishes playing the preceding commands. */
+async function savedMission(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        JSON.parse(
+          localStorage.getItem("tut:save:autosave")!,
+        ) as SaveEnvelope<GameState>
+      ).state.activeMission!,
+  );
+}
+
+test("Jev TDF labels persist, Tab skips them, and End Turn waits for their decisions", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const requests: JevRequest[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("http://localhost:8080/v1/systemone", async (route) => {
+    const headers = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+    };
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    const request = route.request().postDataJSON() as JevRequest;
+    requests.push(request);
+    await gate;
+    const ids = Object.keys(request.questions.action.criteria);
+    const choice = ids.includes("finish") ? "finish" : ids[0];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers,
+      body: JSON.stringify({
+        model: "jev-test",
+        answers: {
+          action: {
+            type: "choice",
+            choice,
+            confidence: 1,
+            probabilities: Object.fromEntries(
+              ids.map((id) => [id, id === choice ? 1 : 0]),
+            ),
+          },
+        },
+      }),
+    });
+  });
+  await launchMission(page, "4242", CITY_MISSION_FIXTURE);
+  await page
+    .locator('[data-role="squad-list"] [data-unit-id="unit-1"]')
+    .click();
+  await page.getByTestId("jev-toggle").click();
+  await page.getByTestId("jev-enabled").check();
+  await page.getByTestId("jev-save").click();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  const label = page.locator(
+    '.tut-status-chip[data-unit-id="unit-1"] [data-field="jev-label"]',
+  );
+  await expect(label).toBeVisible();
+  await expect(label).toHaveText("Jev");
+  await expect(label).toHaveCSS("color", "rgb(142, 216, 255)");
+  await page.screenshot({ path: "test-results/jev-control-label.png" });
+  for (let index = 0; index < 6; index++) {
+    await page.keyboard.press("Tab");
+    await expect(page.locator("body")).not.toHaveAttribute(
+      "data-selected-unit",
+      "unit-1",
+    );
+  }
+  expect(requests).toHaveLength(0);
+  const before = await savedMission(page);
+  const end = page.locator('[data-action="end-turn"]');
+  await end.click();
+  await expect.poll(() => requests.length).toBe(1);
+  await expect(end).toBeDisabled();
+  expect(await savedMission(page)).toMatchObject({
+    turn: before.turn,
+    phase: "player",
+    jev: { activation: { endTurnRequested: true } },
+  });
+  release();
+  await expect
+    .poll(async () => (await savedMission(page)).turn, { timeout: 20_000 })
+    .toBe(before.turn + 1);
+  expect(requests).toHaveLength(2);
+  expect((await savedMission(page)).jev?.decisions).toHaveLength(1);
 });

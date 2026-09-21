@@ -709,6 +709,90 @@ describe("TacticalHudView", () => {
     expect(marked.at(-1)).toBeUndefined();
   });
 
+  it("keeps Jev labels above living TDF units without Shift and removes them when control is disabled", () => {
+    let x = 80;
+    const { hud, mission } = setup({ headAnchorFor: () => ({ x, y: 50 }) });
+    const configured = {
+      ...mission,
+      jev: {
+        entities: {
+          s1: { enabled: true, entityPrompt: "Guard" },
+          b1: { enabled: true, entityPrompt: "Defend" },
+        },
+        commanders: { tdf: "", bugs: "" },
+      },
+    };
+    hud.update(configured);
+    const labels = () =>
+      root.querySelectorAll('[data-field="jev-label"]:not([hidden])');
+    expect(labels()).toHaveLength(1);
+    expect(labels()[0]?.textContent).toBe("Jev");
+    const chip = () =>
+      root.querySelector<HTMLElement>('.tut-status-chip[data-unit-id="s1"]');
+    expect(chip()?.dataset.compact).toBe("true");
+    expect(chip()?.style.left).toBe("80px");
+    hud.setInspecting(true);
+    expect(chip()?.dataset.compact).toBe("false");
+    hud.setInspecting(false);
+    expect(labels()).toHaveLength(1);
+    expect(chip()?.dataset.compact).toBe("true");
+    x = 120;
+    hud.update(configured);
+    expect(chip()?.style.left).toBe("120px");
+    hud.update({
+      ...configured,
+      units: configured.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, hp: 0 } : unit,
+      ),
+    });
+    expect(labels()).toHaveLength(0);
+    hud.update(configured);
+    expect(labels()).toHaveLength(1);
+    hud.update(mission);
+    expect(labels()).toHaveLength(0);
+    hud.unmount();
+  });
+
+  it("Tab skips Jev actors and End Turn counts only unspent manual units", () => {
+    const { hud, mission, commands } = setup();
+    const configured = {
+      ...mission,
+      units: mission.units.map((unit) => ({ ...unit, ap: 2 })),
+      jev: {
+        entities: { s1: { enabled: true, entityPrompt: "Guard" } },
+        commanders: { tdf: "", bugs: "" },
+      },
+    };
+    hud.update(configured);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "next-unit" });
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    hud.handleIntent({ kind: "action", action: "next-unit" });
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    const end = root.querySelector<HTMLButtonElement>(
+      '[data-action="end-turn"]',
+    )!;
+    expect(end.textContent).toContain("1 unspent");
+    hud.update({
+      ...configured,
+      jev: {
+        ...configured.jev,
+        activation: {
+          turn: configured.turn,
+          phase: configured.phase,
+          finished: [],
+          externalBugs: false,
+          endTurnRequested: true,
+        },
+      },
+    });
+    expect(end.disabled).toBe(true);
+    hud.handleIntent({ kind: "end-turn" });
+    hud.handleIntent({ kind: "action", action: "overwatch" });
+    expect(commands).toHaveLength(0);
+    hud.unmount();
+  });
+
   it("shows a status chip above every visible unit while Shift is held, and none after (#1113 review)", () => {
     const { hud, mission } = setup({
       headAnchorFor: (unitId) => ({ x: unitId.length * 10, y: 50 }),

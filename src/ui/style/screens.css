@@ -1768,6 +1768,27 @@
   letter-spacing: 0.02em;
 }
 
+.tut-status-chip__jev {
+  color: #8ed8ff;
+  font-weight: 700;
+  text-align: center;
+  text-shadow:
+    0 1px 3px #07131f,
+    0 0 5px #07131f;
+}
+
+.tut-status-chip[data-compact="true"] {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+}
+
+.tut-status-chip[data-compact="true"] > :not(.tut-status-chip__jev) {
+  display: none;
+}
+
 .tut-status-chip__health {
   display: flex;
   align-items: center;

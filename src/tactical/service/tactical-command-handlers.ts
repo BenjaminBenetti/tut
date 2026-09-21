@@ -16,6 +16,7 @@ import type {
 } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import { withVision } from "./vision-service";
+import { jevEndTurnPending } from "./jev-control-service";
 
 // ===========================================
 // Types
@@ -111,6 +112,19 @@ export function liftTacticalHandler<
     if (mission.outcome !== undefined) {
       return err(
         tacticalRefusal({ kind: "mission-over", outcome: mission.outcome }),
+      );
+    }
+    if (
+      jevEndTurnPending(mission) &&
+      command.type !== "tactical:jev-act" &&
+      command.type !== "tactical:configure-jev" &&
+      command.type !== "tactical:end-turn"
+    ) {
+      return err(
+        tacticalRefusal({
+          kind: "systems-unavailable",
+          reason: "Jev units are finishing this turn",
+        }),
       );
     }
     const label = [

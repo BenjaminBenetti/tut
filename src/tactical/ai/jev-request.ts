@@ -4,6 +4,7 @@ import type {
   JevSnapshot,
 } from "../model/jev-control";
 import type { TacticalState } from "../model/tactical-state";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { PHASE_FOR_TEAM } from "../model/tactical-state";
 import { jevPerception, jevState } from "./jev-observation";
 import { jevCandidates } from "./jev-actions";
@@ -57,82 +58,134 @@ export function captureJev(
   return JSON.parse(JSON.stringify(snapshot)) as JevSnapshot;
 }
 
-/** A page of at most 255 choices. A group is followed by a narrower request on the same snapshot. */
+/** One visible step: action type first, then groups or concrete actions of that type. */
 export interface JevChoicePage {
+  readonly stage: "action-type" | "action-group" | "action";
   readonly request: JevRequest;
   readonly groups?: Readonly<Record<string, readonly JevCandidate[]>>;
 }
 
-/** Preserve every candidate by grouping large catalogues rather than discarding less common actions. */
+// Count alone does not bound tokens: ground attacks carry much larger previews than moves.
+const MAX_LEAF_CHOICES = 48;
+const MAX_CRITERIA_CHARACTERS = 12000;
+const MAX_GROUP_CHOICES = 32;
+const INSTRUCTIONS =
+  "Choose for `actor` using only observed and remembered facts in `state`. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. Consider objectives, AP, weapons, cover, hazards, survival and friendly fire. Resolve names in orders against actor.name and entities[].name. Unknown enemies and terrain must not be assumed known. Historical sightings are not current targets.";
+const ACTION_TYPES: Readonly<Record<string, string>> = {
+  finish: "Finish this entity's activation without spending further actions.",
+  move: "Move to a reachable position to advance, follow, retreat or seek cover.",
+  attack: "Attack a visible enemy unit or nest with a ready weapon.",
+  "attack-ground":
+    "Fire at a tile, considering blast effects, cover destruction and friendly fire.",
+  overwatch:
+    "Reserve fire to react to enemy movement until the next faction turn.",
+  reload: "Reload ammunition or vent a weapon's heat pool.",
+  equipment:
+    "Use available equipment, such as grenades, healing, smoke or deployables.",
+  brace: "Brace the mech for improved stability.",
+  coolant: "Spend coolant to reduce mech heat.",
+  designate: "Mark an enemy to help allied attacks.",
+  jump: "Use jump jets to reach another position.",
+  extract: "Extract this unit from the mission.",
+  interact: "Interact with a mission objective.",
+  "harvest-carcass": "Harvest a visible bug carcass for tech points.",
+};
+
+/** Always ask for an action type first; follow-ups contain only that type, with bounded detail pages. */
 export function jevChoicePage(
   snapshot: JevSnapshot,
-  candidates: readonly JevCandidate[] = snapshot.candidates,
+  candidates?: readonly JevCandidate[],
 ): JevChoicePage {
-  const instructions =
-    "Choose the next action for `actor` using only the observed and remembered facts in `state`. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role and tactics; commander priorities win explicit conflicts. Unknown enemies and terrain must not be assumed known. Consider objectives, AP, weapons, cover, hazards, survival and friendly fire. A historical sighting is not a current target. Choose finish if no offered action is useful or the actor is ineligible.";
-  if (candidates.length <= 255)
-    return {
-      request: {
-        model: "jev-latest",
-        state: snapshot.state,
-        questions: {
-          action: {
-            type: "choice",
-            instructions,
-            criteria: Object.fromEntries(
-              candidates.map((candidate) => [
-                candidate.id,
-                describeCandidate(candidate),
-              ]),
-            ),
+  if (candidates === undefined) {
+    const groups: Record<string, JevCandidate[]> = {};
+    for (const candidate of snapshot.candidates)
+      (groups[candidate.category] ??= []).push(candidate);
+    return choicePage(
+      snapshot,
+      "action-type",
+      Object.fromEntries(
+        Object.entries(groups).map(([category, items]) => [
+          category,
+          {
+            action: category,
+            purpose: ACTION_TYPES[category] ?? category,
+            available_options: items.length,
           },
-        },
-      },
-    };
+        ]),
+      ),
+      groups,
+    );
+  }
+  const criteria = Object.fromEntries(
+    candidates.map((candidate) => [candidate.id, describeCandidate(candidate)]),
+  );
+  if (
+    candidates.length <= MAX_LEAF_CHOICES &&
+    (JSON.stringify(criteria).length <= MAX_CRITERIA_CHARACTERS ||
+      candidates.length === 1)
+  )
+    return choicePage(snapshot, "action", criteria);
+
+  // Spatial families retain every destination. A large family is split by size as well as count.
   const families = new Map<string, JevCandidate[]>();
   for (const candidate of candidates) {
-    const command = candidate.command;
-    const pos =
-      command &&
-      ("tile" in command.payload
-        ? command.payload.tile
-        : "path" in command.payload
-          ? command.payload.path.at(-1)
-          : undefined);
-    const region = pos
-      ? ` near x=${String(Math.floor(pos.x / 8) * 8)}..${String(Math.floor(pos.x / 8) * 8 + 7)}, z=${String(Math.floor(pos.z / 8) * 8)}..${String(Math.floor(pos.z / 8) * 8 + 7)}, y=${String(pos.y)}`
-      : "";
-    const family = candidate.category + region;
-    const group = families.get(family) ?? [];
-    group.push(candidate);
-    families.set(family, group);
+    const pos = destination(candidate);
+    const key = pos
+      ? `${String(Math.floor(pos.x / 8))}:${String(pos.y)}:${String(Math.floor(pos.z / 8))}`
+      : candidate.category;
+    const family = families.get(key) ?? [];
+    family.push(candidate);
+    families.set(key, family);
   }
-  // If a single category/region is still large, split it into complete pages.
-  const entries = [...families].flatMap(([label, items]) => {
-    const pages: { label: string; items: readonly JevCandidate[] }[] = [];
-    for (let start = 0; start < items.length; start += 200)
-      pages.push({
-        label: `${label} (options ${String(start + 1)}–${String(Math.min(items.length, start + 200))})`,
-        items: items.slice(start, start + 200),
-      });
-    return pages;
-  });
-  // Very large catalogues use a balanced hierarchy, keeping all actions reachable.
-  const width = Math.max(1, Math.ceil(entries.length / 200));
+  const pages: JevCandidate[][] = [];
+  for (const family of families.values()) {
+    let page: JevCandidate[] = [];
+    let size = 0;
+    for (const candidate of family) {
+      const cost = candidate.id.length + candidate.description.length + 8;
+      if (
+        page.length &&
+        (page.length >= MAX_LEAF_CHOICES ||
+          size + cost > MAX_CRITERIA_CHARACTERS)
+      ) {
+        pages.push(page);
+        page = [];
+        size = 0;
+      }
+      page.push(candidate);
+      size += cost;
+    }
+    if (page.length) pages.push(page);
+  }
+  const width = Math.max(1, Math.ceil(pages.length / MAX_GROUP_CHOICES));
   const groups: Record<string, readonly JevCandidate[]> = {};
-  const criteria: Record<string, unknown> = {};
-  for (let start = 0; start < entries.length; start += width) {
-    const chunk = entries.slice(start, start + width);
-    const id = `group-${String(start)}`;
-    groups[id] = chunk.flatMap((entry) => entry.items);
-    criteria[id] = {
-      groups: chunk.map((entry) => entry.label),
-      examples: groups[id]
-        .slice(0, 3)
-        .map((candidate) => describeCandidate(candidate)),
-    };
-  }
+  for (let start = 0; start < pages.length; start += width)
+    groups[`group-${String(start)}`] = pages.slice(start, start + width).flat();
+  return choicePage(
+    snapshot,
+    "action-group",
+    Object.fromEntries(
+      Object.entries(groups).map(([id, items]) => [id, describeGroup(items)]),
+    ),
+    groups,
+  );
+}
+
+/** Build the exact wire request; stage metadata stays in the inspector trace. */
+function choicePage(
+  snapshot: JevSnapshot,
+  stage: JevChoicePage["stage"],
+  criteria: Readonly<Record<string, unknown>>,
+  groups?: JevChoicePage["groups"],
+): JevChoicePage {
+  const task =
+    stage === "action-type"
+      ? "Choose the best TYPE of action to take next. Only available types are listed. Concrete targets and destinations will be chosen in a separate request containing only that type. Choose finish when no further action is useful."
+      : stage === "action-group"
+        ? "The action type has been chosen. Choose a region or target group within that type; a subsequent request will choose the concrete action."
+        : "The action type has been chosen. Choose the best concrete action from ONLY the offered options of that type.";
   return {
+    stage,
     groups,
     request: {
       model: "jev-latest",
@@ -140,11 +193,63 @@ export function jevChoicePage(
       questions: {
         action: {
           type: "choice",
-          instructions: `${instructions} This is a grouped catalogue: choose the action family/region to inspect; the exact action is selected in the next request.`,
+          instructions: `${INSTRUCTIONS} ${task}`,
           criteria,
         },
       },
     },
+  };
+}
+
+/** The concrete endpoint is enough to describe a region; paths remain local. */
+function destination(candidate: JevCandidate): TileCoord | undefined {
+  const payload = candidate.command?.payload;
+  return (
+    payload &&
+    ("tile" in payload
+      ? payload.tile
+      : "path" in payload
+        ? payload.path.at(-1)
+        : undefined)
+  );
+}
+
+/** Summarize a group without embedding full action previews in the routing question. */
+function describeGroup(
+  candidates: readonly JevCandidate[],
+): Readonly<Record<string, unknown>> {
+  const positions = candidates.flatMap((candidate) => {
+    const pos = destination(candidate);
+    return pos ? [pos] : [];
+  });
+  const targets = candidates.flatMap((candidate) => {
+    const payload = candidate.command?.payload;
+    return payload && "targetId" in payload ? [payload.targetId] : [];
+  });
+  return {
+    action: candidates[0]?.category,
+    count: candidates.length,
+    ...(positions.length
+      ? {
+          region: {
+            x: [
+              Math.min(...positions.map((pos) => pos.x)),
+              Math.max(...positions.map((pos) => pos.x)),
+            ],
+            y: [
+              Math.min(...positions.map((pos) => pos.y)),
+              Math.max(...positions.map((pos) => pos.y)),
+            ],
+            z: [
+              Math.min(...positions.map((pos) => pos.z)),
+              Math.max(...positions.map((pos) => pos.z)),
+            ],
+          },
+        }
+      : {}),
+    ...(targets.length
+      ? { example_target_ids: [...new Set(targets)].slice(0, 8) }
+      : {}),
   };
 }
 

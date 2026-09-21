@@ -12,6 +12,7 @@ import {
   unitAt,
   openField,
   FIXTURE_TEMPLATES,
+  walledField,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import { withVision } from "../../tactical/service/vision-service";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
@@ -19,7 +20,10 @@ import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue
 import { configureJev, jevAct } from "../../tactical/model/jev-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
 import { endTurn } from "../../tactical/model/end-turn-command";
-import { jevFinished } from "../../tactical/service/jev-control-service";
+import {
+  jevFinished,
+  jevEndTurnPending,
+} from "../../tactical/service/jev-control-service";
 import type { JevRequest } from "../../tactical/model/jev-control";
 
 function reply(request: JevRequest, pick = "finish"): JevReply {
@@ -73,7 +77,158 @@ const instant = () => ({
   ask: vi.fn((request: JevRequest) => Promise.resolve(reply(request))),
 });
 
+/** Two player actors behind a wall, so the next bug turn cannot decide this fixture. */
+function mixedCampaign(): GameState {
+  return {
+    ...campaignOnDay(1, []),
+    activeMission: withVision({
+      state: missionWith(walledField(), [
+        unitAt("self", "infantry", { x: 0, y: 0, z: 5 }),
+        unitAt("manual", "infantry", { x: 1, y: 0, z: 5 }),
+        unitAt("bug", "infantry", { x: 7, y: 0, z: 5 }, { team: "bugs" }),
+      ]),
+      events: [],
+    }).state,
+  };
+}
+
 describe("Jev control", () => {
+  it("waits for manual AP, then asks for a type before concrete actions of only that type", async () => {
+    const transport = {
+      configured: true,
+      ask: vi.fn((request: JevRequest) => {
+        const criteria = request.questions.action!.criteria;
+        const choice = Object.hasOwn(criteria, "overwatch")
+          ? "overwatch"
+          : Object.keys(criteria)[0]!;
+        return Promise.resolve(reply(request, choice));
+      }),
+    };
+    const { store, controller } = setup(transport, mixedCampaign());
+    controller.configure("self", true, "Guard", "Defend");
+    controller.start();
+    await vi.waitFor(() => expect(controller.history).toHaveLength(0));
+    await Promise.resolve();
+    expect(transport.ask).not.toHaveBeenCalled();
+    expect(store.dispatch(overwatch("manual")).ok).toBe(true);
+    await vi.waitFor(() =>
+      expect(controller.history[0]?.status).toBe("applied"),
+    );
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    const [first, second] = transport.ask.mock.calls.map(
+      ([request]) => request,
+    );
+    expect(first!.questions.action!.criteria).toHaveProperty("move");
+    expect(first!.questions.action!.criteria).toHaveProperty("overwatch");
+    expect(Object.values(second!.questions.action!.criteria)).toEqual([
+      expect.objectContaining({ action: "overwatch" }),
+    ]);
+    expect(
+      controller.history[0]?.exchanges.map((exchange) => exchange.stage),
+    ).toEqual(["action-type", "action"]);
+    expect(
+      controller.history[0]?.exchanges.every(
+        (exchange) => exchange.requestBytes > 0,
+      ),
+    ).toBe(true);
+    expect(store.getState().activeMission).toMatchObject({
+      phase: "player",
+      turn: 1,
+    });
+    controller.dispose();
+  });
+  it("delays End Turn until Jev finishes, refuses duplicate/manual orders, then advances exactly once", async () => {
+    let release!: () => void;
+    const transport = {
+      configured: true,
+      ask: vi.fn(
+        (request: JevRequest) =>
+          new Promise<JevReply>((resolve) => {
+            release = () => resolve(reply(request));
+          }),
+      ),
+    };
+    const { store, controller } = setup(transport, mixedCampaign());
+    controller.configure("self", true, "Hold", "Defend");
+    controller.start();
+    expect(store.dispatch(endTurn()).ok).toBe(true);
+    expect(jevEndTurnPending(store.getState().activeMission!)).toBe(true);
+    expect(store.getState().activeMission).toMatchObject({
+      phase: "player",
+      turn: 1,
+    });
+    await vi.waitFor(() => expect(transport.ask).toHaveBeenCalledTimes(1));
+    const pending = store.getState();
+    expect(store.dispatch(endTurn()).ok).toBe(false);
+    expect(store.dispatch(overwatch("manual")).ok).toBe(false);
+    expect(store.getState()).toBe(pending);
+    release();
+    await vi.waitFor(() => expect(transport.ask).toHaveBeenCalledTimes(2));
+    expect(store.getState()).toBe(pending);
+    release();
+    await vi.waitFor(() =>
+      expect(store.getState().activeMission?.turn).toBe(2),
+    );
+    expect(store.getState().activeMission?.phase).toBe("player");
+    expect(jevEndTurnPending(store.getState().activeMission!)).toBe(false);
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(store.getState().activeMission?.jev?.decisions).toHaveLength(1);
+    controller.dispose();
+  });
+  it("resumes a saved pending End Turn without repeating completed Jev units", async () => {
+    const base = mixedCampaign();
+    const transport = instant();
+    const { store, controller } = setup(transport, {
+      ...base,
+      activeMission: {
+        ...base.activeMission!,
+        units: [
+          ...base.activeMission!.units,
+          unitAt("second", "infantry", { x: 2, y: 0, z: 5 }),
+        ],
+      },
+    });
+    controller.configure("self", true, "Hold", "Defend");
+    controller.configure("second", true, "Hold", "Defend");
+    expect(store.dispatch(endTurn()).ok).toBe(true);
+    expect(
+      store.dispatch(
+        jevAct({
+          unitId: "self",
+          expectedSeq: store.getState().activeMission!.commandSeq,
+          choice: "finish",
+        }),
+      ).ok,
+    ).toBe(true);
+    const saved = JSON.parse(JSON.stringify(store.getState())) as GameState;
+    controller.dispose();
+    const resumed = setup(transport, saved);
+    resumed.controller.start();
+    await vi.waitFor(() =>
+      expect(resumed.store.getState().activeMission?.turn).toBe(2),
+    );
+    expect(
+      resumed.controller.history.map((trace) => trace.snapshot.unitId),
+    ).toEqual(["second"]);
+    expect(resumed.store.getState().activeMission?.jev?.decisions).toHaveLength(
+      2,
+    );
+    resumed.controller.dispose();
+  });
+  it("still completes a pending End Turn if Jev fails", async () => {
+    const { store, controller } = setup(
+      { configured: true, ask: () => Promise.reject(new Error("offline")) },
+      mixedCampaign(),
+    );
+    controller.configure("self", true, "Hold", "Defend");
+    store.dispatch(endTurn());
+    controller.start();
+    await vi.waitFor(() =>
+      expect(store.getState().activeMission?.turn).toBe(2),
+    );
+    expect(controller.history[0]?.status).toBe("fallback");
+    controller.dispose();
+  });
   it("sends roster identities for named orders, separately from shared unit types", async () => {
     const campaign = campaignOnDay(1, []);
     const roster = {

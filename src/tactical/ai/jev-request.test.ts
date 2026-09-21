@@ -192,21 +192,62 @@ describe("Jev observation", () => {
       { length: 1800 },
       (_, index) => ({
         id: `test-${String(index)}`,
-        category: "move",
+        category: index % 2 === 0 ? "move" : "attack-ground",
         description: `Destination ${String(index)}`,
       }),
     );
-    const first = jevChoicePage(snapshot, candidates);
-    expect(
-      Object.keys(first.request.questions.action!.criteria).length,
-    ).toBeLessThanOrEqual(255);
-    const all = Object.values(first.groups!).flat();
-    expect(all).toEqual(candidates);
-    for (const group of Object.values(first.groups!))
+    const first = jevChoicePage({ ...snapshot, candidates });
+    expect(first.stage).toBe("action-type");
+    expect(Object.keys(first.request.questions.action!.criteria)).toEqual([
+      "move",
+      "attack-ground",
+    ]);
+    expect(JSON.stringify(first.request)).not.toContain("Destination");
+    const leaves: string[] = [];
+    /** Every route must shrink and preserve the chosen type until a bounded leaf is reached. */
+    const visit = (items: readonly JevCandidate[], category: string): void => {
+      expect(items.every((item) => item.category === category)).toBe(true);
+      const page = jevChoicePage(snapshot, items);
       expect(
-        Object.keys(
-          jevChoicePage(snapshot, group).request.questions.action!.criteria,
-        ).length,
-      ).toBeLessThanOrEqual(255);
+        Object.keys(page.request.questions.action!.criteria).length,
+      ).toBeLessThanOrEqual(48);
+      if (page.groups) {
+        for (const group of Object.values(page.groups)) {
+          expect(group.length).toBeLessThan(items.length);
+          visit(group, category);
+        }
+      } else
+        leaves.push(...Object.keys(page.request.questions.action!.criteria));
+    };
+    for (const [category, group] of Object.entries(first.groups!))
+      visit(group, category);
+    expect(leaves.sort()).toEqual(
+      candidates.map((candidate) => candidate.id).sort(),
+    );
+  });
+  it("splits verbose options even below the Choice count limit", () => {
+    const snapshot = captureJev(fixture(), "self", rules);
+    const candidates: JevCandidate[] = Array.from(
+      { length: 40 },
+      (_, index) => ({
+        id: `attack-${String(index)}`,
+        category: "attack-ground",
+        description: JSON.stringify({
+          action: "attack-ground",
+          preview: "blast victim facts ".repeat(100),
+        }),
+      }),
+    );
+    const page = jevChoicePage(snapshot, candidates);
+    expect(page.stage).toBe("action-group");
+    expect(JSON.stringify(page.request.questions).length).toBeLessThan(12000);
+    expect(Object.values(page.groups!).flat()).toEqual(candidates);
+    for (const group of Object.values(page.groups!)) {
+      const leaf = jevChoicePage(snapshot, group);
+      expect(leaf.stage).toBe("action");
+      expect(
+        JSON.stringify(leaf.request.questions.action!.criteria).length,
+      ).toBeLessThanOrEqual(12000);
+    }
   });
 });

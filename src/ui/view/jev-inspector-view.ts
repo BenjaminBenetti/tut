@@ -293,6 +293,8 @@ export class JevInspectorView {
                   }
                 : undefined,
               answers: trace.exchanges.map((exchange) => ({
+                stage: exchange.stage,
+                request_bytes: exchange.requestBytes,
                 answer: exchange.answer,
                 elapsed_ms: exchange.elapsedMs,
                 request_id: exchange.requestId,

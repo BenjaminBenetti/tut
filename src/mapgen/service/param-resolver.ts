@@ -14,7 +14,12 @@ import type { ResolvedMapGenParams } from "../model/resolved-params";
 /** The registries parameter resolution needs. */
 export type ParamResolverRegistries = Pick<
   MapGenRegistries,
-  "biomes" | "settlements" | "mapSizes" | "placeProfiles" | "buildingTemplates"
+  | "biomes"
+  | "settlements"
+  | "mapSizes"
+  | "placeProfiles"
+  | "buildingTemplates"
+  | "missionSites"
 >;
 
 /**
@@ -49,6 +54,17 @@ export function resolveMapGenParams(
   ) {
     throw new Error(`Unknown landmark building kind "${params.landmark}"`);
   }
+  if (params.site !== undefined) {
+    const site = registries.missionSites.get(params.site);
+    if (
+      site.width + 2 * site.margin + 4 > width ||
+      site.depth + 2 * site.margin + 4 > depth
+    ) {
+      throw new Error(`Mission site "${site.id}" does not fit the map`);
+    }
+    if (params.archetype !== "settlement")
+      throw new Error("Mission sites require the settlement pipeline");
+  }
   const slopeShare = resolveSlopeShare(params.slopeShare);
   const infestation = params.infestation ?? 0;
   if (!Number.isInteger(infestation) || infestation < 0 || infestation > 10) {
@@ -71,6 +87,7 @@ export function resolveMapGenParams(
     settlement,
     hooks: params.hooks,
     ...(params.landmark === undefined ? {} : { landmark: params.landmark }),
+    ...(params.site === undefined ? {} : { site: params.site }),
     slopeShare,
   };
 }

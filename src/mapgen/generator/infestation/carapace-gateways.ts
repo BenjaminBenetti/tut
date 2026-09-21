@@ -89,6 +89,7 @@ function gradeableCell(
   if (
     !draft.inBounds(tile.x, tile.z) ||
     draft.isLandingReserved(tile.x, tile.z) ||
+    draft.isSiteReserved(tile.x, tile.z) ||
     registries.surfaces.get(draft.groundSurfaceAt(tile.x, tile.z))
       .defaultPass !== PassMask.ALL ||
     infestationPressure(draft, tile.x, tile.z) <

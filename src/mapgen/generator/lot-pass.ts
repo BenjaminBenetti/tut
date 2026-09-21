@@ -205,7 +205,11 @@ function fits(
       if (!draft.inBounds(x, z)) {
         continue;
       }
-      if (occupied.has(z * draft.width + x) || draft.isLandingReserved(x, z)) {
+      if (
+        occupied.has(z * draft.width + x) ||
+        draft.isLandingReserved(x, z) ||
+        draft.isSiteReserved(x, z)
+      ) {
         return false;
       }
       if (!rectContains(rect, x, z)) {

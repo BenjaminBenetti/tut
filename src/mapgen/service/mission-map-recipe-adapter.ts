@@ -1,5 +1,4 @@
 import { isPlaceProfileId } from "../../content/model/place-profile-id";
-import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import type {
   MissionHookRequirement,
   MissionType,
@@ -63,10 +62,10 @@ const MAP_EDGE_MARGIN = 2;
  *   MissionType.requiredHooks [{ kind, count, countPerDifficulty }]
  *   + { kind: "tech-carcass", count: 1 } when mapParams.techCarcass is set (#1171)
  *   + { kind: "generator", count: defence.generators } and the installation's
- *     building kind as the landmark when the mission is a defence (#1175)
+ *     composed site id when the mission is a defence (#1175)
  *          │  × difficulty, + HOOK_KIND_DEFAULTS[kind]
  *          ▼
- *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks, landmark? } }
+ *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks, site? } }
  * ```
  */
 export function missionToMapRecipe(
@@ -113,8 +112,7 @@ export function missionToMapRecipe(
       ...(mission.defence === undefined
         ? {}
         : {
-            landmark:
-              INSTALLATION_SITES[mission.defence.installation].buildingKind,
+            site: mission.defence.installation,
           }),
     },
   });

@@ -72,11 +72,11 @@ export interface TechCarcassParams {
  * ```
  */
 export interface InstallationDefence {
-  /** Which kind of installation is under attack; picks the landmark building. */
+  /** Which kind of installation is under attack; picks the authored facility site. */
   readonly installation: DeployableTypeId;
   /** The specific installation the offer was rolled for, for the map cue. */
   readonly deployableId: DeployableId;
-  /** Generators the map stands around the landmark; every one is an objective. */
+  /** Generators the map stands around the facility; every one is an objective. */
   readonly generators: number;
   /** Bug waves that will land before the mission can be completed. At least one. */
   readonly waves: number;

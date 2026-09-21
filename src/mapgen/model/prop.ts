@@ -30,6 +30,7 @@ export interface Prop {
 
 /** Where a prop may be selected; vegetation is explicit planting, excluding random yard clutter. */
 export type PropPlacement =
+  | "site"
   | "ground"
   | "vegetation"
   | "road"

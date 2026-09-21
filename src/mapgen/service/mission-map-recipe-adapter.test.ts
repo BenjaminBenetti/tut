@@ -99,11 +99,11 @@ describe("missionToMapRecipe", () => {
     expect(JSON.parse(JSON.stringify(priced))).toEqual(priced);
   });
 
-  it("names the installation as the landmark and asks for its generators only for a defence (#1175)", () => {
+  it("requests the composed installation site and asks for its generators only for a defence (#1175)", () => {
     const plain = unwrap(
       missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries),
     );
-    expect(plain.params.landmark).toBeUndefined();
+    expect(plain.params.site).toBeUndefined();
     expect(plain.params.hooks.some((h) => h.kind === HookKinds.GENERATOR)).toBe(
       false,
     );
@@ -122,7 +122,7 @@ describe("missionToMapRecipe", () => {
         registries,
       ),
     );
-    expect(defended.params.landmark).toBe("repellent-dispersal");
+    expect(defended.params.site).toBe("repellent-dispersal");
     const generators = defended.params.hooks.filter(
       (h) => h.kind === HookKinds.GENERATOR,
     );
@@ -137,10 +137,10 @@ describe("missionToMapRecipe", () => {
       defended.params.hooks.some((h) => h.kind === HookKinds.EGG_SPAWNER),
     ).toBe(false);
     expect(JSON.parse(JSON.stringify(defended))).toEqual(defended);
-    // And the generator accepts it: the landmark is on the map, its
+    // And the generator accepts it: the facility is on the map, its
     // generators around it.
     const map = generateTacticalMap(defended, { registries });
-    expect(map.buildings.some((b) => b.kind === "repellent-dispersal")).toBe(
+    expect(map.props.some((p) => p.kind === "installation-pump-house")).toBe(
       true,
     );
     expect(

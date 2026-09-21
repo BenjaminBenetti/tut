@@ -14,6 +14,13 @@
  * id here and an entry there in the same PR.
  */
 export const MODEL_IDS = [
+  "installation.sensor",
+  "installation.pump-house",
+  "installation.battery",
+  "installation.tanks",
+  "installation.spray-tower",
+  "installation.bank",
+
   "tile.ground.infested",
   "prop.infested-nest",
   "prop.car-infested",

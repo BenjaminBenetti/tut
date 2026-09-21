@@ -84,6 +84,8 @@ export interface MapGenParams {
    * decide every lot.
    */
   readonly landmark?: string;
+  /** Registered authored site, reserved before ordinary settlement lots. */
+  readonly site?: string;
   /**
    * Share of natural terrain edges that become walkable slopes rather
    * than cliffs, 0–1 (#799). Decided per connected run of edge tiles so a

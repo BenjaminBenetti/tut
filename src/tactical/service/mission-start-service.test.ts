@@ -741,10 +741,10 @@ describe("startTacticalMission on a defence (#1175)", () => {
     expect(tactical.edgeSpawn.totalWaves).toBe(5);
     // The installation itself stands on the map: a building of the
     // installation's kind, so the player defends something they built.
-    expect(tactical.map.recipe.params.landmark).toBe("repellent-dispersal");
+    expect(tactical.map.recipe.params.site).toBe("repellent-dispersal");
   });
 
-  it("leaves a clearance without a wave total, generators or a landmark", () => {
+  it("leaves a clearance without a wave total, generators or an authored site", () => {
     const { state, mission, deployment } = campaign();
     const tactical = unwrap(
       startTacticalMission(state, mission.id, deployment, deps()),
@@ -754,7 +754,7 @@ describe("startTacticalMission on a defence (#1175)", () => {
     expect(tactical.units.some((unit) => unit.kind === "generator")).toBe(
       false,
     );
-    expect(tactical.map.recipe.params.landmark).toBeUndefined();
+    expect(tactical.map.recipe.params.site).toBeUndefined();
   });
 });
 

@@ -21,6 +21,8 @@ export interface ResolvedMapGenParams {
   readonly hooks: readonly HookRequirement[];
   /** Building kind the map must contain, validated against the templates (#1175). */
   readonly landmark?: string;
+  /** Registered authored site, reserved before ordinary settlement lots. */
+  readonly site?: string;
   /** Natural-edge slope share, 0–1, defaulted (#799). */
   readonly slopeShare: number;
 }

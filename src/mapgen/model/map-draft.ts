@@ -1,3 +1,4 @@
+import type { MissionSitePlacement } from "./mission-site";
 import type { InfestationPlan } from "./infestation-plan";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
@@ -96,6 +97,7 @@ export class MapDraft {
   /** Scratch provenance: yard allocation, distinct from vegetation/street/interior props. */
   readonly yardPropIds = new Set<string>();
   readonly dropships: DropshipSite[] = [];
+  readonly sites: MissionSitePlacement[] = [];
   /** Colony districts planned before settlement parcels. Absent on clean maps. */
   infestation?: InfestationPlan;
   /** The production site pass ran; missing sites must not silently become legacy blobs. */
@@ -255,6 +257,16 @@ export class MapDraft {
   /** Land reserved for the aircraft, its circulation margin and external boarding. */
   isLandingReserved(x: number, z: number): boolean {
     return this.dropships.some((site) => rectContains(site.clearance, x, z));
+  }
+
+  /** Authored yards and their circulation shoulders exclude procedural development. */
+  isSiteReserved(x: number, z: number): boolean {
+    return this.sites.some((site) => rectContains(site.clearance, x, z));
+  }
+
+  /** Structural site props are permanent terrain for connectivity repair. */
+  isSiteStructure(id: string): boolean {
+    return this.sites.some((site) => site.structureIds.includes(id));
   }
 
   /** The full aircraft envelope is unavailable to units and hook placers. */

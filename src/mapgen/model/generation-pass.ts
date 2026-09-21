@@ -18,6 +18,7 @@ export type DraftCapability =
   | "water"
   | "roads"
   | "landing-sites"
+  | "mission-sites"
   | "infestation-plan"
   | "lots"
   | "elevation"

@@ -55,6 +55,8 @@ export const WALL_THICKNESS = 0.08;
  * supposed to mean "you".
  */
 export const SURFACE_COLOURS: Readonly<Record<string, number>> = {
+  paving: 0xa7a297,
+  hardstand: 0x3a3d42,
   infested: 0x73452e,
   grass: 0x5e7a3a,
   dirt: 0x7a6045,

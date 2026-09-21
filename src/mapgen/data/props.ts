@@ -7,6 +7,13 @@ import type { PropDefinition } from "../model/prop";
 
 /** Well-known prop kinds (ADR 0004 §4.4). Biomes may add more in data. */
 export const PropKindIds = {
+  INSTALLATION_SENSOR: "installation-sensor",
+  INSTALLATION_PUMP_HOUSE: "installation-pump-house",
+  INSTALLATION_TANKS: "installation-tanks",
+  INSTALLATION_SPRAY_TOWER: "installation-spray-tower",
+  INSTALLATION_BATTERY: "installation-battery",
+  INSTALLATION_BANK: "installation-bank",
+
   INFESTED_NEST: "infested-nest",
   INFESTED_HIVE: "infested-hive",
   INFESTED_CARAPACE_WALL_RIDGE: "infested-carapace-wall-ridge",
@@ -99,6 +106,55 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
  * tier: they are the ground, and no weapon on the arsenal moves it.
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
+  {
+    id: PropKindIds.INSTALLATION_SENSOR,
+    footprint: { w: 10, d: 8 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_PUMP_HOUSE,
+    footprint: { w: 8, d: 6 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_TANKS,
+    footprint: { w: 4, d: 6 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 7,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_SPRAY_TOWER,
+    footprint: { w: 3, d: 3 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 8,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_BATTERY,
+    footprint: { w: 12, d: 10 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_BANK,
+    footprint: { w: 12, d: 10 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 8,
+    placements: ["site"],
+  },
+
   ...[
     PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
     PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP,

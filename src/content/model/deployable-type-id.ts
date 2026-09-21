@@ -7,7 +7,7 @@
  * union so `DEPLOYABLE_TYPES` in `overworld/data` must define every
  * member and any table keyed by it fails to compile when one is
  * forgotten. Shared vocabulary (ADR 0002 §2.1): the overworld builds
- * and ticks them, map generation raises the matching landmark on a
+ * and ticks them, map generation raises the matching facility on a
  * defend-installation map (#1175), and the strategic map and the
  * briefing name them.
  */

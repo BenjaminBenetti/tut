@@ -263,7 +263,13 @@ function planRepairs(
     if (targets.has(key)) {
       return unwind(visits, key);
     }
-    for (const edge of edgesFrom(snapshot, current, unitClass, registries)) {
+    for (const edge of edgesFrom(
+      snapshot,
+      current,
+      unitClass,
+      registries,
+      draft,
+    )) {
       const nextKey = index.keyOf(edge.to);
       const cost = visit.cost + (edge.repair === undefined ? 0 : 1);
       const known = visits.get(nextKey);
@@ -304,6 +310,7 @@ function edgesFrom(
   from: Tile,
   unitClass: UnitClass,
   registries: MapGenRegistries,
+  draft: MapDraft,
 ): { to: Tile; repair?: Repair }[] {
   const { index, reach, links } = snapshot;
   const edges: { to: Tile; repair?: Repair }[] = [];
@@ -329,6 +336,7 @@ function edgesFrom(
         edges.push({ to: level });
       } else if (
         level.propId !== undefined &&
+        !draft.isSiteStructure(level.propId) &&
         surfaceAllows(registries, level, unitClass)
       ) {
         edges.push({
@@ -369,6 +377,7 @@ function edgesFrom(
       edges.push({ to: link.to });
     } else if (
       link.to.propId !== undefined &&
+      !draft.isSiteStructure(link.to.propId) &&
       surfaceAllows(registries, link.to, unitClass)
     ) {
       edges.push({

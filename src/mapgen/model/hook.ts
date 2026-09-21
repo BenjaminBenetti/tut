@@ -21,7 +21,7 @@ export const HookKinds = {
   TECH_CARCASS: "tech-carcass",
   /**
    * A generator the squad holds through timed bug waves (#1175): one
-   * point hook per generator, gathered around the map's landmark.
+   * point hook per generator, placed at its facility's service sockets.
    */
   GENERATOR: "generator",
 } as const;

@@ -12,6 +12,55 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "installation.sensor": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-sensor.glb",
+    footprint: { w: 10, d: 8 },
+    height: 7.15,
+    sockets: [],
+    quality: "final",
+  },
+  "installation.pump-house": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-pump-house.glb",
+    footprint: { w: 8, d: 6 },
+    height: 3.92,
+    sockets: [],
+    quality: "final",
+  },
+  "installation.battery": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-battery.glb",
+    footprint: { w: 12, d: 10 },
+    height: 5.12,
+    sockets: [],
+    quality: "final",
+  },
+  "installation.tanks": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-tanks.glb",
+    footprint: { w: 4, d: 6 },
+    height: 5.19,
+    sockets: [],
+    quality: "final",
+  },
+  "installation.spray-tower": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-spray-tower.glb",
+    footprint: { w: 3, d: 3 },
+    height: 5.59,
+    sockets: [],
+    quality: "final",
+  },
+  "installation.bank": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-bank.glb",
+    footprint: { w: 12, d: 10 },
+    height: 6.04,
+    sockets: [],
+    quality: "final",
+  },
+
   "tdf.mech.weapon-back.incendiary-launcher": {
     category: "units",
     path: "assets/models/units/tdf-mech-weapon-back-incendiary-launcher.glb",

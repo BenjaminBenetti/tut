@@ -4882,5 +4882,89 @@
     "quality": "final",
     "triangles": 3886,
     "bytes": 141724
+  },
+  {
+    "id": "installation.sensor",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-sensor.glb",
+    "footprint": {
+      "w": 10,
+      "d": 8
+    },
+    "height": 7.15,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 704,
+    "bytes": 51780
+  },
+  {
+    "id": "installation.pump-house",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-pump-house.glb",
+    "footprint": {
+      "w": 8,
+      "d": 6
+    },
+    "height": 3.92,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 372,
+    "bytes": 30876
+  },
+  {
+    "id": "installation.battery",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-battery.glb",
+    "footprint": {
+      "w": 12,
+      "d": 10
+    },
+    "height": 5.12,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 480,
+    "bytes": 38684
+  },
+  {
+    "id": "installation.tanks",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-tanks.glb",
+    "footprint": {
+      "w": 4,
+      "d": 6
+    },
+    "height": 5.19,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 540,
+    "bytes": 38168
+  },
+  {
+    "id": "installation.spray-tower",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-spray-tower.glb",
+    "footprint": {
+      "w": 3,
+      "d": 3
+    },
+    "height": 5.59,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 324,
+    "bytes": 26436
+  },
+  {
+    "id": "installation.bank",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-bank.glb",
+    "footprint": {
+      "w": 12,
+      "d": 10
+    },
+    "height": 6.04,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 552,
+    "bytes": 44924
   }
 ]

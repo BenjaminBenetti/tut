@@ -134,6 +134,7 @@ function supportsCourtyard(context: GenerationContext, rect: Rect): boolean {
         x >= draft.width - 1 ||
         z >= draft.depth - 1 ||
         draft.isLandingReserved(x, z) ||
+        draft.isSiteReserved(x, z) ||
         registries.surfaces.get(draft.groundSurfaceAt(x, z)).defaultPass !==
           PassMask.ALL ||
         infestationPressure(draft, x, z) < CARAPACE_SITE_TUNING.minimumPressure
@@ -245,7 +246,10 @@ function canStand(
 ): boolean {
   return (
     draft.inBounds(tile.x, tile.z) &&
-    !draft.isLandingReserved(tile.x, tile.z) &&
+    !(
+      draft.isLandingReserved(tile.x, tile.z) ||
+      draft.isSiteReserved(tile.x, tile.z)
+    ) &&
     !draft.isCovered(tile.x, tile.z) &&
     !draft.propAt(draft.groundCoord(tile.x, tile.z)) &&
     Object.keys(draft.wallsAt(draft.groundCoord(tile.x, tile.z))).length ===

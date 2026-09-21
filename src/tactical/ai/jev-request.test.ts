@@ -46,7 +46,11 @@ describe("Jev observation", () => {
     const unseen = state.map.tiles.find(
       (tile) => !state.vision.tdf.visible.includes(index.keyOf(tile)),
     )!;
-    const before = captureJev(state, "self", rules);
+    const before = captureJev(state, "self", rules, undefined, {
+      self: "Alpha",
+      hidden: "Secret enemy name",
+      undeployed: "Undeployed squad name",
+    });
     const changed = {
       ...state,
       units: state.units.map((unit) =>
@@ -79,7 +83,15 @@ describe("Jev observation", () => {
         ),
       },
     };
-    expect(captureJev(changed, "self", rules)).toEqual(before);
+    expect(
+      captureJev(changed, "self", rules, undefined, {
+        self: "Alpha",
+        hidden: "Changed secret enemy name",
+      }),
+    ).toEqual(before);
+    expect(before.state.actor).toMatchObject({ name: "Alpha" });
+    expect(JSON.stringify(before.state)).not.toContain("enemy name");
+    expect(JSON.stringify(before.state)).not.toContain("Undeployed");
     expect(JSON.stringify(before.state)).not.toContain('"hidden"');
     expect(before.state).not.toHaveProperty("seed");
     expect(before.state).not.toHaveProperty("log");
@@ -102,6 +114,18 @@ describe("Jev observation", () => {
     expect(bug.team).toBe("bugs");
     expect(bug.eligible).toBe(false);
     expect(bug.candidates.map((candidate) => candidate.id)).toEqual(["finish"]);
+  });
+  it("explains combined terrain masks and the actor's movement class", () => {
+    const snapshot = captureJev(fixture(), "self", rules);
+    expect(snapshot.state.actor).toMatchObject({ movement_class: "infantry" });
+    const navigation = snapshot.state.navigation as Record<string, unknown>;
+    expect(navigation.passMask).toEqual({
+      0: "Blocked for all movement classes",
+      1: "Infantry movement class only",
+      2: "Mech movement class only",
+      3: "Both infantry and mech movement classes",
+    });
+    expect(navigation.tiles).toContainEqual([1, 0, 5, 3, 0, {}, false, true]);
   });
   it("remembers observed terrain without refreshing it from unseen changes", () => {
     let state = fixture();

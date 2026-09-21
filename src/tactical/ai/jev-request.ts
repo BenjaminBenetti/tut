@@ -9,12 +9,13 @@ import { jevPerception, jevState } from "./jev-observation";
 import { jevCandidates } from "./jev-actions";
 import type { JevActionRules } from "./jev-actions";
 
-/** Capture an actor's exact current state; inspection does not grant AP or change the phase. */
+/** Capture current state with injected roster names; only perceived units reach the snapshot. */
 export function captureJev(
   mission: TacticalState,
   unitId: string,
   rules: JevActionRules,
   prompts?: { readonly entity: string; readonly commander: string },
+  unitNames: Readonly<Record<string, string>> = {},
 ): JevSnapshot {
   const actor = mission.units.find((unit) => unit.id === unitId);
   if (!actor) throw new Error("Select a living tactical entity.");
@@ -30,6 +31,7 @@ export function captureJev(
     actor,
     prompts?.entity ?? mission.jev?.entities[unitId]?.entityPrompt ?? "",
     prompts?.commander ?? mission.jev?.commanders[actor.team] ?? "",
+    unitNames,
   );
   const snapshot: JevSnapshot = {
     missionId: mission.missionId,

@@ -1,4 +1,5 @@
 import type { CampaignStore } from "../../ui/model/game-session";
+import { namesFor } from "../../ui/service/tactical-error-text";
 import type {
   JevInspector,
   JevTrace,
@@ -60,14 +61,19 @@ export class JevController implements JevInspector {
   mission(): TacticalState | undefined {
     return this.store.getState().activeMission;
   }
-  /** Freeze an observation using the same catalogue that automatic play uses. */
+  /** Freeze an observation with the HUD's roster names and automatic play's catalogue. */
   capture(
     unitId: string,
     prompts?: { entity: string; commander: string },
   ): JevSnapshot {
-    const mission = this.mission();
+    const campaign = this.store.getState();
+    const mission = campaign.activeMission;
     if (!mission) throw new Error("No active mission");
-    return captureJev(mission, unitId, this.rules, prompts);
+    const names = namesFor(mission, campaign);
+    const unitNames = Object.fromEntries(
+      mission.units.map((unit) => [unit.id, names.unit(unit.id)]),
+    );
+    return captureJev(mission, unitId, this.rules, prompts, unitNames);
   }
   /** Evaluate a frozen snapshot without applying its action. */
   async evaluate(snapshot: JevSnapshot): Promise<void> {

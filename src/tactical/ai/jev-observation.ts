@@ -1,4 +1,5 @@
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { PassMask } from "../../mapgen/model/pass-mask";
 import type { TacticalState } from "../model/tactical-state";
 import { NO_VISION } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
@@ -104,6 +105,7 @@ export function jevState(
   actor: Unit,
   entityPrompt: string,
   commanderPrompt: string,
+  unitNames: Readonly<Record<string, string>>,
 ): Readonly<Record<string, unknown>> {
   const vision = view.vision[actor.team];
   const index = new TileIndex(view.map);
@@ -119,7 +121,7 @@ export function jevState(
   return {
     entity_prompt: entityPrompt,
     commander_prompt: commanderPrompt,
-    actor: describeUnit(view, actor, true),
+    actor: describeUnit(view, actor, true, unitNames[actor.id]),
     turn: mission.turn,
     phase: mission.phase,
     faction: actor.team,
@@ -136,7 +138,12 @@ export function jevState(
         "blocksSight",
         "visible",
       ],
-      passMask: { infantry: 1, mech: 2 },
+      passMask: {
+        [PassMask.NONE]: "Blocked for all movement classes",
+        [PassMask.INFANTRY]: "Infantry movement class only",
+        [PassMask.MECH]: "Mech movement class only",
+        [PassMask.ALL]: "Both infantry and mech movement classes",
+      },
       cover: { none: 0, low: 1, high: 2 },
       tiles: localTiles.map((tile) => [
         tile.x,
@@ -158,7 +165,9 @@ export function jevState(
     },
     entities: view.units
       .filter((unit) => unit.id !== actor.id && unit.hp > 0)
-      .map((unit) => describeUnit(view, unit, unit.team === actor.team)),
+      .map((unit) =>
+        describeUnit(view, unit, unit.team === actor.team, unitNames[unit.id]),
+      ),
     visible_spawners: view.spawners.map(({ id, pos, hp, destroyed }) => ({
       id,
       pos,
@@ -193,17 +202,21 @@ export function jevState(
   };
 }
 
-/** Enemy dynamic resources are not known merely because its model is visible. */
+/** Separate roster identity from type; visible enemies do not disclose private resources. */
 function describeUnit(
   view: TacticalState,
   unit: Unit,
   friendly: boolean,
+  name: string | undefined,
 ): Readonly<Record<string, unknown>> {
   const template = view.templates[unit.templateId];
   return {
     id: unit.id,
-    name: template?.name,
+    name: name ?? template?.name,
+    // Mech templates carry their given name, unlike squad types and bug species.
+    type: unit.kind === "mech" ? "Mech" : template?.name,
     kind: unit.kind,
+    movement_class: unit.passClass,
     faction: unit.team,
     relationship: friendly ? "friendly" : "hostile",
     position: unit.pos,

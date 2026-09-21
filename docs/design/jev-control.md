@@ -4,7 +4,7 @@ Jev control is opt-in per tactical unit and uses **shared faction vision**. The 
 
 ## Run locally
 
-Put the runtime secret in the ignored `.env`:
+Put the runtime secret in the repository root's ignored `.env`. There is no API-key field in the UI; only the relay reads the key:
 
 ```dotenv
 JevKey=your-key
@@ -18,6 +18,8 @@ Start both services together:
 ```
 
 Open `http://localhost:5173`. Ctrl+C stops both services; if either exits, the script stops the other too. Run `pnpm install` first on a fresh checkout.
+
+Restart `./run.sh` after changing the key so the relay reloads it. A hosted relay receives `JevKey` as a container environment variable.
 
 Alternatively, run these in separate terminals:
 
@@ -40,6 +42,10 @@ Development defaults to `http://localhost:8080`. To use another relay, set `VITE
 6. Use **History** for actual automatic decisions or earlier previews. Old snapshots remain labelled as old. For grouped choices, State/Questions show the latest exchange, and Output/export retains every exchange.
 7. **Copy request & output** or **Export JSON** provides a reproducible diagnostic artifact without credentials.
 8. To enable autonomous control, check **Jev controls this entity**, press **Save control & prompts**, then close the inspector. Uncheck and save to restore normal control. Saving the commander prompt changes orders for the entire selected faction in this mission.
+
+The actor and observed entities carry both `name` (the roster identity, such as `Alpha` or `Hammerhead`) and `type` (such as `Rifle Squad`, `Mech`, or a bug species). Names match the game's unit labels, so an order such as “follow Alpha” can reference that entity's position and capabilities. Units without a roster identity use their template name. Fog-of-war filtering still applies to every entity.
+
+Navigation's `passMask` is a bitmask: `0` blocks both movement classes, `1` permits infantry, `2` permits mechs, and `3` (`1 | 2`) permits both. The state includes the complete legend and each entity's `movement_class`; bugs can use the infantry movement class too. The same mask applies to connector `pass` values. Occupancy, walls and other movement rules still determine legal paths.
 
 An entity outside its faction's phase, out of AP or dead cannot act; the captured state says so and offers finish. History still shows its last real decision. To evaluate a bug's decision while it can act, enable it and inspect its automatic trace, or pause at its phase through development tools. Turrets and other passive equipment retain their existing automatic abilities; attaching instructions does not grant them new AP or movement.
 

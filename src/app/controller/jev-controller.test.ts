@@ -11,6 +11,7 @@ import {
   missionWith,
   unitAt,
   openField,
+  FIXTURE_TEMPLATES,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import { withVision } from "../../tactical/service/vision-service";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
@@ -73,6 +74,95 @@ const instant = () => ({
 });
 
 describe("Jev control", () => {
+  it("sends roster identities for named orders, separately from shared unit types", async () => {
+    const campaign = campaignOnDay(1, []);
+    const roster = {
+      ...campaign.roster,
+      squads: [
+        { ...campaign.roster.squads[0]!, id: "squad-alpha", name: "Alpha" },
+        { ...campaign.roster.squads[0]!, id: "squad-bravo", name: "Bravo" },
+      ],
+      mechs: [
+        { ...campaign.roster.mechs[0]!, id: "mech-hammer", name: "Hammerhead" },
+      ],
+    };
+    const base = missionWith(openField().build(), [
+      {
+        ...unitAt("unit-alpha", "infantry", { x: 0, y: 0, z: 0 }),
+        sourceId: "squad-alpha",
+      },
+      {
+        ...unitAt("unit-bravo", "infantry", { x: 1, y: 0, z: 0 }),
+        sourceId: "squad-bravo",
+      },
+      {
+        ...unitAt("unit-hammer", "mech", { x: 2, y: 0, z: 0 }),
+        sourceId: "mech-hammer",
+      },
+      unitAt("unit-bug", "infantry", { x: 3, y: 0, z: 0 }, { team: "bugs" }),
+    ]);
+    const templates = {
+      ...base.templates,
+      [FIXTURE_TEMPLATES.infantry]: {
+        ...base.templates[FIXTURE_TEMPLATES.infantry]!,
+        name: "Rifle Squad",
+      },
+      [FIXTURE_TEMPLATES.bug]: {
+        ...base.templates[FIXTURE_TEMPLATES.bug]!,
+        name: "Swarmer",
+      },
+    };
+    const transport = instant();
+    const { controller } = setup(transport, {
+      ...campaign,
+      roster,
+      activeMission: withVision({
+        state: { ...base, templates },
+        events: [],
+      }).state,
+    });
+    const snapshot = controller.capture("unit-bravo", {
+      entity: "Follow Alpha",
+      commander: "Keep Hammerhead covered",
+    });
+    await controller.evaluate(snapshot);
+    const sent = transport.ask.mock.calls[0]?.[0].state;
+    expect(sent).toMatchObject({
+      entity_prompt: "Follow Alpha",
+      commander_prompt: "Keep Hammerhead covered",
+      actor: { id: "unit-bravo", name: "Bravo", type: "Rifle Squad" },
+    });
+    expect(sent?.entities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "unit-alpha",
+          name: "Alpha",
+          type: "Rifle Squad",
+          position: { x: 0, y: 0, z: 0 },
+        }),
+        expect.objectContaining({
+          id: "unit-hammer",
+          name: "Hammerhead",
+          type: "Mech",
+        }),
+        expect.objectContaining({
+          id: "unit-bug",
+          name: "Swarmer",
+          type: "Swarmer",
+          relationship: "hostile",
+        }),
+      ]),
+    );
+    expect(controller.capture("unit-hammer").state.actor).toMatchObject({
+      name: "Hammerhead",
+      type: "Mech",
+      movement_class: "mech",
+    });
+    expect(controller.capture("unit-bug").state.entities).toContainEqual(
+      expect.objectContaining({ name: "Alpha", relationship: "hostile" }),
+    );
+    controller.dispose();
+  });
   it("makes no requests by default, and previews do not mutate the mission", async () => {
     const transport = instant();
     const { store, controller } = setup(transport);

@@ -98,6 +98,21 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     "Preserve yourself and stay in cover.",
   );
   expect(requests[0]?.state.commander_prompt).toBe("Hold the extraction zone.");
+  const campaign = (JSON.parse(before!) as SaveEnvelope<GameState>).state;
+  const observation = requests[0].state;
+  const entities = [observation.actor, ...(observation.entities as unknown[])];
+  for (const unit of campaign.activeMission!.units.filter(
+    (unit) => unit.team === "tdf",
+  )) {
+    const rosterEntry = [
+      ...campaign.roster.squads,
+      ...campaign.roster.mechs,
+    ].find((entry) => entry.id === unit.sourceId);
+    expect(rosterEntry).toBeDefined();
+    expect(entities).toContainEqual(
+      expect.objectContaining({ id: unit.id, name: rosterEntry!.name }),
+    );
+  }
   const shownState = JSON.parse(
     await page.getByTestId("jev-state").inputValue(),
   ) as unknown;

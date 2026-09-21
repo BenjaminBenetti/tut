@@ -27,6 +27,7 @@ env:
   CI: true
   # Pages serves the site under /<repo>/, so assets and icon URLs need this base.
   TUT_BASE_PATH: /tut/
+  VITE_JEV_RELAY_URL: ${{ vars.JEV_RELAY_URL }}
 
 jobs:
   verify:
@@ -44,6 +45,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm test:relay
       - run: pnpm build
       - name: Zip dist
         run: (cd dist && zip -qr "../tut-${GITHUB_REF_NAME}.zip" .)
@@ -94,3 +96,32 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  relay:
+    name: Publish Jev relay container
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: relay/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/benjaminbenetti/tut-jev-relay:${{ github.ref_name }}
+            ghcr.io/benjaminbenetti/tut-jev-relay:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/BenjaminBenetti/tut
+            org.opencontainers.image.revision=${{ github.sha }}

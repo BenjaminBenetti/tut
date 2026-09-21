@@ -649,6 +649,16 @@ const ADD_TURRETS: Migration = {
   },
 };
 
+/** v26 → v27: old saves keep Jev absent/off; the version prevents old builds resuming an external phase. */
+const ADD_JEV_CONTROL: Migration = {
+  from: 26,
+  to: 27,
+  apply(state) {
+    if (!isRecord(state)) throw new Error("v26 state is not an object");
+    return state;
+  },
+};
+
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
@@ -675,4 +685,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_CITY_POPULATION,
   ADD_DEPLOYABLE_LEVELS,
   ADD_TECH_POINTS,
+  ADD_JEV_CONTROL,
 ];

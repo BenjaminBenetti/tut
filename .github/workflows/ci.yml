@@ -35,4 +35,20 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm test:relay
       - run: pnpm build
+  relay-container:
+    name: relay container smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -f relay/Dockerfile -t tut-jev-relay:test .
+      - name: Check runtime health without an upstream request
+        run: |
+          docker run -d --name jev-relay -p 8081:8081 -e PORT=8081 -e JevKey=container-smoke-test tut-jev-relay:test
+          curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://localhost:8081/health
+          docker exec jev-relay node -e "if(process.getuid()===0)process.exit(1)"
+      - name: Container logs
+        if: always()
+        run: docker logs jev-relay

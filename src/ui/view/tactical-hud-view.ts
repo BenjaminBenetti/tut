@@ -1,3 +1,5 @@
+import type { JevInspector } from "../model/jev-inspector";
+import { JevInspectorView } from "./jev-inspector-view";
 import { mechAction } from "../../tactical/model/mech-action-command";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -184,6 +186,8 @@ export interface TacticalHudHandlers {
 
 /** What the HUD needs injected. */
 export interface TacticalHudDeps {
+  /** App controller's inspector port; its menu is gated by development tools. */
+  readonly jev?: JevInspector;
   /** Tuning handed to `previewAttack`; the HUD never computes a number itself. */
   readonly combatTuning: CombatTuning;
   /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
@@ -381,6 +385,8 @@ export class TacticalHudView {
   private sideOverflow: { readonly dispose: () => void } | undefined;
   /** Torn down with the HUD; keeps panel clicks off the map picker. */
   private pointerGuard: { readonly dispose: () => void } | undefined;
+  /** Jev inspection is built only in a dev build. */
+  private readonly jevInspector: JevInspectorView | undefined;
   /** The development tools' panel (#1136); built only in a dev build. */
   private readonly debugMenu: DebugMenuView | undefined;
   /** The bug button that opens it, at the bottom left of the bar. */
@@ -431,6 +437,8 @@ export class TacticalHudView {
       },
       deps.shortcuts ?? {},
     );
+    this.jevInspector =
+      deps.devTools && deps.jev ? new JevInspectorView(deps.jev) : undefined;
     this.debugMenu =
       deps.devTools === undefined
         ? undefined
@@ -525,6 +533,7 @@ export class TacticalHudView {
     this.actions.mount(bottom);
     hud.append(top, rail, side, bottom);
     this.debugMenu?.mount(hud);
+    this.jevInspector?.mount(hud, bottom);
     this.watchSideOverflow(panels);
     this.watchSideOverflow(side);
     this.guardPointer(hud);
@@ -633,6 +642,7 @@ export class TacticalHudView {
     this.sideOverflow?.dispose();
     this.sideOverflow = undefined;
     this.debugMenu?.unmount();
+    this.jevInspector?.unmount();
     this.debugToggle = undefined;
     this.debugOpen = false;
     this.armedPlacement = undefined;
@@ -2121,6 +2131,7 @@ export class TacticalHudView {
 
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
+    this.jevInspector?.update(this.inspectedUnitId());
     this.debugMenu?.update({
       open: this.debugOpen,
       armed: this.armedPlacement,

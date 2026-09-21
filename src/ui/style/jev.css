@@ -1,0 +1,77 @@
+.tut-panel.tut-jev {
+  position: absolute;
+  inset: 3rem 1rem 5rem;
+  z-index: 80;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  overflow: auto;
+  background: #101b22;
+  color: #e2edf0;
+  border: 1px solid #577985;
+}
+.tut-jev[hidden] {
+  display: none;
+}
+.tut-jev header,
+.tut-jev__controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tut-jev header {
+  justify-content: space-between;
+}
+.tut-jev p {
+  margin: 0;
+  color: #acc9d0;
+  font-size: 0.8rem;
+}
+.tut-jev__prompts,
+.tut-jev__panes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.tut-jev__panes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex: 1;
+  min-height: 14rem;
+}
+.tut-jev label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  min-width: 0;
+}
+.tut-jev__controls label {
+  flex-direction: row;
+}
+.tut-jev textarea,
+.tut-jev select {
+  background: #081116;
+  color: #dbedf0;
+  border: 1px solid #365965;
+  border-radius: 3px;
+  padding: 0.5rem;
+}
+.tut-jev textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 4rem;
+  font: 12px/1.45 monospace;
+}
+.tut-jev__panes textarea {
+  flex: 1;
+  min-height: 12rem;
+}
+@media (max-width: 850px) {
+  .tut-jev__panes {
+    grid-template-columns: 1fr;
+  }
+}

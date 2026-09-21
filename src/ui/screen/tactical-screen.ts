@@ -1,3 +1,4 @@
+import type { JevInspector } from "../model/jev-inspector";
 import type { CommandError } from "../../core/model/command-error";
 import type { Unsubscribe } from "../../core/model/event-bus";
 import { findCity } from "../../overworld/service/earth-map-query-service";
@@ -36,6 +37,8 @@ import { actorOf, describeEvent } from "../view/event-vocabulary";
 
 /** What the tactical screen needs from the app. */
 export interface TacticalScreenDeps {
+  /** App-owned asynchronous controller, shared with the dev inspector. */
+  readonly jev?: JevInspector;
   readonly router: ScreenRouter;
   readonly session: GameSession;
   /** Tuning the HUD hands to `previewAttack`; the screen computes no number itself. */
@@ -276,6 +279,7 @@ export class TacticalScreen implements Screen {
           deps.sceneHost?.unitHeadScreenPosition(unitId),
       },
       {
+        jev: deps.jev,
         combatTuning: deps.combatTuning,
         objectiveTuning: deps.objectiveTuning,
         rankTuning: deps.rankTuning,
@@ -349,10 +353,12 @@ export class TacticalScreen implements Screen {
     this.unsubscribe = store?.subscribe((change) => {
       this.render(change.state, tacticalEventsOf(change.events));
     });
+    this.deps.jev?.start();
   }
 
   /** Unsubscribes, releases the lock and the scene, and removes the layout. */
   unmount(): void {
+    this.deps.jev?.dispose();
     this.unsubscribe?.();
     this.unsubscribe = undefined;
     const body = this.root?.ownerDocument.body;

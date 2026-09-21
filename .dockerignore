@@ -1,0 +1,4 @@
+**
+!relay/
+!relay/*.mjs
+relay/*.test.mjs

@@ -7,6 +7,9 @@ test-results/
 *.tsbuildinfo
 .eslintcache
 *.local
+.env
+.env.*
+!.env.example
 .DS_Store
 
 # Producer grooming scratch output

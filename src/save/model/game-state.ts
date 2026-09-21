@@ -53,8 +53,10 @@ import type { TechState } from "../../tech/model/tech-state";
  *   `tech` slice, `missions[].rewards.techPoints`,
  *   `lastMissionResult.techPointsAwarded` and `activeMission.carcasses`.
  *   Older saves have earned and unlocked nothing.
+ * - `27`: optional mission Jev controls, faction knowledge and resumable
+ *   activation progress. Older saves leave Jev disabled.
  */
-export const GAME_STATE_SCHEMA_VERSION = 26;
+export const GAME_STATE_SCHEMA_VERSION = 27;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

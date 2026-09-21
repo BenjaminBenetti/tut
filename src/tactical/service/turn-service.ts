@@ -1,5 +1,6 @@
+import { jevFinished, startJevPhase } from "./jev-control-service";
 import { refreshMechSystems } from "./mech-heat-service";
-import { ok } from "../../core/model/result";
+import { err, ok } from "../../core/model/result";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { EndTurnCommand } from "../model/end-turn-command";
@@ -134,8 +135,25 @@ export function createEndTurnHandler(
     if (outcome !== undefined) {
       return ok(endMission(mission, outcome));
     }
+    if (
+      mission.phase === "bugs" &&
+      mission.jev?.activation?.externalBugs &&
+      mission.units.some(
+        (unit) =>
+          unit.team === "bugs" && unit.hp > 0 && !jevFinished(mission, unit.id),
+      )
+    ) {
+      return err({
+        kind: "systems-unavailable",
+        reason: "The current bug activations have not finished",
+      });
+    }
     const opened = openNextPhase(mission, steps, ctx);
-    if (opened.state.phase !== "bugs" || bugPhase === undefined) {
+    if (
+      opened.state.phase !== "bugs" ||
+      bugPhase === undefined ||
+      opened.state.jev?.activation?.externalBugs === true
+    ) {
       return ok(endIfDecided(opened));
     }
     const played = bugPhase(opened.state, ctx);
@@ -197,7 +215,7 @@ function openNextPhase(
     state = applied.state;
     events.push(...applied.events);
   }
-  return { state, events };
+  return { state: startJevPhase(state), events };
 }
 
 // ===========================================

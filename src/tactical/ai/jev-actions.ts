@@ -4,7 +4,11 @@ import { SequentialIdGenerator } from "../../core/service/sequential-id-generato
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { CombatTuning } from "../model/combat-tuning";
-import type { JevCandidate, JevActionCommand } from "../model/jev-control";
+import type {
+  JevCandidate,
+  JevActionCommand,
+  JevActionType,
+} from "../model/jev-control";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { attack, attackTile } from "../model/attack-command";
@@ -60,14 +64,17 @@ export function jevCandidates(
     },
   ];
   if (actor.hp <= 0 || actor.ap <= 0 || view.outcome) return candidates;
+  /** Retain the executable command and its specific weapon/item routing identity together. */
   const add = (
     category: string,
     command: JevActionCommand,
     details: unknown,
+    actionType?: JevActionType,
   ): void => {
     candidates.push({
       id: `action-${String(candidates.length)}`,
       category,
+      actionType,
       command,
       description: JSON.stringify({
         action: category,
@@ -139,6 +146,26 @@ export function jevCandidates(
     const apCost = attackEndsTurn(weapon.profile, actor.kind, rules.combat)
       ? actor.ap
       : rules.combat.attackApCost;
+    const capability = {
+      weapon_id: weapon.id,
+      weapon: weapon.name,
+      ap_cost: apCost,
+      profile: weapon.profile,
+    };
+    const targetedAttack: JevActionType = {
+      id: `attack:${weapon.id}`,
+      name: `Attack with ${weapon.name}`,
+      purpose:
+        "Use this specific weapon against a visible enemy unit or nest; choose the target next.",
+      capability,
+    };
+    const groundAttack: JevActionType = {
+      id: `attack-ground:${weapon.id}`,
+      name: `Attack ground with ${weapon.name}`,
+      purpose:
+        "Use this specific weapon against terrain or an area; choose the tile next, considering blast effects and friendly fire.",
+      capability,
+    };
     for (const target of targets) {
       const preview = previewAttack(
         view,
@@ -148,11 +175,16 @@ export function jevCandidates(
         weapon.id,
       );
       if (preview.ok)
-        add("attack", attack(actor.id, target.id, weapon.id), {
-          weapon: weapon.name,
-          ap_cost: apCost,
-          ...previewFacts(preview.value),
-        });
+        add(
+          "attack",
+          attack(actor.id, target.id, weapon.id),
+          {
+            weapon: weapon.name,
+            ap_cost: apCost,
+            ...previewFacts(preview.value),
+          },
+          targetedAttack,
+        );
     }
     if (!canTargetTile(weapon.profile)) continue;
     for (const tile of view.map.tiles) {
@@ -177,6 +209,7 @@ export function jevCandidates(
             ap_cost: apCost,
             ...previewFacts(preview.value),
           },
+          groundAttack,
         );
     }
   }
@@ -230,10 +263,21 @@ export function jevCandidates(
           graph,
         ).ok
       )
-        add("equipment", useEquipment(actor.id, item.definition.id, pos), {
-          ...item.definition,
-          uses_left: item.usesLeft,
-        });
+        add(
+          "equipment",
+          useEquipment(actor.id, item.definition.id, pos),
+          {
+            ...item.definition,
+            uses_left: item.usesLeft,
+          },
+          {
+            id: `equipment:${item.definition.id}`,
+            name: `Use ${item.definition.name}`,
+            purpose:
+              "Use this specific item with the effect described in capability; choose its target tile next.",
+            capability: { ...item.definition, uses_left: item.usesLeft },
+          },
+        );
     }
   }
   const other = [

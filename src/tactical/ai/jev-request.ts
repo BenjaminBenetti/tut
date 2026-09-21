@@ -91,24 +91,28 @@ const ACTION_TYPES: Readonly<Record<string, string>> = {
   "harvest-carcass": "Harvest a visible bug carcass for tech points.",
 };
 
-/** Always ask for an action type first; follow-ups contain only that type, with bounded detail pages. */
+/** Route by the actor's specific weapon/mode or item; follow-ups contain only that action's targets. */
 export function jevChoicePage(
   snapshot: JevSnapshot,
   candidates?: readonly JevCandidate[],
 ): JevChoicePage {
   if (candidates === undefined) {
     const groups: Record<string, JevCandidate[]> = {};
-    for (const candidate of snapshot.candidates)
-      (groups[candidate.category] ??= []).push(candidate);
+    for (const candidate of snapshot.candidates) {
+      const id = candidate.actionType?.id ?? candidate.category;
+      (groups[id] ??= []).push(candidate);
+    }
     return choicePage(
       snapshot,
       "action-type",
       Object.fromEntries(
-        Object.entries(groups).map(([category, items]) => [
-          category,
+        Object.entries(groups).map(([id, items]) => [
+          id,
           {
-            action: category,
-            purpose: ACTION_TYPES[category] ?? category,
+            action: id,
+            ...(items[0]?.actionType ?? {
+              purpose: ACTION_TYPES[id] ?? id,
+            }),
             available_options: items.length,
           },
         ]),
@@ -180,10 +184,10 @@ function choicePage(
 ): JevChoicePage {
   const task =
     stage === "action-type"
-      ? "Choose the best TYPE of action to take next. Only available types are listed. Concrete targets and destinations will be chosen in a separate request containing only that type. Choose finish when no further action is useful."
+      ? "Choose the best specific action to take next. Each available weapon and firing mode, usable item, and other ability is listed separately for this actor. Choose the weapon or item now; its target or destination will be selected in a follow-up containing ONLY that action. Choose finish when no further action is useful."
       : stage === "action-group"
         ? "The action type has been chosen. Choose a region or target group within that type; a subsequent request will choose the concrete action."
-        : "The action type has been chosen. Choose the best concrete action from ONLY the offered options of that type.";
+        : "The specific action, including its weapon or item, has been chosen. Choose the best target or destination from ONLY the offered options for that action.";
   return {
     stage,
     groups,
@@ -227,7 +231,7 @@ function describeGroup(
     return payload && "targetId" in payload ? [payload.targetId] : [];
   });
   return {
-    action: candidates[0]?.category,
+    action: candidates[0]?.actionType?.id ?? candidates[0]?.category,
     count: candidates.length,
     ...(positions.length
       ? {

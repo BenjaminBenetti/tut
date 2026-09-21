@@ -103,6 +103,12 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
   );
   expect(requests[0]?.state.commander_prompt).toBe("Hold the extraction zone.");
   expect(requests[0]?.questions.action.criteria).toHaveProperty("move");
+  // The starter mech's ground-fire options name its actual weapons, not a shared attack bucket.
+  const top = requests[0].questions.action.criteria;
+  expect(top).not.toHaveProperty("attack-ground");
+  expect(top).not.toHaveProperty("equipment");
+  expect(JSON.stringify(top)).toContain("Autocannon");
+  expect(JSON.stringify(top)).toContain("Missile Pod");
   expect(
     Object.keys(requests[0].questions.action.criteria).some((id) =>
       id.startsWith("action-"),

@@ -60,10 +60,20 @@ export interface JevControl {
   }[];
 }
 
+/** One loadout-specific action offered before choosing its target or destination. */
+export interface JevActionType {
+  readonly id: string;
+  readonly name: string;
+  readonly purpose: string;
+  readonly capability: Readonly<Record<string, unknown>>;
+}
+
 /** One executable option and its factual explanation for Jev and the inspector. */
 export interface JevCandidate {
   readonly id: string;
   readonly category: string;
+  /** Separates each weapon/firing mode and usable item within a broad command category. */
+  readonly actionType?: JevActionType;
   readonly description: string;
   readonly command?: JevActionCommand;
 }

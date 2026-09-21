@@ -6,6 +6,7 @@ import {
   openField,
   unitAt,
   walledField,
+  FIXTURE_TEMPLATES,
 } from "../service/tactical-fixtures.test-helper";
 import { withVision } from "../service/vision-service";
 import { rememberJevTerrain } from "../service/jev-knowledge-service";
@@ -38,7 +39,134 @@ function fixture(): TacticalState {
   return withVision({ state, events: [] }).state;
 }
 
+/** An injured actor with two weapons, a grenade, healing and a deployable. */
+function loadoutFixture(): TacticalState {
+  const base = missionWith(openField().build(), [
+    unitAt("self", "infantry", { x: 1, y: 0, z: 1 }, { hp: 7 }),
+    unitAt("enemy", "infantry", { x: 3, y: 0, z: 1 }, { team: "bugs" }),
+  ]);
+  const template = base.templates[FIXTURE_TEMPLATES.infantry]!;
+  const weapon = template.weapons[0]!;
+  return withVision({
+    state: {
+      ...base,
+      templates: {
+        ...base.templates,
+        [template.id]: {
+          ...template,
+          weapons: [
+            { ...weapon, id: "carbine", name: "Carbine", charges: 3 },
+            {
+              ...weapon,
+              id: "cannon",
+              name: "Autocannon",
+              charges: 3,
+              profile: { ...weapon.profile, demoForce: 1 },
+            },
+          ],
+          equipment: ["grenade", "medkit", "radar-dish"],
+        },
+      },
+    },
+    events: [],
+  }).state;
+}
+
 describe("Jev observation", () => {
+  it("offers each usable weapon, firing mode and item at the top level and isolates their follow-ups", () => {
+    const snapshot = captureJev(loadoutFixture(), "self", rules);
+    const first = jevChoicePage(snapshot);
+    const criteria = first.request.questions.action!.criteria;
+    expect(Object.keys(criteria)).toEqual(
+      expect.arrayContaining([
+        "attack:carbine",
+        "attack:cannon",
+        "attack-ground:cannon",
+        "equipment:grenade",
+        "equipment:medkit",
+        "equipment:radar-dish",
+        "move",
+        "overwatch",
+        "finish",
+      ]),
+    );
+    expect(criteria).not.toHaveProperty("attack");
+    expect(criteria).not.toHaveProperty("attack-ground");
+    expect(criteria).not.toHaveProperty("equipment");
+    expect(criteria["attack:carbine"]).toMatchObject({
+      name: "Attack with Carbine",
+      capability: { weapon_id: "carbine" },
+    });
+    expect(criteria["equipment:grenade"]).toMatchObject({
+      name: "Use Grenade",
+      capability: { kind: "blast", uses_left: 2 },
+    });
+    expect(criteria["equipment:medkit"]).toMatchObject({
+      capability: { kind: "heal" },
+    });
+    const reached: string[] = [];
+    /** Every descendant retains the exact selected weapon/mode or equipment, including paged tile lists. */
+    const visit = (items: readonly JevCandidate[], actionId: string): void => {
+      expect(
+        items.every(
+          (candidate) =>
+            (candidate.actionType?.id ?? candidate.category) === actionId,
+        ),
+      ).toBe(true);
+      const page = jevChoicePage(snapshot, items);
+      if (page.groups) {
+        for (const group of Object.values(page.groups)) {
+          expect(group.length).toBeLessThan(items.length);
+          visit(group, actionId);
+        }
+      } else {
+        for (const candidate of items) {
+          reached.push(candidate.id);
+          const option = page.request.questions.action!.criteria[candidate.id];
+          if (actionId.startsWith("equipment:"))
+            expect(option).toMatchObject({
+              equipmentId: actionId.slice("equipment:".length),
+            });
+          if (actionId.startsWith("attack"))
+            expect(option).toMatchObject({ weaponId: actionId.split(":")[1] });
+        }
+      }
+    };
+    for (const [actionId, items] of Object.entries(first.groups!))
+      visit(items, actionId);
+    expect(reached.sort()).toEqual(
+      snapshot.candidates.map((candidate) => candidate.id).sort(),
+    );
+  });
+  it("updates the action menu for exhausted items, empty guns and different entity loadouts", () => {
+    const base = loadoutFixture();
+    const changed = {
+      ...base,
+      units: base.units.map((unit) =>
+        unit.id === "self"
+          ? {
+              ...unit,
+              charges: { carbine: 0, cannon: 3 },
+              equipment: { grenade: 0 },
+            }
+          : unit,
+      ),
+    };
+    const menu = jevChoicePage(captureJev(changed, "self", rules)).request
+      .questions.action!.criteria;
+    expect(menu).not.toHaveProperty("attack:carbine");
+    expect(menu).not.toHaveProperty("equipment:grenade");
+    expect(menu).toHaveProperty("attack:cannon");
+    expect(menu).toHaveProperty("equipment:medkit");
+    const bug = jevChoicePage(
+      captureJev({ ...base, phase: "bugs" }, "enemy", rules),
+    ).request.questions.action!.criteria;
+    expect(Object.keys(bug).some((id) => id.startsWith("attack:"))).toBe(true);
+    expect(JSON.stringify(bug)).not.toContain("Carbine");
+    expect(Object.keys(bug).some((id) => id.startsWith("equipment:"))).toBe(
+      false,
+    );
+  });
   it("does not change when unseen enemies, terrain, schedules or logs change", () => {
     const state = fixture();
     expect(state.vision.tdf.spotted).not.toContain("hidden");

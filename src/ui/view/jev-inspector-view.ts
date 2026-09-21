@@ -18,11 +18,14 @@ export class JevInspectorView {
   private questionsText?: HTMLTextAreaElement;
   private outputText?: HTMLTextAreaElement;
   private historySelect?: HTMLSelectElement;
+  private stepSelect?: HTMLSelectElement;
   private runButton?: HTMLButtonElement;
   private rerunButton?: HTMLButtonElement;
+  private stepButton?: HTMLButtonElement;
   private selected?: string;
   private snapshot?: JevSnapshot;
   private traceId?: number;
+  private stepIndex?: number;
   private open = false;
   private pending = false;
   private unsubscribe?: () => void;
@@ -91,11 +94,16 @@ export class JevInspectorView {
     this.rerunButton = button(doc, "Re-run captured state", () => {
       void this.evaluate(true);
     });
+    this.stepButton = button(doc, "Evaluate next step", () => {
+      void this.step();
+    });
+    this.stepButton.dataset.testid = "jev-next-step";
     controls.append(
       label,
       save,
       button(doc, "Refresh state", () => this.capture()),
       this.runButton,
+      this.stepButton,
       this.rerunButton,
     );
     const history = doc.createElement("div");
@@ -105,14 +113,23 @@ export class JevInspectorView {
     this.historySelect.dataset.testid = "jev-history";
     this.historySelect.addEventListener("change", () => {
       this.traceId = Number(this.historySelect!.value);
+      this.stepIndex = undefined;
       const trace = this.currentTrace();
       if (trace) {
         this.snapshot = trace.snapshot;
         this.render();
       }
     });
+    this.stepSelect = doc.createElement("select");
+    this.stepSelect.setAttribute("aria-label", "Jev evaluation step");
+    this.stepSelect.dataset.testid = "jev-step";
+    this.stepSelect.addEventListener("change", () => {
+      this.stepIndex = Number(this.stepSelect!.value);
+      this.render();
+    });
     history.append(
       this.historySelect,
+      this.stepSelect,
       button(doc, "Copy request & output", () => {
         void this.copy();
       }),
@@ -131,7 +148,7 @@ export class JevInspectorView {
     this.questionsText.dataset.testid = "jev-questions";
     this.outputText = textarea(
       doc,
-      "Output · answers, probabilities, timing and all exchanges",
+      "Output · selected step response and decision summary",
       panes,
       true,
     );
@@ -148,6 +165,7 @@ export class JevInspectorView {
     if (unitId !== this.selected) {
       this.selected = unitId;
       this.traceId = undefined;
+      this.stepIndex = undefined;
       this.snapshot = undefined;
       if (this.open) this.loadEntity();
     }
@@ -196,6 +214,7 @@ export class JevInspectorView {
         commander: this.commander?.value ?? "",
       });
       this.traceId = undefined;
+      this.stepIndex = undefined;
       this.render();
     } catch (error) {
       this.message(error);
@@ -232,6 +251,7 @@ export class JevInspectorView {
       },
     };
     this.pending = true;
+    this.stepIndex = undefined;
     this.render();
     const before = this.inspector.history.at(-1)?.id ?? 0;
     try {
@@ -241,6 +261,23 @@ export class JevInspectorView {
       )?.id;
       this.render();
       await work;
+    } catch (error) {
+      this.message(error);
+    } finally {
+      this.pending = false;
+      this.render();
+    }
+  }
+
+  /** Send one follow-up against the original snapshot and prompts, leaving gameplay untouched. */
+  private async step(): Promise<void> {
+    const trace = this.currentTrace();
+    if (this.pending || trace?.status !== "ready") return;
+    this.pending = true;
+    this.stepIndex = trace.exchanges.length;
+    this.render();
+    try {
+      await this.inspector.step(trace.id);
     } catch (error) {
       this.message(error);
     } finally {
@@ -275,9 +312,31 @@ export class JevInspectorView {
       this.historySelect.value = String(this.traceId ?? 0);
     }
     const snapshot = trace?.snapshot ?? this.snapshot;
+    const index =
+      this.stepIndex ?? Math.max(0, (trace?.exchanges.length ?? 0) - 1);
+    const exchange = trace?.exchanges[index];
+    if (this.stepSelect) {
+      this.stepSelect.replaceChildren();
+      for (const [step, item] of (trace?.exchanges ?? []).entries()) {
+        const option = this.stepSelect.ownerDocument.createElement("option");
+        option.value = String(step);
+        option.textContent = `${String(step + 1)} · ${item.stage} · response`;
+        this.stepSelect.append(option);
+      }
+      if (trace?.next) {
+        const option = this.stepSelect.ownerDocument.createElement("option");
+        option.value = String(trace.exchanges.length);
+        option.textContent = `${String(trace.exchanges.length + 1)} · ${trace.next.stage} · ${trace.status === "running" ? "evaluating" : "not sent"}`;
+        this.stepSelect.append(option);
+      }
+      this.stepSelect.disabled = !trace || this.pending;
+      this.stepSelect.value = String(index);
+    }
     if (snapshot && this.stateText && this.questionsText && this.outputText) {
       const request =
-        trace?.exchanges.at(-1)?.request ?? jevChoicePage(snapshot).request;
+        exchange?.request ??
+        trace?.next?.request ??
+        jevChoicePage(snapshot).request;
       this.stateText.value = JSON.stringify(request.state, null, 2);
       this.questionsText.value = JSON.stringify(request.questions, null, 2);
       this.outputText.value = trace
@@ -285,6 +344,22 @@ export class JevInspectorView {
             {
               status: trace.status,
               detail: trace.detail,
+              step: index + 1,
+              exchange: exchange
+                ? {
+                    stage: exchange.stage,
+                    answer: exchange.answer,
+                    error: exchange.error,
+                    elapsedMs: exchange.elapsedMs,
+                    requestId: exchange.requestId,
+                    requestBytes: exchange.requestBytes,
+                    response: exchange.response,
+                  }
+                : {
+                    stage: trace.next?.stage,
+                    status:
+                      trace.status === "running" ? "evaluating" : "not sent",
+                  },
               chosen_action: trace.candidate
                 ? {
                     id: trace.candidate.id,
@@ -299,7 +374,6 @@ export class JevInspectorView {
                 elapsed_ms: exchange.elapsedMs,
                 request_id: exchange.requestId,
               })),
-              exchanges: trace.exchanges,
             },
             null,
             2,
@@ -308,10 +382,23 @@ export class JevInspectorView {
     }
     if (this.runButton)
       this.runButton.disabled =
-        this.pending || !this.selected || !this.inspector.configured;
+        this.pending ||
+        !this.selected ||
+        !this.inspector.configured ||
+        !snapshot?.eligible ||
+        snapshot.candidates.length === 0;
     if (this.rerunButton)
       this.rerunButton.disabled =
-        this.pending || !snapshot || !this.inspector.configured;
+        this.pending ||
+        !snapshot?.eligible ||
+        !this.inspector.configured ||
+        snapshot.candidates.length === 0;
+    if (this.stepButton)
+      this.stepButton.disabled =
+        this.pending ||
+        trace?.mode !== "preview" ||
+        trace.status !== "ready" ||
+        !this.inspector.configured;
     this.renderStatus();
   }
 
@@ -331,7 +418,7 @@ export class JevInspectorView {
       snapshot &&
       (snapshot.missionId !== mission?.missionId ||
         snapshot.commandSeq !== mission.commandSeq);
-    this.status.textContent = `${this.pending ? "Evaluating… " : "Automatic play paused while this panel is open. "}${stale ? "Captured state is older than the battlefield. " : ""}${snapshot && !snapshot.eligible ? "Entity cannot act in this phase or has no AP; inspect its last actual decision in History. " : ""}Evaluate never executes the chosen action. Re-run keeps the captured battlefield and uses your draft prompts.`;
+    this.status.textContent = `${this.pending ? "Evaluating… " : "Automatic play paused while this panel is open. "}${stale ? "Captured state is older than the battlefield. " : ""}${snapshot && (!snapshot.eligible || !snapshot.candidates.length) ? "Entity has no available actions; no request will be sent. Inspect its last decision in History. " : ""}Evaluate sends the first question. Evaluate next step sends one follow-up. Use the step selector to inspect each response or the next question. Preview never executes actions. Re-run starts again with the captured battlefield and your draft prompts.`;
   }
   /** Look up the explicitly selected historical request. */
   private currentTrace(): JevTrace | undefined {

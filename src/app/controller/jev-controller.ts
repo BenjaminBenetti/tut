@@ -5,10 +5,7 @@ import type {
   JevTrace,
   JevExchange,
 } from "../../ui/model/jev-inspector";
-import type {
-  JevSnapshot,
-  JevCandidate,
-} from "../../tactical/model/jev-control";
+import type { JevSnapshot } from "../../tactical/model/jev-control";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { TEAM_FOR_PHASE } from "../../tactical/model/tactical-state";
 import { captureJev, jevChoicePage } from "../../tactical/ai/jev-request";
@@ -79,9 +76,14 @@ export class JevController implements JevInspector {
     );
     return captureJev(mission, unitId, this.rules, prompts, unitNames);
   }
-  /** Evaluate a frozen snapshot without applying its action. */
+  /** Evaluate only the first question of a frozen snapshot without applying its action. */
   async evaluate(snapshot: JevSnapshot): Promise<void> {
     await this.decide(snapshot, "preview");
+  }
+  /** Advance a captured preview by one request; a running or completed trace cannot advance twice. */
+  async step(traceId: number): Promise<void> {
+    const trace = this.traces.find((entry) => entry.id === traceId);
+    if (trace?.mode === "preview") await this.advance(trace);
   }
   /** Save explicit edits, then let the store subscription schedule any newly enabled actor. */
   configure(
@@ -221,6 +223,16 @@ export class JevController implements JevInspector {
         });
         continue;
       }
+      if (trace.status === "skipped") {
+        this.store.dispatch(
+          jevAct({
+            unitId: actor.id,
+            expectedSeq: current.commandSeq,
+            choice: "finish",
+          }),
+        );
+        continue;
+      }
       if (!trace.candidate) {
         const fallback =
           actor.team === "bugs"
@@ -273,110 +285,126 @@ export class JevController implements JevInspector {
   // Shared evaluation and history
   // ===========================================
 
-  /** Each grouped choice is another visible exchange against the same frozen observation. */
+  /** Previews pause after one question; automatic turns consume the same steps until an action is selected. */
   private async decide(
     snapshot: JevSnapshot,
     mode: JevTrace["mode"],
   ): Promise<JevTrace> {
     const id = ++this.sequence;
-    const controller = new AbortController();
-    this.pending.add(controller);
-    if (mode === "automatic") this.automatic = controller;
+    const canAct = snapshot.eligible && snapshot.candidates.length > 0;
     let trace: JevTrace = {
       id,
       mode,
       snapshot,
       exchanges: [],
-      status: "running",
+      status: canAct ? "ready" : "skipped",
+      next: canAct ? jevChoicePage(snapshot) : undefined,
+      detail: canAct
+        ? undefined
+        : "No request sent: this entity cannot act or has no available actions.",
     };
     this.traces = [...this.traces, trace].slice(-30);
     this.emit();
-    let candidates: readonly JevCandidate[] = snapshot.candidates;
-    try {
-      for (let depth = 0; depth < 8; depth++) {
-        const page = jevChoicePage(
-          snapshot,
-          depth === 0 ? undefined : candidates,
-        );
-        const metadata = {
-          stage: page.stage,
-          requestBytes: new TextEncoder().encode(JSON.stringify(page.request))
-            .length,
-        };
-        const started = performance.now();
-        let exchange: JevExchange;
-        try {
-          const reply = await this.transport.ask(
-            page.request,
-            controller.signal,
-          );
-          exchange = {
-            ...metadata,
-            request: page.request,
-            response: reply.raw,
-            requestId: reply.requestId,
-            answer: reply.answer,
-            elapsedMs: Math.round(performance.now() - started),
-          };
-        } catch (error) {
-          exchange = {
-            ...metadata,
-            request: page.request,
-            elapsedMs: Math.round(performance.now() - started),
-            error: error instanceof Error ? error.message : String(error),
-            ...(error instanceof JevRequestError
-              ? { response: error.response, requestId: error.requestId }
-              : {}),
-          };
-        }
-        trace = this.update(id, { exchanges: [...trace.exchanges, exchange] });
-        if (controller.signal.aborted || this.stopped) {
-          trace = this.update(id, { status: "cancelled" });
-          break;
-        }
-        if (
-          mode === "automatic" &&
-          this.mission()?.commandSeq !== snapshot.commandSeq
-        ) {
-          trace = this.update(id, { status: "stale" });
-          break;
-        }
-        if (!exchange.answer) {
-          trace = this.update(id, { status: "failed", detail: exchange.error });
-          break;
-        }
-        if (page.groups) {
-          const next = page.groups[exchange.answer.choice];
-          if (
-            !next ||
-            (page.stage !== "action-type" && next.length >= candidates.length)
-          )
-            throw new Error("Invalid Jev action group");
-          candidates = next;
-        } else {
-          const candidate = candidates.find(
-            (entry) => entry.id === exchange.answer?.choice,
-          );
-          if (!candidate) throw new Error("Unknown Jev action");
-          trace = this.update(id, { status: "evaluated", candidate });
-          break;
-        }
-      }
-      if (trace.status === "running")
-        trace = this.update(id, {
-          status: "failed",
-          detail: "Action grouping exceeded its request limit",
-        });
-    } catch (error) {
-      trace = this.update(id, {
+    do {
+      trace = await this.advance(trace);
+    } while (
+      mode === "automatic" &&
+      trace.status === "ready" &&
+      !this.stopped &&
+      !this.paused
+    );
+    return trace;
+  }
+
+  /** Send one prepared question and retain either its selected action or its unsent follow-up. */
+  private async advance(trace: JevTrace): Promise<JevTrace> {
+    if (trace.status !== "ready" || !trace.next || this.stopped) return trace;
+    const { id, snapshot, mode, next: page } = trace;
+    if (trace.exchanges.length >= 8)
+      return this.update(id, {
         status: "failed",
+        next: undefined,
+        detail: "Action grouping exceeded its request limit",
+      });
+    trace = this.update(id, { status: "running" });
+    const controller = new AbortController();
+    this.pending.add(controller);
+    if (mode === "automatic") this.automatic = controller;
+    try {
+      const metadata = {
+        stage: page.stage,
+        requestBytes: new TextEncoder().encode(JSON.stringify(page.request))
+          .length,
+      };
+      const started = performance.now();
+      let exchange: JevExchange;
+      try {
+        const reply = await this.transport.ask(page.request, controller.signal);
+        exchange = {
+          ...metadata,
+          request: page.request,
+          response: reply.raw,
+          requestId: reply.requestId,
+          answer: reply.answer,
+          elapsedMs: Math.round(performance.now() - started),
+        };
+      } catch (error) {
+        exchange = {
+          ...metadata,
+          request: page.request,
+          elapsedMs: Math.round(performance.now() - started),
+          error: error instanceof Error ? error.message : String(error),
+          ...(error instanceof JevRequestError
+            ? { response: error.response, requestId: error.requestId }
+            : {}),
+        };
+      }
+      trace = this.update(id, {
+        exchanges: [...trace.exchanges, exchange],
+        next: undefined,
+      });
+      if (controller.signal.aborted || this.stopped)
+        return this.update(id, { status: "cancelled" });
+      if (
+        mode === "automatic" &&
+        this.mission()?.commandSeq !== snapshot.commandSeq
+      )
+        return this.update(id, { status: "stale" });
+      if (!exchange.answer)
+        return this.update(id, { status: "failed", detail: exchange.error });
+      if (page.groups) {
+        const next = page.groups[exchange.answer.choice];
+        const count = Object.values(page.groups).reduce(
+          (total, items) => total + items.length,
+          0,
+        );
+        if (
+          !next?.length ||
+          (page.stage !== "action-type" && next.length >= count)
+        )
+          throw new Error("Invalid Jev action group");
+        return this.update(id, {
+          status: "ready",
+          next: jevChoicePage(snapshot, next),
+        });
+      }
+      const candidate = snapshot.candidates.find(
+        (entry) =>
+          entry.id === exchange.answer?.choice &&
+          Object.hasOwn(page.request.questions.action!.criteria, entry.id),
+      );
+      if (!candidate) throw new Error("Unknown Jev action");
+      return this.update(id, { status: "evaluated", candidate });
+    } catch (error) {
+      return this.update(id, {
+        status: "failed",
+        next: undefined,
         detail: error instanceof Error ? error.message : String(error),
       });
     } finally {
       this.pending.delete(controller);
       if (this.automatic === controller) this.automatic = undefined;
     }
-    return trace;
   }
 
   /** Replace rather than mutate history records so consumers can safely retain a trace. */

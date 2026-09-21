@@ -21,6 +21,11 @@ import { SHIPPED_EQUIPMENT } from "../repository/equipment-catalogue";
 import type { JevCandidate } from "../model/jev-control";
 import type { TacticalState } from "../model/tactical-state";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import {
+  apCostOf,
+  buildMoveGraph,
+  searchMoves,
+} from "../service/movement-service";
 
 const rules = {
   handlers: {
@@ -87,12 +92,12 @@ describe("Jev observation", () => {
         "equipment:radar-dish",
         "move",
         "overwatch",
-        "finish",
       ]),
     );
     expect(criteria).not.toHaveProperty("attack");
     expect(criteria).not.toHaveProperty("attack-ground");
     expect(criteria).not.toHaveProperty("equipment");
+    expect(criteria).not.toHaveProperty("finish");
     expect(criteria["attack:carbine"]).toMatchObject({
       name: "Attack with Carbine",
       capability: { weapon_id: "carbine" },
@@ -241,7 +246,44 @@ describe("Jev observation", () => {
     const bug = captureJev(state, "enemy", rules);
     expect(bug.team).toBe("bugs");
     expect(bug.eligible).toBe(false);
-    expect(bug.candidates.map((candidate) => candidate.id)).toEqual(["finish"]);
+    expect(bug.candidates).toEqual([]);
+  });
+  it("offers every one-AP move and excludes every two-AP destination", () => {
+    const state = withVision({
+      state: missionWith(openField().build(), [
+        unitAt("self", "infantry", { x: 0, y: 0, z: 0 }),
+      ]),
+      events: [],
+    }).state;
+    const actor = state.units[0]!;
+    const view = jevPerception(state, actor);
+    const graph = buildMoveGraph(view.map);
+    const reachable = [...searchMoves(view, actor, graph).costs];
+    const oneAp = reachable
+      .filter(([, cost]) => apCostOf(view, actor, cost) === 1)
+      .map(([key]) => key);
+    expect(
+      reachable.some(([, cost]) => apCostOf(view, actor, cost) === 2),
+    ).toBe(true);
+    const snapshot = captureJev(state, actor.id, rules);
+    const moves = snapshot.candidates.filter(
+      (candidate) => candidate.command?.type === "tactical:move",
+    );
+    expect(
+      moves
+        .map((candidate) => {
+          const command = candidate.command!;
+          if (command.type !== "tactical:move")
+            throw new Error("Expected a move");
+          expect(JSON.parse(candidate.description)).toMatchObject({
+            ap_cost: 1,
+          });
+          return graph.index.keyOf(command.payload.path.at(-1)!);
+        })
+        .sort(),
+    ).toEqual(oneAp.sort());
+    const spent = { ...state, units: [{ ...actor, ap: 0 }] };
+    expect(captureJev(spent, actor.id, rules).candidates).toEqual([]);
   });
   it("explains combined terrain masks and the actor's movement class", () => {
     const snapshot = captureJev(fixture(), "self", rules);

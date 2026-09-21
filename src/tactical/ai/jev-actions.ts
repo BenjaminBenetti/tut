@@ -55,14 +55,7 @@ export function jevCandidates(
   actor: Unit,
   rules: JevActionRules,
 ): readonly JevCandidate[] {
-  const candidates: JevCandidate[] = [
-    {
-      id: "finish",
-      category: "finish",
-      description:
-        "Finish this entity's activation without spending further actions.",
-    },
-  ];
+  const candidates: JevCandidate[] = [];
   if (actor.hp <= 0 || actor.ap <= 0 || view.outcome) return candidates;
   /** Retain the executable command and its specific weapon/item routing identity together. */
   const add = (
@@ -84,11 +77,12 @@ export function jevCandidates(
     });
   };
   const graph = buildMoveGraph(view.map);
-  const search = searchMoves(view, actor, graph);
+  // Decide again from fresh vision after each AP of movement.
+  const search = searchMoves(view, { ...actor, ap: 1 }, graph);
   const origin = graph.index.keyOf(actor.pos);
   if (actor.kind !== "turret") {
     for (const [key, cost] of search.costs) {
-      if (key === origin) continue;
+      if (key === origin || apCostOf(view, actor, cost) !== 1) continue;
       const path: TileCoord[] = [];
       let cursor = key;
       while (cursor !== origin) {

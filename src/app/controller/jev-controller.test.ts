@@ -26,7 +26,8 @@ import {
 } from "../../tactical/service/jev-control-service";
 import type { JevRequest } from "../../tactical/model/jev-control";
 
-function reply(request: JevRequest, pick = "finish"): JevReply {
+/** Select a real action by default, reserving the remainder of an activation. */
+function reply(request: JevRequest, pick = "overwatch"): JevReply {
   const criteria = request.questions.action!.criteria;
   const choice = Object.hasOwn(criteria, pick)
     ? pick
@@ -330,7 +331,166 @@ describe("Jev control", () => {
     );
     expect(store.getState()).toBe(before);
     expect(controller.history[0]?.snapshot.state.entity_prompt).toBe("Hold");
+    expect(controller.history[0]?.status).toBe("ready");
+    expect(transport.ask).toHaveBeenCalledTimes(1);
+    await controller.step(controller.history[0]!.id);
     expect(controller.history[0]?.status).toBe("evaluated");
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(store.getState()).toBe(before);
+    await controller.step(controller.history[0]!.id);
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    controller.dispose();
+  });
+  it("steps through grouped previews once per click with frozen inputs, even after the live mission changes", async () => {
+    const transport = {
+      configured: true,
+      ask: vi.fn((request: JevRequest) =>
+        Promise.resolve(reply(request, "move")),
+      ),
+    };
+    const { store, controller } = setup(transport);
+    const captured = controller.capture("self", {
+      entity: "Advance",
+      commander: "Cover",
+    });
+    const snapshot = {
+      ...captured,
+      candidates: Array.from({ length: 100 }, (_, index) => ({
+        id: `move-${String(index)}`,
+        category: "move",
+        description: `Move option ${String(index)}`,
+      })),
+    };
+    await controller.evaluate(snapshot);
+    const id = controller.history[0]!.id;
+    expect(transport.ask).toHaveBeenCalledTimes(1);
+    expect(controller.history[0]).toMatchObject({
+      status: "ready",
+      next: { stage: "action-group" },
+    });
+    expect(store.dispatch(overwatch("self")).ok).toBe(true);
+    const after = store.getState();
+    await Promise.all([controller.step(id), controller.step(id)]);
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(controller.history[0]).toMatchObject({
+      status: "ready",
+      next: { stage: "action" },
+    });
+    await controller.step(id);
+    expect(transport.ask).toHaveBeenCalledTimes(3);
+    expect(controller.history[0]?.status).toBe("evaluated");
+    expect(controller.history[0]?.next).toBeUndefined();
+    expect(controller.history[0]?.exchanges.map((item) => item.stage)).toEqual([
+      "action-type",
+      "action-group",
+      "action",
+    ]);
+    for (const [request] of transport.ask.mock.calls)
+      expect(request.state).toEqual(snapshot.state);
+    expect(store.getState()).toBe(after);
+    controller.dispose();
+  });
+  it("makes no preview or automatic requests for actors without AP or available actions", async () => {
+    const transport = instant();
+    const { store, controller } = setup(transport);
+    const original = controller.capture("self");
+    await controller.evaluate({ ...original, candidates: [] });
+    expect(controller.history.at(-1)?.status).toBe("skipped");
+    expect(store.dispatch(overwatch("self")).ok).toBe(true);
+    controller.configure("self", true, "Guard", "Defend");
+    controller.start();
+    const spent = controller.capture("self");
+    expect(spent.candidates).toEqual([]);
+    await controller.evaluate(spent);
+    await controller.step(controller.history.at(-1)!.id);
+    expect(controller.history.at(-1)?.status).toBe("skipped");
+    expect(transport.ask).not.toHaveBeenCalled();
+    controller.dispose();
+  });
+  it("retains both responses when a preview follow-up fails and does not retry on another step", async () => {
+    const transport = instant();
+    const { store, controller } = setup(transport);
+    const before = store.getState();
+    await controller.evaluate(controller.capture("self"));
+    const id = controller.history[0]!.id;
+    transport.ask.mockRejectedValueOnce(new Error("relay unavailable"));
+    await controller.step(id);
+    expect(controller.history[0]).toMatchObject({
+      status: "failed",
+      detail: "relay unavailable",
+      exchanges: [
+        { stage: "action-type", answer: { choice: "overwatch" } },
+        { stage: "action", error: "relay unavailable" },
+      ],
+    });
+    expect(controller.history[0]?.next).toBeUndefined();
+    await controller.step(id);
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(store.getState()).toBe(before);
+    controller.dispose();
+  });
+  it("recaptures position, AP and vision after each one-AP move and stops requesting at zero AP", async () => {
+    const transport = {
+      configured: true,
+      ask: vi.fn((request: JevRequest) => {
+        const criteria = request.questions.action!.criteria;
+        const farthest = Object.entries(criteria).find(([, value]) => {
+          const candidate = value as { destination?: { x: number; z: number } };
+          const actor = request.state.actor as { position: { x: number } };
+          return (
+            candidate.destination?.x === actor.position.x + 3 &&
+            candidate.destination.z === 0
+          );
+        });
+        return Promise.resolve(
+          reply(
+            request,
+            Object.hasOwn(criteria, "move") ? "move" : farthest?.[0],
+          ),
+        );
+      }),
+    };
+    const { store, controller } = setup(transport, {
+      ...campaignOnDay(1, []),
+      activeMission: withVision({
+        state: missionWith(openField().build(), [
+          unitAt("self", "infantry", { x: 0, y: 0, z: 0 }),
+          unitAt("enemy", "infantry", { x: 7, y: 0, z: 3 }, { team: "bugs" }),
+        ]),
+        events: [],
+      }).state,
+    });
+    controller.configure("self", true, "Advance", "Scout");
+    controller.start();
+    await vi.waitFor(() =>
+      expect(store.getState().activeMission!.units[0]!.ap).toBe(0),
+    );
+    expect(controller.history).toHaveLength(2);
+    expect(transport.ask).toHaveBeenCalledTimes(4);
+    const [first, second] = controller.history;
+    expect(first!.snapshot.state.actor).toMatchObject({
+      ap: 2,
+      position: { x: 0, y: 0, z: 0 },
+    });
+    expect(second!.snapshot.state.actor).toMatchObject({
+      ap: 1,
+      position: { x: 3, y: 0, z: 0 },
+    });
+    expect(second!.snapshot.commandSeq).toBeGreaterThan(
+      first!.snapshot.commandSeq,
+    );
+    expect(first!.snapshot.state.entities).not.toEqual(
+      second!.snapshot.state.entities,
+    );
+    expect(store.getState().activeMission!.units[0]!.pos).toEqual({
+      x: 6,
+      y: 0,
+      z: 0,
+    });
+    expect(
+      controller.history.every((trace) => trace.status === "applied"),
+    ).toBe(true);
+    expect(jevFinished(store.getState().activeMission!, "self")).toBe(true);
     controller.dispose();
   });
   it("plays enabled TDF entities, checkpoints completion, and does not repeat after JSON save/resume", async () => {

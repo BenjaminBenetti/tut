@@ -43,16 +43,7 @@ export function captureJev(
     phase: mission.phase,
     eligible,
     state: { ...state, eligible_to_act: eligible },
-    candidates: eligible
-      ? jevCandidates(view, actor, rules)
-      : [
-          {
-            id: "finish",
-            category: "finish",
-            description:
-              "No action now: the entity is dead, out of AP, the mission is over, or it is another faction's phase.",
-          },
-        ],
+    candidates: eligible ? jevCandidates(view, actor, rules) : [],
   };
   // Freeze by value, never retain references to a changing mission or prompt draft.
   return JSON.parse(JSON.stringify(snapshot)) as JevSnapshot;
@@ -72,8 +63,7 @@ const MAX_GROUP_CHOICES = 32;
 const INSTRUCTIONS =
   "Choose for `actor` using only observed and remembered facts in `state`. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. Consider objectives, AP, weapons, cover, hazards, survival and friendly fire. Resolve names in orders against actor.name and entities[].name. Unknown enemies and terrain must not be assumed known. Historical sightings are not current targets.";
 const ACTION_TYPES: Readonly<Record<string, string>> = {
-  finish: "Finish this entity's activation without spending further actions.",
-  move: "Move to a reachable position to advance, follow, retreat or seek cover.",
+  move: "Spend one AP moving to a reachable position to advance, follow, retreat or seek cover.",
   attack: "Attack a visible enemy unit or nest with a ready weapon.",
   "attack-ground":
     "Fire at a tile, considering blast effects, cover destruction and friendly fire.",
@@ -184,7 +174,7 @@ function choicePage(
 ): JevChoicePage {
   const task =
     stage === "action-type"
-      ? "Choose the best specific action to take next. Each available weapon and firing mode, usable item, and other ability is listed separately for this actor. Choose the weapon or item now; its target or destination will be selected in a follow-up containing ONLY that action. Choose finish when no further action is useful."
+      ? "Choose the best specific action to take next. Each available weapon and firing mode, usable item, and other ability is listed separately for this actor. Choose the weapon or item now; its target or destination will be selected in a follow-up containing ONLY that action."
       : stage === "action-group"
         ? "The action type has been chosen. Choose a region or target group within that type; a subsequent request will choose the concrete action."
         : "The specific action, including its weapon or item, has been chosen. Choose the best target or destination from ONLY the offered options for that action.";

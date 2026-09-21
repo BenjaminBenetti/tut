@@ -15,6 +15,7 @@ it("exposes no inspector DOM or subscription without development tools", () => {
       throw new Error("Must not capture");
     },
     evaluate: () => Promise.resolve(),
+    step: () => Promise.resolve(),
     configure: vi.fn(),
     subscribe,
     pause: vi.fn(),

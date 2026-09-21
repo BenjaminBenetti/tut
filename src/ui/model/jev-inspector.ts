@@ -5,6 +5,7 @@ import type {
   JevSnapshot,
 } from "../../tactical/model/jev-control";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { JevChoicePage } from "../../tactical/ai/jev-request";
 
 /** One actual HTTP exchange, including unsuccessful responses. */
 export interface JevExchange {
@@ -25,9 +26,13 @@ export interface JevTrace {
   readonly mode: "preview" | "automatic";
   readonly snapshot: JevSnapshot;
   readonly exchanges: readonly JevExchange[];
+  /** Prepared next question; previews wait for an explicit step before sending it. */
+  readonly next?: JevChoicePage;
   readonly candidate?: JevCandidate;
   readonly status:
     | "running"
+    | "ready"
+    | "skipped"
     | "evaluated"
     | "applied"
     | "stale"
@@ -48,8 +53,10 @@ export interface JevInspector {
     unitId: string,
     prompts?: { entity: string; commander: string },
   ): JevSnapshot;
-  /** Preview through the same transport and questions as automatic turns. */
+  /** Preview the first question only, without executing an action. */
   evaluate(snapshot: JevSnapshot): Promise<void>;
+  /** Send exactly one pending follow-up for this captured preview. */
+  step(traceId: number): Promise<void>;
   /** Persist prompt and control changes explicitly. */
   configure(
     unitId: string,

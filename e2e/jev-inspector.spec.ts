@@ -41,11 +41,7 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     const request = route.request().postDataJSON() as JevRequest;
     requests.push(request);
     const ids = Object.keys(request.questions.action.criteria);
-    const choice = ids.includes("move")
-      ? "move"
-      : ids.includes("finish")
-        ? "finish"
-        : ids[0];
+    const choice = ids.includes("move") ? "move" : ids[0];
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -97,7 +93,54 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
         ? (JSON.parse(value) as { status: string }).status
         : "waiting";
     })
-    .toBe("evaluated");
+    .toBe("ready");
+  expect(requests).toHaveLength(1);
+  await expect(page.getByTestId("jev-next-step")).toBeEnabled();
+  expect(
+    JSON.parse(await page.getByTestId("jev-questions").inputValue()),
+  ).toEqual(requests[0].questions);
+  expect(
+    JSON.parse(await page.getByTestId("jev-output").inputValue()),
+  ).toMatchObject({
+    step: 1,
+    exchange: { stage: "action-type", answer: { choice: "move" } },
+  });
+  // Each click sends exactly one request; the next question can be inspected before sending it.
+  for (let index = 0; index < 7; index++) {
+    const output = JSON.parse(
+      await page.getByTestId("jev-output").inputValue(),
+    ) as { status: string };
+    if (output.status === "evaluated") break;
+    expect(output.status).toBe("ready");
+    const count = requests.length;
+    await page.getByTestId("jev-step").selectOption(String(count));
+    const nextQuestions = JSON.parse(
+      await page.getByTestId("jev-questions").inputValue(),
+    ) as unknown;
+    expect(
+      JSON.parse(await page.getByTestId("jev-output").inputValue()),
+    ).toMatchObject({
+      exchange: { status: "not sent" },
+    });
+    expect(requests).toHaveLength(count);
+    await page.getByTestId("jev-next-step").click();
+    await expect
+      .poll(
+        async () =>
+          (
+            JSON.parse(await page.getByTestId("jev-output").inputValue()) as {
+              status: string;
+            }
+          ).status,
+      )
+      .not.toBe("running");
+    expect(requests).toHaveLength(count + 1);
+    expect(requests.at(-1)!.questions).toEqual(nextQuestions);
+  }
+  await expect(page.getByTestId("jev-next-step")).toBeDisabled();
+  expect(
+    JSON.parse(await page.getByTestId("jev-output").inputValue()),
+  ).toMatchObject({ status: "evaluated" });
   expect(requests[0]?.state.entity_prompt).toBe(
     "Preserve yourself and stay in cover.",
   );
@@ -107,6 +150,7 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
   const top = requests[0].questions.action.criteria;
   expect(top).not.toHaveProperty("attack-ground");
   expect(top).not.toHaveProperty("equipment");
+  expect(top).not.toHaveProperty("finish");
   expect(JSON.stringify(top)).toContain("Autocannon");
   expect(JSON.stringify(top)).toContain("Missile Pod");
   expect(
@@ -118,6 +162,21 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
   for (const request of requests.slice(1))
     for (const option of Object.values(request.questions.action.criteria))
       expect(option).toMatchObject({ action: "move" });
+  for (const option of Object.values(
+    requests.at(-1)!.questions.action.criteria,
+  ))
+    expect(option).toMatchObject({ ap_cost: 1 });
+  // Completed requests remain individually reviewable with their matching response.
+  await page.getByTestId("jev-step").selectOption("0");
+  expect(
+    JSON.parse(await page.getByTestId("jev-questions").inputValue()),
+  ).toEqual(requests[0].questions);
+  expect(
+    JSON.parse(await page.getByTestId("jev-output").inputValue()),
+  ).toMatchObject({
+    exchange: { stage: "action-type", answer: { choice: "move" } },
+  });
+  await page.getByTestId("jev-step").selectOption(String(requests.length - 1));
   const campaign = (JSON.parse(before!) as SaveEnvelope<GameState>).state;
   const observation = requests[0].state;
   const entities = [observation.actor, ...(observation.entities as unknown[])];
@@ -145,10 +204,20 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     await page.evaluate(() => localStorage.getItem("tut:save:autosave")),
   ).toBe(before);
   await page.getByTestId("jev-entity-prompt").fill("Advance cautiously.");
+  const beforeRerun = requests.length;
   await page.getByRole("button", { name: "Re-run captured state" }).click();
-  await expect(page.getByTestId("jev-output")).toHaveValue(
-    /Advance cautiously/,
-  );
+  await expect(page.getByTestId("jev-state")).toHaveValue(/Advance cautiously/);
+  await expect
+    .poll(
+      async () =>
+        (
+          JSON.parse(await page.getByTestId("jev-output").inputValue()) as {
+            status: string;
+          }
+        ).status,
+    )
+    .toBe("ready");
+  expect(requests).toHaveLength(beforeRerun + 1);
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export JSON" }).click();
   expect((await download).suggestedFilename()).toBe("jev-unit-1.json");
@@ -241,7 +310,7 @@ test("Jev TDF labels persist, Tab skips them, and End Turn waits for their decis
     requests.push(request);
     await gate;
     const ids = Object.keys(request.questions.action.criteria);
-    const choice = ids.includes("finish") ? "finish" : ids[0];
+    const choice = ids.includes("overwatch") ? "overwatch" : ids[0];
     await route.fulfill({
       status: 200,
       contentType: "application/json",

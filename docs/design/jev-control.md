@@ -22,6 +22,8 @@ Development defaults to `http://localhost:8080`. To use another relay, set `VITE
 
 ## Inspect a decision
 
+![Jev development inspector showing a real evaluated request](jev-inspector.png)
+
 1. Launch a tactical mission and select a TDF unit, or select/target a visible bug so its card is shown.
 2. Press **Jev** in the bottom bar. Automatic Jev actions pause while the panel is open.
 3. Inspect the exact **State** and **Questions** JSON. Entity and faction prompt fields are editable drafts.
@@ -69,3 +71,5 @@ pnpm test:e2e
 ```
 
 Focused coverage lives in `jev-request.test.ts` (knowledge boundaries), `jev-controller.test.ts` (preview, opt-in, mixed turns, stale responses, fallback and resume), `jev-client.test.ts` (wire validation), `relay/server.test.mjs` (real HTTP relay), and `e2e/jev-inspector.spec.ts` (the development workflow through Chromium, with a deterministic mocked upstream).
+
+A live Chromium → local relay → TypeSafe check used campaign seed `4242`, the first available mission and selected mech `unit-1`. With instructions to advance cautiously toward the objective, Jev `jev-1.13.0` selected a move into cover through two Choice requests. The inspector captured both responses; preview left the saved mission unchanged. This verifies connectivity and observability, not tactical quality: use captured-state reruns to assess different orders and battlefield situations.

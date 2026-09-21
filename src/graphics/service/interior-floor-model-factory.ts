@@ -75,11 +75,13 @@ function floorTexture(appearance: InteriorFloorAppearance): DataTexture {
           : appearance.finish === "carpet"
             ? 0.975 + ((x + z) % 2) * 0.025
             : 0.99 + ((Math.floor(x / 16) + Math.floor(z / 16)) % 2) * 0.01;
-      const colour = isSeam ? seam : base;
+      const pattern = architecturalPattern(appearance, x, z);
+      const colour = isSeam || pattern.inlay ? seam : base;
+      const brightness = variation * pattern.brightness;
       const offset = (z * TEXTURE_SIZE + x) * 4;
-      pixels[offset] = Math.round(colour.r * 255 * variation);
-      pixels[offset + 1] = Math.round(colour.g * 255 * variation);
-      pixels[offset + 2] = Math.round(colour.b * 255 * variation);
+      pixels[offset] = Math.round(colour.r * 255 * brightness);
+      pixels[offset + 1] = Math.round(colour.g * 255 * brightness);
+      pixels[offset + 2] = Math.round(colour.b * 255 * brightness);
       pixels[offset + 3] = 255;
     }
   }
@@ -94,4 +96,41 @@ function floorTexture(appearance: InteriorFloorAppearance): DataTexture {
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
   return texture;
+}
+
+/** Marble slabs with green diamond inlays, or steel tread plate; ordinary finishes retain their pattern. */
+function architecturalPattern(
+  appearance: InteriorFloorAppearance,
+  x: number,
+  z: number,
+): { readonly inlay: boolean; readonly brightness: number } {
+  if (appearance.finish === "marble") {
+    const edgeX = Math.min(x, TEXTURE_SIZE - 1 - x);
+    const edgeZ = Math.min(z, TEXTURE_SIZE - 1 - z);
+    const vein = Math.abs(
+      Math.sin(
+        (x + z * 0.73 + Math.sin(z * 0.18) * 4 + appearance.variant * 13) *
+          0.17,
+      ),
+    );
+    return {
+      inlay: edgeX + edgeZ < 7,
+      brightness:
+        edgeX === 0 || edgeZ === 0
+          ? 0.83
+          : vein < 0.1
+            ? 0.73
+            : vein < 0.27
+              ? 0.91
+              : 1,
+    };
+  }
+  if (appearance.finish === "steel") {
+    const tread = (x + (Math.floor(z / 8) % 2) * 4) % 8;
+    return {
+      inlay: x === 0 || z === 0,
+      brightness: (tread + (z % 8)) % 8 === 0 ? 1.12 : 0.97,
+    };
+  }
+  return { inlay: false, brightness: 1 };
 }

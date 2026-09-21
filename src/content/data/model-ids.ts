@@ -14,6 +14,21 @@
  * id here and an entry there in the same PR.
  */
 export const MODEL_IDS = [
+  "building.installation-bank-wall-solid",
+  "building.installation-bank-wall-window",
+  "building.installation-bank-wall-door",
+  "building.installation-battery-wall-solid",
+  "building.installation-battery-wall-window",
+  "building.installation-battery-wall-door",
+  "building.installation-sensor-wall-solid",
+  "building.installation-sensor-wall-window",
+  "building.installation-sensor-wall-door",
+  "building.installation-dispersal-wall-solid",
+  "building.installation-dispersal-wall-window",
+  "building.installation-dispersal-wall-door",
+  "prop.bank-marble-pillar",
+  "prop.battery-blast-barrier",
+
   "building.installation-sensor-array-entry",
   "building.installation-repellent-dispersal-entry",
   "building.installation-defensive-battery-entry",

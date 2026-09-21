@@ -11,9 +11,14 @@ import { SurfaceIds } from "./surfaces";
 // ===========================================
 
 /** Short, separated cover lines leave broad entrances on every side. */
-function barriers(x: number, z: number, count: number): SiteStructure[] {
+function barriers(
+  x: number,
+  z: number,
+  count: number,
+  kind = "barrier",
+): SiteStructure[] {
   return Array.from({ length: count }, (_, i) => ({
-    kind: "barrier",
+    kind,
     x: x + i,
     z,
   }));
@@ -118,10 +123,10 @@ export const MISSION_SITES: Readonly<
       },
     ],
     structures: [
-      ...barriers(2, 4, 4),
-      ...barriers(18, 4, 4),
-      ...barriers(2, 17, 4),
-      ...barriers(18, 17, 4),
+      ...barriers(2, 4, 4, "blast-barrier"),
+      ...barriers(18, 4, 4, "blast-barrier"),
+      ...barriers(2, 17, 4, "blast-barrier"),
+      ...barriers(18, 17, 4, "blast-barrier"),
       { kind: "crate", x: 7, z: 19 },
       { kind: "crate", x: 16, z: 19 },
     ],

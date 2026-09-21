@@ -12,6 +12,161 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "building.installation-bank-wall-solid": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-bank-wall-solid.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-bank-wall-window": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-bank-wall-window.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-bank-wall-door": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-bank-wall-door.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+  "building.installation-battery-wall-solid": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-battery-wall-solid.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-battery-wall-window": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-battery-wall-window.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-battery-wall-door": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-battery-wall-door.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+  "building.installation-sensor-wall-solid": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-sensor-wall-solid.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-sensor-wall-window": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-sensor-wall-window.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-sensor-wall-door": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-sensor-wall-door.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+  "building.installation-dispersal-wall-solid": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-dispersal-wall-solid.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-dispersal-wall-window": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-dispersal-wall-window.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.installation-dispersal-wall-door": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-dispersal-wall-door.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+  "prop.bank-marble-pillar": {
+    category: "props",
+    path: "assets/models/props/bank-marble-pillar.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.45,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.battery-blast-barrier": {
+    category: "props",
+    path: "assets/models/props/battery-blast-barrier.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.66,
+    sockets: [],
+    quality: "final",
+  },
+
   "building.installation-sensor-array-entry": {
     category: "buildings",
     path: "assets/models/buildings/installation-sensor-array-entry.glb",

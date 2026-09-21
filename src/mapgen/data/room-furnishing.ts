@@ -302,8 +302,15 @@ export const ROOM_FURNISHING: Readonly<
       { props: [Prop.WORKBENCH], zone: "wall", count: 2 },
     ],
   ]),
-  "banking-hall": furnishing("banking-hall", 5, 14, [
+  "banking-hall": furnishing("banking-hall", 5, 16, [
     [
+      {
+        props: [Prop.MARBLE_PILLAR],
+        zone: "aisle",
+        fallbackZone: "wall",
+        count: 4,
+        spacing: 3,
+      },
       { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 4 },
       { props: [Prop.SOFA], zone: "wall", count: 3 },
       { props: [Prop.DESK_COMPUTER], zone: "wall", count: 2 },

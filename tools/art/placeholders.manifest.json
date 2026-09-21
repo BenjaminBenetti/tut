@@ -5072,5 +5072,209 @@
     "quality": "final",
     "triangles": 264,
     "bytes": 22648
+  },
+  {
+    "id": "building.installation-bank-wall-solid",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-bank-wall-solid.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 364,
+    "bytes": 43676
+  },
+  {
+    "id": "building.installation-bank-wall-window",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-bank-wall-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 408,
+    "bytes": 47596
+  },
+  {
+    "id": "building.installation-bank-wall-door",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-bank-wall-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 324,
+    "bytes": 36948
+  },
+  {
+    "id": "building.installation-battery-wall-solid",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-battery-wall-solid.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 316,
+    "bytes": 37556
+  },
+  {
+    "id": "building.installation-battery-wall-window",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-battery-wall-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 384,
+    "bytes": 44672
+  },
+  {
+    "id": "building.installation-battery-wall-door",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-battery-wall-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 348,
+    "bytes": 40172
+  },
+  {
+    "id": "building.installation-sensor-wall-solid",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-sensor-wall-solid.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 268,
+    "bytes": 31624
+  },
+  {
+    "id": "building.installation-sensor-wall-window",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-sensor-wall-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 288,
+    "bytes": 32412
+  },
+  {
+    "id": "building.installation-sensor-wall-door",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-sensor-wall-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 228,
+    "bytes": 24872
+  },
+  {
+    "id": "building.installation-dispersal-wall-solid",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-dispersal-wall-solid.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 388,
+    "bytes": 39876
+  },
+  {
+    "id": "building.installation-dispersal-wall-window",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-dispersal-wall-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 432,
+    "bytes": 43660
+  },
+  {
+    "id": "building.installation-dispersal-wall-door",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-dispersal-wall-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 444,
+    "bytes": 45496
+  },
+  {
+    "id": "prop.bank-marble-pillar",
+    "category": "props",
+    "path": "assets/models/props/bank-marble-pillar.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.45,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 180,
+    "bytes": 16428
+  },
+  {
+    "id": "prop.battery-blast-barrier",
+    "category": "props",
+    "path": "assets/models/props/battery-blast-barrier.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.66,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 132,
+    "bytes": 18008
   }
 ]

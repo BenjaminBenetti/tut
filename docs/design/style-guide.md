@@ -155,6 +155,14 @@ Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `
 | Desert | `env-sand #D9B87A` | `env-sandstone #B58A5A` | `env-scrub #8A8A4A` |
 | Coastal | `env-wet-sand #B5A276` | `env-water-shallow #3F8FA8` | `env-water-deep #1F5C73`, `env-seawall #7E7F7A` |
 
+Installation wall kits retain the city grid and use distinct muted material
+families: warm stone/marble/bronze for banks (`#D6CEB9`, `#ECE6D6`, `#96815A`),
+steel armour/frame (`#505D60`, `#303C42`), white/blue sensor panels (`#CED8D5`,
+`#436D86`), and green/cream process cladding (`#658174`, `#C9CBB7`). Muted safety
+yellow (`#C9AA56`) marks industrial openings and blast barriers. Marble halls
+have dark green inlays and subdued veins; armories use steel tread plate. See
+the [installation kit](kits/installation-facilities.md) for modules and captures.
+
 Building frontage fabric uses flat `env-awning-green #56735F` and
 `env-awning-cream #D8D0B8`. These are untextured cloth colours; the grass and
 snow atlas cells would read as terrain painted onto the awning. Other frontage

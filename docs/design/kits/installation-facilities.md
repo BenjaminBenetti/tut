@@ -18,6 +18,27 @@ The external generator counts, hit points, wave schedule and victory rules are
 unchanged. Tanks and machines occupy prop footprints; the buildings themselves
 are traversable floor tiles bounded by normal, individually destructible walls.
 
+## Architectural materials
+
+Each building use selects a modular wall kit through `BUILDING_WALL_FAMILIES`.
+These are solid, window and door replacements on the same one-tile edges, with
+the same 1.5-unit storey and 0.6 × 1.2-unit door clearance. Both wall faces carry
+the details, including interior partitions. Other buildings retain their seeded
+brick, concrete, panel or local plaster selection.
+
+| Building | Wall kit | Interior and yard details |
+| --- | --- | --- |
+| Bank | Pale stone panels, moulded pilasters and bronze reveals | Veined marble hall with green diamond inlays; four freestanding marble columns where circulation permits |
+| Defensive battery | Bolted steel frames, armour plates and muted yellow opening markers | Steel tread-plate armory floor; sixteen separate blast-barrier sections around the approaches |
+| Sensor array | White insulated panels, blue bands and louvred vents | Operations rooms retain their carpet and electronics; panel detailing continues inside |
+| Repellent dispersal | Green ribbed cladding, cream ribs, exposed process pipes and door guards | Concrete pump hall and service rooms; pipes run above doors and windows |
+
+Columns provide ordinary high cover and blast barriers ordinary low cover; both
+can be demolished with force 3. They use the normal prop placement, collision and
+floor-cut rules. Furniture stays clear of the deepest moulding or pipe in its
+building's kit. Marble and tread plate extend the existing room-floor material
+factory, preserving the floor slab and walk plane. They add no simulation state.
+
 ## Generated-map gallery
 
 These are actual Map Lab captures through the production generator and tactical
@@ -99,9 +120,33 @@ facility source, with all bunker geometry removed. Each module passed trimesh
 validation and review of all three fixed isometric renders under
 `docs/design/renders/installation.{radar,cannon,pump}_*.png`. The exterior tanks
 and spray towers retain their existing equipment models. Building shells use the
-existing modular kit throughout. `installation-frontages.py` prints the four
+same modular grid throughout. `installation-frontages.py` prints the four
 installation names on the existing entrance-canopy geometry; those ordinary wall
 attachments follow the same cutaway and demolition ownership as other signs.
+
+`tools/art/models/installation-architecture.py` builds the twelve wall pieces,
+marble column and blast barrier. All fourteen parts passed trimesh validation
+and inspection at 045°, 135° and 225°. Walls use 228–444 triangles and stay below
+48 KB; the column is 180 triangles and the barrier 132, both below 19 KB. The
+shipped geometry tests also ray-test door clearance and check furniture depth.
+
+| Bank column | Battery wall |
+| --- | --- |
+| ![Marble column](../renders/prop.bank-marble-pillar_045.png) | ![Bolted steel module](../renders/building.installation-battery-wall-solid_045.png) |
+
+```sh
+blender -b -t 4 --python-exit-code 1 --python tools/art/make_model.py -- \
+  --script tools/art/models/installation-architecture.py \
+  --build-arg family=bank --build-arg kind=solid \
+  --id building.installation-bank-wall-solid --category buildings \
+  --file installation-bank-wall-solid.glb --footprint 1x0 \
+  --max-triangles 800 --no-textured --quality final
+```
+
+Wall families are `bank`, `battery`, `sensor`, `dispersal`; kinds are `solid`,
+`window`, `door`. `kind=pillar` builds `prop.bank-marble-pillar`; `kind=barrier`
+builds `prop.battery-blast-barrier`, both category `props`, footprint `1x1` and
+budget 300. Full isolated renders are in `docs/design/renders/`.
 
 ```sh
 blender -b -t 4 --python-exit-code 1 --python tools/art/make_model.py -- \

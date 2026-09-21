@@ -10,6 +10,8 @@ export const PropKindIds = {
   INSTALLATION_RADAR: "installation-radar",
   INSTALLATION_CANNON: "installation-cannon",
   PUMP_UNIT: "pump-unit",
+  MARBLE_PILLAR: "marble-pillar",
+  BLAST_BARRIER: "blast-barrier",
   INSTALLATION_SENSOR: "installation-sensor",
   INSTALLATION_PUMP_HOUSE: "installation-pump-house",
   INSTALLATION_TANKS: "installation-tanks",
@@ -133,6 +135,21 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     blocksLos: true,
     demolition: 2,
     placements: ["interior"],
+  },
+  {
+    id: PropKindIds.MARBLE_PILLAR,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 2,
+    demolition: 3,
+    placements: ["interior"],
+  },
+  {
+    id: PropKindIds.BLAST_BARRIER,
+    cover: CoverLevel.LOW,
+    blocksLos: false,
+    demolition: 3,
+    placements: ["yard"],
   },
   // Legacy sealed models remain loadable for missions saved before modular sites.
 

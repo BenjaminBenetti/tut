@@ -10,7 +10,7 @@ import { MODEL_MANIFEST } from "../data/model-manifest";
 const SIGNS = MODEL_IDS.filter(
   (id) =>
     id.startsWith("building.business-") ||
-    id.startsWith("building.installation-"),
+    (id.startsWith("building.installation-") && id.endsWith("-entry")),
 );
 const EPSILON = 0.00001;
 

@@ -440,7 +440,7 @@ function carcassesFrom(
 /**
  * One generator per generator hook, in hook order (#1175), facing the
  * board's centre like everything else that stands still. The map
- * placed the hooks on open ground the squad can reach, so nothing here
+ * placed the hooks on clear ground or interior floors the squad can reach, so nothing here
  * can fail to stand.
  */
 function generatorsFrom(

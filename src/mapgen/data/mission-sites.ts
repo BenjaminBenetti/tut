@@ -55,7 +55,7 @@ export const MISSION_SITES: Readonly<
       ...barriers(18, 4, 2),
     ],
     objectives: [
-      { kind: HookKinds.GENERATOR, x: 3, z: 10 },
+      { kind: HookKinds.GENERATOR, x: 7, z: 8, interior: true },
       { kind: HookKinds.GENERATOR, x: 18, z: 9 },
     ],
   },
@@ -91,7 +91,7 @@ export const MISSION_SITES: Readonly<
       { kind: HookKinds.GENERATOR, x: 4, z: 12 },
       { kind: HookKinds.GENERATOR, x: 19, z: 12 },
       { kind: HookKinds.GENERATOR, x: 11, z: 18 },
-      { kind: HookKinds.GENERATOR, x: 12, z: 4 },
+      { kind: HookKinds.GENERATOR, x: 13, z: 10, interior: true },
     ],
   },
   "defensive-battery": {
@@ -131,7 +131,7 @@ export const MISSION_SITES: Readonly<
       { kind: "crate", x: 16, z: 19 },
     ],
     objectives: [
-      { kind: HookKinds.GENERATOR, x: 1, z: 10 },
+      { kind: HookKinds.GENERATOR, x: 5, z: 9, interior: true },
       { kind: HookKinds.GENERATOR, x: 22, z: 10 },
       { kind: HookKinds.GENERATOR, x: 12, z: 19 },
     ],
@@ -164,7 +164,7 @@ export const MISSION_SITES: Readonly<
       { kind: "bench", x: 12, z: 20 },
     ],
     objectives: [
-      { kind: HookKinds.GENERATOR, x: 2, z: 9 },
+      { kind: HookKinds.GENERATOR, x: 6, z: 6, interior: true },
       { kind: HookKinds.GENERATOR, x: 19, z: 9 },
       { kind: HookKinds.GENERATOR, x: 11, z: 18 },
     ],

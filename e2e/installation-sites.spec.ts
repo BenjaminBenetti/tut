@@ -99,7 +99,15 @@ for (const site of Object.values(MISSION_SITES)) {
           })),
         generators: map.hooks.objectives
           .filter((hook) => hook.kind === "generator")
-          .map((hook) => hook.tiles[0]),
+          .map((hook) => ({
+            tile: hook.tiles[0],
+            buildingId: map.tiles.find(
+              (tile) =>
+                tile.x === hook.tiles[0].x &&
+                tile.y === hook.tiles[0].y &&
+                tile.z === hook.tiles[0].z,
+            )?.buildingId,
+          })),
       };
     }, site);
     expect(
@@ -111,13 +119,43 @@ for (const site of Object.values(MISSION_SITES)) {
       expect(building.entrances).toBe(2);
       expect(building.rooms).toBeGreaterThan(1);
     }
-    expect(stats.generators).toEqual(
-      site.objectives.map((socket) => ({
-        x: stats.origin.x + socket.x,
-        y: stats.origin.y,
-        z: stats.origin.z + socket.z,
-      })),
-    );
+    expect(stats.generators).toHaveLength(site.objectives.length);
+    expect(
+      stats.generators.filter((generator) => generator.buildingId),
+    ).toHaveLength(1);
+    for (const [i, socket] of site.objectives.entries()) {
+      const generator = stats.generators[i];
+      if (socket.interior) {
+        const building = site.buildings!.find(
+          ({ rect }) =>
+            socket.x >= rect.x &&
+            socket.x < rect.x + rect.w &&
+            socket.z >= rect.z &&
+            socket.z < rect.z + rect.d,
+        )!;
+        expect(generator.buildingId).toBeTruthy();
+        expect(generator.tile.y).toBe(stats.origin.y);
+        expect(generator.tile.x).toBeGreaterThanOrEqual(
+          stats.origin.x + building.rect.x,
+        );
+        expect(generator.tile.x).toBeLessThan(
+          stats.origin.x + building.rect.x + building.rect.w,
+        );
+        expect(generator.tile.z).toBeGreaterThanOrEqual(
+          stats.origin.z + building.rect.z,
+        );
+        expect(generator.tile.z).toBeLessThan(
+          stats.origin.z + building.rect.z + building.rect.d,
+        );
+      } else {
+        expect(generator.tile).toEqual({
+          x: stats.origin.x + socket.x,
+          y: stats.origin.y,
+          z: stats.origin.z + socket.z,
+        });
+        expect(generator.buildingId).toBeUndefined();
+      }
+    }
     await page.mouse.move(0, 0);
     await drawnFrame(page);
     assertNoAssetFallback(page, site.id);

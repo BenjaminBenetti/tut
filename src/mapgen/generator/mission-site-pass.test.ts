@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BIOME_IDS } from "../../content/model/biome-id";
+import { DIRECTIONS } from "../../core/model/direction";
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
 import { createRegistry } from "../../core/service/definition-registry";
@@ -10,7 +11,7 @@ import { SurfaceIds } from "../data/surfaces";
 import { HookKinds } from "../model/hook";
 import type { MapRecipe } from "../model/map-recipe";
 import type { MissionSiteDefinition } from "../model/mission-site";
-import { PassMask } from "../model/pass-mask";
+import { allows, PassMask } from "../model/pass-mask";
 import { createDefaultRegistries } from "../service/default-registries";
 import { freezeDraft } from "../service/draft-freezer";
 import { generateTacticalMap } from "../service/generate-tactical-map";
@@ -91,9 +92,47 @@ describe("authored mission sites", () => {
           const generators = map.hooks.objectives.filter(
             (hook) => hook.kind === HookKinds.GENERATOR,
           );
-          expect(generators.map((hook) => hook.tiles[0])).toEqual(
-            placed.objectives.map((socket) => socket.tile),
+          expect(generators).toHaveLength(site.objectives.length);
+          const occupied = new Set(
+            generators.map((hook) => index.keyOf(hook.tiles[0]!)),
           );
+          const occupiedReach = new ReachabilityService(
+            index,
+            map.connectors,
+            (tile, unitClass) =>
+              allows(tile.pass, unitClass) && !occupied.has(index.keyOf(tile)),
+          ).reachableFrom(deploy, PassMask.INFANTRY);
+          for (const [i, socket] of placed.objectives.entries()) {
+            const tile = index.getAt(generators[i]!.tiles[0]!)!;
+            if (socket.interior) {
+              expect(tile.surface).toBe(SurfaceIds.FLOOR);
+              expect(tile.buildingId).toBe(
+                index.getAt(socket.tile)?.buildingId,
+              );
+              expect(tile.buildingId).toBeDefined();
+              expect(tile.y).toBe(socket.tile.y);
+              expect(tile.propId).toBeUndefined();
+              expect(Object.values(tile.walls)).not.toContain("door");
+              expect(
+                DIRECTIONS.some((side) => {
+                  const adjacent = index.getAt(stepGridPos(tile, side));
+                  return (
+                    adjacent &&
+                    occupiedReach.has(index.keyOf(adjacent)) &&
+                    reach.canStep(adjacent, tile, PassMask.INFANTRY)
+                  );
+                }),
+              ).toBe(true);
+            } else {
+              expect(generators[i]!.tiles[0]).toEqual(socket.tile);
+              expect(tile.buildingId).toBeUndefined();
+            }
+          }
+          expect(
+            generators.filter(
+              (hook) => index.getAt(hook.tiles[0]!)?.buildingId,
+            ),
+          ).toHaveLength(1);
           for (const generator of generators)
             expect(accessible.has(index.keyOf(generator.tiles[0]!))).toBe(true);
           for (const structureId of placed.structureIds) {
@@ -143,11 +182,17 @@ describe("authored mission sites", () => {
             const interior = tiles.filter(
               (tile) => tile.pass & PassMask.INFANTRY,
             );
-            for (const tile of interior)
+            for (const tile of interior) {
+              if (!occupied.has(index.keyOf(tile)))
+                expect(
+                  occupiedReach.has(index.keyOf(tile)),
+                  `${building.kind} occupied circulation`,
+                ).toBe(true);
               expect(
                 accessible.has(index.keyOf(tile)),
                 `${building.kind} ${tile.x},${tile.y},${tile.z}`,
               ).toBe(true);
+            }
             expect(
               interior.some((tile) => tile.surface === SurfaceIds.ROOF),
             ).toBe(true);
@@ -299,6 +344,25 @@ describe("authored mission sites", () => {
         registries,
       ),
     ).toThrow(/Blocked building access/);
+  });
+
+  it("requires interior sockets to target a building and rejects duplicate anchors", () => {
+    const site = MISSION_SITES.bank;
+    expect(() =>
+      validateSite(
+        {
+          ...site,
+          objectives: [
+            { kind: HookKinds.GENERATOR, x: 2, z: 9, interior: true },
+          ],
+        },
+        registries,
+      ),
+    ).toThrow(/Blocked/);
+    const inside = site.objectives.find((socket) => socket.interior)!;
+    expect(() =>
+      validateSite({ ...site, objectives: [inside, inside] }, registries),
+    ).toThrow(/overlapping/);
   });
 
   it("rejects unknown sites, undersized maps and overlapping content", () => {

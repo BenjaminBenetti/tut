@@ -33,6 +33,8 @@ export interface SiteBuilding extends BuildingSpecification {
 /** An objective socket, activated only when the recipe requests this hook kind. */
 export interface SiteObjective {
   readonly kind: HookKind;
+  /** Prefer these coordinates inside their building; resolve a clear ground-floor cell after furnishing. */
+  readonly interior?: boolean;
   readonly x: number;
   readonly z: number;
 }
@@ -64,6 +66,7 @@ export interface MissionSitePlacement {
   readonly clearance: Rect;
   readonly objectives: readonly {
     readonly kind: HookKind;
+    readonly interior?: boolean;
     readonly tile: TileCoord;
   }[];
   /** Structural pieces must survive connectivity repair, like building shells. */

@@ -109,6 +109,7 @@ export class MissionSitePass implements GenerationPass {
       lotIds,
       objectives: definition.objectives.map((socket) => ({
         kind: socket.kind,
+        ...(socket.interior ? { interior: true } : {}),
         tile: { x: bounds.x + socket.x, y: level, z: bounds.z + socket.z },
       })),
     });
@@ -259,12 +260,21 @@ export function validateSite(
       occupied.add(key);
     }
   }
+  const sockets = new Set<string>();
   for (const socket of site.objectives) {
     const key = `${socket.x},${socket.z}`;
-    if (!valid(socket.x, socket.z) || occupied.has(key))
+    const inside = (site.buildings ?? []).some(({ rect }) =>
+      rectContains(rect, socket.x, socket.z),
+    );
+    if (
+      !valid(socket.x, socket.z) ||
+      sockets.has(key) ||
+      (socket.interior ? !inside : occupied.has(key))
+    )
       throw new Error(
         `Blocked or overlapping objective socket in mission site "${site.id}"`,
       );
+    sockets.add(key);
     occupied.add(key);
   }
   // A full free apron preserves every possible frontage door and roof ladder.

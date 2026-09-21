@@ -14,8 +14,9 @@ storey cut reveals the rooms and hides their roofs and rooftop equipment.
 | Bank | 14×12, two storeys | Public banking hall with teller counters, secure storage rooms, upstairs offices and meeting space | 22×22 / 3 |
 
 Every building has front and rear entrances, interior stairs and a walkable roof.
-The external generator counts, hit points, wave schedule and victory rules are
-unchanged. Tanks and machines occupy prop footprints; the buildings themselves
+One generator stands inside each installation on a clear ground-floor tile;
+the other generators remain in the yard. Total counts, hit points, wave schedule
+and victory rules are unchanged. Tanks and machines occupy prop footprints; the buildings themselves
 are traversable floor tiles bounded by normal, individually destructible walls.
 
 ## Architectural materials
@@ -56,6 +57,7 @@ The captures wait for all assets and reject placeholder fallbacks.
 Reproduce with `pnpm exec playwright test e2e/installation-sites.spec.ts` or open
 `/mapgen-preview.html?seed=installation-review&biome=temperate&settlement=town&size=medium&site=sensor-array&models=1&units=1`.
 The Installation selector retains the facility when regenerating or sharing a URL.
+The interior captures also show the indoor generator in each facility.
 
 ## Extending generation
 
@@ -90,6 +92,14 @@ roads + landing -> grade yard and reserve shoulder
                             |
               ordinary saved buildings, tiles, props and hooks
 ```
+
+Objective sockets with `interior: true` target the ground floor of the building
+containing their preferred site-local coordinates. After rooms and furniture
+exist, the hook placer selects the nearest clear floor tile, avoiding doors and
+stair landings. It checks circulation with all objective tiles occupied, so a
+generator cannot seal a room or the roof route. Exterior sockets retain their
+exact authored positions. An indoor socket that cannot be placed fails generation
+instead of silently moving its objective outside.
 
 Roof fixtures are placed before stairs choose their holes and landings. Their
 full footprints therefore participate in access planning, instead of a large

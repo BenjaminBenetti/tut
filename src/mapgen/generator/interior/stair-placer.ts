@@ -40,7 +40,7 @@ interface StairCandidate {
  * ```
  *
  * Candidates are rejected when the stair tile or landing has a door, sits
- * on the entrance, or lies in a room narrower than two tiles, and when the
+ * on the entrance, intersects equipment, or lies in a room narrower than two tiles, and when the
  * hole would cut the upper floor off. Holes on interior columns are tried
  * before holes on the perimeter so facades stay whole. Returns the
  * connector, or undefined when no candidate works.
@@ -121,7 +121,11 @@ function collectCandidates(
       continue;
     }
     const hole = draft.getTile({ x: from.x, y: toY, z: from.z });
-    if (hole?.buildingId !== buildingId || hasDoor(draft, hole)) {
+    if (
+      hole?.buildingId !== buildingId ||
+      hasDoor(draft, hole) ||
+      draft.propAt(hole)
+    ) {
       continue;
     }
     for (const direction of DIRECTIONS) {
@@ -131,6 +135,7 @@ function collectCandidates(
       if (
         landing?.buildingId === buildingId &&
         isLandingSurface(landing) &&
+        !draft.propAt(landing) &&
         !hasDoor(draft, landing)
       ) {
         candidates.push({ from, landing, hole });
@@ -189,9 +194,13 @@ function onPerimeter(draft: MapDraft, tile: TileCoord): boolean {
   );
 }
 
-/** A floor tile that has not already become stairs and carries no door. */
+/** An unoccupied floor tile that has not become stairs and carries no door. */
 function isPlainFloor(draft: MapDraft, tile: DraftTile): boolean {
-  return tile.surface === SurfaceIds.FLOOR && !hasDoor(draft, tile);
+  return (
+    tile.surface === SurfaceIds.FLOOR &&
+    !hasDoor(draft, tile) &&
+    !draft.propAt(tile)
+  );
 }
 
 /** Landings may be floors or walkable roofs. */

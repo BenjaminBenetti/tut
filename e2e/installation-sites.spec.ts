@@ -1,5 +1,7 @@
 /// <reference types="node" />
 import { expect, test } from "@playwright/test";
+import type { LayerFocus } from "../src/graphics/model/layer-focus";
+import type { TileCoord } from "../src/mapgen/model/tile-coord";
 import type { OrthographicCameraRig } from "../src/graphics/service/orthographic-camera-rig";
 import type { TacticalMap } from "../src/mapgen/model/tactical-map";
 import { MISSION_SITES } from "../src/mapgen/data/mission-sites";
@@ -12,6 +14,12 @@ import {
 /** Diagnostic access to the real generated map and camera, injected only by this capture. */
 interface SitePreview {
   readonly map: TacticalMap;
+  readonly builder: {
+    /** Use the ordinary gameplay storey cut for interior review. */
+    setLayerFocus(focus: LayerFocus): void;
+    /** Whether a tile is hidden by that same renderer cut. */
+    isCut(tile: TileCoord): boolean;
+  };
   readonly rig: OrthographicCameraRig;
 }
 
@@ -34,7 +42,7 @@ for (const site of Object.values(MISSION_SITES)) {
         response,
         body: body.replace(
           marker,
-          "$& globalThis.__sitePreview = { map, rig };",
+          "$& globalThis.__sitePreview = { map, rig, builder };",
         ),
       });
     });
@@ -61,13 +69,14 @@ for (const site of Object.values(MISSION_SITES)) {
       const { map, rig } = (
         globalThis as typeof globalThis & { __sitePreview: SitePreview }
       ).__sitePreview;
-      const anchor = map.props.find(
-        (prop) => prop.kind === definition.structures[0].kind,
+      const parcel = definition.buildings![0];
+      const anchor = map.buildings.find(
+        (building) => building.kind === parcel.template,
       )!;
       const origin = {
-        x: anchor.tile.x - definition.structures[0].x,
-        y: anchor.tile.y,
-        z: anchor.tile.z - definition.structures[0].z,
+        x: anchor.footprint[0].x - parcel.rect.x,
+        y: anchor.groundLevel,
+        z: anchor.footprint[0].z - parcel.rect.z,
       };
       rig.lookAt({
         x: origin.x + definition.width / 2,
@@ -78,19 +87,30 @@ for (const site of Object.values(MISSION_SITES)) {
       rig.apply();
       return {
         origin,
-        structures: map.props
-          .filter((prop) => prop.kind.startsWith("installation-"))
-          .map((prop) => prop.kind),
+        buildings: map.buildings
+          .filter((b) =>
+            definition.buildings!.some((p) => p.template === b.kind),
+          )
+          .map((b) => ({
+            kind: b.kind,
+            floors: b.floors.length,
+            entrances: b.entrances.length,
+            rooms: b.floors.flatMap((f) => f.rooms).length,
+          })),
         generators: map.hooks.objectives
           .filter((hook) => hook.kind === "generator")
           .map((hook) => hook.tiles[0]),
       };
     }, site);
-    expect(stats.structures).toEqual(
-      site.structures
-        .filter((piece) => piece.kind.startsWith("installation-"))
-        .map((piece) => piece.kind),
+    expect(
+      stats.buildings.map((b) => ({ kind: b.kind, floors: b.floors })),
+    ).toEqual(
+      site.buildings!.map((b) => ({ kind: b.template, floors: b.floors })),
     );
+    for (const building of stats.buildings) {
+      expect(building.entrances).toBe(2);
+      expect(building.rooms).toBeGreaterThan(1);
+    }
     expect(stats.generators).toEqual(
       site.objectives.map((socket) => ({
         x: stats.origin.x + socket.x,
@@ -104,6 +124,32 @@ for (const site of Object.values(MISSION_SITES)) {
     expect(errors).toEqual([]);
     await page.locator("#map-viewport").screenshot({
       path: `docs/design/diagnostics/installations/${site.id}.png`,
+    });
+    const cut = await page.evaluate(() => {
+      const { map, builder } = (
+        globalThis as typeof globalThis & { __sitePreview: SitePreview }
+      ).__sitePreview;
+      builder.setLayerFocus({
+        storey: 0,
+        storeyCount: Math.max(...map.buildings.map((b) => b.floors.length)) + 1,
+      });
+      const installation = map.buildings.filter(
+        (b) => b.kind === map.recipe.params.site,
+      );
+      return installation.map((b) => ({
+        groundVisible: map.tiles
+          .filter((t) => t.buildingId === b.id && t.y === b.groundLevel)
+          .every((t) => !builder.isCut(t)),
+        roofsHidden: map.tiles
+          .filter((t) => t.buildingId === b.id && t.surface === "roof")
+          .every((t) => builder.isCut(t)),
+      }));
+    });
+    expect(cut).toHaveLength(site.buildings!.length);
+    expect(cut.every((b) => b.groundVisible && b.roofsHidden)).toBe(true);
+    await drawnFrame(page);
+    await page.locator("#map-viewport").screenshot({
+      path: `docs/design/diagnostics/installations/${site.id}-interior.png`,
     });
     // The selector and share URL retain the chosen installation on regeneration.
     await page.locator('button[type="submit"]').click();

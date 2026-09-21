@@ -1,11 +1,11 @@
 import type { ArchitecturalPlan } from "../model/architectural-plan";
 import type { KnownBuildingKindId } from "./building-kind-ids";
 
-/** One control room off a service bay, the rest open plant floor (#1175). */
+/** Industrial service rooms behind the main plant or magazine floor. */
 const INSTALLATION_PLAN: ArchitecturalPlan = {
   style: "industrial",
   serviceDepth: { min: 3, max: 4 },
-  serviceWidth: { min: 3, max: 4 },
+  serviceWidth: { min: 2, max: 3 },
   minimumPublicDepth: 4,
 };
 
@@ -43,9 +43,19 @@ export const ARCHITECTURAL_PLANS: Readonly<
     serviceWidth: { min: 3, max: 4 },
     minimumPublicDepth: 5,
   },
-  // Installations are plant rooms behind a service bay (#1175).
-  "sensor-array": INSTALLATION_PLAN,
+  // Operations and treasury buildings share the ordinary workplace/retail planners.
+  "sensor-array": {
+    style: "workplace",
+    serviceDepth: { min: 3, max: 3 },
+    serviceWidth: { min: 3, max: 4 },
+    minimumPublicDepth: 3,
+  },
   "repellent-dispersal": INSTALLATION_PLAN,
   "defensive-battery": INSTALLATION_PLAN,
-  bank: INSTALLATION_PLAN,
+  bank: {
+    style: "retail",
+    serviceDepth: { min: 4, max: 4 },
+    serviceWidth: { min: 4, max: 5 },
+    minimumPublicDepth: 6,
+  },
 };

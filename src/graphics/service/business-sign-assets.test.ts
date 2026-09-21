@@ -7,7 +7,11 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { MODEL_IDS } from "../../content/data/model-ids";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 
-const SIGNS = MODEL_IDS.filter((id) => id.startsWith("building.business-"));
+const SIGNS = MODEL_IDS.filter(
+  (id) =>
+    id.startsWith("building.business-") ||
+    id.startsWith("building.installation-"),
+);
 const EPSILON = 0.00001;
 
 /** Only bitmap decoding needs a browser; retain the shipped mesh, UVs and transforms. */

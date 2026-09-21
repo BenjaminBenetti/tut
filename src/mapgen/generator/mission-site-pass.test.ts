@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BIOME_IDS } from "../../content/model/biome-id";
-import { rectContains } from "../../core/service/grid-math";
+import { STOREY_LAYERS } from "../../core/model/elevation";
+import { rectContains, stepGridPos } from "../../core/service/grid-math";
 import { createRegistry } from "../../core/service/definition-registry";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
@@ -110,12 +111,89 @@ describe("authored mission sites", () => {
                 });
             }
           }
-          // No ordinary building, vegetation, colony or aircraft consumes the yard.
+          const siteBuildings = map.buildings.filter((building) =>
+            building.footprint.some((rect) =>
+              rectContains(placed.bounds, rect.x, rect.z),
+            ),
+          );
+          expect(siteBuildings.map((building) => building.kind)).toEqual(
+            site.buildings!.map((building) => building.template),
+          );
+          for (const [i, building] of siteBuildings.entries()) {
+            expect(building.floors).toHaveLength(site.buildings![i]!.floors);
+            expect(building.entrances).toHaveLength(2);
+            expect(building.floors[0]!.rooms.length).toBeGreaterThan(1);
+            for (const entrance of building.entrances) {
+              expect(
+                accessible.has(index.keyOf(entrance.tile)),
+                `${building.id} entrance`,
+              ).toBe(true);
+              expect(
+                accessible.has(
+                  index.keyOf(stepGridPos(entrance.tile, entrance.side)),
+                ),
+              ).toBe(true);
+              expect(index.getAt(entrance.tile)?.walls?.[entrance.side]).toBe(
+                "door",
+              );
+            }
+            const tiles = map.tiles.filter(
+              (tile) => tile.buildingId === building.id,
+            );
+            const interior = tiles.filter(
+              (tile) => tile.pass & PassMask.INFANTRY,
+            );
+            for (const tile of interior)
+              expect(
+                accessible.has(index.keyOf(tile)),
+                `${building.kind} ${tile.x},${tile.y},${tile.z}`,
+              ).toBe(true);
+            expect(
+              interior.some((tile) => tile.surface === SurfaceIds.ROOF),
+            ).toBe(true);
+            expect(
+              map.connectors.some(
+                (c) => c.buildingId === building.id && c.kind === "stairs",
+              ),
+            ).toBe(true);
+            expect(
+              tiles.some(
+                (tile) =>
+                  tile.propId !== undefined && tile.y === building.groundLevel,
+              ),
+            ).toBe(true);
+            expect(
+              tiles.filter(
+                (tile) =>
+                  tile.y ===
+                    building.groundLevel +
+                      building.floors.length * STOREY_LAYERS &&
+                  tile.surface === SurfaceIds.ROOF,
+              ).length,
+            ).toBeGreaterThan(20);
+          }
+          for (const kind of [
+            "installation-sensor",
+            "installation-pump-house",
+            "installation-battery",
+            "installation-bank",
+          ])
+            expect(map.props.some((prop) => prop.kind === kind)).toBe(false);
+          if (site.id === "sensor-array")
+            expect(
+              map.props.filter((prop) => prop.kind === "installation-radar"),
+            ).toHaveLength(1);
+          if (site.id === "defensive-battery")
+            expect(
+              map.props.filter((prop) => prop.kind === "installation-cannon"),
+            ).toHaveLength(2);
+          // Only authored buildings/equipment and their ordinary furnishings occupy the yard.
           for (const tile of map.tiles.filter((tile) =>
             rectContains(placed.bounds, tile.x, tile.z),
           )) {
-            expect(tile.buildingId).toBeUndefined();
-            if (tile.propId !== undefined)
+            if (tile.buildingId !== undefined)
+              expect(siteBuildings.map((b) => b.id)).toContain(tile.buildingId);
+            else if (tile.propId !== undefined)
               expect(placed.structureIds).toContain(tile.propId);
           }
           for (const ship of map.dropships ?? []) {
@@ -138,16 +216,23 @@ describe("authored mission sites", () => {
   it("extends through an injected catalogue with new terrain, a rotated structure and a hook socket", () => {
     const site: MissionSiteDefinition = {
       id: "research-outpost",
-      width: 16,
-      depth: 16,
+      width: 22,
+      depth: 22,
       margin: 2,
       surface: SurfaceIds.DIRT,
       terrain: [
         { rect: { x: 2, z: 2, w: 10, d: 10 }, surface: SurfaceIds.SIDEWALK },
       ],
-      structures: [
-        { kind: "installation-pump-house", x: 4, z: 4, rotation: 1 },
+      buildings: [
+        {
+          template: "house",
+          rect: { x: 3, z: 3, w: 8, d: 8 },
+          floors: 2,
+          frontage: "e",
+          additionalEntrances: ["w"],
+        },
       ],
+      structures: [{ kind: "installation-tanks", x: 14, z: 5, rotation: 1 }],
       objectives: [{ kind: HookKinds.GENERATOR, x: 2, z: 8 }],
     };
     const custom = {
@@ -155,13 +240,65 @@ describe("authored mission sites", () => {
       missionSites: createRegistry("mission site", [site]),
     };
     const map = generateTacticalMap(recipe(site), { registries: custom });
-    const piece = map.props.find(
-      (prop) => prop.kind === "installation-pump-house",
-    )!;
+    const piece = map.props.find((prop) => prop.kind === "installation-tanks")!;
     expect(piece.rotation).toBe(1);
     expect(new Set(propTiles(piece).map((tile) => tile.x)).size).toBe(6);
-    expect(new Set(propTiles(piece).map((tile) => tile.z)).size).toBe(8);
+    expect(new Set(propTiles(piece).map((tile) => tile.z)).size).toBe(4);
     expect(map.hooks.objectives).toHaveLength(1);
+    expect(
+      map.buildings.some(
+        (building) =>
+          building.kind === "house" &&
+          building.entrances.length === 2 &&
+          building.floors.length === 2,
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects malformed building requests and roof fixtures before stamping", () => {
+    const site = MISSION_SITES["sensor-array"];
+    const building = site.buildings![0]!;
+    expect(() =>
+      validateSite(
+        { ...site, buildings: [{ ...building, template: "missing" }] },
+        registries,
+      ),
+    ).toThrow(/building template/);
+    expect(() =>
+      validateSite(
+        { ...site, buildings: [{ ...building, floors: 9 }] },
+        registries,
+      ),
+    ).toThrow(/Invalid building/);
+    expect(() =>
+      validateSite({ ...site, buildings: [building, building] }, registries),
+    ).toThrow(/Overlapping building/);
+    expect(() =>
+      validateSite(
+        {
+          ...site,
+          buildings: [
+            {
+              ...building,
+              roofEquipment: [{ kind: "installation-radar", x: 0, z: 0 }],
+            },
+          ],
+        },
+        registries,
+      ),
+    ).toThrow(/roof equipment/);
+    expect(() =>
+      validateSite(
+        {
+          ...site,
+          structures: [
+            ...site.structures,
+            { kind: "crate", x: building.rect.x - 1, z: building.rect.z },
+          ],
+        },
+        registries,
+      ),
+    ).toThrow(/Blocked building access/);
   });
 
   it("rejects unknown sites, undersized maps and overlapping content", () => {

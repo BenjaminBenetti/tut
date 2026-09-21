@@ -4966,5 +4966,111 @@
     "quality": "final",
     "triangles": 552,
     "bytes": 44924
+  },
+  {
+    "id": "installation.pump",
+    "category": "props",
+    "path": "assets/models/props/installation-pump.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.0,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 136,
+    "bytes": 13120
+  },
+  {
+    "id": "building.installation-sensor-array-entry",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-sensor-array-entry.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 33968
+  },
+  {
+    "id": "building.installation-repellent-dispersal-entry",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-repellent-dispersal-entry.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 40584
+  },
+  {
+    "id": "building.installation-defensive-battery-entry",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-defensive-battery-entry.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 30760
+  },
+  {
+    "id": "building.installation-bank-entry",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-bank-entry.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.4,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 31540
+  },
+  {
+    "id": "installation.radar",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-radar.glb",
+    "footprint": {
+      "w": 5,
+      "d": 5
+    },
+    "height": 3.2,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 500,
+    "bytes": 35084
+  },
+  {
+    "id": "installation.cannon",
+    "category": "buildings",
+    "path": "assets/models/buildings/installation-cannon.glb",
+    "footprint": {
+      "w": 4,
+      "d": 5
+    },
+    "height": 1.28,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 264,
+    "bytes": 22648
   }
 ]

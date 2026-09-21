@@ -123,6 +123,9 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
+  "installation-radar": "installation.radar",
+  "installation-cannon": "installation.cannon",
+  "pump-unit": "installation.pump",
   "installation-sensor": "installation.sensor",
   "installation-pump-house": "installation.pump-house",
   "installation-battery": "installation.battery",

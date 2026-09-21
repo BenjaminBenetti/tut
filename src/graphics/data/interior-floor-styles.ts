@@ -38,4 +38,9 @@ export const ROOM_FLOOR_FINISHES: Readonly<
   kitchen: "ceramic",
   bathroom: "ceramic",
   workshop: "concrete",
+  "control-room": "carpet",
+  "pump-room": "concrete",
+  armory: "concrete",
+  "banking-hall": "ceramic",
+  vault: "concrete",
 };

@@ -269,9 +269,11 @@ function addLadder(
         const outside = stepGridPos({ x, y: roofY, z }, direction);
         if (
           draft.getTile({ x, y: roofY, z }) === undefined ||
+          draft.propAt({ x, y: roofY, z }) !== undefined ||
           rectContains(footprint, outside.x, outside.z) ||
           !draft.inBounds(outside.x, outside.z) ||
           draft.isCovered(outside.x, outside.z) ||
+          draft.propAt(draft.groundCoord(outside.x, outside.z)) !== undefined ||
           draft.groundSurfaceAt(outside.x, outside.z) === SurfaceIds.WATER ||
           // A ladder rises at least its rule's minimum (two layers): natural
           // ground can now sit one layer under a roof (#808), and a rung

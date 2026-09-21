@@ -7,6 +7,10 @@ import ast
 from pathlib import Path
 
 STYLES = {
+    "sensor-array": ("SENSOR CONTROL", "env-water-deep", "env-awning-cream"),
+    "repellent-dispersal": ("DISPERSAL WORKS", "env-roof-green", "env-awning-cream"),
+    "defensive-battery": ("DEFENCE BATTERY", "tdf-grey-dark", "env-awning-cream"),
+    "bank": ("REGIONAL BANK", "env-roof-green", "env-awning-cream"),
     "grocery": ("GROCERY", "env-foliage", "env-awning-cream"),
     "bakery-cafe": ("BAKERY CAFE", "env-rust", "env-awning-cream"),
     "pharmacy": ("PHARMACY", "env-snow", "env-foliage"),
@@ -40,6 +44,7 @@ def palette() -> dict[str, str]:
 
 def draw_icon(draw, identity: str, foreground: str, background: str) -> None:
     """Use bold closed pictograms on a 128-pixel square, readable at tactical scale."""
+    identity = {"sensor-array": "electronics", "repellent-dispersal": "hardware", "defensive-battery": "depot", "bank": "offices"}.get(identity, identity)
     fg, bg = foreground, background
     if identity == "grocery":
         draw.ellipse((18, 35, 76, 111), fill=fg)

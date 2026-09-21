@@ -2,7 +2,6 @@ import type { RooftopFurnishing } from "../model/rooftop-furnishing";
 import type { PropKindId } from "../model/prop";
 import { PropKindIds } from "./props";
 
-/** The roof the four installations share (#1175). */
 /**
  * An installation's roof (#1175): its signature piece first, always,
  * then plant if the roof is big enough.
@@ -48,8 +47,25 @@ export const ROOFTOP_FURNISHING: Readonly<Record<string, RooftopFurnishing>> = {
     spacing: 2,
   },
   // Installations (#1175): plant on the roof, but room left to fight from it.
-  "sensor-array": installationRoof(PropKindIds.SENSOR_MAST),
+  "sensor-array": {
+    props: [PropKindIds.INSTALLATION_RADAR],
+    tilesPerProp: 120,
+    maxProps: 1,
+    minProps: 1,
+    spacing: 6,
+  },
   "repellent-dispersal": installationRoof(PropKindIds.DISPERSAL_STACK),
-  "defensive-battery": installationRoof(PropKindIds.BATTERY_EMPLACEMENT),
-  bank: installationRoof(PropKindIds.STRONGROOM),
+  "defensive-battery": {
+    props: [PropKindIds.INSTALLATION_CANNON],
+    tilesPerProp: 120,
+    maxProps: 1,
+    minProps: 1,
+    spacing: 6,
+  },
+  bank: {
+    props: [PropKindIds.ROOFTOP_HVAC],
+    tilesPerProp: 70,
+    maxProps: 2,
+    spacing: 3,
+  },
 };

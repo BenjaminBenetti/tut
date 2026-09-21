@@ -113,14 +113,11 @@ export const BUILDING_TEMPLATES: Readonly<
       roomPrograms: BUILDING_ROOM_PROGRAMS.tower,
     },
   },
-  // The installations (#1175): a landmark in a defend mission, so one
-  // storey and a flat roof the squad can hold from, few windows so the
-  // fight stays outside around the generators, and a footprint every
-  // scale's lots can carry.
-  "sensor-array": installationTemplate("sensor-array"),
-  "repellent-dispersal": installationTemplate("repellent-dispersal"),
-  "defensive-battery": installationTemplate("defensive-battery"),
-  bank: installationTemplate("bank"),
+  // Installations use the same modular shells and interior passes as the town.
+  "sensor-array": installationTemplate("sensor-array", 2, 0.35),
+  "repellent-dispersal": installationTemplate("repellent-dispersal", 1, 0.2),
+  "defensive-battery": installationTemplate("defensive-battery", 1, 0.15),
+  bank: installationTemplate("bank", 2, 0.3),
 };
 
 // ===========================================
@@ -128,21 +125,22 @@ export const BUILDING_TEMPLATES: Readonly<
 // ===========================================
 
 /**
- * The shell the four installations share (#1175). They differ in
- * dressing, not in structure: an industrial floor plan of workshop and
- * storage bays, the depot frontage, a walkable roof.
+ * Shared construction rules with type-specific height, windows and room plans.
+ * Exact authored parcels can be larger than the randomly sized landmark lots.
  */
 function installationTemplate(
   id: InstallationBuildingKindId,
+  floors: number,
+  windowDensity: number,
 ): BuildingTemplate {
   return {
     id,
-    footprintWidth: { min: 6, max: 12 },
-    footprintDepth: { min: 6, max: 10 },
-    floors: { min: 1, max: 1 },
+    footprintWidth: { min: 6, max: 16 },
+    footprintDepth: { min: 6, max: 14 },
+    floors: { min: 1, max: floors },
     roof: "flat",
     roofWalkable: true,
-    windowDensity: 0.2,
+    windowDensity,
     scales: ["rural", "town", "city"],
     interior: {
       roomSize: { min: 5, max: 8 },

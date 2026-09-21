@@ -14,6 +14,13 @@
  * id here and an entry there in the same PR.
  */
 export const MODEL_IDS = [
+  "building.installation-sensor-array-entry",
+  "building.installation-repellent-dispersal-entry",
+  "building.installation-defensive-battery-entry",
+  "building.installation-bank-entry",
+  "installation.radar",
+  "installation.cannon",
+  "installation.pump",
   "installation.sensor",
   "installation.pump-house",
   "installation.battery",

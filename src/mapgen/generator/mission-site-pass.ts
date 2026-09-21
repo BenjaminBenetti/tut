@@ -19,8 +19,8 @@ import { propPlacementTiles } from "../service/prop-footprint";
  * Reserves and stamps a composed facility before lots and vegetation compete
  * for its land. Roads through the yard become its authored service pavement;
  * the surrounding network stays connected through the open circulation lanes.
- * All structures use real collision footprints and opaque heights. No
- * building record or walkable roof is invented for sealed industrial plant.
+ * Building parcels go through the normal shell/interior/furnishing passes;
+ * equipment uses registered collision footprints alongside them.
  */
 export class MissionSitePass implements GenerationPass {
   readonly id = "mission-sites";
@@ -67,6 +67,19 @@ export class MissionSitePass implements GenerationPass {
         (x, z) => draft.setGroundSurface(x, z, patch.surface),
       );
     }
+    const lotIds = (definition.buildings ?? []).map(
+      ({ rect, frontage, ...building }) => {
+        const id = draft.ids.nextId("lot");
+        draft.lots.push({
+          id,
+          rect: { ...rect, x: bounds.x + rect.x, z: bounds.z + rect.z },
+          frontage,
+          level,
+          building,
+        });
+        return id;
+      },
+    );
     const structureIds = definition.structures.map((piece) => {
       const tile = { x: bounds.x + piece.x, y: level, z: bounds.z + piece.z };
       const rotation = piece.rotation ?? 0;
@@ -93,13 +106,14 @@ export class MissionSitePass implements GenerationPass {
       bounds,
       clearance,
       structureIds,
+      lotIds,
       objectives: definition.objectives.map((socket) => ({
         kind: socket.kind,
         tile: { x: bounds.x + socket.x, y: level, z: bounds.z + socket.z },
       })),
     });
     diagnostics.note(
-      `${definition.id}: ${bounds.w}×${bounds.d} yard, ${structureIds.length} structures, ${definition.objectives.length} objective sockets`,
+      `${definition.id}: ${bounds.w}×${bounds.d} yard, ${lotIds.length} buildings, ${structureIds.length} equipment pieces, ${definition.objectives.length} objective sockets`,
       { x: bounds.x, y: level, z: bounds.z },
     );
   }
@@ -143,7 +157,10 @@ function chooseBounds(
 /** Rejects malformed definitions before any part of the draft is changed. */
 export function validateSite(
   site: MissionSiteDefinition,
-  registries: Pick<MapGenRegistries, "props" | "surfaces">,
+  registries: Pick<
+    MapGenRegistries,
+    "props" | "surfaces" | "buildingTemplates"
+  >,
 ): void {
   if (
     ![site.width, site.depth].every((n) => Number.isInteger(n) && n > 0) ||
@@ -167,6 +184,66 @@ export function validateSite(
     )
       throw new Error(`Terrain outside mission site "${site.id}"`);
   }
+  for (const building of site.buildings ?? []) {
+    const template = registries.buildingTemplates.get(building.template);
+    const { rect } = building;
+    const along =
+      building.frontage === "n" || building.frontage === "s" ? rect.w : rect.d;
+    const deep =
+      building.frontage === "n" || building.frontage === "s" ? rect.d : rect.w;
+    if (
+      ![rect.x, rect.z, rect.w, rect.d, building.floors].every(
+        Number.isInteger,
+      ) ||
+      along < template.footprintWidth.min ||
+      along > template.footprintWidth.max ||
+      deep < template.footprintDepth.min ||
+      deep > template.footprintDepth.max ||
+      building.floors < template.floors.min ||
+      building.floors > template.floors.max ||
+      !valid(rect.x - 1, rect.z - 1) ||
+      !valid(rect.x + rect.w, rect.z + rect.d)
+    )
+      throw new Error(`Invalid building parcel in mission site "${site.id}"`);
+    visitRect(rect, (x, z) => {
+      const key = `${x},${z}`;
+      if (occupied.has(key))
+        throw new Error(`Overlapping building in mission site "${site.id}"`);
+      occupied.add(key);
+    });
+    const roof = new Set<string>();
+    for (const piece of building.roofEquipment ?? []) {
+      const prop = registries.props.get(piece.kind);
+      if (
+        !template.roofWalkable ||
+        template.roof !== "flat" ||
+        !prop.placements.includes("roof")
+      )
+        throw new Error(
+          `Unsupported roof equipment in mission site "${site.id}"`,
+        );
+      for (const tile of propPlacementTiles(
+        { x: piece.x, y: 0, z: piece.z },
+        prop,
+        piece.rotation ?? 0,
+      )) {
+        const key = `${tile.x},${tile.z}`;
+        if (
+          !Number.isInteger(tile.x) ||
+          !Number.isInteger(tile.z) ||
+          tile.x < 1 ||
+          tile.z < 1 ||
+          tile.x >= rect.w - 1 ||
+          tile.z >= rect.d - 1 ||
+          roof.has(key)
+        )
+          throw new Error(
+            `Overlapping or out-of-bounds roof equipment in mission site "${site.id}"`,
+          );
+        roof.add(key);
+      }
+    }
+  }
   for (const piece of site.structures) {
     const definition = registries.props.get(piece.kind);
     for (const tile of propPlacementTiles(
@@ -189,6 +266,17 @@ export function validateSite(
         `Blocked or overlapping objective socket in mission site "${site.id}"`,
       );
     occupied.add(key);
+  }
+  // A full free apron preserves every possible frontage door and roof ladder.
+  // Objectives can stand in the yard, but equipment cannot seal a building in.
+  const blocked = new Set(occupied);
+  for (const socket of site.objectives)
+    blocked.delete(`${socket.x},${socket.z}`);
+  for (const { rect } of site.buildings ?? []) {
+    visitRect(expand(rect, 1), (x, z) => {
+      if (!rectContains(rect, x, z) && blocked.has(`${x},${z}`))
+        throw new Error(`Blocked building access in mission site "${site.id}"`);
+    });
   }
 }
 

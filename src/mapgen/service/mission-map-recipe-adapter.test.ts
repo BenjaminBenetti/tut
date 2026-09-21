@@ -140,7 +140,7 @@ describe("missionToMapRecipe", () => {
     // And the generator accepts it: the facility is on the map, its
     // generators around it.
     const map = generateTacticalMap(defended, { registries });
-    expect(map.props.some((p) => p.kind === "installation-pump-house")).toBe(
+    expect(map.buildings.some((b) => b.kind === "repellent-dispersal")).toBe(
       true,
     );
     expect(

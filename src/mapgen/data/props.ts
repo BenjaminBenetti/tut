@@ -7,6 +7,9 @@ import type { PropDefinition } from "../model/prop";
 
 /** Well-known prop kinds (ADR 0004 §4.4). Biomes may add more in data. */
 export const PropKindIds = {
+  INSTALLATION_RADAR: "installation-radar",
+  INSTALLATION_CANNON: "installation-cannon",
+  PUMP_UNIT: "pump-unit",
   INSTALLATION_SENSOR: "installation-sensor",
   INSTALLATION_PUMP_HOUSE: "installation-pump-house",
   INSTALLATION_TANKS: "installation-tanks",
@@ -106,6 +109,33 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
  * tier: they are the ground, and no weapon on the arsenal moves it.
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
+  {
+    id: PropKindIds.INSTALLATION_RADAR,
+    footprint: { w: 5, d: 5 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    demolition: 3,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_CANNON,
+    footprint: { w: 4, d: 5 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 2,
+    demolition: 3,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.PUMP_UNIT,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    demolition: 2,
+    placements: ["interior"],
+  },
+  // Legacy sealed models remain loadable for missions saved before modular sites.
+
   {
     id: PropKindIds.INSTALLATION_SENSOR,
     footprint: { w: 10, d: 8 },
@@ -427,7 +457,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     demolition: 3,
     cover: CoverLevel.HIGH,
     blocksLos: true,
-    placements: ["roof"],
+    placements: ["roof", "interior"],
   },
   {
     id: PropKindIds.CAR,

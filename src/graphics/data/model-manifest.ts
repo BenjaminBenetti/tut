@@ -12,6 +12,62 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "building.installation-sensor-array-entry": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-sensor-array-entry.glb",
+    footprint: { w: 3, d: 0.66 },
+    height: 0.4,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "building.installation-repellent-dispersal-entry": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-repellent-dispersal-entry.glb",
+    footprint: { w: 3, d: 0.66 },
+    height: 0.4,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "building.installation-defensive-battery-entry": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-defensive-battery-entry.glb",
+    footprint: { w: 3, d: 0.66 },
+    height: 0.4,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "building.installation-bank-entry": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-bank-entry.glb",
+    footprint: { w: 3, d: 0.66 },
+    height: 0.4,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "installation.radar": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-radar.glb",
+    footprint: { w: 5, d: 5 },
+    height: 3.2,
+    sockets: [],
+    quality: "final",
+  },
+  "installation.cannon": {
+    category: "buildings",
+    path: "assets/models/buildings/installation-cannon.glb",
+    footprint: { w: 4, d: 5 },
+    height: 1.28,
+    sockets: [],
+    quality: "final",
+  },
+  "installation.pump": {
+    category: "props",
+    path: "assets/models/props/installation-pump.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.0,
+    sockets: [],
+    quality: "final",
+  },
   "installation.sensor": {
     category: "buildings",
     path: "assets/models/buildings/installation-sensor.glb",

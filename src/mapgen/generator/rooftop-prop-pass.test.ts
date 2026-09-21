@@ -79,12 +79,12 @@ describe("rooftop service groups", () => {
   );
 
   it.each([
-    ["sensor-array", "sensor-mast"],
+    ["sensor-array", "installation-radar"],
     ["repellent-dispersal", "dispersal-stack"],
-    ["defensive-battery", "battery-emplacement"],
-    ["bank", "strongroom"],
+    ["defensive-battery", "installation-cannon"],
+    ["bank", "rooftop-hvac"],
   ] as const)(
-    "crowns a %s landmark with its %s, however small its roof (#1175)",
+    "equips a modular %s site with %s without blocking roof access",
     (landmark, signature) => {
       const map = generateTacticalMap({
         seed: `landmark-roof-${landmark}`,
@@ -94,7 +94,7 @@ describe("rooftop service groups", () => {
           settlement: "town",
           size: "small",
           hooks: DEFAULT_MISSION_HOOKS,
-          landmark,
+          site: landmark,
         },
       });
       const building = map.buildings.find((b) => b.kind === landmark);
@@ -105,12 +105,15 @@ describe("rooftop service groups", () => {
           prop.kind === signature &&
           index.getAt(prop.tile)?.buildingId === building?.id,
       );
-      expect(crown).toHaveLength(1);
+      expect(crown.length).toBeGreaterThanOrEqual(1);
       expect(index.getAt(crown[0]!.tile)?.surface).toBe("roof");
-      // The signature piece is the landmark's alone.
-      expect(map.props.filter((prop) => prop.kind === signature)).toHaveLength(
-        1,
-      );
+      for (const prop of crown) {
+        for (const tile of prop.occupiedTiles ?? [prop.tile]) {
+          expect(index.getAt(tile)?.buildingId).toBe(building?.id);
+          expect(index.getAt(tile)?.surface).toBe("roof");
+          expect(index.getAt(tile)?.propId).toBe(prop.id);
+        }
+      }
       expect(validateTacticalMap(map, createDefaultRegistries())).toEqual([]);
     },
   );

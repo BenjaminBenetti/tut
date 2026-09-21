@@ -1,104 +1,119 @@
-# Installation facilities (#1175)
+# Installation buildings (#1175)
 
-Defense missions now reserve a purpose-built compound before ordinary settlement
-lots. Each installation has building-scale geometry and a different yard layout.
-The generator objectives, hit points, count, wave schedule and victory conditions
-are unchanged.
+Defense installations are ordinary, enterable buildings assembled from the same
+floor, wall, window, door, stair and roof modules as the surrounding town. Each
+has its own architectural plan, room uses, furnishings and service yard. Infantry
+can fight inside, climb to the roof and breach individual walls. The normal
+storey cut reveals the rooms and hides their roofs and rooftop equipment.
 
-| Installation | Main structure | Compound | Generators | Shape |
-| --- | --- | --- | --- | --- |
-| Sensor array | 10×8 tiles | 22×20 | 2 | Large concave reflector on a control bunker; flanking power units |
-| Repellent dispersal | 8×6 pump hall, two 4×6 reservoir pairs, two 3×3 towers | 24×22 | 4 | Tank farm and spray towers with intersecting service lanes |
-| Defensive battery | 12×10 tiles | 24×22 | 3 | Twin cannon, magazine bunker and blast walls; separated outer cover lines |
-| Bank | 12×10 tiles | 22×22 | 3 | Colonnaded treasury with hipped roof, armored loading entrance and forecourt |
+| Installation | Buildings | Interior | Compound / generators |
+| --- | --- | --- | --- |
+| Sensor array | 12×10, two storeys; separate 5×5 radar on the roof | Reception, operations consoles, offices, workshop and meeting rooms | 22×20 / 2 |
+| Repellent dispersal | 8×8 pump hall, with separate tank and spray equipment outside | Pump skids, control room, workbenches and service storage | 24×22 / 4 |
+| Defensive battery | Two 8×10 magazine buildings, each with a separate 4×5 gun on its roof | Ammunition racks, crates, control and maintenance rooms; passage between buildings | 24×22 / 3 |
+| Bank | 14×12, two storeys | Public banking hall with teller counters, secure storage rooms, upstairs offices and meeting space | 22×22 / 3 |
 
-These are sealed facilities: their complete footprints obstruct movement and
-provide cover. They have no accessible interior or walkable roof. Opaque heights
-represent the main solid mass; the radar reflector and gun barrels stand above
-the bunker sight volume. The plant's external generators remain the destructible
-mission targets. Existing saved missions keep their original map and models;
-newly launched missions use the compound recipe.
+Every building has front and rear entrances, interior stairs and a walkable roof.
+The external generator counts, hit points, wave schedule and victory rules are
+unchanged. Tanks and machines occupy prop footprints; the buildings themselves
+are traversable floor tiles bounded by normal, individually destructible walls.
 
 ## Generated-map gallery
 
-All four frames come from Map Lab's production generator and tactical renderer,
-using seed `installation-review`, temperate / town / medium. Generator models are
-placed at the real objective hooks. The captures wait for map and unit models
-and reject asset fallbacks. They include the surrounding settlement for scale.
+These are actual Map Lab captures through the production generator and tactical
+renderer, using seed `installation-review`, temperate / town / medium. The second
+column uses the game's building storey cut to expose the ground-floor interiors.
+The captures wait for all assets and reject placeholder fallbacks.
 
-| Sensor array | Repellent dispersal |
+| Installation exterior | Ground-floor interior |
 | --- | --- |
-| ![Sensor array](../diagnostics/installations/sensor-array.png) | ![Repellent dispersal](../diagnostics/installations/repellent-dispersal.png) |
-| Defensive battery | Bank |
-| ![Defensive battery](../diagnostics/installations/defensive-battery.png) | ![Bank](../diagnostics/installations/bank.png) |
+| ![Sensor array exterior](../diagnostics/installations/sensor-array.png) | ![Sensor array interior](../diagnostics/installations/sensor-array-interior.png) |
+| ![Repellent dispersal exterior](../diagnostics/installations/repellent-dispersal.png) | ![Repellent dispersal interior](../diagnostics/installations/repellent-dispersal-interior.png) |
+| ![Defensive battery exterior](../diagnostics/installations/defensive-battery.png) | ![Defensive battery interior](../diagnostics/installations/defensive-battery-interior.png) |
+| ![Bank exterior](../diagnostics/installations/bank.png) | ![Bank interior](../diagnostics/installations/bank-interior.png) |
 
 Reproduce with `pnpm exec playwright test e2e/installation-sites.spec.ts` or open
 `/mapgen-preview.html?seed=installation-review&biome=temperate&settlement=town&size=medium&site=sensor-array&models=1&units=1`.
-The Installation selector changes the facility and preserves it when generating
-another seed or sharing the URL.
+The Installation selector retains the facility when regenerating or sharing a URL.
 
 ## Extending generation
 
-`MissionSiteDefinition` in `src/mapgen/model/mission-site.ts` describes a local
-composition: yard dimensions, a clear shoulder, base surface, terrain patches,
-registered solid structures (including rotation), and objective sockets. The
-four shipped definitions live in `src/mapgen/data/mission-sites.ts`; the pass
-reads the injected `missionSites` registry, with no installation-type switch.
-A new mission requests a registry id through `MapGenParams.site`. Custom prop
-and surface ids are already open catalogues; graphics resolves their art
-separately. A test registers a new research outpost without changing the pass.
+`MissionSiteDefinition` in `src/mapgen/model/mission-site.ts` composes a graded
+yard, terrain patches, building parcels, external equipment and objective sockets.
+The injected `missionSites` catalogue selects a definition through `recipe.site`;
+there is no installation-specific branch in the generation or rendering code.
+
+A building parcel requests a registered template, exact footprint, floor count,
+frontage, optional extra entrances and optional roof equipment. The site pass
+writes normal `Lot` records. `BuildingPass` realizes their requested template;
+`InteriorPass` supplies the ordinary rooms, stairs, roofs and ladders; the usual
+furnishing pass arranges furniture around doors and routes. Unspecified lots
+continue to choose buildings from biome weights. Authored lots are preserved
+when ensuring settlement verticality or legacy landmarks.
 
 ```text
-recipe.site -> registry definition
+recipe.site -> catalogue definition
                     |
-roads + landing -> select/grade site -> reserve shoulder -> ordinary lots
-                    |                                         |
-             terrain + structures                      surrounding town
+roads + landing -> grade yard and reserve shoulder
                     |
-recipe hooks -> authored objective sockets -> ordinary placers fill remainder
-                    |
-           ramps / final connectivity -> freeze ordinary tiles, props, hooks
+          +---------+-------------------+
+          |                             |
+   authored building lots       terrain / equipment / sockets
+          + surrounding lots            |
+          |                             |
+   ordinary building shells             |
+          |                             |
+   roof fixtures -> rooms/stairs -> furnishing
+          |                             |
+          +---- hooks / ramps / connectivity
+                            |
+              ordinary saved buildings, tiles, props and hooks
 ```
 
-The planner selects a central location clear of the aircraft, prefers dry ground,
-and grades the yard to the median existing elevation. It removes obsolete road
-ramp endpoints before the normal ramp pass builds joins on the new terrain.
-Lots, elevated features, vegetation, fences, yard clutter and colony development
-respect the reservation. Connectivity repair can open surrounding routes but
-cannot erase authored structures to reach an objective.
+Roof fixtures are placed before stairs choose their holes and landings. Their
+full footprints therefore participate in access planning, instead of a large
+machine either blocking the only stair or disappearing when the roof is dressed.
+The rooftop pass counts existing fixtures against its quota and validates the
+complete footprints of additional equipment. Placement validation requires a
+clear roof perimeter and a clear apron outside building walls.
 
-Definitions are validated before stamping: registered surfaces/props, positive
-integer dimensions, in-bounds terrain and structure footprints, and unblocked,
-unique objective sockets. Recipes that cannot fit the facility fail explicitly.
-`site` is optional; ordinary and legacy `landmark` recipes keep their existing
-path. Site placements are draft metadata; saved maps use the existing multi-tile
-prop and terrain contracts, so no save migration is needed.
+The site planner chooses a central location outside aircraft clearance, prefers
+dry ground and grades to the median elevation. It discards obsolete road ramps
+before the usual ramp pass reconstructs terrain joins. Ordinary lots, vegetation,
+fences and colony development respect the yard reservation. Definitions reject
+unknown templates, invalid dimensions/floor counts, overlapping buildings or
+props, blocked approaches and malformed roof equipment before altering the map.
 
-The current composition stamps a level yard and surface patches. Future features
-such as accessible bespoke rooms or authored elevation profiles can extend the
-site realization stage while retaining reservation and objective placement.
+A future mission can register a new site using existing building templates, or
+add a new template with its own architectural plan and room programme. The custom
+catalogue test composes a two-storey house, rotated equipment and terrain without
+changing any generator. No new building runtime type or save migration is needed.
+Active saved missions retain their stored maps; the earlier sealed models remain
+registered only so those saves still render. New defense maps use modular buildings.
 
-## Art source and checks
+## Art and validation
 
-`tools/art/models/installation-facilities.py` builds six models through the
-repository's headless Blender workflow. Each is below 800 triangles, uses the
-existing environment/TDF palette, stands on the ground, and fits its registered
-footprint. Models were validated with trimesh and inspected at all three fixed
-isometric angles. The 18 renders live under `docs/design/renders/installation.*`.
+`tools/art/models/installation-equipment.py` builds the separate radar, gun and
+interior pump. The radar and gun reuse the mechanical geometry from the earlier
+facility source, with all bunker geometry removed. Each module passed trimesh
+validation and review of all three fixed isometric renders under
+`docs/design/renders/installation.{radar,cannon,pump}_*.png`. The exterior tanks
+and spray towers retain their existing equipment models. Building shells use the
+existing modular kit throughout. `installation-frontages.py` prints the four
+installation names on the existing entrance-canopy geometry; those ordinary wall
+attachments follow the same cutaway and demolition ownership as other signs.
 
 ```sh
 blender -b -t 4 --python-exit-code 1 --python tools/art/make_model.py -- \
-  --script tools/art/models/installation-facilities.py --build-arg kind=sensor \
-  --id installation.sensor --category buildings --file installation-sensor.glb \
-  --footprint 10x8 --max-triangles 800 --no-textured
+  --script tools/art/models/installation-equipment.py --build-arg kind=radar \
+  --id installation.radar --category buildings --file installation-radar.glb \
+  --footprint 5x5 --max-triangles 800 --no-textured
 ```
 
-Other `kind`/footprint pairs: `pump-house`/8x6, `tanks`/4x6,
-`spray-tower`/3x3, `battery`/12x10 and `bank`/12x10. Substitute the kind in
-both the id and filename. Register the printed manifest entry after rebuilding.
+Use `cannon` / `4x5` for the gun; use `pump` / `1x1`, category `props` and
+`--max-triangles 300` for the interior machine.
 
-The generation sweep covers four facilities × twelve biomes × three map sizes,
-including mature infestation on the largest maps. It checks real map invariants,
-exact socket placement, reachability, collision/LOS, reservation preservation,
-determinism, serialization and an injected custom catalogue. The browser test
-checks all six GLBs through four complete generated compounds.
+The four-installation, twelve-biome, three-size sweep checks map invariants,
+exact building and generator placement, room and roof reachability, entrances,
+furniture, equipment collision, serialization and infestation compatibility.
+Browser checks exercise real models and both exterior and interior storey views.

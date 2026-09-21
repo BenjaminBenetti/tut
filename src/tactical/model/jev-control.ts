@@ -74,6 +74,8 @@ export interface JevCandidate {
   readonly category: string;
   /** Separates each weapon/firing mode and usable item within a broad command category. */
   readonly actionType?: JevActionType;
+  /** Cost calculated by the game's rules, including actions that consume all remaining AP. */
+  readonly apCost?: number;
   readonly description: string;
   readonly command?: JevActionCommand;
 }

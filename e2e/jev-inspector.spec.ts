@@ -145,6 +145,15 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     "Preserve yourself and stay in cover.",
   );
   expect(requests[0]?.state.commander_prompt).toBe("Hold the extraction zone.");
+  expect(requests[0]?.state.navigation).toMatchObject({
+    format: "ascii-layers",
+    legend: {
+      f: expect.any(String),
+      "@": expect.any(String),
+      O: expect.any(String),
+    },
+    layers: expect.any(Array),
+  });
   expect(requests[0]?.questions.action.criteria).toHaveProperty("move");
   // The starter mech's ground-fire options name its actual weapons, not a shared attack bucket.
   const top = requests[0].questions.action.criteria;
@@ -159,9 +168,13 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     ),
   ).toBe(false);
   expect(requests.length).toBeGreaterThanOrEqual(2);
-  for (const request of requests.slice(1))
+  for (const request of requests.slice(1)) {
+    expect(request.questions.action.instructions).toContain(
+      "short move does not save any AP",
+    );
     for (const option of Object.values(request.questions.action.criteria))
       expect(option).toMatchObject({ action: "move" });
+  }
   for (const option of Object.values(
     requests.at(-1)!.questions.action.criteria,
   ))

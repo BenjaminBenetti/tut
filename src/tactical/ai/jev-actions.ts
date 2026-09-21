@@ -61,13 +61,14 @@ export function jevCandidates(
   const add = (
     category: string,
     command: JevActionCommand,
-    details: unknown,
+    details: Readonly<Record<string, unknown>> & { readonly ap_cost: number },
     actionType?: JevActionType,
   ): void => {
     candidates.push({
       id: `action-${String(candidates.length)}`,
       category,
       actionType,
+      apCost: details.ap_cost,
       command,
       description: JSON.stringify({
         action: category,
@@ -115,11 +116,14 @@ export function jevCandidates(
       candidates.push({
         id: `action-${String(candidates.length)}`,
         category: "move",
+        apCost: 1,
         command: move(actor.id, path),
         description: JSON.stringify({
           action: "move",
           destination: { x: tile.x, y: tile.y, z: tile.z },
           ap_cost: apCostOf(view, actor, cost),
+          movement_points: cost,
+          path_steps: path.length,
           cover,
           known_hazards: view.effects.filter(
             (effect) => graph.index.keyOf(effect.tile) === key,
@@ -144,6 +148,7 @@ export function jevCandidates(
       weapon_id: weapon.id,
       weapon: weapon.name,
       ap_cost: apCost,
+      ends_activation: attackEndsTurn(weapon.profile, actor.kind, rules.combat),
       profile: weapon.profile,
     };
     const targetedAttack: JevActionType = {
@@ -262,6 +267,7 @@ export function jevCandidates(
           useEquipment(actor.id, item.definition.id, pos),
           {
             ...item.definition,
+            ap_cost: item.definition.apCost,
             uses_left: item.usesLeft,
           },
           {
@@ -269,7 +275,11 @@ export function jevCandidates(
             name: `Use ${item.definition.name}`,
             purpose:
               "Use this specific item with the effect described in capability; choose its target tile next.",
-            capability: { ...item.definition, uses_left: item.usesLeft },
+            capability: {
+              ...item.definition,
+              ap_cost: item.definition.apCost,
+              uses_left: item.usesLeft,
+            },
           },
         );
     }

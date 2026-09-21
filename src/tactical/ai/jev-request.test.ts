@@ -26,6 +26,8 @@ import {
   buildMoveGraph,
   searchMoves,
 } from "../service/movement-service";
+import type { JevMapLayer } from "../model/jev-navigation";
+import { SurfaceIds } from "../../mapgen/data/surfaces";
 
 const rules = {
   handlers: {
@@ -36,6 +38,7 @@ const rules = {
   combat: COMBAT_TUNING,
   equipment: { catalogue: SHIPPED_EQUIPMENT, combat: COMBAT_TUNING },
 };
+/** A wall hides an enemy so observations can be compared without leaking changes. */
 function fixture(): TacticalState {
   const state = missionWith(walledField(), [
     unitAt("self", "infantry", { x: 1, y: 0, z: 5 }),
@@ -119,6 +122,9 @@ describe("Jev observation", () => {
         ),
       ).toBe(true);
       const page = jevChoicePage(snapshot, items);
+      expect(page.request.questions.action!.instructions).toContain(
+        items[0]!.actionType?.name ?? items[0]!.category,
+      );
       if (page.groups) {
         for (const group of Object.values(page.groups)) {
           expect(group.length).toBeLessThan(items.length);
@@ -285,17 +291,127 @@ describe("Jev observation", () => {
     const spent = { ...state, units: [{ ...actor, ap: 0 }] };
     expect(captureJev(spent, actor.id, rules).candidates).toEqual([]);
   });
-  it("explains combined terrain masks and the actor's movement class", () => {
+  it("uses ASCII terrain resolved for the actor's movement class", () => {
     const snapshot = captureJev(fixture(), "self", rules);
     expect(snapshot.state.actor).toMatchObject({ movement_class: "infantry" });
     const navigation = snapshot.state.navigation as Record<string, unknown>;
-    expect(navigation.passMask).toEqual({
-      0: "Blocked for all movement classes",
-      1: "Infantry movement class only",
-      2: "Mech movement class only",
-      3: "Both infantry and mech movement classes",
+    expect(navigation.format).toBe("ascii-layers");
+    expect(navigation).not.toHaveProperty("passMask");
+    expect(navigation).not.toHaveProperty("tiles");
+    const layer = (navigation.layers as readonly JevMapLayer[])[0]!;
+    expect(layer.rows!["5"]![1]).toBe("@");
+    expect(layer.markers).toContainEqual(
+      expect.objectContaining({
+        id: "self",
+        terrain: ".",
+        position: { x: 1, y: 0, z: 5 },
+      }),
+    );
+  });
+  it("explains actual movement allowance and costs on every routing stage", () => {
+    const base = missionWith(
+      openField().tile({ x: 1, y: 0, z: 0 }, SurfaceIds.INFESTED).build(),
+      [unitAt("self", "infantry", { x: 0, y: 0, z: 0 }, { ap: 3 })],
+    );
+    const template = base.templates[FIXTURE_TEMPLATES.infantry]!;
+    const state = withVision({
+      state: {
+        ...base,
+        templates: {
+          ...base.templates,
+          [template.id]: { ...template, move: 5 },
+        },
+      },
+      events: [],
+    }).state;
+    const snapshot = captureJev(state, "self", rules);
+    const first = jevChoicePage(snapshot);
+    expect(first.request.questions.action!.criteria.move).toMatchObject({
+      ap_costs: [1],
     });
-    expect(navigation.tiles).toContainEqual([1, 0, 5, 3, 0, {}, false, true]);
+    const moves = first.groups!.move!;
+    const infested = moves.find((candidate) => {
+      const payload = candidate.command?.payload;
+      return (
+        payload &&
+        "path" in payload &&
+        payload.path.length === 1 &&
+        payload.path[0]!.x === 1
+      );
+    })!;
+    expect(JSON.parse(infested.description)).toMatchObject({
+      ap_cost: 1,
+      movement_points: 2,
+      path_steps: 1,
+    });
+    const topInstructions = (
+      first.request.questions.action!.criteria.move as { instructions: string }
+    ).instructions;
+    const leaf = jevChoicePage(snapshot, moves);
+    // Force a routing stage using real movement candidates, keeping their original costs and rules.
+    const grouped = jevChoicePage(
+      snapshot,
+      Array.from({ length: 100 }, (_, i) => ({
+        ...moves[i % moves.length]!,
+        id: `copy-${String(i)}`,
+      })),
+    );
+    expect(grouped.stage).toBe("action-group");
+    for (const instructions of [
+      topInstructions,
+      leaf.request.questions.action!.instructions,
+      grouped.request.questions.action!.instructions,
+    ]) {
+      expect(instructions).toContain("3 AP remaining");
+      expect(instructions).toContain("5 movement points");
+      expect(instructions).toContain("short move does not save any AP");
+      expect(instructions).toContain("updated position and vision");
+    }
+  });
+  it("keeps weapon, healing and explosive rules with their own follow-up and quotes real AP costs", () => {
+    const snapshot = captureJev(loadoutFixture(), "self", rules);
+    const first = jevChoicePage(snapshot);
+    const cases = [
+      ["attack:carbine", "hit_chance_percent"],
+      ["equipment:grenade", "harm allies"],
+      ["equipment:medkit", "never attacks enemies"],
+      ["equipment:radar-dish", "do not reveal terrain"],
+      ["overwatch", "Spend all remaining AP"],
+    ];
+    for (const [id, rule] of cases) {
+      const top = first.request.questions.action!.criteria[id!] as {
+        instructions: string;
+        ap_costs: number[];
+      };
+      expect(top.instructions).toContain(rule);
+      expect(top.ap_costs).toEqual(id === "overwatch" ? [2] : [1]);
+      const follow = jevChoicePage(snapshot, first.groups![id!]);
+      expect(follow.request.questions.action!.instructions).toContain(rule);
+      if (id !== "overwatch")
+        expect(follow.request.questions.action!.instructions).toContain(
+          "Selected capability:",
+        );
+    }
+    const base = missionWith(openField().build(), [
+      unitAt("self", "mech", { x: 0, y: 0, z: 0 }, { ap: 3 }),
+      unitAt("enemy", "infantry", { x: 1, y: 0, z: 0 }, { team: "bugs" }),
+    ]);
+    const mech = captureJev(
+      withVision({ state: base, events: [] }).state,
+      "self",
+      rules,
+    );
+    const shot = mech.candidates.find(
+      (candidate) => candidate.category === "attack",
+    )!;
+    expect(shot.apCost).toBe(3);
+    expect(shot.actionType!.capability).toMatchObject({
+      ap_cost: 3,
+      ends_activation: true,
+    });
+    expect(
+      jevChoicePage(mech, [shot]).request.questions.action!.instructions,
+    ).toContain("costs 3 AP");
   });
   it("remembers observed terrain without refreshing it from unseen changes", () => {
     let state = fixture();
@@ -380,7 +496,7 @@ describe("Jev observation", () => {
       const page = jevChoicePage(snapshot, items);
       expect(
         Object.keys(page.request.questions.action!.criteria).length,
-      ).toBeLessThanOrEqual(48);
+      ).toBeLessThanOrEqual(32);
       if (page.groups) {
         for (const group of Object.values(page.groups)) {
           expect(group.length).toBeLessThan(items.length);
@@ -417,7 +533,7 @@ describe("Jev observation", () => {
       expect(leaf.stage).toBe("action");
       expect(
         JSON.stringify(leaf.request.questions.action!.criteria).length,
-      ).toBeLessThanOrEqual(12000);
+      ).toBeLessThanOrEqual(8000);
     }
   });
 });

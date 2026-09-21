@@ -9,6 +9,10 @@ import { PHASE_FOR_TEAM } from "../model/tactical-state";
 import { jevPerception, jevState } from "./jev-observation";
 import { jevCandidates } from "./jev-actions";
 import type { JevActionRules } from "./jev-actions";
+import {
+  jevActionInstructions,
+  jevSelectedActionInstructions,
+} from "./jev-instructions";
 
 /** Capture current state with injected roster names; only perceived units reach the snapshot. */
 export function captureJev(
@@ -57,29 +61,11 @@ export interface JevChoicePage {
 }
 
 // Count alone does not bound tokens: ground attacks carry much larger previews than moves.
-const MAX_LEAF_CHOICES = 48;
-const MAX_CRITERIA_CHARACTERS = 12000;
+const MAX_LEAF_CHOICES = 32;
+const MAX_CRITERIA_CHARACTERS = 8000;
 const MAX_GROUP_CHOICES = 32;
 const INSTRUCTIONS =
-  "Choose for `actor` using only observed and remembered facts in `state`. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. Consider objectives, AP, weapons, cover, hazards, survival and friendly fire. Resolve names in orders against actor.name and entities[].name. Unknown enemies and terrain must not be assumed known. Historical sightings are not current targets.";
-const ACTION_TYPES: Readonly<Record<string, string>> = {
-  move: "Spend one AP moving to a reachable position to advance, follow, retreat or seek cover.",
-  attack: "Attack a visible enemy unit or nest with a ready weapon.",
-  "attack-ground":
-    "Fire at a tile, considering blast effects, cover destruction and friendly fire.",
-  overwatch:
-    "Reserve fire to react to enemy movement until the next faction turn.",
-  reload: "Reload ammunition or vent a weapon's heat pool.",
-  equipment:
-    "Use available equipment, such as grenades, healing, smoke or deployables.",
-  brace: "Brace the mech for improved stability.",
-  coolant: "Spend coolant to reduce mech heat.",
-  designate: "Mark an enemy to help allied attacks.",
-  jump: "Use jump jets to reach another position.",
-  extract: "Extract this unit from the mission.",
-  interact: "Interact with a mission objective.",
-  "harvest-carcass": "Harvest a visible bug carcass for tech points.",
-};
+  "Choose the actor's next action in a turn-based tactical battle using `gameplay` for rules and only observed or remembered facts in the state. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. When no specific order applies, use `faction_goal`. AP means action points: actor.ap is the remaining budget, each action spends its listed cost, and a new decision follows if AP remains. HP means health points. Read ASCII layers using navigation.legend and coordinates; f is unknown and remembered terrain may be stale. Resolve names in orders against actor.name and entities[].name. Historical sightings and radar pings are not visible attack targets. Consider objectives, cover, hazards, survival and friendly fire. Select only an offered option; choosing a group does not spend AP or execute an action.";
 
 /** Route by the actor's specific weapon/mode or item; follow-ups contain only that action's targets. */
 export function jevChoicePage(
@@ -100,9 +86,15 @@ export function jevChoicePage(
           id,
           {
             action: id,
-            ...(items[0]?.actionType ?? {
-              purpose: ACTION_TYPES[id] ?? id,
-            }),
+            ...items[0]!.actionType,
+            instructions: jevActionInstructions(snapshot.state, items[0]!),
+            ap_costs: [
+              ...new Set(
+                items.flatMap((item) =>
+                  item.apCost === undefined ? [] : [item.apCost],
+                ),
+              ),
+            ],
             available_options: items.length,
           },
         ]),
@@ -118,7 +110,7 @@ export function jevChoicePage(
     (JSON.stringify(criteria).length <= MAX_CRITERIA_CHARACTERS ||
       candidates.length === 1)
   )
-    return choicePage(snapshot, "action", criteria);
+    return choicePage(snapshot, "action", criteria, undefined, candidates[0]);
 
   // Spatial families retain every destination. A large family is split by size as well as count.
   const families = new Map<string, JevCandidate[]>();
@@ -162,6 +154,7 @@ export function jevChoicePage(
       Object.entries(groups).map(([id, items]) => [id, describeGroup(items)]),
     ),
     groups,
+    candidates[0],
   );
 }
 
@@ -171,6 +164,7 @@ function choicePage(
   stage: JevChoicePage["stage"],
   criteria: Readonly<Record<string, unknown>>,
   groups?: JevChoicePage["groups"],
+  selected?: JevCandidate,
 ): JevChoicePage {
   const task =
     stage === "action-type"
@@ -187,7 +181,7 @@ function choicePage(
       questions: {
         action: {
           type: "choice",
-          instructions: `${INSTRUCTIONS} ${task}`,
+          instructions: `${INSTRUCTIONS} ${task}${selected ? ` ${jevSelectedActionInstructions(snapshot.state, selected)}` : " Read each option's instructions and capability before choosing."}`,
           criteria,
         },
       },

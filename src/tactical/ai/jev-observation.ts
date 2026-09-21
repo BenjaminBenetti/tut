@@ -1,10 +1,10 @@
 import { TileIndex } from "../../mapgen/service/tile-index";
-import { PassMask } from "../../mapgen/model/pass-mask";
 import type { TacticalState } from "../model/tactical-state";
 import { NO_VISION } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { rememberJevTerrain } from "../service/jev-knowledge-service";
 import { radarContacts } from "../service/radar-service";
+import { jevNavigation } from "./jev-map";
 
 /** Build a physically filtered rules input. Never hand Jev the raw mission or its event log. */
 export function jevPerception(
@@ -98,7 +98,7 @@ export function jevPerception(
   };
 }
 
-/** Explicit wire projection: compact navigation, observed entities, mission intel and both prompts. */
+/** Explicit wire projection: layered ASCII navigation, observed entities, mission intel and both prompts. */
 export function jevState(
   mission: TacticalState,
   view: TacticalState,
@@ -108,16 +108,13 @@ export function jevState(
   unitNames: Readonly<Record<string, string>>,
 ): Readonly<Record<string, unknown>> {
   const vision = view.vision[actor.team];
-  const index = new TileIndex(view.map);
-  const visible = new Set(vision.visible);
-  const range = Math.max(
-    12,
-    (view.templates[actor.templateId]?.move ?? 0) * actor.maxAp + 2,
-  );
-  const localTiles = view.map.tiles.filter(
-    (tile) =>
-      Math.abs(tile.x - actor.pos.x) + Math.abs(tile.z - actor.pos.z) <= range,
-  );
+  const objectives = mission.objectives.map((objective) => ({
+    id: objective.id,
+    kind: objective.kind,
+    complete: objective.complete,
+    position: mission.spawners.find((nest) => nest.id === objective.targetId)
+      ?.pos,
+  }));
   return {
     entity_prompt: entityPrompt,
     commander_prompt: commanderPrompt,
@@ -125,44 +122,15 @@ export function jevState(
     turn: mission.turn,
     phase: mission.phase,
     faction: actor.team,
-    navigation: {
-      scope:
-        "Remembered and visible terrain near the actor. Omitted tiles are unknown or outside this local window; do not infer their geometry. Paths are computed by the game on known terrain. Coordinates are x, elevation layer y, z.",
-      columns: [
-        "x",
-        "y",
-        "z",
-        "passMask",
-        "cover",
-        "walls",
-        "blocksSight",
-        "visible",
-      ],
-      passMask: {
-        [PassMask.NONE]: "Blocked for all movement classes",
-        [PassMask.INFANTRY]: "Infantry movement class only",
-        [PassMask.MECH]: "Mech movement class only",
-        [PassMask.ALL]: "Both infantry and mech movement classes",
-      },
-      cover: { none: 0, low: 1, high: 2 },
-      tiles: localTiles.map((tile) => [
-        tile.x,
-        tile.y,
-        tile.z,
-        tile.pass,
-        tile.coverProvided,
-        tile.walls,
-        tile.blocksLos,
-        visible.has(index.keyOf(tile)),
-      ]),
-      connectors: view.map.connectors
-        .filter((link) =>
-          localTiles.some(
-            (tile) => index.keyOf(tile) === index.keyOf(link.from),
-          ),
-        )
-        .map(({ kind, from, to, pass }) => ({ kind, from, to, pass })),
-    },
+    navigation: jevNavigation(
+      view,
+      actor,
+      objectives.flatMap((objective) =>
+        !objective.complete && objective.position
+          ? [{ symbol: "O", id: objective.id, position: objective.position }]
+          : [],
+      ),
+    ),
     entities: view.units
       .filter((unit) => unit.id !== actor.id && unit.hp > 0)
       .map((unit) =>
@@ -174,13 +142,20 @@ export function jevState(
       hp,
       destroyed,
     })),
-    objectives: mission.objectives.map((objective) => ({
-      id: objective.id,
-      kind: objective.kind,
-      complete: objective.complete,
-      position: mission.spawners.find((nest) => nest.id === objective.targetId)
-        ?.pos,
-    })),
+    objectives,
+    gameplay: {
+      turn: "This is a turn-based tactical battle: the TDF player faction acts, then the bug faction. You control only actor. A living actor with AP can act during its faction's phase; AP refreshes on its next faction turn. Enemy resources not shown are unknown.",
+      resources:
+        "AP means action points, HP means health points. Zero HP removes a unit. actor.ap is the budget remaining now; actor.max_ap is its normal turn budget. Each action pays its listed AP cost immediately. If AP remains, you receive an updated state and choose another action. Never assume all attacks cost one AP: some consume every remaining AP.",
+      movement:
+        "actor.movement is movement points per AP, not remaining AP. An ordinary tile costs one movement point; infestation slows TDF and speeds bugs, and rough terrain can slow mechs. Offered move destinations and their movement_points already account for the actor's terrain costs, walls, footprint and elevation. Every move option spends exactly one AP; unused distance cannot be saved for later.",
+      combat:
+        "Attack previews report hit chance in percent and damage in HP. Ranged cover and height affect shots; cover is directional and does not reduce adjacent melee damage. Armor reduces damage and armor penetration bypasses armor. Blast attacks can hurt allies and destroy cover. Profiles describe capabilities; offered previews describe the actual target.",
+      knowledge:
+        "Faction vision is shared. f cells have no known surface; remembered cells may be stale. Radar contacts are positions only, not visible targets. Objective locations are public but do not reveal surrounding terrain or hidden nest health. Names in orders refer to actor.name and entities[].name.",
+      objectives:
+        "For destroy-spawner objectives the TDF must destroy the nest with attacks or an offered nearby interact action; merely reaching the marker does not complete it. Bugs defend their nests and oppose TDF. Extraction removes the actor from this mission; use it only when its orders call for leaving.",
+    },
     faction_goal:
       actor.team === "bugs"
         ? "Defend the nests and defeat the TDF."

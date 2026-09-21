@@ -1,5 +1,7 @@
 # Jev 4×4 movement-format comparison
 
+Follow-up: [explaining movement AP costs](jev-4x4-ap-comparison.md) produced 10/10 A3 choices for each format. The original results below are retained; their instructions did not explicitly ask for AP-efficient movement.
+
 Run: 2026-09-21T05:43:02.846Z to 2026-09-21T05:43:05.249Z. Model: `jev-1.13.0`. All 20 requests succeeded.
 
 On this exact map, neither sample format reliably selected the most efficient move. The game-format sample selected A2 in all ten trials. ASCII selected A2 nine times and A3 once. Both avoided the B1 dead end in this batch, so the previously reported confident B1 response was not reproduced.

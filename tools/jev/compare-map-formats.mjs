@@ -12,6 +12,8 @@ const OPTIONS = [
 ];
 const QUESTION =
   "Which tile should the actor move to next to reach the objective?";
+const AP_QUESTION =
+  "Choose the destination for one movement action to carry out entity_prompt. AP means action points; the actor has 2 AP remaining. Every offered destination costs exactly 1 AP, whether the route travels one tile or two tiles. One AP allows movement along a walkable path of up to two tiles. Movement is horizontal or vertical, may turn, and cannot cross blocked tiles. Unused movement range is lost when this action ends: moving only one tile does not save any AP. After this move, another decision can spend the remaining AP on another action. Choose the destination that reaches the objective in the fewest total movement actions, accounting for blocked tiles and any backtracking needed. Select only an offered destination.";
 
 /** Ordinary breadth-first distances provide ground truth, never additional model input. */
 function distances(start) {
@@ -37,7 +39,8 @@ function distances(start) {
 }
 
 /** Build the sample requests with the same map, destinations, ordering and question text. */
-function requests() {
+function requests(explainAp = false) {
+  const instructions = explainAp ? AP_QUESTION : QUESTION;
   const tiles = ROWS.flatMap((row, z) =>
     [...row].map((cell, x) => [
       x,
@@ -103,7 +106,7 @@ function requests() {
       questions: {
         action: {
           type: "choice",
-          instructions: QUESTION,
+          instructions,
           criteria: Object.fromEntries(
             OPTIONS.map(({ x, z }, i) => [
               `action-${i}`,
@@ -127,9 +130,10 @@ function requests() {
     ascii: {
       model: MODEL,
       state: {
+        ...(explainAp ? { entity_prompt: "Reach objective-1." } : {}),
         map_legend: {
           "@": "Actor",
-          O: "Objective",
+          O: explainAp ? "Objective objective-1" : "Objective",
           ".": "Walkable tile",
           "#": "Blocked tile",
         },
@@ -142,7 +146,7 @@ function requests() {
       questions: {
         action: {
           type: "choice",
-          instructions: QUESTION,
+          instructions,
           criteria: Object.fromEntries(
             OPTIONS.map(({ tile, steps }) => [
               tile,
@@ -182,7 +186,8 @@ function summarize(runs, format) {
 
 /** Run ten matched repetitions, alternating format order and retaining every response without retries. */
 async function main() {
-  const payloads = requests();
+  const explainAp = process.argv.includes("--explain-ap");
+  const payloads = requests(explainAp);
   const fromActor = distances({ x: 0, z: 0 });
   const fromGoal = distances({ x: 3, z: 3 });
   const oracle = OPTIONS.map((option) => ({
@@ -201,9 +206,13 @@ async function main() {
   const result = {
     startedAt: new Date().toISOString(),
     model: MODEL,
+    experiment: explainAp ? "explicit-ap-instructions" : "original-samples",
     repetitionsPerFormat: 10,
     method:
       "Identical 4x4 map repeated, alternating game/ascii order; no prompt tuning or retries. These are the two simplified discussion samples, not full production requests or an isolation of map encoding alone.",
+    changes: explainAp
+      ? "Both formats receive the same AP explanation and entity_prompt. ASCII's objective marker is named objective-1. Map, choices, option order and model are unchanged from the original samples."
+      : "Original samples, including the absence of entity_prompt in ASCII.",
     map: ROWS,
     groundTruth: {
       bestTile: "A3",
@@ -222,7 +231,11 @@ async function main() {
     throw new Error(
       "Set JevKey via node --env-file=.env; it is never saved or printed.",
     );
-  const output = process.argv[2] ?? ".producer/jev/map-format-results.json";
+  const output =
+    process.argv.slice(2).find((arg) => !arg.startsWith("--")) ??
+    (explainAp
+      ? ".producer/jev/map-format-ap-results.json"
+      : ".producer/jev/map-format-results.json");
   await mkdir(dirname(output), { recursive: true });
   for (let trial = 1; trial <= 10; trial++) {
     for (const format of trial % 2 ? ["game", "ascii"] : ["ascii", "game"]) {

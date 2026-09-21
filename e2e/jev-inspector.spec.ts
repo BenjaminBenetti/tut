@@ -1,8 +1,24 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { drawnFrame } from "./capture-frame.helper";
 import { launchMission } from "./mission-capture.helper";
 import { CITY_MISSION_FIXTURE } from "./fixtures/mission-maps";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import type { JevRequest } from "../src/tactical/model/jev-control";
+import type { GameState } from "../src/save/model/game-state";
+import type { SaveEnvelope } from "../src/save/model/save-envelope";
+
+/** Two fixed world points detect both camera zoom and pan without relying on animated units. */
+async function cameraProjection(page: Page) {
+  return page.evaluate(() => {
+    const save = JSON.parse(
+      localStorage.getItem("tut:save:autosave")!,
+    ) as SaveEnvelope<GameState>;
+    return save.state
+      .activeMission!.units.filter((unit) => unit.team === "tdf")
+      .slice(0, 2)
+      .map((unit) => window.__tutTactical__!.tileScreenPosition(unit.pos));
+  });
+}
 
 test("Jev menu evaluates exact state and questions without acting, and exports observable responses", async ({
   page,
@@ -102,5 +118,55 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
   await page.getByRole("button", { name: "Export JSON" }).click();
   expect((await download).suggestedFilename()).toBe("jev-unit-1.json");
   await page.screenshot({ path: "test-results/jev-inspector.png" });
+
+  // Native scrolling must work in every pane without reaching the camera.
+  for (const id of ["jev-entity-prompt", "jev-commander-prompt"])
+    await page
+      .getByTestId(id)
+      .fill("Hold position and preserve cover.\n".repeat(60));
+  await drawnFrame(page);
+  const camera = await cameraProjection(page);
+  expect(camera.every((point) => point !== undefined)).toBe(true);
+  for (const id of [
+    "jev-state",
+    "jev-questions",
+    "jev-output",
+    "jev-entity-prompt",
+    "jev-commander-prompt",
+  ]) {
+    const area = page.getByTestId(id);
+    await area.evaluate((element) => {
+      element.scrollTop = 0;
+    });
+    await area.hover();
+    await page.mouse.wheel(0, 300);
+    await expect
+      .poll(() => area.evaluate((element) => element.scrollTop), {
+        message: `${id} should scroll its own content`,
+      })
+      .toBeGreaterThan(0);
+    await drawnFrame(page);
+    expect(await cameraProjection(page)).toEqual(camera);
+
+    // Scrolling beyond a textarea's end must stay inside the inspector too.
+    await area.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    const panelTop = await page
+      .getByTestId("jev-inspector")
+      .evaluate((element) => element.scrollTop);
+    await page.mouse.wheel(0, 300);
+    await drawnFrame(page);
+    expect(await cameraProjection(page)).toEqual(camera);
+    expect(
+      await page
+        .getByTestId("jev-inspector")
+        .evaluate((element) => element.scrollTop),
+    ).toBe(panelTop);
+  }
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.locator("#tactical-viewport canvas").hover();
+  await page.mouse.wheel(0, -200);
+  await expect.poll(() => cameraProjection(page)).not.toEqual(camera);
   expect(errors).toEqual([]);
 });

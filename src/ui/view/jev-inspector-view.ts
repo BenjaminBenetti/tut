@@ -47,6 +47,10 @@ export class JevInspectorView {
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", "Jev entity inspector");
     panel.hidden = true;
+    // Keep native scrolling; the viewport's wheel handler would cancel it and zoom the map.
+    panel.addEventListener("wheel", (event) => event.stopPropagation(), {
+      passive: true,
+    });
     panel.addEventListener("keydown", (event) => {
       event.stopPropagation();
       if (event.key === "Escape") this.show(false);

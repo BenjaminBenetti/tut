@@ -214,7 +214,9 @@ function describeUnit(
     footprint: template?.footprint ?? 1,
     weapons: template?.weapons,
     equipment: template?.equipment,
-    status: unit.status.filter((status) => status !== "hidden"),
+    status: friendly
+      ? unit.status
+      : unit.status.filter((status) => status !== "hidden"),
     ...(friendly
       ? {
           ap: unit.ap,
@@ -226,6 +228,9 @@ function describeUnit(
           equipment_remaining: unit.equipment,
           weapon_ready_on_turn: unit.weaponReadyOnTurn,
           braced: unit.braced,
+          moved_this_turn: unit.movedThisTurn,
+          ablative_spent: unit.ablativeSpent,
+          overwatch_shots: unit.overwatchShots,
         }
       : {}),
   };

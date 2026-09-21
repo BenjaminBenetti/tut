@@ -137,6 +137,31 @@ describe("Jev observation", () => {
       ),
     ).toEqual(known);
   });
+  it("preserves the actor's own concealment and resources without exposing enemy reserves", () => {
+    const base = missionWith(openField().build(), [
+      {
+        ...unitAt("self", "infantry", { x: 0, y: 0, z: 0 }),
+        status: ["hidden" as const],
+        overwatchShots: 2,
+      },
+      unitAt("enemy", "infantry", { x: 1, y: 0, z: 0 }, { team: "bugs" }),
+    ]);
+    const state = withVision({ state: base, events: [] }).state;
+    const before = captureJev(state, "self", rules);
+    expect(before.state.actor).toMatchObject({
+      status: ["hidden"],
+      overwatch_shots: 2,
+    });
+    const changed = {
+      ...state,
+      units: state.units.map((unit) =>
+        unit.id === "enemy"
+          ? { ...unit, ap: 0, heat: 100, equipment: { grenade: 99 } }
+          : unit,
+      ),
+    };
+    expect(captureJev(changed, "self", rules)).toEqual(before);
+  });
   it("keeps all actions reachable through bounded Choice pages", () => {
     const snapshot = captureJev(fixture(), "self", rules);
     const candidates: JevCandidate[] = Array.from(

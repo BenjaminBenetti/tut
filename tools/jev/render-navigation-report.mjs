@@ -70,7 +70,13 @@ for (const input of inputs) {
     vision: result.visibility,
     reverseChoices: result.reverseChoices ?? false,
     requestCount: result.requestCount,
-    cases: result.cases,
+    cases: result.cases.map((item) =>
+      Object.fromEntries(
+        Object.entries(item).filter(
+          ([key]) => !["roster", "choiceOrder", "entityOrder"].includes(key),
+        ),
+      ),
+    ),
     summary: result.summary,
   });
   for (const run of result.runs) {

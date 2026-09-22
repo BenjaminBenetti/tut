@@ -4,31 +4,47 @@ import type { Tile } from "../../mapgen/model/tile";
 import type { Connector } from "../../mapgen/model/connector";
 import type { TacticalPhase } from "./tactical-state";
 import type { Team } from "./unit";
-import type { AttackCommand } from "./attack-command";
-import type { MoveCommand } from "./move-command";
-import type { OverwatchCommand } from "./overwatch-command";
-import type { ReloadCommand } from "./reload-command";
-import type { UseEquipmentCommand } from "./use-equipment-command";
-import type { MechActionCommand } from "./mech-action-command";
-import type { InteractCommand } from "./interact-command";
-import type { ExtractCommand } from "./extract-command";
-import type { HarvestCarcassCommand } from "./harvest-carcass-command";
+import type { TacticalCommand, TacticalCommandFor } from "./tactical-command";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 
 /** Shared limit for editable entity and faction orders. */
 export const JEV_PROMPT_MAX_LENGTH = 8000;
 
-/** Only orders belonging to one entity; never phase, configuration or campaign commands. */
-export type JevActionCommand =
-  | AttackCommand
-  | MoveCommand
-  | OverwatchCommand
-  | ReloadCommand
-  | UseEquipmentCommand
-  | MechActionCommand
-  | InteractCommand
-  | ExtractCommand
-  | HarvestCarcassCommand;
+/**
+ * Derive entity orders from the game's command registry. New commands require a
+ * Jev provider and instructions at compile time, unless deliberately excluded
+ * here as mission lifecycle, controller orchestration, configuration or debug.
+ */
+export type JevActionCommand = Exclude<
+  TacticalCommand,
+  {
+    readonly type:
+      | "tactical:end-turn"
+      | "tactical:abandon-mission"
+      | "tactical:jev-act"
+      | "tactical:default-bug-act"
+      | "tactical:configure-jev"
+      | "tactical:set-jev-commander-prompt"
+      | "tactical:place-unit";
+  }
+>;
+
+/** Runtime allowlist and owner fields, exhaustive over entity commands so new capabilities can execute. */
+export const JEV_ACTION_OWNER_FIELDS = {
+  "tactical:attack": "attackerId",
+  "tactical:move": "unitId",
+  "tactical:overwatch": "unitId",
+  "tactical:reload": "unitId",
+  "tactical:use-equipment": "unitId",
+  "tactical:mech-action": "unitId",
+  "tactical:extract": "unitId",
+  "tactical:interact": "unitId",
+  "tactical:harvest-carcass": "unitId",
+} as const satisfies {
+  readonly [
+    Type in JevActionCommand["type"]
+  ]: keyof TacticalCommandFor<Type>["payload"];
+};
 
 /** Explicit opt-in and the individual entity's instructions. */
 export interface JevEntityControl {

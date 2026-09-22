@@ -8,7 +8,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { PHASE_FOR_TEAM } from "../model/tactical-state";
 import { jevPerception, jevState } from "./jev-observation";
 import { jevCandidates } from "./jev-actions";
-import { jevMovementCandidates, jevObjectives } from "./jev-movement";
+import { jevObjectives } from "./jev-movement";
 import type { JevActionRules } from "./jev-actions";
 import {
   jevActionInstructions,
@@ -52,15 +52,11 @@ export function captureJev(
     eligible,
     state: { ...state, eligible_to_act: eligible },
     candidates: eligible
-      ? [
-          ...jevMovementCandidates(
-            navigation,
-            actor,
-            jevObjectives(mission),
-            unitNames,
-          ),
-          ...jevCandidates(view, actor, rules),
-        ]
+      ? jevCandidates(view, actor, rules, {
+          navigation,
+          objectives: jevObjectives(mission),
+          names: unitNames,
+        })
       : [],
   };
   // Freeze by value, never retain references to a changing mission or prompt draft.
@@ -206,7 +202,7 @@ function choicePage(
       : stage === "action-group"
         ? "The action type has been chosen. Choose a region or target group within that type; a subsequent request will choose the concrete action."
         : stage === "movement-target"
-          ? "Which destination or direction should actor move toward to follow its orders? Match entity names and metadata, including shared capabilities. Choose a known entity, objective, compass direction or retreat. The game finds a legal route to a free tile beside an entity, toward an objective, or in that direction. A follow-up decides how much of the one-AP route to use. Questions spend no AP."
+          ? "Which destination or direction should actor move toward to follow its orders? Match entity names and metadata, including shared capabilities. Choose a known entity, objective, extraction zone, compass direction or retreat. The game finds a legal route to a free tile beside an entity, toward an objective, into the extraction zone, or in that direction. Reaching extraction does not board the actor; a TDF unit must choose Extract once inside. A follow-up decides how much of the one-AP route to use. Questions spend no AP."
           : "The specific action, including its weapon or item, has been chosen. Choose the best target or destination from ONLY the offered options for that action.";
   return {
     stage,

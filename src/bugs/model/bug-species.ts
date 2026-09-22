@@ -1,6 +1,7 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type { WeaponProfile } from "../../tactical/model/weapon-profile";
+import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
 
 // ===========================================
 // Behaviour
@@ -41,7 +42,7 @@ export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
  *   └────────────────────────────┘
  * ```
  */
-export interface BugSpecies {
+export interface BugSpecies extends BugUnitSource {
   /** Unique catalogue key. */
   readonly id: BugSpeciesId;
   /** Display name, e.g. `"Swarmer"`. */
@@ -56,7 +57,7 @@ export interface BugSpecies {
   readonly move: number;
   /** Action points per turn. Positive. */
   readonly ap: number;
-  /** The species' one attack. */
+  /** Default attack when no explicit `weapons` loadout is supplied. */
   readonly weapon: WeaponProfile;
   /** Tiles it can see, for fog of war (ADR 0006). Positive. */
   readonly sightRange: number;

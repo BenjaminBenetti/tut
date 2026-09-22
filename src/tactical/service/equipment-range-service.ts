@@ -32,7 +32,8 @@ import { attackDistance, closestTiles } from "./weapon-reach-service";
  *              mend is the wheel's question, not the reach's)
  * ```
  *
- * The unit's own tiles are never in the answer. The radar's walk is a
+ * The overlay omits the unit's own tiles by default; action discovery can
+ * include them for self-healing and other legal uses. The radar's walk is a
  * few tiles, so its scan is the item's range box; a thrown item's is
  * the same box, since height only ever adds to `attackDistance` and an
  * item has no reach bonus for standing high. Deterministic: tiles come
@@ -44,6 +45,7 @@ import { attackDistance, closestTiles } from "./weapon-reach-service";
  * @param catalogue - Where item definitions come from.
  * @param index - An index over the map, built here when the caller has none.
  * @param graph - A move graph over the map, built here for a radar when the caller has none.
+ * @param includeActorTiles - Include reachable tiles beneath the actor for action discovery.
  * @returns The tiles the item can be used on, or none for an unknown unit or item.
  */
 export function equipmentRangeTiles(
@@ -53,6 +55,7 @@ export function equipmentRangeTiles(
   catalogue: EquipmentCatalogue,
   index: TileIndex = new TileIndex(mission.map),
   graph?: MoveGraph,
+  includeActorTiles = false,
 ): TileCoord[] {
   const unit = mission.units.find((u) => u.id === unitId);
   const definition = catalogue.get(equipmentId);
@@ -72,7 +75,7 @@ export function equipmentRangeTiles(
       z++
     ) {
       for (const tile of index.column(x, z)) {
-        if (footprintContains(unit.pos, size, tile)) {
+        if (!includeActorTiles && footprintContains(unit.pos, size, tile)) {
           continue;
         }
         const allowed =

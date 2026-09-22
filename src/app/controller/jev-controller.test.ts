@@ -110,6 +110,44 @@ function mixedCampaign(): GameState {
 }
 
 describe("Jev control", () => {
+  it("retries cancelled requests without spending AP or counting them as actions", async () => {
+    const waiting: {
+      request: JevRequest;
+      resolve: (reply: JevReply) => void;
+    }[] = [];
+    const ask = vi.fn(
+      (request: JevRequest) =>
+        new Promise<JevReply>((resolve) => waiting.push({ request, resolve })),
+    );
+    const { store, controller } = setup({ configured: true, ask });
+    controller.configure("self", true, "Hold", "Defend");
+    controller.start();
+    try {
+      // More cancellations than the activation's action limit must still leave
+      // the unit free to act. Simulate a transport that settles after abort.
+      for (let attempt = 0; attempt < 17; attempt++) {
+        await vi.waitFor(() => expect(waiting).toHaveLength(attempt + 1));
+        controller.pause(true);
+        controller.pause(false);
+        waiting[attempt]!.resolve(reply(waiting[attempt]!.request));
+        await vi.waitFor(() => expect(waiting).toHaveLength(attempt + 2));
+        expect(store.getState().activeMission!.units[0]!.ap).toBe(2);
+        expect(jevFinished(store.getState().activeMission!, "self")).toBe(
+          false,
+        );
+        expect(controller.history[attempt]?.status).toBe("cancelled");
+      }
+      waiting[17]!.resolve(reply(waiting[17]!.request));
+      await vi.waitFor(() =>
+        expect(store.getState().activeMission!.units[0]!.status).toContain(
+          "overwatch",
+        ),
+      );
+      expect(store.getState().activeMission!.jev!.decisions).toHaveLength(1);
+    } finally {
+      controller.dispose();
+    }
+  });
   it.each(["fresh", "disabled", "switched-off"])(
     "makes no requests across ordinary bug turns with %s controls",
     async (configuration) => {

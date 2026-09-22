@@ -5,6 +5,7 @@ import type {
   MechActionCommand,
   MechActionPayload,
 } from "../model/mech-action-command";
+import { MECH_ACTION_DEFINITIONS } from "../model/mech-action-command";
 import { MECH_SYSTEM_USED } from "../model/mech-system-used-event";
 import type { TacticalError } from "../model/tactical-error";
 import type { TacticalHandler } from "../model/tactical-handler";
@@ -30,11 +31,12 @@ export function validateMechAction(
   const acting = actingUnit(
     mission,
     payload.unitId,
-    payload.action === "coolant" ? 0 : 1,
+    MECH_ACTION_DEFINITIONS[payload.action].apCost,
   );
   if (!acting.ok) return acting;
   const unit = acting.value;
   const systems = mission.templates[unit.templateId]?.systems;
+  /** Retain the shared systems refusal shape for UI and AI callers. */
   const refuse = (reason: string): Result<Unit, TacticalError> =>
     err(systemsRefusal(reason));
   if (unit.kind !== "mech" || !systems)
@@ -70,7 +72,7 @@ export function validateMechAction(
       )
     )
       return refuse("Designate a visible enemy unit");
-  } else {
+  } else if (payload.action === "jump") {
     if (!(systems.jumpRange ?? 0)) return refuse("No jump actuators fitted");
     const tile = payload.tile;
     if (!tile) return refuse("Choose a landing tile");
@@ -105,6 +107,9 @@ export function validateMechAction(
       return refuse("Jump needs an unoccupied outdoor or flat-roof landing");
     const obstruction = jumpObstruction(mission.map, index, unit.pos, tile);
     if (obstruction) return refuse(obstruction);
+  } else {
+    const unhandled: never = payload.action;
+    return refuse(`Unknown mech action: ${String(unhandled)}`);
   }
   return ok(unit);
 }
@@ -121,7 +126,7 @@ export function createMechActionHandler(
     const systems = mission.templates[unit.templateId]?.systems;
     const changed: Unit = {
       ...unit,
-      ap: unit.ap - (action === "coolant" ? 0 : 1),
+      ap: unit.ap - MECH_ACTION_DEFINITIONS[action].apCost,
       ...(action === "brace" ? { braced: true } : {}),
       ...(action === "coolant"
         ? {

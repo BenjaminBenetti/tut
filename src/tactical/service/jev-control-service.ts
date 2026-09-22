@@ -18,7 +18,10 @@ import type { TacticalHandlers } from "./tactical-command-handlers";
 import { applyTacticalCommand } from "./tactical-command-handlers";
 import { withVision } from "./vision-service";
 import { isAutonomous } from "../model/unit";
-import { JEV_PROMPT_MAX_LENGTH } from "../model/jev-control";
+import {
+  JEV_PROMPT_MAX_LENGTH,
+  JEV_ACTION_OWNER_FIELDS,
+} from "../model/jev-control";
 
 /** Start a fresh serializable cursor when a phase changes, keeping the legacy path when no bug opts in. */
 export function startJevPhase(mission: TacticalState): TacticalState {
@@ -178,21 +181,12 @@ export function createJevActHandler(
     if (actor.team !== TEAM_FOR_PHASE[mission.phase])
       return err({ kind: "wrong-phase", unitId });
     if (action) {
+      if (!Object.hasOwn(JEV_ACTION_OWNER_FIELDS, action.type)) return stale();
       const payload = action.payload;
-      const owner =
-        "attackerId" in payload ? payload.attackerId : payload.unitId;
-      const allowed = [
-        "tactical:move",
-        "tactical:attack",
-        "tactical:overwatch",
-        "tactical:reload",
-        "tactical:use-equipment",
-        "tactical:mech-action",
-        "tactical:extract",
-        "tactical:interact",
-        "tactical:harvest-carcass",
+      const owner = (payload as unknown as Readonly<Record<string, unknown>>)[
+        JEV_ACTION_OWNER_FIELDS[action.type]
       ];
-      if (owner !== unitId || !allowed.includes(action.type)) return stale();
+      if (owner !== unitId) return stale();
     }
     const applied = action
       ? applyTacticalCommand(handlers, mission, action, ctx)

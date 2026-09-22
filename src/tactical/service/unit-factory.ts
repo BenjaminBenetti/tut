@@ -157,7 +157,9 @@ export function mechUnit(
  * Builds a bug from its species data, which is already in tactical
  * terms (#322). Every bug of a species shares one template
  * (`"bug:<species>"`) and starts at full health; a species with a
- * footprint carries it onto the template (#1130). Pure: reads only its
+ * footprint carries it onto the template (#1130). Explicit weapons and
+ * equipment are copied into the same loadout used by player and Jev rules;
+ * older species retain their single default attack. Pure: reads only its
  * arguments and draws one id.
  */
 export function bugUnit(
@@ -171,13 +173,18 @@ export function bugUnit(
     maxHp: species.hp,
     maxAp: species.ap,
     move: species.move,
-    weapons: [
-      {
-        id: PRIMARY_WEAPON_ID,
-        name: DEFAULT_WEAPON_NAME,
-        profile: species.weapon,
-      },
-    ],
+    weapons: species.weapons
+      ? [...species.weapons]
+      : [
+          {
+            id: PRIMARY_WEAPON_ID,
+            name: DEFAULT_WEAPON_NAME,
+            profile: species.weapon,
+          },
+        ],
+    ...(species.equipment === undefined
+      ? {}
+      : { equipment: [...species.equipment] }),
     sightRange: species.sightRange,
     armor: species.armor,
     passClass: "infantry",

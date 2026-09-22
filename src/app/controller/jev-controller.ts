@@ -215,9 +215,8 @@ export class JevController implements JevInspector {
         if (!applied.ok) return;
         continue;
       }
-      const count = (this.actionCounts.get(actor.id) ?? 0) + 1;
-      this.actionCounts.set(actor.id, count);
-      if (count > 16 || actor.ap <= 0) {
+      const count = this.actionCounts.get(actor.id) ?? 0;
+      if (count >= 16 || actor.ap <= 0) {
         this.store.dispatch(
           jevAct({
             unitId: actor.id,
@@ -239,6 +238,9 @@ export class JevController implements JevInspector {
         });
         continue;
       }
+      // Opening and closing the inspector can abort a request before it
+      // settles. Cancellation spends neither AP nor an activation attempt.
+      if (trace.status === "cancelled" || trace.status === "stale") continue;
       if (trace.status === "skipped") {
         this.store.dispatch(
           jevAct({
@@ -270,6 +272,7 @@ export class JevController implements JevInspector {
         if (!result.ok) return;
         continue;
       }
+      this.actionCounts.set(actor.id, count + 1);
       const applied = this.store.dispatch(
         jevAct({
           unitId: actor.id,

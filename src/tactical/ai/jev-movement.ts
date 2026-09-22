@@ -155,6 +155,31 @@ export function jevMovementCandidates(
       },
     );
   }
+  // Extraction requires the actor's anchor inside the zone, not merely beside
+  // it. Choose the cheapest reachable zone tile, including floors and blockers.
+  const extraction = cheapest(
+    search,
+    navigation.extraction
+      .filter((tile) => graph.index.inBounds(tile))
+      .map((tile) => graph.index.keyOf(tile))
+      .filter((key) => search.costs.has(key)),
+  );
+  add(
+    "move_to_extraction",
+    actor.team === "tdf"
+      ? "Move into the extraction zone. Arrival does not extract the actor; choose Extract once inside to leave the battlefield."
+      : "Move toward the TDF extraction zone to contest it. Bugs cannot extract.",
+    extraction,
+    {
+      intent: "approach_extraction",
+      targetId: "extraction",
+      targetName: "Extraction zone",
+      targetPosition: navigation.extraction.find(
+        (tile) => graph.index.keyOf(tile) === extraction,
+      ),
+      routeKind: "known-route",
+    },
+  );
   const reachable = [...search.costs]
     .filter(([, cost]) => cost > 0 && cost <= budget)
     .map(([key]) => key);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { jevMovementCandidates } from "./jev-movement";
 import { scaleJevMovement, jevDistancePage } from "./jev-distance";
-import { captureJev } from "./jev-request";
+import { captureJev, jevChoicePage } from "./jev-request";
 import {
   missionWith,
   openField,
@@ -13,6 +13,8 @@ import {
   riggedRng,
 } from "../service/tactical-fixtures.test-helper";
 import { createMoveHandler } from "../service/move-handler";
+import { createExtractHandler } from "../service/objective-service";
+import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
@@ -68,6 +70,88 @@ function execute(
 }
 
 describe("Jev movement intent planning", () => {
+  it("routes into a reachable extraction tile, then offers and executes extraction at its real AP cost", () => {
+    let mission = revealed({
+      ...missionWith(openField().build(), [
+        unitAt("self", "infantry", { x: 1, y: 0, z: 1 }),
+        unitAt("blocking-ally", "infantry", { x: 2, y: 0, z: 1 }),
+      ]),
+      extraction: [
+        { x: 2, y: 0, z: 1 },
+        { x: 3, y: 0, z: 1 },
+      ],
+    });
+    const extract = createExtractHandler(OBJECTIVE_TUNING);
+    const extractionRules = {
+      ...rules,
+      handlers: { "tactical:extract": extract },
+    };
+    // The nearest extraction tile is occupied; choose the next reachable one.
+    for (let step = 0; step < 3; step++) {
+      const snapshot = captureJev(mission, "self", extractionRules);
+      const target = snapshot.candidates.find(
+        (candidate) => candidate.id === "move_to_extraction",
+      );
+      if (!target) break;
+      expect(target.movement).toMatchObject({
+        targetName: "Extraction zone",
+        targetPosition: { x: 3, y: 0, z: 1 },
+      });
+      expect(
+        jevChoicePage(
+          snapshot,
+          snapshot.candidates.filter((candidate) => candidate.movement),
+        ).request.questions.action!.criteria,
+      ).toHaveProperty("move_to_extraction");
+      mission = execute(mission, scaleJevMovement(target, 4));
+      if (mission.units[0]!.ap === 0)
+        mission = {
+          ...mission,
+          units: mission.units.map((unit) => ({ ...unit, ap: 2 })),
+        };
+    }
+    expect(mission.units[0]!.pos).toEqual({ x: 3, y: 0, z: 1 });
+    const arrived = captureJev(mission, "self", extractionRules);
+    expect(
+      arrived.candidates.some(
+        (candidate) => candidate.id === "move_to_extraction",
+      ),
+    ).toBe(false);
+    const candidate = arrived.candidates.find(
+      (entry) => entry.category === "extract",
+    )!;
+    expect(candidate).toMatchObject({
+      apCost: OBJECTIVE_TUNING.extractApCost,
+      endsActivation: true,
+    });
+    if (candidate.command?.type !== "tactical:extract")
+      throw new Error("Expected extraction");
+    const result = extract(
+      mission,
+      candidate.command,
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("Expected successful extraction");
+    expect(result.value.state.units.some((unit) => unit.id === "self")).toBe(
+      false,
+    );
+    expect(result.value.state.extracted[0]?.id).toBe("self");
+  });
+  it("does not invent an extraction move when every zone tile is blocked", () => {
+    const mission = revealed({
+      ...missionWith(openField().build(), [
+        unitAt("self", "infantry", { x: 1, y: 0, z: 1 }),
+        unitAt("ally", "infantry", { x: 2, y: 0, z: 1 }),
+      ]),
+      extraction: [{ x: 2, y: 0, z: 1 }],
+    });
+    expect(
+      captureJev(mission, "self", rules).candidates.some(
+        (entry) => entry.id === "move_to_extraction",
+      ),
+    ).toBe(false);
+  });
   it("routes around walls toward named entities and stops beside their occupied footprint", () => {
     let mission = revealed(
       missionWith(walledField(), [

@@ -1,9 +1,19 @@
 import { isRecord } from "../../core/model/record-guard";
-import type { JevCandidate } from "../model/jev-control";
+import type { JevActionCommand, JevCandidate } from "../model/jev-control";
+import type { EquipmentKind } from "../model/equipment";
+import type { MechAction } from "../model/mech-action-command";
 
 // ===========================================
 // Gameplay rules for each ability
 // ===========================================
+
+type CommandCategory<T extends string> = T extends `tactical:${infer Category}`
+  ? Category
+  : never;
+type SimpleCategory = Exclude<
+  CommandCategory<JevActionCommand["type"]>,
+  "move" | "use-equipment" | "mech-action"
+>;
 
 const ACTION_RULES: Readonly<Record<string, string>> = {
   attack:
@@ -25,19 +35,19 @@ const ACTION_RULES: Readonly<Record<string, string>> = {
     "Plant demolition charges at the offered nearby nest objective, dealing objective damage immediately for the listed AP cost. This is not a move. The nest may require more damage to be destroyed; reaching its map marker alone does not complete the objective.",
   "harvest-carcass":
     "Harvest an offered nearby bug carcass for campaign tech points. This spends AP without attacking, healing or completing a nest objective; weigh the research gain against the actor's current orders and safety.",
-};
+} satisfies Readonly<Record<SimpleCategory | MechAction, string>>;
 
 const EQUIPMENT_RULES: Readonly<Record<string, string>> = {
   blast:
-    "Throw or use this explosive against one offered visible enemy unit or nest. The targetId identifies the entity; the game aims at its listed tile, not empty ground. It makes an immediate attack that can miss; its blast can harm allies and enemies and damage terrain. Compare the item's damage, radius and lingering effect with units and hazards around the target.",
+    "Throw or use this explosive against one offered visible enemy unit or nest. The targetId identifies the entity; the game aims at a legal tile occupied by that entity, not empty ground. It makes an immediate attack that can miss; its blast can harm allies and enemies and damage terrain. Compare hit_chance_percent, damage_range and the listed blast victims for friendly fire.",
   charge:
     "Place a delayed explosive at an offered tile. It detonates after the item's delayTurns (two turns if absent), not immediately. The later blast can hurt any faction, including this actor; account for friendly positions and escape routes.",
-  heal: "Heal eligible friendly units around the offered tile, up to their maximum HP. heal.target distinguishes organic units from mechanical units; heal.amount and heal.radius describe the effect. This always heals eligible allies and never attacks enemies. Choose where missing HP can actually be restored.",
+  heal: "Heal eligible friendly units around the offered tile, up to their maximum HP. heal.target distinguishes organic units from mechanical units; heal.amount and heal.radius describe the effect. healing.beneficiaries lists the units helped, actual HP restored and resulting HP. This always heals eligible allies and never attacks enemies. Choose where missing HP can actually be restored.",
   radar:
     "Deploy a radar at an offered tile to detect nearby hostile positions during its lifetime. Radar pings do not reveal terrain or make hidden enemies visible attack targets. Position it to cover useful unknown approaches.",
   turret:
     "Deploy an allied autonomous turret at an offered free tile. It watches for enemies and fires automatically with a limited battery; it does not receive normal movement orders. Consider its firing range, sight lines and friendly positions.",
-};
+} satisfies Readonly<Record<EquipmentKind, string>>;
 
 // ===========================================
 // Context for the current actor and selection
@@ -62,7 +72,7 @@ export function jevActionInstructions(
         : "actor.movement";
     const remaining =
       typeof actor.ap === "number" ? String(actor.ap) : "actor.ap";
-    return `${identity} AP means action points; the actor has ${remaining} AP remaining and up to ${allowance} movement points per AP. Choose an entity, objective, compass direction or retreat; the game plans a route using the full map layout and known units, accounting for terrain costs, walls, footprints and stairs between floors. A follow-up rates how much of the proposed route to use. Every executed move spends exactly 1 AP: a short move does not save any AP. Unused movement range is lost. Another decision follows from the updated position and vision while AP remains. Balance reaching orders quickly with survival, hazards and friendly positions. Arrival does not itself attack, heal, interact or complete an objective.`;
+    return `${identity} AP means action points; the actor has ${remaining} AP remaining and up to ${allowance} movement points per AP. Choose an entity, objective, extraction zone, compass direction or retreat; the game plans a route using the full map layout and known units, accounting for terrain costs, walls, footprints and stairs between floors. A follow-up rates how much of the proposed route to use. Every executed move spends exactly 1 AP: a short move does not save any AP. Unused movement range is lost. Another decision follows from the updated position and vision while AP remains. Balance reaching orders quickly with survival, hazards and friendly positions. Arrival does not itself attack, heal, interact, extract or complete an objective.`;
   }
   if (candidate.category === "equipment") {
     const kind = candidate.actionType?.capability.kind;

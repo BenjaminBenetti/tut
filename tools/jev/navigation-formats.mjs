@@ -6,6 +6,7 @@ import {
 } from "../../src/tactical/service/movement-service.ts";
 import { localMap } from "./navigation-local-map.mjs";
 import { goalRoutePage } from "./navigation-routes.mjs";
+import { entityChoicePage } from "./navigation-entity-choice.mjs";
 
 export const VARIANTS = [
   "current",
@@ -17,6 +18,8 @@ export const VARIANTS = [
   "route-cost",
   "goal-route",
   "goal-route-doors",
+  "entities-inline",
+  "entities-shared",
 ];
 const INSTRUCTIONS =
   "Move the actor to the objective using the fewest movement actions. Every offered destination is reachable and costs 1 AP, including short moves; unused movement range is lost. After moving you choose again from the new position. Account for obstacles and detours. Select only an offered choice.";
@@ -49,6 +52,8 @@ function leanState(snapshot, goal, map = true) {
 
 /** Compare tile-input reductions with explicitly separate engine-assisted route and goal controls. */
 export function choicePage(variant, snapshot, candidates, goal, context) {
+  if (variant.startsWith("entities-"))
+    return entityChoicePage(variant, snapshot, context);
   if (variant === "goal-route")
     return goalRoutePage(snapshot, candidates, context);
   if (variant === "goal-route-doors")

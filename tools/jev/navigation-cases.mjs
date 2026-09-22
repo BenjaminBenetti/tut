@@ -186,6 +186,9 @@ export function observe(mission, visibility) {
               explored: mission.map.tiles.map((tile) =>
                 gridKey(tile, mission.map.width, mission.map.depth),
               ),
+              spotted: mission.units
+                .filter((unit) => unit.team !== "tdf" && unit.hp > 0)
+                .map((unit) => unit.id),
             },
           },
         }
@@ -216,7 +219,9 @@ export function applyMove(world, mission, candidate) {
     next = {
       ...next,
       turn: next.turn + 1,
-      units: [{ ...next.units[0], ap: next.units[0].maxAp }],
+      units: next.units.map((unit, index) =>
+        index === 0 ? { ...unit, ap: unit.maxAp } : unit,
+      ),
     };
   return observe(next, world.visibility);
 }

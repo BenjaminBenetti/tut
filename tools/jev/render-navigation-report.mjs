@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, basename } from "node:path";
 import { format } from "prettier";
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
 
 const inputs = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 const output =
@@ -9,14 +11,32 @@ const output =
   "docs/experiments/jev-navigation";
 assert(inputs.length, "Pass evaluation directories and optionally --out=path");
 await mkdir(output, { recursive: true });
-const data = { batches: [], maps: {}, runs: [] };
+const data = {
+  batches: [],
+  maps: {},
+  runs: [],
+  requestTemplates: {},
+  requests: {},
+};
 const summary = { batches: [] };
+const samples = new Set();
 for (const input of inputs) {
   const batch = basename(input);
   const result = JSON.parse(
     await readFile(join(input, "results.json"), "utf8"),
   );
-  data.batches.push({ id: batch, vision: result.visibility });
+  assert.equal(
+    result.scenario,
+    "entities-100",
+    "This report displays the 100-entity evaluations; pass only those batches",
+  );
+  data.batches.push({
+    id: batch,
+    vision: result.visibility,
+    suite: result.suite,
+    summary: result.summary,
+    reverseChoices: result.reverseChoices,
+  });
   const maps = new Map();
   for (const item of result.cases) {
     const key = `${item.seed}:${item.size}:${item.biome}:${item.settlement}`;
@@ -41,6 +61,10 @@ for (const input of inputs) {
   summary.batches.push({
     id: batch,
     model: result.model,
+    suite: result.suite,
+    scenario: result.scenario,
+    method: result.method,
+    gameCommit: result.gameCommit,
     startedAt: result.startedAt,
     finishedAt: result.finishedAt,
     vision: result.visibility,
@@ -58,6 +82,12 @@ for (const input of inputs) {
       map: maps.get(run.caseId),
       start: metadata.start,
       goal: metadata.goal.position,
+      goalId: metadata.goal.id,
+      goalName: metadata.goal.name,
+      roster: metadata.roster,
+      prompts: metadata.prompts,
+      orderKind: metadata.orderKind,
+      entityCount: metadata.entityCount,
       steps: run.steps.map((step) => ({
         ...step,
         calls: step.calls.map((call) => ({
@@ -68,14 +98,55 @@ for (const input of inputs) {
           elapsedMs: call.elapsedMs,
           requestHash: call.requestHash,
           error: call.error,
+          httpStatus: call.httpStatus,
+          requestId: call.requestId,
+          response: call.response,
         })),
       })),
     });
+    for (const step of run.steps)
+      for (const call of step.calls) {
+        if (data.requests[call.requestHash]) continue;
+        const request = JSON.parse(
+          await readFile(
+            join(input, "requests", `${call.requestHash}.json`),
+            "utf8",
+          ),
+        );
+        const template = {
+          ...request,
+          state: { ...request.state, actor: null },
+        };
+        const templateId = createHash("sha256")
+          .update(JSON.stringify(template))
+          .digest("hex");
+        data.requestTemplates[templateId] = template;
+        data.requests[call.requestHash] = {
+          templateId,
+          actor: request.state.actor,
+        };
+        const restored = {
+          ...template,
+          state: {
+            ...template.state,
+            ...(request.state.actor ? { actor: request.state.actor } : {}),
+          },
+        };
+        if (!Object.hasOwn(request.state, "actor")) delete restored.state.actor;
+        assert.equal(
+          createHash("sha256").update(JSON.stringify(restored)).digest("hex"),
+          call.requestHash,
+          "Viewer request reconstruction must match the exact recorded payload",
+        );
+      }
   }
-  if (batch === "navigation-holdout-full")
+  if (result.suite === "holdout")
     for (const variant of result.variants) {
-      const first = result.runs.find((run) => run.variant === variant).steps[0]
-        .calls[0];
+      if (samples.has(variant)) continue;
+      const first = result.runs.find((run) => run.variant === variant)?.steps[0]
+        ?.calls[0];
+      if (!first) continue;
+      samples.add(variant);
       const request = JSON.parse(
         await readFile(
           join(input, "requests", `${first.requestHash}.json`),
@@ -94,7 +165,7 @@ const template = await readFile(
 );
 const html = template.replace(
   "__NAV_DATA__",
-  Buffer.from(JSON.stringify(data)).toString("base64"),
+  gzipSync(Buffer.from(JSON.stringify(data)), { level: 9 }).toString("base64"),
 );
 await writeFile(
   join(output, "index.html"),

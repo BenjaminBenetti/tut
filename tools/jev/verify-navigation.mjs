@@ -4,8 +4,10 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 
-const { buildCase, applyMove, remaining } =
+const { buildCase, applyMove, remaining, RULES } =
   await import("./navigation-cases.mjs");
+const { buildEntityCase } = await import("./navigation-entities.mjs");
+const { captureJev } = await import("../../src/tactical/ai/jev-request.ts");
 const inputs = process.argv.slice(2);
 assert(
   inputs.length,
@@ -14,7 +16,9 @@ assert(
 let episodes = 0,
   commands = 0,
   calls = 0,
-  refusals = 0;
+  refusals = 0,
+  targetDecisions = 0,
+  correctTargetDecisions = 0;
 for (const input of inputs) {
   const result = JSON.parse(
     await readFile(join(input, "results.json"), "utf8"),
@@ -22,7 +26,10 @@ for (const input of inputs) {
   const worlds = new Map(
     result.cases.map((metadata) => [
       metadata.id,
-      buildCase(metadata, result.visibility),
+      (result.scenario === "entities-100" ? buildEntityCase : buildCase)(
+        metadata,
+        result.visibility,
+      ),
     ]),
   );
   for (const run of result.runs) {
@@ -31,6 +38,10 @@ for (const input of inputs) {
     let ap = 0,
       waste = 0;
     assert.equal(run.optimalAp, world.optimalAp);
+    assert.deepEqual(
+      world.metadata,
+      result.cases.find((item) => item.id === run.caseId),
+    );
     for (const step of run.steps) {
       assert.deepEqual(step.from, mission.units[0].pos);
       assert.equal(step.distanceBefore, remaining(world, mission.units[0].pos));
@@ -47,6 +58,49 @@ for (const input of inputs) {
         );
         const request = JSON.parse(body);
         assert.equal(request.model, result.model);
+        if (result.scenario === "entities-100") {
+          const snapshot = captureJev(
+            mission,
+            mission.units[0].id,
+            RULES,
+            world.prompts,
+            world.names,
+          );
+          const wireState = JSON.parse(JSON.stringify(snapshot.state));
+          assert.equal(request.state.entities.length, 100);
+          assert.equal(
+            Object.keys(request.questions.action.criteria).length,
+            100,
+          );
+          assert.deepEqual(request.state.actor, wireState.actor);
+          assert.equal(request.state.entity_prompt, world.prompts.entity);
+          assert.equal(request.state.commander_prompt, world.prompts.commander);
+          const byId = new Map(
+            wireState.entities.map((entity) => [entity.id, entity]),
+          );
+          for (const { capability_ref, ...entity } of request.state.entities) {
+            const expanded = capability_ref
+              ? { ...entity, ...request.state.capabilities[capability_ref] }
+              : entity;
+            assert.deepEqual(expanded, byId.get(entity.id));
+          }
+          const order = result.reverseChoices
+            ? [...world.choiceOrder].reverse()
+            : world.choiceOrder;
+          assert.deepEqual(
+            Object.keys(request.questions.action.criteria),
+            order,
+          );
+          if (call.answer) {
+            assert.equal(step.selectedEntityId, call.answer.choice);
+            assert.equal(
+              step.selectedEntityCorrect,
+              call.answer.choice === world.goal.id,
+            );
+            targetDecisions++;
+            if (step.selectedEntityCorrect) correctTargetDecisions++;
+          }
+        }
         if (call.answer)
           assert(
             Object.hasOwn(
@@ -95,5 +149,13 @@ for (const input of inputs) {
   console.log(`Verified ${input}: ${result.runs.length} episodes`);
 }
 console.log(
-  JSON.stringify({ episodes, commands, calls, refusals, networkRequests: 0 }),
+  JSON.stringify({
+    episodes,
+    commands,
+    calls,
+    refusals,
+    targetDecisions,
+    correctTargetDecisions,
+    networkRequests: 0,
+  }),
 );

@@ -199,6 +199,8 @@ export class TacticalScreen implements Screen {
   private playbackGeneration = 0;
   /** What the HUD, the scene and the body were last told. */
   private playing = false;
+  /** Every unsettled scene update, including single actions without a phase-change event. */
+  private readonly sceneUpdates = new Set<symbol>();
   /**
    * Releases waiting on the phase banner (#1132): the scene has settled
    * but "Bug phase" is still up, so the controls wait for it to pass.
@@ -359,6 +361,7 @@ export class TacticalScreen implements Screen {
   /** Unsubscribes, releases the lock and the scene, and removes the layout. */
   unmount(): void {
     this.deps.jev?.dispose();
+    this.sceneUpdates.clear();
     this.unsubscribe?.();
     this.unsubscribe = undefined;
     const body = this.root?.ownerDocument.body;
@@ -443,9 +446,11 @@ export class TacticalScreen implements Screen {
       this.viewport !== undefined &&
       this.attachedMissionId === mission.missionId;
     if (!paced) {
+      this.sceneUpdates.clear();
       // Another mission, or none: whatever the last scene was playing
       // is over as far as these controls are concerned.
       this.resetPlayback();
+      this.syncJevPlayback();
       this.hud.update(mission, events);
       if (!mission) {
         return;
@@ -599,12 +604,20 @@ export class TacticalScreen implements Screen {
       return;
     }
     this.playing = playing;
+    this.syncJevPlayback();
     this.hud.setPlaybackLocked(playing);
     this.deps.sceneHost?.setInputLocked(playing);
     const body = this.root?.ownerDocument.body;
     if (body) {
       body.dataset.phasePlaying = String(playing);
     }
+  }
+
+  /** Automatic actions wait for all scene updates and the existing phase-banner lock. */
+  private syncJevPlayback(): void {
+    this.deps.jev?.setPlaybackPending(
+      this.playing || this.sceneUpdates.size > 0,
+    );
   }
 
   /**
@@ -744,6 +757,9 @@ export class TacticalScreen implements Screen {
         this.deps.onIntent?.(intent);
       },
     };
+    const batch = Symbol();
+    this.sceneUpdates.add(batch);
+    this.syncJevPlayback();
     const pending =
       this.attachedMissionId === mission.missionId
         ? host.update(mission, events, hooks)
@@ -765,9 +781,13 @@ export class TacticalScreen implements Screen {
     // touches a key, so the readout is never blank while the control is
     // live.
     this.hud.setLayerFocus(host.layerFocus());
-    return pending.catch((error: unknown) => {
-      console.error("Tactical scene failed", error);
-    });
+    return pending
+      .catch((error: unknown) => {
+        console.error("Tactical scene failed", error);
+      })
+      .finally(() => {
+        if (this.sceneUpdates.delete(batch)) this.syncJevPlayback();
+      });
   }
 
   /** Mirrors the last intent to the body so end-to-end tests can watch it. */

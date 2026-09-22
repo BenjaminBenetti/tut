@@ -106,6 +106,122 @@ function mixedCampaign(): GameState {
 }
 
 describe("Jev control", () => {
+  it.each(["fresh", "disabled", "switched-off"])(
+    "makes no requests across ordinary bug turns with %s controls",
+    async (configuration) => {
+      const transport = instant();
+      const { store, controller } = setup(transport, mixedCampaign());
+      if (configuration === "switched-off") {
+        controller.configure("self", true, "Hold", "Defend");
+        controller.configure("bug", true, "Hold", "Defend");
+      }
+      if (configuration !== "fresh") {
+        controller.configure("self", false, "Hold", "Defend");
+        controller.configure("bug", false, "Hold", "Defend");
+      }
+      controller.start();
+      for (let turn = 1; turn <= 3; turn++) {
+        expect(store.dispatch(endTurn()).ok).toBe(true);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(store.getState().activeMission).toMatchObject({
+          phase: "player",
+          turn: turn + 1,
+        });
+      }
+      expect(transport.ask).not.toHaveBeenCalled();
+      expect(controller.history).toEqual([]);
+      controller.dispose();
+    },
+  );
+  it("waits for manual animation playback before asking an enabled TDF unit", async () => {
+    const transport = instant();
+    const { store, controller } = setup(transport, mixedCampaign());
+    controller.configure("self", true, "Hold", "Defend");
+    // The screen subscribes first and raises the gate synchronously when a command animates.
+    const detach = store.subscribe(() => controller.setPlaybackPending(true));
+    controller.start();
+    expect(store.dispatch(overwatch("manual")).ok).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(transport.ask).not.toHaveBeenCalled();
+    controller.pause(true);
+    controller.setPlaybackPending(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(transport.ask).not.toHaveBeenCalled();
+    controller.pause(false);
+    await vi.waitFor(() => expect(transport.ask).toHaveBeenCalledTimes(1));
+    expect(controller.history[0]?.snapshot.team).toBe("tdf");
+    detach();
+    controller.dispose();
+  });
+  it("waits between mixed bug activations and before returning the player turn", async () => {
+    const transport = instant();
+    const { store, controller } = setup(transport);
+    controller.configure("bug", true, "Hold", "Defend");
+    const commands: string[] = [];
+    const detach = store.subscribe((change) => {
+      if (change.kind === "command") commands.push(change.command.type);
+      controller.setPlaybackPending(true);
+    });
+    expect(store.dispatch(endTurn()).ok).toBe(true);
+    controller.start();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(transport.ask).not.toHaveBeenCalled();
+    controller.setPlaybackPending(false);
+    await vi.waitFor(() => expect(commands).toHaveLength(2));
+    expect(commands.at(-1)).toBe("tactical:jev-act");
+    expect(transport.ask).toHaveBeenCalledTimes(1);
+    expect(store.getState().activeMission?.phase).toBe("bugs");
+    expect(jevFinished(store.getState().activeMission!, "ordinary")).toBe(
+      false,
+    );
+    controller.setPlaybackPending(false);
+    await vi.waitFor(() => expect(commands).toHaveLength(3));
+    expect(commands.at(-1)).toBe("tactical:default-bug-act");
+    expect(store.getState().activeMission?.phase).toBe("bugs");
+    expect(transport.ask).toHaveBeenCalledTimes(1);
+    controller.setPlaybackPending(false);
+    await vi.waitFor(() =>
+      expect(store.getState().activeMission?.phase).toBe("player"),
+    );
+    expect(commands.at(-1)).toBe("tactical:end-turn");
+    expect(transport.ask).toHaveBeenCalledTimes(1);
+    detach();
+    controller.dispose();
+  });
+  it("does not ask a TDF unit for the next turn while the ordinary bug phase is still animating", async () => {
+    const transport = instant();
+    const { store, controller } = setup(transport, mixedCampaign());
+    controller.configure("self", true, "Hold", "Defend");
+    store.dispatch(overwatch("manual"));
+    const campaign = store.getState();
+    store.replaceState({
+      ...campaign,
+      activeMission: {
+        ...campaign.activeMission!,
+        units: campaign.activeMission!.units.map((unit) =>
+          unit.team === "tdf"
+            ? { ...unit, maxAp: unit.id === "self" ? 2 : 0 }
+            : unit,
+        ),
+      },
+    });
+    const detach = store.subscribe(() => controller.setPlaybackPending(true));
+    controller.start();
+    await vi.waitFor(() => expect(transport.ask).toHaveBeenCalledTimes(1));
+    controller.setPlaybackPending(false);
+    expect(store.dispatch(endTurn()).ok).toBe(true);
+    expect(store.getState().activeMission?.phase).toBe("player");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(transport.ask).toHaveBeenCalledTimes(1);
+    controller.setPlaybackPending(false);
+    await vi.waitFor(() => expect(transport.ask).toHaveBeenCalledTimes(2));
+    expect(controller.history.map((trace) => trace.snapshot.team)).toEqual([
+      "tdf",
+      "tdf",
+    ]);
+    detach();
+    controller.dispose();
+  });
   it("waits for manual AP, then executes actions needing no target without a redundant question", async () => {
     const transport = {
       configured: true,

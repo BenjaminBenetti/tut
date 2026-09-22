@@ -41,6 +41,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
+import type { JevInspector } from "../model/jev-inspector";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
@@ -230,10 +231,10 @@ class FakeHost implements TacticalSceneHost {
     }
     if (this.deferSettle) {
       return new Promise((resolve) => {
-        this.pendingSettle = () => {
+        this.pendingSettles.push(() => {
           hooks.onSettled?.();
           resolve();
-        };
+        });
       });
     }
     hooks.onSettled?.();
@@ -241,12 +242,10 @@ class FakeHost implements TacticalSceneHost {
   }
   /** When set, `update` holds its settle until `settle()`, like a scene still animating (#1130). */
   deferSettle = false;
-  private pendingSettle: (() => void) | undefined;
+  private readonly pendingSettles: (() => void)[] = [];
   /** Lets a deferred update settle, as the scene does after its last event. */
   settle(): void {
-    const settle = this.pendingSettle;
-    this.pendingSettle = undefined;
-    settle?.();
+    this.pendingSettles.shift()?.();
   }
   /** What the screen last told the map's input (#1130); undefined until told. */
   locked: boolean | undefined;
@@ -1224,7 +1223,24 @@ describe("TacticalScreen playback lock (#1130)", () => {
     // say which moved when.
     const banner = manualTimers();
     const watchdog = manualTimers();
+    const jev = {
+      configured: false,
+      history: [],
+      mission: () => store.getState().activeMission,
+      capture: () => {
+        throw new Error("Not an inspector test");
+      },
+      evaluate: () => Promise.resolve(),
+      step: () => Promise.resolve(),
+      configure: vi.fn(),
+      subscribe: () => () => undefined,
+      pause: vi.fn(),
+      setPlaybackPending: vi.fn(),
+      start: vi.fn(),
+      dispose: vi.fn(),
+    } satisfies JevInspector;
     const screen = new TacticalScreen({
+      jev,
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
@@ -1261,8 +1277,51 @@ describe("TacticalScreen playback lock (#1130)", () => {
         ] as CampaignEvent[],
       );
     };
-    return { screen, store, host, state, mission, endTurn, banner, watchdog };
+    return {
+      screen,
+      store,
+      host,
+      state,
+      mission,
+      endTurn,
+      banner,
+      watchdog,
+      jev,
+    };
   }
+
+  it("holds automatic play through scene loading, bug animation and its phase banner", async () => {
+    const { jev, endTurn, host, banner } = playing();
+    expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(true);
+    await vi.waitFor(() =>
+      expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(false),
+    );
+    endTurn();
+    expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(true);
+    host.settle();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(true);
+    banner.fire();
+    expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(false);
+  });
+
+  it("holds automatic play until all individual action batches settle, independently of the watchdog", async () => {
+    const { jev, store, host, state, endTurn, watchdog } = playing();
+    await vi.waitFor(() =>
+      expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(false),
+    );
+    endTurn();
+    store.command(state, []);
+    watchdog.fire();
+    expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(true);
+    host.settle();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(true);
+    host.settle();
+    await vi.waitFor(() =>
+      expect(jev.setPlaybackPending).toHaveBeenLastCalledWith(false),
+    );
+  });
 
   it("holds End turn, the map and the body while a phase plays, and releases them once the scene has settled and the bug phase banner has passed", () => {
     const { host, store, endTurn, banner } = playing();

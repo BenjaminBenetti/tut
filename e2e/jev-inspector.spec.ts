@@ -399,3 +399,115 @@ test("Jev TDF labels persist, Tab skips them, and End Turn waits for their decis
   expect(requests).toHaveLength(1);
   expect((await savedMission(page)).jev?.decisions).toHaveLength(1);
 });
+
+test("automatic TDF decisions wait for the bug phase to finish animating", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const requests: { request: JevRequest; duringPlayback: boolean }[] = [];
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.route("http://localhost:8080/v1/systemone", async (route) => {
+    const headers = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+    };
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    const request = route.request().postDataJSON() as JevRequest;
+    const duringPlayback = await page.evaluate(
+      () => document.body.dataset.phasePlaying === "true",
+    );
+    requests.push({ request, duringPlayback });
+    const ids = Object.keys(request.questions.action!.criteria);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers,
+      body: JSON.stringify({
+        model: "jev-test",
+        answers: {
+          action: {
+            type: "choice",
+            choice: "overwatch",
+            confidence: 1,
+            probabilities: Object.fromEntries(
+              ids.map((id) => [id, id === "overwatch" ? 1 : 0]),
+            ),
+          },
+        },
+      }),
+    });
+  });
+  await launchMission(page, "4242", CITY_MISSION_FIXTURE);
+  // Only the enabled actor refreshes AP, so it becomes eligible as soon as the
+  // simulation returns the next player turn, before the bug replay has finished.
+  await page.evaluate(() => {
+    const key = "tut:save:autosave";
+    const save = JSON.parse(
+      localStorage.getItem(key)!,
+    ) as SaveEnvelope<GameState>;
+    const mission = save.state.activeMission!;
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        ...save,
+        state: {
+          ...save.state,
+          activeMission: {
+            ...mission,
+            units: mission.units.map((unit) =>
+              unit.team === "tdf"
+                ? {
+                    ...unit,
+                    ap: unit.id === "unit-1" ? 2 : 0,
+                    maxAp: unit.id === "unit-1" ? 2 : 0,
+                  }
+                : unit,
+            ),
+            jev: {
+              entities: {
+                "unit-1": { enabled: true, entityPrompt: "Hold position" },
+              },
+              commanders: { tdf: "Defend", bugs: "" },
+            },
+          },
+        },
+      }),
+    );
+  });
+  await page.reload();
+  await page.locator('[data-action="continue"]').click();
+  await expect
+    .poll(async () => (await savedMission(page)).jev?.decisions?.length)
+    .toBe(1);
+  expect(requests).toHaveLength(1);
+  await page.locator('[data-action="end-turn"]').click();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-phase-playing",
+    "true",
+  );
+  await expect
+    .poll(async () => (await savedMission(page)).jev?.decisions?.length, {
+      timeout: 60_000,
+    })
+    .toBe(2);
+  expect(
+    requests.map((entry) => ({
+      turn: entry.request.state.turn,
+      faction: entry.request.state.faction,
+      duringPlayback: entry.duringPlayback,
+    })),
+  ).toEqual([
+    { turn: 1, faction: "tdf", duringPlayback: false },
+    { turn: 2, faction: "tdf", duringPlayback: false },
+  ]);
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-phase-playing",
+    "false",
+  );
+  expect(errors).toEqual([]);
+});

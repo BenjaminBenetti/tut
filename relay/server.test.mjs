@@ -129,6 +129,49 @@ test("preserves upstream errors and retry headers but redacts credentials", asyn
   );
 });
 
+test("identifies the acting unit and faction in logs without recording prompts or secrets", async () => {
+  await withRelay(async (base, logs) => {
+    const response = await fetch(`${base}/v1/systemone`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...request,
+        state: {
+          actor: { id: "unit-1", name: "Alpha secret-for-test", hp: 10 },
+          faction: "tdf",
+          phase: "player",
+          turn: 3,
+          entity_prompt: "private unit orders",
+          commander_prompt: "private faction orders",
+        },
+      }),
+    });
+    assert.equal(response.status, 200);
+    const entry = JSON.parse(logs[0]);
+    assert.deepEqual(
+      {
+        actorId: entry.actorId,
+        actorName: entry.actorName,
+        faction: entry.faction,
+        phase: entry.phase,
+        turn: entry.turn,
+        questionTypes: entry.questionTypes,
+      },
+      {
+        actorId: "unit-1",
+        actorName: "Alpha [redacted]",
+        faction: "tdf",
+        phase: "player",
+        turn: 3,
+        questionTypes: ["choice"],
+      },
+    );
+    assert.ok(!logs[0].includes("secret-for-test"));
+    assert.ok(!logs[0].includes("private"));
+    assert.equal(entry.hp, undefined);
+  });
+});
+
 test("forwards Score questions unchanged and rejects invalid ordered scales before upstream", async () => {
   const scoreRequest = {
     ...request,

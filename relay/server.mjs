@@ -60,6 +60,7 @@ export function createRelay({
       if (!res.writableEnded) controller.abort();
     });
     req.setTimeout(15000, () => req.destroy());
+    let context = {};
     try {
       let size = 0;
       const chunks = [];
@@ -81,6 +82,7 @@ export function createRelay({
         return reply(400, {
           error: "Expected Jev state, model and Choice or Score questions",
         });
+      context = requestContext(payload, key);
       const upstream = await fetchUpstream(UPSTREAM, {
         method: "POST",
         headers: {
@@ -117,10 +119,32 @@ export function createRelay({
           requestId: id,
           status: res.statusCode,
           elapsedMs: Date.now() - started,
+          ...context,
         }),
       );
     }
   });
+}
+
+/** Identify the acting entity without logging prompts, battlefield state or credentials. */
+function requestContext(payload, key) {
+  const state = payload.state;
+  const actor = state?.actor;
+  /** Keep caller-supplied labels short and redact credentials before serialization. */
+  const label = (value) =>
+    typeof value === "string"
+      ? value.replaceAll(key, "[redacted]").slice(0, 120)
+      : undefined;
+  return {
+    actorId: label(actor?.id),
+    actorName: label(actor?.name),
+    faction: label(state?.faction),
+    phase: label(state?.phase),
+    turn: Number.isSafeInteger(state?.turn) ? state.turn : undefined,
+    questionTypes: Object.values(payload.questions).map(
+      (question) => question.type,
+    ),
+  };
 }
 
 /** Bound the evaluation interface; callers cannot choose an upstream or send credentials. */

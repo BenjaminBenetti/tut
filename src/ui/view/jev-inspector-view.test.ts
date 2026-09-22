@@ -19,6 +19,7 @@ it("exposes no inspector DOM or subscription without development tools", () => {
     configure: vi.fn(),
     subscribe,
     pause: vi.fn(),
+    setPlaybackPending: vi.fn(),
     start: vi.fn(),
     dispose: vi.fn(),
   };

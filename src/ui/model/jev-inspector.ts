@@ -68,6 +68,8 @@ export interface JevInspector {
   subscribe(listener: () => void): () => void;
   /** Pause automatic play while inspecting. */
   pause(paused: boolean): void;
+  /** Hold automatic decisions and phase changes until scene playback and phase banners settle. */
+  setPlaybackPending(pending: boolean): void;
   /** Start observing the active mission. */
   start(): void;
   /** Abort requests and stop observing when the screen/session leaves. */

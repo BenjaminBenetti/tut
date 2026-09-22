@@ -40,6 +40,9 @@ export class JevController implements JevInspector {
   private detach?: () => void;
   private stopped = false;
   private paused = false;
+  private playbackPending = false;
+  private countedPhase?: string;
+  private readonly actionCounts = new Map<string, number>();
   private running = false;
   private reschedule = false;
   private readonly pending = new Set<AbortController>();
@@ -116,6 +119,12 @@ export class JevController implements JevInspector {
     if (paused) this.automatic?.abort();
     else this.schedule();
   }
+  /** Scene playback is independent of the inspector pause; neither can release the other. */
+  setPlaybackPending(pending: boolean): void {
+    if (this.playbackPending === pending) return;
+    this.playbackPending = pending;
+    if (!pending) this.schedule();
+  }
   /** Attach after the tactical screen has subscribed to animation events. */
   start(): void {
     this.stopped = false;
@@ -136,7 +145,7 @@ export class JevController implements JevInspector {
 
   /** Avoid nested store notifications and run one actor at a time. */
   private schedule(): void {
-    if (this.stopped || this.paused) return;
+    if (this.stopped || this.paused || this.playbackPending) return;
     if (this.running) {
       this.reschedule = true;
       return;
@@ -163,10 +172,14 @@ export class JevController implements JevInspector {
 
   /** Resume from saved phase progress. Ordinary bugs still use their existing species behaviours. */
   private async run(): Promise<void> {
-    const counts = new Map<string, number>();
-    while (!this.stopped && !this.paused) {
+    while (!this.stopped && !this.paused && !this.playbackPending) {
       const mission = this.mission();
       if (!mission || mission.outcome) return;
+      const phaseKey = `${mission.missionId}:${String(mission.turn)}:${mission.phase}`;
+      if (this.countedPhase !== phaseKey) {
+        this.countedPhase = phaseKey;
+        this.actionCounts.clear();
+      }
       if (
         mission.phase === "player" &&
         !jevEndTurnPending(mission) &&
@@ -202,9 +215,8 @@ export class JevController implements JevInspector {
         if (!applied.ok) return;
         continue;
       }
-      const key = `${String(mission.turn)}:${mission.phase}:${actor.id}`;
-      const count = (counts.get(key) ?? 0) + 1;
-      counts.set(key, count);
+      const count = (this.actionCounts.get(actor.id) ?? 0) + 1;
+      this.actionCounts.set(actor.id, count);
       if (count > 16 || actor.ap <= 0) {
         this.store.dispatch(
           jevAct({
@@ -217,7 +229,7 @@ export class JevController implements JevInspector {
       }
       const snapshot = this.capture(actor.id);
       const trace = await this.decide(snapshot, "automatic");
-      if (this.stopped || this.paused) return;
+      if (this.stopped || this.paused || this.playbackPending) return;
       const current = this.mission();
       if (current !== mission) {
         this.update(trace.id, {
@@ -315,7 +327,8 @@ export class JevController implements JevInspector {
       mode === "automatic" &&
       trace.status === "ready" &&
       !this.stopped &&
-      !this.paused
+      !this.paused &&
+      !this.playbackPending
     );
     return trace;
   }

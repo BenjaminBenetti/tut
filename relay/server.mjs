@@ -79,7 +79,7 @@ export function createRelay({
       }
       if (!validRequest(payload))
         return reply(400, {
-          error: "Expected Jev state, model and Choice questions",
+          error: "Expected Jev state, model and Choice or Score questions",
         });
       const upstream = await fetchUpstream(UPSTREAM, {
         method: "POST",
@@ -151,13 +151,20 @@ function validRequest(value) {
     questions.every(
       (q) =>
         q &&
-        q.type === "choice" &&
         typeof q.instructions === "string" &&
         q.criteria &&
         typeof q.criteria === "object" &&
-        !Array.isArray(q.criteria) &&
-        Object.keys(q.criteria).length >= 1 &&
-        Object.keys(q.criteria).length <= 255,
+        ((q.type === "choice" &&
+          !Array.isArray(q.criteria) &&
+          Object.keys(q.criteria).length >= 1 &&
+          Object.keys(q.criteria).length <= 255) ||
+          (q.type === "score" &&
+            Array.isArray(q.criteria) &&
+            q.criteria.length >= 2 &&
+            q.criteria.length <= 10 &&
+            q.criteria.every(
+              (level) => typeof level === "string" && level.length > 0,
+            ))),
     )
   );
 }

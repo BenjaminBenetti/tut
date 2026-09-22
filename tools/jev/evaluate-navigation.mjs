@@ -8,7 +8,7 @@ import { execFileSync } from "node:child_process";
 const { buildCase, caseDefinitions, applyMove, remaining, RULES } =
   await import("./navigation-cases.mjs");
 const { choicePage, VARIANTS } = await import("./navigation-formats.mjs");
-const { captureJev } = await import("../../src/tactical/ai/jev-request.ts");
+const { captureJev } = await import("./navigation-snapshot.mjs");
 const { buildEntityCase, entityCaseDefinitions } =
   await import("./navigation-entities.mjs");
 const { moveTowardEntity } = await import("./navigation-entity-choice.mjs");

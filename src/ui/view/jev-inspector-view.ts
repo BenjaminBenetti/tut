@@ -365,6 +365,7 @@ export class JevInspectorView {
                     id: trace.candidate.id,
                     category: trace.candidate.category,
                     description: trace.candidate.description,
+                    command: trace.candidate.command,
                   }
                 : undefined,
               answers: trace.exchanges.map((exchange) => ({

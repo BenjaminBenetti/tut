@@ -9,7 +9,7 @@ import type { JevChoicePage } from "../../tactical/ai/jev-request";
 
 /** One actual HTTP exchange, including unsuccessful responses. */
 export interface JevExchange {
-  readonly stage: "action-type" | "action-group" | "action";
+  readonly stage: JevChoicePage["stage"];
   /** UTF-8 wire bytes, not a tokenizer estimate. */
   readonly requestBytes: number;
   readonly request: JevRequest;

@@ -9,6 +9,10 @@ import type { JevSnapshot } from "../../tactical/model/jev-control";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { TEAM_FOR_PHASE } from "../../tactical/model/tactical-state";
 import { captureJev, jevChoicePage } from "../../tactical/ai/jev-request";
+import {
+  jevDistancePage,
+  scaleJevMovement,
+} from "../../tactical/ai/jev-distance";
 import type { JevActionRules } from "../../tactical/ai/jev-actions";
 import {
   configureJev,
@@ -372,6 +376,16 @@ export class JevController implements JevInspector {
         return this.update(id, { status: "stale" });
       if (!exchange.answer)
         return this.update(id, { status: "failed", detail: exchange.error });
+      if (page.stage === "movement-distance") {
+        if (!page.movement || typeof exchange.answer.score !== "number")
+          throw new Error("Expected a Jev movement distance score");
+        return this.update(id, {
+          status: "evaluated",
+          candidate: scaleJevMovement(page.movement, exchange.answer.score),
+        });
+      }
+      if (typeof exchange.answer.choice !== "string")
+        throw new Error("Expected a Jev action choice");
       if (page.groups) {
         const next = page.groups[exchange.answer.choice];
         const count = Object.values(page.groups).reduce(
@@ -383,6 +397,9 @@ export class JevController implements JevInspector {
           (page.stage !== "action-type" && next.length >= count)
         )
           throw new Error("Invalid Jev action group");
+        // A single concrete non-movement command needs no redundant target question.
+        if (next.length === 1 && !next[0]!.movement)
+          return this.update(id, { status: "evaluated", candidate: next[0] });
         return this.update(id, {
           status: "ready",
           next: jevChoicePage(snapshot, next),
@@ -394,6 +411,11 @@ export class JevController implements JevInspector {
           Object.hasOwn(page.request.questions.action!.criteria, entry.id),
       );
       if (!candidate) throw new Error("Unknown Jev action");
+      if (candidate.movement)
+        return this.update(id, {
+          status: "ready",
+          next: jevDistancePage(snapshot, candidate),
+        });
       return this.update(id, { status: "evaluated", candidate });
     } catch (error) {
       return this.update(id, {

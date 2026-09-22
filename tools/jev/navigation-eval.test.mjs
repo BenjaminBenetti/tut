@@ -8,7 +8,7 @@ import {
   RULES,
 } from "./navigation-cases.mjs";
 import { choicePage } from "./navigation-formats.mjs";
-import { captureJev } from "../../src/tactical/ai/jev-request.ts";
+import { captureJev } from "./navigation-snapshot.mjs";
 import { FixtureMapBuilder } from "../../src/mapgen/service/fixture-map-builder.ts";
 import {
   missionWith,

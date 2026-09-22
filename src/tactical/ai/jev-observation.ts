@@ -4,7 +4,11 @@ import { NO_VISION } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { rememberJevTerrain } from "../service/jev-knowledge-service";
 import { radarContacts } from "../service/radar-service";
-import { jevNavigation } from "./jev-map";
+import { jevObjectives } from "./jev-movement";
+import { jevSharedCapabilities } from "./jev-capabilities";
+import type { EquipmentCatalogue } from "../model/equipment";
+import { equipmentOf } from "../service/equipment-service";
+import { chargesLeft } from "../service/combat-service";
 
 /** Build a physically filtered rules input. Never hand Jev the raw mission or its event log. */
 export function jevPerception(
@@ -98,7 +102,7 @@ export function jevPerception(
   };
 }
 
-/** Explicit wire projection: layered ASCII navigation, observed entities, mission intel and both prompts. */
+/** Compact wire projection: shared capabilities, observed entities, public goals and faction orders. */
 export function jevState(
   mission: TacticalState,
   view: TacticalState,
@@ -106,36 +110,42 @@ export function jevState(
   entityPrompt: string,
   commanderPrompt: string,
   unitNames: Readonly<Record<string, string>>,
+  equipment: EquipmentCatalogue,
 ): Readonly<Record<string, unknown>> {
   const vision = view.vision[actor.team];
-  const objectives = mission.objectives.map((objective) => ({
-    id: objective.id,
-    kind: objective.kind,
-    complete: objective.complete,
-    position: mission.spawners.find((nest) => nest.id === objective.targetId)
-      ?.pos,
-  }));
+  const objectives = jevObjectives(mission);
   return {
     entity_prompt: entityPrompt,
     commander_prompt: commanderPrompt,
-    actor: describeUnit(view, actor, true, unitNames[actor.id]),
+    actor: describeUnit(view, actor, true, unitNames[actor.id], equipment),
     turn: mission.turn,
     phase: mission.phase,
     faction: actor.team,
-    navigation: jevNavigation(
-      view,
-      actor,
-      objectives.flatMap((objective) =>
-        !objective.complete && objective.position
-          ? [{ symbol: "O", id: objective.id, position: objective.position }]
-          : [],
-      ),
+    ...jevSharedCapabilities(
+      view.units
+        .filter((unit) => unit.id !== actor.id && unit.hp > 0)
+        .map((unit) =>
+          describeUnit(
+            view,
+            unit,
+            unit.team === actor.team,
+            unitNames[unit.id],
+            equipment,
+          ),
+        ),
     ),
-    entities: view.units
-      .filter((unit) => unit.id !== actor.id && unit.hp > 0)
-      .map((unit) =>
-        describeUnit(view, unit, unit.team === actor.team, unitNames[unit.id]),
-      ),
+    equipment_definitions: Object.fromEntries(
+      [
+        ...new Set(
+          view.units.flatMap(
+            (unit) => view.templates[unit.templateId]?.equipment ?? [],
+          ),
+        ),
+      ].flatMap((id) => {
+        const definition = equipment.get(id);
+        return definition ? [[id, definition]] : [];
+      }),
+    ),
     visible_spawners: view.spawners.map(({ id, pos, hp, destroyed }) => ({
       id,
       pos,
@@ -148,11 +158,11 @@ export function jevState(
       resources:
         "AP means action points, HP means health points. Zero HP removes a unit. actor.ap is the budget remaining now; actor.max_ap is its normal turn budget. Each action pays its listed AP cost immediately. If AP remains, you receive an updated state and choose another action. Never assume all attacks cost one AP: some consume every remaining AP.",
       movement:
-        "actor.movement is movement points per AP, not remaining AP. An ordinary tile costs one movement point; infestation slows TDF and speeds bugs, and rough terrain can slow mechs. Offered move destinations and their movement_points already account for the actor's terrain costs, walls, footprint and elevation. Every move option spends exactly one AP; unused distance cannot be saved for later.",
+        "actor.movement is movement points per AP, not remaining AP. An ordinary tile costs one movement point; infestation slows TDF and speeds bugs, and rough terrain can slow mechs. The game finds routes toward the chosen entity, objective or direction using known terrain, walls, occupied footprints and elevation. A distance question can shorten the proposed one-AP route. Every move option spends exactly one AP; unused distance cannot be saved for later.",
       combat:
         "Attack previews report hit chance in percent and damage in HP. Ranged cover and height affect shots; cover is directional and does not reduce adjacent melee damage. Armor reduces damage and armor penetration bypasses armor. Blast attacks can hurt allies and destroy cover. Profiles describe capabilities; offered previews describe the actual target.",
       knowledge:
-        "Faction vision is shared. f cells have no known surface; remembered cells may be stale. Radar contacts are positions only, not visible targets. Objective locations are public but do not reveal surrounding terrain or hidden nest health. Names in orders refer to actor.name and entities[].name.",
+        "Faction vision is shared. Unseen terrain stays unknown; remembered terrain may be stale. capability_ref refers to shared capabilities; equipment IDs refer to equipment_definitions. Per-entity resources stay on that entity. Radar contacts are positions only, not visible targets. Objective locations are public but do not reveal surrounding terrain or hidden nest health. Names in orders refer to actor.name and entities[].name.",
       objectives:
         "For destroy-spawner objectives the TDF must destroy the nest with attacks or an offered nearby interact action; merely reaching the marker does not complete it. Bugs defend their nests and oppose TDF. Extraction removes the actor from this mission; use it only when its orders call for leaving.",
     },
@@ -183,6 +193,7 @@ function describeUnit(
   unit: Unit,
   friendly: boolean,
   name: string | undefined,
+  equipment: EquipmentCatalogue,
 ): Readonly<Record<string, unknown>> {
   const template = view.templates[unit.templateId];
   return {
@@ -212,8 +223,18 @@ function describeUnit(
           movement: template?.move,
           heat: unit.heat,
           systems: template?.systems,
-          charges: unit.charges,
-          equipment_remaining: unit.equipment,
+          charges: Object.fromEntries(
+            (template?.weapons ?? []).map((weapon) => [
+              weapon.id,
+              chargesLeft(unit, weapon) ?? "unlimited",
+            ]),
+          ),
+          equipment_remaining: Object.fromEntries(
+            equipmentOf(template, unit, equipment).map((item) => [
+              item.definition.id,
+              item.usesLeft,
+            ]),
+          ),
           weapon_ready_on_turn: unit.weaponReadyOnTurn,
           braced: unit.braced,
           moved_this_turn: unit.movedThisTurn,

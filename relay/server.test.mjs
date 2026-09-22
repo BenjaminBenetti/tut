@@ -128,3 +128,64 @@ test("preserves upstream errors and retry headers but redacts credentials", asyn
       }),
   );
 });
+
+test("forwards Score questions unchanged and rejects invalid ordered scales before upstream", async () => {
+  const scoreRequest = {
+    ...request,
+    questions: {
+      distance: {
+        type: "score",
+        instructions: "How far?",
+        criteria: ["minimal", "short", "half", "mostly", "full"],
+      },
+    },
+  };
+  let calls = 0;
+  await withRelay(
+    async (base) => {
+      const send = (payload) =>
+        fetch(`${base}/v1/systemone`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      assert.equal((await send(scoreRequest)).status, 200);
+      for (const criteria of [
+        [],
+        ["one"],
+        Array(11).fill("level"),
+        { 0: "minimal", 1: "full" },
+        ["minimal", null],
+      ])
+        assert.equal(
+          (
+            await send({
+              ...scoreRequest,
+              questions: {
+                distance: { ...scoreRequest.questions.distance, criteria },
+              },
+            })
+          ).status,
+          400,
+        );
+      assert.equal(calls, 1);
+    },
+    async (_url, options) => {
+      calls++;
+      assert.deepEqual(JSON.parse(options.body), scoreRequest);
+      return new Response(
+        JSON.stringify({
+          model: "jev-test",
+          answers: {
+            distance: {
+              type: "score",
+              score: 4,
+              confidence: 1,
+              probabilities: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 1 },
+            },
+          },
+        }),
+      );
+    },
+  );
+});

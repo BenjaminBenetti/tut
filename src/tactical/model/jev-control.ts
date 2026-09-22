@@ -13,6 +13,7 @@ import type { MechActionCommand } from "./mech-action-command";
 import type { InteractCommand } from "./interact-command";
 import type { ExtractCommand } from "./extract-command";
 import type { HarvestCarcassCommand } from "./harvest-carcass-command";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 
 /** Only orders belonging to one entity; never phase, configuration or campaign commands. */
 export type JevActionCommand =
@@ -78,22 +79,45 @@ export interface JevCandidate {
   readonly apCost?: number;
   readonly description: string;
   readonly command?: JevActionCommand;
+  /** Local route and legal stopping points; never an exhaustive tile menu on the wire. */
+  readonly movement?: JevMovement;
+}
+
+/** A selected intent and its one-AP route, costed using faction terrain knowledge. */
+export interface JevMovement {
+  readonly intent: string;
+  readonly targetId?: string;
+  readonly targetName?: string;
+  readonly targetPosition?: TileCoord;
+  readonly routeKind: "known-route" | "explore-frontier";
+  readonly stops: readonly {
+    readonly steps: number;
+    readonly cost: number;
+  }[];
+}
+
+/** Named alternatives for action and target selection. */
+export interface JevChoiceQuestion {
+  readonly type: "choice";
+  readonly instructions: string;
+  readonly criteria: Readonly<Record<string, unknown>>;
+}
+
+/** Ordered descriptive levels for movement extent. */
+export interface JevScoreQuestion {
+  readonly type: "score";
+  readonly instructions: string;
+  readonly criteria: readonly string[];
 }
 
 /** Wire shape from TypeSafe's v1 HTTP API. */
 export interface JevRequest {
   readonly model: string;
   readonly state: Readonly<Record<string, unknown>>;
-  readonly questions: Readonly<
-    Record<
-      string,
-      {
-        readonly type: "choice";
-        readonly instructions: string;
-        readonly criteria: Readonly<Record<string, unknown>>;
-      }
-    >
-  >;
+  readonly questions: {
+    readonly action?: JevChoiceQuestion;
+    readonly distance?: JevScoreQuestion;
+  };
 }
 
 /** A frozen evaluation input, built once and shared by inspection and automatic control. */
@@ -110,8 +134,13 @@ export interface JevSnapshot {
 }
 
 /** A validated typed answer, retaining the raw wire response separately in the trace. */
-export interface JevAnswer {
-  readonly choice: string;
+export type JevAnswer = (
+  | { readonly choice: string; readonly score?: never }
+  | {
+      readonly score: number;
+      readonly choice?: never;
+    }
+) & {
   readonly confidence: number;
   readonly probabilities: Readonly<Record<string, number>>;
-}
+};

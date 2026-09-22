@@ -8,6 +8,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { PHASE_FOR_TEAM } from "../model/tactical-state";
 import { jevPerception, jevState } from "./jev-observation";
 import { jevCandidates } from "./jev-actions";
+import { jevMovementCandidates, jevObjectives } from "./jev-movement";
 import type { JevActionRules } from "./jev-actions";
 import {
   jevActionInstructions,
@@ -37,6 +38,7 @@ export function captureJev(
     prompts?.entity ?? mission.jev?.entities[unitId]?.entityPrompt ?? "",
     prompts?.commander ?? mission.jev?.commanders[actor.team] ?? "",
     unitNames,
+    rules.equipment.catalogue,
   );
   const snapshot: JevSnapshot = {
     missionId: mission.missionId,
@@ -47,7 +49,17 @@ export function captureJev(
     phase: mission.phase,
     eligible,
     state: { ...state, eligible_to_act: eligible },
-    candidates: eligible ? jevCandidates(view, actor, rules) : [],
+    candidates: eligible
+      ? [
+          ...jevMovementCandidates(
+            view,
+            actor,
+            jevObjectives(mission),
+            unitNames,
+          ),
+          ...jevCandidates(view, actor, rules),
+        ]
+      : [],
   };
   // Freeze by value, never retain references to a changing mission or prompt draft.
   return JSON.parse(JSON.stringify(snapshot)) as JevSnapshot;
@@ -55,7 +67,13 @@ export function captureJev(
 
 /** One visible step: action type first, then groups or concrete actions of that type. */
 export interface JevChoicePage {
-  readonly stage: "action-type" | "action-group" | "action";
+  readonly stage:
+    | "action-type"
+    | "action-group"
+    | "action"
+    | "movement-target"
+    | "movement-distance";
+  readonly movement?: JevCandidate;
   readonly request: JevRequest;
   readonly groups?: Readonly<Record<string, readonly JevCandidate[]>>;
 }
@@ -65,7 +83,7 @@ const MAX_LEAF_CHOICES = 32;
 const MAX_CRITERIA_CHARACTERS = 8000;
 const MAX_GROUP_CHOICES = 32;
 const INSTRUCTIONS =
-  "Choose the actor's next action in a turn-based tactical battle using `gameplay` for rules and only observed or remembered facts in the state. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. When no specific order applies, use `faction_goal`. AP means action points: actor.ap is the remaining budget, each action spends its listed cost, and a new decision follows if AP remains. HP means health points. Read ASCII layers using navigation.legend and coordinates; f is unknown and remembered terrain may be stale. Resolve names in orders against actor.name and entities[].name. Historical sightings and radar pings are not visible attack targets. Consider objectives, cover, hazards, survival and friendly fire. Select only an offered option; choosing a group does not spend AP or execute an action.";
+  "Choose the actor's next action in a turn-based tactical battle using `gameplay` for rules and only observed or remembered facts in the state. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. When no specific order applies, use `faction_goal`. AP means action points: actor.ap is the remaining budget, each action spends its listed cost, and a new decision follows if AP remains. HP means health points. capability_ref refers to the shared capabilities dictionary. The game handles pathfinding; north is -z, east +x, south +z and west -x. Resolve names in orders against actor.name and entities[].name. Historical sightings and radar pings are not visible attack targets. Consider objectives, cover, hazards, survival and friendly fire. Select only an offered option; choosing a group does not spend AP or execute an action.";
 
 /** Route by the actor's specific weapon/mode or item; follow-ups contain only that action's targets. */
 export function jevChoicePage(
@@ -102,6 +120,19 @@ export function jevChoicePage(
       groups,
     );
   }
+  if (
+    candidates.length <= 255 &&
+    candidates.every((candidate) => candidate.movement)
+  )
+    return choicePage(
+      snapshot,
+      "movement-target",
+      Object.fromEntries(
+        candidates.map((candidate) => [candidate.id, candidate.description]),
+      ),
+      undefined,
+      candidates[0],
+    );
   const criteria = Object.fromEntries(
     candidates.map((candidate) => [candidate.id, describeCandidate(candidate)]),
   );
@@ -171,7 +202,9 @@ function choicePage(
       ? "Choose the best specific action to take next. Each available weapon and firing mode, usable item, and other ability is listed separately for this actor. Choose the weapon or item now; its target or destination will be selected in a follow-up containing ONLY that action."
       : stage === "action-group"
         ? "The action type has been chosen. Choose a region or target group within that type; a subsequent request will choose the concrete action."
-        : "The specific action, including its weapon or item, has been chosen. Choose the best target or destination from ONLY the offered options for that action.";
+        : stage === "movement-target"
+          ? "Which destination or direction should actor move toward to follow its orders? Match entity names and metadata, including shared capabilities. Choose a known entity, objective, compass direction or retreat. The game finds a legal route to a free tile beside an entity, toward an objective, or in that direction. A follow-up decides how much of the one-AP route to use. Questions spend no AP."
+          : "The specific action, including its weapon or item, has been chosen. Choose the best target or destination from ONLY the offered options for that action.";
   return {
     stage,
     groups,

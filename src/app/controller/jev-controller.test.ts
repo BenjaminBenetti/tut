@@ -28,6 +28,18 @@ import type { JevRequest } from "../../tactical/model/jev-control";
 
 /** Select a real action by default, reserving the remainder of an activation. */
 function reply(request: JevRequest, pick = "overwatch"): JevReply {
+  if (request.questions.distance)
+    return {
+      raw: {
+        model: "test",
+        answers: { distance: { type: "score", score: 4 } },
+      },
+      answer: {
+        score: 4,
+        confidence: 1,
+        probabilities: { "0": 0, "1": 0, "2": 0, "3": 0, "4": 1 },
+      },
+    };
   const criteria = request.questions.action!.criteria;
   const choice = Object.hasOwn(criteria, pick)
     ? pick
@@ -94,7 +106,7 @@ function mixedCampaign(): GameState {
 }
 
 describe("Jev control", () => {
-  it("waits for manual AP, then asks for a type before concrete actions of only that type", async () => {
+  it("waits for manual AP, then executes actions needing no target without a redundant question", async () => {
     const transport = {
       configured: true,
       ask: vi.fn((request: JevRequest) => {
@@ -115,18 +127,13 @@ describe("Jev control", () => {
     await vi.waitFor(() =>
       expect(controller.history[0]?.status).toBe("applied"),
     );
-    expect(transport.ask).toHaveBeenCalledTimes(2);
-    const [first, second] = transport.ask.mock.calls.map(
-      ([request]) => request,
-    );
+    expect(transport.ask).toHaveBeenCalledTimes(1);
+    const [first] = transport.ask.mock.calls.map(([request]) => request);
     expect(first!.questions.action!.criteria).toHaveProperty("move");
     expect(first!.questions.action!.criteria).toHaveProperty("overwatch");
-    expect(Object.values(second!.questions.action!.criteria)).toEqual([
-      expect.objectContaining({ action: "overwatch" }),
-    ]);
     expect(
       controller.history[0]?.exchanges.map((exchange) => exchange.stage),
-    ).toEqual(["action-type", "action"]);
+    ).toEqual(["action-type"]);
     expect(
       controller.history[0]?.exchanges.every(
         (exchange) => exchange.requestBytes > 0,
@@ -164,15 +171,12 @@ describe("Jev control", () => {
     expect(store.dispatch(overwatch("manual")).ok).toBe(false);
     expect(store.getState()).toBe(pending);
     release();
-    await vi.waitFor(() => expect(transport.ask).toHaveBeenCalledTimes(2));
-    expect(store.getState()).toBe(pending);
-    release();
     await vi.waitFor(() =>
       expect(store.getState().activeMission?.turn).toBe(2),
     );
     expect(store.getState().activeMission?.phase).toBe("player");
     expect(jevEndTurnPending(store.getState().activeMission!)).toBe(false);
-    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(transport.ask).toHaveBeenCalledTimes(1);
     expect(store.getState().activeMission?.jev?.decisions).toHaveLength(1);
     controller.dispose();
   });
@@ -288,7 +292,17 @@ describe("Jev control", () => {
       commander_prompt: "Keep Hammerhead covered",
       actor: { id: "unit-bravo", name: "Bravo", type: "Rifle Squad" },
     });
-    expect(sent?.entities).toEqual(
+    const capabilities = sent?.capabilities as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const entities = (sent?.entities as Record<string, unknown>[]).map(
+      (entity) => ({
+        ...capabilities[entity.capability_ref as string],
+        ...entity,
+      }),
+    );
+    expect(entities).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: "unit-alpha",
@@ -331,14 +345,14 @@ describe("Jev control", () => {
     );
     expect(store.getState()).toBe(before);
     expect(controller.history[0]?.snapshot.state.entity_prompt).toBe("Hold");
-    expect(controller.history[0]?.status).toBe("ready");
+    expect(controller.history[0]?.status).toBe("evaluated");
     expect(transport.ask).toHaveBeenCalledTimes(1);
     await controller.step(controller.history[0]!.id);
     expect(controller.history[0]?.status).toBe("evaluated");
-    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(transport.ask).toHaveBeenCalledTimes(1);
     expect(store.getState()).toBe(before);
     await controller.step(controller.history[0]!.id);
-    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(transport.ask).toHaveBeenCalledTimes(1);
     controller.dispose();
   });
   it("steps through grouped previews once per click with frozen inputs, even after the live mission changes", async () => {
@@ -408,7 +422,12 @@ describe("Jev control", () => {
     controller.dispose();
   });
   it("retains both responses when a preview follow-up fails and does not retry on another step", async () => {
-    const transport = instant();
+    const transport = {
+      configured: true,
+      ask: vi.fn((request: JevRequest) =>
+        Promise.resolve(reply(request, "move")),
+      ),
+    };
     const { store, controller } = setup(transport);
     const before = store.getState();
     await controller.evaluate(controller.capture("self"));
@@ -419,8 +438,8 @@ describe("Jev control", () => {
       status: "failed",
       detail: "relay unavailable",
       exchanges: [
-        { stage: "action-type", answer: { choice: "overwatch" } },
-        { stage: "action", error: "relay unavailable" },
+        { stage: "action-type", answer: { choice: "move" } },
+        { stage: "movement-target", error: "relay unavailable" },
       ],
     });
     expect(controller.history[0]?.next).toBeUndefined();
@@ -429,26 +448,113 @@ describe("Jev control", () => {
     expect(store.getState()).toBe(before);
     controller.dispose();
   });
+  it("steps through movement target and distance, preserving all metadata and rounding the recorded command", async () => {
+    const transport = {
+      configured: true,
+      ask: vi.fn((request: JevRequest) =>
+        Promise.resolve(
+          request.questions.distance
+            ? {
+                ...reply(request),
+                answer: {
+                  score: 2,
+                  confidence: 1,
+                  probabilities: { "0": 0, "1": 0, "2": 1, "3": 0, "4": 0 },
+                },
+              }
+            : reply(
+                request,
+                Object.hasOwn(request.questions.action!.criteria, "move")
+                  ? "move"
+                  : "move_east",
+              ),
+        ),
+      ),
+    };
+    const { store, controller } = setup(transport);
+    const snapshot = controller.capture("self", {
+      entity: "Advance east",
+      commander: "Stay alive",
+    });
+    const before = store.getState();
+    await controller.evaluate(snapshot);
+    const id = controller.history[0]!.id;
+    expect(controller.history[0]?.next?.stage).toBe("movement-target");
+    await controller.step(id);
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    const next = controller.history[0]!.next!;
+    expect(next.stage).toBe("movement-distance");
+    expect(next.request.state).toMatchObject(snapshot.state);
+    expect(next.request.state.selected_movement).toMatchObject({
+      intent: "move_east",
+      available_distance: 3,
+    });
+    expect(controller.history[0]?.candidate).toBeUndefined();
+    await Promise.all([controller.step(id), controller.step(id)]);
+    expect(transport.ask).toHaveBeenCalledTimes(3);
+    expect(controller.history[0]).toMatchObject({
+      status: "evaluated",
+      candidate: {
+        command: {
+          type: "tactical:move",
+          payload: {
+            path: [
+              { x: 1, y: 0, z: 0 },
+              { x: 2, y: 0, z: 0 },
+            ],
+          },
+        },
+      },
+    });
+    expect(
+      controller.history[0]!.exchanges.map((entry) => entry.stage),
+    ).toEqual(["action-type", "movement-target", "movement-distance"]);
+    expect(store.getState()).toBe(before);
+    controller.dispose();
+  });
+  it("retains a failed distance request and never exposes an unscored move for execution", async () => {
+    const transport = {
+      configured: true,
+      ask: vi.fn((request: JevRequest) =>
+        request.questions.distance
+          ? Promise.reject(new Error("distance unavailable"))
+          : Promise.resolve(reply(request, "move")),
+      ),
+    };
+    const { store, controller } = setup(transport);
+    const before = store.getState();
+    await controller.evaluate(controller.capture("self"));
+    const id = controller.history[0]!.id;
+    await controller.step(id);
+    await controller.step(id);
+    await controller.step(id);
+    expect(transport.ask).toHaveBeenCalledTimes(3);
+    expect(controller.history[0]).toMatchObject({
+      status: "failed",
+      detail: "distance unavailable",
+    });
+    expect(controller.history[0]?.candidate).toBeUndefined();
+    expect(controller.history[0]?.exchanges[2]).toMatchObject({
+      stage: "movement-distance",
+      error: "distance unavailable",
+    });
+    expect(store.getState()).toBe(before);
+    controller.dispose();
+  });
   it("recaptures position, AP and vision after each one-AP move and stops requesting at zero AP", async () => {
     const transport = {
       configured: true,
-      ask: vi.fn((request: JevRequest) => {
-        const criteria = request.questions.action!.criteria;
-        const farthest = Object.entries(criteria).find(([, value]) => {
-          const candidate = value as { destination?: { x: number; z: number } };
-          const actor = request.state.actor as { position: { x: number } };
-          return (
-            candidate.destination?.x === actor.position.x + 3 &&
-            candidate.destination.z === 0
-          );
-        });
-        return Promise.resolve(
+      ask: vi.fn((request: JevRequest) =>
+        Promise.resolve(
           reply(
             request,
-            Object.hasOwn(criteria, "move") ? "move" : farthest?.[0],
+            request.questions.action &&
+              Object.hasOwn(request.questions.action.criteria, "move")
+              ? "move"
+              : "move_east",
           ),
-        );
-      }),
+        ),
+      ),
     };
     const { store, controller } = setup(transport, {
       ...campaignOnDay(1, []),
@@ -466,7 +572,7 @@ describe("Jev control", () => {
       expect(store.getState().activeMission!.units[0]!.ap).toBe(0),
     );
     expect(controller.history).toHaveLength(2);
-    expect(transport.ask).toHaveBeenCalledTimes(4);
+    expect(transport.ask).toHaveBeenCalledTimes(6);
     const [first, second] = controller.history;
     expect(first!.snapshot.state.actor).toMatchObject({
       ap: 2,

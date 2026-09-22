@@ -26,7 +26,6 @@ import {
   buildMoveGraph,
   searchMoves,
 } from "../service/movement-service";
-import type { JevMapLayer } from "../model/jev-navigation";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 
 const rules = {
@@ -254,7 +253,7 @@ describe("Jev observation", () => {
     expect(bug.eligible).toBe(false);
     expect(bug.candidates).toEqual([]);
   });
-  it("offers every one-AP move and excludes every two-AP destination", () => {
+  it("offers compact movement intents with only one-AP paths and no tile map", () => {
     const state = withVision({
       state: missionWith(openField().build(), [
         unitAt("self", "infantry", { x: 0, y: 0, z: 0 }),
@@ -264,49 +263,32 @@ describe("Jev observation", () => {
     const actor = state.units[0]!;
     const view = jevPerception(state, actor);
     const graph = buildMoveGraph(view.map);
-    const reachable = [...searchMoves(view, actor, graph).costs];
-    const oneAp = reachable
-      .filter(([, cost]) => apCostOf(view, actor, cost) === 1)
-      .map(([key]) => key);
+    const reachable = searchMoves(view, actor, graph).costs;
     expect(
-      reachable.some(([, cost]) => apCostOf(view, actor, cost) === 2),
+      [...reachable.values()].some((cost) => apCostOf(view, actor, cost) === 2),
     ).toBe(true);
     const snapshot = captureJev(state, actor.id, rules);
-    const moves = snapshot.candidates.filter(
-      (candidate) => candidate.command?.type === "tactical:move",
-    );
-    expect(
-      moves
-        .map((candidate) => {
-          const command = candidate.command!;
-          if (command.type !== "tactical:move")
-            throw new Error("Expected a move");
-          expect(JSON.parse(candidate.description)).toMatchObject({
-            ap_cost: 1,
-          });
-          return graph.index.keyOf(command.payload.path.at(-1)!);
-        })
-        .sort(),
-    ).toEqual(oneAp.sort());
-    const spent = { ...state, units: [{ ...actor, ap: 0 }] };
-    expect(captureJev(spent, actor.id, rules).candidates).toEqual([]);
-  });
-  it("uses ASCII terrain resolved for the actor's movement class", () => {
-    const snapshot = captureJev(fixture(), "self", rules);
+    const moves = snapshot.candidates.filter((candidate) => candidate.movement);
+    expect(moves.map((candidate) => candidate.id)).toEqual([
+      "move_east",
+      "move_south",
+    ]);
+    for (const candidate of moves) {
+      const command = candidate.command!;
+      if (command.type !== "tactical:move") throw new Error("Expected a move");
+      const cost = reachable.get(
+        graph.index.keyOf(command.payload.path.at(-1)!),
+      )!;
+      expect(apCostOf(view, actor, cost)).toBe(1);
+      expect(candidate.apCost).toBe(1);
+    }
+    expect(snapshot.state).not.toHaveProperty("navigation");
     expect(snapshot.state.actor).toMatchObject({ movement_class: "infantry" });
-    const navigation = snapshot.state.navigation as Record<string, unknown>;
-    expect(navigation.format).toBe("ascii-layers");
-    expect(navigation).not.toHaveProperty("passMask");
-    expect(navigation).not.toHaveProperty("tiles");
-    const layer = (navigation.layers as readonly JevMapLayer[])[0]!;
-    expect(layer.rows!["5"]![1]).toBe("@");
-    expect(layer.markers).toContainEqual(
-      expect.objectContaining({
-        id: "self",
-        terrain: ".",
-        position: { x: 1, y: 0, z: 5 },
-      }),
-    );
+    expect(jevChoicePage(snapshot, moves).stage).toBe("movement-target");
+    expect(
+      captureJev({ ...state, units: [{ ...actor, ap: 0 }] }, actor.id, rules)
+        .candidates,
+    ).toEqual([]);
   });
   it("explains actual movement allowance and costs on every routing stage", () => {
     const base = missionWith(
@@ -330,20 +312,9 @@ describe("Jev observation", () => {
       ap_costs: [1],
     });
     const moves = first.groups!.move!;
-    const infested = moves.find((candidate) => {
-      const payload = candidate.command?.payload;
-      return (
-        payload &&
-        "path" in payload &&
-        payload.path.length === 1 &&
-        payload.path[0]!.x === 1
-      );
-    })!;
-    expect(JSON.parse(infested.description)).toMatchObject({
-      ap_cost: 1,
-      movement_points: 2,
-      path_steps: 1,
-    });
+    expect(
+      moves.every((candidate) => candidate.movement!.stops.at(-1)!.cost <= 5),
+    ).toBe(true);
     const topInstructions = (
       first.request.questions.action!.criteria.move as { instructions: string }
     ).instructions;
@@ -351,7 +322,7 @@ describe("Jev observation", () => {
     // Force a routing stage using real movement candidates, keeping their original costs and rules.
     const grouped = jevChoicePage(
       snapshot,
-      Array.from({ length: 100 }, (_, i) => ({
+      Array.from({ length: 300 }, (_, i) => ({
         ...moves[i % moves.length]!,
         id: `copy-${String(i)}`,
       })),

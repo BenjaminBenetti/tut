@@ -1,6 +1,6 @@
 # Jev AI approach
 
-**Jev chooses what to do; the game handles rules, pathfinding and execution.** Entity and objective destination selection has been validated in evaluations and awaits gameplay integration.
+**Jev chooses what to do; the game handles rules, pathfinding and execution.** The game uses this loop for opt-in Jev control and development inspection.
 
 ## State sent to Jev
 
@@ -19,12 +19,13 @@ Use shared faction knowledge throughout. Hidden information stays hidden. Each q
 2. **Build fresh state and legal choices.** List the actor's available actions, including each specific weapon and usable item separately.
 3. **Ask Jev to choose an action.** For example: move, fire its rifle, throw its grenade or overwatch.
 4. **Ask for the selected action's details, if needed.** For movement, choose an entity, objective, direction or retreat. For a weapon or item, choose from that action's legal targets. Actions needing no further choice proceed directly.
-5. **Validate and execute in the game.** Movement follows a game-calculated route for one AP, respecting known terrain and occupied tiles. Other actions spend their defined AP cost. Choosing an action or target alone spends nothing.
-6. **Return to step 1.** Refresh the state and ask for a new action while the actor can still act. It can move again or choose something else.
+5. **For movement only, ask Jev how far to move.** Prepare a proposed one-AP move, then send the full state plus the selected movement, proposed endpoint and available distance. Ask Jev to score how much of that move the actor should use.
+6. **Validate and execute in the game.** Scale movement by the distance score and round up to the next legal stopping point, capped at the available one-AP move and still fitting the selected movement intent. An executed move costs one AP; other actions spend their defined AP cost. Questions alone spend nothing.
+7. **Return to step 1.** Refresh the state and ask for a new action while the actor can still act. It can move again or choose something else.
 
 ## Movement options
 
-After choosing movement, Jev selects one of these options. The game chooses the tile and route, then moves for one AP.
+After choosing movement, Jev selects one of these options. The game prepares the full available move within one AP; the distance follow-up can shorten it before execution.
 
 | Option | Meaning |
 |---|---|
@@ -35,8 +36,12 @@ After choosing movement, Jev selects one of these options. The game chooses the 
 
 Offer options only when they produce a legal move. Retreat requires a known hostile and a destination that increases separation. Directions follow the map's compass. Tile maps and exhaustive tile choices stay out of the Jev question.
 
+The distance question is **“How much of the available movement should the actor use to follow its orders?”** It receives all actor and entity metadata alongside the selected movement. A normalized score of 1 means the full move; 0.5 means roughly half. Instructions must make clear that a shorter move still spends the whole AP.
+
 ## Validation and inspection
 
-The [movement evaluations](../experiments/jev-navigation/README.md) tested real maps with 100 entity destinations. Sharing capability definitions improved reliability and reduced input size. These tests used fully visible, stationary units. Directional movement and retreat are planned additions awaiting evaluation. Combat, moving targets and crowded scenes under fog also need validation.
+The [movement evaluations](../experiments/jev-navigation/README.md) tested real maps with 100 entity destinations. Sharing capability definitions improved reliability and reduced input size. These tests used fully visible, stationary units. Directional movement, retreat and distance scoring are implemented. Their rules have deterministic tests; distance scoring still needs live comparison with full-length moves to check for wasted AP. Combat, moving targets and crowded scenes under fog also need validation.
 
-The [development inspector](jev-control.md) should let us step through the state, both question stages, responses and resulting action, including failures.
+An initial distance-scoring pass reached the correct target but used **17 AP versus the recorded 14-AP baseline**. On the same 100-entity scene, normalized scores shortened 16 moves even though full movement was the most likely response at every step. That pass rounded to the nearest step; the game now rounds up instead. Distance scoring remains experimental.
+
+The [development inspector](jev-control.md) lets us step through the state, each question stage, responses and resulting action, including failures.

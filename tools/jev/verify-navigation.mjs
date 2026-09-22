@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 const { buildCase, applyMove, remaining, RULES } =
   await import("./navigation-cases.mjs");
 const { buildEntityCase } = await import("./navigation-entities.mjs");
-const { captureJev } = await import("../../src/tactical/ai/jev-request.ts");
+const { captureJev } = await import("./navigation-snapshot.mjs");
 const inputs = process.argv.slice(2);
 assert(
   inputs.length,

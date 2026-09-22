@@ -75,7 +75,7 @@ export class JevClient implements JevTransport {
     const answer = parseJevAnswer(raw, request);
     if (!answer)
       throw new JevRequestError(
-        "Jev returned a malformed or unknown action choice",
+        "Jev returned a malformed or unknown decision",
         raw,
         requestId,
       );
@@ -88,20 +88,15 @@ export function parseJevAnswer(
   raw: unknown,
   request: JevRequest,
 ): JevAnswer | undefined {
-  if (
-    !isRecord(raw) ||
-    typeof raw.model !== "string" ||
-    !isRecord(raw.answers) ||
-    !isRecord(raw.answers.action)
-  )
+  const entries = Object.entries(request.questions);
+  if (entries.length !== 1) return undefined;
+  const [id, question] = entries[0]!;
+  if (!isRecord(raw) || typeof raw.model !== "string" || !isRecord(raw.answers))
     return undefined;
-  const answer = raw.answers.action;
-  const criteria = request.questions.action?.criteria;
+  const answer = raw.answers[id];
   if (
-    !criteria ||
-    answer.type !== "choice" ||
-    typeof answer.choice !== "string" ||
-    !Object.hasOwn(criteria, answer.choice) ||
+    !isRecord(answer) ||
+    answer.type !== question.type ||
     typeof answer.confidence !== "number" ||
     !Number.isFinite(answer.confidence) ||
     answer.confidence < 0 ||
@@ -109,27 +104,44 @@ export function parseJevAnswer(
     !isRecord(answer.probabilities)
   )
     return undefined;
+  const keys =
+    question.type === "score"
+      ? question.criteria.map((_, index) => String(index))
+      : Object.keys(question.criteria);
   const probabilities: Record<string, number> = {};
-  for (const [id, value] of Object.entries(answer.probabilities)) {
+  for (const [key, value] of Object.entries(answer.probabilities)) {
     if (
-      !Object.hasOwn(criteria, id) ||
+      !keys.includes(key) ||
       typeof value !== "number" ||
       !Number.isFinite(value) ||
       value < 0 ||
       value > 1
     )
       return undefined;
-    probabilities[id] = value;
+    probabilities[key] = value;
   }
   if (
-    Object.keys(criteria).length !== Object.keys(probabilities).length ||
+    keys.length !== Object.keys(probabilities).length ||
     Math.abs(Object.values(probabilities).reduce((sum, p) => sum + p, 0) - 1) >
       0.03
   )
     return undefined;
-  return {
-    choice: answer.choice,
-    confidence: answer.confidence,
-    probabilities,
-  };
+  const shared = { confidence: answer.confidence, probabilities };
+  if (question.type === "score") {
+    if (
+      keys.length < 2 ||
+      typeof answer.score !== "number" ||
+      !Number.isFinite(answer.score) ||
+      answer.score < 0 ||
+      answer.score > keys.length - 1
+    )
+      return undefined;
+    return { ...shared, score: answer.score };
+  }
+  if (
+    typeof answer.choice !== "string" ||
+    !Object.hasOwn(question.criteria, answer.choice)
+  )
+    return undefined;
+  return { ...shared, choice: answer.choice };
 }

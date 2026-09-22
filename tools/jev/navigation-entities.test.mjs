@@ -9,7 +9,11 @@ import {
   sharedCapabilities,
 } from "./navigation-entity-choice.mjs";
 import { applyMove, remaining, RULES } from "./navigation-cases.mjs";
-import { captureJev } from "../../src/tactical/ai/jev-request.ts";
+import { captureJev } from "./navigation-snapshot.mjs";
+import {
+  captureJev as captureGame,
+  jevChoicePage,
+} from "../../src/tactical/ai/jev-request.ts";
 import { unitFootprintTiles } from "../../src/tactical/service/footprint-service.ts";
 
 /** Use the same faction-filtered metadata projection as the live game inspector. */
@@ -142,6 +146,40 @@ describe("100-entity navigation evaluation", () => {
     expect(JSON.stringify(factored).length).toBeLessThan(
       JSON.stringify(entities).length,
     );
+  });
+
+  it("ships all reachable entity destinations in one compact gameplay question with shared metadata", () => {
+    const world = buildEntityCase(entityCaseDefinitions("pilot")[0], "full");
+    const snapshot = captureGame(
+      world.mission,
+      world.mission.units[0].id,
+      RULES,
+      world.prompts,
+      world.names,
+    );
+    expect(snapshot.state.entities).toHaveLength(100);
+    expect(snapshot.state).not.toHaveProperty("navigation");
+    const moves = snapshot.candidates.filter((candidate) => candidate.movement);
+    expect(
+      moves.filter(
+        (candidate) => candidate.movement.intent === "approach_entity",
+      ),
+    ).toHaveLength(100);
+    const page = jevChoicePage(snapshot, moves);
+    expect(page.stage).toBe("movement-target");
+    expect(page.groups).toBeUndefined();
+    expect(Object.keys(page.request.questions.action.criteria)).toHaveLength(
+      moves.length,
+    );
+    expect(JSON.stringify(page.request.questions).length).toBeLessThan(16000);
+    const definitions = snapshot.state.capabilities;
+    expect(Object.keys(definitions).length).toBeLessThan(20);
+    for (const entity of snapshot.state.entities) {
+      expect(definitions[entity.capability_ref]).toBeDefined();
+      expect(entity).not.toHaveProperty("weapons");
+      if (entity.relationship === "friendly")
+        expect(entity.equipment_remaining).toBeDefined();
+    }
   });
 
   it("rejects a fog setup that would falsely expose 100 enemy-inclusive targets", () => {

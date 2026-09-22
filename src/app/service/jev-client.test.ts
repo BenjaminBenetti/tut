@@ -74,3 +74,57 @@ it("surfaces upstream failure bodies for inspection without treating them as dec
     ),
   ).rejects.toMatchObject({ response: { error: "overloaded" } });
 });
+
+it("validates Score answers and their complete level distribution independently of confidence", async () => {
+  const scored: JevRequest = {
+    ...request,
+    questions: {
+      distance: {
+        type: "score",
+        instructions: "How far?",
+        criteria: ["minimal", "short", "half", "mostly", "full"],
+      },
+    },
+  };
+  const answer = {
+    type: "score",
+    score: 3.3,
+    confidence: 0.4,
+    probabilities: { "0": 0, "1": 0, "2": 0, "3": 0.7, "4": 0.3 },
+  };
+  const raw = { model: "jev-1.13.0", answers: { distance: answer } };
+  expect(parseJevAnswer(raw, scored)).toEqual({
+    score: 3.3,
+    confidence: 0.4,
+    probabilities: answer.probabilities,
+  });
+  expect(parseJevAnswer(raw, request)).toBeUndefined();
+  expect(parseJevAnswer(response, scored)).toBeUndefined();
+  for (const patch of [
+    { score: NaN },
+    { score: Infinity },
+    { score: -1 },
+    { score: 4.01 },
+    { type: "choice", choice: "4" },
+    { confidence: 2 },
+    { probabilities: { "3": 0.7, "4": 0.3 } },
+    { probabilities: { "0": 0, "1": 0, "2": 0, "3": 0.7, "5": 0.3 } },
+  ])
+    expect(
+      parseJevAnswer(
+        { ...raw, answers: { distance: { ...answer, ...patch } } },
+        scored,
+      ),
+    ).toBeUndefined();
+  const send = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(new Response(JSON.stringify(raw)));
+  expect(
+    (
+      await new JevClient("https://relay.example", send).ask(
+        scored,
+        new AbortController().signal,
+      )
+    ).answer.score,
+  ).toBe(3.3);
+});

@@ -40,7 +40,7 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     }
     const request = route.request().postDataJSON() as JevRequest;
     requests.push(request);
-    const ids = Object.keys(request.questions.action.criteria);
+    const ids = Object.keys(request.questions.action?.criteria ?? {});
     const choice = ids.includes("move") ? "move" : ids[0];
     await route.fulfill({
       status: 200,
@@ -52,16 +52,25 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
       },
       body: JSON.stringify({
         model: "jev-test",
-        answers: {
-          action: {
-            type: "choice",
-            choice,
-            confidence: 1,
-            probabilities: Object.fromEntries(
-              ids.map((id) => [id, id === choice ? 1 : 0]),
-            ),
-          },
-        },
+        answers: request.questions.distance
+          ? {
+              distance: {
+                type: "score",
+                score: 3.3,
+                confidence: 0.8,
+                probabilities: { "0": 0, "1": 0, "2": 0, "3": 0.7, "4": 0.3 },
+              },
+            }
+          : {
+              action: {
+                type: "choice",
+                choice,
+                confidence: 1,
+                probabilities: Object.fromEntries(
+                  ids.map((id) => [id, id === choice ? 1 : 0]),
+                ),
+              },
+            },
         usage: { input_tokens: 321, output_tokens: 12 },
       }),
     });
@@ -145,40 +154,44 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
     "Preserve yourself and stay in cover.",
   );
   expect(requests[0]?.state.commander_prompt).toBe("Hold the extraction zone.");
-  expect(requests[0]?.state.navigation).toMatchObject({
-    format: "ascii-layers",
-    legend: {
-      f: expect.any(String),
-      "@": expect.any(String),
-      O: expect.any(String),
-    },
-    layers: expect.any(Array),
-  });
-  expect(requests[0]?.questions.action.criteria).toHaveProperty("move");
+  expect(requests[0]?.state).not.toHaveProperty("navigation");
+  expect(requests[0]?.state.capabilities).toBeDefined();
+  expect(requests[0]?.questions.action!.criteria).toHaveProperty("move");
   // The starter mech's ground-fire options name its actual weapons, not a shared attack bucket.
-  const top = requests[0].questions.action.criteria;
+  const top = requests[0].questions.action!.criteria;
   expect(top).not.toHaveProperty("attack-ground");
   expect(top).not.toHaveProperty("equipment");
   expect(top).not.toHaveProperty("finish");
   expect(JSON.stringify(top)).toContain("Autocannon");
   expect(JSON.stringify(top)).toContain("Missile Pod");
   expect(
-    Object.keys(requests[0].questions.action.criteria).some((id) =>
+    Object.keys(requests[0].questions.action!.criteria).some((id) =>
       id.startsWith("action-"),
     ),
   ).toBe(false);
-  expect(requests.length).toBeGreaterThanOrEqual(2);
-  for (const request of requests.slice(1)) {
-    expect(request.questions.action.instructions).toContain(
-      "short move does not save any AP",
-    );
-    for (const option of Object.values(request.questions.action.criteria))
-      expect(option).toMatchObject({ action: "move" });
-  }
-  for (const option of Object.values(
-    requests.at(-1)!.questions.action.criteria,
-  ))
-    expect(option).toMatchObject({ ap_cost: 1 });
+  expect(requests).toHaveLength(3);
+  expect(requests[1].questions.action!.instructions).toContain(
+    "short move does not save any AP",
+  );
+  expect(
+    Object.keys(requests[1].questions.action!.criteria).some((id) =>
+      id.startsWith("move_"),
+    ),
+  ).toBe(true);
+  expect(requests[2].questions.distance).toMatchObject({
+    type: "score",
+    criteria: expect.any(Array),
+  });
+  expect(requests[2].state.selected_movement).toMatchObject({
+    ap_cost: 1,
+    proposed_endpoint: expect.any(Object),
+  });
+  expect(
+    JSON.parse(await page.getByTestId("jev-output").inputValue()),
+  ).toMatchObject({
+    exchange: { stage: "movement-distance", answer: { score: 3.3 } },
+    chosen_action: { command: { type: "tactical:move" } },
+  });
   // Completed requests remain individually reviewable with their matching response.
   await page.getByTestId("jev-step").selectOption("0");
   expect(
@@ -322,7 +335,7 @@ test("Jev TDF labels persist, Tab skips them, and End Turn waits for their decis
     const request = route.request().postDataJSON() as JevRequest;
     requests.push(request);
     await gate;
-    const ids = Object.keys(request.questions.action.criteria);
+    const ids = Object.keys(request.questions.action!.criteria);
     const choice = ids.includes("overwatch") ? "overwatch" : ids[0];
     await route.fulfill({
       status: 200,
@@ -380,6 +393,6 @@ test("Jev TDF labels persist, Tab skips them, and End Turn waits for their decis
   await expect
     .poll(async () => (await savedMission(page)).turn, { timeout: 20_000 })
     .toBe(before.turn + 1);
-  expect(requests).toHaveLength(2);
+  expect(requests).toHaveLength(1);
   expect((await savedMission(page)).jev?.decisions).toHaveLength(1);
 });

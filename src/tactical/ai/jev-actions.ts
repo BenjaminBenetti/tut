@@ -2,7 +2,6 @@ import type { AttackPreview } from "../model/attack-preview";
 import { canTargetTile } from "../model/weapon-profile";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
-import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { CombatTuning } from "../model/combat-tuning";
 import type {
   JevCandidate,
@@ -12,7 +11,6 @@ import type {
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { attack, attackTile } from "../model/attack-command";
-import { move } from "../model/move-command";
 import { overwatch } from "../model/overwatch-command";
 import { reload } from "../model/reload-command";
 import { extract } from "../model/extract-command";
@@ -25,11 +23,7 @@ import {
   previewTileAttack,
   attackEndsTurn,
 } from "../service/combat-service";
-import {
-  buildMoveGraph,
-  searchMoves,
-  apCostOf,
-} from "../service/movement-service";
+import { buildMoveGraph } from "../service/movement-service";
 import {
   equipmentOf,
   validateEquipmentUse,
@@ -39,8 +33,6 @@ import { validateMechAction } from "../service/mech-action-service";
 import { reloadPools } from "../service/reload-handler";
 import { applyTacticalCommand } from "../service/tactical-command-handlers";
 import type { TacticalHandlers } from "../service/tactical-command-handlers";
-import { coverAgainst } from "../service/sight-service";
-import { DIRECTIONS } from "../../core/model/direction";
 
 /** Injected tactical rules; the action catalogue contains no parallel combat rules. */
 export interface JevActionRules {
@@ -78,60 +70,6 @@ export function jevCandidates(
     });
   };
   const graph = buildMoveGraph(view.map);
-  // Decide again from fresh vision after each AP of movement.
-  const search = searchMoves(view, { ...actor, ap: 1 }, graph);
-  const origin = graph.index.keyOf(actor.pos);
-  if (actor.kind !== "turret") {
-    for (const [key, cost] of search.costs) {
-      if (key === origin || apCostOf(view, actor, cost) !== 1) continue;
-      const path: TileCoord[] = [];
-      let cursor = key;
-      while (cursor !== origin) {
-        const tile = search.tiles.get(cursor);
-        const parent = search.parents.get(cursor);
-        if (!tile || parent === undefined) break;
-        path.unshift({ x: tile.x, y: tile.y, z: tile.z });
-        cursor = parent;
-      }
-      const tile = search.tiles.get(key)!;
-      const cover = DIRECTIONS.map((direction) => {
-        const offsets = {
-          n: [0, -1],
-          e: [1, 0],
-          s: [0, 1],
-          w: [-1, 0],
-        } as const;
-        const [dx, dz] = offsets[direction];
-        return [
-          direction,
-          coverAgainst(
-            view.map,
-            tile,
-            { x: tile.x + dx, y: tile.y, z: tile.z + dz },
-            graph.index,
-          ),
-        ];
-      });
-      // The path is kept locally; the question needs only the destination and cost.
-      candidates.push({
-        id: `action-${String(candidates.length)}`,
-        category: "move",
-        apCost: 1,
-        command: move(actor.id, path),
-        description: JSON.stringify({
-          action: "move",
-          destination: { x: tile.x, y: tile.y, z: tile.z },
-          ap_cost: apCostOf(view, actor, cost),
-          movement_points: cost,
-          path_steps: path.length,
-          cover,
-          known_hazards: view.effects.filter(
-            (effect) => graph.index.keyOf(effect.tile) === key,
-          ),
-        }),
-      });
-    }
-  }
   const template = view.templates[actor.templateId];
   const footprintReach = 2 * ((template?.footprint ?? 1) - 1);
   const targets = [

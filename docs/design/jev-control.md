@@ -2,6 +2,8 @@
 
 Jev control is opt-in per tactical unit and uses **shared faction vision**. The entity's prompt describes its role and tactics; the faction commander prompt sets priorities and wins explicit conflicts. Model selection uses `jev-latest`; every raw response records the resolved model. See [ADR 0012](../adr/0012-jev-entity-control.md).
 
+The [Jev AI approach](jev-ai.md) records the high-level decision design, starting with the movement approach validated in our evaluations.
+
 ## Run locally
 
 Put the runtime secret in the repository root's ignored `.env`. There is no API-key field in the UI; only the relay reads the key:

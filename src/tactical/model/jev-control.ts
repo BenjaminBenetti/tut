@@ -73,10 +73,12 @@ export interface JevActionType {
 export interface JevCandidate {
   readonly id: string;
   readonly category: string;
-  /** Separates each weapon/firing mode and usable item within a broad command category. */
+  /** Separates each weapon and usable item within a broad command category. */
   readonly actionType?: JevActionType;
-  /** Cost calculated by the game's rules, including actions that consume all remaining AP. */
+  /** Base AP cost, separate from any remaining AP forfeited when the activation ends. */
   readonly apCost?: number;
+  /** Whether executing this action ends the actor's activation, forfeiting any unspent AP. */
+  readonly endsActivation?: boolean;
   readonly description: string;
   readonly command?: JevActionCommand;
   /** Local route and legal stopping points; never an exhaustive tile menu on the wire. */

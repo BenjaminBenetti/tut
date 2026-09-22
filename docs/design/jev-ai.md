@@ -18,9 +18,9 @@ Use shared faction knowledge throughout. Hidden information stays hidden. Each q
 1. **Check eligibility.** If the actor cannot act, has no AP or has no legal actions, stop without calling Jev.
 2. **Build fresh state and legal choices.** List the actor's available actions, including each specific weapon and usable item separately.
 3. **Ask Jev to choose an action.** For example: move, fire its rifle, throw its grenade or overwatch.
-4. **Ask for the selected action's details, if needed.** For movement, choose an entity, objective, direction or retreat. For a weapon or item, choose from that action's legal targets. Actions needing no further choice proceed directly.
+4. **Ask for the selected action's details, if needed.** For movement, choose an entity, objective, direction or retreat. Weapons and immediate explosives target visible hostile entities, including nests, even for area attacks. Other items retain their legal placement targets. Actions needing no further choice proceed directly.
 5. **For movement only, ask Jev how far to move.** Prepare a proposed one-AP move, then send the full state plus the selected movement, proposed endpoint and available distance. Ask Jev to score how much of that move the actor should use.
-6. **Validate and execute in the game.** Scale movement by the distance score and round up to the next legal stopping point, capped at the available one-AP move and still fitting the selected movement intent. An executed move costs one AP; other actions spend their defined AP cost. Questions alone spend nothing.
+6. **Validate and execute in the game.** Scale movement by the distance score and round up to the next legal stopping point, capped at the available one-AP move and still fitting the selected movement intent. An executed move costs one AP; other actions spend their defined AP cost. Overwatch costs one AP and ends the actor's activation; actions marked as ending activation forfeit any remaining AP. Questions alone spend nothing.
 7. **Return to step 1.** Refresh the state and ask for a new action while the actor can still act. It can move again or choose something else.
 
 ## Movement options

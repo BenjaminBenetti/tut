@@ -7,7 +7,10 @@ import {
   unitAt,
   walledField,
   FIXTURE_TEMPLATES,
+  ctxWith,
+  riggedRng,
 } from "../service/tactical-fixtures.test-helper";
+import { overwatchHandler } from "../service/overwatch-handler";
 import { withVision } from "../service/vision-service";
 import { rememberJevTerrain } from "../service/jev-knowledge-service";
 import {
@@ -68,7 +71,11 @@ function loadoutFixture(): TacticalState {
               id: "cannon",
               name: "Autocannon",
               charges: 3,
-              profile: { ...weapon.profile, demoForce: 1 },
+              profile: {
+                ...weapon.profile,
+                demoForce: 1,
+                aoe: { radius: 2, falloff: 0.4 },
+              },
             },
           ],
           equipment: ["grenade", "medkit", "radar-dish"],
@@ -80,7 +87,7 @@ function loadoutFixture(): TacticalState {
 }
 
 describe("Jev observation", () => {
-  it("offers each usable weapon, firing mode and item at the top level and isolates their follow-ups", () => {
+  it("offers each usable weapon and item at the top level and isolates their follow-ups", () => {
     const snapshot = captureJev(loadoutFixture(), "self", rules);
     const first = jevChoicePage(snapshot);
     const criteria = first.request.questions.action!.criteria;
@@ -88,7 +95,6 @@ describe("Jev observation", () => {
       expect.arrayContaining([
         "attack:carbine",
         "attack:cannon",
-        "attack-ground:cannon",
         "equipment:grenade",
         "equipment:medkit",
         "equipment:radar-dish",
@@ -98,6 +104,9 @@ describe("Jev observation", () => {
     );
     expect(criteria).not.toHaveProperty("attack");
     expect(criteria).not.toHaveProperty("attack-ground");
+    expect(
+      Object.keys(criteria).some((id) => id.startsWith("attack-ground")),
+    ).toBe(false);
     expect(criteria).not.toHaveProperty("equipment");
     expect(criteria).not.toHaveProperty("finish");
     expect(criteria["attack:carbine"]).toMatchObject({
@@ -112,7 +121,7 @@ describe("Jev observation", () => {
       capability: { kind: "heal" },
     });
     const reached: string[] = [];
-    /** Every descendant retains the exact selected weapon/mode or equipment, including paged tile lists. */
+    /** Every descendant retains the exact selected weapon or equipment, including paged tile lists. */
     const visit = (items: readonly JevCandidate[], actionId: string): void => {
       expect(
         items.every(
@@ -148,6 +157,139 @@ describe("Jev observation", () => {
       snapshot.candidates.map((candidate) => candidate.id).sort(),
     );
   });
+  it("offers only hostile entities for AOE weapons and grenades, retaining blast victims", () => {
+    const base = loadoutFixture();
+    const state = withVision({
+      state: {
+        ...base,
+        units: [
+          ...base.units,
+          unitAt("ally", "infantry", { x: 3, y: 0, z: 2 }),
+          unitAt(
+            "dead",
+            "infantry",
+            { x: 2, y: 0, z: 3 },
+            { team: "bugs", hp: 0 },
+          ),
+        ],
+        spawners: [
+          {
+            id: "nest",
+            pos: { x: 4, y: 0, z: 1 },
+            hp: 20,
+            hatchRadius: 3,
+            timer: 2,
+            destroyed: false,
+          },
+          {
+            id: "destroyed",
+            pos: { x: 4, y: 0, z: 3 },
+            hp: 0,
+            hatchRadius: 3,
+            timer: 2,
+            destroyed: true,
+          },
+        ],
+      },
+      events: [],
+    }).state;
+    const snapshot = captureJev(state, "self", rules);
+    const top = jevChoicePage(snapshot);
+    for (const id of ["attack:carbine", "attack:cannon"]) {
+      const shots = top.groups![id]!;
+      expect(shots.map((candidate) => candidate.command!.payload)).toEqual([
+        { attackerId: "self", targetId: "enemy", weaponId: id.split(":")[1] },
+        { attackerId: "self", targetId: "nest", weaponId: id.split(":")[1] },
+      ]);
+    }
+    expect(
+      snapshot.candidates.some(
+        (candidate) => candidate.category === "attack-ground",
+      ),
+    ).toBe(false);
+    const cannon = jevChoicePage(snapshot, top.groups!["attack:cannon"]);
+    expect(cannon.request.questions.action!.instructions).toContain(
+      "Only entity targets are offered",
+    );
+    const shot = Object.values(
+      cannon.request.questions.action!.criteria,
+    )[0] as {
+      details: { blast: { radius: number; victims: readonly unknown[] } };
+    };
+    expect(shot.details.blast.radius).toBe(2);
+    expect(shot.details.blast.victims).toContainEqual(
+      expect.objectContaining({ id: "ally", team: "tdf" }),
+    );
+    const grenades = top.groups!["equipment:grenade"]!;
+    expect(
+      grenades
+        .map(
+          (candidate) =>
+            (
+              JSON.parse(candidate.description) as {
+                details: { targetId: string };
+              }
+            ).details.targetId,
+        )
+        .sort(),
+    ).toEqual(["enemy", "nest"]);
+    expect(grenades.map((candidate) => candidate.command!.payload)).toEqual([
+      { unitId: "self", equipmentId: "grenade", tile: { x: 3, y: 0, z: 1 } },
+      { unitId: "self", equipmentId: "grenade", tile: { x: 4, y: 0, z: 1 } },
+    ]);
+    expect(
+      jevChoicePage(snapshot, grenades).request.questions.action!.instructions,
+    ).toContain("visible enemy unit or nest");
+  });
+  it("does not offer weapons or grenades when no hostile entity is visible", () => {
+    const base = loadoutFixture();
+    const state = {
+      ...base,
+      vision: { ...base.vision, tdf: { ...base.vision.tdf, spotted: [] } },
+    };
+    const top = jevChoicePage(captureJev(state, "self", rules));
+    expect(Object.keys(top.groups!).some((id) => id.startsWith("attack"))).toBe(
+      false,
+    );
+    expect(top.groups).not.toHaveProperty("equipment:grenade");
+    expect(top.groups).toHaveProperty("equipment:medkit");
+    expect(top.groups).toHaveProperty("equipment:radar-dish");
+  });
+  it.each([1, 2, 3])(
+    "describes overwatch as 1 AP and ends the activation with %i AP available",
+    (ap) => {
+      const state = withVision({
+        state: missionWith(openField().build(), [
+          unitAt("self", "infantry", { x: 1, y: 0, z: 1 }, { ap }),
+        ]),
+        events: [],
+      }).state;
+      const snapshot = captureJev(state, "self", rules);
+      const top = jevChoicePage(snapshot);
+      expect(top.request.questions.action!.criteria.overwatch).toMatchObject({
+        ap_costs: [1],
+        ends_activation: true,
+      });
+      const option = top.request.questions.action!.criteria.overwatch as {
+        instructions: string;
+      };
+      expect(option.instructions).toContain(
+        "Overwatch costs 1 AP and ends the actor's activation",
+      );
+      const candidate = top.groups!.overwatch![0]!;
+      expect(candidate.apCost).toBe(1);
+      const command = candidate.command!;
+      if (command.type !== "tactical:overwatch")
+        throw new Error("Expected overwatch");
+      const result = overwatchHandler(state, command, ctxWith(riggedRng(true)));
+      expect(result.ok).toBe(true);
+      if (result.ok)
+        expect(result.value.state.units[0]).toMatchObject({
+          ap: 0,
+          status: ["overwatch"],
+        });
+    },
+  );
   it("updates the action menu for exhausted items, empty guns and different entity loadouts", () => {
     const base = loadoutFixture();
     const changed = {
@@ -347,7 +489,7 @@ describe("Jev observation", () => {
       ["equipment:grenade", "harm allies"],
       ["equipment:medkit", "never attacks enemies"],
       ["equipment:radar-dish", "do not reveal terrain"],
-      ["overwatch", "Spend all remaining AP"],
+      ["overwatch", "Overwatch costs 1 AP and ends the actor's activation"],
     ];
     for (const [id, rule] of cases) {
       const top = first.request.questions.action!.criteria[id!] as {
@@ -355,7 +497,7 @@ describe("Jev observation", () => {
         ap_costs: number[];
       };
       expect(top.instructions).toContain(rule);
-      expect(top.ap_costs).toEqual(id === "overwatch" ? [2] : [1]);
+      expect(top.ap_costs).toEqual([1]);
       const follow = jevChoicePage(snapshot, first.groups![id!]);
       expect(follow.request.questions.action!.instructions).toContain(rule);
       if (id !== "overwatch")
@@ -375,14 +517,15 @@ describe("Jev observation", () => {
     const shot = mech.candidates.find(
       (candidate) => candidate.category === "attack",
     )!;
-    expect(shot.apCost).toBe(3);
+    expect(shot.apCost).toBe(1);
+    expect(shot.endsActivation).toBe(true);
     expect(shot.actionType!.capability).toMatchObject({
-      ap_cost: 3,
+      ap_cost: 1,
       ends_activation: true,
     });
     expect(
       jevChoicePage(mech, [shot]).request.questions.action!.instructions,
-    ).toContain("costs 3 AP");
+    ).toContain("costs 1 AP");
   });
   it("remembers observed terrain without refreshing it from unseen changes", () => {
     let state = fixture();
@@ -449,7 +592,7 @@ describe("Jev observation", () => {
       { length: 1800 },
       (_, index) => ({
         id: `test-${String(index)}`,
-        category: index % 2 === 0 ? "move" : "attack-ground",
+        category: index % 2 === 0 ? "move" : "attack",
         description: `Destination ${String(index)}`,
       }),
     );
@@ -457,7 +600,7 @@ describe("Jev observation", () => {
     expect(first.stage).toBe("action-type");
     expect(Object.keys(first.request.questions.action!.criteria)).toEqual([
       "move",
-      "attack-ground",
+      "attack",
     ]);
     expect(JSON.stringify(first.request)).not.toContain("Destination");
     const leaves: string[] = [];
@@ -488,9 +631,9 @@ describe("Jev observation", () => {
       { length: 40 },
       (_, index) => ({
         id: `attack-${String(index)}`,
-        category: "attack-ground",
+        category: "attack",
         description: JSON.stringify({
-          action: "attack-ground",
+          action: "attack",
           preview: "blast victim facts ".repeat(100),
         }),
       }),

@@ -156,7 +156,7 @@ export function jevState(
     gameplay: {
       turn: "This is a turn-based tactical battle: the TDF player faction acts, then the bug faction. You control only actor. A living actor with AP can act during its faction's phase; AP refreshes on its next faction turn. Enemy resources not shown are unknown.",
       resources:
-        "AP means action points, HP means health points. Zero HP removes a unit. actor.ap is the budget remaining now; actor.max_ap is its normal turn budget. Each action pays its listed AP cost immediately. If AP remains, you receive an updated state and choose another action. Never assume all attacks cost one AP: some consume every remaining AP.",
+        "AP means action points, HP means health points. Zero HP removes a unit. actor.ap is the budget remaining now; actor.max_ap is its normal turn budget. Each action pays its listed AP cost immediately. If AP remains, you receive an updated state and choose another action. An action marked ends_activation forfeits any AP left after paying its cost. Overwatch costs 1 AP and always ends the actor's activation.",
       movement:
         "actor.movement is movement points per AP, not remaining AP. An ordinary tile costs one movement point; infestation slows TDF and speeds bugs, and rough terrain can slow mechs. The game finds routes toward the chosen entity, objective or direction using known terrain, walls, occupied footprints and elevation. A distance question can shorten the proposed one-AP route. Every move option spends exactly one AP; unused distance cannot be saved for later.",
       combat:

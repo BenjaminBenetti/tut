@@ -78,14 +78,14 @@ export interface JevChoicePage {
   readonly groups?: Readonly<Record<string, readonly JevCandidate[]>>;
 }
 
-// Count alone does not bound tokens: ground attacks carry much larger previews than moves.
+// Count alone does not bound tokens: area attacks can carry large victim previews.
 const MAX_LEAF_CHOICES = 32;
 const MAX_CRITERIA_CHARACTERS = 8000;
 const MAX_GROUP_CHOICES = 32;
 const INSTRUCTIONS =
-  "Choose the actor's next action in a turn-based tactical battle using `gameplay` for rules and only observed or remembered facts in the state. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. When no specific order applies, use `faction_goal`. AP means action points: actor.ap is the remaining budget, each action spends its listed cost, and a new decision follows if AP remains. HP means health points. capability_ref refers to the shared capabilities dictionary. The game handles pathfinding; north is -z, east +x, south +z and west -x. Resolve names in orders against actor.name and entities[].name. Historical sightings and radar pings are not visible attack targets. Consider objectives, cover, hazards, survival and friendly fire. Select only an offered option; choosing a group does not spend AP or execute an action.";
+  "Choose the actor's next action in a turn-based tactical battle using `gameplay` for rules and only observed or remembered facts in the state. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. When no specific order applies, use `faction_goal`. AP means action points: actor.ap is the remaining budget, each action spends its listed cost. An action marked ends_activation ends the actor's activation and forfeits any remaining AP; otherwise a new decision follows if AP remains. HP means health points. capability_ref refers to the shared capabilities dictionary. The game handles pathfinding; north is -z, east +x, south +z and west -x. Resolve names in orders against actor.name and entities[].name. Historical sightings and radar pings are not visible attack targets. Consider objectives, cover, hazards, survival and friendly fire. Select only an offered option; choosing a group does not spend AP or execute an action.";
 
-/** Route by the actor's specific weapon/mode or item; follow-ups contain only that action's targets. */
+/** Route by the actor's specific weapon or item; follow-ups contain only that action's targets. */
 export function jevChoicePage(
   snapshot: JevSnapshot,
   candidates?: readonly JevCandidate[],
@@ -106,6 +106,7 @@ export function jevChoicePage(
             action: id,
             ...items[0]!.actionType,
             instructions: jevActionInstructions(snapshot.state, items[0]!),
+            ends_activation: items[0]!.endsActivation === true,
             ap_costs: [
               ...new Set(
                 items.flatMap((item) =>
@@ -199,7 +200,7 @@ function choicePage(
 ): JevChoicePage {
   const task =
     stage === "action-type"
-      ? "Choose the best specific action to take next. Each available weapon and firing mode, usable item, and other ability is listed separately for this actor. Choose the weapon or item now; its target or destination will be selected in a follow-up containing ONLY that action."
+      ? "Choose the best specific action to take next. Each available weapon, usable item, and other ability is listed separately for this actor. Choose the weapon or item now; its target or destination will be selected in a follow-up containing ONLY that action."
       : stage === "action-group"
         ? "The action type has been chosen. Choose a region or target group within that type; a subsequent request will choose the concrete action."
         : stage === "movement-target"

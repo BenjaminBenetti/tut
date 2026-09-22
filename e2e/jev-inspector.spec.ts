@@ -157,13 +157,16 @@ test("Jev menu evaluates exact state and questions without acting, and exports o
   expect(requests[0]?.state).not.toHaveProperty("navigation");
   expect(requests[0]?.state.capabilities).toBeDefined();
   expect(requests[0]?.questions.action!.criteria).toHaveProperty("move");
-  // The starter mech's ground-fire options name its actual weapons, not a shared attack bucket.
+  // Weapons stay in actor metadata even when there is no visible entity to attack.
   const top = requests[0].questions.action!.criteria;
-  expect(top).not.toHaveProperty("attack-ground");
+  expect(Object.keys(top).some((id) => id.startsWith("attack-ground"))).toBe(
+    false,
+  );
   expect(top).not.toHaveProperty("equipment");
   expect(top).not.toHaveProperty("finish");
-  expect(JSON.stringify(top)).toContain("Autocannon");
-  expect(JSON.stringify(top)).toContain("Missile Pod");
+  expect(JSON.stringify(requests[0].state.actor)).toContain("Autocannon");
+  expect(JSON.stringify(requests[0].state.actor)).toContain("Missile Pod");
+  expect(top.overwatch).toMatchObject({ ap_costs: [1], ends_activation: true });
   expect(
     Object.keys(requests[0].questions.action!.criteria).some((id) =>
       id.startsWith("action-"),

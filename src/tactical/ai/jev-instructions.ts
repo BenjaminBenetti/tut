@@ -7,11 +7,9 @@ import type { JevCandidate } from "../model/jev-control";
 
 const ACTION_RULES: Readonly<Record<string, string>> = {
   attack:
-    "Attack one offered visible enemy or nest with this weapon. Compare hit_chance_percent (0-100), damage_range in HP, target health/armor, cover and elevation. A range-1 weapon is melee; ranged attacks may miss. A blast can damage allies as well as enemies. Check the weapon's ammo, heat and cooldown; ends_activation means firing spends all remaining AP.",
-  "attack-ground":
-    "Fire this weapon at an offered tile to damage an area or destroy terrain. This is a weapon attack, not movement. Consider blast victims, damage, lingering effects and friendly fire; a tile can contain allies. ends_activation means firing spends all remaining AP.",
+    "Attack one offered visible enemy unit or nest with this weapon. Only entity targets are offered, including for area-of-effect weapons: the blast is centered on the selected entity. Compare hit_chance_percent (0-100), damage_range in HP, target health/armor, cover and elevation. A range-1 weapon is melee; ranged attacks may miss. A blast can damage allies as well as enemies and destroy terrain; check the listed blast victims for friendly fire. Check the weapon's ammo, heat and cooldown; ends_activation means firing ends the actor's activation and forfeits any AP left after paying the listed cost.",
   overwatch:
-    "Spend all remaining AP to watch for enemy movement until the next faction turn. The first weapon fires reaction shots when an enemy moves into legal range and line of sight, subject to ammo, heat and cooldown. This ends the actor's actions now; it does not attack immediately or guarantee a reaction shot.",
+    "Overwatch costs 1 AP and ends the actor's activation, forfeiting any remaining AP. It is available with just 1 AP; using it with 2 AP also leaves 0 AP. Watch for enemy movement until the next faction turn. The first weapon fires reaction shots when an enemy moves into legal range and line of sight, subject to ammo, heat and cooldown. It does not attack immediately or guarantee a reaction shot.",
   reload:
     "Spend the listed AP to restore all weapon charge pools to capacity, or vent a fitted mech's heat to zero. This does not replenish limited equipment uses. Reloading leaves any unspent AP available for another action.",
   brace:
@@ -31,7 +29,7 @@ const ACTION_RULES: Readonly<Record<string, string>> = {
 
 const EQUIPMENT_RULES: Readonly<Record<string, string>> = {
   blast:
-    "Throw or use this explosive at an offered tile. It makes an immediate attack that can miss; its blast can harm allies and enemies and damage terrain. Compare the item's damage, radius and lingering effect with units and hazards at the target.",
+    "Throw or use this explosive against one offered visible enemy unit or nest. The targetId identifies the entity; the game aims at its listed tile, not empty ground. It makes an immediate attack that can miss; its blast can harm allies and enemies and damage terrain. Compare the item's damage, radius and lingering effect with units and hazards around the target.",
   charge:
     "Place a delayed explosive at an offered tile. It detonates after the item's delayTurns (two turns if absent), not immediately. The later blast can hurt any faction, including this actor; account for friendly positions and escape routes.",
   heal: "Heal eligible friendly units around the offered tile, up to their maximum HP. heal.target distinguishes organic units from mechanical units; heal.amount and heal.radius describe the effect. This always heals eligible allies and never attacks enemies. Choose where missing HP can actually be restored.",

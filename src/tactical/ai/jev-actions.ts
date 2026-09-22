@@ -1,5 +1,4 @@
 import type { AttackPreview } from "../model/attack-preview";
-import { canTargetTile } from "../model/weapon-profile";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { CombatTuning } from "../model/combat-tuning";
@@ -10,7 +9,7 @@ import type {
 } from "../model/jev-control";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
-import { attack, attackTile } from "../model/attack-command";
+import { attack } from "../model/attack-command";
 import { overwatch } from "../model/overwatch-command";
 import { reload } from "../model/reload-command";
 import { extract } from "../model/extract-command";
@@ -18,11 +17,7 @@ import { interact } from "../model/interact-command";
 import { harvestCarcass } from "../model/harvest-carcass-command";
 import { mechAction } from "../model/mech-action-command";
 import { useEquipment } from "../model/use-equipment-command";
-import {
-  previewAttack,
-  previewTileAttack,
-  attackEndsTurn,
-} from "../service/combat-service";
+import { previewAttack, attackEndsTurn } from "../service/combat-service";
 import { buildMoveGraph } from "../service/movement-service";
 import {
   equipmentOf,
@@ -61,6 +56,7 @@ export function jevCandidates(
       category,
       actionType,
       apCost: details.ap_cost,
+      endsActivation: details.ends_activation === true,
       command,
       description: JSON.stringify({
         action: category,
@@ -79,28 +75,24 @@ export function jevCandidates(
       : []),
   ];
   for (const weapon of template?.weapons ?? []) {
-    const apCost = attackEndsTurn(weapon.profile, actor.kind, rules.combat)
-      ? actor.ap
-      : rules.combat.attackApCost;
+    const apCost = rules.combat.attackApCost;
+    const endsActivation = attackEndsTurn(
+      weapon.profile,
+      actor.kind,
+      rules.combat,
+    );
     const capability = {
       weapon_id: weapon.id,
       weapon: weapon.name,
       ap_cost: apCost,
-      ends_activation: attackEndsTurn(weapon.profile, actor.kind, rules.combat),
+      ends_activation: endsActivation,
       profile: weapon.profile,
     };
     const targetedAttack: JevActionType = {
       id: `attack:${weapon.id}`,
       name: `Attack with ${weapon.name}`,
       purpose:
-        "Use this specific weapon against a visible enemy unit or nest; choose the target next.",
-      capability,
-    };
-    const groundAttack: JevActionType = {
-      id: `attack-ground:${weapon.id}`,
-      name: `Attack ground with ${weapon.name}`,
-      purpose:
-        "Use this specific weapon against terrain or an area; choose the tile next, considering blast effects and friendly fire.",
+        "Attack a visible enemy unit or nest with this weapon; choose the entity next. Area damage is centered on that entity.",
       capability,
     };
     for (const target of targets) {
@@ -118,41 +110,17 @@ export function jevCandidates(
           {
             weapon: weapon.name,
             ap_cost: apCost,
+            ends_activation: endsActivation,
             ...previewFacts(preview.value),
           },
           targetedAttack,
         );
     }
-    if (!canTargetTile(weapon.profile)) continue;
-    for (const tile of view.map.tiles) {
-      if (
-        Math.abs(tile.x - actor.pos.x) + Math.abs(tile.z - actor.pos.z) >
-        weapon.profile.range + rules.combat.maxReachBonus + footprintReach
-      )
-        continue;
-      const preview = previewTileAttack(
-        view,
-        actor.id,
-        tile,
-        rules.combat,
-        weapon.id,
-      );
-      if (preview.ok)
-        add(
-          "attack-ground",
-          attackTile(actor.id, { x: tile.x, y: tile.y, z: tile.z }, weapon.id),
-          {
-            weapon: weapon.name,
-            ap_cost: apCost,
-            ...previewFacts(preview.value),
-          },
-          groundAttack,
-        );
-    }
   }
   if (actor.kind === "turret") return candidates;
   add("overwatch", overwatch(actor.id), {
-    ap_cost: actor.ap,
+    ap_cost: 1,
+    ends_activation: true,
     effect: "React to enemy movement until the next faction turn",
   });
   if (reloadPools(view, actor).ok)
@@ -190,6 +158,16 @@ export function jevCandidates(
     if (template?.systems?.jumpRange && validateMechAction(view, jump).ok)
       add("jump", mechAction(jump), { ap_cost: 1 });
     for (const item of equipment) {
+      const entityTarget = item.definition.kind === "blast";
+      const target = entityTarget
+        ? targets.find(
+            (target) =>
+              target.pos.x === pos.x &&
+              target.pos.y === pos.y &&
+              target.pos.z === pos.z,
+          )
+        : undefined;
+      if (entityTarget && !target) continue;
       if (
         validateEquipmentUse(
           view,
@@ -207,12 +185,14 @@ export function jevCandidates(
             ...item.definition,
             ap_cost: item.definition.apCost,
             uses_left: item.usesLeft,
+            ...(target ? { targetId: target.id } : {}),
           },
           {
             id: `equipment:${item.definition.id}`,
             name: `Use ${item.definition.name}`,
-            purpose:
-              "Use this specific item with the effect described in capability; choose its target tile next.",
+            purpose: entityTarget
+              ? "Use this explosive against a visible enemy unit or nest; choose the entity next. The blast is centered on that entity."
+              : "Use this specific item with the effect described in capability; choose its target tile next.",
             capability: {
               ...item.definition,
               ap_cost: item.definition.apCost,

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jev navigation evaluations</title>
+    <style>
+      body {
+        margin: 24px auto;
+        padding: 0 20px;
+        max-width: 1250px;
+        background: #111821;
+        color: #e0e9ef;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+      }
+      h1 {
+        font-size: 26px;
+      }
+      a {
+        color: #85d4fa;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 20px 0;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      select,
+      button {
+        background: #253545;
+        color: inherit;
+        border: 1px solid #63839b;
+        border-radius: 4px;
+        padding: 8px;
+      }
+      .view {
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) minmax(250px, 420px);
+        gap: 24px;
+      }
+      canvas {
+        width: 100%;
+        background: #090e15;
+        border: 1px solid #475669;
+        image-rendering: pixelated;
+      }
+      pre {
+        padding: 12px;
+        background: #1a2532;
+        overflow: auto;
+        max-height: 620px;
+        font-size: 12px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      input {
+        width: 100%;
+      }
+      .note {
+        color: #acbbca;
+        font-size: 14px;
+      }
+      @media (max-width: 800px) {
+        .view {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Jev navigation evaluations</h1>
+    <p>
+      Real generated maps, real movement rules, one AP per move. Green is the
+      start; gold is the objective; blue is the route; white is the actor.
+    </p>
+    <p class="note">
+      Observer view shows full terrain for inspection. Fog runs planned with
+      faction knowledge only. “Goal route” methods use deterministic
+      pathfinding; Jev selects the objective. The report and trace archive
+      describe each experiment, including unsuccessful development versions.
+    </p>
+    <div class="controls">
+      <label>Experiment<select id="batch"></select></label>
+      <label>Case and method<select id="run"></select></label>
+      <label>Elevation<select id="level"></select></label>
+    </div>
+    <p id="metrics"></p>
+    <div class="view">
+      <div>
+        <canvas
+          id="map"
+          width="768"
+          height="768"
+          aria-label="Map and selected movement trajectory"
+        ></canvas>
+        <label
+          >Decision attempt <span id="step-label"></span
+          ><input type="range" id="step" min="0" value="0"
+        /></label>
+        <p class="note">
+          Walls: pale = solid/window, brown = door, grey = half wall. Dimmed
+          route points are on another elevation. Exact requests are in the trace
+          archive under the displayed request hash.
+        </p>
+      </div>
+      <div><pre id="detail"></pre></div>
+    </div>
+    <script>
+      const data = JSON.parse(atob("__NAV_DATA__"));
+      const batch = document.getElementById("batch");
+      const runSelect = document.getElementById("run");
+      const level = document.getElementById("level");
+      const slider = document.getElementById("step");
+      const canvas = document.getElementById("map");
+      const ctx = canvas.getContext("2d");
+      let runs = [],
+        run;
+      for (const item of data.batches) batch.add(new Option(item.id, item.id));
+      if (data.batches.some((item) => item.id === "navigation-holdout-fog"))
+        batch.value = "navigation-holdout-fog";
+      /** Select comparable trajectories within an experiment. */
+      function chooseBatch() {
+        runs = data.runs.filter((item) => item.batch === batch.value);
+        runSelect.replaceChildren();
+        runs.forEach((item, i) =>
+          runSelect.add(
+            new Option(
+              `${item.caseId} · ${item.variant} · ${item.status}`,
+              String(i),
+            ),
+          ),
+        );
+        chooseRun();
+      }
+      /** Reset the step controls when a different model trajectory is selected. */
+      function chooseRun() {
+        run = runs[Number(runSelect.value)];
+        const map = data.maps[run.map];
+        level.replaceChildren();
+        for (let y = 0; y < map.levels; y++)
+          level.add(new Option(String(y), String(y)));
+        level.value = String(run.start.y);
+        slider.max = String(run.steps.length);
+        slider.value = slider.max;
+        draw();
+      }
+      /** Draw geometry and the recorded route; no simulation or inference is performed here. */
+      function draw() {
+        const map = data.maps[run.map];
+        const y = Number(level.value),
+          count = Number(slider.value),
+          scale = canvas.width / map.width;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const [x, tileY, z, pass, walls] of map.tiles) {
+          if (tileY !== y) continue;
+          ctx.fillStyle = pass & 1 ? "#334b5e" : "#1b2631";
+          ctx.fillRect(x * scale, z * scale, scale, scale);
+          const edges = [
+            [x, z, x + 1, z],
+            [x + 1, z, x + 1, z + 1],
+            [x, z + 1, x + 1, z + 1],
+            [x, z, x, z + 1],
+          ];
+          for (let side = 0; side < 4; side++) {
+            const kind = (walls >> (side * 3)) & 7;
+            if (!kind) continue;
+            ctx.strokeStyle =
+              kind === 2 ? "#d49a56" : kind === 4 ? "#7a8a98" : "#cad4df";
+            ctx.lineWidth = Math.max(1, scale / 5);
+            const [x0, z0, x1, z1] = edges[side];
+            ctx.beginPath();
+            ctx.moveTo(x0 * scale, z0 * scale);
+            ctx.lineTo(x1 * scale, z1 * scale);
+            ctx.stroke();
+          }
+        }
+        let previous = run.start;
+        for (const step of run.steps.slice(0, count))
+          for (const point of step.path ?? []) {
+            ctx.globalAlpha = point.y === y ? 1 : 0.22;
+            ctx.strokeStyle = "#56bdff";
+            ctx.lineWidth = Math.max(2, scale / 3);
+            ctx.beginPath();
+            ctx.moveTo((previous.x + 0.5) * scale, (previous.z + 0.5) * scale);
+            ctx.lineTo((point.x + 0.5) * scale, (point.z + 0.5) * scale);
+            ctx.stroke();
+            previous = point;
+          }
+        ctx.globalAlpha = 1;
+        marker(run.start, "#78e6a5", "S", scale);
+        marker(run.goal, "#ffc969", "O", scale);
+        marker(previous, "#ffffff", "@", scale);
+        document.getElementById("metrics").textContent =
+          `${map.width}×${map.depth} · ${run.vision} vision · ${run.status} · ${run.apUsed} AP spent · ${run.optimalAp} AP omniscient minimum · ${run.distanceRemaining} route steps remaining`;
+        document.getElementById("step-label").textContent =
+          `${count} / ${run.steps.length}`;
+        document.getElementById("detail").textContent = JSON.stringify(
+          count ? run.steps[count - 1] : { start: run.start, goal: run.goal },
+          null,
+          2,
+        );
+      }
+      /** Mark a start, target or current actor position in the observer map. */
+      function marker(point, color, label, scale) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(
+          (point.x + 0.5) * scale,
+          (point.z + 0.5) * scale,
+          Math.max(5, scale * 0.6),
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.fillStyle = "#08131e";
+        ctx.font = "bold 10px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, (point.x + 0.5) * scale, (point.z + 0.5) * scale);
+      }
+      batch.addEventListener("change", chooseBatch);
+      runSelect.addEventListener("change", chooseRun);
+      level.addEventListener("change", draw);
+      slider.addEventListener("input", draw);
+      chooseBatch();
+    </script>
+  </body>
+</html>

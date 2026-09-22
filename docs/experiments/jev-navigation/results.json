@@ -1,0 +1,1069 @@
+{
+  "batches": [
+    {
+      "id": "navigation-dev-door-refusal-fog",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:52:12.211Z",
+      "finishedAt": "2026-09-22T01:52:17.434Z",
+      "vision": "fog",
+      "reverseChoices": false,
+      "requestCount": 33,
+      "cases": [
+        {
+          "id": "development-2-large",
+          "seed": "3677615265",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 47, "y": 2, "z": 81 },
+            "distance": 98
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 10595
+        }
+      ],
+      "summary": {
+        "goal-route-doors": {
+          "episodes": 1,
+          "reached": 1,
+          "statuses": { "reached": 1 },
+          "meanApRatioOnSuccess": 1.6,
+          "wastedAp": 12,
+          "calls": 33,
+          "meanInputTokens": 379,
+          "meanLatencyMs": 105.3030303030303
+        }
+      }
+    },
+    {
+      "id": "navigation-dev-goal-doors-fog",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:50:46.353Z",
+      "finishedAt": "2026-09-22T01:50:58.891Z",
+      "vision": "fog",
+      "reverseChoices": false,
+      "requestCount": 87,
+      "cases": [
+        {
+          "id": "development-1-small",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 44, "y": 2, "z": 10 },
+            "distance": 55
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 2821
+        },
+        {
+          "id": "development-1-medium",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 18, "y": 2, "z": 9 },
+            "distance": 35
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 6970
+        },
+        {
+          "id": "development-1-large",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 86, "y": 2, "z": 25 },
+            "distance": 54
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 12297
+        },
+        {
+          "id": "development-2-small",
+          "seed": "3677615265",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 42, "y": 2, "z": 39 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 29, "y": 2, "z": 35 },
+            "distance": 33
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 2649
+        },
+        {
+          "id": "development-2-medium",
+          "seed": "3677615265",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 2, "z": 24 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 37, "y": 2, "z": 25 },
+            "distance": 50
+          },
+          "movement": 5,
+          "optimalAp": 10,
+          "terrainTiles": 5921
+        },
+        {
+          "id": "development-2-large",
+          "seed": "3677615265",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 47, "y": 2, "z": 81 },
+            "distance": 98
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 10595
+        }
+      ],
+      "summary": {
+        "goal-route-doors": {
+          "episodes": 6,
+          "reached": 5,
+          "statuses": { "reached": 5, "error": 1 },
+          "meanApRatioOnSuccess": 1.3498701298701299,
+          "wastedAp": 23,
+          "calls": 87,
+          "meanInputTokens": 379,
+          "meanLatencyMs": 100.19540229885058
+        }
+      }
+    },
+    {
+      "id": "navigation-dev-goal-fog",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:47:42.358Z",
+      "finishedAt": "2026-09-22T01:48:03.428Z",
+      "vision": "fog",
+      "reverseChoices": false,
+      "requestCount": 151,
+      "cases": [
+        {
+          "id": "development-1-small",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 44, "y": 2, "z": 10 },
+            "distance": 55
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 2821
+        },
+        {
+          "id": "development-1-medium",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 18, "y": 2, "z": 9 },
+            "distance": 35
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 6970
+        },
+        {
+          "id": "development-1-large",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 86, "y": 2, "z": 25 },
+            "distance": 54
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 12297
+        },
+        {
+          "id": "development-2-small",
+          "seed": "3677615265",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 42, "y": 2, "z": 39 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 29, "y": 2, "z": 35 },
+            "distance": 33
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 2649
+        },
+        {
+          "id": "development-2-medium",
+          "seed": "3677615265",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 2, "z": 24 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 37, "y": 2, "z": 25 },
+            "distance": 50
+          },
+          "movement": 5,
+          "optimalAp": 10,
+          "terrainTiles": 5921
+        },
+        {
+          "id": "development-2-large",
+          "seed": "3677615265",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 47, "y": 2, "z": 81 },
+            "distance": 98
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 10595
+        }
+      ],
+      "summary": {
+        "goal-route": {
+          "episodes": 6,
+          "reached": 3,
+          "statuses": { "reached": 3, "ap-limit": 3 },
+          "meanApRatioOnSuccess": 1.6727272727272728,
+          "wastedAp": 97,
+          "calls": 151,
+          "meanInputTokens": 379,
+          "meanLatencyMs": 102.3907284768212
+        }
+      }
+    },
+    {
+      "id": "navigation-dev-second-full",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:48:11.344Z",
+      "finishedAt": "2026-09-22T01:49:08.033Z",
+      "vision": "full",
+      "reverseChoices": false,
+      "requestCount": 206,
+      "cases": [
+        {
+          "id": "development-2-small",
+          "seed": "3677615265",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 42, "y": 2, "z": 39 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 29, "y": 2, "z": 35 },
+            "distance": 33
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 2649
+        },
+        {
+          "id": "development-2-medium",
+          "seed": "3677615265",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 2, "z": 24 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 37, "y": 2, "z": 25 },
+            "distance": 50
+          },
+          "movement": 5,
+          "optimalAp": 10,
+          "terrainTiles": 5921
+        },
+        {
+          "id": "development-2-large",
+          "seed": "3677615265",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 47, "y": 2, "z": 81 },
+            "distance": 98
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 10595
+        }
+      ],
+      "summary": {
+        "current": {
+          "episodes": 3,
+          "reached": 0,
+          "statuses": { "loop": 3 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 39,
+          "calls": 96,
+          "meanInputTokens": 18735.697916666668,
+          "meanLatencyMs": 207.46875
+        },
+        "lean-flat": {
+          "episodes": 3,
+          "reached": 0,
+          "statuses": { "loop": 3 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 27,
+          "calls": 36,
+          "meanInputTokens": 15335.111111111111,
+          "meanLatencyMs": 191.97222222222223
+        },
+        "route-cost": {
+          "episodes": 3,
+          "reached": 3,
+          "statuses": { "reached": 3 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "calls": 37,
+          "meanInputTokens": 3073.324324324324,
+          "meanLatencyMs": 113.45945945945945
+        },
+        "goal-route": {
+          "episodes": 3,
+          "reached": 3,
+          "statuses": { "reached": 3 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "calls": 37,
+          "meanInputTokens": 379,
+          "meanLatencyMs": 99.27027027027027
+        }
+      }
+    },
+    {
+      "id": "navigation-holdout-fog",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:53:31.751Z",
+      "finishedAt": "2026-09-22T01:54:30.155Z",
+      "vision": "fog",
+      "reverseChoices": false,
+      "requestCount": 390,
+      "cases": [
+        {
+          "id": "holdout-1-small",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 20, "y": 1, "z": 22 },
+            "distance": 34
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 3263
+        },
+        {
+          "id": "holdout-1-medium",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 51, "y": 2, "z": 50 },
+            "distance": 71
+          },
+          "movement": 5,
+          "optimalAp": 15,
+          "terrainTiles": 6953
+        },
+        {
+          "id": "holdout-1-large",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 79, "y": 2, "z": 50 },
+            "distance": 102
+          },
+          "movement": 5,
+          "optimalAp": 21,
+          "terrainTiles": 12058
+        },
+        {
+          "id": "holdout-2-small",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 24, "y": 2, "z": 41 },
+            "distance": 40
+          },
+          "movement": 5,
+          "optimalAp": 8,
+          "terrainTiles": 3108
+        },
+        {
+          "id": "holdout-2-medium",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 17, "y": 0, "z": 27 },
+            "distance": 32
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 6415
+        },
+        {
+          "id": "holdout-2-large",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 48, "y": 0, "z": 23 },
+            "distance": 107
+          },
+          "movement": 5,
+          "optimalAp": 22,
+          "terrainTiles": 11284
+        }
+      ],
+      "summary": {
+        "current": {
+          "episodes": 6,
+          "reached": 0,
+          "statuses": { "loop": 6 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 97,
+          "refusedDoorAttempts": 0,
+          "calls": 217,
+          "meanInputTokens": 7424.7788018433175,
+          "meanLatencyMs": 139.17511520737327
+        },
+        "lean-flat": {
+          "episodes": 6,
+          "reached": 1,
+          "statuses": { "loop": 5, "reached": 1 },
+          "meanApRatioOnSuccess": 1.1904761904761905,
+          "wastedAp": 41,
+          "refusedDoorAttempts": 0,
+          "calls": 88,
+          "meanInputTokens": 7224.375,
+          "meanLatencyMs": 137.6590909090909
+        },
+        "goal-route-doors": {
+          "episodes": 6,
+          "reached": 6,
+          "statuses": { "reached": 6 },
+          "meanApRatioOnSuccess": 1.097222222222222,
+          "wastedAp": 5,
+          "refusedDoorAttempts": 0,
+          "calls": 85,
+          "meanInputTokens": 379,
+          "meanLatencyMs": 100.10588235294118
+        }
+      }
+    },
+    {
+      "id": "navigation-holdout-full",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:53:30.589Z",
+      "finishedAt": "2026-09-22T01:55:58.358Z",
+      "vision": "full",
+      "reverseChoices": false,
+      "requestCount": 427,
+      "cases": [
+        {
+          "id": "holdout-1-small",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 20, "y": 1, "z": 22 },
+            "distance": 34
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 3263
+        },
+        {
+          "id": "holdout-1-medium",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 51, "y": 2, "z": 50 },
+            "distance": 71
+          },
+          "movement": 5,
+          "optimalAp": 15,
+          "terrainTiles": 6953
+        },
+        {
+          "id": "holdout-1-large",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 79, "y": 2, "z": 50 },
+            "distance": 102
+          },
+          "movement": 5,
+          "optimalAp": 21,
+          "terrainTiles": 12058
+        },
+        {
+          "id": "holdout-2-small",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 24, "y": 2, "z": 41 },
+            "distance": 40
+          },
+          "movement": 5,
+          "optimalAp": 8,
+          "terrainTiles": 3108
+        },
+        {
+          "id": "holdout-2-medium",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 17, "y": 0, "z": 27 },
+            "distance": 32
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 6415
+        },
+        {
+          "id": "holdout-2-large",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 48, "y": 0, "z": 23 },
+            "distance": 107
+          },
+          "movement": 5,
+          "optimalAp": 22,
+          "terrainTiles": 11284
+        }
+      ],
+      "summary": {
+        "current": {
+          "episodes": 6,
+          "reached": 0,
+          "statuses": { "loop": 5, "error": 1 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 67,
+          "refusedDoorAttempts": 0,
+          "calls": 187,
+          "meanInputTokens": 19501.251336898396,
+          "meanLatencyMs": 330.1016042780749
+        },
+        "lean-flat": {
+          "episodes": 6,
+          "reached": 0,
+          "statuses": { "loop": 6 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 43,
+          "refusedDoorAttempts": 0,
+          "calls": 80,
+          "meanInputTokens": 17456.325,
+          "meanLatencyMs": 214.7625
+        },
+        "route-cost": {
+          "episodes": 6,
+          "reached": 6,
+          "statuses": { "reached": 6 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "refusedDoorAttempts": 0,
+          "calls": 80,
+          "meanInputTokens": 3086.85,
+          "meanLatencyMs": 116.3125
+        },
+        "goal-route-doors": {
+          "episodes": 6,
+          "reached": 6,
+          "statuses": { "reached": 6 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "refusedDoorAttempts": 0,
+          "calls": 80,
+          "meanInputTokens": 379,
+          "meanLatencyMs": 113.3875
+        }
+      }
+    },
+    {
+      "id": "navigation-holdout-reversed-fog",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:55:18.070Z",
+      "finishedAt": "2026-09-22T01:55:31.266Z",
+      "vision": "fog",
+      "reverseChoices": true,
+      "requestCount": 85,
+      "cases": [
+        {
+          "id": "holdout-1-small",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 20, "y": 1, "z": 22 },
+            "distance": 34
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 3263
+        },
+        {
+          "id": "holdout-1-medium",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 51, "y": 2, "z": 50 },
+            "distance": 71
+          },
+          "movement": 5,
+          "optimalAp": 15,
+          "terrainTiles": 6953
+        },
+        {
+          "id": "holdout-1-large",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "fog",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 79, "y": 2, "z": 50 },
+            "distance": 102
+          },
+          "movement": 5,
+          "optimalAp": 21,
+          "terrainTiles": 12058
+        },
+        {
+          "id": "holdout-2-small",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 24, "y": 2, "z": 41 },
+            "distance": 40
+          },
+          "movement": 5,
+          "optimalAp": 8,
+          "terrainTiles": 3108
+        },
+        {
+          "id": "holdout-2-medium",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 17, "y": 0, "z": 27 },
+            "distance": 32
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 6415
+        },
+        {
+          "id": "holdout-2-large",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "visibility": "fog",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 48, "y": 0, "z": 23 },
+            "distance": 107
+          },
+          "movement": 5,
+          "optimalAp": 22,
+          "terrainTiles": 11284
+        }
+      ],
+      "summary": {
+        "goal-route-doors": {
+          "episodes": 6,
+          "reached": 6,
+          "statuses": { "reached": 6 },
+          "meanApRatioOnSuccess": 1.097222222222222,
+          "wastedAp": 5,
+          "refusedDoorAttempts": 0,
+          "calls": 85,
+          "meanInputTokens": 379,
+          "meanLatencyMs": 107.04705882352941
+        }
+      }
+    },
+    {
+      "id": "navigation-pilot-full",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:41:56.643Z",
+      "finishedAt": "2026-09-22T01:43:03.733Z",
+      "vision": "full",
+      "reverseChoices": false,
+      "requestCount": 227,
+      "cases": [
+        {
+          "id": "pilot-1-small",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 44, "y": 2, "z": 10 },
+            "distance": 55
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 2821
+        },
+        {
+          "id": "pilot-1-medium",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 18, "y": 2, "z": 9 },
+            "distance": 35
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 6970
+        },
+        {
+          "id": "pilot-1-large",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 86, "y": 2, "z": 25 },
+            "distance": 54
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 12297
+        }
+      ],
+      "summary": {
+        "current": {
+          "episodes": 3,
+          "reached": 0,
+          "statuses": { "loop": 3 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 31,
+          "calls": 68,
+          "meanInputTokens": 19264.5,
+          "meanLatencyMs": 233.7941176470588
+        },
+        "lean-state": {
+          "episodes": 3,
+          "reached": 0,
+          "statuses": { "loop": 3 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 27,
+          "calls": 74,
+          "meanInputTokens": 15704.932432432432,
+          "meanLatencyMs": 202.83783783783784
+        },
+        "lean-flat": {
+          "episodes": 3,
+          "reached": 1,
+          "statuses": { "reached": 1, "loop": 2 },
+          "meanApRatioOnSuccess": 1.0909090909090908,
+          "wastedAp": 20,
+          "calls": 42,
+          "meanInputTokens": 16402.071428571428,
+          "meanLatencyMs": 222.71428571428572
+        },
+        "coordinates": {
+          "episodes": 3,
+          "reached": 1,
+          "statuses": { "reached": 1, "loop": 2 },
+          "meanApRatioOnSuccess": 1.2727272727272727,
+          "wastedAp": 21,
+          "calls": 43,
+          "meanInputTokens": 2413.3255813953488,
+          "meanLatencyMs": 120.06976744186046
+        }
+      }
+    },
+    {
+      "id": "navigation-pilot-reduced",
+      "model": "jev-1.13.0",
+      "startedAt": "2026-09-22T01:44:59.820Z",
+      "finishedAt": "2026-09-22T01:45:27.377Z",
+      "vision": "full",
+      "reverseChoices": false,
+      "requestCount": 112,
+      "cases": [
+        {
+          "id": "pilot-1-small",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 44, "y": 2, "z": 10 },
+            "distance": 55
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 2821
+        },
+        {
+          "id": "pilot-1-medium",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "objective-1",
+            "position": { "x": 18, "y": 2, "z": 9 },
+            "distance": 35
+          },
+          "movement": 5,
+          "optimalAp": 7,
+          "terrainTiles": 6970
+        },
+        {
+          "id": "pilot-1-large",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "objective-2",
+            "position": { "x": 86, "y": 2, "z": 25 },
+            "distance": 54
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 12297
+        }
+      ],
+      "summary": {
+        "local": {
+          "episodes": 3,
+          "reached": 0,
+          "statuses": { "loop": 3 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 30,
+          "calls": 43,
+          "meanInputTokens": 4053.0232558139537,
+          "meanLatencyMs": 127.67441860465117
+        },
+        "relative": {
+          "episodes": 3,
+          "reached": 0,
+          "statuses": { "loop": 3 },
+          "meanApRatioOnSuccess": null,
+          "wastedAp": 29,
+          "calls": 40,
+          "meanInputTokens": 2298.1,
+          "meanLatencyMs": 122.45
+        },
+        "route-cost": {
+          "episodes": 3,
+          "reached": 3,
+          "statuses": { "reached": 3 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "calls": 29,
+          "meanInputTokens": 3119.9655172413795,
+          "meanLatencyMs": 124.03448275862068
+        }
+      }
+    }
+  ]
+}

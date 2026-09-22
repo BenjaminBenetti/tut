@@ -1,0 +1,17 @@
+{
+  "model": "jev-1.13.0",
+  "state": {
+    "entity_prompt": "Reach objective-1 as quickly as possible.",
+    "commander_prompt": ""
+  },
+  "questions": {
+    "action": {
+      "type": "choice",
+      "instructions": "Which destination should this actor move toward to follow its orders? The game handles pathfinding around obstacles using faction knowledge, exploring when needed. This move spends 1 AP; you choose again afterward.",
+      "criteria": {
+        "objective-1": "Move toward objective-1.",
+        "objective-2": "Move toward objective-2."
+      }
+    }
+  }
+}

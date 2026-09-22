@@ -32,6 +32,7 @@ export const ICON_MANIFEST = {
   check: { path: "assets/ui/icons/check.svg", label: "Confirm" },
   city: { path: "assets/ui/icons/city.svg", label: "City" },
   close: { path: "assets/ui/icons/close.svg", label: "Close" },
+  command: { path: "assets/ui/icons/command.svg", label: "Command" },
   credits: { path: "assets/ui/icons/credits.svg", label: "Credits" },
   day: { path: "assets/ui/icons/day.svg", label: "Day" },
   deploy: { path: "assets/ui/icons/deploy.svg", label: "Deploy" },

@@ -1,5 +1,6 @@
 import type { JevInspector, JevTrace } from "../model/jev-inspector";
 import type { JevSnapshot } from "../../tactical/model/jev-control";
+import { JEV_PROMPT_MAX_LENGTH } from "../../tactical/model/jev-control";
 import { jevChoicePage } from "../../tactical/ai/jev-request";
 
 /** Development-only entity inspector. All text is rendered as text, including user prompts and model output. */
@@ -77,7 +78,7 @@ export class JevInspectorView {
       prompts,
     );
     this.commander.dataset.testid = "jev-commander-prompt";
-    this.entity.maxLength = this.commander.maxLength = 8000;
+    this.entity.maxLength = this.commander.maxLength = JEV_PROMPT_MAX_LENGTH;
     const controls = doc.createElement("div");
     controls.className = "tut-jev__controls";
     const label = doc.createElement("label");

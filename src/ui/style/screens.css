@@ -1152,6 +1152,103 @@
   grid-area: top;
 }
 
+/* Equal side columns keep Command at the viewport center regardless of their contents. */
+.tut-hud__banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  min-height: 40px;
+  height: auto;
+  padding-block: var(--space-1);
+}
+
+.tut-hud__banner-left,
+.tut-hud__banner-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
+}
+
+.tut-hud__banner-right {
+  justify-content: flex-end;
+}
+
+.tut-hud__banner .tut-topbar__stat {
+  min-width: 0;
+}
+
+.tut-hud__banner [data-field="mission-name"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tut-command {
+  position: relative;
+  z-index: 5;
+}
+
+.tut-command__toggle .tut-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.tut-command__toggle[aria-expanded="true"] {
+  color: var(--ui-accent);
+  box-shadow: inset 0 -2px var(--ui-accent);
+}
+
+.tut-command__popover {
+  position: absolute;
+  top: calc(100% + var(--space-3));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-shadow: 0 12px 32px #0008;
+}
+
+.tut-command__popover[hidden] {
+  display: none;
+}
+
+.tut-command__popover p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tut-command__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.tut-command__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-2);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 100px;
+  max-height: 40vh;
+  overscroll-behavior: contain;
+}
+
+.tut-command__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 .tut-hud__side {
   grid-area: side;
   margin: var(--space-4);

@@ -15,6 +15,9 @@ import type { ExtractCommand } from "./extract-command";
 import type { HarvestCarcassCommand } from "./harvest-carcass-command";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 
+/** Shared limit for editable entity and faction orders. */
+export const JEV_PROMPT_MAX_LENGTH = 8000;
+
 /** Only orders belonging to one entity; never phase, configuration or campaign commands. */
 export type JevActionCommand =
   | AttackCommand

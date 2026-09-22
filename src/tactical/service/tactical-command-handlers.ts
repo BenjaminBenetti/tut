@@ -118,6 +118,7 @@ export function liftTacticalHandler<
       jevEndTurnPending(mission) &&
       command.type !== "tactical:jev-act" &&
       command.type !== "tactical:configure-jev" &&
+      command.type !== "tactical:set-jev-commander-prompt" &&
       command.type !== "tactical:end-turn"
     ) {
       return err(

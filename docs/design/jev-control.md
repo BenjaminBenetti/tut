@@ -32,6 +32,14 @@ pnpm dev
 
 Development defaults to `http://localhost:8080`. To use another relay, set `VITE_JEV_RELAY_URL` in `.env` and restart Vite. Never prefix the API key with `VITE_`.
 
+## Give TDF orders
+
+The **Command** flag button is centered in the tactical top bar and is available in normal gameplay, with no unit selection required. It opens a small editor for the shared TDF commander prompt. Write orders such as “Follow Alpha. Stay together and protect the objective,” then press **Apply orders**. Every Jev-controlled TDF unit receives those orders with its next decision. Clearing the field and applying removes the shared orders.
+
+Orders are saved with the mission. Applying them costs no AP and preserves each unit's control setting and individual prompt, the bug faction's orders, and turn progress. A pending Jev response based on old orders is discarded before acting. Cancel, Escape or clicking outside dismisses unsaved edits. Typing and scrolling in the editor do not control the battlefield.
+
+![TDF command editor centered under the tactical top bar](jev-command.png)
+
 ## Inspect a decision
 
 ![Jev development inspector showing a real evaluated request](jev-inspector.png)

@@ -7,6 +7,7 @@ import type {
 } from "../model/tactical-handler";
 import type {
   ConfigureJevCommand,
+  SetJevCommanderPromptCommand,
   JevActCommand,
   DefaultBugActCommand,
 } from "../model/jev-command";
@@ -17,6 +18,7 @@ import type { TacticalHandlers } from "./tactical-command-handlers";
 import { applyTacticalCommand } from "./tactical-command-handlers";
 import { withVision } from "./vision-service";
 import { isAutonomous } from "../model/unit";
+import { JEV_PROMPT_MAX_LENGTH } from "../model/jev-control";
 
 /** Start a fresh serializable cursor when a phase changes, keeping the legacy path when no bug opts in. */
 export function startJevPhase(mission: TacticalState): TacticalState {
@@ -116,7 +118,10 @@ export const configureJevHandler: TacticalHandler<ConfigureJevCommand> = (
   const { unitId, control, commanderPrompt } = command.payload;
   const unit = mission.units.find((entry) => entry.id === unitId);
   if (!unit) return err({ kind: "unit-not-found", unitId });
-  if (control.entityPrompt.length > 8000 || commanderPrompt.length > 8000)
+  if (
+    control.entityPrompt.length > JEV_PROMPT_MAX_LENGTH ||
+    commanderPrompt.length > JEV_PROMPT_MAX_LENGTH
+  )
     return err({
       kind: "systems-unavailable",
       reason: "Jev prompts must each be at most 8000 characters",
@@ -135,6 +140,29 @@ export const configureJevHandler: TacticalHandler<ConfigureJevCommand> = (
   };
   if (!jev.activation) state = startJevPhase(state);
   return ok({ state, events: [] });
+};
+
+/** Update faction orders without changing entity control, AP or activation progress. */
+export const setJevCommanderPromptHandler: TacticalHandler<
+  SetJevCommanderPromptCommand
+> = (mission, command) => {
+  const { team, prompt } = command.payload;
+  if (prompt.length > JEV_PROMPT_MAX_LENGTH)
+    return err({
+      kind: "systems-unavailable",
+      reason: "Jev prompts must each be at most 8000 characters",
+    });
+  const jev = mission.jev ?? {
+    entities: {},
+    commanders: { tdf: "", bugs: "" },
+  };
+  return ok({
+    state: {
+      ...mission,
+      jev: { ...jev, commanders: { ...jev.commanders, [team]: prompt } },
+    },
+    events: [],
+  });
 };
 
 /** A selected order still passes authoritative rules and may address only its acting entity. */

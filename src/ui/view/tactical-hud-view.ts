@@ -1,5 +1,7 @@
 import type { JevInspector } from "../model/jev-inspector";
 import { JevInspectorView } from "./jev-inspector-view";
+import { CommanderPromptView } from "./commander-prompt-view";
+import { setJevCommanderPrompt } from "../../tactical/model/jev-command";
 import { mechAction } from "../../tactical/model/mech-action-command";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -388,6 +390,8 @@ export class TacticalHudView {
   private pointerGuard: { readonly dispose: () => void } | undefined;
   /** Jev inspection is built only in a dev build. */
   private readonly jevInspector: JevInspectorView | undefined;
+  /** Faction orders are available to players in every build. */
+  private readonly commander: CommanderPromptView;
   /** The development tools' panel (#1136); built only in a dev build. */
   private readonly debugMenu: DebugMenuView | undefined;
   /** The bug button that opens it, at the bottom left of the bar. */
@@ -416,6 +420,9 @@ export class TacticalHudView {
     );
     this.handlers = handlers;
     this.deps = deps;
+    this.commander = new CommanderPromptView((prompt) => {
+      handlers.onCommand(setJevCommanderPrompt("tdf", prompt));
+    });
     this.banner = new TurnBannerView({
       onLeave: () => handlers.onLeave(),
       onLayerStep: (delta) => handlers.onLayerStep?.(delta),
@@ -463,7 +470,8 @@ export class TacticalHudView {
   /**
    * Builds the HUD under `parent`: banner on top, the force and the
    * objectives down the left rail with the event log under them, the
-   * unit card alone on the right, End turn below (#1134).
+   * unit card alone on the right, End turn below (#1134), and faction
+   * orders at the center of the top bar.
    *
    * ```
    *   ┌ top: turn banner ──────────────────────────────────────────┐
@@ -497,7 +505,9 @@ export class TacticalHudView {
     side.className = "tut-hud__side tut-stack";
     const bottom = doc.createElement("div");
     bottom.className = "tut-hud__bottom";
-    this.banner.mount(top);
+    const commandSlot = doc.createElement("div");
+    this.commander.mount(commandSlot);
+    this.banner.mount(top, commandSlot);
     this.radial.mount(hud);
     this.status.mount(hud);
     // The force first, then the objectives: the strip is the overview
@@ -644,6 +654,7 @@ export class TacticalHudView {
     this.sideOverflow = undefined;
     this.debugMenu?.unmount();
     this.jevInspector?.unmount();
+    this.commander.unmount();
     this.debugToggle = undefined;
     this.debugOpen = false;
     this.armedPlacement = undefined;
@@ -2155,6 +2166,15 @@ export class TacticalHudView {
 
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
+    this.commander.update(
+      this.mission
+        ? {
+            missionId: this.mission.missionId,
+            prompt: this.mission.jev?.commanders.tdf ?? "",
+            editable: !this.mission.outcome,
+          }
+        : undefined,
+    );
     this.jevInspector?.update(this.inspectedUnitId());
     this.debugMenu?.update({
       open: this.debugOpen,

@@ -1,10 +1,12 @@
 import {
   CONFIGURE_JEV,
+  SET_JEV_COMMANDER_PROMPT,
   JEV_ACT,
   DEFAULT_BUG_ACT,
 } from "../../tactical/model/jev-command";
 import {
   configureJevHandler,
+  setJevCommanderPromptHandler,
   createJevActHandler,
   createDefaultBugActHandler,
 } from "../../tactical/service/jev-control-service";
@@ -325,6 +327,7 @@ export function shippedTacticalHandlers(
   return {
     ...actions,
     [CONFIGURE_JEV]: configureJevHandler,
+    [SET_JEV_COMMANDER_PROMPT]: setJevCommanderPromptHandler,
     [JEV_ACT]: createJevActHandler(actions),
     [DEFAULT_BUG_ACT]: createDefaultBugActHandler(
       actions,

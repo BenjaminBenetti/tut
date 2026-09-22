@@ -1,5 +1,6 @@
 import {
   CONFIGURE_JEV,
+  SET_JEV_COMMANDER_PROMPT,
   JEV_ACT,
   DEFAULT_BUG_ACT,
 } from "../../tactical/model/jev-command";
@@ -163,6 +164,7 @@ describe("composeTactical", () => {
       // rules above: the bug phase drives them and must not be able to
       // recurse into the turn engine (#335).
       CONFIGURE_JEV,
+      SET_JEV_COMMANDER_PROMPT,
       JEV_ACT,
       DEFAULT_BUG_ACT,
       END_TURN,

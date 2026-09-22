@@ -20,6 +20,7 @@ import { withVision } from "../../tactical/service/vision-service";
 import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import { setJevCommanderPrompt } from "../../tactical/model/jev-command";
 
 let root: HTMLElement;
 const card = (): HTMLElement | null =>
@@ -122,6 +123,43 @@ function twoWeaponMission() {
 }
 
 describe("TacticalHudView", () => {
+  it("offers faction orders without selection or dev tools, preserves drafts and emits only an explicit save", () => {
+    const { hud, commands, mission } = setup();
+    const toggle = root.querySelector<HTMLButtonElement>(
+      '[data-testid="command-toggle"]',
+    )!;
+    const panel = root.querySelector<HTMLElement>(
+      '[data-testid="commander-popover"]',
+    )!;
+    const input = root.querySelector<HTMLTextAreaElement>(
+      '[data-testid="commander-orders-input"]',
+    )!;
+    expect(hud.getSelectedUnitId()).toBeUndefined();
+    expect(toggle.closest("#turn-banner")).not.toBeNull();
+    expect(toggle.disabled).toBe(false);
+    expect(toggle.querySelector('[data-icon="command"]')).not.toBeNull();
+    toggle.click();
+    expect(panel.hidden).toBe(false);
+    expect(document.activeElement).toBe(input);
+    input.value = "Follow Alpha";
+    hud.update({ ...mission, turn: mission.turn + 1 });
+    expect(input.value).toBe("Follow Alpha");
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    expect(panel.hidden).toBe(true);
+    expect(document.activeElement).toBe(toggle);
+    expect(commands).toEqual([]);
+    toggle.click();
+    expect(input.value).toBe("");
+    input.value = "Hold the objective";
+    panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
+    expect(commands).toEqual([
+      setJevCommanderPrompt("tdf", "Hold the objective"),
+    ]);
+    expect(panel.hidden).toBe(true);
+    hud.unmount();
+  });
   it("renders the banner and objectives and the placeholder card", () => {
     setup();
     expect(field("turn")?.textContent).toBe("2");

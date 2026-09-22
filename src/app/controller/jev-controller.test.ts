@@ -17,7 +17,11 @@ import {
 import { withVision } from "../../tactical/service/vision-service";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
-import { configureJev, jevAct } from "../../tactical/model/jev-command";
+import {
+  configureJev,
+  jevAct,
+  setJevCommanderPrompt,
+} from "../../tactical/model/jev-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
 import { endTurn } from "../../tactical/model/end-turn-command";
 import {
@@ -761,6 +765,83 @@ describe("Jev control", () => {
     await vi.waitFor(() => expect(controller.history[0]?.status).toBe("stale"));
     expect(store.getState()).toBe(changed);
     controller.dispose();
+  });
+  it("saves shared TDF orders without enabling units or spending AP, and restores them on load", async () => {
+    const transport = instant();
+    const { store, controller } = setup(transport, mixedCampaign());
+    const original = store.getState().activeMission!;
+    expect(
+      store.dispatch(setJevCommanderPrompt("bugs", "Guard the nests")).ok,
+    ).toBe(true);
+    expect(
+      store.dispatch(setJevCommanderPrompt("tdf", "Follow Alpha")).ok,
+    ).toBe(true);
+    const saved = store.getState().activeMission!;
+    expect(saved.units).toEqual(original.units);
+    expect(saved.jev?.entities).toEqual({});
+    expect(saved.jev?.commanders).toEqual({
+      tdf: "Follow Alpha",
+      bugs: "Guard the nests",
+    });
+    for (const unit of saved.units.filter((unit) => unit.team === "tdf"))
+      expect(controller.capture(unit.id).state.commander_prompt).toBe(
+        "Follow Alpha",
+      );
+    controller.start();
+    await Promise.resolve();
+    expect(transport.ask).not.toHaveBeenCalled();
+    controller.dispose();
+    const loaded = setup(
+      instant(),
+      JSON.parse(JSON.stringify(store.getState())) as GameState,
+    );
+    expect(loaded.controller.capture("self").state.commander_prompt).toBe(
+      "Follow Alpha",
+    );
+    expect(
+      loaded.store.dispatch(setJevCommanderPrompt("tdf", "x".repeat(8001))).ok,
+    ).toBe(false);
+    expect(loaded.controller.capture("self").state.commander_prompt).toBe(
+      "Follow Alpha",
+    );
+    expect(loaded.store.dispatch(setJevCommanderPrompt("tdf", "")).ok).toBe(
+      true,
+    );
+    expect(loaded.controller.capture("self").state.commander_prompt).toBe("");
+    loaded.controller.dispose();
+  });
+  it("replaces orders during a pending End Turn and discards the old response without spending AP", async () => {
+    const pending: {
+      request: JevRequest;
+      resolve: (reply: JevReply) => void;
+    }[] = [];
+    const ask = vi.fn(
+      (request: JevRequest) =>
+        new Promise<JevReply>((resolve) => pending.push({ request, resolve })),
+    );
+    const { store, controller } = setup(
+      { configured: true, ask },
+      mixedCampaign(),
+    );
+    controller.configure("self", true, "Stay alive", "Hold position");
+    expect(store.dispatch(endTurn()).ok).toBe(true);
+    const before = store.getState().activeMission!;
+    expect(jevEndTurnPending(before)).toBe(true);
+    controller.start();
+    await vi.waitFor(() => expect(pending).toHaveLength(1));
+    expect(
+      store.dispatch(setJevCommanderPrompt("tdf", "Follow Alpha")).ok,
+    ).toBe(true);
+    const changed = store.getState().activeMission!;
+    expect(changed.jev?.entities).toEqual(before.jev?.entities);
+    expect(changed.jev?.activation).toEqual(before.jev?.activation);
+    pending[0]!.resolve(reply(pending[0]!.request));
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    expect(controller.history[0]?.status).toBe("stale");
+    expect(pending[1]!.request.state.commander_prompt).toBe("Follow Alpha");
+    expect(store.getState().activeMission!.units).toEqual(before.units);
+    controller.dispose();
+    pending[1]!.resolve(reply(pending[1]!.request));
   });
   it("resolves mixed Jev and ordinary bug activations and returns the player turn", async () => {
     const transport = instant();

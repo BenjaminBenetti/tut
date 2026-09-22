@@ -11,7 +11,7 @@
 - **`entity_prompt`:** this actor's orders.
 - **`commander_prompt`:** faction orders, which take priority when orders conflict.
 
-Use shared faction knowledge throughout. Hidden information stays hidden. Each question includes clear gameplay instructions and only its relevant choices.
+Entity information uses shared faction vision. The game's path planner knows the full map layout, including floors and stairs through fog. Each question includes clear gameplay instructions and only its relevant choices.
 
 ## Full decision loop
 
@@ -34,7 +34,7 @@ After choosing movement, Jev selects one of these options. The game prepares the
 | `move_north`, `move_east`, `move_south`, `move_west` | Move as far as possible in that map direction within one AP. |
 | `move_away_from_enemies` | Choose the reachable tile within one AP that maximizes distance from the nearest known hostile. |
 
-Offer options only when they produce a legal move. Retreat requires a known hostile and a destination that increases separation. Directions follow the map's compass. Tile maps and exhaustive tile choices stay out of the Jev question.
+Offer options only when they produce a legal move. Routes use the full map layout and known occupied tiles; approaching an entity on another floor requires reaching that floor. Retreat requires a known hostile and a destination that increases separation. Directions follow the map's compass. Tile maps and exhaustive tile choices stay out of the Jev question.
 
 The distance question is **“How much of the available movement should the actor use to follow its orders?”** It receives all actor and entity metadata alongside the selected movement. A normalized score of 1 means the full move; 0.5 means roughly half. Instructions must make clear that a shorter move still spends the whole AP.
 

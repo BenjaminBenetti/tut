@@ -85,13 +85,13 @@ export interface JevCandidate {
   readonly movement?: JevMovement;
 }
 
-/** A selected intent and its one-AP route, costed using faction terrain knowledge. */
+/** A selected intent and its one-AP route, costed using the full map layout. */
 export interface JevMovement {
   readonly intent: string;
   readonly targetId?: string;
   readonly targetName?: string;
   readonly targetPosition?: TileCoord;
-  readonly routeKind: "known-route" | "explore-frontier";
+  readonly routeKind: "known-route";
   readonly stops: readonly {
     readonly steps: number;
     readonly cost: number;

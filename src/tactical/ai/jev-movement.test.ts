@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { jevMovementCandidates } from "./jev-movement";
 import { scaleJevMovement, jevDistancePage } from "./jev-distance";
 import { captureJev } from "./jev-request";
-import { jevPerception } from "./jev-observation";
 import {
   missionWith,
   openField,
@@ -15,7 +14,12 @@ import {
 } from "../service/tactical-fixtures.test-helper";
 import { createMoveHandler } from "../service/move-handler";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
+import { PassMask } from "../../mapgen/model/pass-mask";
+import { buildMoveGraph } from "../service/movement-service";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
+import { DEFAULT_MISSION_HOOKS } from "../../mapgen/data/hook-requirements";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { SHIPPED_EQUIPMENT } from "../repository/equipment-catalogue";
 import type { TacticalState } from "../model/tactical-state";
@@ -126,6 +130,155 @@ describe("Jev movement intent planning", () => {
     for (const move of jevMovementCandidates(large, large.units[0]!, [], {}))
       execute(large, scaleJevMovement(move, 2));
   });
+  it.each([
+    ["tdf", 0, 4],
+    ["tdf", 4, 0],
+    ["bugs", 0, 4],
+    ["bugs", 4, 0],
+  ] as const)(
+    "routes %s from layer %i to %i using stairs outside faction vision",
+    (team, startY, targetY) => {
+      const builder = new FixtureMapBuilder(6, 2, 5)
+        .fillGround()
+        .fillGround(2, SurfaceIds.FLOOR)
+        .fillGround(4, SurfaceIds.FLOOR);
+      builder.connector("stairs", { x: 4, y: 0, z: 0 }, { x: 4, y: 2, z: 1 });
+      builder.connector("stairs", { x: 1, y: 2, z: 1 }, { x: 1, y: 4, z: 0 });
+      const map = builder.build();
+      let mission = missionWith(
+        map,
+        [
+          unitAt("self", "infantry", { x: 0, y: startY, z: 0 }, { team }),
+          unitAt("alpha", "infantry", { x: 0, y: targetY, z: 0 }, { team }),
+        ],
+        { phase: team === "tdf" ? "player" : "bugs" },
+      );
+      const layers = new Set<number>([startY]);
+      for (let i = 0; i < 8; i++) {
+        const visible = [new TileIndex(map).keyOf(mission.units[0]!.pos)];
+        mission = {
+          ...mission,
+          units: mission.units.map((unit) => ({ ...unit, ap: 2 })),
+          vision: {
+            ...mission.vision,
+            [team]: { visible, explored: visible, spotted: [], lastSeen: {} },
+          },
+        };
+        const candidate = captureJev(mission, "self", rules).candidates.find(
+          (entry) => entry.id === "move_to_entity:alpha",
+        );
+        if (!candidate) break;
+        const command = candidate.command!;
+        if (command.type !== "tactical:move")
+          throw new Error("Expected a move");
+        for (const pos of command.payload.path) layers.add(pos.y);
+        mission = execute(mission, scaleJevMovement(candidate, 4));
+      }
+      const end = mission.units[0]!.pos;
+      expect(end.y).toBe(targetY);
+      expect(end.x + end.z).toBe(1);
+      expect([...layers].sort()).toEqual([0, 2, 4]);
+    },
+  );
+  it("uses another staircase when the target occupies a landing instead of arriving on the wrong floor", () => {
+    const original = twoFloorBuilding();
+    const map = {
+      ...original,
+      connectors: [
+        ...original.connectors,
+        {
+          ...original.connectors[0]!,
+          id: "second-stairs",
+          from: { x: 6, y: 0, z: 6 },
+          to: { x: 6, y: 2, z: 5 },
+        },
+      ],
+    };
+    const mission = revealed(
+      missionWith(map, [
+        unitAt("self", "infantry", { x: 5, y: 0, z: 6 }),
+        unitAt("alpha", "infantry", { x: 5, y: 2, z: 5 }),
+      ]),
+    );
+    const candidate = captureJev(mission, "self", rules).candidates.find(
+      (entry) => entry.id === "move_to_entity:alpha",
+    );
+    expect(candidate).toBeDefined();
+    expect(execute(mission, candidate!).units[0]!.pos).toEqual({
+      x: 6,
+      y: 2,
+      z: 5,
+    });
+  });
+  it("reaches another floor in a generated city building with no explored terrain", () => {
+    const map = generateTacticalMap({
+      seed: "730982385",
+      params: {
+        archetype: "settlement",
+        biome: "temperate",
+        settlement: "city",
+        size: "small",
+        hooks: DEFAULT_MISSION_HOOKS,
+      },
+    });
+    const building = map.buildings.find((entry) => entry.floors.length >= 3)!;
+    expect(building).toBeDefined();
+    const stairs = map.connectors
+      .filter(
+        (link) => link.buildingId === building.id && link.kind === "stairs",
+      )
+      .sort((a, b) => b.to.y - a.to.y);
+    const graph = buildMoveGraph(map);
+    const landing = graph.index.getAt(stairs[0]!.to)!;
+    const target = [
+      ...graph.reachability.neighbours(landing, PassMask.INFANTRY),
+    ].find((tile) => tile.y === landing.y && tile.buildingId === building.id)!;
+    expect(target).toBeDefined();
+    const upper = { x: target.x, y: target.y, z: target.z };
+    const lower = building.entrances[0]!.tile;
+    for (const [start, goal] of [
+      [lower, upper],
+      [upper, lower],
+    ] as const) {
+      let mission = missionWith(map, [
+        unitAt("self", "infantry", start),
+        unitAt("alpha", "infantry", goal),
+      ]);
+      const vision = mission.vision;
+      for (let i = 0; i < 32; i++) {
+        const candidate = captureJev(mission, "self", rules).candidates.find(
+          (entry) => entry.id === "move_to_entity:alpha",
+        );
+        if (!candidate) break;
+        mission = execute(mission, scaleJevMovement(candidate, 4));
+        mission = {
+          ...mission,
+          units: mission.units.map((unit) => ({ ...unit, ap: 2 })),
+          vision,
+        };
+      }
+      const end = mission.units[0]!.pos;
+      expect(end.y).toBe(goal.y);
+      expect(Math.abs(end.x - goal.x) + Math.abs(end.z - goal.z)).toBe(1);
+    }
+  });
+  it("still treats a natural half-height step as adjacent to the target", () => {
+    const map = openField()
+      .removeTile({ x: 1, y: 0, z: 0 })
+      .tile({ x: 1, y: 1, z: 0 }, SurfaceIds.GRASS)
+      .build();
+    const mission = revealed(
+      missionWith(map, [
+        unitAt("self", "infantry", { x: 0, y: 0, z: 0 }),
+        unitAt("alpha", "infantry", { x: 1, y: 1, z: 0 }),
+      ]),
+    );
+    expect(
+      captureJev(mission, "self", rules).candidates.some(
+        (entry) => entry.id === "move_to_entity:alpha",
+      ),
+    ).toBe(false);
+  });
   it("offers compass extremes and retreats from the closest hostile, retaining that intent when shortened", () => {
     const mission = revealed(
       missionWith(openField().build(), [
@@ -162,55 +315,111 @@ describe("Jev movement intent planning", () => {
       ),
     ).toBe(false);
   });
-  it("uses only faction knowledge, offers public objectives without leaking fog, and omits completed or unreachable targets", () => {
-    const mission = missionWith(walledField(), [
-      unitAt("self", "infantry", { x: 1, y: 0, z: 5 }),
-      unitAt("hidden", "infantry", { x: 6, y: 0, z: 5 }, { team: "bugs" }),
-    ]);
+  it("routes toward public objectives through fog without using hidden entity positions", () => {
+    const mission = missionWith(
+      walledField(),
+      [
+        unitAt("self", "infantry", { x: 1, y: 0, z: 5 }),
+        unitAt("hidden", "infantry", { x: 7, y: 0, z: 7 }, { team: "bugs" }),
+      ],
+      {
+        objectives: [
+          {
+            id: "objective-1",
+            kind: "destroy-spawner",
+            targetId: "nest",
+            complete: false,
+          },
+        ],
+        spawners: [
+          {
+            id: "nest",
+            pos: { x: 6, y: 0, z: 5 },
+            hp: 20,
+            timer: 2,
+            hatchRadius: 3,
+            destroyed: false,
+          },
+        ],
+      },
+    );
     const index = new TileIndex(mission.map);
     const visible = mission.map.tiles
       .filter((tile) => tile.x <= 2)
       .map((tile) => index.keyOf(tile));
-    const observed = {
+    let observed = {
       ...mission,
       vision: {
         ...mission.vision,
         tdf: { visible, explored: visible, spotted: [], lastSeen: {} },
       },
     };
-    const view = jevPerception(observed, observed.units[0]!);
-    const goal = {
-      id: "objective-1",
-      kind: "destroy-spawner",
-      complete: false,
-      position: { x: 6, y: 0, z: 5 },
-    };
-    const candidates = jevMovementCandidates(view, view.units[0]!, [goal], {});
-    expect(candidates.some((item) => item.id.includes("hidden"))).toBe(false);
-    const move = candidates.find(
-      (item) => item.id === "move_to_objective:objective-1",
-    )!;
-    expect(move.movement?.routeKind).toBe("explore-frontier");
-    const result = execute(observed, move);
-    expect(result.units[0]!.pos.x).toBeLessThanOrEqual(2);
+    for (let i = 0; i < 2; i++) {
+      const candidates = captureJev(observed, "self", rules).candidates;
+      expect(candidates.some((item) => item.id.includes("hidden"))).toBe(false);
+      const move = candidates.find(
+        (item) => item.id === "move_to_objective:objective-1",
+      )!;
+      expect(move.movement?.routeKind).toBe("known-route");
+      observed = { ...execute(observed, move), vision: observed.vision };
+    }
+    expect(observed.units[0]!.pos.x).toBeGreaterThan(3);
+    expect(visible).not.toContain(index.keyOf(observed.units[0]!.pos));
     expect(
-      jevMovementCandidates(
-        view,
-        view.units[0]!,
-        [{ ...goal, complete: true }],
-        {},
-      ).some((item) => item.id.includes("objective")),
+      captureJev(
+        {
+          ...mission,
+          objectives: mission.objectives.map((goal) => ({
+            ...goal,
+            complete: true,
+          })),
+        },
+        "self",
+        rules,
+      ).candidates.some((item) => item.id.includes("objective")),
     ).toBe(false);
-    const isolated = revealed(
-      missionWith(walledField(), [
-        unitAt("mech", "mech", { x: 1, y: 0, z: 5 }),
-        unitAt("friend", "infantry", { x: 6, y: 0, z: 5 }),
-      ]),
-    );
+  });
+  it("omits unreachable targets instead of walking to a fog boundary", () => {
+    const isolated = missionWith(walledField(), [
+      unitAt("mech", "mech", { x: 1, y: 0, z: 5 }),
+      unitAt("friend", "infantry", { x: 6, y: 0, z: 5 }),
+    ]);
     expect(
-      jevMovementCandidates(isolated, isolated.units[0]!, [], {}).some((item) =>
+      captureJev(isolated, "mech", rules).candidates.some((item) =>
         item.id.includes("friend"),
       ),
+    ).toBe(false);
+    const blockedLanding = missionWith(twoFloorBuilding(), [
+      unitAt("self", "infantry", { x: 5, y: 0, z: 6 }),
+      unitAt("friend", "infantry", { x: 5, y: 2, z: 5 }),
+    ]);
+    expect(
+      captureJev(blockedLanding, "self", rules).candidates.some((item) =>
+        item.id.includes("friend"),
+      ),
+    ).toBe(false);
+  });
+  it("does not route around or reveal an unseen enemy; execution still validates real occupancy", () => {
+    const mission = missionWith(openField().build(), [
+      unitAt("self", "infantry", { x: 0, y: 0, z: 0 }),
+      unitAt("alpha", "infantry", { x: 6, y: 0, z: 0 }),
+    ]);
+    const before = captureJev(mission, "self", rules);
+    const blocked = {
+      ...mission,
+      units: [
+        ...mission.units,
+        unitAt("hidden", "infantry", { x: 1, y: 0, z: 0 }, { team: "bugs" }),
+      ],
+    };
+    expect(captureJev(blocked, "self", rules)).toEqual(before);
+    const candidate = before.candidates.find(
+      (item) => item.id === "move_to_entity:alpha",
+    )!;
+    const command = candidate.command!;
+    if (command.type !== "tactical:move") throw new Error("Expected a move");
+    expect(
+      createMoveHandler()(blocked, command, ctxWith(riggedRng(true))).ok,
     ).toBe(false);
   });
 });

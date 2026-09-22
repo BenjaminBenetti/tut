@@ -319,7 +319,7 @@ describe("Jev observation", () => {
       false,
     );
   });
-  it("does not change when unseen enemies, terrain, schedules or logs change", () => {
+  it("does not change when unseen enemies, cover, schedules or logs change", () => {
     const state = fixture();
     expect(state.vision.tdf.spotted).not.toContain("hidden");
     const index = new TileIndex(state.map);
@@ -403,7 +403,7 @@ describe("Jev observation", () => {
       events: [],
     }).state;
     const actor = state.units[0]!;
-    const view = jevPerception(state, actor);
+    const view = { ...jevPerception(state, actor), map: state.map };
     const graph = buildMoveGraph(view.map);
     const reachable = searchMoves(view, actor, graph).costs;
     expect(

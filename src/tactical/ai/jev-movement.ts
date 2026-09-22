@@ -1,7 +1,5 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { DIRECTIONS } from "../../core/model/direction";
-import { stepGridPos } from "../../core/service/grid-math";
-import { wallKindBlocks } from "../../mapgen/service/reachability-service";
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { JevCandidate, JevMovement } from "../model/jev-control";
 import type { TacticalState } from "../model/tactical-state";
 import { passMaskFor, type Unit } from "../model/unit";
@@ -18,7 +16,7 @@ import {
   footprintTiles,
 } from "../service/footprint-service";
 
-/** Public mission destination, without hidden terrain or target condition. */
+/** Public mission destination, without hidden target condition. */
 export interface JevObjective {
   readonly id: string;
   readonly kind: string;
@@ -26,7 +24,7 @@ export interface JevObjective {
   readonly position?: TileCoord;
 }
 
-/** Objective locations are public intel; nest health and surrounding terrain are not. */
+/** Objective locations are public intel; unobserved nest health is not. */
 export function jevObjectives(mission: TacticalState): readonly JevObjective[] {
   return mission.objectives.map((objective) => ({
     id: objective.id,
@@ -41,20 +39,20 @@ export function jevObjectives(mission: TacticalState): readonly JevObjective[] {
 // Movement intents
 // ===========================================
 
-/** Plan named destinations and directions with the game's weighted, occupied, faction-known graph. */
+/** Plan routes using the full map layout and faction-known units for occupancy and targets. */
 export function jevMovementCandidates(
-  view: TacticalState,
+  navigation: TacticalState,
   actor: Unit,
   objectives: readonly JevObjective[],
   names: Readonly<Record<string, string>>,
 ): readonly JevCandidate[] {
   if (actor.kind === "turret" || actor.ap <= 0 || actor.hp <= 0) return [];
-  const budget = moveBudget(view, { ...actor, ap: 1 });
+  const budget = moveBudget(navigation, { ...actor, ap: 1 });
   if (budget <= 0) return [];
-  const graph = buildMoveGraph(view.map);
-  // One whole-known-map search serves all destinations; only a one-AP prefix is executable.
+  const graph = buildMoveGraph(navigation.map);
+  // One whole-map search serves all destinations; only a one-AP prefix is executable.
   const search = searchMoves(
-    view,
+    navigation,
     { ...actor, ap: Number.MAX_SAFE_INTEGER },
     graph,
   );
@@ -94,10 +92,10 @@ export function jevMovementCandidates(
       movement: { ...intent, stops },
     });
   };
-  const size = unitFootprintSize(view, actor);
-  for (const target of view.units) {
+  const size = unitFootprintSize(navigation, actor);
+  for (const target of navigation.units) {
     if (target.id === actor.id || target.hp <= 0) continue;
-    const targetSize = unitFootprintSize(view, target);
+    const targetSize = unitFootprintSize(navigation, target);
     const approaches = approachKeys(
       graph,
       search,
@@ -106,16 +104,16 @@ export function jevMovementCandidates(
       targetSize,
       actor,
     );
-    const knownEndpoint = cheapest(search, approaches);
-    const endpoint =
-      knownEndpoint ?? frontierToward(actor, target.pos, graph, search);
+    const endpoint = cheapest(search, approaches);
     // Already adjacent means no move; unreachable entities are not invented destinations.
     const name =
-      names[target.id] ?? view.templates[target.templateId]?.name ?? target.id;
+      names[target.id] ??
+      navigation.templates[target.templateId]?.name ??
+      target.id;
     const type =
       target.kind === "mech"
         ? "Mech"
-        : (view.templates[target.templateId]?.name ?? target.kind);
+        : (navigation.templates[target.templateId]?.name ?? target.kind);
     add(
       `move_to_entity:${target.id}`,
       `Move toward ${name} (${type}, ${target.team === actor.team ? "friendly" : "hostile"}).`,
@@ -125,8 +123,7 @@ export function jevMovementCandidates(
         targetId: target.id,
         targetName: name,
         targetPosition: target.pos,
-        routeKind:
-          knownEndpoint === undefined ? "explore-frontier" : "known-route",
+        routeKind: "known-route",
       },
     );
   }
@@ -145,11 +142,6 @@ export function jevMovementCandidates(
           )
           .map(([id]) => id),
       );
-    let routeKind: JevMovement["routeKind"] = "known-route";
-    if (endpoint === undefined) {
-      endpoint = frontierToward(actor, objective.position, graph, search);
-      routeKind = "explore-frontier";
-    }
     add(
       `move_to_objective:${objective.id}`,
       `Move toward ${objective.id} (${objective.kind}); arrival alone does not complete it.`,
@@ -159,7 +151,7 @@ export function jevMovementCandidates(
         targetId: objective.id,
         targetName: objective.id,
         targetPosition: objective.position,
-        routeKind,
+        routeKind: "known-route",
       },
     );
   }
@@ -195,7 +187,7 @@ export function jevMovementCandidates(
       (pos) => progress(pos) > 0,
     );
   }
-  const hostiles = view.units.filter(
+  const hostiles = navigation.units.filter(
     (unit) => unit.team !== actor.team && unit.hp > 0,
   );
   if (hostiles.length) {
@@ -207,7 +199,7 @@ export function jevMovementCandidates(
             pos,
             size,
             enemy.pos,
-            unitFootprintSize(view, enemy),
+            unitFootprintSize(navigation, enemy),
           ),
         ),
       );
@@ -236,7 +228,7 @@ export function jevMovementCandidates(
 }
 
 // ===========================================
-// Known routes and exploration
+// Routes and arrival
 // ===========================================
 
 /** Pick a least-cost destination, breaking ties by tile key for deterministic replays. */
@@ -266,7 +258,7 @@ function readRoute(
   return path.reverse();
 }
 
-/** Require an open edge beside an entity, respecting both footprints and elevation links. */
+/** Require an open edge beside an entity; a link across storeys is a route, not arrival. */
 function approachKeys(
   graph: MoveGraph,
   search: MoveSearch,
@@ -282,7 +274,9 @@ function approachKeys(
     for (const neighbour of graph.reachability.neighbours(
       tile,
       passMaskFor(actor.passClass),
-    ))
+    )) {
+      // Natural half-height steps are adjacent; stairs and ladders across floors are not.
+      if (Math.abs(neighbour.y - target.y) >= STOREY_LAYERS) continue;
       for (let dx = 0; dx < size; dx++)
         for (let dz = 0; dz < size; dz++) {
           const anchor = {
@@ -294,6 +288,7 @@ function approachKeys(
           const key = graph.index.keyOf(anchor);
           if (search.costs.has(key)) keys.add(key);
         }
+    }
   }
   return [...keys];
 }
@@ -310,37 +305,4 @@ function footprintDistance(
     Math.max(0, a.z - (b.z + bSize - 1), b.z - (a.z + aSize - 1)) +
     Math.abs(a.y - b.y)
   );
-}
-
-/** Approach an unknown objective via a reachable knowledge boundary; never read unseen terrain. */
-function frontierToward(
-  actor: Unit,
-  goal: TileCoord,
-  graph: MoveGraph,
-  search: MoveSearch,
-): number | undefined {
-  const frontiers = [...search.tiles.entries()].filter(([, tile]) =>
-    DIRECTIONS.some((direction) => {
-      const neighbour = stepGridPos(tile, direction);
-      return (
-        graph.index.inBounds(neighbour) &&
-        !wallKindBlocks(tile.walls[direction], passMaskFor(actor.passClass)) &&
-        [0, -1, 1].every(
-          (dy) => !graph.index.get(neighbour.x, neighbour.y + dy, neighbour.z),
-        )
-      );
-    }),
-  );
-  // Include the origin: an exhausted boundary should not cause a move away then straight back.
-  frontiers.sort(
-    ([a, posA], [b, posB]) =>
-      search.costs.get(a)! +
-        footprintDistance(posA, 1, goal, 1) -
-        search.costs.get(b)! -
-        footprintDistance(posB, 1, goal, 1) ||
-      footprintDistance(posA, 1, goal, 1) -
-        footprintDistance(posB, 1, goal, 1) ||
-      a - b,
-  );
-  return frontiers[0]?.[0];
 }

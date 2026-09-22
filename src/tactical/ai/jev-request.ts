@@ -26,6 +26,8 @@ export function captureJev(
   const actor = mission.units.find((unit) => unit.id === unitId);
   if (!actor) throw new Error("Select a living tactical entity.");
   const view = jevPerception(mission, actor);
+  // Terrain layout is public through fog; entity occupancy still uses faction vision.
+  const navigation = { ...view, map: mission.map };
   const eligible =
     !mission.outcome &&
     actor.hp > 0 &&
@@ -52,7 +54,7 @@ export function captureJev(
     candidates: eligible
       ? [
           ...jevMovementCandidates(
-            view,
+            navigation,
             actor,
             jevObjectives(mission),
             unitNames,

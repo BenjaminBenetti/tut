@@ -62,7 +62,7 @@ export function jevActionInstructions(
         : "actor.movement";
     const remaining =
       typeof actor.ap === "number" ? String(actor.ap) : "actor.ap";
-    return `${identity} AP means action points; the actor has ${remaining} AP remaining and up to ${allowance} movement points per AP. Choose an entity, objective, compass direction or retreat; the game plans a route using faction knowledge, accounting for terrain costs, walls, footprints and elevation. A follow-up rates how much of the proposed route to use. Every executed move spends exactly 1 AP: a short move does not save any AP. Unused movement range is lost. Another decision follows from the updated position and vision while AP remains. Balance reaching orders quickly with survival, hazards and friendly positions. Arrival does not itself attack, heal, interact or complete an objective.`;
+    return `${identity} AP means action points; the actor has ${remaining} AP remaining and up to ${allowance} movement points per AP. Choose an entity, objective, compass direction or retreat; the game plans a route using the full map layout and known units, accounting for terrain costs, walls, footprints and stairs between floors. A follow-up rates how much of the proposed route to use. Every executed move spends exactly 1 AP: a short move does not save any AP. Unused movement range is lost. Another decision follows from the updated position and vision while AP remains. Balance reaching orders quickly with survival, hazards and friendly positions. Arrival does not itself attack, heal, interact or complete an objective.`;
   }
   if (candidate.category === "equipment") {
     const kind = candidate.actionType?.capability.kind;

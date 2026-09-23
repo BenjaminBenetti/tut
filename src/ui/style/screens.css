@@ -1691,6 +1691,7 @@
 .tut-hud__actions {
   flex: 1 1 auto;
   flex-wrap: wrap;
+  gap: var(--space-2);
   min-width: 0;
   justify-content: center;
 }
@@ -1702,12 +1703,14 @@
 /*
  * The End turn button carries its glyph before the label (#495). The icon
  * takes `currentColor`, so it dims with an unavailable button without a
- * rule of its own.
+ * rule of its own. Compact spacing keeps Auto end beside the actions at
+ * 1280px without adding a row that crowds the selected unit's card.
  */
 .tut-hud__actions .tut-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  padding-inline: var(--space-2);
 }
 
 /* A preference beside End turn; it remains operable while the map is playing. */

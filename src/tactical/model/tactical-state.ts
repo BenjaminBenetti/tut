@@ -1,4 +1,5 @@
 import type { JevControl } from "./jev-control";
+import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { MissionId } from "../../overworld/model/mission";
@@ -68,8 +69,8 @@ export interface Spawner {
   readonly destroyed: boolean;
 }
 
-/** What the player must achieve. M2 ships one kind; M3 adds rescue, defend and escort. */
-export interface Objective {
+/** Destroy one egg spawner (GDD §5.4): complete when it is wrecked. */
+export interface DestroySpawnerObjective {
   readonly id: ObjectiveId;
   readonly kind: "destroy-spawner";
   /** The spawner this objective tracks. */
@@ -77,12 +78,43 @@ export interface Objective {
   readonly complete: boolean;
 }
 
+/**
+ * Hold the installation's generators through every timed wave (#1175,
+ * GDD §5.4). `complete` and `failed` mirror `defendStatus` as of the
+ * last phase step, for the log and the tracker; the live answer is
+ * always the service's.
+ *
+ * ```
+ *   no generator standing            ──► failed
+ *   every wave landed, no bug alive  ──► complete
+ *   otherwise                        ──► open
+ * ```
+ */
+export interface DefendGeneratorsObjective {
+  readonly id: ObjectiveId;
+  readonly kind: "defend-generators";
+  /** The installation under attack, for the briefing and the tracker. */
+  readonly installation: DeployableTypeId;
+  /** The generator units, in hook order. */
+  readonly targetIds: readonly UnitId[];
+  readonly complete: boolean;
+  readonly failed: boolean;
+}
+
+/** What the player must achieve: wreck a spawner, or hold the generators (#1175). */
+export type Objective = DestroySpawnerObjective | DefendGeneratorsObjective;
+
 /** When the next wave walks in from the map edge, and how many have so far. */
 export interface EdgeSpawnSchedule {
   /** Turn the next wave arrives on. */
   readonly nextTurn: number;
   /** Waves that have arrived. */
   readonly wave: number;
+  /**
+   * How many waves the mission sends before the edges fall quiet
+   * (#1175); absent, they never do.
+   */
+  readonly totalWaves?: number;
 }
 
 // ===========================================

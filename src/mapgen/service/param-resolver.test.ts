@@ -135,6 +135,17 @@ describe("resolveMapGenParams", () => {
     }
   });
 
+  it("passes a registered landmark through and rejects an unknown one (#1175)", () => {
+    expect(resolveMapGenParams(BASE, registries).landmark).toBeUndefined();
+    expect(
+      resolveMapGenParams({ ...BASE, landmark: "sensor-array" }, registries)
+        .landmark,
+    ).toBe("sensor-array");
+    expect(() =>
+      resolveMapGenParams({ ...BASE, landmark: "cathedral" }, registries),
+    ).toThrow(/Unknown landmark building kind "cathedral"/);
+  });
+
   it("rejects hook requirements no placer could satisfy", () => {
     expect(() =>
       resolveMapGenParams(

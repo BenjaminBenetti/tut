@@ -11,7 +11,11 @@ import type { SpawnSource } from "../model/spawn-source";
 import type { SpawnTuning } from "../model/spawn-tuning";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalContext } from "../model/tactical-handler";
-import type { Spawner, TacticalState } from "../model/tactical-state";
+import type {
+  EdgeSpawnSchedule,
+  Spawner,
+  TacticalState,
+} from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
@@ -164,8 +168,14 @@ export function edgeWave(
   if (mission.phase !== "bugs" || mission.turn < mission.edgeSpawn.nextTurn) {
     return { state: mission, events: [] };
   }
-  const { wave } = mission.edgeSpawn;
-  const edgeSpawn = {
+  const { wave, totalWaves } = mission.edgeSpawn;
+  // The edges fall quiet once the mission has sent every wave it
+  // promised (#1175); a schedule without a total sends them forever.
+  if (totalWaves !== undefined && wave >= totalWaves) {
+    return { state: mission, events: [] };
+  }
+  const edgeSpawn: EdgeSpawnSchedule = {
+    ...mission.edgeSpawn,
     nextTurn:
       mission.turn +
       waveInterval(mission.difficulty, mission.threat, deps.tuning),
@@ -205,6 +215,8 @@ export function edgeWave(
               unitIds: placed.unitIds,
               source: "edge",
               sourceId: hook.id,
+              wave: edgeSpawn.wave,
+              ...(totalWaves === undefined ? {} : { totalWaves }),
             },
           },
         ]

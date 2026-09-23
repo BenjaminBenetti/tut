@@ -1,3 +1,4 @@
+import type { MissionSiteDefinition } from "./mission-site";
 import type { PlaceProfile } from "./place-profile";
 import type { BiomeDefinition } from "./biome-definition";
 import type { BuildingTemplate } from "./building-template";
@@ -20,6 +21,8 @@ import type { SurfaceDefinition } from "./surface";
  * data change only.
  */
 export interface MapGenRegistries {
+  /** Composed mission terrain, structural footprints and objective sockets. */
+  readonly missionSites: Registry<MissionSiteDefinition>;
   readonly surfaces: Registry<SurfaceDefinition>;
   readonly props: Registry<PropDefinition>;
   readonly biomes: Registry<BiomeDefinition>;

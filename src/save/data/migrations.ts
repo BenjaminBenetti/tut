@@ -649,12 +649,30 @@ const ADD_TURRETS: Migration = {
   },
 };
 
-/** v26 → v27: old saves keep Jev absent/off; the version prevents old builds resuming an external phase. */
-const ADD_JEV_CONTROL: Migration = {
+/**
+ * v26 → v27 (#1175): defend-installation missions. An offer may carry
+ * `defence`, an active mission a `defend-generators` objective, units
+ * of kind `generator` and an `edgeSpawn.totalWaves`, and a result a
+ * `defence` field. Every one is optional and reads as its absence meant
+ * before, and no v26 save can hold any of them, so there is nothing to
+ * rewrite: the step stamps the save as read by rules that know the
+ * shapes.
+ */
+const ADD_DEFEND_INSTALLATION: Migration = {
   from: 26,
   to: 27,
   apply(state) {
     if (!isRecord(state)) throw new Error("v26 state is not an object");
+    return state;
+  },
+};
+
+/** v27 → v28: old saves keep Jev absent/off; the version prevents old builds resuming an external phase. */
+const ADD_JEV_CONTROL: Migration = {
+  from: 27,
+  to: 28,
+  apply(state) {
+    if (!isRecord(state)) throw new Error("v27 state is not an object");
     return state;
   },
 };
@@ -685,5 +703,6 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_CITY_POPULATION,
   ADD_DEPLOYABLE_LEVELS,
   ADD_TECH_POINTS,
+  ADD_DEFEND_INSTALLATION,
   ADD_JEV_CONTROL,
 ];

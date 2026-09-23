@@ -191,6 +191,7 @@ function available(
   if (
     !rectContains(lot.rect, tile.x, tile.z) ||
     !isOpenGround(draft, tile.x, tile.z) ||
+    draft.isSiteReserved(tile.x, tile.z) ||
     draft.groundLevelAt(tile.x, tile.z) !== tile.y ||
     draft.isNaturalEdge(tile.x, tile.z) ||
     blocked.has(draft.tileKey(tile)) ||

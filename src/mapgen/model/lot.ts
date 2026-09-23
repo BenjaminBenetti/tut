@@ -1,5 +1,23 @@
 import type { Direction } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
+import type { PropKindId, Rotation } from "./prop";
+
+/** Building-local equipment footprint, installed before stairs choose their landings. */
+export interface BuildingEquipment {
+  readonly kind: PropKindId;
+  readonly x: number;
+  readonly z: number;
+  readonly rotation?: Rotation;
+}
+
+/** An authored building request, realized by the ordinary building/interior passes. */
+export interface BuildingSpecification {
+  readonly template: string;
+  readonly floors: number;
+  /** Extra ground-floor doors in addition to the lot's frontage entrance. */
+  readonly additionalEntrances?: readonly Direction[];
+  readonly roofEquipment?: readonly BuildingEquipment[];
+}
 
 // ===========================================
 // Lot
@@ -17,4 +35,6 @@ export interface Lot {
   readonly level: number;
   /** Side of the lot that faces the road; entrances go there. */
   readonly frontage: Direction;
+  /** Use the exact lot footprint and requested template instead of a random building. */
+  readonly building?: BuildingSpecification;
 }

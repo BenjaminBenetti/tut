@@ -1,6 +1,7 @@
 import { BIOME_INFO } from "../../content/data/biome-info";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
+import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
 import {
@@ -32,6 +33,8 @@ const FIELDS = [
   "reward",
   "tech",
   "carcass",
+  "installation",
+  "waves",
   "days-left",
   "biome",
   "settlement",
@@ -41,6 +44,9 @@ const FIELDS = [
 
 type Field = (typeof FIELDS)[number];
 
+/** Rows that only a defence has (#1175); hidden for every other type. */
+const DEFENCE_FIELDS: readonly Field[] = ["installation", "waves"];
+
 const LABELS: Readonly<Record<Field, string>> = {
   type: "Type",
   city: "City",
@@ -48,6 +54,8 @@ const LABELS: Readonly<Record<Field, string>> = {
   reward: "Reward",
   tech: "Tech reward",
   carcass: "Tech carcass",
+  installation: "Installation",
+  waves: "Bug waves",
   "days-left": "Days left",
   biome: "Biome",
   settlement: "Settlement",
@@ -76,6 +84,7 @@ export class MissionDetailsView {
   private description: HTMLElement | undefined;
   private plan: HTMLButtonElement | undefined;
   private readonly values = new Map<Field, HTMLElement>();
+  private readonly terms = new Map<Field, HTMLElement>();
   private shown: MissionId | undefined;
   private onPlan: (() => void) | undefined;
 
@@ -124,6 +133,7 @@ export class MissionDetailsView {
       value.dataset.field = `detail-${field}`;
       grid.append(term, value);
       this.values.set(field, value);
+      this.terms.set(field, term);
     }
 
     const plan = doc.createElement("button");
@@ -169,6 +179,12 @@ export class MissionDetailsView {
       carcass: mission.mapParams.techCarcass
         ? `Reported · +${formatTechPoints(mission.mapParams.techCarcass.techPoints)}`
         : "None reported",
+      installation: mission.defence
+        ? `${INSTALLATION_SITES[mission.defence.installation].name} · ${formatWhole(mission.defence.generators)} generators`
+        : "",
+      waves: mission.defence
+        ? `${formatWhole(mission.defence.waves)} timed waves`
+        : "",
       "days-left": `${formatWhole(mission.expiresDay - state.overworld.day)} d`,
       biome: BIOME_INFO[mission.mapParams.biome].name,
       settlement: mission.mapParams.settlement,
@@ -178,6 +194,16 @@ export class MissionDetailsView {
     for (const [field, element] of this.values) {
       if (element.textContent !== values[field]) {
         element.textContent = values[field];
+      }
+      // A defence's rows only appear on a defence (#1175); a clearance
+      // briefing keeps the grid it always had.
+      if (DEFENCE_FIELDS.includes(field)) {
+        const hidden = mission.defence === undefined;
+        element.hidden = hidden;
+        const term = this.terms.get(field);
+        if (term) {
+          term.hidden = hidden;
+        }
       }
     }
     if (this.description.textContent !== type.description) {

@@ -29,7 +29,7 @@ import {
   clumpScore,
   distanceScore,
   exposureScore,
-  landingSite,
+  huntSite,
   recalledSite,
   huntableEnemies,
   moveTowards,
@@ -176,7 +176,7 @@ export class LurkerBehaviour implements BugBehaviour {
     // fell through to the deploy zone it was already standing beside,
     // found no better tile and idled for the rest of the mission — which
     // is why concealment could not be turned up at all (#695).
-    const site = recalledSite(mission, unit) ?? landingSite(mission, unit.pos);
+    const site = recalledSite(mission, unit) ?? huntSite(mission, unit.pos);
     if (site === undefined) {
       return [];
     }

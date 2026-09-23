@@ -1320,6 +1320,22 @@
 }
 
 /*
+ * A defence's row (#1175): the label, then its progress line under it.
+ * "2 / 3 generators · wave 3 / 5 · 4 bugs left" is wider than the rail
+ * leaves beside a label, so it goes below and may wrap there.
+ */
+.tut-hud__objectives .tut-list > li > .tut-hud__defence {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tut-hud__objectives .tut-list > li > .tut-hud__defence > .tut-mono {
+  white-space: normal;
+}
+
+/*
  * The squad strip (#1041): the player's own force, at a glance.
  *
  * Scoped to this panel rather than styling `.tut-list > li`, which every

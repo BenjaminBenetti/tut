@@ -86,7 +86,11 @@ export class CoastalRoadPass implements GenerationPass {
         ) {
           for (let inward = 0; inward <= back; inward++) {
             const at = fromCoast(draft, edge, lateral, inward);
-            if (!draft.inBounds(at.x, at.z) || draft.isCovered(at.x, at.z))
+            if (
+              !draft.inBounds(at.x, at.z) ||
+              draft.isCovered(at.x, at.z) ||
+              draft.isSiteReserved(at.x, at.z)
+            )
               continue;
             const surface = draft.groundSurfaceAt(at.x, at.z);
             if (surface !== SurfaceIds.ROAD && surface !== SurfaceIds.SIDEWALK)

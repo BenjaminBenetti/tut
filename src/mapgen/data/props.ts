@@ -7,6 +7,18 @@ import type { PropDefinition } from "../model/prop";
 
 /** Well-known prop kinds (ADR 0004 §4.4). Biomes may add more in data. */
 export const PropKindIds = {
+  INSTALLATION_RADAR: "installation-radar",
+  INSTALLATION_CANNON: "installation-cannon",
+  PUMP_UNIT: "pump-unit",
+  MARBLE_PILLAR: "marble-pillar",
+  BLAST_BARRIER: "blast-barrier",
+  INSTALLATION_SENSOR: "installation-sensor",
+  INSTALLATION_PUMP_HOUSE: "installation-pump-house",
+  INSTALLATION_TANKS: "installation-tanks",
+  INSTALLATION_SPRAY_TOWER: "installation-spray-tower",
+  INSTALLATION_BATTERY: "installation-battery",
+  INSTALLATION_BANK: "installation-bank",
+
   INFESTED_NEST: "infested-nest",
   INFESTED_HIVE: "infested-hive",
   INFESTED_CARAPACE_WALL_RIDGE: "infested-carapace-wall-ridge",
@@ -74,6 +86,10 @@ export const PropKindIds = {
   CACTUS: "cactus",
   ROOFTOP_HVAC: "rooftop-hvac",
   ROOFTOP_WATER_TANK: "rooftop-water-tank",
+  SENSOR_MAST: "sensor-mast",
+  DISPERSAL_STACK: "dispersal-stack",
+  BATTERY_EMPLACEMENT: "battery-emplacement",
+  STRONGROOM: "strongroom",
 } as const;
 
 /** One of the well-known prop kind ids. */
@@ -95,6 +111,97 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
  * tier: they are the ground, and no weapon on the arsenal moves it.
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
+  {
+    id: PropKindIds.INSTALLATION_RADAR,
+    footprint: { w: 5, d: 5 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    demolition: 3,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_CANNON,
+    footprint: { w: 4, d: 5 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 2,
+    demolition: 3,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.PUMP_UNIT,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    demolition: 2,
+    placements: ["interior"],
+  },
+  {
+    id: PropKindIds.MARBLE_PILLAR,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 2,
+    demolition: 3,
+    placements: ["interior"],
+  },
+  {
+    id: PropKindIds.BLAST_BARRIER,
+    cover: CoverLevel.LOW,
+    blocksLos: false,
+    demolition: 3,
+    placements: ["yard"],
+  },
+  // Legacy sealed models remain loadable for missions saved before modular sites.
+
+  {
+    id: PropKindIds.INSTALLATION_SENSOR,
+    footprint: { w: 10, d: 8 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_PUMP_HOUSE,
+    footprint: { w: 8, d: 6 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_TANKS,
+    footprint: { w: 4, d: 6 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 7,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_SPRAY_TOWER,
+    footprint: { w: 3, d: 3 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 8,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_BATTERY,
+    footprint: { w: 12, d: 10 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    placements: ["site"],
+  },
+  {
+    id: PropKindIds.INSTALLATION_BANK,
+    footprint: { w: 12, d: 10 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 8,
+    placements: ["site"],
+  },
+
   ...[
     PropKindIds.INFESTED_CARAPACE_WALL_RIDGE,
     PropKindIds.INFESTED_CARAPACE_WALL_OVERLAP,
@@ -337,6 +444,37 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.HIGH,
     blocksLos: true,
     placements: ["roof"],
+  },
+  // The signature pieces an installation's landmark wears on its roof
+  // (#1175): one per installation kind, so the building the player is
+  // defending reads as the thing they built.
+  {
+    id: PropKindIds.SENSOR_MAST,
+    demolition: 3,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.DISPERSAL_STACK,
+    demolition: 3,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.BATTERY_EMPLACEMENT,
+    demolition: 3,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.STRONGROOM,
+    demolition: 3,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof", "interior"],
   },
   {
     id: PropKindIds.CAR,

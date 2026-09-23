@@ -8,6 +8,7 @@ import type { MissionResolver } from "../../overworld/model/mission-resolver";
 import type {
   MechDamageReport,
   MissionResult,
+  MissionResultDefence,
   SquadCasualties,
 } from "../../overworld/model/mission-result";
 import {
@@ -23,7 +24,11 @@ import {
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type { TacticalError } from "../model/tactical-error";
-import type { TacticalState } from "../model/tactical-state";
+import type {
+  DefendGeneratorsObjective,
+  TacticalState,
+} from "../model/tactical-state";
+import { defendStatus } from "./defence-service";
 import { CARCASS_HARVESTED } from "../model/carcass-harvested-event";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import { UNIT_DIED } from "../model/unit-died-event";
@@ -189,6 +194,30 @@ export function tacticalMissionResult(
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
     ...leftBehindField(tactical, roster),
     ...(harvested > 0 ? { techPointsHarvested: harvested } : {}),
+    ...defenceField(tactical),
+  };
+}
+
+/**
+ * How a defence ended (#1175): the installation and whether any of its
+ * generators was still running when the mission closed. Absent for
+ * every other mission so their results are exactly what they were.
+ */
+function defenceField(tactical: TacticalState): {
+  defence?: MissionResultDefence;
+} {
+  const objective = tactical.objectives.find(
+    (candidate): candidate is DefendGeneratorsObjective =>
+      candidate.kind === "defend-generators",
+  );
+  if (objective === undefined) {
+    return {};
+  }
+  return {
+    defence: {
+      installation: objective.installation,
+      held: defendStatus(tactical, objective) !== "failed",
+    },
   };
 }
 

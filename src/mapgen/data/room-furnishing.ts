@@ -281,6 +281,49 @@ export const ROOM_FURNISHING: Readonly<
       { props: [Prop.PLANTER], zone: "corner", count: 1 },
     ],
   ]),
+  "control-room": furnishing("control-room", 4, 14, [
+    [
+      { props: [Prop.DESK_COMPUTER], zone: "aisle", count: 6, spacing: 2 },
+      { props: [Prop.ELECTRONICS_DISPLAY], zone: "wall", count: 4 },
+      { props: [Prop.FILING_CABINET], zone: "wall", count: 2 },
+    ],
+  ]),
+  "pump-room": furnishing("pump-room", 4, 12, [
+    [
+      { props: [Prop.PUMP_UNIT], zone: "aisle", count: 6, spacing: 2 },
+      { props: [Prop.WORKBENCH], zone: "wall", count: 2 },
+      { props: [Prop.HARDWARE_SHELF], zone: "wall", count: 3 },
+    ],
+  ]),
+  armory: furnishing("armory", 4, 14, [
+    [
+      { props: [Prop.HARDWARE_SHELF], zone: "aisle", count: 5, spacing: 2 },
+      { props: [Prop.CRATE], zone: "wall", count: 5 },
+      { props: [Prop.WORKBENCH], zone: "wall", count: 2 },
+    ],
+  ]),
+  "banking-hall": furnishing("banking-hall", 5, 16, [
+    [
+      {
+        props: [Prop.MARBLE_PILLAR],
+        zone: "aisle",
+        fallbackZone: "wall",
+        count: 4,
+        spacing: 3,
+      },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 4 },
+      { props: [Prop.SOFA], zone: "wall", count: 3 },
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 2 },
+      { props: [Prop.PLANTER], zone: "corner", count: 3 },
+    ],
+  ]),
+  vault: furnishing("vault", 4, 10, [
+    [
+      { props: [Prop.STRONGROOM], zone: "wall", count: 3 },
+      { props: [Prop.FILING_CABINET], zone: "wall", count: 4 },
+      { props: [Prop.CRATE], zone: "aisle", count: 2 },
+    ],
+  ]),
   workshop: furnishing("workshop", 4, 10, [
     [
       { props: [Prop.WORKBENCH], zone: "wall", count: 3 },

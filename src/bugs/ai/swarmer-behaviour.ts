@@ -18,7 +18,7 @@ import {
   attackOptions,
   bestBy,
   clumpScore,
-  landingSite,
+  huntSite,
   livingAllies,
   livingEnemies,
   moveTowards,
@@ -157,7 +157,7 @@ export class SwarmerBehaviour implements BugBehaviour {
     unit: Unit,
     ctx: BehaviourContext,
   ): readonly TacticalCommand[] {
-    const site = landingSite(mission, unit.pos);
+    const site = huntSite(mission, unit.pos);
     if (site === undefined) {
       return [];
     }

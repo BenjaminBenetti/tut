@@ -19,6 +19,11 @@ export const HookKinds = {
   EXTRACTION: "extraction",
   /** A harvestable dead bug worth tech points (#1171); at most one a map. */
   TECH_CARCASS: "tech-carcass",
+  /**
+   * A generator the squad holds through timed bug waves (#1175): one
+   * point hook per generator, placed at its facility's service sockets.
+   */
+  GENERATOR: "generator",
 } as const;
 
 /** Scalar metadata a hook or requirement may carry, e.g. `hatchRadius`. */

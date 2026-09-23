@@ -1,3 +1,4 @@
+import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import { advanceDay } from "../../overworld/model/advance-day-command";
 import type {
   MissionOutcome,
@@ -77,6 +78,27 @@ const OUTCOME_COPY: Readonly<Record<MissionOutcome, OutcomeCopy>> = {
     tone: "danger",
   },
 };
+
+/**
+ * A defence says what became of the installation (#1175) instead of the
+ * generic line: held through every wave, held when the force pulled
+ * out, or lost with its generators. Undefined for any other mission.
+ */
+function defenceTagline(result: MissionResult): string | undefined {
+  if (result.defence === undefined) {
+    return undefined;
+  }
+  const name = INSTALLATION_SITES[result.defence.installation].name;
+  if (result.outcome === "won") {
+    return `The ${name.toLowerCase()} held through every wave. The force is coming home with full rewards.`;
+  }
+  if (result.defence.held) {
+    return `The force pulled out with the ${name.toLowerCase()} still running. Survivors are coming home.`;
+  }
+  return result.outcome === "lost"
+    ? `The generators fell and the ${name.toLowerCase()} is lost. The force was wiped, or the mission was left with the installation down.`
+    : `The generators fell; the ${name.toLowerCase()} is lost. Survivors are coming home.`;
+}
 
 /**
  * Shown when a stored result names a city the map no longer has — only
@@ -234,7 +256,8 @@ export class MissionResultsScreen implements Screen {
     title.textContent = copy.title;
     const tagline = doc.createElement("p");
     tagline.className = "tut-dim";
-    tagline.textContent = copy.tagline;
+    tagline.dataset.field = "tagline";
+    tagline.textContent = defenceTagline(result) ?? copy.tagline;
     // The city, not the id (#739). The player chose this mission from a
     // list that called it Seoul; the screen they land on afterwards has
     // to agree. `cityId` is carried on the result because the mission

@@ -1,3 +1,4 @@
+import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import type { GameState } from "../../save/model/game-state";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { CommandError } from "../../core/model/command-error";
@@ -126,7 +127,10 @@ export function namesFor(
   const spawners = new Set((mission?.spawners ?? []).map((nest) => nest.id));
   /** The ordinal of the objective tracking `id` as its target, or -1. */
   const trackedAs = (id: string): number =>
-    objectives.findIndex((objective) => objective.targetId === id);
+    objectives.findIndex(
+      (objective) =>
+        objective.kind !== "defend-generators" && objective.targetId === id,
+    );
   const nameUnit = (id: string): string => {
     const unit = units.get(id);
     if (!unit) {
@@ -144,8 +148,14 @@ export function namesFor(
   };
   return {
     unit: nameUnit,
-    objective: (id) =>
-      ordinalOf(objectives.findIndex((objective) => objective.id === id)),
+    // A defence is named for what it holds (#1175); a spawner objective
+    // by its ordinal, as the tracker shows it.
+    objective: (id) => {
+      const objective = objectives.find((candidate) => candidate.id === id);
+      return objective?.kind === "defend-generators"
+        ? `the ${INSTALLATION_SITES[objective.installation].name.toLowerCase()}`
+        : ordinalOf(objectives.findIndex((candidate) => candidate.id === id));
+    },
     spawner: (id) => ordinalOf(trackedAs(id)),
     // Units first: they are the common target and the id sets do not
     // overlap, since the mission issues both from one generator. Then
@@ -268,6 +278,8 @@ export function describeRefusal(
       return `That objective is not in this mission`;
     case "objective-complete":
       return `${capitalise(names.objective(error.objectiveId))} is already done`;
+    case "objective-not-interactive":
+      return `${capitalise(names.objective(error.objectiveId))} is held by standing your ground, not by working it`;
     case "objective-not-yours":
       return `${names.unit(error.unitId)} is not on the side whose objective that is`;
     case "objective-target-missing":

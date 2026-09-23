@@ -62,11 +62,13 @@ export function propSurfaceModel(
  * Seats shallow furniture against its back wall inside the same occupied tile.
  * Only a solid/window rear edge counts: doorways, side walls and exterior
  * furniture keep their existing pivots. No sideways corner fit is applied.
+ * An authored wall kit may reserve extra depth for its mouldings or pipework.
  */
 export function propAppearanceOffset(
   prop: Prop,
   tile: Tile,
   turns: Rotation,
+  wallClearance = INTERIOR_FURNITURE_STYLE.wallClearance,
 ): { x: number; z: number } {
   const style = INTERIOR_FURNITURE_STYLE;
   const rearExtent = style.rearExtents[prop.kind as KnownPropKindId];
@@ -80,7 +82,7 @@ export function propAppearanceOffset(
   const back = FURNITURE_BACK[turns];
   const wall = tile.walls[back];
   if (wall !== "solid" && wall !== "window") return { x: 0, z: 0 };
-  const distance = Math.max(0, 0.5 - style.wallClearance - rearExtent);
+  const distance = Math.max(0, 0.5 - wallClearance - rearExtent);
   const neighbour = stepGridPos(tile, back);
   return {
     x: (neighbour.x - tile.x) * distance,

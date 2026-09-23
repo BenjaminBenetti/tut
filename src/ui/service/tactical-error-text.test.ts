@@ -69,6 +69,7 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "takes-no-orders", unitId: ID },
   { kind: "objective-not-found", objectiveId: ID },
   { kind: "objective-complete", objectiveId: ID },
+  { kind: "objective-not-interactive", objectiveId: ID },
   { kind: "objective-not-yours", unitId: ID },
   { kind: "objective-target-missing", objectiveId: ID, targetId: ID },
   { kind: "objective-out-of-reach", objectiveId: ID, distance: 9, range: 4 },
@@ -268,5 +269,36 @@ describe("namesFor", () => {
     expect(
       describeRefusal({ kind: "no-line-of-sight", targetId: "unit-9" }, names),
     ).toBe("No line of sight to Swarmer");
+  });
+});
+
+describe("namesFor on a defence (#1175)", () => {
+  it("names the defence objective by its installation, and words its refusal", () => {
+    const names = namesFor(
+      {
+        units: [],
+        spawners: [],
+        objectives: [
+          {
+            id: "objective-d",
+            kind: "defend-generators",
+            installation: "defensive-battery",
+            targetIds: ["gen-1"],
+            complete: false,
+            failed: false,
+          },
+        ],
+      } as unknown as Parameters<typeof namesFor>[0],
+      undefined,
+    );
+    expect(names.objective("objective-d")).toBe("the defensive battery");
+    expect(
+      describeRefusal(
+        { kind: "objective-not-interactive", objectiveId: "objective-d" },
+        names,
+      ),
+    ).toBe(
+      "The defensive battery is held by standing your ground, not by working it",
+    );
   });
 });

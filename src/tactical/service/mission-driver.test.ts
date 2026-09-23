@@ -35,6 +35,7 @@ import {
 } from "./tactical-fixtures.test-helper";
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
+import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { ATTACK } from "../model/attack-command";
@@ -171,6 +172,7 @@ function startedMission(seed: number, mapSeed: string): TacticalState {
       unitTuning: UNIT_TUNING,
       spawnTuning: SPAWN_TUNING,
       garrison: GARRISON_TUNING,
+      generator: GENERATOR_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

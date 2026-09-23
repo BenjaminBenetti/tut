@@ -11,6 +11,8 @@ export const OBJECTIVE_UPDATED = "tactical:objective-updated";
 export interface ObjectiveUpdatedPayload {
   readonly objectiveId: string;
   readonly complete: boolean;
+  /** True when the objective can no longer be completed (#1175). */
+  readonly failed?: boolean;
 }
 
 /** An objective's completion changed. */

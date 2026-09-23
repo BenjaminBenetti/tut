@@ -19,6 +19,10 @@ import {
 import { withVision } from "../../src/tactical/service/vision-service.ts";
 import { EQUIPMENT } from "../../src/tactical/data/equipment.ts";
 import { COMBAT_TUNING } from "../../src/tactical/data/combat-tuning.ts";
+import { GENERATOR_TUNING } from "../../src/tactical/data/generator-tuning.ts";
+import { generatorUnit } from "../../src/tactical/service/unit-factory.ts";
+import { UNIT_KINDS } from "../../src/tactical/model/unit.ts";
+import { SequentialIdGenerator } from "../../src/core/service/sequential-id-generator.ts";
 import { OBJECTIVE_TUNING } from "../../src/tactical/data/objective-tuning.ts";
 import {
   createExtractHandler,
@@ -206,6 +210,106 @@ function requestsFor(state, rules) {
 }
 
 describe("Relay compatibility with actual game requests", () => {
+  it.each(UNIT_KINDS)(
+    "accepts observed units of registered kind %s",
+    (kind) => {
+      const { state, rules } = scenario("tdf");
+      const mission = {
+        ...state,
+        units: state.units.map((unit) =>
+          unit.id === "ally" ? { ...unit, kind } : unit,
+        ),
+      };
+      const request = requestsFor(mission, rules)[0].request;
+      expect(
+        Object.values(request.state.capabilities).some(
+          (capability) => capability.kind === kind,
+        ),
+      ).toBe(true);
+      expect(validGameRequest(request)).toBe(true);
+    },
+  );
+
+  it.each(["tdf", "bugs"])(
+    "accepts defence objectives and generator targets for %s",
+    (team) => {
+      const { state, rules } = scenario(team);
+      const generator = generatorUnit(
+        GENERATOR_TUNING,
+        { pos: { x: 4, y: 0, z: 3 }, facing: "n" },
+        new SequentialIdGenerator(),
+      );
+      const mission = withVision({
+        state: {
+          ...state,
+          units: [...state.units, generator.unit],
+          templates: {
+            ...state.templates,
+            [generator.template.id]: generator.template,
+          },
+          objectives: [
+            {
+              id: "defence",
+              kind: "defend-generators",
+              installation: "sensor-array",
+              targetIds: [generator.unit.id],
+              complete: false,
+              failed: false,
+            },
+          ],
+          edgeSpawn: { wave: 1, totalWaves: 3, nextTurn: 3 },
+        },
+        events: [],
+      }).state;
+      const pages = requestsFor(mission, rules);
+      expect(pages[0].request.state.objectives).toEqual([
+        {
+          id: "defence",
+          kind: "defend-generators",
+          target_ids: [generator.unit.id],
+          complete: false,
+          failed: false,
+        },
+      ]);
+      expect(
+        pages.some(
+          ({ request }) =>
+            request.questions.action?.criteria[
+              `move_to_entity:${generator.unit.id}`
+            ],
+        ),
+      ).toBe(true);
+      for (const { stage, request } of pages)
+        expect(validGameRequest(request), stage).toBe(true);
+
+      if (team === "bugs") {
+        const hidden = {
+          ...mission,
+          vision: {
+            ...mission.vision,
+            bugs: { visible: [], explored: [], spotted: [], lastSeen: {} },
+          },
+        };
+        const hiddenPages = requestsFor(hidden, rules);
+        expect(
+          hiddenPages[0].request.state.entities.some(
+            (unit) => unit.id === generator.unit.id,
+          ),
+        ).toBe(false);
+        expect(
+          hiddenPages.some(
+            ({ request }) =>
+              request.questions.action?.criteria[
+                `move_to_entity:${generator.unit.id}`
+              ],
+          ),
+        ).toBe(false);
+        for (const { stage, request } of hiddenPages)
+          expect(validGameRequest(request), stage).toBe(true);
+      }
+    },
+  );
+
   it("requires explicit relay coverage when a command or mech action family is added", () => {
     const ordinary = Object.keys(JEV_ACTION_OWNER_FIELDS)
       .filter(

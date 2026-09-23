@@ -40,7 +40,8 @@ export class InfestationPass implements GenerationPass {
         if (
           infestationPressure(draft, x, z) <
             INFESTATION_TUNING.growthThreshold ||
-          draft.isLandingReserved(x, z)
+          draft.isLandingReserved(x, z) ||
+          draft.isSiteReserved(x, z)
         )
           continue;
         const surface = draft.groundSurfaceAt(x, z);

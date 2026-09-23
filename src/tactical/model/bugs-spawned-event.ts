@@ -15,6 +15,10 @@ export interface BugsSpawnedPayload {
   readonly source: "spawner" | "edge";
   /** The spawner or edge-spawn hook they came from. */
   readonly sourceId: string;
+  /** One-based wave number for an edge wave (#1175). */
+  readonly wave?: number;
+  /** How many waves the mission sends, when it is a finite count (#1175). */
+  readonly totalWaves?: number;
 }
 
 /** Bugs appeared on the map. */

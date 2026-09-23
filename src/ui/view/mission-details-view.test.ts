@@ -84,3 +84,49 @@ describe("MissionDetailsView", () => {
     expect(onPlanDeployment).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("MissionDetailsView on a defence (#1175)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const field = (name: string): HTMLElement | null =>
+    root.querySelector<HTMLElement>(`[data-field="detail-${name}"]`);
+
+  it("names the installation, its generators and the wave count, and hides them again on a clearance", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const base = missionAt("mission-1", "cairo", 7, 4);
+    const defence = {
+      ...base,
+      typeId: "defend-installation" as const,
+      defence: {
+        installation: "repellent-dispersal" as const,
+        deployableId: "deployable-1",
+        generators: 4,
+        waves: 5,
+      },
+    };
+    view.update(campaignOnDay(4, [defence]), defence);
+    expect(field("type")?.textContent).toBe(
+      MISSION_TYPES["defend-installation"].name,
+    );
+    expect(field("installation")?.textContent).toBe(
+      "Repellent dispersal · 4 generators",
+    );
+    expect(field("waves")?.textContent).toBe("5 timed waves");
+    expect(field("installation")?.hidden).toBe(false);
+    expect(field("waves")?.hidden).toBe(false);
+
+    view.update(campaignOnDay(4, [base]), base);
+    expect(field("installation")?.hidden).toBe(true);
+    expect(field("waves")?.hidden).toBe(true);
+  });
+});

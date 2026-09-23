@@ -82,4 +82,54 @@ export const BUILDING_ROOM_PROGRAMS: Readonly<
       repeat: [Room.OFFICE, Room.OFFICE, Room.MEETING],
     },
   },
+  "sensor-array": {
+    ground: {
+      arrival: Room.RECEPTION,
+      roomSlots: { workfloor: Room.CONTROL_ROOM },
+      primary: [Room.CONTROL_ROOM, Room.WORKSHOP, Room.BREAK_ROOM],
+      repeat: [Room.OFFICE],
+    },
+    upper: {
+      arrival: Room.CONTROL_ROOM,
+      roomSlots: { workfloor: Room.CONTROL_ROOM },
+      primary: [Room.MEETING, Room.OFFICE],
+      repeat: [Room.OFFICE],
+    },
+  },
+  "repellent-dispersal": {
+    ground: {
+      arrival: Room.PUMP_ROOM,
+      primary: [Room.CONTROL_ROOM, Room.WORKSHOP],
+      repeat: [Room.STORAGE],
+    },
+    upper: {
+      arrival: Room.PUMP_ROOM,
+      primary: [Room.WORKSHOP],
+      repeat: [Room.STORAGE],
+    },
+  },
+  "defensive-battery": {
+    ground: {
+      arrival: Room.ARMORY,
+      primary: [Room.CONTROL_ROOM, Room.WORKSHOP],
+      repeat: [Room.STORAGE],
+    },
+    upper: {
+      arrival: Room.ARMORY,
+      primary: [Room.CONTROL_ROOM],
+      repeat: [Room.STORAGE],
+    },
+  },
+  bank: {
+    ground: {
+      arrival: Room.BANKING_HALL,
+      primary: [Room.VAULT, Room.OFFICE],
+      repeat: [Room.VAULT],
+    },
+    upper: {
+      arrival: Room.OFFICE,
+      primary: [Room.MEETING, Room.BREAK_ROOM],
+      repeat: [Room.OFFICE],
+    },
+  },
 };

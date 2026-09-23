@@ -172,7 +172,7 @@ const equipment = object(equipmentFields, equipmentOptions);
 
 const staticFields = {
   type: label,
-  kind: oneOf("squad", "mech", "bug", "turret"),
+  kind: oneOf("squad", "mech", "bug", "turret", "generator"),
   movement_class: oneOf("infantry", "mech"),
   max_hp: stat,
   armor: stat,
@@ -266,7 +266,11 @@ const stateShape = object(
     objectives: list(
       object(
         { id: identifier, kind: identifier, complete: bool },
-        { position: coordinate },
+        {
+          position: coordinate,
+          target_ids: list(identifier, 256),
+          failed: bool,
+        },
       ),
       256,
     ),

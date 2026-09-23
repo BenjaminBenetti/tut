@@ -156,7 +156,11 @@ function protectedColumns(draft: MapDraft): Set<number> {
 
 /** Rejects occupied ground, walls and every potential slope, including corners. */
 function supportedGround(draft: MapDraft, tile: TileCoord): boolean {
-  if (!isOpenGround(draft, tile.x, tile.z)) return false;
+  if (
+    !isOpenGround(draft, tile.x, tile.z) ||
+    draft.isSiteReserved(tile.x, tile.z)
+  )
+    return false;
   // The marker is independent of slopeShare; a visual knob must not reroll fences.
   if (draft.isNaturalEdge(tile.x, tile.z)) return false;
   if (Object.keys(draft.wallsAt(tile)).length > 0) return false;

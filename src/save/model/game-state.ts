@@ -53,10 +53,14 @@ import type { TechState } from "../../tech/model/tech-state";
  *   `tech` slice, `missions[].rewards.techPoints`,
  *   `lastMissionResult.techPointsAwarded` and `activeMission.carcasses`.
  *   Older saves have earned and unlocked nothing.
- * - `27`: optional mission Jev controls, faction knowledge and resumable
+ * - `27`: defend-installation missions (#1175): `missions[].defence`, a
+ *   `defend-generators` objective, `generator` units and
+ *   `activeMission.edgeSpawn.totalWaves`, `lastMissionResult.defence`.
+ *   All optional; older saves hold none.
+ * - `28`: optional mission Jev controls, faction knowledge and resumable
  *   activation progress. Older saves leave Jev disabled.
  */
-export const GAME_STATE_SCHEMA_VERSION = 27;
+export const GAME_STATE_SCHEMA_VERSION = 28;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

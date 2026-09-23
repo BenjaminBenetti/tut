@@ -1,6 +1,7 @@
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS } from "../../core/model/direction";
 import { manhattanDistance, stepGridPos } from "../../core/service/grid-math";
+import type { RooftopFurnishing } from "../model/rooftop-furnishing";
 import { ROOFTOP_FURNISHING } from "../data/rooftop-furnishing";
 import { SurfaceIds } from "../data/surfaces";
 import type {
@@ -11,8 +12,9 @@ import type {
 import type { MapDraft } from "../model/map-draft";
 import type { TileCoord } from "../model/tile-coord";
 import { unreachableInteriorTiles } from "./interior/building-reachability";
+import { propPlacementTiles } from "../service/prop-footprint";
 
-/** Furnishes real walkable roofs with small service rows, after mission clearances are known. */
+/** Adds service equipment around preplaced fixtures after mission clearances are known. */
 export class RooftopPropPass implements GenerationPass {
   readonly id = "rooftop-props";
   readonly requires: readonly DraftCapability[] = [
@@ -35,10 +37,13 @@ export class RooftopPropPass implements GenerationPass {
       const roofTiles = draft
         .tilesOfBuilding(building.id)
         .filter((tile) => tile.y === y && tile.surface === SurfaceIds.ROOF);
-      const quota = Math.min(
-        style.maxProps,
-        Math.floor(roofTiles.length / style.tilesPerProp),
-      );
+      const existing = draft.props.filter(
+        (prop) =>
+          prop.tile.y === y &&
+          draft.getTile(prop.tile)?.buildingId === building.id &&
+          style.props.includes(prop.kind),
+      ).length;
+      const quota = Math.max(0, roofQuota(style, roofTiles.length) - existing);
       if (
         quota === 0 ||
         style.props.some((kind) => !registries.props.has(kind))
@@ -53,13 +58,24 @@ export class RooftopPropPass implements GenerationPass {
         for (const anchor of candidates) {
           // Rows run parallel to the entrance wall, giving the rooftop a coherent service side.
           const alongX = entrance.side === "n" || entrance.side === "s";
+          const rotation = alongX ? 0 : 1;
           const group = Array.from({ length: size }, (_, i) => ({
             x: anchor.x + (alongX ? i * style.spacing : 0),
             y,
             z: anchor.z + (alongX ? 0 : i * style.spacing),
           }));
+          const footprints = group.map((tile, i) =>
+            propPlacementTiles(
+              tile,
+              registries.props.get(style.props[i % style.props.length]!),
+              rotation,
+            ),
+          );
+          const occupied = footprints.flat();
           if (
-            !group.every((tile) =>
+            new Set(occupied.map((tile) => `${tile.x},${tile.z}`)).size !==
+              occupied.length ||
+            !occupied.every((tile) =>
               availableRoofTile(draft, building.id, tile, blocked),
             )
           )
@@ -68,7 +84,8 @@ export class RooftopPropPass implements GenerationPass {
             draft.addProp(
               style.props[i % style.props.length]!,
               tile,
-              alongX ? 0 : 1,
+              rotation,
+              footprints[i]!.length > 1 ? footprints[i] : undefined,
             ),
           );
           if (
@@ -89,6 +106,18 @@ export class RooftopPropPass implements GenerationPass {
       `${count} utility props in ${roofs} roof service groups; perimeter and landings clear`,
     );
   }
+}
+
+/**
+ * How many pieces a roof of `tiles` gets: one per `tilesPerProp` up to
+ * `maxProps`, and never under `minProps` (#1175), so a landmark's
+ * signature piece stands on a roof too small to earn plant.
+ */
+export function roofQuota(style: RooftopFurnishing, tiles: number): number {
+  return Math.max(
+    style.minProps ?? 0,
+    Math.min(style.maxProps, Math.floor(tiles / style.tilesPerProp)),
+  );
 }
 
 /** Every piece has a full walkable roof apron and stays off the perimeter firing line. */

@@ -21,6 +21,7 @@ import {
   createExtractHandler,
   createInteractHandler,
   reachableObjectives,
+  DEFAULT_OBJECTIVE_INTERACTIONS,
 } from "./objective-service";
 import {
   ctxWith,
@@ -240,6 +241,7 @@ describe("createInteractHandler", () => {
   it("hands the objective's own effect to the interaction for its kind", () => {
     const seen: string[] = [];
     const custom = createInteractHandler(TUNING, {
+      ...DEFAULT_OBJECTIVE_INTERACTIONS,
       "destroy-spawner": (mission, objective, unit) => {
         seen.push(`${objective.id}:${unit.id}`);
         return ok({ state: mission, events: [] });
@@ -257,6 +259,7 @@ describe("createInteractHandler", () => {
 
   it("spends nothing when the interaction refuses", () => {
     const custom = createInteractHandler(TUNING, {
+      ...DEFAULT_OBJECTIVE_INTERACTIONS,
       "destroy-spawner": () => err({ kind: "unit-dead", unitId: "u" }),
     });
     const applied = custom(besideSpawner(), interact("u", "objective-1"), CTX);

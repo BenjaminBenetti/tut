@@ -119,9 +119,12 @@ describe("assessMap", () => {
     expect(assessment.coveredFiringShare).toBe(0);
   });
 
-  it("reports a walkable, shootable map for every biome and settlement", () => {
-    for (const biome of BIOME_IDS) {
-      for (const settlement of SETTLEMENT_SCALES) {
+  // Keep every seed and assertion, but give each generated map its own
+  // timeout: the combined 36-map sweep exceeded 30 seconds on CI.
+  describe.each(BIOME_IDS)("on %s", (biome) => {
+    it.each(SETTLEMENT_SCALES)(
+      "reports a walkable, shootable %s map",
+      (settlement) => {
         const label = `${biome}/${settlement}`;
         const map = generateTacticalMap(
           recipe(`assess-${biome}-${settlement}`, biome, settlement),
@@ -140,9 +143,10 @@ describe("assessMap", () => {
         // a city map leaves them on one level (#444).
         expect(assessment.infantryLevelSpan, label).toBeGreaterThan(1);
         expect(assessment.mechLevelSpan, label).toBeGreaterThanOrEqual(1);
-      }
-    }
-  }, 30_000);
+      },
+      30_000,
+    );
+  });
 });
 
 // ===========================================

@@ -11,6 +11,9 @@ export interface JevObjective {
   readonly kind: string;
   readonly complete: boolean;
   readonly position?: TileCoord;
+  /** Defence targets are also exposed as entity destinations when known to the faction. */
+  readonly target_ids?: readonly string[];
+  readonly failed?: boolean;
 }
 
 /** The same destination sources feed observation and the exhaustive movement provider registry. */
@@ -58,11 +61,26 @@ export function jevDestinations(
 
 /** Objective locations are public intel; unobserved nest health is not. */
 export function jevObjectives(mission: TacticalState): readonly JevObjective[] {
-  return mission.objectives.map((objective) => ({
-    id: objective.id,
-    kind: objective.kind,
-    complete: objective.complete,
-    position: mission.spawners.find((nest) => nest.id === objective.targetId)
-      ?.pos,
-  }));
+  return mission.objectives.map((objective): JevObjective => {
+    const common = {
+      id: objective.id,
+      kind: objective.kind,
+      complete: objective.complete,
+    };
+    switch (objective.kind) {
+      case "destroy-spawner":
+        return {
+          ...common,
+          position: mission.spawners.find(
+            (nest) => nest.id === objective.targetId,
+          )?.pos,
+        };
+      case "defend-generators":
+        return {
+          ...common,
+          target_ids: objective.targetIds,
+          failed: objective.failed,
+        };
+    }
+  });
 }

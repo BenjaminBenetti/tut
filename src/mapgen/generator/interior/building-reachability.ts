@@ -15,7 +15,7 @@ import type { TileCoord } from "../../model/tile-coord";
  * expected to be reached. Returns the tiles it could not reach from
  * `start`. The interior and prop passes use it to accept or reject a
  * placement before the map exists; the validator repeats the check on
- * the frozen map.
+ * the frozen map. Optional occupied cells model mission units without adding temporary props.
  */
 export function unreachableInteriorTiles(
   draft: MapDraft,
@@ -23,10 +23,16 @@ export function unreachableInteriorTiles(
   connectors: readonly Connector[],
   start: TileCoord,
   maxLevel: number,
+  occupied?: ReadonlySet<number>,
 ): DraftTile[] {
   const tiles = draft
     .tilesOfBuilding(buildingId)
-    .filter((tile) => tile.y <= maxLevel && draft.propAt(tile) === undefined);
+    .filter(
+      (tile) =>
+        tile.y <= maxLevel &&
+        draft.propAt(tile) === undefined &&
+        !occupied?.has(draft.tileKey(tile)),
+    );
   const byKey = new Map(tiles.map((tile) => [draft.tileKey(tile), tile]));
   const links = new Map<number, number[]>();
   for (const connector of connectors) {

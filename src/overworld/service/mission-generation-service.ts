@@ -1,3 +1,4 @@
+import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import { mapInfestationLevel } from "../../content/model/map-infestation";
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { Rng } from "../../core/model/rng";
@@ -13,8 +14,15 @@ import {
   withInfestation,
 } from "../model/city";
 import type { EarthMap } from "../model/earth-map";
-import type { Mission, MissionId, MissionMapParams } from "../model/mission";
+import type { Deployable } from "../model/deployable";
 import type {
+  InstallationDefence,
+  Mission,
+  MissionId,
+  MissionMapParams,
+} from "../model/mission";
+import type {
+  InstallationDefenceTuning,
   MissionTuning,
   MissionTypeGenerationRule,
 } from "../model/mission-tuning";
@@ -28,9 +36,10 @@ import {
   MISSION_OFFERED,
 } from "../model/overworld-domain-event";
 import type { OverworldState } from "../model/overworld-state";
-import type { RegionId } from "../model/region";
+import type { Region, RegionId } from "../model/region";
 import { MAX_THREAT } from "../model/threat";
 import { findRegion, getRegion } from "./earth-map-query-service";
+import { regionInfestation } from "./threat-service";
 
 // ===========================================
 // Types
@@ -127,6 +136,22 @@ export function mapSizeFor(
   return "small";
 }
 
+/**
+ * Waves a defend-installation mission sends (#1175) for a region whose
+ * mean infestation is `infestation`: `baseWaves` plus one per
+ * `1 / wavesPerInfestationPoint` points, floored, capped at `maxWaves`
+ * and never below one.
+ */
+export function wavesFor(
+  infestation: number,
+  tuning: InstallationDefenceTuning,
+): number {
+  const raw =
+    tuning.baseWaves +
+    Math.floor(tuning.wavesPerInfestationPoint * infestation);
+  return Math.max(1, Math.min(tuning.maxWaves, raw));
+}
+
 // ===========================================
 // Tick step: expiry
 // ===========================================
@@ -207,27 +232,44 @@ export function expireMissions(
 // ===========================================
 
 /**
- * Offers new missions for `state.day`. Every detected city without an
- * active mission is visited in map order (an undetected infestation is
- * one the player has not found, so it cannot be answered, GDD §5.3); for
- * each mission type in
- * `MISSION_TYPE_IDS` order with a positive `offerChance`, one `chance`
- * draw decides whether that type is offered, and the first success wins
- * the city for the day. An offered mission draws one more number for its
- * map seed and takes the next `"mission"` id.
+ * Offers new missions for `state.day`, in two passes over the types in
+ * `MISSION_TYPE_IDS` order, split by their rule's `trigger` (#1175).
+ *
+ * **City-triggered types.** Every detected city without an active
+ * mission is visited in map order (an undetected infestation is one the
+ * player has not found, so it cannot be answered, GDD §5.3); for each
+ * such type with a positive `offerChance`, one `chance` draw decides
+ * whether it is offered, and the first success wins the city for the
+ * day. An offered mission draws one more number for its map seed and
+ * takes the next `"mission"` id.
+ *
+ * **Region-triggered types.** Then every region is visited in map
+ * order; one holding a built installation whose mean infestation
+ * clears the rule's threshold rolls once per such type, and a success
+ * attaches the mission to the region's most infested detected city
+ * that has no mission yet. A region without an installation, or with
+ * no free city, draws nothing.
  *
  * ```
  *   for city in map.cities (detected, no active mission):
- *     for type in MISSION_TYPE_IDS:
+ *     for type in MISSION_TYPE_IDS with trigger "city-infestation":
  *       p = offerChance(city.infestation, rule[type])
  *       p > 0 and rng.chance(p) ──► mission { difficulty, rewards, expiry, mapParams }
  *                                    └─ rng.fork(`carcass:${id}`) ──► mapParams.techCarcass?
  *                                    ──► MissionOffered, next city
+ *   for region in map.regions (has a deployable):
+ *     for type in MISSION_TYPE_IDS with trigger "region-installation":
+ *       host = most infested detected free city in the region, or skip
+ *       p = offerChance(regionInfestation, rule[type])
+ *       p > 0 and rng.chance(p) ──► mission { …, defence }
+ *                                    └─ rng.fork(`defence:${id}`) ──► which installation
+ *                                    ──► MissionOffered, next region
  * ```
  *
  * The draw order is part of the determinism contract: the same state,
- * seed and deps always offer the same missions. Returns the input state
- * untouched when nothing was offered.
+ * seed and deps always offer the same missions, and a campaign with no
+ * installation draws exactly what it drew before the second pass
+ * existed. Returns the input state untouched when nothing was offered.
  *
  * @throws {RangeError} if `intelBonus` names a region that is not on the
  *   map or holds a value that is not a non-negative integer. Those are
@@ -241,11 +283,17 @@ export function generateMissions(
 
   const occupied = new Set(state.missions.map((mission) => mission.cityId));
   const offered: Mission[] = [];
+  const cityTypes = MISSION_TYPE_IDS.filter(
+    (typeId) => deps.tuning.rules[typeId].trigger === "city-infestation",
+  );
+  const regionTypes = MISSION_TYPE_IDS.filter(
+    (typeId) => deps.tuning.rules[typeId].trigger === "region-installation",
+  );
   for (const city of state.map.cities) {
     if (!city.detected || occupied.has(city.id)) {
       continue;
     }
-    for (const typeId of MISSION_TYPE_IDS) {
+    for (const typeId of cityTypes) {
       const rule = deps.tuning.rules[typeId];
       const chance = offerChance(city.infestation, rule);
       if (chance <= 0 || !deps.rng.chance(chance)) {
@@ -254,6 +302,37 @@ export function generateMissions(
       offered.push(
         createMission(state, city, deps.missionTypes[typeId], rule, deps),
       );
+      occupied.add(city.id);
+      break;
+    }
+  }
+  for (const region of state.map.regions) {
+    const installations = state.deployables.filter(
+      (deployable) => deployable.regionId === region.id,
+    );
+    if (installations.length === 0) {
+      continue;
+    }
+    for (const typeId of regionTypes) {
+      const rule = deps.tuning.rules[typeId];
+      const infestation = regionInfestation(state.map, region.id);
+      const chance = offerChance(infestation, rule);
+      const host = hostCityFor(state, region, occupied);
+      if (chance <= 0 || host === undefined || !deps.rng.chance(chance)) {
+        continue;
+      }
+      const mission = createMission(
+        state,
+        host,
+        deps.missionTypes[typeId],
+        rule,
+        deps,
+      );
+      offered.push({
+        ...mission,
+        defence: defenceFor(mission.id, installations, infestation, deps),
+      });
+      occupied.add(host.id);
       break;
     }
   }
@@ -330,6 +409,51 @@ function techCarcassFor(
     techCarcass: {
       techPoints: tuning.basePoints + tuning.pointsPerDifficulty * difficulty,
     },
+  };
+}
+
+/**
+ * The city a region-triggered mission attaches to (#1175): the most
+ * infested detected city in the region that has no mission, existing or
+ * offered today; ties keep region order. Undefined when every city is
+ * taken or undetected.
+ */
+function hostCityFor(
+  state: OverworldState,
+  region: Region,
+  occupied: ReadonlySet<CityId>,
+): City | undefined {
+  let host: City | undefined;
+  for (const cityId of region.cityIds) {
+    const city = state.map.cities.find((candidate) => candidate.id === cityId);
+    if (city === undefined || !city.detected || occupied.has(city.id)) {
+      continue;
+    }
+    if (host === undefined || city.infestation > host.infestation) {
+      host = city;
+    }
+  }
+  return host;
+}
+
+/**
+ * What a defend-installation offer holds (#1175): one of the region's
+ * installations, drawn on a fork keyed by the mission id so the choice
+ * consumes nothing from the campaign stream, the generators its site
+ * stands, and the waves the region's infestation earns.
+ */
+function defenceFor(
+  id: MissionId,
+  installations: readonly Deployable[],
+  infestation: number,
+  deps: MissionGenerationDeps,
+): InstallationDefence {
+  const target = deps.rng.fork(`defence:${id}`).pick(installations);
+  return {
+    installation: target.typeId,
+    deployableId: target.id,
+    generators: INSTALLATION_SITES[target.typeId].generators,
+    waves: wavesFor(infestation, deps.tuning.defence),
   };
 }
 

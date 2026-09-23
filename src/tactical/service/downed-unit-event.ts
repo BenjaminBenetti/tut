@@ -1,3 +1,4 @@
+import { GENERATOR_DESTROYED } from "../model/generator-destroyed-event";
 import type { TacticalEvent } from "../model/tactical-event";
 import { TURRET_DESTROYED } from "../model/turret-destroyed-event";
 import { UNIT_DIED } from "../model/unit-died-event";
@@ -29,6 +30,12 @@ export function downedEvent(unit: Unit, killerId?: UnitId): TacticalEvent {
     return {
       type: TURRET_DESTROYED,
       payload: { turretId: unit.id, pos: unit.pos, ...credit },
+    };
+  }
+  if (unit.kind === "generator") {
+    return {
+      type: GENERATOR_DESTROYED,
+      payload: { generatorId: unit.id, pos: unit.pos, ...credit },
     };
   }
   return { type: UNIT_DIED, payload: { unitId: unit.id, ...credit } };

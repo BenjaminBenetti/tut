@@ -9,6 +9,8 @@ import { rankBonuses, rankIndexOf } from "../../roster/service/rank-service";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType } from "../../roster/model/squad-type";
 import type { BugUnitSource } from "../model/bug-unit-source";
+import type { GeneratorTuning } from "../model/generator";
+import { GENERATOR_SOURCE_ID } from "../model/generator";
 import type { TurretTuning } from "../model/turret";
 import { TURRET_SOURCE_ID } from "../model/turret";
 import type { Team, Unit, UnitKind } from "../model/unit";
@@ -264,6 +266,46 @@ export function turretUnit(
         ? built.unit
         : { ...built.unit, turnsLeft: tuning.batteryTurns },
   };
+}
+
+/**
+ * Builds a generator from its tuning (#1175), for the start of a
+ * defend-installation mission. Every generator shares one template
+ * (`"generator:generator"`). No weapon, no movement, no action points:
+ * it is `mechanical`, so a repair kit mends it while the squad holds
+ * the yard. Pure: reads only its arguments and draws one id.
+ *
+ * @param tuning - The generator's stats.
+ * @param placement - Where it stands and which way it faces.
+ * @param ids - Issues its unit id.
+ */
+export function generatorUnit(
+  tuning: GeneratorTuning,
+  placement: UnitPlacement,
+  ids: IdGenerator,
+): UnitBuild {
+  const template: UnitTemplate = {
+    id: templateIdFor("generator", GENERATOR_SOURCE_ID),
+    name: tuning.name,
+    maxHp: tuning.maxHp,
+    maxAp: 0,
+    move: 0,
+    weapons: [],
+    sightRange: tuning.sightRange,
+    armor: tuning.armor,
+    passClass: "infantry",
+    modelId: tuning.modelId,
+    construction: "mechanical",
+  };
+  return build(
+    "generator",
+    "tdf",
+    GENERATOR_SOURCE_ID,
+    template,
+    tuning.maxHp,
+    placement,
+    ids,
+  );
 }
 
 // ===========================================

@@ -135,7 +135,18 @@ describe("map model table", () => {
     }
   });
 
-  it("draws terrain, carapace modules and ordinary props from their respective kits", () => {
+  it("uses the authored facility footprints at their actual size", () => {
+    for (const definition of PROP_DEFINITIONS.filter((prop) =>
+      prop.placements.includes("site"),
+    )) {
+      const model = MODEL_MANIFEST[propModel(definition.id)!];
+      expect(definition.footprint, definition.id).toEqual(model.footprint);
+      expect(model.quality).toBe("final");
+      expect(definition.demolition).toBeUndefined();
+    }
+  });
+
+  it("draws terrain, structural modules and ordinary props from their respective kits", () => {
     for (const [surface, id] of Object.entries(SURFACE_MODELS)) {
       expect(["tiles", "buildings"], `${surface} -> ${id}`).toContain(
         MODEL_MANIFEST[id].category,
@@ -153,7 +164,9 @@ describe("map model table", () => {
     ]);
     for (const [kind, id] of Object.entries(PROP_MODELS)) {
       expect(MODEL_MANIFEST[id].category, kind).toBe(
-        carapaceModules.has(kind) ? "buildings" : "props",
+        carapaceModules.has(kind) || kind.startsWith("installation-")
+          ? "buildings"
+          : "props",
       );
     }
     for (const id of allWallModels) {

@@ -81,6 +81,12 @@ export function livingEnemies(mission: TacticalState, unit: Unit): Unit[] {
  */
 export function huntableEnemies(mission: TacticalState, unit: Unit): Unit[] {
   const enemies = livingEnemies(mission, unit);
+  if (enemies.some((enemy) => enemy.kind === "generator")) {
+    // A generator is what the swarm came for (#1175): every one it can
+    // see draws it, whatever else is nearer, and the turret rule below
+    // still admits the nearest turret beside them.
+    return generatorsAndTheRest(mission, unit, enemies);
+  }
   const size = unitFootprintSize(mission, unit);
   const distanceTo = (enemy: Unit): number =>
     footprintDistance(unit.pos, size, enemy.pos);
@@ -95,6 +101,37 @@ export function huntableEnemies(mission: TacticalState, unit: Unit): Unit[] {
   }
   return enemies.filter(
     (enemy) => !isAutonomous(enemy) || enemy.id === nearest?.id,
+  );
+}
+
+/**
+ * The generators in view plus every non-autonomous enemy and the nearest
+ * turret (#1175): the `huntableEnemies` answer when generators are on
+ * the board.
+ */
+function generatorsAndTheRest(
+  mission: TacticalState,
+  unit: Unit,
+  enemies: readonly Unit[],
+): Unit[] {
+  const size = unitFootprintSize(mission, unit);
+  let nearestTurret: Unit | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const enemy of enemies) {
+    if (enemy.kind !== "turret") {
+      continue;
+    }
+    const distance = footprintDistance(unit.pos, size, enemy.pos);
+    if (distance < nearestDistance) {
+      nearestTurret = enemy;
+      nearestDistance = distance;
+    }
+  }
+  return enemies.filter(
+    (enemy) =>
+      enemy.kind === "generator" ||
+      !isAutonomous(enemy) ||
+      enemy.id === nearestTurret?.id,
   );
 }
 
@@ -223,6 +260,54 @@ export function recalledSite(
     best = pos;
   }
   return best;
+}
+
+/**
+ * Where a bug with nothing in view goes (#1175): the nearest generator
+ * hook the swarm has not already wrecked, else the landing site. Like
+ * the landing site it is **static map knowledge** — the generators are
+ * why the bugs came, and a hook tile is where one stands — not a live
+ * position; a generator the bug has seen destroyed no longer draws it,
+ * one it has not seen still does, until it arrives and finds the wreck.
+ *
+ * ```
+ *   generator hooks − tiles of generators this side has seen at 0 hp
+ *     ├─ any left  ──► nearest by tile distance
+ *     └─ none      ──► landingSite
+ * ```
+ */
+export function huntSite(
+  mission: TacticalState,
+  from: TileCoord,
+): TileCoord | undefined {
+  const wrecked = new Set(
+    mission.units
+      .filter((unit) => unit.kind === "generator" && unit.hp <= 0)
+      .map((unit) => tileKeyOf(mission, unit.pos)),
+  );
+  let best: TileCoord | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const hook of mission.map.hooks.objectives) {
+    if (hook.kind !== "generator") {
+      continue;
+    }
+    for (const tile of hook.tiles) {
+      if (wrecked.has(tileKeyOf(mission, tile))) {
+        continue;
+      }
+      const distance = tileDistance(from, tile);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = tile;
+      }
+    }
+  }
+  return best ?? landingSite(mission, from);
+}
+
+/** A column-and-layer key for comparing tiles across records. */
+function tileKeyOf(mission: TacticalState, tile: TileCoord): number {
+  return (tile.y * mission.map.depth + tile.z) * mission.map.width + tile.x;
 }
 
 /**

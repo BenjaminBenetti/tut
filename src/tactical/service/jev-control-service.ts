@@ -18,6 +18,7 @@ import type { TacticalHandlers } from "./tactical-command-handlers";
 import { applyTacticalCommand } from "./tactical-command-handlers";
 import { withVision } from "./vision-service";
 import { isAutonomous } from "../model/unit";
+import { extract } from "../model/extract-command";
 import {
   JEV_PROMPT_MAX_LENGTH,
   JEV_ACTION_OWNER_FIELDS,
@@ -57,6 +58,26 @@ export function jevFinished(mission: TacticalState, unitId: string): boolean {
   );
 }
 
+/** A saved, explicit withdrawal may complete for free once its walk has finished playing. */
+export function jevExtractionPending(
+  mission: TacticalState,
+  unitId: string,
+): boolean {
+  const activation = mission.jev?.activation;
+  const actor = mission.units.find((unit) => unit.id === unitId);
+  return (
+    mission.phase === "player" &&
+    activation?.turn === mission.turn &&
+    activation.phase === mission.phase &&
+    activation.pendingExtractions?.includes(unitId) === true &&
+    mission.jev?.entities[unitId]?.enabled === true &&
+    actor?.team === "tdf" &&
+    actor.hp > 0 &&
+    actor.ap === 0 &&
+    !jevFinished(mission, unitId)
+  );
+}
+
 /** A saved End Turn request applies only to the player phase in which it was made. */
 export function jevEndTurnPending(mission: TacticalState): boolean {
   const activation = mission.jev?.activation;
@@ -86,7 +107,7 @@ export function pendingJevTdf(mission: TacticalState): boolean {
     (unit) =>
       unit.team === "tdf" &&
       unit.hp > 0 &&
-      unit.ap > 0 &&
+      (unit.ap > 0 || jevExtractionPending(mission, unit.id)) &&
       mission.jev?.entities[unit.id]?.enabled &&
       !jevFinished(mission, unit.id),
   );
@@ -108,6 +129,9 @@ function finish(mission: TacticalState, unitId: string): TacticalState {
       activation: {
         ...jev.activation!,
         finished: [...new Set([...jev.activation!.finished, unitId])],
+        pendingExtractions: jev.activation!.pendingExtractions?.filter(
+          (id) => id !== unitId,
+        ),
       },
     },
   };
@@ -139,6 +163,15 @@ export const configureJevHandler: TacticalHandler<ConfigureJevCommand> = (
       ...jev,
       entities: { ...jev.entities, [unitId]: control },
       commanders: { ...jev.commanders, [unit.team]: commanderPrompt },
+      activation:
+        jev.activation && !control.enabled
+          ? {
+              ...jev.activation,
+              pendingExtractions: jev.activation.pendingExtractions?.filter(
+                (id) => id !== unitId,
+              ),
+            }
+          : jev.activation,
     },
   };
   if (!jev.activation) state = startJevPhase(state);
@@ -173,7 +206,13 @@ export function createJevActHandler(
   handlers: TacticalHandlers,
 ): TacticalHandler<JevActCommand> {
   return (mission, command, ctx) => {
-    const { unitId, expectedSeq, choice, command: action } = command.payload;
+    const {
+      unitId,
+      expectedSeq,
+      choice,
+      command: action,
+      extractOnArrival,
+    } = command.payload;
     const actor = mission.units.find((unit) => unit.id === unitId);
     if (mission.commandSeq !== expectedSeq || jevFinished(mission, unitId))
       return stale();
@@ -193,10 +232,25 @@ export function createJevActHandler(
       : ok({ state: mission, events: [] });
     if (!applied.ok) return applied;
     const after = applied.value.state.units.find((unit) => unit.id === unitId);
-    const done = !action || !after || after.hp <= 0 || after.ap <= 0;
+    // Validate the free follow-up now, but save it instead of removing the unit
+    // until the controller's playback gate releases the completed walk.
+    const queueExtraction =
+      extractOnArrival === true &&
+      action?.type === "tactical:move" &&
+      actor.team === "tdf" &&
+      after !== undefined &&
+      after.hp > 0 &&
+      after.ap === 0 &&
+      !applied.value.state.outcome &&
+      applyTacticalCommand(handlers, applied.value.state, extract(unitId), ctx)
+        .ok;
+    const done =
+      !action || !after || after.hp <= 0 || (after.ap <= 0 && !queueExtraction);
     const state = done
       ? finish(applied.value.state, unitId)
-      : applied.value.state;
+      : queueExtraction
+        ? queueFreeExtraction(applied.value.state, unitId)
+        : applied.value.state;
     return ok({
       state: {
         ...state,
@@ -210,12 +264,38 @@ export function createJevActHandler(
               phase: mission.phase,
               choice,
               command: action,
+              extractOnArrival,
             },
           ].slice(-128),
         },
       },
       events: applied.value.events,
     });
+  };
+}
+
+/** Checkpoint an already selected zero-cost continuation so save/resume retains withdrawal intent. */
+function queueFreeExtraction(
+  mission: TacticalState,
+  unitId: string,
+): TacticalState {
+  const state =
+    mission.jev?.activation?.turn === mission.turn &&
+    mission.jev.activation.phase === mission.phase
+      ? mission
+      : startJevPhase(mission);
+  const jev = state.jev!;
+  return {
+    ...state,
+    jev: {
+      ...jev,
+      activation: {
+        ...jev.activation!,
+        pendingExtractions: [
+          ...new Set([...(jev.activation!.pendingExtractions ?? []), unitId]),
+        ],
+      },
+    },
   };
 }
 

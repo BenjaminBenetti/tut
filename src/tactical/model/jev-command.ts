@@ -27,6 +27,8 @@ export type JevActCommand = Command<
     readonly expectedSeq: number;
     readonly choice: string;
     readonly command?: JevActionCommand;
+    /** Explicit withdrawal intent; never inferred from merely standing in the extraction zone. */
+    readonly extractOnArrival?: boolean;
   }
 >;
 export type DefaultBugActCommand = Command<

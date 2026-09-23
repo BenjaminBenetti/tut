@@ -22,7 +22,7 @@ import type { JevActionContext, JevActionRules } from "./jev-action-context";
 import { jevAttackCandidates } from "./jev-combat";
 import { jevEquipmentCandidates } from "./jev-equipment";
 import { jevMovementCandidates } from "./jev-movement";
-import type { JevObjective } from "./jev-movement";
+import type { JevDestinationSources } from "./jev-destinations";
 
 export type { JevActionRules } from "./jev-action-context";
 
@@ -33,7 +33,7 @@ export function jevCandidates(
   rules: JevActionRules,
   planning: {
     readonly navigation: TacticalState;
-    readonly objectives: readonly JevObjective[];
+    readonly destinations: JevDestinationSources;
     readonly names: Readonly<Record<string, string>>;
   },
 ): readonly JevCandidate[] {
@@ -75,8 +75,20 @@ export function jevCandidates(
         ...jevMovementCandidates(
           planning.navigation,
           actor,
-          planning.objectives,
+          planning.destinations,
           planning.names,
+          (carcassId, pos) =>
+            applyTacticalCommand(
+              rules.handlers,
+              {
+                ...view,
+                units: view.units.map((unit) =>
+                  unit.id === actor.id ? { ...unit, pos } : unit,
+                ),
+              },
+              harvestCarcass(actor.id, carcassId),
+              { rng: new Mulberry32Rng(0), ids: new SequentialIdGenerator() },
+            ).ok,
         ),
       ),
     "tactical:attack": () => jevAttackCandidates(context),

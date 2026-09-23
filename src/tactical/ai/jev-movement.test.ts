@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { jevMovementCandidates } from "./jev-movement";
+import { jevDestinations } from "./jev-destinations";
 import { scaleJevMovement, jevDistancePage } from "./jev-distance";
 import { captureJev, jevChoicePage } from "./jev-request";
 import {
@@ -161,9 +162,14 @@ describe("Jev movement intent planning", () => {
     );
     const visited = [];
     for (let i = 0; i < 8; i++) {
-      const candidate = jevMovementCandidates(mission, mission.units[0]!, [], {
-        alpha: "Alpha",
-      }).find((entry) => entry.id === "move_to_entity:alpha");
+      const candidate = jevMovementCandidates(
+        mission,
+        mission.units[0]!,
+        jevDestinations(mission, mission, mission.units[0]!),
+        {
+          alpha: "Alpha",
+        },
+      ).find((entry) => entry.id === "move_to_entity:alpha");
       if (!candidate) break;
       expect(candidate.description).toContain("Alpha");
       mission = execute(mission, scaleJevMovement(candidate, 4));
@@ -188,7 +194,7 @@ describe("Jev movement intent planning", () => {
     const candidate = jevMovementCandidates(
       elevated,
       elevated.units[0]!,
-      [],
+      jevDestinations(elevated, elevated, elevated.units[0]!),
       {},
     ).find((entry) => entry.id === "move_to_entity:alpha")!;
     expect(candidate).toBeDefined();
@@ -211,7 +217,12 @@ describe("Jev movement intent planning", () => {
         { phase: "bugs" },
       ),
     );
-    for (const move of jevMovementCandidates(large, large.units[0]!, [], {}))
+    for (const move of jevMovementCandidates(
+      large,
+      large.units[0]!,
+      jevDestinations(large, large, large.units[0]!),
+      {},
+    ))
       execute(large, scaleJevMovement(move, 2));
   });
   it.each([
@@ -370,7 +381,12 @@ describe("Jev movement intent planning", () => {
         unitAt("enemy", "infantry", { x: 2, y: 0, z: 3 }, { team: "bugs" }),
       ]),
     );
-    const moves = jevMovementCandidates(mission, mission.units[0]!, [], {});
+    const moves = jevMovementCandidates(
+      mission,
+      mission.units[0]!,
+      jevDestinations(mission, mission, mission.units[0]!),
+      {},
+    );
     const expected = {
       move_north: { x: 3, y: 0, z: 0 },
       move_east: { x: 6, y: 0, z: 3 },
@@ -394,9 +410,12 @@ describe("Jev movement intent planning", () => {
     }
     const alone = { ...mission, units: [mission.units[0]!] };
     expect(
-      jevMovementCandidates(alone, alone.units[0]!, [], {}).some(
-        (item) => item.id === "move_away_from_enemies",
-      ),
+      jevMovementCandidates(
+        alone,
+        alone.units[0]!,
+        jevDestinations(alone, alone, alone.units[0]!),
+        {},
+      ).some((item) => item.id === "move_away_from_enemies"),
     ).toBe(false);
   });
   it("routes toward public objectives through fog without using hidden entity positions", () => {
@@ -555,9 +574,12 @@ describe("Jev movement distance", () => {
     const tdf = revealed(
       missionWith(map, [unitAt("self", "infantry", { x: 0, y: 0, z: 0 })]),
     );
-    const move = jevMovementCandidates(tdf, tdf.units[0]!, [], {}).find(
-      (item) => item.id === "move_east",
-    )!;
+    const move = jevMovementCandidates(
+      tdf,
+      tdf.units[0]!,
+      jevDestinations(tdf, tdf, tdf.units[0]!),
+      {},
+    ).find((item) => item.id === "move_east")!;
     expect(move.movement?.stops.map((stop) => stop.cost)).toEqual([2, 3]);
     expect(execute(tdf, scaleJevMovement(move, 2.5)).units[0]!.pos.x).toBe(1);
     const bugs = revealed(
@@ -567,9 +589,12 @@ describe("Jev movement distance", () => {
         { phase: "bugs" },
       ),
     );
-    const bugMove = jevMovementCandidates(bugs, bugs.units[0]!, [], {}).find(
-      (item) => item.id === "move_east",
-    )!;
+    const bugMove = jevMovementCandidates(
+      bugs,
+      bugs.units[0]!,
+      jevDestinations(bugs, bugs, bugs.units[0]!),
+      {},
+    ).find((item) => item.id === "move_east")!;
     expect(bugMove.movement?.stops.map((stop) => stop.cost)).toEqual([
       0.5, 1.5, 2.5,
     ]);

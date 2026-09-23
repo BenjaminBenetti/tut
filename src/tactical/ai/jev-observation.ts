@@ -3,8 +3,7 @@ import type { TacticalState } from "../model/tactical-state";
 import { NO_VISION } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { rememberJevTerrain } from "../service/jev-knowledge-service";
-import { radarContacts } from "../service/radar-service";
-import { jevObjectives } from "./jev-movement";
+import type { JevDestinationSources } from "./jev-destinations";
 import { jevSharedCapabilities } from "./jev-capabilities";
 import type { EquipmentCatalogue } from "../model/equipment";
 import { equipmentOf } from "../service/equipment-service";
@@ -111,9 +110,8 @@ export function jevState(
   commanderPrompt: string,
   unitNames: Readonly<Record<string, string>>,
   equipment: EquipmentCatalogue,
+  destinations: JevDestinationSources,
 ): Readonly<Record<string, unknown>> {
-  const vision = view.vision[actor.team];
-  const objectives = jevObjectives(mission);
   return {
     entity_prompt: entityPrompt,
     commander_prompt: commanderPrompt,
@@ -122,7 +120,7 @@ export function jevState(
     phase: mission.phase,
     faction: actor.team,
     ...jevSharedCapabilities(
-      view.units
+      destinations.entities
         .filter((unit) => unit.id !== actor.id && unit.hp > 0)
         .map((unit) =>
           describeUnit(
@@ -152,37 +150,30 @@ export function jevState(
       hp,
       destroyed,
     })),
-    objectives,
+    objectives: destinations.objectives,
     gameplay: {
       turn: "This is a turn-based tactical battle: the TDF player faction acts, then the bug faction. You control only actor. A living actor with AP can act during its faction's phase; AP refreshes on its next faction turn. Enemy resources not shown are unknown.",
       resources:
         "AP means action points, HP means health points. Zero HP removes a unit. actor.ap is the budget remaining now; actor.max_ap is its normal turn budget. Each action pays its listed AP cost immediately. If AP remains, you receive an updated state and choose another action. An action marked ends_activation forfeits any AP left after paying its cost. Overwatch costs 1 AP and always ends the actor's activation.",
       movement:
-        "actor.movement is movement points per AP, not remaining AP. An ordinary tile costs one movement point; infestation slows TDF and speeds bugs, and rough terrain can slow mechs. The game finds routes toward the chosen entity, objective or direction using the full map layout, walls, known occupied footprints and stairs between floors. A distance question can shorten the proposed one-AP route. Every move option spends exactly one AP; unused distance cannot be saved for later.",
+        "actor.movement is movement points per AP, not remaining AP. An ordinary tile costs one movement point; infestation slows TDF and speeds bugs, and rough terrain can slow mechs. The game finds routes toward the chosen entity, objective, extraction zone, harvestable carcass, radar contact, historical sighting or direction using the full map layout, walls, known occupied footprints and stairs between floors. A distance question can shorten the proposed one-AP route. Every move option spends exactly one AP; unused distance cannot be saved for later.",
       combat:
         "Attack previews report hit chance in percent and damage in HP. Ranged cover and height affect shots; cover is directional and does not reduce adjacent melee damage. Armor reduces damage and armor penetration bypasses armor. Blast attacks can hurt allies and destroy cover. Profiles describe capabilities; offered previews describe the actual target.",
       knowledge:
-        "Faction vision is shared. The path planner knows the full map layout through fog; unseen enemies stay unknown. capability_ref refers to shared capabilities; equipment IDs refer to equipment_definitions. Per-entity resources stay on that entity. Radar contacts are positions only, not visible targets. Objective locations are public but do not reveal hidden nest health. Names in orders refer to actor.name and entities[].name.",
+        "Faction vision is shared. The path planner knows the full map layout through fog; unseen enemies stay unknown. capability_ref refers to shared capabilities; equipment IDs refer to equipment_definitions. Per-entity resources stay on that entity. Radar contacts are positions only; last_seen locations are historical and may be empty. Both can be investigated for sight, but are not visible attack targets. Visible carcasses can be approached by actors able to harvest them; arrival does not harvest. Objective locations are public but do not reveal hidden nest health. Names in orders refer to actor.name and entities[].name.",
       objectives:
-        "For destroy-spawner objectives the TDF must destroy the nest with attacks or an offered nearby interact action; merely reaching the marker does not complete it. Bugs defend their nests and oppose TDF. Extraction removes the actor from this mission; use it only when its orders call for leaving.",
+        "For destroy-spawner objectives the TDF must destroy the nest with attacks or an offered nearby interact action; merely reaching the marker does not complete it. Bugs defend their nests and oppose TDF. Extraction removes the actor from this mission; use it only when its orders call for leaving. An explicit TDF extraction move reaching the zone with the last AP is followed by free extraction after the walk; other moves into the zone do not authorize extraction.",
     },
     faction_goal:
       actor.team === "bugs"
         ? "Defend the nests and defeat the TDF."
         : "Complete the mission objectives and preserve the force.",
-    extraction: mission.extraction,
-    last_seen: Object.entries(vision.lastSeen)
-      .filter(([id]) => !vision.spotted.includes(id))
-      .map(([id, position]) => ({
-        id,
-        position,
-        knowledge:
-          "Historical sighting; current location, health and survival unknown",
-      })),
-    radar_contacts: radarContacts(mission, actor.team),
+    extraction: destinations.extraction,
+    last_seen: destinations.last_seen,
+    radar_contacts: destinations.radar_contacts,
     friendly_radars: view.radars,
     friendly_charges: view.charges,
-    visible_carcasses: view.carcasses,
+    visible_carcasses: destinations.visible_carcasses,
     observed_hazards: view.effects,
   };
 }

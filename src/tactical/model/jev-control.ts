@@ -70,6 +70,8 @@ export interface JevControl {
     readonly externalBugs: boolean;
     /** The player ended this turn; finish Jev TDF activations before opening the bug phase. */
     readonly endTurnRequested?: boolean;
+    /** Explicit extraction moves that arrived on the last AP; complete after movement playback. */
+    readonly pendingExtractions?: readonly string[];
   };
   readonly decisions?: readonly {
     readonly unitId: string;
@@ -77,6 +79,7 @@ export interface JevControl {
     readonly phase: TacticalPhase;
     readonly choice: string;
     readonly command?: JevActionCommand;
+    readonly extractOnArrival?: boolean;
   }[];
 }
 
@@ -107,6 +110,8 @@ export interface JevCandidate {
 /** A selected intent and its one-AP route, costed using the full map layout. */
 export interface JevMovement {
   readonly intent: string;
+  /** Permit the free extraction follow-up only if this move reaches the zone with zero AP. */
+  readonly extractOnArrival?: boolean;
   readonly targetId?: string;
   readonly targetName?: string;
   readonly targetPosition?: TileCoord;

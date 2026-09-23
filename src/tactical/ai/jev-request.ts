@@ -8,7 +8,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { PHASE_FOR_TEAM } from "../model/tactical-state";
 import { jevPerception, jevState } from "./jev-observation";
 import { jevCandidates } from "./jev-actions";
-import { jevObjectives } from "./jev-movement";
+import { jevDestinations } from "./jev-destinations";
 import type { JevActionRules } from "./jev-actions";
 import {
   jevActionInstructions,
@@ -33,6 +33,7 @@ export function captureJev(
     actor.hp > 0 &&
     actor.ap > 0 &&
     mission.phase === PHASE_FOR_TEAM[actor.team];
+  const destinations = jevDestinations(mission, view, actor);
   const state = jevState(
     mission,
     view,
@@ -41,6 +42,7 @@ export function captureJev(
     prompts?.commander ?? mission.jev?.commanders[actor.team] ?? "",
     unitNames,
     rules.equipment.catalogue,
+    destinations,
   );
   const snapshot: JevSnapshot = {
     missionId: mission.missionId,
@@ -54,7 +56,7 @@ export function captureJev(
     candidates: eligible
       ? jevCandidates(view, actor, rules, {
           navigation,
-          objectives: jevObjectives(mission),
+          destinations,
           names: unitNames,
         })
       : [],

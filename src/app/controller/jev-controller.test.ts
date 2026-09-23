@@ -24,9 +24,11 @@ import {
 } from "../../tactical/model/jev-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
 import { endTurn } from "../../tactical/model/end-turn-command";
+import { move } from "../../tactical/model/move-command";
 import {
   jevFinished,
   jevEndTurnPending,
+  jevExtractionPending,
 } from "../../tactical/service/jev-control-service";
 import type { JevRequest } from "../../tactical/model/jev-control";
 
@@ -109,7 +111,196 @@ function mixedCampaign(): GameState {
   };
 }
 
+/** Keep a second TDF actor on the map so extraction can be inspected before mission resolution. */
+function extractionCampaign(ap = 1): GameState {
+  const base = missionWith(openField().build(), [
+    { ...unitAt("self", "infantry", { x: 1, y: 0, z: 1 }), ap },
+    { ...unitAt("manual", "infantry", { x: 0, y: 0, z: 0 }), ap: 0 },
+    unitAt("bug", "infantry", { x: 7, y: 0, z: 7 }, { team: "bugs" }),
+  ]);
+  return {
+    ...campaignOnDay(1, []),
+    activeMission: withVision({
+      state: { ...base, extraction: [{ x: 3, y: 0, z: 1 }] },
+      events: [],
+    }).state,
+  };
+}
+
 describe("Jev control", () => {
+  it.each([false, true])(
+    "finishes explicit last-AP extraction after playback without inference (save/resume: %s)",
+    async (resume) => {
+      const transport = {
+        configured: true,
+        ask: vi.fn((request: JevRequest) =>
+          Promise.resolve(
+            reply(
+              request,
+              request.questions.action?.criteria.move
+                ? "move"
+                : "move_to_extraction",
+            ),
+          ),
+        ),
+      };
+      const initial = setup(transport, extractionCampaign());
+      initial.controller.configure("self", true, "Extract", "Withdraw");
+      const detach = initial.store.subscribe(() =>
+        initial.controller.setPlaybackPending(true),
+      );
+      initial.controller.start();
+      await vi.waitFor(() =>
+        expect(
+          jevExtractionPending(initial.store.getState().activeMission!, "self"),
+        ).toBe(true),
+      );
+      const arrived = initial.store.getState().activeMission!;
+      expect(arrived.units.find((unit) => unit.id === "self")).toMatchObject({
+        ap: 0,
+        pos: { x: 3, y: 0, z: 1 },
+      });
+      expect(arrived.extracted).toEqual([]);
+      expect(transport.ask).toHaveBeenCalledTimes(3);
+      // End Turn must wait for this saved zero-AP continuation too.
+      expect(initial.store.dispatch(endTurn()).ok).toBe(true);
+      expect(initial.store.getState().activeMission!.phase).toBe("player");
+      expect(jevEndTurnPending(initial.store.getState().activeMission!)).toBe(
+        true,
+      );
+      const saved = JSON.parse(
+        JSON.stringify(initial.store.getState()),
+      ) as GameState;
+      const active = resume ? setup(transport, saved) : initial;
+      let detachResumed: (() => void) | undefined;
+      if (resume) {
+        initial.controller.dispose();
+        detach();
+        active.controller.setPlaybackPending(true);
+        detachResumed = active.store.subscribe(() =>
+          active.controller.setPlaybackPending(true),
+        );
+        active.controller.start();
+      }
+      active.controller.setPlaybackPending(false);
+      await vi.waitFor(() =>
+        expect(
+          active.store
+            .getState()
+            .activeMission!.extracted.map((unit) => unit.id),
+        ).toEqual(["self"]),
+      );
+      expect(transport.ask).toHaveBeenCalledTimes(3);
+      const after = active.store.getState().activeMission!;
+      expect(after.units.some((unit) => unit.id === "self")).toBe(false);
+      expect(after.jev?.activation?.pendingExtractions).toEqual([]);
+      expect(after.jev?.decisions?.map((decision) => decision.choice)).toEqual([
+        "move_to_extraction",
+        "extract_on_arrival",
+      ]);
+      expect(jevFinished(after, "self")).toBe(true);
+      expect(after.phase).toBe("player");
+      detach();
+      detachResumed?.();
+      active.controller.dispose();
+    },
+  );
+
+  it.each([
+    {
+      label: "ordinary movement into the zone",
+      ap: 1,
+      intent: false,
+      steps: 2,
+    },
+    {
+      label: "extraction movement ending short of the zone",
+      ap: 1,
+      intent: true,
+      steps: 1,
+    },
+    {
+      label: "extraction arrival with AP remaining",
+      ap: 2,
+      intent: true,
+      steps: 2,
+    },
+  ])(
+    "does not queue automatic extraction for $label",
+    ({ ap, intent, steps }) => {
+      const { store, controller } = setup(instant(), extractionCampaign(ap));
+      controller.configure("self", true, "Guard the zone", "Hold");
+      const applied = store.dispatch(
+        jevAct({
+          unitId: "self",
+          expectedSeq: store.getState().activeMission!.commandSeq,
+          choice: intent ? "move_to_extraction" : "move_east",
+          extractOnArrival: intent,
+          command: move(
+            "self",
+            [
+              { x: 2, y: 0, z: 1 },
+              { x: 3, y: 0, z: 1 },
+            ].slice(0, steps),
+          ),
+        }),
+      );
+      expect(applied.ok).toBe(true);
+      const after = store.getState().activeMission!;
+      expect(jevExtractionPending(after, "self")).toBe(false);
+      expect(after.extracted).toEqual([]);
+      expect(jevFinished(after, "self")).toBe(ap === 1);
+      controller.dispose();
+    },
+  );
+
+  it("does not request or extract an AP-zero actor merely standing in the zone", async () => {
+    const base = extractionCampaign(0);
+    const transport = instant();
+    const { store, controller } = setup(transport, {
+      ...base,
+      activeMission: {
+        ...base.activeMission!,
+        extraction: [{ x: 1, y: 0, z: 1 }],
+      },
+    });
+    controller.configure("self", true, "Guard extraction", "Hold");
+    controller.start();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(transport.ask).not.toHaveBeenCalled();
+    expect(store.getState().activeMission!.extracted).toEqual([]);
+    controller.dispose();
+  });
+
+  it("cancels a queued withdrawal when Jev control is disabled", () => {
+    const { store, controller } = setup(instant(), extractionCampaign());
+    controller.configure("self", true, "Extract", "Withdraw");
+    expect(
+      store.dispatch(
+        jevAct({
+          unitId: "self",
+          expectedSeq: store.getState().activeMission!.commandSeq,
+          choice: "move_to_extraction",
+          extractOnArrival: true,
+          command: move("self", [
+            { x: 2, y: 0, z: 1 },
+            { x: 3, y: 0, z: 1 },
+          ]),
+        }),
+      ).ok,
+    ).toBe(true);
+    expect(jevExtractionPending(store.getState().activeMission!, "self")).toBe(
+      true,
+    );
+    controller.configure("self", false, "Guard", "Hold");
+    controller.configure("self", true, "Guard", "Hold");
+    expect(jevExtractionPending(store.getState().activeMission!, "self")).toBe(
+      false,
+    );
+    expect(store.getState().activeMission!.extracted).toEqual([]);
+    controller.dispose();
+  });
+
   it("retries cancelled requests without spending AP or counting them as actions", async () => {
     const waiting: {
       request: JevRequest;

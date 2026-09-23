@@ -20,9 +20,11 @@ import {
   jevAct,
 } from "../../tactical/model/jev-command";
 import { endTurn } from "../../tactical/model/end-turn-command";
+import { extract } from "../../tactical/model/extract-command";
 import {
   jevFinished,
   jevEndTurnPending,
+  jevExtractionPending,
   manualTdfHasActions,
 } from "../../tactical/service/jev-control-service";
 import { missionOutcome } from "../../tactical/service/mission-end-service";
@@ -175,6 +177,41 @@ export class JevController implements JevInspector {
     while (!this.stopped && !this.paused && !this.playbackPending) {
       const mission = this.mission();
       if (!mission || mission.outcome) return;
+      const withdrawing = mission.units.find((unit) =>
+        jevExtractionPending(mission, unit.id),
+      );
+      if (withdrawing) {
+        const applied = this.store.dispatch(
+          jevAct({
+            unitId: withdrawing.id,
+            expectedSeq: mission.commandSeq,
+            choice: "extract_on_arrival",
+            command: extract(withdrawing.id),
+          }),
+        );
+        const trace = [...this.traces]
+          .reverse()
+          .find(
+            (entry) =>
+              entry.snapshot.unitId === withdrawing.id &&
+              entry.status === "applied",
+          );
+        if (trace)
+          this.update(trace.id, {
+            detail: `${trace.detail ?? ""} ${applied.ok ? "Extracted for zero AP after movement playback, as selected." : applied.error.message}`,
+          });
+        if (!applied.ok) {
+          const finished = this.store.dispatch(
+            jevAct({
+              unitId: withdrawing.id,
+              expectedSeq: mission.commandSeq,
+              choice: "finish",
+            }),
+          );
+          if (!finished.ok) return;
+        }
+        continue;
+      }
       const phaseKey = `${mission.missionId}:${String(mission.turn)}:${mission.phase}`;
       if (this.countedPhase !== phaseKey) {
         this.countedPhase = phaseKey;
@@ -279,6 +316,7 @@ export class JevController implements JevInspector {
           expectedSeq: current.commandSeq,
           choice: trace.candidate.id,
           command: trace.candidate.command,
+          extractOnArrival: trace.candidate.movement?.extractOnArrival,
         }),
       );
       this.update(trace.id, {

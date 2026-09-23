@@ -32,6 +32,7 @@ export function jevDistancePage(
           target_name: movement.targetName,
           target_position: movement.targetPosition,
           route_kind: movement.routeKind,
+          extract_on_arrival_with_last_ap: movement.extractOnArrival === true,
           available_distance: movement.stops.at(-1)!.cost,
           distance_unit: "terrain-weighted movement points",
           ap_cost: 1,
@@ -43,7 +44,7 @@ export function jevDistancePage(
         distance: {
           type: "score",
           instructions:
-            "How much of the available movement should the actor use to follow its orders? Follow commander_prompt over conflicting entity_prompt; otherwise use faction_goal. The movement destination has already been selected in selected_movement. Consider all actor and entity metadata; capability_ref points to shared capabilities. Rate the desired movement extent using the ordered levels. Any move costs exactly 1 AP, even a short move; unused movement points are lost. A shorter move does not preserve AP. The game divides the score by 4, scales the proposed route's movement-point cost, and rounds up to the next legal nonzero stopping point that still follows the selected intent, capped at the proposed endpoint. A fresh state and decision follow this move while AP remains. Arrival alone does not attack, extract or complete an objective.",
+            "How much of the available movement should the actor use to follow its orders? Follow commander_prompt over conflicting entity_prompt; otherwise use faction_goal. The movement destination has already been selected in selected_movement. Consider all actor and entity metadata; capability_ref points to shared capabilities. Rate the desired movement extent using the ordered levels. Any move costs exactly 1 AP, even a short move; unused movement points are lost. A shorter move does not preserve AP. The game divides the score by 4, scales the proposed route's movement-point cost, and rounds up to the next legal nonzero stopping point that still follows the selected intent, capped at the proposed endpoint. A fresh state and decision follow this move while AP remains. Arrival does not attack, harvest or complete an objective. If selected_movement.extract_on_arrival_with_last_ap is true and this move reaches the extraction zone using the last AP, the actor extracts for zero AP after the walk; stopping short will not extract it.",
           criteria: DISTANCE_LEVELS,
         },
       },

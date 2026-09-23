@@ -16,24 +16,13 @@ import {
   footprintTiles,
 } from "../service/footprint-service";
 
-/** Public mission destination, without hidden target condition. */
-export interface JevObjective {
-  readonly id: string;
-  readonly kind: string;
-  readonly complete: boolean;
-  readonly position?: TileCoord;
-}
+import type { JevDestinationSources } from "./jev-destinations";
 
-/** Objective locations are public intel; unobserved nest health is not. */
-export function jevObjectives(mission: TacticalState): readonly JevObjective[] {
-  return mission.objectives.map((objective) => ({
-    id: objective.id,
-    kind: objective.kind,
-    complete: objective.complete,
-    position: mission.spawners.find((nest) => nest.id === objective.targetId)
-      ?.pos,
-  }));
-}
+/** Authoritative interaction check at a hypothetical route endpoint. */
+export type JevHarvestArrival = (
+  carcassId: string,
+  position: TileCoord,
+) => boolean;
 
 // ===========================================
 // Movement intents
@@ -43,8 +32,9 @@ export function jevObjectives(mission: TacticalState): readonly JevObjective[] {
 export function jevMovementCandidates(
   navigation: TacticalState,
   actor: Unit,
-  objectives: readonly JevObjective[],
+  destinations: JevDestinationSources,
   names: Readonly<Record<string, string>>,
+  canHarvestFrom: JevHarvestArrival = () => false,
 ): readonly JevCandidate[] {
   if (actor.kind === "turret" || actor.ap <= 0 || actor.hp <= 0) return [];
   const budget = moveBudget(navigation, { ...actor, ap: 1 });
@@ -93,93 +83,168 @@ export function jevMovementCandidates(
     });
   };
   const size = unitFootprintSize(navigation, actor);
-  for (const target of navigation.units) {
-    if (target.id === actor.id || target.hp <= 0) continue;
-    const targetSize = unitFootprintSize(navigation, target);
-    const approaches = approachKeys(
-      graph,
-      search,
-      size,
-      target.pos,
-      targetSize,
-      actor,
-    );
-    const endpoint = cheapest(search, approaches);
-    // Already adjacent means no move; unreachable entities are not invented destinations.
-    const name =
-      names[target.id] ??
-      navigation.templates[target.templateId]?.name ??
-      target.id;
-    const type =
-      target.kind === "mech"
-        ? "Mech"
-        : (navigation.templates[target.templateId]?.name ?? target.kind);
-    add(
-      `move_to_entity:${target.id}`,
-      `Move toward ${name} (${type}, ${target.team === actor.team ? "friendly" : "hostile"}).`,
-      endpoint,
-      {
-        intent: "approach_entity",
-        targetId: target.id,
-        targetName: name,
-        targetPosition: target.pos,
-        routeKind: "known-route",
-      },
-    );
-  }
-  for (const objective of objectives) {
-    if (objective.complete || !objective.position) continue;
-    const key = graph.index.keyOf(objective.position);
-    let endpoint = search.costs.has(key) ? key : undefined;
-    // Nests can occupy impassable surfaces; stop at a reachable adjoining surface.
-    if (endpoint === undefined && graph.index.getAt(objective.position))
-      endpoint = cheapest(
-        search,
-        [...search.tiles.entries()]
-          .filter(
-            ([, tile]) =>
-              footprintDistance(tile, size, objective.position!, 1) === 1,
-          )
-          .map(([id]) => id),
-      );
-    add(
-      `move_to_objective:${objective.id}`,
-      `Move toward ${objective.id} (${objective.kind}); arrival alone does not complete it.`,
-      endpoint,
-      {
-        intent: "approach_objective",
-        targetId: objective.id,
-        targetName: objective.id,
-        targetPosition: objective.position,
-        routeKind: "known-route",
-      },
-    );
-  }
-  // Extraction requires the actor's anchor inside the zone, not merely beside
-  // it. Choose the cheapest reachable zone tile, including floors and blockers.
-  const extraction = cheapest(
-    search,
-    navigation.extraction
-      .filter((tile) => graph.index.inBounds(tile))
-      .map((tile) => graph.index.keyOf(tile))
-      .filter((key) => search.costs.has(key)),
-  );
-  add(
-    "move_to_extraction",
-    actor.team === "tdf"
-      ? "Move into the extraction zone. Arrival does not extract the actor; choose Extract once inside to leave the battlefield."
-      : "Move toward the TDF extraction zone to contest it. Bugs cannot extract.",
-    extraction,
-    {
-      intent: "approach_extraction",
-      targetId: "extraction",
-      targetName: "Extraction zone",
-      targetPosition: navigation.extraction.find(
-        (tile) => graph.index.keyOf(tile) === extraction,
-      ),
-      routeKind: "known-route",
+  const providers = {
+    entities: () => {
+      for (const target of destinations.entities) {
+        if (target.id === actor.id || target.hp <= 0) continue;
+        const targetSize = unitFootprintSize(navigation, target);
+        const approaches = approachKeys(
+          graph,
+          search,
+          size,
+          target.pos,
+          targetSize,
+          actor,
+        );
+        const endpoint = cheapest(search, approaches);
+        // Already adjacent means no move; unreachable entities are not invented destinations.
+        const name =
+          names[target.id] ??
+          navigation.templates[target.templateId]?.name ??
+          target.id;
+        const type =
+          target.kind === "mech"
+            ? "Mech"
+            : (navigation.templates[target.templateId]?.name ?? target.kind);
+        add(
+          `move_to_entity:${target.id}`,
+          `Move toward ${name} (${type}, ${target.team === actor.team ? "friendly" : "hostile"}).`,
+          endpoint,
+          {
+            intent: "approach_entity",
+            targetId: target.id,
+            targetName: name,
+            targetPosition: target.pos,
+            routeKind: "known-route",
+          },
+        );
+      }
     },
-  );
+    objectives: () => {
+      for (const objective of destinations.objectives) {
+        if (objective.complete || !objective.position) continue;
+        const key = graph.index.keyOf(objective.position);
+        let endpoint = search.costs.has(key) ? key : undefined;
+        // Nests can occupy impassable surfaces; stop at a reachable adjoining surface.
+        if (endpoint === undefined && graph.index.getAt(objective.position))
+          endpoint = cheapest(
+            search,
+            [...search.tiles.entries()]
+              .filter(
+                ([, tile]) =>
+                  footprintDistance(tile, size, objective.position!, 1) === 1,
+              )
+              .map(([id]) => id),
+          );
+        add(
+          `move_to_objective:${objective.id}`,
+          `Move toward ${objective.id} (${objective.kind}); arrival alone does not complete it.`,
+          endpoint,
+          {
+            intent: "approach_objective",
+            targetId: objective.id,
+            targetName: objective.id,
+            targetPosition: objective.position,
+            routeKind: "known-route",
+          },
+        );
+      }
+    },
+    extraction: () => {
+      // Extraction requires the actor's anchor inside the zone, not merely beside
+      // it. Choose the cheapest reachable zone tile, including floors and blockers.
+      const extraction = cheapest(
+        search,
+        destinations.extraction
+          .filter((tile) => graph.index.inBounds(tile))
+          .map((tile) => graph.index.keyOf(tile))
+          .filter((key) => search.costs.has(key)),
+      );
+      add(
+        "move_to_extraction",
+        actor.team === "tdf"
+          ? "Move into the extraction zone to leave the battlefield. If arrival spends the last AP, extract automatically for zero AP after the walk; otherwise choose Extract next. To guard the zone without leaving, choose another movement intent."
+          : "Move toward the TDF extraction zone to contest it. Bugs cannot extract.",
+        extraction,
+        {
+          intent: "approach_extraction",
+          extractOnArrival: actor.team === "tdf",
+          targetId: "extraction",
+          targetName: "Extraction zone",
+          targetPosition: destinations.extraction.find(
+            (tile) => graph.index.keyOf(tile) === extraction,
+          ),
+          routeKind: "known-route",
+        },
+      );
+    },
+    visible_carcasses: () => {
+      for (const carcass of destinations.visible_carcasses) {
+        // Ask the real harvest rules for both capability and range. A mech or
+        // bug cannot be offered an infantry interaction it could never use.
+        if (carcass.harvested || !canHarvestFrom(carcass.id, carcass.pos))
+          continue;
+        const endpoint = [...search.costs.keys()]
+          .sort((a, b) => search.costs.get(a)! - search.costs.get(b)! || a - b)
+          .find((key) => canHarvestFrom(carcass.id, search.tiles.get(key)!));
+        add(
+          `move_to_carcass:${carcass.id}`,
+          `Move within harvesting range of carcass ${carcass.id} (${String(carcass.techPoints)} tech points). Arrival does not harvest it; Harvest spends its own AP.`,
+          endpoint,
+          {
+            intent: "approach_carcass",
+            targetId: carcass.id,
+            targetName: `Carcass ${carcass.id}`,
+            targetPosition: carcass.pos,
+            routeKind: "known-route",
+          },
+        );
+      }
+    },
+    radar_contacts: () => {
+      const seen = new Set<string>();
+      for (const contact of destinations.radar_contacts) {
+        const position = contact.pos;
+        const id = `${String(position.x)}:${String(position.y)}:${String(position.z)}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        add(
+          `investigate_radar:${id}`,
+          `Investigate radar ${contact.kind} contact at (${String(position.x)}, ${String(position.y)}, ${String(position.z)}). Position only; identity, health and capabilities are unknown. Approach to gain sight, not to attack.`,
+          cheapest(
+            search,
+            approachKeys(graph, search, size, position, 1, actor),
+          ),
+          {
+            intent: "investigate_radar",
+            targetName: `Radar contact ${id}`,
+            targetPosition: position,
+            routeKind: "known-route",
+          },
+        );
+      }
+    },
+    last_seen: () => {
+      for (const sighting of destinations.last_seen) {
+        add(
+          `investigate_last_seen:${sighting.id}`,
+          `Investigate the last-seen location of ${sighting.id}. This is a historical position; the entity may have moved or died. Approach to gain sight, not to attack.`,
+          cheapest(
+            search,
+            approachKeys(graph, search, size, sighting.position, 1, actor),
+          ),
+          {
+            intent: "investigate_last_seen",
+            targetId: sighting.id,
+            targetName: `Last sighting of ${sighting.id}`,
+            targetPosition: sighting.position,
+            routeKind: "known-route",
+          },
+        );
+      }
+    },
+  } satisfies Readonly<Record<keyof JevDestinationSources, () => void>>;
+  for (const provide of Object.values(providers)) provide();
   const reachable = [...search.costs]
     .filter(([, cost]) => cost > 0 && cost <= budget)
     .map(([key]) => key);

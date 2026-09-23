@@ -1,0 +1,2052 @@
+{
+  "batches": [
+    {
+      "id": "crowd-pilot",
+      "model": "jev-1.13.0",
+      "suite": "pilot",
+      "scenario": "entities-100",
+      "method": "Generated game maps with 100 static, fully observed units plus a rookie rifle actor. All 100 destinations and production actor/entity metadata are sent every decision; shared format losslessly factors repeated capabilities. Named ally, named hostile, equipment and commander-override orders. Jev chooses the entity; game pathfinding routes to a free adjacent tile with real unit occupancy. Fresh inference after every 1 AP move. No combat, enemy turns, retries, confidence threshold or response substitution. Full-map distances are offline scoring only. AP refreshes after two moves. Stop at arrival, wrong destination, error, 2*optimalAP+10 AP, or four identical states. Entity and option order are independently shuffled by seed.",
+      "gameCommit": "ec2d2be2e024bd251b9507b7ec455094dc82fda5",
+      "startedAt": "2026-09-22T02:53:57.906Z",
+      "finishedAt": "2026-09-22T02:57:51.152Z",
+      "vision": "full",
+      "reverseChoices": false,
+      "requestCount": 455,
+      "cases": [
+        {
+          "id": "pilot-1-small-named-ally",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 21, "y": 12, "z": 9 },
+            "distance": 84
+          },
+          "movement": 5,
+          "optimalAp": 17,
+          "terrainTiles": 2821,
+          "goalTiles": [
+            { "x": 21, "y": 12, "z": 8 },
+            { "x": 22, "y": 12, "z": 9 },
+            { "x": 21, "y": 12, "z": 10 },
+            { "x": 20, "y": 12, "z": 9 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Golf-02 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-small-named-hostile",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "unit-4",
+            "name": "Brute-09",
+            "position": { "x": 21, "y": 12, "z": 6 },
+            "distance": 80
+          },
+          "movement": 5,
+          "optimalAp": 16,
+          "terrainTiles": 2821,
+          "goalTiles": [
+            { "x": 21, "y": 12, "z": 5 },
+            { "x": 20, "y": 12, "z": 6 },
+            { "x": 22, "y": 12, "z": 5 },
+            { "x": 23, "y": 12, "z": 6 },
+            { "x": 21, "y": 12, "z": 8 },
+            { "x": 20, "y": 12, "z": 7 },
+            { "x": 23, "y": 12, "z": 7 },
+            { "x": 22, "y": 12, "z": 8 }
+          ],
+          "prompts": {
+            "entity": "Approach Brute-09 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-small-equipment",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "unit-20",
+            "name": "Foxtrot-01",
+            "position": { "x": 42, "y": 2, "z": 46 },
+            "distance": 50
+          },
+          "movement": 5,
+          "optimalAp": 10,
+          "terrainTiles": 2821,
+          "goalTiles": [
+            { "x": 42, "y": 2, "z": 45 },
+            { "x": 43, "y": 2, "z": 46 },
+            { "x": 42, "y": 2, "z": 47 },
+            { "x": 41, "y": 2, "z": 46 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-small-commander",
+          "seed": "730982385",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [48, 48, 14],
+          "start": { "x": 8, "y": 2, "z": 29 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 21, "y": 12, "z": 9 },
+            "distance": 84
+          },
+          "movement": 5,
+          "optimalAp": 17,
+          "terrainTiles": 2821,
+          "goalTiles": [
+            { "x": 21, "y": 12, "z": 8 },
+            { "x": 22, "y": 12, "z": 9 },
+            { "x": 21, "y": 12, "z": 10 },
+            { "x": 20, "y": 12, "z": 9 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Delta-05 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-medium-named-ally",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "unit-15",
+            "name": "Alpha-01",
+            "position": { "x": 70, "y": 2, "z": 63 },
+            "distance": 98
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 6970,
+          "goalTiles": [
+            { "x": 70, "y": 2, "z": 62 },
+            { "x": 71, "y": 2, "z": 63 },
+            { "x": 70, "y": 2, "z": 64 },
+            { "x": 69, "y": 2, "z": 63 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Alpha-01 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-medium-named-hostile",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "unit-81",
+            "name": "Swarmer-10",
+            "position": { "x": 64, "y": 2, "z": 67 },
+            "distance": 96
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 6970,
+          "goalTiles": [
+            { "x": 64, "y": 2, "z": 66 },
+            { "x": 65, "y": 2, "z": 67 },
+            { "x": 64, "y": 2, "z": 68 },
+            { "x": 63, "y": 2, "z": 67 }
+          ],
+          "prompts": {
+            "entity": "Approach Swarmer-10 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-medium-equipment",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "unit-62",
+            "name": "Hotel-05",
+            "position": { "x": 53, "y": 2, "z": 69 },
+            "distance": 87
+          },
+          "movement": 5,
+          "optimalAp": 18,
+          "terrainTiles": 6970,
+          "goalTiles": [
+            { "x": 53, "y": 2, "z": 68 },
+            { "x": 54, "y": 2, "z": 69 },
+            { "x": 53, "y": 2, "z": 70 },
+            { "x": 52, "y": 2, "z": 69 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-medium-commander",
+          "seed": "730982385",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 8, "y": 2, "z": 26 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 60, "y": 2, "z": 46 },
+            "distance": 71
+          },
+          "movement": 5,
+          "optimalAp": 15,
+          "terrainTiles": 6970,
+          "goalTiles": [
+            { "x": 60, "y": 2, "z": 45 },
+            { "x": 61, "y": 2, "z": 46 },
+            { "x": 60, "y": 2, "z": 47 },
+            { "x": 59, "y": 2, "z": 46 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Alpha-01 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-large-named-ally",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "unit-43",
+            "name": "India-03",
+            "position": { "x": 12, "y": 2, "z": 16 },
+            "distance": 128
+          },
+          "movement": 5,
+          "optimalAp": 26,
+          "terrainTiles": 12297,
+          "goalTiles": [
+            { "x": 12, "y": 2, "z": 15 },
+            { "x": 13, "y": 2, "z": 16 },
+            { "x": 12, "y": 2, "z": 17 },
+            { "x": 11, "y": 2, "z": 16 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with India-03 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-large-named-hostile",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "unit-93",
+            "name": "Swarmer-28",
+            "position": { "x": 30, "y": 10, "z": 23 },
+            "distance": 147
+          },
+          "movement": 5,
+          "optimalAp": 30,
+          "terrainTiles": 12297,
+          "goalTiles": [
+            { "x": 30, "y": 10, "z": 22 },
+            { "x": 31, "y": 10, "z": 23 },
+            { "x": 30, "y": 10, "z": 24 },
+            { "x": 29, "y": 10, "z": 23 }
+          ],
+          "prompts": {
+            "entity": "Approach Swarmer-28 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-large-equipment",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "unit-20",
+            "name": "Foxtrot-01",
+            "position": { "x": 32, "y": 4, "z": 33 },
+            "distance": 105
+          },
+          "movement": 5,
+          "optimalAp": 21,
+          "terrainTiles": 12297,
+          "goalTiles": [
+            { "x": 32, "y": 4, "z": 32 },
+            { "x": 33, "y": 4, "z": 33 },
+            { "x": 32, "y": 4, "z": 34 },
+            { "x": 31, "y": 4, "z": 33 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "pilot-1-large-commander",
+          "seed": "730982385",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 85, "y": 2, "z": 72 },
+          "goal": {
+            "id": "unit-43",
+            "name": "India-03",
+            "position": { "x": 12, "y": 2, "z": 16 },
+            "distance": 128
+          },
+          "movement": 5,
+          "optimalAp": 26,
+          "terrainTiles": 12297,
+          "goalTiles": [
+            { "x": 12, "y": 2, "z": 15 },
+            { "x": 13, "y": 2, "z": 16 },
+            { "x": 12, "y": 2, "z": 17 },
+            { "x": 11, "y": 2, "z": 16 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Bravo-01 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        }
+      ],
+      "summary": {
+        "entities-inline": {
+          "episodes": 12,
+          "reached": 10,
+          "statuses": { "reached": 10, "wrong-destination": 2 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 2,
+          "refusedDoorAttempts": 0,
+          "calls": 219,
+          "targetDecisions": 219,
+          "correctTargetDecisions": 210,
+          "meanInputTokens": 28246.753424657534,
+          "meanLatencyMs": 340.027397260274
+        },
+        "entities-shared": {
+          "episodes": 12,
+          "reached": 12,
+          "statuses": { "reached": 12 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "refusedDoorAttempts": 0,
+          "calls": 236,
+          "targetDecisions": 236,
+          "correctTargetDecisions": 236,
+          "meanInputTokens": 17168.080508474577,
+          "meanLatencyMs": 235.04661016949152
+        }
+      }
+    },
+    {
+      "id": "crowd-holdout",
+      "model": "jev-1.13.0",
+      "suite": "holdout",
+      "scenario": "entities-100",
+      "method": "Generated game maps with 100 static, fully observed units plus a rookie rifle actor. All 100 destinations and production actor/entity metadata are sent every decision; shared format losslessly factors repeated capabilities. Named ally, named hostile, equipment and commander-override orders. Jev chooses the entity; game pathfinding routes to a free adjacent tile with real unit occupancy. Fresh inference after every 1 AP move. No combat, enemy turns, retries, confidence threshold or response substitution. Full-map distances are offline scoring only. AP refreshes after two moves. Stop at arrival, wrong destination, error, 2*optimalAP+10 AP, or four identical states. Entity and option order are independently shuffled by seed.",
+      "gameCommit": "ec2d2be2e024bd251b9507b7ec455094dc82fda5",
+      "startedAt": "2026-09-22T02:56:07.657Z",
+      "finishedAt": "2026-09-22T03:04:00.605Z",
+      "vision": "full",
+      "reverseChoices": false,
+      "requestCount": 900,
+      "cases": [
+        {
+          "id": "holdout-1-small-named-ally",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-22",
+            "name": "Hotel-01",
+            "position": { "x": 1, "y": 1, "z": 44 },
+            "distance": 68
+          },
+          "movement": 5,
+          "optimalAp": 14,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 1, "y": 1, "z": 43 },
+            { "x": 2, "y": 1, "z": 44 },
+            { "x": 1, "y": 1, "z": 45 },
+            { "x": 0, "y": 1, "z": 44 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-01 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-small-named-hostile",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-89",
+            "name": "Swarmer-22",
+            "position": { "x": 21, "y": 11, "z": 23 },
+            "distance": 81
+          },
+          "movement": 5,
+          "optimalAp": 17,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 21, "y": 11, "z": 22 },
+            { "x": 22, "y": 11, "z": 23 },
+            { "x": 21, "y": 11, "z": 24 },
+            { "x": 20, "y": 11, "z": 23 }
+          ],
+          "prompts": {
+            "entity": "Approach Swarmer-22 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-small-equipment",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-50",
+            "name": "Foxtrot-04",
+            "position": { "x": 1, "y": 1, "z": 42 },
+            "distance": 66
+          },
+          "movement": 5,
+          "optimalAp": 14,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 1, "y": 1, "z": 41 },
+            { "x": 2, "y": 1, "z": 42 },
+            { "x": 1, "y": 1, "z": 43 },
+            { "x": 0, "y": 1, "z": 42 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-small-commander",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 1, "y": 1, "z": 33 },
+            "distance": 63
+          },
+          "movement": 5,
+          "optimalAp": 13,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 1, "y": 1, "z": 32 },
+            { "x": 2, "y": 1, "z": 33 },
+            { "x": 1, "y": 1, "z": 34 },
+            { "x": 0, "y": 1, "z": 33 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-01 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-named-ally",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-39",
+            "name": "Echo-03",
+            "position": { "x": 59, "y": 12, "z": 48 },
+            "distance": 120
+          },
+          "movement": 5,
+          "optimalAp": 24,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 59, "y": 12, "z": 47 },
+            { "x": 60, "y": 12, "z": 48 },
+            { "x": 59, "y": 12, "z": 49 },
+            { "x": 58, "y": 12, "z": 48 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Echo-03 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-named-hostile",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-84",
+            "name": "Lurker-14",
+            "position": { "x": 69, "y": 2, "z": 61 },
+            "distance": 99
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 69, "y": 2, "z": 60 },
+            { "x": 70, "y": 2, "z": 61 },
+            { "x": 69, "y": 2, "z": 62 },
+            { "x": 68, "y": 2, "z": 61 }
+          ],
+          "prompts": {
+            "entity": "Approach Lurker-14 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-equipment",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-62",
+            "name": "Hotel-05",
+            "position": { "x": 35, "y": 6, "z": 51 },
+            "distance": 67
+          },
+          "movement": 5,
+          "optimalAp": 14,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 35, "y": 6, "z": 50 },
+            { "x": 36, "y": 6, "z": 51 },
+            { "x": 35, "y": 6, "z": 52 },
+            { "x": 34, "y": 6, "z": 51 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-commander",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-73",
+            "name": "India-06",
+            "position": { "x": 33, "y": 2, "z": 69 },
+            "distance": 77
+          },
+          "movement": 5,
+          "optimalAp": 16,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 33, "y": 2, "z": 68 },
+            { "x": 34, "y": 2, "z": 69 },
+            { "x": 33, "y": 2, "z": 70 },
+            { "x": 32, "y": 2, "z": 69 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Echo-03 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-named-ally",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-36",
+            "name": "Bravo-03",
+            "position": { "x": 88, "y": 2, "z": 92 },
+            "distance": 152
+          },
+          "movement": 5,
+          "optimalAp": 31,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 88, "y": 2, "z": 91 },
+            { "x": 89, "y": 2, "z": 92 },
+            { "x": 88, "y": 2, "z": 93 },
+            { "x": 87, "y": 2, "z": 92 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Bravo-03 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-named-hostile",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-76",
+            "name": "Lurker-02",
+            "position": { "x": 91, "y": 2, "z": 89 },
+            "distance": 152
+          },
+          "movement": 5,
+          "optimalAp": 31,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 91, "y": 2, "z": 88 },
+            { "x": 92, "y": 2, "z": 89 },
+            { "x": 91, "y": 2, "z": 90 },
+            { "x": 90, "y": 2, "z": 89 }
+          ],
+          "prompts": {
+            "entity": "Approach Lurker-02 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-equipment",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-50",
+            "name": "Foxtrot-04",
+            "position": { "x": 75, "y": 2, "z": 93 },
+            "distance": 140
+          },
+          "movement": 5,
+          "optimalAp": 28,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 75, "y": 2, "z": 92 },
+            { "x": 76, "y": 2, "z": 93 },
+            { "x": 75, "y": 2, "z": 94 },
+            { "x": 74, "y": 2, "z": 93 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-commander",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 61, "y": 2, "z": 87 },
+            "distance": 120
+          },
+          "movement": 5,
+          "optimalAp": 24,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 61, "y": 2, "z": 86 },
+            { "x": 62, "y": 2, "z": 87 },
+            { "x": 61, "y": 2, "z": 88 },
+            { "x": 60, "y": 2, "z": 87 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Bravo-03 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-named-ally",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-65",
+            "name": "Alpha-06",
+            "position": { "x": 24, "y": 8, "z": 38 },
+            "distance": 60
+          },
+          "movement": 5,
+          "optimalAp": 12,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 24, "y": 8, "z": 37 },
+            { "x": 25, "y": 8, "z": 38 },
+            { "x": 24, "y": 8, "z": 39 },
+            { "x": 23, "y": 8, "z": 38 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Alpha-06 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-named-hostile",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-5",
+            "name": "Brute-12",
+            "position": { "x": 26, "y": 8, "z": 40 },
+            "distance": 59
+          },
+          "movement": 5,
+          "optimalAp": 12,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 26, "y": 8, "z": 39 },
+            { "x": 25, "y": 8, "z": 40 },
+            { "x": 27, "y": 8, "z": 39 },
+            { "x": 28, "y": 8, "z": 40 },
+            { "x": 26, "y": 8, "z": 42 },
+            { "x": 25, "y": 8, "z": 41 },
+            { "x": 28, "y": 8, "z": 41 },
+            { "x": 27, "y": 8, "z": 42 }
+          ],
+          "prompts": {
+            "entity": "Approach Brute-12 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-equipment",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-20",
+            "name": "Foxtrot-01",
+            "position": { "x": 29, "y": 6, "z": 24 },
+            "distance": 53
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 29, "y": 6, "z": 23 },
+            { "x": 30, "y": 6, "z": 24 },
+            { "x": 29, "y": 6, "z": 25 },
+            { "x": 28, "y": 6, "z": 24 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-commander",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 10, "y": 2, "z": 45 },
+            "distance": 47
+          },
+          "movement": 5,
+          "optimalAp": 10,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 10, "y": 2, "z": 44 },
+            { "x": 11, "y": 2, "z": 45 },
+            { "x": 10, "y": 2, "z": 46 },
+            { "x": 9, "y": 2, "z": 45 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Alpha-06 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-named-ally",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-70",
+            "name": "Foxtrot-06",
+            "position": { "x": 49, "y": 1, "z": 69 },
+            "distance": 101
+          },
+          "movement": 5,
+          "optimalAp": 21,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 49, "y": 1, "z": 68 },
+            { "x": 50, "y": 1, "z": 69 },
+            { "x": 49, "y": 1, "z": 70 },
+            { "x": 48, "y": 1, "z": 69 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Foxtrot-06 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-named-hostile",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-93",
+            "name": "Swarmer-28",
+            "position": { "x": 17, "y": 8, "z": 66 },
+            "distance": 106
+          },
+          "movement": 5,
+          "optimalAp": 22,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 17, "y": 8, "z": 65 },
+            { "x": 18, "y": 8, "z": 66 },
+            { "x": 17, "y": 8, "z": 67 },
+            { "x": 16, "y": 8, "z": 66 }
+          ],
+          "prompts": {
+            "entity": "Approach Swarmer-28 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-equipment",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-62",
+            "name": "Hotel-05",
+            "position": { "x": 19, "y": 2, "z": 54 },
+            "distance": 58
+          },
+          "movement": 5,
+          "optimalAp": 12,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 19, "y": 2, "z": 53 },
+            { "x": 20, "y": 2, "z": 54 },
+            { "x": 19, "y": 2, "z": 55 },
+            { "x": 18, "y": 2, "z": 54 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-commander",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-67",
+            "name": "Charlie-06",
+            "position": { "x": 17, "y": 8, "z": 50 },
+            "distance": 86
+          },
+          "movement": 5,
+          "optimalAp": 18,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 17, "y": 8, "z": 49 },
+            { "x": 18, "y": 8, "z": 50 },
+            { "x": 17, "y": 8, "z": 51 },
+            { "x": 16, "y": 8, "z": 50 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Foxtrot-06 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-named-ally",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-42",
+            "name": "Hotel-03",
+            "position": { "x": 76, "y": 2, "z": 8 },
+            "distance": 149
+          },
+          "movement": 5,
+          "optimalAp": 30,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 76, "y": 2, "z": 7 },
+            { "x": 77, "y": 2, "z": 8 },
+            { "x": 76, "y": 2, "z": 9 },
+            { "x": 75, "y": 2, "z": 8 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-03 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-named-hostile",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-96",
+            "name": "Lurker-32",
+            "position": { "x": 60, "y": 0, "z": 2 },
+            "distance": 139
+          },
+          "movement": 5,
+          "optimalAp": 28,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 60, "y": 0, "z": 1 },
+            { "x": 61, "y": 0, "z": 2 },
+            { "x": 60, "y": 0, "z": 3 },
+            { "x": 59, "y": 0, "z": 2 }
+          ],
+          "prompts": {
+            "entity": "Approach Lurker-32 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-equipment",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-26",
+            "name": "Bravo-02",
+            "position": { "x": 59, "y": 0, "z": 25 },
+            "distance": 115
+          },
+          "movement": 5,
+          "optimalAp": 23,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 59, "y": 0, "z": 24 },
+            { "x": 60, "y": 0, "z": 25 },
+            { "x": 59, "y": 0, "z": 26 },
+            { "x": 58, "y": 0, "z": 25 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-commander",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-25",
+            "name": "Alpha-02",
+            "position": { "x": 68, "y": 2, "z": 6 },
+            "distance": 143
+          },
+          "movement": 5,
+          "optimalAp": 29,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 68, "y": 2, "z": 5 },
+            { "x": 69, "y": 2, "z": 6 },
+            { "x": 68, "y": 2, "z": 7 },
+            { "x": 67, "y": 2, "z": 6 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-03 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        }
+      ],
+      "summary": {
+        "entities-inline": {
+          "episodes": 24,
+          "reached": 19,
+          "statuses": { "reached": 19, "wrong-destination": 5 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 13,
+          "refusedDoorAttempts": 0,
+          "calls": 426,
+          "targetDecisions": 426,
+          "correctTargetDecisions": 409,
+          "meanInputTokens": 28235.413145539907,
+          "meanLatencyMs": 325.65727699530515
+        },
+        "entities-shared": {
+          "episodes": 24,
+          "reached": 24,
+          "statuses": { "reached": 24 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "refusedDoorAttempts": 0,
+          "calls": 474,
+          "targetDecisions": 474,
+          "correctTargetDecisions": 474,
+          "meanInputTokens": 17156.54641350211,
+          "meanLatencyMs": 223.16033755274262
+        }
+      }
+    },
+    {
+      "id": "crowd-reversed",
+      "model": "jev-1.13.0",
+      "suite": "holdout",
+      "scenario": "entities-100",
+      "method": "Generated game maps with 100 static, fully observed units plus a rookie rifle actor. All 100 destinations and production actor/entity metadata are sent every decision; shared format losslessly factors repeated capabilities. Named ally, named hostile, equipment and commander-override orders. Jev chooses the entity; game pathfinding routes to a free adjacent tile with real unit occupancy. Fresh inference after every 1 AP move. No combat, enemy turns, retries, confidence threshold or response substitution. Full-map distances are offline scoring only. AP refreshes after two moves. Stop at arrival, wrong destination, error, 2*optimalAP+10 AP, or four identical states. Entity and option order are independently shuffled by seed.",
+      "gameCommit": "ec2d2be2e024bd251b9507b7ec455094dc82fda5",
+      "startedAt": "2026-09-22T03:01:59.808Z",
+      "finishedAt": "2026-09-22T03:05:58.418Z",
+      "vision": "full",
+      "reverseChoices": true,
+      "requestCount": 474,
+      "cases": [
+        {
+          "id": "holdout-1-small-named-ally",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-22",
+            "name": "Hotel-01",
+            "position": { "x": 1, "y": 1, "z": 44 },
+            "distance": 68
+          },
+          "movement": 5,
+          "optimalAp": 14,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 1, "y": 1, "z": 43 },
+            { "x": 2, "y": 1, "z": 44 },
+            { "x": 1, "y": 1, "z": 45 },
+            { "x": 0, "y": 1, "z": 44 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-01 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-small-named-hostile",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-89",
+            "name": "Swarmer-22",
+            "position": { "x": 21, "y": 11, "z": 23 },
+            "distance": 81
+          },
+          "movement": 5,
+          "optimalAp": 17,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 21, "y": 11, "z": 22 },
+            { "x": 22, "y": 11, "z": 23 },
+            { "x": 21, "y": 11, "z": 24 },
+            { "x": 20, "y": 11, "z": 23 }
+          ],
+          "prompts": {
+            "entity": "Approach Swarmer-22 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-small-equipment",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-50",
+            "name": "Foxtrot-04",
+            "position": { "x": 1, "y": 1, "z": 42 },
+            "distance": 66
+          },
+          "movement": 5,
+          "optimalAp": 14,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 1, "y": 1, "z": 41 },
+            { "x": 2, "y": 1, "z": 42 },
+            { "x": 1, "y": 1, "z": 43 },
+            { "x": 0, "y": 1, "z": 42 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-small-commander",
+          "seed": "jev-navigation-holdout-1",
+          "size": "small",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [48, 48, 13],
+          "start": { "x": 34, "y": 1, "z": 8 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 1, "y": 1, "z": 33 },
+            "distance": 63
+          },
+          "movement": 5,
+          "optimalAp": 13,
+          "terrainTiles": 3263,
+          "goalTiles": [
+            { "x": 1, "y": 1, "z": 32 },
+            { "x": 2, "y": 1, "z": 33 },
+            { "x": 1, "y": 1, "z": 34 },
+            { "x": 0, "y": 1, "z": 33 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-01 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-named-ally",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-39",
+            "name": "Echo-03",
+            "position": { "x": 59, "y": 12, "z": 48 },
+            "distance": 120
+          },
+          "movement": 5,
+          "optimalAp": 24,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 59, "y": 12, "z": 47 },
+            { "x": 60, "y": 12, "z": 48 },
+            { "x": 59, "y": 12, "z": 49 },
+            { "x": 58, "y": 12, "z": 48 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Echo-03 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-named-hostile",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-84",
+            "name": "Lurker-14",
+            "position": { "x": 69, "y": 2, "z": 61 },
+            "distance": 99
+          },
+          "movement": 5,
+          "optimalAp": 20,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 69, "y": 2, "z": 60 },
+            { "x": 70, "y": 2, "z": 61 },
+            { "x": 69, "y": 2, "z": 62 },
+            { "x": 68, "y": 2, "z": 61 }
+          ],
+          "prompts": {
+            "entity": "Approach Lurker-14 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-equipment",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-62",
+            "name": "Hotel-05",
+            "position": { "x": 35, "y": 6, "z": 51 },
+            "distance": 67
+          },
+          "movement": 5,
+          "optimalAp": 14,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 35, "y": 6, "z": 50 },
+            { "x": 36, "y": 6, "z": 51 },
+            { "x": 35, "y": 6, "z": 52 },
+            { "x": 34, "y": 6, "z": 51 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-medium-commander",
+          "seed": "jev-navigation-holdout-1",
+          "size": "medium",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [72, 72, 14],
+          "start": { "x": 22, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-73",
+            "name": "India-06",
+            "position": { "x": 33, "y": 2, "z": 69 },
+            "distance": 77
+          },
+          "movement": 5,
+          "optimalAp": 16,
+          "terrainTiles": 6953,
+          "goalTiles": [
+            { "x": 33, "y": 2, "z": 68 },
+            { "x": 34, "y": 2, "z": 69 },
+            { "x": 33, "y": 2, "z": 70 },
+            { "x": 32, "y": 2, "z": 69 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Echo-03 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-named-ally",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-36",
+            "name": "Bravo-03",
+            "position": { "x": 88, "y": 2, "z": 92 },
+            "distance": 152
+          },
+          "movement": 5,
+          "optimalAp": 31,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 88, "y": 2, "z": 91 },
+            { "x": 89, "y": 2, "z": 92 },
+            { "x": 88, "y": 2, "z": 93 },
+            { "x": 87, "y": 2, "z": 92 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Bravo-03 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-named-hostile",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-76",
+            "name": "Lurker-02",
+            "position": { "x": 91, "y": 2, "z": 89 },
+            "distance": 152
+          },
+          "movement": 5,
+          "optimalAp": 31,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 91, "y": 2, "z": 88 },
+            { "x": 92, "y": 2, "z": 89 },
+            { "x": 91, "y": 2, "z": 90 },
+            { "x": 90, "y": 2, "z": 89 }
+          ],
+          "prompts": {
+            "entity": "Approach Lurker-02 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-equipment",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-50",
+            "name": "Foxtrot-04",
+            "position": { "x": 75, "y": 2, "z": 93 },
+            "distance": 140
+          },
+          "movement": 5,
+          "optimalAp": 28,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 75, "y": 2, "z": 92 },
+            { "x": 76, "y": 2, "z": 93 },
+            { "x": 75, "y": 2, "z": 94 },
+            { "x": 74, "y": 2, "z": 93 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-1-large-commander",
+          "seed": "jev-navigation-holdout-1",
+          "size": "large",
+          "biome": "temperate",
+          "settlement": "city",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [96, 96, 14],
+          "start": { "x": 19, "y": 2, "z": 8 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 61, "y": 2, "z": 87 },
+            "distance": 120
+          },
+          "movement": 5,
+          "optimalAp": 24,
+          "terrainTiles": 12058,
+          "goalTiles": [
+            { "x": 61, "y": 2, "z": 86 },
+            { "x": 62, "y": 2, "z": 87 },
+            { "x": 61, "y": 2, "z": 88 },
+            { "x": 60, "y": 2, "z": 87 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Bravo-03 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-named-ally",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-65",
+            "name": "Alpha-06",
+            "position": { "x": 24, "y": 8, "z": 38 },
+            "distance": 60
+          },
+          "movement": 5,
+          "optimalAp": 12,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 24, "y": 8, "z": 37 },
+            { "x": 25, "y": 8, "z": 38 },
+            { "x": 24, "y": 8, "z": 39 },
+            { "x": 23, "y": 8, "z": 38 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Alpha-06 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-named-hostile",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-5",
+            "name": "Brute-12",
+            "position": { "x": 26, "y": 8, "z": 40 },
+            "distance": 59
+          },
+          "movement": 5,
+          "optimalAp": 12,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 26, "y": 8, "z": 39 },
+            { "x": 25, "y": 8, "z": 40 },
+            { "x": 27, "y": 8, "z": 39 },
+            { "x": 28, "y": 8, "z": 40 },
+            { "x": 26, "y": 8, "z": 42 },
+            { "x": 25, "y": 8, "z": 41 },
+            { "x": 28, "y": 8, "z": 41 },
+            { "x": 27, "y": 8, "z": 42 }
+          ],
+          "prompts": {
+            "entity": "Approach Brute-12 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-equipment",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-20",
+            "name": "Foxtrot-01",
+            "position": { "x": 29, "y": 6, "z": 24 },
+            "distance": 53
+          },
+          "movement": 5,
+          "optimalAp": 11,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 29, "y": 6, "z": 23 },
+            { "x": 30, "y": 6, "z": 24 },
+            { "x": 29, "y": 6, "z": 25 },
+            { "x": 28, "y": 6, "z": 24 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-small-commander",
+          "seed": "jev-navigation-holdout-2",
+          "size": "small",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [48, 48, 10],
+          "start": { "x": 21, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-31",
+            "name": "Golf-02",
+            "position": { "x": 10, "y": 2, "z": 45 },
+            "distance": 47
+          },
+          "movement": 5,
+          "optimalAp": 10,
+          "terrainTiles": 3108,
+          "goalTiles": [
+            { "x": 10, "y": 2, "z": 44 },
+            { "x": 11, "y": 2, "z": 45 },
+            { "x": 10, "y": 2, "z": 46 },
+            { "x": 9, "y": 2, "z": 45 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Alpha-06 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-named-ally",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-70",
+            "name": "Foxtrot-06",
+            "position": { "x": 49, "y": 1, "z": 69 },
+            "distance": 101
+          },
+          "movement": 5,
+          "optimalAp": 21,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 49, "y": 1, "z": 68 },
+            { "x": 50, "y": 1, "z": 69 },
+            { "x": 49, "y": 1, "z": 70 },
+            { "x": 48, "y": 1, "z": 69 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Foxtrot-06 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-named-hostile",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-93",
+            "name": "Swarmer-28",
+            "position": { "x": 17, "y": 8, "z": 66 },
+            "distance": 106
+          },
+          "movement": 5,
+          "optimalAp": 22,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 17, "y": 8, "z": 65 },
+            { "x": 18, "y": 8, "z": 66 },
+            { "x": 17, "y": 8, "z": 67 },
+            { "x": 16, "y": 8, "z": 66 }
+          ],
+          "prompts": {
+            "entity": "Approach Swarmer-28 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-equipment",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-62",
+            "name": "Hotel-05",
+            "position": { "x": 19, "y": 2, "z": 54 },
+            "distance": 58
+          },
+          "movement": 5,
+          "optimalAp": 12,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 19, "y": 2, "z": 53 },
+            { "x": 20, "y": 2, "z": 54 },
+            { "x": 19, "y": 2, "z": 55 },
+            { "x": 18, "y": 2, "z": 54 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-medium-commander",
+          "seed": "jev-navigation-holdout-2",
+          "size": "medium",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [72, 72, 10],
+          "start": { "x": 8, "y": 0, "z": 8 },
+          "goal": {
+            "id": "unit-67",
+            "name": "Charlie-06",
+            "position": { "x": 17, "y": 8, "z": 50 },
+            "distance": 86
+          },
+          "movement": 5,
+          "optimalAp": 18,
+          "terrainTiles": 6415,
+          "goalTiles": [
+            { "x": 17, "y": 8, "z": 49 },
+            { "x": 18, "y": 8, "z": 50 },
+            { "x": 17, "y": 8, "z": 51 },
+            { "x": 16, "y": 8, "z": 50 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Foxtrot-06 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-named-ally",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-ally",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-42",
+            "name": "Hotel-03",
+            "position": { "x": 76, "y": 2, "z": 8 },
+            "distance": 149
+          },
+          "movement": 5,
+          "optimalAp": 30,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 76, "y": 2, "z": 7 },
+            { "x": 77, "y": 2, "z": 8 },
+            { "x": 76, "y": 2, "z": 9 },
+            { "x": 75, "y": 2, "z": 8 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-03 as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-named-hostile",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "named-hostile",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-96",
+            "name": "Lurker-32",
+            "position": { "x": 60, "y": 0, "z": 2 },
+            "distance": 139
+          },
+          "movement": 5,
+          "optimalAp": 28,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 60, "y": 0, "z": 1 },
+            { "x": 61, "y": 0, "z": 2 },
+            { "x": 60, "y": 0, "z": 3 },
+            { "x": 59, "y": 0, "z": 2 }
+          ],
+          "prompts": {
+            "entity": "Approach Lurker-32 as quickly as possible. Move only; do not attack.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-equipment",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "equipment",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-26",
+            "name": "Bravo-02",
+            "position": { "x": 59, "y": 0, "z": 25 },
+            "distance": 115
+          },
+          "movement": 5,
+          "optimalAp": 23,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 59, "y": 0, "z": 24 },
+            { "x": 60, "y": 0, "z": 25 },
+            { "x": 59, "y": 0, "z": 26 },
+            { "x": 58, "y": 0, "z": 25 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with the friendly Radio Squad carrying exactly one radar dish remaining. Move as quickly as possible.",
+            "commander": ""
+          },
+          "entityCount": 100
+        },
+        {
+          "id": "holdout-2-large-commander",
+          "seed": "jev-navigation-holdout-2",
+          "size": "large",
+          "biome": "coastal",
+          "settlement": "town",
+          "scenario": "entities-100",
+          "orderKind": "commander",
+          "visibility": "full",
+          "dimensions": [96, 96, 10],
+          "start": { "x": 5, "y": 1, "z": 87 },
+          "goal": {
+            "id": "unit-25",
+            "name": "Alpha-02",
+            "position": { "x": 68, "y": 2, "z": 6 },
+            "distance": 143
+          },
+          "movement": 5,
+          "optimalAp": 29,
+          "terrainTiles": 11284,
+          "goalTiles": [
+            { "x": 68, "y": 2, "z": 5 },
+            { "x": 69, "y": 2, "z": 6 },
+            { "x": 68, "y": 2, "z": 7 },
+            { "x": 67, "y": 2, "z": 6 }
+          ],
+          "prompts": {
+            "entity": "Rendezvous with Hotel-03 as quickly as possible.",
+            "commander": "Override individual rendezvous orders: move to the friendly Medic Squad with the lowest current HP. Reach that squad as quickly as possible."
+          },
+          "entityCount": 100
+        }
+      ],
+      "summary": {
+        "entities-shared": {
+          "episodes": 24,
+          "reached": 24,
+          "statuses": { "reached": 24 },
+          "meanApRatioOnSuccess": 1,
+          "wastedAp": 0,
+          "refusedDoorAttempts": 0,
+          "calls": 474,
+          "targetDecisions": 474,
+          "correctTargetDecisions": 474,
+          "meanInputTokens": 17156.54641350211,
+          "meanLatencyMs": 228.36286919831224
+        }
+      }
+    }
+  ]
+}

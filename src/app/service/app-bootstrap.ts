@@ -1,3 +1,7 @@
+import "../../ui/style/jev.css";
+import { JevController } from "../controller/jev-controller";
+import { JevClient } from "./jev-client";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { MECH_BLUEPRINTS } from "../../roster/data/mech-blueprints";
 import "../../ui/style/theme.css";
 import "../../ui/style/screens.css";
@@ -274,6 +278,23 @@ export async function bootstrapApp(doc: Document): Promise<void> {
         "tactical",
         () =>
           new TacticalScreen({
+            jev: game.session.store
+              ? new JevController(
+                  game.session.store,
+                  new JevClient(
+                    import.meta.env.VITE_JEV_RELAY_URL ??
+                      (import.meta.env.DEV ? "http://localhost:8080" : ""),
+                  ),
+                  {
+                    handlers: game.tactical.handlers,
+                    combat: COMBAT_TUNING,
+                    equipment: {
+                      catalogue: SHIPPED_EQUIPMENT,
+                      combat: COMBAT_TUNING,
+                    },
+                  },
+                )
+              : undefined,
             router,
             session: game.session,
             combatTuning: COMBAT_TUNING,

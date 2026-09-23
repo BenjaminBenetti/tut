@@ -1,0 +1,1051 @@
+{
+  "startedAt": "2026-09-21T05:43:02.846Z",
+  "model": "jev-1.13.0",
+  "repetitionsPerFormat": 10,
+  "method": "Identical 4x4 map repeated, alternating game/ascii order; no prompt tuning or retries. These are the two simplified discussion samples, not full production requests or an isolation of map encoding alone.",
+  "map": ["@.#.", ".#..", "....", "...O"],
+  "groundTruth": {
+    "bestTile": "A3",
+    "actorDistance": 6,
+    "options": [
+      {
+        "tile": "B1",
+        "x": 1,
+        "z": 0,
+        "steps": 1,
+        "remainingSteps": 7
+      },
+      {
+        "tile": "A2",
+        "x": 0,
+        "z": 1,
+        "steps": 1,
+        "remainingSteps": 5
+      },
+      {
+        "tile": "A3",
+        "x": 0,
+        "z": 2,
+        "steps": 2,
+        "remainingSteps": 4
+      }
+    ]
+  },
+  "requests": {
+    "game": {
+      "model": "jev-1.13.0",
+      "state": {
+        "entity_prompt": "Reach objective-1.",
+        "commander_prompt": "",
+        "actor": {
+          "id": "unit-1",
+          "name": "Alpha",
+          "type": "Rifle Squad",
+          "movement_class": "infantry",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "ap": 2,
+          "max_ap": 2,
+          "movement": 2
+        },
+        "turn": 1,
+        "phase": "player",
+        "faction": "tdf",
+        "eligible_to_act": true,
+        "navigation": {
+          "scope": "Remembered and visible terrain near the actor. Omitted tiles are unknown or outside this local window; do not infer their geometry. Paths are computed by the game on known terrain. Coordinates are x, elevation layer y, z.",
+          "columns": [
+            "x",
+            "y",
+            "z",
+            "passMask",
+            "cover",
+            "walls",
+            "blocksSight",
+            "visible"
+          ],
+          "passMask": {
+            "0": "Blocked for all movement classes",
+            "1": "Infantry movement class only",
+            "2": "Mech movement class only",
+            "3": "Both infantry and mech movement classes"
+          },
+          "cover": {
+            "none": 0,
+            "low": 1,
+            "high": 2
+          },
+          "tiles": [
+            [0, 0, 0, 3, 0, {}, false, true],
+            [1, 0, 0, 3, 0, {}, false, true],
+            [2, 0, 0, 0, 0, {}, false, true],
+            [3, 0, 0, 3, 0, {}, false, true],
+            [0, 0, 1, 3, 0, {}, false, true],
+            [1, 0, 1, 0, 0, {}, false, true],
+            [2, 0, 1, 3, 0, {}, false, true],
+            [3, 0, 1, 3, 0, {}, false, true],
+            [0, 0, 2, 3, 0, {}, false, true],
+            [1, 0, 2, 3, 0, {}, false, true],
+            [2, 0, 2, 3, 0, {}, false, true],
+            [3, 0, 2, 3, 0, {}, false, true],
+            [0, 0, 3, 3, 0, {}, false, true],
+            [1, 0, 3, 3, 0, {}, false, true],
+            [2, 0, 3, 3, 0, {}, false, true],
+            [3, 0, 3, 3, 0, {}, false, true]
+          ],
+          "connectors": []
+        },
+        "entities": [],
+        "objectives": [
+          {
+            "id": "objective-1",
+            "complete": false,
+            "position": {
+              "x": 3,
+              "y": 0,
+              "z": 3
+            }
+          }
+        ],
+        "observed_hazards": []
+      },
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Which tile should the actor move to next to reach the objective?",
+          "criteria": {
+            "action-0": {
+              "action": "move",
+              "destination": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+              },
+              "ap_cost": 1,
+              "cover": [
+                ["n", 0],
+                ["e", 0],
+                ["s", 0],
+                ["w", 0]
+              ],
+              "known_hazards": []
+            },
+            "action-1": {
+              "action": "move",
+              "destination": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+              },
+              "ap_cost": 1,
+              "cover": [
+                ["n", 0],
+                ["e", 0],
+                ["s", 0],
+                ["w", 0]
+              ],
+              "known_hazards": []
+            },
+            "action-2": {
+              "action": "move",
+              "destination": {
+                "x": 0,
+                "y": 0,
+                "z": 2
+              },
+              "ap_cost": 1,
+              "cover": [
+                ["n", 0],
+                ["e", 0],
+                ["s", 0],
+                ["w", 0]
+              ],
+              "known_hazards": []
+            }
+          }
+        }
+      }
+    },
+    "ascii": {
+      "model": "jev-1.13.0",
+      "state": {
+        "map_legend": {
+          "@": "Actor",
+          "O": "Objective",
+          ".": "Walkable tile",
+          "#": "Blocked tile"
+        },
+        "coordinates": "Columns A–D run left to right. Rows 1–4 run top to bottom.",
+        "movement": "Move up to two tiles per action, horizontally or vertically. Turns are allowed. Cannot cross blocked tiles.",
+        "map_rows": ["@.#.", ".#..", "....", "...O"]
+      },
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Which tile should the actor move to next to reach the objective?",
+          "criteria": {
+            "B1": "Move to B1, one step away.",
+            "A2": "Move to A2, one step away.",
+            "A3": "Move to A3, two steps away."
+          }
+        }
+      }
+    }
+  },
+  "runs": [
+    {
+      "trial": 1,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 211,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.21,
+        "probabilities": {
+          "action-2": 0.16,
+          "action-0": 0.37,
+          "action-1": 0.47
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.21,
+            "probabilities": {
+              "action-2": 0.16,
+              "action-0": 0.37,
+              "action-1": 0.47
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 1,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 117,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.34,
+        "probabilities": {
+          "A2": 0.56,
+          "B1": 0.04,
+          "A3": 0.4
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.34,
+            "probabilities": {
+              "A2": 0.56,
+              "B1": 0.04,
+              "A3": 0.4
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 2,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 181,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.36,
+        "probabilities": {
+          "B1": 0.05,
+          "A2": 0.57,
+          "A3": 0.38
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.36,
+            "probabilities": {
+              "B1": 0.05,
+              "A2": 0.57,
+              "A3": 0.38
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 2,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 99,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.28,
+        "probabilities": {
+          "action-0": 0.24,
+          "action-1": 0.52,
+          "action-2": 0.24
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.28,
+            "probabilities": {
+              "action-0": 0.24,
+              "action-1": 0.52,
+              "action-2": 0.24
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 3,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 108,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.25,
+        "probabilities": {
+          "action-2": 0.16,
+          "action-0": 0.34,
+          "action-1": 0.5
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.25,
+            "probabilities": {
+              "action-2": 0.16,
+              "action-0": 0.34,
+              "action-1": 0.5
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 3,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 107,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.31,
+        "probabilities": {
+          "A3": 0.42,
+          "A2": 0.54,
+          "B1": 0.04
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.31,
+            "probabilities": {
+              "A3": 0.42,
+              "A2": 0.54,
+              "B1": 0.04
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 4,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 119,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.29,
+        "probabilities": {
+          "A2": 0.52,
+          "A3": 0.44,
+          "B1": 0.04
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.29,
+            "probabilities": {
+              "A2": 0.52,
+              "A3": 0.44,
+              "B1": 0.04
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 4,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 81,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.18,
+        "probabilities": {
+          "action-0": 0.38,
+          "action-1": 0.46,
+          "action-2": 0.16
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.18,
+            "probabilities": {
+              "action-0": 0.38,
+              "action-1": 0.46,
+              "action-2": 0.16
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 5,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 104,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.17,
+        "probabilities": {
+          "action-1": 0.45,
+          "action-0": 0.39,
+          "action-2": 0.16
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.17,
+            "probabilities": {
+              "action-1": 0.45,
+              "action-0": 0.39,
+              "action-2": 0.16
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 5,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 119,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.4,
+        "probabilities": {
+          "A2": 0.6,
+          "A3": 0.36,
+          "B1": 0.04
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.4,
+            "probabilities": {
+              "A2": 0.6,
+              "A3": 0.36,
+              "B1": 0.04
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 6,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 106,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.3,
+        "probabilities": {
+          "B1": 0.04,
+          "A3": 0.43,
+          "A2": 0.53
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.3,
+            "probabilities": {
+              "B1": 0.04,
+              "A3": 0.43,
+              "A2": 0.53
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 6,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 89,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.2,
+        "probabilities": {
+          "action-2": 0.17,
+          "action-1": 0.47,
+          "action-0": 0.36
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.2,
+            "probabilities": {
+              "action-2": 0.17,
+              "action-1": 0.47,
+              "action-0": 0.36
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 7,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 149,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.26,
+        "probabilities": {
+          "action-1": 0.5,
+          "action-2": 0.17,
+          "action-0": 0.33
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.26,
+            "probabilities": {
+              "action-1": 0.5,
+              "action-2": 0.17,
+              "action-0": 0.33
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 7,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 105,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.26,
+        "probabilities": {
+          "B1": 0.04,
+          "A2": 0.51,
+          "A3": 0.45
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.26,
+            "probabilities": {
+              "B1": 0.04,
+              "A2": 0.51,
+              "A3": 0.45
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 8,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 137,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A3",
+      "remainingSteps": 4,
+      "correct": true,
+      "answer": {
+        "type": "choice",
+        "choice": "A3",
+        "confidence": 0.21,
+        "probabilities": {
+          "A2": 0.47,
+          "A3": 0.48,
+          "B1": 0.05
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A3",
+            "confidence": 0.21,
+            "probabilities": {
+              "A2": 0.47,
+              "A3": 0.48,
+              "B1": 0.05
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 8,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 130,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.35,
+        "probabilities": {
+          "action-0": 0.27,
+          "action-1": 0.57,
+          "action-2": 0.16
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.35,
+            "probabilities": {
+              "action-0": 0.27,
+              "action-1": 0.57,
+              "action-2": 0.16
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 9,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 122,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.21,
+        "probabilities": {
+          "action-2": 0.17,
+          "action-1": 0.48,
+          "action-0": 0.35
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.21,
+            "probabilities": {
+              "action-2": 0.17,
+              "action-1": 0.48,
+              "action-0": 0.35
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    },
+    {
+      "trial": 9,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 76,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.35,
+        "probabilities": {
+          "A2": 0.57,
+          "A3": 0.38,
+          "B1": 0.05
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.35,
+            "probabilities": {
+              "A2": 0.57,
+              "A3": 0.38,
+              "B1": 0.05
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 10,
+      "format": "ascii",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 118,
+      "requestId": null,
+      "requestBytes": 594,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "A2",
+        "confidence": 0.3,
+        "probabilities": {
+          "A3": 0.41,
+          "B1": 0.05,
+          "A2": 0.54
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "A2",
+            "confidence": 0.3,
+            "probabilities": {
+              "A3": 0.41,
+              "B1": 0.05,
+              "A2": 0.54
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 475,
+          "output_tokens": 42
+        }
+      }
+    },
+    {
+      "trial": 10,
+      "format": "game",
+      "status": "ok",
+      "httpStatus": 200,
+      "elapsedMs": 114,
+      "requestId": null,
+      "requestBytes": 1934,
+      "tile": "A2",
+      "remainingSteps": 5,
+      "correct": false,
+      "answer": {
+        "type": "choice",
+        "choice": "action-1",
+        "confidence": 0.27,
+        "probabilities": {
+          "action-2": 0.19,
+          "action-0": 0.29,
+          "action-1": 0.52
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-1",
+            "confidence": 0.27,
+            "probabilities": {
+              "action-2": 0.19,
+              "action-0": 0.29,
+              "action-1": 0.52
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1297,
+          "output_tokens": 46
+        }
+      }
+    }
+  ],
+  "finishedAt": "2026-09-21T05:43:05.249Z",
+  "summary": {
+    "game": {
+      "attempts": 10,
+      "answered": 10,
+      "correct": 0,
+      "choices": {
+        "B1": 0,
+        "A2": 10,
+        "A3": 0
+      },
+      "meanConfidence": 0.238,
+      "meanElapsedMs": 120.7,
+      "meanInputTokens": 1297,
+      "meanOutputTokens": 46
+    },
+    "ascii": {
+      "attempts": 10,
+      "answered": 10,
+      "correct": 1,
+      "choices": {
+        "B1": 0,
+        "A2": 9,
+        "A3": 1
+      },
+      "meanConfidence": 0.31199999999999994,
+      "meanElapsedMs": 118.5,
+      "meanInputTokens": 475,
+      "meanOutputTokens": 42
+    }
+  }
+}

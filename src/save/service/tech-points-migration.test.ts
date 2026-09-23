@@ -76,7 +76,7 @@ describe("ADD_TECH_POINTS", () => {
     );
   });
 
-  it("is registered and reaches the current schema", () => {
+  it("is registered and migrates through subsequent steps to the current schema", () => {
     const runner = new MigrationRunner(
       GAME_STATE_MIGRATIONS,
       GAME_STATE_SCHEMA_VERSION,

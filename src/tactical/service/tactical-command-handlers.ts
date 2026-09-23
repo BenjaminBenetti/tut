@@ -1,3 +1,4 @@
+import { rememberJevTerrain } from "./jev-knowledge-service";
 import { err, ok } from "../../core/model/result";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { CommandHandler } from "../../overworld/model/command-handler";
@@ -15,6 +16,7 @@ import type {
 } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import { withVision } from "./vision-service";
+import { jevEndTurnPending } from "./jev-control-service";
 
 // ===========================================
 // Types
@@ -112,6 +114,20 @@ export function liftTacticalHandler<
         tacticalRefusal({ kind: "mission-over", outcome: mission.outcome }),
       );
     }
+    if (
+      jevEndTurnPending(mission) &&
+      command.type !== "tactical:jev-act" &&
+      command.type !== "tactical:configure-jev" &&
+      command.type !== "tactical:set-jev-commander-prompt" &&
+      command.type !== "tactical:end-turn"
+    ) {
+      return err(
+        tacticalRefusal({
+          kind: "systems-unavailable",
+          reason: "Jev units are finishing this turn",
+        }),
+      );
+    }
     const label = [
       "tactical",
       mission.missionId,
@@ -131,7 +147,7 @@ export function liftTacticalHandler<
     // is the one site every handler's result already passes through, so
     // no rule can move a unit and forget to update what a side can see.
     const seen = withVision(outcome.value, mission);
-    const next = seen.state;
+    const next = rememberJevTerrain(seen.state);
     return ok({
       state: {
         ...state,

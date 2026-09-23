@@ -1152,6 +1152,112 @@
   grid-area: top;
 }
 
+/* Equal side columns keep Command at the viewport center regardless of their contents. */
+.tut-hud__banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  min-height: 40px;
+  height: auto;
+  padding-block: var(--space-1);
+}
+
+.tut-hud__banner-left,
+.tut-hud__banner-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
+}
+
+.tut-hud__banner-right {
+  justify-content: flex-end;
+}
+
+.tut-hud__banner .tut-topbar__stat {
+  min-width: 0;
+}
+
+.tut-hud__banner [data-field="mission-name"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tut-command {
+  position: relative;
+  z-index: 5;
+}
+
+.tut-command__toggle .tut-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.tut-command__toggle[aria-expanded="true"] {
+  color: var(--ui-accent);
+  box-shadow: inset 0 -2px var(--ui-accent);
+}
+
+.tut-command__popover {
+  position: absolute;
+  top: calc(100% + var(--space-3));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-shadow: 0 12px 32px #0008;
+}
+
+.tut-command__popover[hidden] {
+  display: none;
+}
+
+/* Unit editors sit outside the scrolling rail and follow their row's flag. */
+.tut-command__popover--floating {
+  position: fixed;
+  transform: none;
+  max-height: calc(100vh - 24px);
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.tut-command__popover p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tut-command__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.tut-command__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-2);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 100px;
+  max-height: 40vh;
+  overscroll-behavior: contain;
+}
+
+.tut-command__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 .tut-hud__side {
   grid-area: side;
   margin: var(--space-4);
@@ -1246,8 +1352,113 @@
 }
 
 .tut-hud__squad .tut-list > li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
   gap: var(--space-2);
   cursor: pointer;
+}
+
+.tut-hud__squad .tut-list > li[role="checkbox"][aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tut-hud__squad .tut-list > li[data-bulk-selected="true"] {
+  background: #8ed8ff18;
+  box-shadow: inset 2px 0 0 #8ed8ff;
+}
+
+.tut-hud__squad .tut-list > li:focus-visible {
+  outline: 1px solid var(--ui-accent);
+  outline-offset: -1px;
+}
+
+.tut-squad__choice {
+  width: 16px;
+  height: 16px;
+  border: 1px solid currentColor;
+  display: grid;
+  place-items: center;
+  color: #8ed8ff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.tut-squad__bulk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.tut-squad__bulk-controls .tut-btn {
+  padding: 5px 8px;
+  min-height: 30px;
+  font-size: 11px;
+  gap: var(--space-2);
+}
+
+.tut-squad__bulk-controls .tut-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tut-hud .tut-squad__jev[aria-pressed="true"] {
+  color: #8ed8ff;
+  box-shadow: inset 0 0 0 2px #8ed8ff;
+}
+
+.tut-squad__hint {
+  margin: var(--space-3) 0;
+  font-size: 12px;
+}
+
+.tut-squad__prompt {
+  display: grid;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.tut-squad__prompt textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--space-2);
+  resize: vertical;
+  font-size: 12px;
+  line-height: 1.5;
+  overscroll-behavior: contain;
+}
+
+.tut-hud__card > .tut-panel__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tut-unit-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tut-unit-controls .tut-btn {
+  padding: 3px 7px;
+  min-height: 26px;
+  font-size: 11px;
+}
+
+.tut-unit-controls .tut-command__toggle .tut-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tut-unit-controls__jev[aria-pressed="true"] {
+  color: #8ed8ff;
+  border-color: #8ed8ff;
+  background: #8ed8ff18;
 }
 
 .tut-hud__squad .tut-list > li > span:not(.tut-icon) {
@@ -1277,7 +1488,7 @@
  * question the strip answers is "who still has a turn", and an absent
  * row would answer "who exists" instead.
  */
-.tut-hud__squad .tut-list > li[data-spent="true"] {
+.tut-hud__squad .tut-list > li[data-spent="true"] > span {
   opacity: 0.55;
 }
 
@@ -1479,18 +1690,57 @@
 
 .tut-hud__actions {
   flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
   justify-content: center;
+}
+
+.tut-hud__turn-controls {
+  flex: 0 0 auto;
 }
 
 /*
  * The End turn button carries its glyph before the label (#495). The icon
  * takes `currentColor`, so it dims with an unavailable button without a
- * rule of its own.
+ * rule of its own. Compact spacing keeps Auto end beside the actions at
+ * 1280px without adding a row that crowds the selected unit's card.
  */
 .tut-hud__actions .tut-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  padding-inline: var(--space-2);
+}
+
+/* A preference beside End turn; it remains operable while the map is playing. */
+.tut-hud__auto-end {
+  white-space: nowrap;
+}
+
+.tut-hud__auto-end-indicator {
+  width: 1.6em;
+  height: 0.9em;
+  flex: 0 0 auto;
+  border: var(--line) solid currentColor;
+  border-radius: 1em;
+  background: radial-gradient(
+    circle at 25% 50%,
+    currentColor 0 0.25em,
+    transparent 0.28em
+  );
+}
+
+.tut-hud__auto-end[aria-pressed="true"] {
+  color: var(--ui-accent);
+}
+
+.tut-hud__auto-end[aria-pressed="true"] .tut-hud__auto-end-indicator {
+  background: radial-gradient(
+    circle at 75% 50%,
+    currentColor 0 0.25em,
+    transparent 0.28em
+  );
 }
 
 /* The unit card's rows lead with the same glyph vocabulary. */
@@ -1782,6 +2032,27 @@
 .tut-status-chip__name {
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.tut-status-chip__jev {
+  color: #8ed8ff;
+  font-weight: 700;
+  text-align: center;
+  text-shadow:
+    0 1px 3px #07131f,
+    0 0 5px #07131f;
+}
+
+.tut-status-chip[data-compact="true"] {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+}
+
+.tut-status-chip[data-compact="true"] > :not(.tut-status-chip__jev) {
+  display: none;
 }
 
 .tut-status-chip__health {

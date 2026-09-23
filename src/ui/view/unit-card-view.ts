@@ -134,8 +134,8 @@ export class UnitCardView {
   // Lifecycle
   // ===========================================
 
-  /** Builds the card under `parent`; call `update` to fill it. */
-  mount(parent: HTMLElement): void {
+  /** Builds the card with an optional header toolbar; call `update` to fill it. */
+  mount(parent: HTMLElement, controls?: HTMLElement): void {
     const doc = parent.ownerDocument;
     const section = doc.createElement("section");
     section.id = "unit-card";
@@ -144,6 +144,7 @@ export class UnitCardView {
     const title = doc.createElement("div");
     title.className = "tut-panel__title";
     title.textContent = "Unit";
+    if (controls) title.append(controls);
 
     const empty = doc.createElement("p");
     empty.className = "tut-dim";

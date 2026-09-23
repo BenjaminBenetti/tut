@@ -17,7 +17,9 @@
     "test:sim": "vitest run --config vitest.sim.config.ts",
     "test:e2e": "playwright test --fail-on-flaky-tests",
     "art:placeholders": "node tools/art/build-placeholders.mjs",
-    "art:textures": "node tools/art/build-textures.mjs"
+    "art:textures": "node tools/art/build-textures.mjs",
+    "dev:relay": "node --env-file=.env relay/main.mjs",
+    "test:relay": "node --test relay/server.test.mjs"
   },
   "dependencies": {
     "three": "^0.185.1"

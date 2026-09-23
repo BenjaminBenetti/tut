@@ -6,7 +6,7 @@ import { iconGlyph } from "./icon-glyph";
 // Types
 // ===========================================
 
-/** The actions the bar lists: the unit's, plus End turn. */
+/** Tactical actions in the bar; Auto end is a separate UI preference. */
 export type ActionBarAction =
   | "move"
   | "attack"
@@ -20,10 +20,14 @@ export type ActionBarAction =
 export interface ActionBarHandlers {
   /** A button was pressed; the HUD treats it exactly as the key would. */
   readonly onAction: (action: ActionBarAction) => void;
+  /** A turn preference, independent of the selected actor and action lock. */
+  readonly onAutoEndChange?: (enabled: boolean) => void;
 }
 
 /** What the bar shows. */
 export interface ActionBarModel {
+  /** End the player phase automatically once all activations and animations finish. */
+  readonly autoEnd?: boolean;
   /** Whether it is the player's phase, so End turn is offered. */
   readonly playerPhase: boolean;
   /** The actions the selected unit cannot take, marked unavailable (#1030). */
@@ -41,9 +45,8 @@ export interface ActionBarModel {
    */
   readonly unspent: number;
   /**
-   * Whether the bug phase is still playing on the map (#1130). Held,
-   * every button is disabled outright — End turn first among them — so
-   * the bar cannot be worked ahead of what the map shows.
+   * Whether the bug phase is still playing on the map (#1130). Tactical
+   * actions are disabled while the Auto end preference remains editable.
    */
   readonly locked?: boolean;
 }
@@ -110,6 +113,7 @@ export class ActionBarView {
   private readonly keys: Readonly<Partial<Record<ActionBarAction, string>>>;
   private root: HTMLElement | undefined;
   private readonly buttons = new Map<ActionBarAction, HTMLButtonElement>();
+  private autoEnd: HTMLButtonElement | undefined;
   private dispose: (() => void) | undefined;
 
   // ===========================================
@@ -160,10 +164,37 @@ export class ActionBarView {
       bar.appendChild(button);
       this.buttons.set(action, button);
     }
+    const autoEnd = doc.createElement("button");
+    autoEnd.type = "button";
+    autoEnd.className = "tut-btn tut-hud__auto-end";
+    autoEnd.dataset.testid = "auto-end-toggle";
+    const indicator = doc.createElement("span");
+    indicator.className = "tut-hud__auto-end-indicator";
+    indicator.setAttribute("aria-hidden", "true");
+    autoEnd.append(indicator, "Auto end");
+    autoEnd.title =
+      "End turn when no units have actions left, after animations finish";
+    autoEnd.setAttribute("aria-pressed", "false");
+    autoEnd.disabled = this.handlers.onAutoEndChange === undefined;
+    autoEnd.addEventListener("keydown", (event) => {
+      // Enter activates this toggle, not the document's End Turn shortcut.
+      if (event.key === "Enter" || event.key === " ") event.stopPropagation();
+    });
+    const turnControls = doc.createElement("div");
+    turnControls.className = "tut-row tut-hud__turn-controls";
+    turnControls.append(this.buttons.get("end-turn")!, autoEnd);
+    bar.appendChild(turnControls);
+    this.autoEnd = autoEnd;
     parent.appendChild(bar);
     const onClick = (event: Event): void => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      if (target.closest('[data-testid="auto-end-toggle"]') === autoEnd) {
+        this.handlers.onAutoEndChange?.(
+          autoEnd.getAttribute("aria-pressed") !== "true",
+        );
         return;
       }
       const button = target.closest<HTMLButtonElement>("button[data-action]");
@@ -179,8 +210,9 @@ export class ActionBarView {
     this.root = bar;
   }
 
-  /** Marks availability per the model, the aim on Attack, and the unspent on End turn; disables the lot while locked. */
+  /** Marks action availability and preferences; Auto end stays editable during playback. */
   update(model: ActionBarModel): void {
+    this.autoEnd?.setAttribute("aria-pressed", String(model.autoEnd === true));
     const locked = model.locked === true;
     if (this.root) {
       this.root.dataset.locked = String(locked);
@@ -218,6 +250,7 @@ export class ActionBarView {
     this.root?.remove();
     this.root = undefined;
     this.buttons.clear();
+    this.autoEnd = undefined;
   }
 }
 

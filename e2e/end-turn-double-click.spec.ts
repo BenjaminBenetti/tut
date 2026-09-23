@@ -21,6 +21,11 @@ test("End turn pressed twice ends one turn, and is disabled while the bug phase 
   page,
 }) => {
   test.setTimeout(180_000);
+  const jevRequests: string[] = [];
+  await page.route("**/v1/systemone", async (route) => {
+    jevRequests.push(route.request().method());
+    await route.abort();
+  });
   await page.setViewportSize({ width: 1280, height: 720 });
   await launchMission(page, "4242");
   await settleForShot(page);
@@ -64,4 +69,5 @@ test("End turn pressed twice ends one turn, and is disabled while the bug phase 
   await waitForBugPhasePlayed(page);
   await expect(endTurn).toBeEnabled();
   expect(await turn()).toBe(4);
+  expect(jevRequests).toEqual([]);
 });

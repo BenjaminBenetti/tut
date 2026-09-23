@@ -1,0 +1,312 @@
+{
+  "request": {
+    "model": "jev-latest",
+    "state": {
+      "entity_prompt": "Reach objective-1 as quickly as possible.",
+      "commander_prompt": "",
+      "actor": {
+        "id": "self",
+        "name": "Alpha",
+        "type": "squad:fixture",
+        "kind": "squad",
+        "movement_class": "infantry",
+        "faction": "tdf",
+        "relationship": "friendly",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "facing": "n",
+        "hp": 10,
+        "max_hp": 10,
+        "armor": 0,
+        "footprint": 1,
+        "weapons": [
+          {
+            "id": "primary",
+            "name": "Attack",
+            "profile": {
+              "range": 5,
+              "accuracy": 60,
+              "damage": 3,
+              "armorPen": 0
+            }
+          }
+        ],
+        "status": [],
+        "ap": 2,
+        "max_ap": 2,
+        "movement": 2
+      },
+      "turn": 1,
+      "phase": "player",
+      "faction": "tdf",
+      "navigation": {
+        "format": "ascii-layers",
+        "width": 4,
+        "depth": 4,
+        "coordinates": "Zero-based x increases right; z increases down; y is elevation. Each layer covers the full width and depth, filled with f by default. rows keys are z; character index plus row_start_x[z] (default 0) is x. Omitted rows and characters outside a row are f. Only fog padding is omitted; every known tile and marker is included. x_digits labels global columns. n means z-1, e x+1, s z+1, w x-1.",
+        "x_digits": ["0123"],
+        "scope": "Full map bounds with shared faction knowledge only. Remembered terrain may be stale. Map glyphs describe terrain for this actor; living unit footprints, wall edges and elevation links also constrain movement. Markers may overlap; their records retain every id and the underlying anchor terrain. Public objectives or extraction markers over f do not reveal the surface. Unmarked terrain is not proof that no hidden enemy is there.",
+        "legend": {
+          "f": "Unknown: no observed or remembered surface here. May be unexplored terrain or air; do not assume walkable ground.",
+          ".": "Currently visible surface passable for this actor's movement class.",
+          ",": "Remembered passable surface, currently out of sight; may have changed.",
+          "#": "Currently visible surface blocked for this actor's movement class.",
+          "%": "Remembered blocked surface, currently out of sight.",
+          "l": "Visible blocked obstacle providing low cover to adjacent tiles.",
+          "L": "Remembered low-cover obstacle, currently out of sight.",
+          "h": "Visible blocked obstacle providing high cover; blocks sight unless features says otherwise.",
+          "H": "Remembered high-cover obstacle, currently out of sight.",
+          "~": "Visible passable rough or infested terrain; movement cost depends on the actor.",
+          "=": "Remembered passable rough or infested terrain, currently out of sight.",
+          "@": "The actor; marker.terrain preserves the surface underneath.",
+          "a": "Living ally; look up its id/name and footprint in actor or entities.",
+          "e": "Currently spotted living enemy; look up its id/name and footprint in entities.",
+          "O": "Unfinished mission objective. Its public location does not reveal terrain or hidden enemies.",
+          "n": "Currently visible living nest/spawner.",
+          "x": "Extraction tile; leaving requires an extract action."
+        },
+        "wall_rules": "walls contains two ASCII edge maps on this layer. vertical: row key is tile z, character index is boundary x (0..width); a glyph at x,z separates tiles (x-1,z) and (x,z). horizontal: row key is boundary z (0..depth), character index is tile x; a glyph at x,z separates tiles (x,z-1) and (x,z). Lowercase s=solid, d=door, w=window, h=half wall are visible; uppercase S/D/W/H are remembered and may be stale. Spaces, missing rows and trailing characters mean no known wall. Solid/windows block movement; doors/half allow infantry but block mechs. Solid/doors block sight, windows/half permit sight; half walls give low cover. Walls are bidirectional.",
+        "feature_rules": "features groups 'x,z' coordinate strings on this layer by property and value, overriding the terrain glyph: cover_provided 0=none, 1=low, 2=high; blocks_sight true/false. Connectors group by usable/blocked for this actor, then kind; each string is 'fromX,fromY,fromZ -> toX,toY,toZ'.",
+        "elevation_rules": "Adjacent surfaces one y-layer apart can be walked between when otherwise legal. Rises of two or more layers require a listed connector or a legal jump action. Two layers make one storey. Same x,z on different layers are different tiles; do not treat a roof as ground.",
+        "layers": [
+          {
+            "y": 0,
+            "fill": "f",
+            "rows": {
+              "0": "@.#.",
+              "1": ".#..",
+              "2": "....",
+              "3": "...O"
+            },
+            "markers": [
+              {
+                "symbol": "n",
+                "id": "spawner-1",
+                "position": {
+                  "x": 3,
+                  "y": 0,
+                  "z": 3
+                },
+                "terrain": "."
+              },
+              {
+                "symbol": "O",
+                "id": "objective-1",
+                "position": {
+                  "x": 3,
+                  "y": 0,
+                  "z": 3
+                },
+                "terrain": "."
+              },
+              {
+                "symbol": "@",
+                "id": "self",
+                "position": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "footprint": 1,
+                "terrain": "."
+              }
+            ],
+            "walls": {},
+            "features": {}
+          }
+        ],
+        "connectors": {}
+      },
+      "entities": [],
+      "visible_spawners": [
+        {
+          "id": "spawner-1",
+          "pos": {
+            "x": 3,
+            "y": 0,
+            "z": 3
+          },
+          "hp": 20,
+          "destroyed": false
+        }
+      ],
+      "objectives": [
+        {
+          "id": "objective-1",
+          "kind": "destroy-spawner",
+          "complete": false,
+          "position": {
+            "x": 3,
+            "y": 0,
+            "z": 3
+          }
+        }
+      ],
+      "gameplay": {
+        "turn": "This is a turn-based tactical battle: the TDF player faction acts, then the bug faction. You control only actor. A living actor with AP can act during its faction's phase; AP refreshes on its next faction turn. Enemy resources not shown are unknown.",
+        "resources": "AP means action points, HP means health points. Zero HP removes a unit. actor.ap is the budget remaining now; actor.max_ap is its normal turn budget. Each action pays its listed AP cost immediately. If AP remains, you receive an updated state and choose another action. Never assume all attacks cost one AP: some consume every remaining AP.",
+        "movement": "actor.movement is movement points per AP, not remaining AP. An ordinary tile costs one movement point; infestation slows TDF and speeds bugs, and rough terrain can slow mechs. Offered move destinations and their movement_points already account for the actor's terrain costs, walls, footprint and elevation. Every move option spends exactly one AP; unused distance cannot be saved for later.",
+        "combat": "Attack previews report hit chance in percent and damage in HP. Ranged cover and height affect shots; cover is directional and does not reduce adjacent melee damage. Armor reduces damage and armor penetration bypasses armor. Blast attacks can hurt allies and destroy cover. Profiles describe capabilities; offered previews describe the actual target.",
+        "knowledge": "Faction vision is shared. f cells have no known surface; remembered cells may be stale. Radar contacts are positions only, not visible targets. Objective locations are public but do not reveal surrounding terrain or hidden nest health. Names in orders refer to actor.name and entities[].name.",
+        "objectives": "For destroy-spawner objectives the TDF must destroy the nest with attacks or an offered nearby interact action; merely reaching the marker does not complete it. Bugs defend their nests and oppose TDF. Extraction removes the actor from this mission; use it only when its orders call for leaving."
+      },
+      "faction_goal": "Complete the mission objectives and preserve the force.",
+      "extraction": [],
+      "last_seen": [],
+      "radar_contacts": [],
+      "friendly_radars": [],
+      "friendly_charges": [],
+      "visible_carcasses": [],
+      "observed_hazards": [],
+      "eligible_to_act": true
+    },
+    "questions": {
+      "action": {
+        "type": "choice",
+        "instructions": "Choose the actor's next action in a turn-based tactical battle using `gameplay` for rules and only observed or remembered facts in the state. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. When no specific order applies, use `faction_goal`. AP means action points: actor.ap is the remaining budget, each action spends its listed cost, and a new decision follows if AP remains. HP means health points. Read ASCII layers using navigation.legend and coordinates; f is unknown and remembered terrain may be stale. Resolve names in orders against actor.name and entities[].name. Historical sightings and radar pings are not visible attack targets. Consider objectives, cover, hazards, survival and friendly fire. Select only an offered option; choosing a group does not spend AP or execute an action. The specific action, including its weapon or item, has been chosen. Choose the best target or destination from ONLY the offered options for that action. move: costs 1 AP. AP means action points; the actor has 2 AP remaining. Every offered destination costs exactly 1 AP, whether the route is short or uses the full 2 movement points allowed per AP. Movement follows horizontal/vertical neighbors, may turn, and must respect blocked terrain, walls and elevation links. Ordinary tiles cost one movement point; terrain may change that cost. Each option's movement_points is its actual route cost and path_steps is the number of tiles traveled. Unused movement range is lost when this action ends: a short move does not save any AP. After this move, another decision can spend remaining AP from the updated position and vision. To reach a destination quickly, prefer progress along a viable route that needs fewer total movement actions, accounting for obstacles and backtracking; do not simply choose the nearest tile or the longest move. Balance this with orders, cover, hazards and survival. Cover lists n/e/s/w protection: 0 none, 1 low, 2 high. Choose only an offered destination or group; the game computes the path.",
+        "criteria": {
+          "action-0": {
+            "action": "move",
+            "destination": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "ap_cost": 1,
+            "movement_points": 1,
+            "path_steps": 1,
+            "cover": [
+              ["n", 0],
+              ["e", 0],
+              ["s", 0],
+              ["w", 0]
+            ],
+            "known_hazards": []
+          },
+          "action-1": {
+            "action": "move",
+            "destination": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "ap_cost": 1,
+            "movement_points": 1,
+            "path_steps": 1,
+            "cover": [
+              ["n", 0],
+              ["e", 0],
+              ["s", 0],
+              ["w", 0]
+            ],
+            "known_hazards": []
+          },
+          "action-2": {
+            "action": "move",
+            "destination": {
+              "x": 0,
+              "y": 0,
+              "z": 2
+            },
+            "ap_cost": 1,
+            "movement_points": 2,
+            "path_steps": 2,
+            "cover": [
+              ["n", 0],
+              ["e", 0],
+              ["s", 0],
+              ["w", 0]
+            ],
+            "known_hazards": []
+          }
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "status": 200,
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-2",
+            "confidence": 0.3,
+            "probabilities": {
+              "action-0": 0.19,
+              "action-1": 0.27,
+              "action-2": 0.54
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 3149,
+          "output_tokens": 46
+        }
+      },
+      "destination": {
+        "x": 0,
+        "y": 0,
+        "z": 2
+      }
+    },
+    {
+      "status": 200,
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-2",
+            "confidence": 0.25,
+            "probabilities": {
+              "action-1": 0.27,
+              "action-2": 0.5,
+              "action-0": 0.23
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 3149,
+          "output_tokens": 46
+        }
+      },
+      "destination": {
+        "x": 0,
+        "y": 0,
+        "z": 2
+      }
+    },
+    {
+      "status": 200,
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "action": {
+            "type": "choice",
+            "choice": "action-2",
+            "confidence": 0.38,
+            "probabilities": {
+              "action-0": 0.16,
+              "action-2": 0.59,
+              "action-1": 0.25
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 3149,
+          "output_tokens": 46
+        }
+      },
+      "destination": {
+        "x": 0,
+        "y": 0,
+        "z": 2
+      }
+    }
+  ]
+}

@@ -57,8 +57,10 @@ import type { TechState } from "../../tech/model/tech-state";
  *   `defend-generators` objective, `generator` units and
  *   `activeMission.edgeSpawn.totalWaves`, `lastMissionResult.defence`.
  *   All optional; older saves hold none.
+ * - `28`: optional mission Jev controls, faction knowledge and resumable
+ *   activation progress. Older saves leave Jev disabled.
  */
-export const GAME_STATE_SCHEMA_VERSION = 27;
+export const GAME_STATE_SCHEMA_VERSION = 28;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

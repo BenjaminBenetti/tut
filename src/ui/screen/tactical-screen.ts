@@ -1,3 +1,4 @@
+import type { JevInspector } from "../model/jev-inspector";
 import type { CommandError } from "../../core/model/command-error";
 import type { Unsubscribe } from "../../core/model/event-bus";
 import { findCity } from "../../overworld/service/earth-map-query-service";
@@ -5,6 +6,12 @@ import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { abandonMission } from "../../tactical/model/abandon-mission-command";
 import { finishMission } from "../../tactical/model/finish-mission-command";
+import { endTurn } from "../../tactical/model/end-turn-command";
+import {
+  jevEndTurnPending,
+  manualTdfHasActions,
+  pendingJevTdf,
+} from "../../tactical/service/jev-control-service";
 import { leaveMissionSummary } from "../../tactical/service/abandon-mission-handler";
 import type { RankTuning } from "../../roster/model/rank";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
@@ -36,6 +43,8 @@ import { actorOf, describeEvent } from "../view/event-vocabulary";
 
 /** What the tactical screen needs from the app. */
 export interface TacticalScreenDeps {
+  /** App-owned asynchronous controller, shared with the dev inspector. */
+  readonly jev?: JevInspector;
   readonly router: ScreenRouter;
   readonly session: GameSession;
   /** Tuning the HUD hands to `previewAttack`; the screen computes no number itself. */
@@ -196,6 +205,14 @@ export class TacticalScreen implements Screen {
   private playbackGeneration = 0;
   /** What the HUD, the scene and the body were last told. */
   private playing = false;
+  /** Every unsettled scene update, including single actions without a phase-change event. */
+  private readonly sceneUpdates = new Set<symbol>();
+  /** Local to this visit to the mission; automatic turn ending starts off. */
+  private autoEnd = false;
+  private automationPaused = false;
+  private autoEndCheckQueued = false;
+  /** A refused or duplicate notification must not repeatedly dispatch for one turn. */
+  private autoEndedTurn: { missionId: string; turn: number } | undefined;
   /**
    * Releases waiting on the phase banner (#1132): the scene has settled
    * but "Bug phase" is still up, so the controls wait for it to pass.
@@ -230,6 +247,15 @@ export class TacticalScreen implements Screen {
         },
         onLeave: () => {
           this.leave();
+        },
+        onAutoEndChange: (enabled) => {
+          this.autoEnd = enabled;
+          this.hud.setAutoEnd(enabled);
+          this.scheduleAutoEnd();
+        },
+        onAutomationPause: (paused) => {
+          this.automationPaused = paused;
+          this.scheduleAutoEnd();
         },
         // Bring a unit on screen (#1041). The camera rig has had
         // `lookAt` all along; until now nothing called it after the
@@ -276,6 +302,7 @@ export class TacticalScreen implements Screen {
           deps.sceneHost?.unitHeadScreenPosition(unitId),
       },
       {
+        jev: deps.jev,
         combatTuning: deps.combatTuning,
         objectiveTuning: deps.objectiveTuning,
         rankTuning: deps.rankTuning,
@@ -294,6 +321,7 @@ export class TacticalScreen implements Screen {
       for (const check of [...this.awaitingBanner]) {
         check();
       }
+      this.scheduleAutoEnd();
     });
     this.dialog = new ConfirmDialogView(
       {
@@ -326,6 +354,7 @@ export class TacticalScreen implements Screen {
     viewport.id = "tactical-viewport";
     viewport.className = "tut-tactical__viewport";
     layout.appendChild(viewport);
+    this.hud.setAutoEnd(this.autoEnd);
     this.hud.mount(viewport);
 
     const note = doc.createElement("p");
@@ -349,10 +378,15 @@ export class TacticalScreen implements Screen {
     this.unsubscribe = store?.subscribe((change) => {
       this.render(change.state, tacticalEventsOf(change.events));
     });
+    this.deps.jev?.start();
   }
 
   /** Unsubscribes, releases the lock and the scene, and removes the layout. */
   unmount(): void {
+    this.autoEnd = false;
+    this.autoEndedTurn = undefined;
+    this.deps.jev?.dispose();
+    this.sceneUpdates.clear();
     this.unsubscribe?.();
     this.unsubscribe = undefined;
     const body = this.root?.ownerDocument.body;
@@ -417,6 +451,7 @@ export class TacticalScreen implements Screen {
     state: GameState | undefined,
     events: readonly TacticalEvent[] = [],
   ): void {
+    this.scheduleAutoEnd();
     const mission = state?.activeMission;
     if (this.note) {
       this.note.hidden = mission !== undefined;
@@ -437,9 +472,11 @@ export class TacticalScreen implements Screen {
       this.viewport !== undefined &&
       this.attachedMissionId === mission.missionId;
     if (!paced) {
+      this.sceneUpdates.clear();
       // Another mission, or none: whatever the last scene was playing
       // is over as far as these controls are concerned.
       this.resetPlayback();
+      this.syncAutomationPlayback();
       this.hud.update(mission, events);
       if (!mission) {
         return;
@@ -593,12 +630,54 @@ export class TacticalScreen implements Screen {
       return;
     }
     this.playing = playing;
+    this.syncAutomationPlayback();
     this.hud.setPlaybackLocked(playing);
     this.deps.sceneHost?.setInputLocked(playing);
     const body = this.root?.ownerDocument.body;
     if (body) {
       body.dataset.phasePlaying = String(playing);
     }
+  }
+
+  /** Automatic actions wait for all scene updates and the existing phase-banner lock. */
+  private syncAutomationPlayback(): void {
+    this.deps.jev?.setPlaybackPending(
+      this.playing || this.sceneUpdates.size > 0,
+    );
+    this.scheduleAutoEnd();
+  }
+
+  /**
+   * Recheck live state after store notifications finish, then use ordinary End Turn.
+   * Every scene update counts, including the last manual action and queued Jev
+   * extraction. The watchdog unlocking input is not animation completion.
+   */
+  private scheduleAutoEnd(): void {
+    if (!this.autoEnd || !this.root || this.autoEndCheckQueued) return;
+    const root = this.root;
+    this.autoEndCheckQueued = true;
+    queueMicrotask(() => {
+      this.autoEndCheckQueued = false;
+      const mission = this.deps.session.store?.getState().activeMission;
+      if (
+        !this.autoEnd ||
+        this.root !== root ||
+        this.automationPaused ||
+        this.playing ||
+        this.sceneUpdates.size > 0 ||
+        this.hud.isAnnouncing("bugs") ||
+        mission?.phase !== "player" ||
+        mission.outcome !== undefined ||
+        jevEndTurnPending(mission) ||
+        manualTdfHasActions(mission) ||
+        pendingJevTdf(mission) ||
+        (this.autoEndedTurn?.missionId === mission.missionId &&
+          this.autoEndedTurn.turn === mission.turn)
+      )
+        return;
+      this.autoEndedTurn = { missionId: mission.missionId, turn: mission.turn };
+      this.dispatch(endTurn());
+    });
   }
 
   /**
@@ -738,6 +817,9 @@ export class TacticalScreen implements Screen {
         this.deps.onIntent?.(intent);
       },
     };
+    const batch = Symbol();
+    this.sceneUpdates.add(batch);
+    this.syncAutomationPlayback();
     const pending =
       this.attachedMissionId === mission.missionId
         ? host.update(mission, events, hooks)
@@ -759,9 +841,13 @@ export class TacticalScreen implements Screen {
     // touches a key, so the readout is never blank while the control is
     // live.
     this.hud.setLayerFocus(host.layerFocus());
-    return pending.catch((error: unknown) => {
-      console.error("Tactical scene failed", error);
-    });
+    return pending
+      .catch((error: unknown) => {
+        console.error("Tactical scene failed", error);
+      })
+      .finally(() => {
+        if (this.sceneUpdates.delete(batch)) this.syncAutomationPlayback();
+      });
   }
 
   /** Mirrors the last intent to the body so end-to-end tests can watch it. */

@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jev navigation · 100 entities</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 28px auto;
+        padding: 0 24px;
+        max-width: 1400px;
+        background: #101720;
+        color: #e2eaf1;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      h1 {
+        font-size: 30px;
+        margin-bottom: 8px;
+      }
+      h2 {
+        font-size: 18px;
+      }
+      a {
+        color: #8bd5ff;
+      }
+      .note {
+        color: #aabcca;
+        font-size: 13px;
+      }
+      .controls,
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin: 16px 0;
+        align-items: end;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      select,
+      button {
+        background: #213244;
+        color: inherit;
+        border: 1px solid #56718a;
+        border-radius: 5px;
+        padding: 8px;
+        font: inherit;
+      }
+      select {
+        max-width: min(100%, 640px);
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin: 18px 0;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px;
+        border-bottom: 1px solid #334456;
+        white-space: nowrap;
+      }
+      th {
+        color: #b9cddb;
+      }
+      .view {
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) minmax(300px, 470px);
+        gap: 24px;
+      }
+      canvas {
+        width: 100%;
+        display: block;
+        background: #090e15;
+        border: 1px solid #475669;
+        image-rendering: pixelated;
+      }
+      pre {
+        padding: 12px;
+        background: #1a2633;
+        overflow: auto;
+        max-height: 420px;
+        font-size: 12px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        overscroll-behavior: contain;
+      }
+      #request,
+      #response {
+        max-height: 560px;
+      }
+      input[type="range"] {
+        width: 100%;
+      }
+      #orders {
+        border-left: 3px solid #87c5f8;
+        padding: 4px 16px;
+        background: #192532;
+      }
+      #orders p {
+        margin: 8px 0;
+      }
+      .badge {
+        color: #ffc969;
+      }
+      .good {
+        color: #8de2af;
+      }
+      #error {
+        color: #ff9d92;
+      }
+      details {
+        border: 1px solid #33485b;
+        border-radius: 5px;
+        padding: 12px;
+        margin-top: 16px;
+      }
+      summary {
+        cursor: pointer;
+      }
+      #entity-info {
+        min-height: 60px;
+      }
+      @media (max-width: 850px) {
+        body {
+          padding: 0 14px;
+        }
+        .view {
+          grid-template-columns: 1fr;
+        }
+        .controls label {
+          max-width: 100%;
+        }
+        h1 {
+          font-size: 25px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Jev navigation <span class="badge">100 entities</span></h1>
+    <p>
+      100 destination choices, real unit metadata, one actor. Jev selects whom
+      to approach; the game finds and executes a legal route for one AP, then
+      asks again.
+    </p>
+    <p class="note">
+      Generated 48×48, 72×72 and 96×96 maps. Every roster has 60 TDF squads and
+      40 bugs, including 2×2 brutes. These are fully visible, stationary units;
+      movement respects their occupied tiles. No combat or enemy turns. This is
+      an evaluation prototype, separate from the game controller.
+    </p>
+    <p>
+      <a href="README.md">Method and findings</a> ·
+      <a href="results.json">Results JSON</a> ·
+      <a href="traces.tar.gz">Complete traces</a> ·
+      <a href="sample-entities-shared.json">Sample shared request</a> ·
+      <a href="sample-entities-inline.json">Sample inline request</a>
+    </p>
+    <p id="loading">Loading recorded evaluations…</p>
+    <p id="error" role="alert"></p>
+    <div class="scroll">
+      <table id="summary">
+        <thead>
+          <tr>
+            <th>Batch</th>
+            <th>Format</th>
+            <th>Reached</th>
+            <th>Correct target choices</th>
+            <th>AP ratio (success)</th>
+            <th>Mean input tokens</th>
+            <th>Mean HTTP latency</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="controls">
+      <label>Experiment<select id="batch"></select></label>
+      <label>Case and format<select id="run"></select></label>
+      <label>Elevation<select id="level"></select></label>
+    </div>
+    <div id="orders"></div>
+    <p id="metrics"></p>
+    <div class="view">
+      <div>
+        <canvas
+          id="map"
+          width="768"
+          height="768"
+          aria-label="Game map with 100 entities and the selected movement trajectory"
+        ></canvas>
+        <div class="actions">
+          <button id="previous" type="button">← Previous decision</button
+          ><button id="next" type="button">Next decision →</button>
+        </div>
+        <label
+          >Decision <span id="step-label"></span
+          ><input type="range" id="step" min="1" value="1"
+        /></label>
+        <p class="note">
+          Blue squares: TDF · red squares: bugs · gold ring: ordered target ·
+          violet ring: Jev’s choice · white: actor · cyan: route. Other
+          elevations are dimmed. Click a unit to inspect its metadata.
+        </p>
+        <p class="note">
+          Walls: pale = solid/window, brown = door, grey = half wall. The
+          selected decision shows movement before and after that call.
+        </p>
+        <pre id="entity-info">Click a unit on the map to inspect it.</pre>
+      </div>
+      <div>
+        <h2 id="decision-title">Decision</h2>
+        <pre id="detail"></pre>
+        <h2>Exact response</h2>
+        <pre id="response"></pre>
+      </div>
+    </div>
+    <details id="request-panel">
+      <summary>
+        Exact request · state, actor, 100 entities and all choices
+      </summary>
+      <p class="note">
+        Reconstructed losslessly from the recorded request. Its SHA-256 is
+        checked when this page is generated. The complete unmodified request and
+        response files are also in the trace archive.
+      </p>
+      <button id="download" type="button">Download this request</button>
+      <pre id="request"></pre>
+    </details>
+    <script type="module">
+      /** Decode the embedded archive; no API or network connection is needed. */
+      async function loadData() {
+        const bytes = Uint8Array.from(atob("__NAV_DATA__"), (c) =>
+          c.charCodeAt(0),
+        );
+        return new Response(
+          new Blob([bytes])
+            .stream()
+            .pipeThrough(new DecompressionStream("gzip")),
+        ).json();
+      }
+      try {
+        const data = await loadData();
+        document.getElementById("loading").remove();
+        initialize(data);
+      } catch (error) {
+        document.getElementById("error").textContent =
+          `Could not open the embedded report: ${error.message}. Use a current browser with DecompressionStream support.`;
+      }
+      /** Wire an entirely local explorer over the saved game geometry and inference records. */
+      function initialize(data) {
+        const batch = document.getElementById("batch");
+        const runSelect = document.getElementById("run");
+        const level = document.getElementById("level");
+        const slider = document.getElementById("step");
+        const canvas = document.getElementById("map");
+        const ctx = canvas.getContext("2d");
+        const previousButton = document.getElementById("previous");
+        const nextButton = document.getElementById("next");
+        const requestPanel = document.getElementById("request-panel");
+        let runs = [],
+          run,
+          selectedRequest;
+        const labels = {
+          "entities-inline": "Inline capabilities",
+          "entities-shared": "Shared capabilities",
+        };
+        for (const item of data.batches) {
+          batch.add(new Option(item.id, item.id));
+          for (const [variant, result] of Object.entries(item.summary)) {
+            const row = document.createElement("tr");
+            const values = [
+              item.id,
+              labels[variant] ?? variant,
+              `${result.reached}/${result.episodes}`,
+              `${result.correctTargetDecisions}/${result.targetDecisions}`,
+              result.meanApRatioOnSuccess == null
+                ? "—"
+                : `${result.meanApRatioOnSuccess.toFixed(2)}×`,
+              Math.round(result.meanInputTokens ?? 0).toLocaleString(),
+              `${Math.round(result.meanLatencyMs ?? 0)} ms`,
+            ];
+            for (const value of values) {
+              const cell = document.createElement("td");
+              cell.textContent = String(value);
+              row.append(cell);
+            }
+            document.querySelector("#summary tbody").append(row);
+          }
+        }
+        batch.value =
+          data.batches.find(
+            (item) => item.suite === "holdout" && !item.reverseChoices,
+          )?.id ?? data.batches[0].id;
+        /** Select comparable trajectories within an experiment. */
+        function chooseBatch() {
+          runs = data.runs.filter((item) => item.batch === batch.value);
+          runSelect.replaceChildren();
+          runs.forEach((item, i) =>
+            runSelect.add(
+              new Option(
+                `${item.caseId} · ${labels[item.variant] ?? item.variant} · ${item.status}`,
+                String(i),
+              ),
+            ),
+          );
+          chooseRun();
+        }
+        /** Reset the map, order text and step controls for a recorded trajectory. */
+        function chooseRun() {
+          run = runs[Number(runSelect.value)];
+          const map = data.maps[run.map];
+          level.replaceChildren();
+          for (let y = 0; y < map.levels; y++)
+            level.add(new Option(String(y), String(y)));
+          level.value = String(run.start.y);
+          slider.max = String(run.steps.length);
+          slider.value = "1";
+          const orders = document.getElementById("orders");
+          orders.replaceChildren();
+          for (const [label, value] of [
+            ["Entity order", run.prompts?.entity],
+            ["Commander order", run.prompts?.commander || "(none)"],
+            ["Expected target", `${run.goalName} (${run.goalId})`],
+          ]) {
+            const paragraph = document.createElement("p");
+            const heading = document.createElement("strong");
+            heading.textContent = `${label}: `;
+            paragraph.append(heading, value);
+            orders.append(paragraph);
+          }
+          document.getElementById("entity-info").textContent =
+            "Click a unit on the map to inspect it.";
+          draw();
+        }
+        /** Restore the recorded payload from a shared immutable request and its actor state. */
+        function requestFor(hash) {
+          const record = data.requests[hash];
+          const template = data.requestTemplates[record.templateId];
+          return {
+            ...template,
+            state: { ...template.state, actor: record.actor },
+          };
+        }
+        /** Draw game geometry, physical entity footprints and all executed moves through this decision. */
+        function draw() {
+          const map = data.maps[run.map];
+          const y = Number(level.value),
+            count = Number(slider.value),
+            scale = canvas.width / map.width;
+          const step = run.steps[count - 1];
+          const call = step?.calls.at(-1);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          for (const [x, tileY, z, pass, walls] of map.tiles) {
+            if (tileY !== y) continue;
+            ctx.fillStyle = pass & 1 ? "#334b5e" : "#1b2631";
+            ctx.fillRect(x * scale, z * scale, scale, scale);
+            const edges = [
+              [x, z, x + 1, z],
+              [x + 1, z, x + 1, z + 1],
+              [x, z + 1, x + 1, z + 1],
+              [x, z, x, z + 1],
+            ];
+            for (let side = 0; side < 4; side++) {
+              const kind = (walls >> (side * 3)) & 7;
+              if (!kind) continue;
+              ctx.strokeStyle =
+                kind === 2 ? "#d49a56" : kind === 4 ? "#7a8a98" : "#cad4df";
+              ctx.lineWidth = Math.max(1, scale / 5);
+              const [x0, z0, x1, z1] = edges[side];
+              ctx.beginPath();
+              ctx.moveTo(x0 * scale, z0 * scale);
+              ctx.lineTo(x1 * scale, z1 * scale);
+              ctx.stroke();
+            }
+          }
+          for (const entity of run.roster ?? []) {
+            ctx.globalAlpha = entity.position.y === y ? 1 : 0.25;
+            ctx.fillStyle = entity.faction === "tdf" ? "#7daff5" : "#f18285";
+            ctx.fillRect(
+              (entity.position.x + 0.15) * scale,
+              (entity.position.z + 0.15) * scale,
+              (entity.footprint - 0.3) * scale,
+              (entity.footprint - 0.3) * scale,
+            );
+          }
+          ctx.globalAlpha = 1;
+          let previous = run.start;
+          for (const recorded of run.steps.slice(0, count))
+            for (const point of recorded.path ?? []) {
+              ctx.globalAlpha = point.y === y ? 1 : 0.22;
+              ctx.strokeStyle = "#56d7ff";
+              ctx.lineWidth = Math.max(2, scale / 3);
+              ctx.beginPath();
+              ctx.moveTo(
+                (previous.x + 0.5) * scale,
+                (previous.z + 0.5) * scale,
+              );
+              ctx.lineTo((point.x + 0.5) * scale, (point.z + 0.5) * scale);
+              ctx.stroke();
+              previous = point;
+            }
+          ctx.globalAlpha = 1;
+          ring(run.goal, "#ffc969", 1, scale);
+          const chosen = run.roster?.find(
+            (entity) => entity.id === step?.selectedEntityId,
+          );
+          if (chosen) ring(chosen.position, "#cb9bff", 1.5, scale);
+          marker(previous, "#ffffff", "@", scale);
+          document.getElementById("metrics").textContent =
+            `${map.width}×${map.depth} · ${run.entityCount} entities + actor · ${run.status} · ${run.apUsed} AP spent / ${run.optimalAp} minimum · ${run.distanceRemaining} route steps remaining`;
+          document.getElementById("step-label").textContent =
+            `${count} / ${run.steps.length}`;
+          previousButton.disabled = count <= 1;
+          nextButton.disabled = count >= run.steps.length;
+          document.getElementById("decision-title").textContent =
+            `Choice: ${chosen?.name ?? call?.choice ?? "no answer"} · ${step?.selectedEntityCorrect ? "correct" : "incorrect / failed"}`;
+          document.getElementById("detail").textContent = JSON.stringify(
+            {
+              decision: count,
+              selectedEntity: chosen?.name,
+              expectedEntity: run.goalName,
+              correct: step?.selectedEntityCorrect,
+              from: step?.from,
+              to: step?.to,
+              distanceBefore: step?.distanceBefore,
+              distanceAfter: step?.distanceAfter,
+              inputTokens: call?.inputTokens,
+              elapsedMs: call?.elapsedMs,
+              confidence: call?.confidence,
+              requestHash: call?.requestHash,
+              error: call?.error ?? run.error,
+            },
+            null,
+            2,
+          );
+          document.getElementById("response").textContent = JSON.stringify(
+            call?.response ?? {
+              error: call?.error ?? "No inference call recorded.",
+            },
+            null,
+            2,
+          );
+          selectedRequest = call ? requestFor(call.requestHash) : undefined;
+          renderRequest();
+        }
+        /** Defer formatting the large request until its inspector is opened. */
+        function renderRequest() {
+          if (requestPanel.open)
+            document.getElementById("request").textContent = JSON.stringify(
+              selectedRequest,
+              null,
+              2,
+            );
+        }
+        /** Outline an expected or selected target, dimming targets on other levels. */
+        function ring(point, color, radius, scale) {
+          ctx.globalAlpha = point.y === Number(level.value) ? 1 : 0.4;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(
+            (point.x + 0.5) * scale,
+            (point.z + 0.5) * scale,
+            Math.max(6, radius * scale),
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+        /** Show the actor at its current tile, including its elevation. */
+        function marker(point, color, label, scale) {
+          ctx.globalAlpha = point.y === Number(level.value) ? 1 : 0.5;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(
+            (point.x + 0.5) * scale,
+            (point.z + 0.5) * scale,
+            Math.max(5, scale * 0.6),
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+          ctx.fillStyle = "#08131e";
+          ctx.font = "bold 10px system-ui";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, (point.x + 0.5) * scale, (point.z + 0.5) * scale);
+          ctx.globalAlpha = 1;
+        }
+        canvas.addEventListener("click", (event) => {
+          const bounds = canvas.getBoundingClientRect();
+          const map = data.maps[run.map];
+          const x = ((event.clientX - bounds.left) / bounds.width) * map.width,
+            z = ((event.clientY - bounds.top) / bounds.height) * map.depth;
+          const entity = run.roster
+            .filter(
+              (item) =>
+                x >= item.position.x &&
+                x < item.position.x + item.footprint &&
+                z >= item.position.z &&
+                z < item.position.z + item.footprint,
+            )
+            .sort(
+              (a, b) =>
+                Math.abs(a.position.y - Number(level.value)) -
+                Math.abs(b.position.y - Number(level.value)),
+            )[0];
+          if (!entity || !selectedRequest) return;
+          const record = selectedRequest.state.entities.find(
+            (item) => item.id === entity.id,
+          );
+          const { capability_ref, ...runtime } = record;
+          document.getElementById("entity-info").textContent = JSON.stringify(
+            capability_ref
+              ? {
+                  ...runtime,
+                  ...selectedRequest.state.capabilities[capability_ref],
+                }
+              : runtime,
+            null,
+            2,
+          );
+        });
+        document.getElementById("download").addEventListener("click", () => {
+          if (!selectedRequest) return;
+          const url = URL.createObjectURL(
+            new Blob([JSON.stringify(selectedRequest, null, 2) + "\n"], {
+              type: "application/json",
+            }),
+          );
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = `${run.caseId}-${run.variant}-decision-${slider.value}.json`;
+          anchor.click();
+          setTimeout(() => URL.revokeObjectURL(url), 0);
+        });
+        previousButton.addEventListener("click", () => {
+          slider.value = String(Math.max(1, Number(slider.value) - 1));
+          draw();
+        });
+        nextButton.addEventListener("click", () => {
+          slider.value = String(
+            Math.min(run.steps.length, Number(slider.value) + 1),
+          );
+          draw();
+        });
+        batch.addEventListener("change", chooseBatch);
+        runSelect.addEventListener("change", chooseRun);
+        level.addEventListener("change", draw);
+        slider.addEventListener("input", draw);
+        requestPanel.addEventListener("toggle", renderRequest);
+        chooseBatch();
+      }
+    </script>
+  </body>
+</html>

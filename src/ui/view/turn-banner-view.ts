@@ -62,7 +62,7 @@ export interface TurnBannerModel {
  * mission still running).
  *
  * ```
- *   ┌ MISSION Lagos · TURN 3 · PLAYER PHASE · TDF 3 · BUGS 1 · FLOOR [-] 2/3 [+] ── status ── [Leave] ┐
+ *   ┌ MISSION Lagos · TURN 3 · PLAYER PHASE ── [Command] ── TDF 3 · BUGS 1 · FLOOR [-] 2/3 [+] · [Leave] ┐
  * ```
  */
 export class TurnBannerView {
@@ -94,8 +94,8 @@ export class TurnBannerView {
   // Lifecycle
   // ===========================================
 
-  /** Builds the banner under `parent`; call `update` to fill it. */
-  mount(parent: HTMLElement): void {
+  /** Builds the banner with an optional centered control; call `update` to fill its mission facts. */
+  mount(parent: HTMLElement, center?: HTMLElement): void {
     const doc = parent.ownerDocument;
     const bar = doc.createElement("header");
     bar.id = "turn-banner";
@@ -106,8 +106,6 @@ export class TurnBannerView {
     phase.className = "tut-badge tut-badge--info";
     phase.dataset.field = "phase";
     phase.textContent = "—";
-    const spacer = doc.createElement("span");
-    spacer.className = "tut-topbar__spacer";
     const status = doc.createElement("span");
     status.className = "tut-topbar__status tut-dim";
     status.dataset.role = "status";
@@ -121,7 +119,13 @@ export class TurnBannerView {
     const tdf = this.createStat(doc, "TDF", "tdf-units");
     const bugs = this.createStat(doc, "Bugs", "bug-units");
     const layer = this.createLayerControl(doc);
-    bar.append(mission, turn, phase, tdf, bugs, layer, spacer, status, back);
+    const left = doc.createElement("div");
+    left.className = "tut-hud__banner-left";
+    left.append(mission, turn, phase);
+    const right = doc.createElement("div");
+    right.className = "tut-hud__banner-right";
+    right.append(tdf, bugs, layer, status, back);
+    bar.append(left, center ?? doc.createElement("div"), right);
     parent.appendChild(bar);
     const onBack = (): void => {
       this.handlers.onLeave();

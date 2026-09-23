@@ -1,3 +1,17 @@
+import {
+  CONFIGURE_JEV,
+  SET_JEV_COMMANDER_PROMPT,
+  JEV_ACT,
+  DEFAULT_BUG_ACT,
+} from "../../tactical/model/jev-command";
+import {
+  configureJevHandler,
+  setJevCommanderPromptHandler,
+  createJevActHandler,
+  createDefaultBugActHandler,
+} from "../../tactical/service/jev-control-service";
+import { chooseBugCommands } from "../../bugs/ai/behaviour-registry";
+import { viewFor } from "../../tactical/service/mission-view-service";
 import { MECH_ACTION } from "../../tactical/model/mech-action-command";
 import { createMechActionHandler } from "../../tactical/service/mech-action-service";
 import type { BugBehaviour } from "../../bugs/ai/bug-behaviour";
@@ -305,14 +319,30 @@ export function shippedTacticalHandlers(
     [ABANDON_MISSION]: createAbandonMissionHandler(),
     [PLACE_UNIT]: createPlaceUnitHandler(placement),
   };
+  const registry = new MapBehaviourRegistry(shippedBugBehaviours());
+  const speciesOf = createSpeciesLookup(BUG_SPECIES);
   const bugPhase = createBugPhaseRunner({
     handlers: actions,
-    registry: new MapBehaviourRegistry(shippedBugBehaviours()),
-    speciesOf: createSpeciesLookup(BUG_SPECIES),
+    registry,
+    speciesOf,
     combat: COMBAT_TUNING,
   });
   return {
     ...actions,
+    [CONFIGURE_JEV]: configureJevHandler,
+    [SET_JEV_COMMANDER_PROMPT]: setJevCommanderPromptHandler,
+    [JEV_ACT]: createJevActHandler(actions),
+    [DEFAULT_BUG_ACT]: createDefaultBugActHandler(
+      actions,
+      (mission, unitId, ctx) =>
+        chooseBugCommands(
+          viewFor(mission, "bugs"),
+          unitId,
+          registry,
+          speciesOf,
+          { rng: ctx.rng, combat: COMBAT_TUNING },
+        ),
+    ),
     [END_TURN]: createEndTurnHandler(
       [
         ...DEFAULT_PHASE_STEPS,

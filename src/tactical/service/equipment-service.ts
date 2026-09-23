@@ -100,8 +100,8 @@ export interface EquipmentUse {
 // ===========================================
 
 /**
- * Whether the unit's frozen template lists the item (#1132). A bug or a
- * mech carries nothing; a squad carries what its type gave it.
+ * Whether the unit's frozen template lists the item (#1132), regardless
+ * of faction or kind. Squads, mechs and bug species all supply loadouts.
  */
 export function carriesEquipment(
   mission: TacticalState,

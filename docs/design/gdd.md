@@ -123,11 +123,13 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 ## 6. Tactical missions
 
 ### 6.1 Presentation
+- A **Command** flag button sits at the center of the tactical top bar. Its popover edits shared orders for all Jev-controlled TDF units; Apply saves them with the mission for subsequent decisions, without spending AP or needing a selected unit.
 - Fixed isometric camera; rotation in 90° steps; zoom in a small range. Orthographic projection.
 - Tile grid with elevation levels. Multi-floor buildings are enterable by infantry. Mechs are too tall for interiors; jump-equipped mechs can reach clear flat roofs and walk across them (ADR 0010).
 - Unit tokens: an infantry squad is rendered as ~5 figures that move as one unit and occupy one tile; a mech occupies one tile and is visibly taller. A mech is drawn from the parts fitted to it, so the mech on the field is the one built in the bay and two loadouts are told apart at a glance (Executive Director, 2026-09-12, #1115). A **brute occupies a 2×2 block** of tiles: its position is the block's lowest-`x`, lowest-`z` tile and every tile of the block shares its level. It moves anchor by anchor at the same cost as anyone else, needs all four tiles standing, free and unbroken by walls, fits through no door, and is measured by the tile of it nearest the other party — it is shot on the face it presents, it swings from the tile nearest its mark, it sees from all four tiles, it is spotted when any of them is in view, and a blast or a fire hurts it once. It gets no cover and cannot be flanked (Executive Director, 2026-09-13, #1130).
 
 ### 6.2 Turn structure
+- Opt-in Jev-controlled TDF units act after manual units exhaust their AP, or before the bug phase when the player presses End turn. The turn waits for their remaining activations. A light-blue **Jev** label above the unit identifies its control, and Tab cycles only manual actors.
 - **Fitted mech systems** (#1168) add jumping, bracing, shared heat, terrain-aware movement, indirect fire with allied spotting, smoke, line beams, designation, reconnaissance, repair and limited defensive consumables. The [shipped rules](mech-roster.md#shipped-rules-1168) specify costs, ranges, duration and save compatibility. Tactical previews and commands share the same validation.
 - Player phase → bug phase. Each unit has action points (move + act, XCOM-style two-action budget by default; mechs may have distinct budgets).
 - Actions: move, attack, overwatch, reload/vent, use equipment (§6.2.4), interact with objective.

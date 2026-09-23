@@ -1,3 +1,10 @@
+import type { JevInspector } from "../model/jev-inspector";
+import { JevInspectorView } from "./jev-inspector-view";
+import { CommanderPromptView } from "./commander-prompt-view";
+import {
+  configureJev,
+  setJevCommanderPrompt,
+} from "../../tactical/model/jev-command";
 import { mechAction } from "../../tactical/model/mech-action-command";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -92,10 +99,14 @@ import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import type { CardHover } from "./unit-card-view";
 import { UnitCardView } from "./unit-card-view";
+import { UnitControlView } from "./unit-control-view";
+import type { JevEntityControl } from "../../tactical/model/jev-control";
+import { JEV_PROMPT_MAX_LENGTH } from "../../tactical/model/jev-control";
 import type { UnitStatusChip } from "./unit-status-layer-view";
 import { UnitStatusLayerView } from "./unit-status-layer-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { chargeRegisterFor } from "../service/charge-register";
+import { jevEndTurnPending } from "../../tactical/service/jev-control-service";
 
 // ===========================================
 // Types
@@ -119,6 +130,10 @@ export interface TacticalHudHandlers {
   readonly onCommand: (command: TacticalCommand) => void;
   /** The player asked to leave the mission (#1132); the owner confirms and dispatches. */
   readonly onLeave: () => void;
+  /** Change the screen's automatic turn-ending preference. */
+  readonly onAutoEndChange?: (enabled: boolean) => void;
+  /** Hold automatic turn ending while a HUD editor pauses automation. */
+  readonly onAutomationPause?: (paused: boolean) => void;
   /**
    * Bring a unit on screen (#1041). Absent in headless callers, which
    * then simply do not move the camera.
@@ -186,6 +201,8 @@ export interface TacticalHudHandlers {
 
 /** What the HUD needs injected. */
 export interface TacticalHudDeps {
+  /** Jev availability for normal controls and the development-only inspector. */
+  readonly jev?: JevInspector;
   /** Tuning handed to `previewAttack`; the HUD never computes a number itself. */
   readonly combatTuning: CombatTuning;
   /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
@@ -288,8 +305,25 @@ export class TacticalHudView {
   private readonly card: UnitCardView;
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
+  /** Orders and controller choice for the friendly unit shown in the card. */
+  private readonly unitControl = new UnitControlView({
+    onToggleJev: (unitId) =>
+      this.configureUnitJev(unitId, {
+        enabled: !this.mission?.jev?.entities[unitId]?.enabled,
+      }),
+    onEntityPrompt: (unitId, prompt) =>
+      this.configureUnitJev(unitId, { entityPrompt: prompt }),
+  });
+  private readonly automationPauses = new Set<"inspector" | "squad">();
   /** The force at a glance; a row selects and recovers a unit (#1041). */
   private readonly squad = new SquadStripView({
+    onApplyJev: (unitIds) => this.configureSquadJev(unitIds),
+    onApplyOrders: (unitIds, prompt) => {
+      if (prompt.length > JEV_PROMPT_MAX_LENGTH) return;
+      for (const id of unitIds)
+        this.configureUnitJev(id, { entityPrompt: prompt });
+    },
+    onEditingChange: (editing) => this.setAutomationPause("squad", editing),
     onPick: (unitId) => {
       if (this.playbackLocked) {
         return;
@@ -331,6 +365,7 @@ export class TacticalHudView {
   private readonly log = new EventLogView();
   /** The actions with their keys along the bottom; a press is the key (#1113 review). */
   private readonly actions: ActionBarView;
+  private autoEnd = false;
   /** Cancels the frame loop that keeps an open wheel on its tile as the camera moves. */
   private stopFollowing: (() => void) | undefined;
   /** The status chips above every visible unit while Shift is held. */
@@ -383,6 +418,10 @@ export class TacticalHudView {
   private sideOverflow: { readonly dispose: () => void } | undefined;
   /** Torn down with the HUD; keeps panel clicks off the map picker. */
   private pointerGuard: { readonly dispose: () => void } | undefined;
+  /** Jev inspection is built only in a dev build. */
+  private readonly jevInspector: JevInspectorView | undefined;
+  /** Faction orders are available to players in every build. */
+  private readonly commander: CommanderPromptView;
   /** The development tools' panel (#1136); built only in a dev build. */
   private readonly debugMenu: DebugMenuView | undefined;
   /** The bug button that opens it, at the bottom left of the bar. */
@@ -411,6 +450,9 @@ export class TacticalHudView {
     );
     this.handlers = handlers;
     this.deps = deps;
+    this.commander = new CommanderPromptView((prompt) => {
+      handlers.onCommand(setJevCommanderPrompt("tdf", prompt));
+    });
     this.banner = new TurnBannerView({
       onLeave: () => handlers.onLeave(),
       onLayerStep: (delta) => handlers.onLayerStep?.(delta),
@@ -423,6 +465,7 @@ export class TacticalHudView {
     });
     this.actions = new ActionBarView(
       {
+        onAutoEndChange: handlers.onAutoEndChange,
         onAction: (action) => {
           this.handleIntent(
             action === "end-turn"
@@ -433,6 +476,12 @@ export class TacticalHudView {
       },
       deps.shortcuts ?? {},
     );
+    this.jevInspector =
+      deps.devTools && deps.jev
+        ? new JevInspectorView(deps.jev, (paused) =>
+            this.setAutomationPause("inspector", paused),
+          )
+        : undefined;
     this.debugMenu =
       deps.devTools === undefined
         ? undefined
@@ -456,7 +505,8 @@ export class TacticalHudView {
   /**
    * Builds the HUD under `parent`: banner on top, the force and the
    * objectives down the left rail with the event log under them, the
-   * unit card alone on the right, End turn below (#1134).
+   * unit card alone on the right, End turn below (#1134), and faction
+   * orders at the center of the top bar.
    *
    * ```
    *   ┌ top: turn banner ──────────────────────────────────────────┐
@@ -490,14 +540,18 @@ export class TacticalHudView {
     side.className = "tut-hud__side tut-stack";
     const bottom = doc.createElement("div");
     bottom.className = "tut-hud__bottom";
-    this.banner.mount(top);
+    const commandSlot = doc.createElement("div");
+    this.commander.mount(commandSlot);
+    this.banner.mount(top, commandSlot);
     this.radial.mount(hud);
     this.status.mount(hud);
     // The force first, then the objectives: the strip is the overview
     // (#1041), and it heads the rail the way it used to head the column.
     this.squad.mount(panels);
     this.objectives.mount(panels);
-    this.card.mount(side);
+    const unitControls = doc.createElement("div");
+    this.unitControl.mount(unitControls, hud);
+    this.card.mount(side, unitControls);
     this.preview.mount(side);
     const radarLegend = doc.createElement("section");
     radarLegend.className = "tut-panel tut-mono";
@@ -527,6 +581,7 @@ export class TacticalHudView {
     this.actions.mount(bottom);
     hud.append(top, rail, side, bottom);
     this.debugMenu?.mount(hud);
+    this.jevInspector?.mount(hud, bottom);
     this.watchSideOverflow(panels);
     this.watchSideOverflow(side);
     this.guardPointer(hud);
@@ -635,6 +690,10 @@ export class TacticalHudView {
     this.sideOverflow?.dispose();
     this.sideOverflow = undefined;
     this.debugMenu?.unmount();
+    this.jevInspector?.unmount();
+    this.commander.unmount();
+    this.unitControl.unmount();
+    this.squad.unmount();
     this.debugToggle = undefined;
     this.debugOpen = false;
     this.armedPlacement = undefined;
@@ -642,7 +701,9 @@ export class TacticalHudView {
     this.pointerGuard = undefined;
     this.stopFollowing?.();
     this.stopFollowing = undefined;
-    this.setInspecting(false);
+    this.inspecting = false;
+    this.stopInspecting?.();
+    this.stopInspecting = undefined;
     this.status.unmount();
     this.phases.unmount();
     this.actions.unmount();
@@ -744,7 +805,11 @@ export class TacticalHudView {
 
   /** Applies an intent from the input controller or the keyboard; drops all but Shift while a phase plays (#1130). */
   handleIntent(intent: TacticalIntent): void {
-    if (this.playbackLocked && intent.kind !== "inspect") {
+    if (
+      (this.playbackLocked ||
+        (this.mission && jevEndTurnPending(this.mission))) &&
+      intent.kind !== "inspect"
+    ) {
       return;
     }
     if (this.placeArmed(intent)) {
@@ -782,25 +847,34 @@ export class TacticalHudView {
   }
 
   /**
-   * Shows the status chips above every visible unit while `held`, and
-   * takes them away when not (Shift, on #1113's review). The chips are
+   * Shows full status chips while `held`, keeping only Jev labels when
+   * released (Shift, on #1113's review). The chips are
    * re-anchored once a frame while up, so they follow the camera and
    * the units, and re-filled on every refresh, so they follow the state.
    *
    * @param held - Whether Shift is down.
    */
   setInspecting(held: boolean): void {
-    if (held === this.inspecting) {
-      return;
-    }
     this.inspecting = held;
-    if (!held) {
+    this.followStatus();
+  }
+
+  /** Keep Jev labels anchored between inspections; stop the frame loop when neither is needed. */
+  private followStatus(): void {
+    const hasJev = this.view?.units.some(
+      (unit) =>
+        unit.team === "tdf" &&
+        unit.hp > 0 &&
+        this.mission?.jev?.entities[unit.id]?.enabled,
+    );
+    if (!this.inspecting && !hasJev) {
       this.stopInspecting?.();
       this.stopInspecting = undefined;
       this.status.hide();
       return;
     }
     this.drawStatus();
+    if (this.stopInspecting) return;
     const schedule =
       typeof requestAnimationFrame === "function"
         ? requestAnimationFrame
@@ -810,9 +884,6 @@ export class TacticalHudView {
     }
     let handle = 0;
     const tick = (): void => {
-      if (!this.inspecting) {
-        return;
-      }
       this.drawStatus();
       handle = schedule(tick);
     };
@@ -850,6 +921,12 @@ export class TacticalHudView {
   /** Whether the controls are held for a playing bug phase. */
   isPlaybackLocked(): boolean {
     return this.playbackLocked;
+  }
+
+  /** Display the screen-owned preference without issuing any tactical command. */
+  setAutoEnd(enabled: boolean): void {
+    this.autoEnd = enabled;
+    this.refresh();
   }
 
   /**
@@ -1622,7 +1699,12 @@ export class TacticalHudView {
     // A turret is never an actor (#1138): Tab walks the units the
     // player can give an order to.
     const actors = mission.units.filter(
-      (u) => u.team === team && u.hp > 0 && u.ap > 0 && !isAutonomous(u),
+      (u) =>
+        u.team === team &&
+        u.hp > 0 &&
+        u.ap > 0 &&
+        !isAutonomous(u) &&
+        !mission.jev?.entities[u.id]?.enabled,
     );
     if (actors.length === 0) {
       return;
@@ -1643,8 +1725,10 @@ export class TacticalHudView {
     if (mission?.phase !== "player") {
       return 0;
     }
-    return playerUnits(mission).filter((unit) => unit.hp > 0 && unit.ap > 0)
-      .length;
+    return playerUnits(mission).filter(
+      (unit) =>
+        unit.hp > 0 && unit.ap > 0 && !mission.jev?.entities[unit.id]?.enabled,
+    ).length;
   }
 
   /**
@@ -2074,7 +2158,9 @@ export class TacticalHudView {
     const names = namesFor(mission, this.campaign);
     const chips: UnitStatusChip[] = [];
     for (const unit of view.units) {
-      if (unit.hp <= 0) {
+      const jevControlled =
+        unit.team === "tdf" && mission.jev?.entities[unit.id]?.enabled === true;
+      if (unit.hp <= 0 || (!this.inspecting && !jevControlled)) {
         continue;
       }
       const anchor = anchorFor(unit.id);
@@ -2115,14 +2201,96 @@ export class TacticalHudView {
         team: unit.team,
         hp: unit.hp,
         maxHp: unit.maxHp,
+        jevControlled,
+        compact: !this.inspecting,
         charges,
       });
     }
     this.status.show(chips);
   }
 
+  /** Apply a unit's control or prompt edit against live settings, preserving its other fields. */
+  private configureUnitJev(
+    unitId: UnitId,
+    change: Partial<JevEntityControl>,
+  ): void {
+    const mission = this.mission;
+    const unit = mission?.units.find((entry) => entry.id === unitId);
+    if (
+      !mission ||
+      mission.outcome ||
+      !unit ||
+      unit.hp <= 0 ||
+      unit.team !== "tdf" ||
+      isAutonomous(unit)
+    )
+      return;
+    const current = mission.jev?.entities[unitId];
+    const enabled = change.enabled ?? current?.enabled === true;
+    const entityPrompt = change.entityPrompt ?? current?.entityPrompt ?? "";
+    if (enabled && !current?.enabled && !this.deps.jev?.configured) return;
+    if (entityPrompt.length > JEV_PROMPT_MAX_LENGTH) return;
+    if (
+      enabled === (current?.enabled === true) &&
+      entityPrompt === (current?.entityPrompt ?? "")
+    )
+      return;
+    this.handlers.onCommand(
+      configureJev(
+        unitId,
+        {
+          enabled,
+          entityPrompt,
+        },
+        mission.jev?.commanders.tdf ?? "",
+      ),
+    );
+  }
+
+  /** Apply the checked roster as one synchronous edit while automatic play remains paused. */
+  private configureSquadJev(unitIds: readonly UnitId[]): void {
+    const mission = this.mission;
+    if (!mission || mission.outcome) return;
+    const checked = new Set(unitIds);
+    const actors = playerUnits(mission).filter((unit) => unit.hp > 0);
+    if (
+      !this.deps.jev?.configured &&
+      actors.some(
+        (unit) =>
+          checked.has(unit.id) && !mission.jev?.entities[unit.id]?.enabled,
+      )
+    )
+      return;
+    for (const unit of actors)
+      this.configureUnitJev(unit.id, { enabled: checked.has(unit.id) });
+  }
+
+  /** An inspector and a squad edit each hold automation until both have closed. */
+  private setAutomationPause(
+    source: "inspector" | "squad",
+    paused: boolean,
+  ): void {
+    const wasPaused = this.automationPauses.size > 0;
+    if (paused) this.automationPauses.add(source);
+    else this.automationPauses.delete(source);
+    const isPaused = this.automationPauses.size > 0;
+    if (wasPaused === isPaused) return;
+    this.deps.jev?.pause(isPaused);
+    this.handlers.onAutomationPause?.(isPaused);
+  }
+
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
+    this.commander.update(
+      this.mission
+        ? {
+            missionId: this.mission.missionId,
+            prompt: this.mission.jev?.commanders.tdf ?? "",
+            editable: !this.mission.outcome,
+          }
+        : undefined,
+    );
+    this.jevInspector?.update(this.inspectedUnitId());
     this.debugMenu?.update({
       open: this.debugOpen,
       armed: this.armedPlacement,
@@ -2137,17 +2305,17 @@ export class TacticalHudView {
       );
     }
     this.followMenu();
-    if (this.inspecting) {
-      this.drawStatus();
-    }
+    this.followStatus();
     const mission = this.mission;
     if (!mission) {
       this.banner.update(undefined);
       this.card.update(undefined, undefined);
+      this.unitControl.update(undefined);
       this.preview.update(undefined);
       this.objectives.update([], []);
       this.squad.update(undefined);
       this.actions.update({
+        autoEnd: this.autoEnd,
         playerPhase: false,
         unavailable: [],
         hasActor: false,
@@ -2189,6 +2357,18 @@ export class TacticalHudView {
       shown?.team === "tdf" ? this.attacksLeftFor(shown) : undefined,
       shown ? namesFor(mission, this.campaign).unit(shown.id) : undefined,
     );
+    this.unitControl.update(
+      shown?.team === "tdf" && shown.hp > 0 && !isAutonomous(shown)
+        ? {
+            missionId: mission.missionId,
+            unitId: shown.id,
+            name: namesFor(mission, this.campaign).unit(shown.id),
+            control: mission.jev?.entities[shown.id],
+            jevAvailable: this.deps.jev?.configured === true,
+            editable: !mission.outcome,
+          }
+        : undefined,
+    );
     // A preview that stays up across a move is recomputed from where the
     // unit stands now, and one for a unit no longer selected goes.
     this.previewRowRange(this.card.hoveredRow());
@@ -2221,11 +2401,16 @@ export class TacticalHudView {
     // banner and the log (#1040).
     const railNames = namesFor(mission, this.campaign);
     this.squad.update({
+      missionId: mission.missionId,
       units: playerUnits(mission),
       selectedId: this.selected,
+      controls: mission.jev?.entities,
+      jevAvailable: this.deps.jev?.configured === true,
+      editable: !mission.outcome,
       nameOf: (unitId) => railNames.unit(unitId),
     });
     this.actions.update({
+      autoEnd: this.autoEnd,
       playerPhase: mission.phase === "player",
       unavailable: this.unavailableActions(),
       hasActor: this.actingSelection() !== undefined,
@@ -2233,7 +2418,7 @@ export class TacticalHudView {
         .actionLabel,
       aiming: this.mode === "attack",
       unspent: this.unspentCount(),
-      locked: this.playbackLocked,
+      locked: this.playbackLocked || jevEndTurnPending(mission),
     });
     this.handlers.onMarkBlast?.(this.consideredBlast());
     // Last, so the listener reads the state the refresh just settled.

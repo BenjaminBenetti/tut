@@ -1,5 +1,11 @@
+import {
+  jevFinished,
+  startJevPhase,
+  jevEndTurnPending,
+  pendingJevTdf,
+} from "./jev-control-service";
 import { refreshMechSystems } from "./mech-heat-service";
-import { ok } from "../../core/model/result";
+import { err, ok } from "../../core/model/result";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { EndTurnCommand } from "../model/end-turn-command";
@@ -124,6 +130,8 @@ export const DEFAULT_PHASE_STEPS: readonly PhaseStep[] = [refreshSides];
  *
  * `early` on the payload is informational. Commands after the mission
  * has ended are refused by the lifting adapter (`mission-over`).
+ * Pending Jev TDF actors keep the player phase open with a saved End Turn
+ * request; the app completes them and dispatches End Turn again afterward.
  */
 export function createEndTurnHandler(
   steps: readonly PhaseStep[] = DEFAULT_PHASE_STEPS,
@@ -134,8 +142,47 @@ export function createEndTurnHandler(
     if (outcome !== undefined) {
       return ok(endMission(mission, outcome));
     }
+    if (mission.phase === "player" && pendingJevTdf(mission)) {
+      if (jevEndTurnPending(mission))
+        return err({
+          kind: "systems-unavailable",
+          reason: "Jev units are finishing this turn",
+        });
+      const base =
+        mission.jev?.activation?.turn === mission.turn &&
+        mission.jev.activation.phase === mission.phase
+          ? mission
+          : startJevPhase(mission);
+      return ok({
+        state: {
+          ...base,
+          jev: {
+            ...base.jev!,
+            activation: { ...base.jev!.activation!, endTurnRequested: true },
+          },
+        },
+        events: [],
+      });
+    }
+    if (
+      mission.phase === "bugs" &&
+      mission.jev?.activation?.externalBugs &&
+      mission.units.some(
+        (unit) =>
+          unit.team === "bugs" && unit.hp > 0 && !jevFinished(mission, unit.id),
+      )
+    ) {
+      return err({
+        kind: "systems-unavailable",
+        reason: "The current bug activations have not finished",
+      });
+    }
     const opened = openNextPhase(mission, steps, ctx);
-    if (opened.state.phase !== "bugs" || bugPhase === undefined) {
+    if (
+      opened.state.phase !== "bugs" ||
+      bugPhase === undefined ||
+      opened.state.jev?.activation?.externalBugs === true
+    ) {
       return ok(endIfDecided(opened));
     }
     const played = bugPhase(opened.state, ctx);
@@ -197,7 +244,7 @@ function openNextPhase(
     state = applied.state;
     events.push(...applied.events);
   }
-  return { state, events };
+  return { state: startJevPhase(state), events };
 }
 
 // ===========================================

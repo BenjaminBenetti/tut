@@ -64,3 +64,7 @@ which `vite.config.ts` uses as Vite's `base`, so bundled asset URLs are
 prefixed. Runtime asset lookups go through `import.meta.env.BASE_URL`
 (icon and sprite manifests, model loader), so they follow the same base.
 Local development and CI keep `base: "/"`.
+
+## Jev relay container
+
+The same verified release publishes `ghcr.io/benjaminbenetti/tut-jev-relay:<tag>` and `:sha-<commit>` for amd64 and arm64. The owner hosts that container with a runtime `JevKey`. Set Actions variable `JEV_RELAY_URL` before a frontend release to bake in its public HTTPS address. With the variable absent, production Jev calls are unavailable and default gameplay is unchanged. See [Jev deployment and inspection](../design/jev-control.md).

@@ -20,6 +20,10 @@ import { withVision } from "../../tactical/service/vision-service";
 import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import {
+  configureJev,
+  setJevCommanderPrompt,
+} from "../../tactical/model/jev-command";
 
 let root: HTMLElement;
 const card = (): HTMLElement | null =>
@@ -122,6 +126,198 @@ function twoWeaponMission() {
 }
 
 describe("TacticalHudView", () => {
+  it("edits selected-unit orders independently and preserves a draft through card refreshes", () => {
+    const onLookAt = vi.fn();
+    const { hud, commands, mission } = setup({ onLookAt });
+    const configured: TacticalState = {
+      ...mission,
+      jev: {
+        entities: { s1: { enabled: true, entityPrompt: "Follow Alpha" } },
+        commanders: { tdf: "Protect the squad", bugs: "Defend nests" },
+      },
+    };
+    hud.update(configured);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const row = root.querySelector<HTMLElement>(
+      '[data-role="squad-list"] [data-unit-id="s1"]',
+    )!;
+    expect(row.querySelector("button")).toBeNull();
+    const flag = card()!.querySelector<HTMLButtonElement>(
+      '[data-testid="entity-command-toggle"]',
+    )!;
+    expect(flag.textContent).toBe("");
+    expect(flag.querySelector('[data-icon="command"]')).not.toBeNull();
+    flag.click();
+    const panel = root.querySelector<HTMLElement>("#entity-orders")!;
+    const input = panel.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(panel.hidden).toBe(false);
+    expect(input.value).toBe("Follow Alpha");
+    expect(document.activeElement).toBe(input);
+    input.value = "Cover the medic";
+    // The shared orders can change while this unit's draft is open.
+    hud.update({
+      ...configured,
+      jev: {
+        ...configured.jev!,
+        commanders: { tdf: "Withdraw together", bugs: "Defend nests" },
+      },
+    });
+    expect(row.isConnected).toBe(true);
+    expect(input.value).toBe("Cover the medic");
+    expect(document.activeElement).toBe(input);
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    expect(onLookAt).not.toHaveBeenCalled();
+    panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
+    expect(commands).toEqual([
+      configureJev(
+        "s1",
+        { enabled: true, entityPrompt: "Cover the medic" },
+        "Withdraw together",
+      ),
+    ]);
+    expect(panel.hidden).toBe(true);
+    expect(document.activeElement).toBe(flag);
+    hud.unmount();
+    expect(panel.isConnected).toBe(false);
+  });
+
+  it("can release Jev control from the card without the service, preserving orders and selection", () => {
+    const onLookAt = vi.fn();
+    const { hud, commands, mission } = setup({ onLookAt });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const button = (): HTMLButtonElement =>
+      root.querySelector('#unit-card [data-testid="unit-jev-toggle"]')!;
+    expect(button().disabled).toBe(true);
+    hud.update({
+      ...mission,
+      jev: {
+        entities: { s1: { enabled: true, entityPrompt: "Cover Alpha" } },
+        commanders: { tdf: "Hold", bugs: "Defend" },
+      },
+    });
+    expect(button().getAttribute("aria-pressed")).toBe("true");
+    expect(button().disabled).toBe(false);
+    button().click();
+    expect(commands).toEqual([
+      configureJev(
+        "s1",
+        { enabled: false, entityPrompt: "Cover Alpha" },
+        "Hold",
+      ),
+    ]);
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    expect(onLookAt).not.toHaveBeenCalled();
+    hud.unmount();
+  });
+
+  it("prepares unit orders without enabling Jev and discards a removed unit's open editor", () => {
+    const { hud, commands, mission } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    const flag = root.querySelector<HTMLButtonElement>(
+      '#unit-card [data-testid="entity-command-toggle"]',
+    )!;
+    flag.click();
+    const panel = root.querySelector<HTMLElement>("#entity-orders")!;
+    panel.querySelector<HTMLTextAreaElement>("textarea")!.value =
+      "Guard extraction";
+    panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
+    expect(commands).toEqual([
+      configureJev(
+        "s2",
+        { enabled: false, entityPrompt: "Guard extraction" },
+        "",
+      ),
+    ]);
+    flag.click();
+    expect(panel.hidden).toBe(false);
+    hud.update({
+      ...mission,
+      units: mission.units.filter((unit) => unit.id !== "s2"),
+    });
+    expect(panel.hidden).toBe(true);
+    expect(root.querySelector<HTMLElement>(".tut-unit-controls")!.hidden).toBe(
+      true,
+    );
+    hud.unmount();
+  });
+
+  it("closes unit orders when selection changes and hides controls on enemy and turret cards", () => {
+    const { hud, mission, commands } = setup();
+    const controls = root.querySelector<HTMLElement>(".tut-unit-controls")!;
+    const flag = controls.querySelector<HTMLButtonElement>(
+      '[data-testid="entity-command-toggle"]',
+    )!;
+    const panel = root.querySelector<HTMLElement>("#entity-orders")!;
+    const input = panel.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(controls.hidden).toBe(true);
+    hud.update({
+      ...mission,
+      jev: {
+        entities: { s2: { enabled: false, entityPrompt: "Guard extraction" } },
+        commanders: { tdf: "", bugs: "" },
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(controls.hidden).toBe(false);
+    flag.click();
+    input.value = "Only for the first unit";
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(panel.hidden).toBe(true);
+    flag.click();
+    expect(input.value).toBe("Guard extraction");
+    expect(commands).toEqual([]);
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(controls.hidden).toBe(true);
+    expect(panel.hidden).toBe(true);
+    hud.update({
+      ...mission,
+      units: [
+        ...mission.units,
+        { ...hudUnit("turret", "tdf", "rifle", 2, 2), kind: "turret" },
+      ],
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "turret" });
+    expect(controls.hidden).toBe(true);
+    hud.unmount();
+  });
+
+  it("offers faction orders without selection or dev tools, preserves drafts and emits only an explicit save", () => {
+    const { hud, commands, mission } = setup();
+    const toggle = root.querySelector<HTMLButtonElement>(
+      '[data-testid="command-toggle"]',
+    )!;
+    const panel = root.querySelector<HTMLElement>(
+      '[data-testid="commander-popover"]',
+    )!;
+    const input = root.querySelector<HTMLTextAreaElement>(
+      '[data-testid="commander-orders-input"]',
+    )!;
+    expect(hud.getSelectedUnitId()).toBeUndefined();
+    expect(toggle.closest("#turn-banner")).not.toBeNull();
+    expect(toggle.disabled).toBe(false);
+    expect(toggle.querySelector('[data-icon="command"]')).not.toBeNull();
+    toggle.click();
+    expect(panel.hidden).toBe(false);
+    expect(document.activeElement).toBe(input);
+    input.value = "Follow Alpha";
+    hud.update({ ...mission, turn: mission.turn + 1 });
+    expect(input.value).toBe("Follow Alpha");
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    expect(panel.hidden).toBe(true);
+    expect(document.activeElement).toBe(toggle);
+    expect(commands).toEqual([]);
+    toggle.click();
+    expect(input.value).toBe("");
+    input.value = "Hold the objective";
+    panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
+    expect(commands).toEqual([
+      setJevCommanderPrompt("tdf", "Hold the objective"),
+    ]);
+    expect(panel.hidden).toBe(true);
+    hud.unmount();
+  });
   it("renders the banner and objectives and the placeholder card", () => {
     setup();
     expect(field("turn")?.textContent).toBe("2");
@@ -707,6 +903,90 @@ describe("TacticalHudView", () => {
     );
     hud.handleIntent({ kind: "action", action: "cancel" });
     expect(marked.at(-1)).toBeUndefined();
+  });
+
+  it("keeps Jev labels above living TDF units without Shift and removes them when control is disabled", () => {
+    let x = 80;
+    const { hud, mission } = setup({ headAnchorFor: () => ({ x, y: 50 }) });
+    const configured = {
+      ...mission,
+      jev: {
+        entities: {
+          s1: { enabled: true, entityPrompt: "Guard" },
+          b1: { enabled: true, entityPrompt: "Defend" },
+        },
+        commanders: { tdf: "", bugs: "" },
+      },
+    };
+    hud.update(configured);
+    const labels = () =>
+      root.querySelectorAll('[data-field="jev-label"]:not([hidden])');
+    expect(labels()).toHaveLength(1);
+    expect(labels()[0]?.textContent).toBe("Jev");
+    const chip = () =>
+      root.querySelector<HTMLElement>('.tut-status-chip[data-unit-id="s1"]');
+    expect(chip()?.dataset.compact).toBe("true");
+    expect(chip()?.style.left).toBe("80px");
+    hud.setInspecting(true);
+    expect(chip()?.dataset.compact).toBe("false");
+    hud.setInspecting(false);
+    expect(labels()).toHaveLength(1);
+    expect(chip()?.dataset.compact).toBe("true");
+    x = 120;
+    hud.update(configured);
+    expect(chip()?.style.left).toBe("120px");
+    hud.update({
+      ...configured,
+      units: configured.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, hp: 0 } : unit,
+      ),
+    });
+    expect(labels()).toHaveLength(0);
+    hud.update(configured);
+    expect(labels()).toHaveLength(1);
+    hud.update(mission);
+    expect(labels()).toHaveLength(0);
+    hud.unmount();
+  });
+
+  it("Tab skips Jev actors and End Turn counts only unspent manual units", () => {
+    const { hud, mission, commands } = setup();
+    const configured = {
+      ...mission,
+      units: mission.units.map((unit) => ({ ...unit, ap: 2 })),
+      jev: {
+        entities: { s1: { enabled: true, entityPrompt: "Guard" } },
+        commanders: { tdf: "", bugs: "" },
+      },
+    };
+    hud.update(configured);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "next-unit" });
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    hud.handleIntent({ kind: "action", action: "next-unit" });
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    const end = root.querySelector<HTMLButtonElement>(
+      '[data-action="end-turn"]',
+    )!;
+    expect(end.textContent).toContain("1 unspent");
+    hud.update({
+      ...configured,
+      jev: {
+        ...configured.jev,
+        activation: {
+          turn: configured.turn,
+          phase: configured.phase,
+          finished: [],
+          externalBugs: false,
+          endTurnRequested: true,
+        },
+      },
+    });
+    expect(end.disabled).toBe(true);
+    hud.handleIntent({ kind: "end-turn" });
+    hud.handleIntent({ kind: "action", action: "overwatch" });
+    expect(commands).toHaveLength(0);
+    hud.unmount();
   });
 
   it("shows a status chip above every visible unit while Shift is held, and none after (#1113 review)", () => {

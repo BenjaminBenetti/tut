@@ -667,6 +667,16 @@ const ADD_DEFEND_INSTALLATION: Migration = {
   },
 };
 
+/** v27 → v28: old saves keep Jev absent/off; the version prevents old builds resuming an external phase. */
+const ADD_JEV_CONTROL: Migration = {
+  from: 27,
+  to: 28,
+  apply(state) {
+    if (!isRecord(state)) throw new Error("v27 state is not an object");
+    return state;
+  },
+};
+
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
@@ -694,4 +704,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_DEPLOYABLE_LEVELS,
   ADD_TECH_POINTS,
   ADD_DEFEND_INSTALLATION,
+  ADD_JEV_CONTROL,
 ];

@@ -14,6 +14,10 @@ export interface UnitStatusChip {
   readonly team: Team;
   readonly hp: number;
   readonly maxHp: number;
+  /** Persistent control label, also visible without holding Shift. */
+  readonly jevControlled?: boolean;
+  /** Show only the Jev label until inspection is held. */
+  readonly compact?: boolean;
   /**
    * One entry per weapon that carries a pool, in the register the
    * unit's card uses — `Autocannon · heat 4 / 4`, `Rifle · ammo 2 / 3` —
@@ -37,7 +41,7 @@ export interface UnitStatusCharge {
 // ===========================================
 
 /**
- * The status chips above every visible unit while Shift is held (the
+ * Persistent Jev labels and status chips above visible units while Shift is held (the
  * Executive Director's ask on #1113): name, a health bar and the
  * charge gauge, compact, and in the world rather than on a rail — DOM
  * anchored to the unit's head (ADR 0007), so it follows the unit and
@@ -150,6 +154,11 @@ function buildChip(doc: Document, unitId: UnitId): HTMLElement {
   const chip = doc.createElement("div");
   chip.className = "tut-status-chip";
   chip.dataset.unitId = unitId;
+  const jev = doc.createElement("div");
+  jev.className = "tut-status-chip__jev";
+  jev.dataset.field = "jev-label";
+  jev.textContent = "Jev";
+  jev.hidden = true;
   const name = doc.createElement("div");
   name.className = "tut-status-chip__name";
   name.dataset.field = "status-name";
@@ -168,13 +177,16 @@ function buildChip(doc: Document, unitId: UnitId): HTMLElement {
   const gauges = doc.createElement("div");
   gauges.className = "tut-status-chip__gauges tut-mono";
   gauges.dataset.field = "status-charges";
-  chip.append(name, health, gauges);
+  chip.append(jev, name, health, gauges);
   return chip;
 }
 
 /** Writes a chip's words, bar and position. */
 function fillChip(element: HTMLElement, chip: UnitStatusChip): void {
   element.dataset.team = chip.team;
+  element.dataset.compact = String(chip.compact === true);
+  const jev = element.querySelector<HTMLElement>('[data-field="jev-label"]');
+  if (jev) jev.hidden = !chip.jevControlled;
   element.style.left = `${String(chip.anchor.x)}px`;
   element.style.top = `${String(chip.anchor.y)}px`;
   const name = element.querySelector<HTMLElement>('[data-field="status-name"]');

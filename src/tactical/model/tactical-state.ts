@@ -1,3 +1,4 @@
+import type { JevControl } from "./jev-control";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -206,6 +207,8 @@ export const NO_VISION: SideVision = {
  * a save is self-contained; `map.recipe` still records how to rebuild it.
  */
 export interface TacticalState {
+  /** Optional entity controllers; absence preserves the original turn flow. */
+  readonly jev?: JevControl;
   readonly missionId: MissionId;
   /** Unsigned 32-bit seed the mission's rules fork their streams from. */
   readonly seed: number;

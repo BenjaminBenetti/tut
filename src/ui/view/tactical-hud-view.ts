@@ -98,6 +98,8 @@ import { TurnBannerView } from "./turn-banner-view";
 import type { CardHover } from "./unit-card-view";
 import { UnitCardView } from "./unit-card-view";
 import { UnitControlView } from "./unit-control-view";
+import type { JevEntityControl } from "../../tactical/model/jev-control";
+import { JEV_PROMPT_MAX_LENGTH } from "../../tactical/model/jev-control";
 import type { UnitStatusChip } from "./unit-status-layer-view";
 import { UnitStatusLayerView } from "./unit-status-layer-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
@@ -128,7 +130,7 @@ export interface TacticalHudHandlers {
   readonly onLeave: () => void;
   /** Change the screen's automatic turn-ending preference. */
   readonly onAutoEndChange?: (enabled: boolean) => void;
-  /** Hold automatic turn ending while the development inspector is open. */
+  /** Hold automatic turn ending while a HUD editor pauses automation. */
   readonly onAutomationPause?: (paused: boolean) => void;
   /**
    * Bring a unit on screen (#1041). Absent in headless callers, which
@@ -303,12 +305,23 @@ export class TacticalHudView {
   private readonly objectives = new ObjectiveTrackerView();
   /** Orders and controller choice for the friendly unit shown in the card. */
   private readonly unitControl = new UnitControlView({
-    onToggleJev: (unitId) => this.configureUnitJev(unitId, true),
+    onToggleJev: (unitId) =>
+      this.configureUnitJev(unitId, {
+        enabled: !this.mission?.jev?.entities[unitId]?.enabled,
+      }),
     onEntityPrompt: (unitId, prompt) =>
-      this.configureUnitJev(unitId, false, prompt),
+      this.configureUnitJev(unitId, { entityPrompt: prompt }),
   });
+  private readonly automationPauses = new Set<"inspector" | "squad">();
   /** The force at a glance; a row selects and recovers a unit (#1041). */
   private readonly squad = new SquadStripView({
+    onApplyJev: (unitIds) => this.configureSquadJev(unitIds),
+    onApplyOrders: (unitIds, prompt) => {
+      if (prompt.length > JEV_PROMPT_MAX_LENGTH) return;
+      for (const id of unitIds)
+        this.configureUnitJev(id, { entityPrompt: prompt });
+    },
+    onEditingChange: (editing) => this.setAutomationPause("squad", editing),
     onPick: (unitId) => {
       if (this.playbackLocked) {
         return;
@@ -463,7 +476,9 @@ export class TacticalHudView {
     );
     this.jevInspector =
       deps.devTools && deps.jev
-        ? new JevInspectorView(deps.jev, handlers.onAutomationPause)
+        ? new JevInspectorView(deps.jev, (paused) =>
+            this.setAutomationPause("inspector", paused),
+          )
         : undefined;
     this.debugMenu =
       deps.devTools === undefined
@@ -676,6 +691,7 @@ export class TacticalHudView {
     this.jevInspector?.unmount();
     this.commander.unmount();
     this.unitControl.unmount();
+    this.squad.unmount();
     this.debugToggle = undefined;
     this.debugOpen = false;
     this.armedPlacement = undefined;
@@ -2191,11 +2207,10 @@ export class TacticalHudView {
     this.status.show(chips);
   }
 
-  /** Apply a unit-card edit against live settings so one field never overwrites another. */
+  /** Apply a unit's control or prompt edit against live settings, preserving its other fields. */
   private configureUnitJev(
     unitId: UnitId,
-    toggle: boolean,
-    prompt?: string,
+    change: Partial<JevEntityControl>,
   ): void {
     const mission = this.mission;
     const unit = mission?.units.find((entry) => entry.id === unitId);
@@ -2209,18 +2224,57 @@ export class TacticalHudView {
     )
       return;
     const current = mission.jev?.entities[unitId];
-    const enabled = toggle ? !current?.enabled : current?.enabled === true;
-    if (toggle && enabled && !this.deps.jev?.configured) return;
+    const enabled = change.enabled ?? current?.enabled === true;
+    const entityPrompt = change.entityPrompt ?? current?.entityPrompt ?? "";
+    if (enabled && !current?.enabled && !this.deps.jev?.configured) return;
+    if (entityPrompt.length > JEV_PROMPT_MAX_LENGTH) return;
+    if (
+      enabled === (current?.enabled === true) &&
+      entityPrompt === (current?.entityPrompt ?? "")
+    )
+      return;
     this.handlers.onCommand(
       configureJev(
         unitId,
         {
           enabled,
-          entityPrompt: prompt ?? current?.entityPrompt ?? "",
+          entityPrompt,
         },
         mission.jev?.commanders.tdf ?? "",
       ),
     );
+  }
+
+  /** Apply the checked roster as one synchronous edit while automatic play remains paused. */
+  private configureSquadJev(unitIds: readonly UnitId[]): void {
+    const mission = this.mission;
+    if (!mission || mission.outcome) return;
+    const checked = new Set(unitIds);
+    const actors = playerUnits(mission).filter((unit) => unit.hp > 0);
+    if (
+      !this.deps.jev?.configured &&
+      actors.some(
+        (unit) =>
+          checked.has(unit.id) && !mission.jev?.entities[unit.id]?.enabled,
+      )
+    )
+      return;
+    for (const unit of actors)
+      this.configureUnitJev(unit.id, { enabled: checked.has(unit.id) });
+  }
+
+  /** An inspector and a squad edit each hold automation until both have closed. */
+  private setAutomationPause(
+    source: "inspector" | "squad",
+    paused: boolean,
+  ): void {
+    const wasPaused = this.automationPauses.size > 0;
+    if (paused) this.automationPauses.add(source);
+    else this.automationPauses.delete(source);
+    const isPaused = this.automationPauses.size > 0;
+    if (wasPaused === isPaused) return;
+    this.deps.jev?.pause(isPaused);
+    this.handlers.onAutomationPause?.(isPaused);
   }
 
   /** Pushes the mission and the presentation state into every part. */
@@ -2343,6 +2397,9 @@ export class TacticalHudView {
       missionId: mission.missionId,
       units: playerUnits(mission),
       selectedId: this.selected,
+      controls: mission.jev?.entities,
+      jevAvailable: this.deps.jev?.configured === true,
+      editable: !mission.outcome,
       nameOf: (unitId) => railNames.unit(unitId),
     });
     this.actions.update({

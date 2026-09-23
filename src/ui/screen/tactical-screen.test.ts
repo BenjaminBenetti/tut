@@ -1324,6 +1324,26 @@ describe("TacticalScreen playback lock (#1130)", () => {
     expect(store.dispatched.map((command) => command.type)).toEqual([END_TURN]);
   });
 
+  it("holds Auto end while squad recipients or orders are being edited", async () => {
+    const { store, state, host } = playing();
+    const orders = root.querySelector<HTMLButtonElement>(
+      '[data-testid="squad-orders-toggle"]',
+    )!;
+    orders.click();
+    autoEndButton().click();
+    store.command(exhausted(state), []);
+    host.settle();
+    await flush();
+    expect(store.dispatched).toEqual([]);
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-testid="squad-selection-cancel"]',
+      )!
+      .click();
+    await flush();
+    expect(store.dispatched.map((command) => command.type)).toEqual([END_TURN]);
+  });
+
   it("waits for every last-action animation, then ends once and remains enabled next turn", async () => {
     const { store, state, host } = playing();
     autoEndButton().click();

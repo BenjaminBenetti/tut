@@ -48,6 +48,17 @@ The flag opens **Unit orders**, which edits only that entity's `entity_prompt`. 
 
 ![Selected-unit Jev toggle and individual orders editor](jev-unit-orders.png)
 
+## Control several units
+
+The bottom of **Squad** has a **Jev** button and a **command flag**. Either starts a selection mode: compact squad rows become checkboxes, and the active button highlights and changes to **Apply**. Selecting rows in this mode leaves the battlefield selection and camera alone.
+
+- **Jev:** currently controlled units start checked. Change the selection and press **Apply**. Checked units use Jev; unchecked units return to player control. Each unit keeps its own saved orders. An empty selection releases everyone.
+- **Command flag:** write orders, check the recipients, then press **Apply**. The same text replaces each selected unit's `entity_prompt` without changing control settings or faction orders. Clearing the field clears their individual orders.
+
+Changes remain drafts until Apply. **Cancel**, **Escape**, or switching modes discards the draft. Jev decisions and Auto end pause while either selection mode is open, then resume after Apply or Cancel; opening the development inspector also keeps that pause held until both editors close. Applying costs no AP, and the settings persist with the mission.
+
+![Preparing Squad orders for several checked units](jev-squad-orders.png)
+
 ## Inspect a decision
 
 ![Jev development inspector showing a real evaluated request](jev-inspector.png)
@@ -70,7 +81,7 @@ There is no `finish` choice. Movement offers named entities and objectives, visi
 
 A Jev-controlled TDF unit has light-blue **Jev** text above its head, visible without holding Shift. Tab skips it. It waits while manual units still have AP, then takes its actions once they are spent. Pressing **End turn** starts Jev's remaining activations immediately and delays the bug phase until they finish; repeated End Turn and manual orders are blocked while that request is pending. Saving and loading during this interval resumes unfinished activations.
 
-**Auto end**, beside End turn, optionally advances when manual units have spent their AP and Jev has finished its remaining activations, including queued extraction. It waits for all action animations and the bug-phase banner to settle. The toggle starts off when entering the tactical screen, stays enabled across turns, and can be switched off during playback. With it off, spent turns remain open. The development inspector pauses automatic turn ending as well as Jev decisions.
+**Auto end**, beside End turn, optionally advances when manual units have spent their AP and Jev has finished its remaining activations, including queued extraction. It waits for all action animations and the bug-phase banner to settle. The toggle starts off when entering the tactical screen, stays enabled across turns, and can be switched off during playback. With it off, spent turns remain open. The development inspector and Squad selection modes pause automatic turn ending as well as Jev decisions.
 
 ![Auto end beside End turn in the tactical HUD](auto-end.png)
 
@@ -119,7 +130,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Focused coverage lives in `jev-movement.test.ts` (named destinations, walls, elevation, footprints, compass/retreat intent and terrain-weighted round-up scaling), `jev-destinations.test.ts` (every destination source, harvest approach/execution, intel privacy and upstairs radar investigation), `jev-request.test.ts` (knowledge boundaries and contextual weapon/item choices), `jev-controller.test.ts` (all three movement stages, failures, fresh state after each AP, opt-in, mixed turns, stale responses and resume), `jev-client.test.ts` (Choice/Score validation), `relay/server.test.mjs` (real HTTP relay), `e2e/jev-inspector.spec.ts` (stepped inspection and TDF turn scheduling in Chromium), and `e2e/unit-orders.spec.ts` (row toggles, individual orders, input isolation and save/resume). The earlier ASCII projection remains available to the evaluation tools through `navigation-snapshot.mjs`; it is not sent during gameplay.
+Focused coverage lives in `jev-movement.test.ts` (named destinations, walls, elevation, footprints, compass/retreat intent and terrain-weighted round-up scaling), `jev-destinations.test.ts` (every destination source, harvest approach/execution, intel privacy and upstairs radar investigation), `jev-request.test.ts` (knowledge boundaries and contextual weapon/item choices), `jev-controller.test.ts` (all three movement stages, failures, fresh state after each AP, opt-in, mixed turns, stale responses and resume), `jev-client.test.ts` (Choice/Score validation), `relay/server.test.mjs` (real HTTP relay), `e2e/jev-inspector.spec.ts` (stepped inspection and TDF turn scheduling in Chromium), `e2e/unit-orders.spec.ts` (unit-card toggles, individual orders, input isolation and save/resume), and `e2e/squad-orders.spec.ts` (bulk selection, Jev control, shared unit orders, cancellation and persistence). The earlier ASCII projection remains available to the evaluation tools through `navigation-snapshot.mjs`; it is not sent during gameplay.
 
 A live integration smoke test used the fully visible `holdout-1-small-named-ally` scene with 100 stationary entities. Through the actual relay and browser transport code, Jev selected `move`, the correct named ally, and distance score **3.11/4**. The game rounded the five-point route up to four tiles and executed it for exactly one AP. The three requests used **17,705 / 20,360 / 17,098 input tokens**. This validates one complete decision; it does not establish full-mission performance or solve navigation under fog.
 

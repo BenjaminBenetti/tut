@@ -58,10 +58,12 @@ test("compact squad rows select units whose card controls Jev and independent or
   const rowBounds = (await row.boundingBox())!;
   expect(rowBounds.height).toBeLessThan(48);
   const aligned = await row.evaluate((element) =>
-    [...element.children].map((child) => {
-      const bounds = child.getBoundingClientRect();
-      return bounds.y + bounds.height / 2;
-    }),
+    [...element.children]
+      .filter((child) => child.getBoundingClientRect().height > 0)
+      .map((child) => {
+        const bounds = child.getBoundingClientRect();
+        return bounds.y + bounds.height / 2;
+      }),
   );
   expect(Math.max(...aligned) - Math.min(...aligned)).toBeLessThan(2);
   await expect(

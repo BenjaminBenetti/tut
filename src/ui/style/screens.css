@@ -1342,6 +1342,79 @@
   cursor: pointer;
 }
 
+.tut-hud__squad .tut-list > li[role="checkbox"][aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tut-hud__squad .tut-list > li[data-bulk-selected="true"] {
+  background: #8ed8ff18;
+  box-shadow: inset 2px 0 0 #8ed8ff;
+}
+
+.tut-hud__squad .tut-list > li:focus-visible {
+  outline: 1px solid var(--ui-accent);
+  outline-offset: -1px;
+}
+
+.tut-squad__choice {
+  width: 16px;
+  height: 16px;
+  border: 1px solid currentColor;
+  display: grid;
+  place-items: center;
+  color: #8ed8ff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.tut-squad__bulk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.tut-squad__bulk-controls .tut-btn {
+  padding: 5px 8px;
+  min-height: 30px;
+  font-size: 11px;
+  gap: var(--space-2);
+}
+
+.tut-squad__bulk-controls .tut-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tut-hud .tut-squad__jev[aria-pressed="true"] {
+  color: #8ed8ff;
+  box-shadow: inset 0 0 0 2px #8ed8ff;
+}
+
+.tut-squad__hint {
+  margin: var(--space-3) 0;
+  font-size: 12px;
+}
+
+.tut-squad__prompt {
+  display: grid;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.tut-squad__prompt textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--space-2);
+  resize: vertical;
+  font-size: 12px;
+  line-height: 1.5;
+  overscroll-behavior: contain;
+}
+
 .tut-hud__card > .tut-panel__title {
   display: flex;
   align-items: center;

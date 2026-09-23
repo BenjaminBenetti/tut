@@ -182,8 +182,7 @@ export class JevInspectorView {
     this.panel?.remove();
     this.toggle?.remove();
     this.open = false;
-    this.inspector.pause(false);
-    this.onPause?.(false);
+    this.setPause(false);
   }
 
   // ===========================================
@@ -196,9 +195,14 @@ export class JevInspectorView {
     this.open = open;
     if (this.panel) this.panel.hidden = !open;
     this.toggle?.setAttribute("aria-expanded", String(open));
-    this.inspector.pause(open);
-    this.onPause?.(open);
+    this.setPause(open);
     if (open) this.loadEntity();
+  }
+
+  /** Let the HUD combine inspector and squad pauses, or control the port directly when standalone. */
+  private setPause(paused: boolean): void {
+    if (this.onPause) this.onPause(paused);
+    else this.inspector.pause(paused);
   }
 
   /** Reset draft prompts only when a different entity is inspected or the panel opens. */

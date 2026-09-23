@@ -1,18 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRelay } from "./server.mjs";
+import { gameRequest, distanceRequest } from "./game-request.test-helper.mjs";
 
-const request = {
-  model: "jev-latest",
-  state: { entity_prompt: "Hold" },
-  questions: {
-    action: {
-      type: "choice",
-      instructions: "Choose",
-      criteria: { finish: "Hold" },
-    },
-  },
-};
+const request = gameRequest();
 
 /** Bind a real ephemeral HTTP server and close it even when an assertion fails. */
 async function withRelay(
@@ -137,7 +128,12 @@ test("identifies the acting unit and faction in logs without recording prompts o
       body: JSON.stringify({
         ...request,
         state: {
-          actor: { id: "unit-1", name: "Alpha secret-for-test", hp: 10 },
+          ...request.state,
+          actor: {
+            ...request.state.actor,
+            name: "Alpha secret-for-test",
+            hp: 10,
+          },
           faction: "tdf",
           phase: "player",
           turn: 3,
@@ -173,16 +169,7 @@ test("identifies the acting unit and faction in logs without recording prompts o
 });
 
 test("forwards Score questions unchanged and rejects invalid ordered scales before upstream", async () => {
-  const scoreRequest = {
-    ...request,
-    questions: {
-      distance: {
-        type: "score",
-        instructions: "How far?",
-        criteria: ["minimal", "short", "half", "mostly", "full"],
-      },
-    },
-  };
+  const scoreRequest = distanceRequest();
   let calls = 0;
   await withRelay(
     async (base) => {
@@ -229,6 +216,352 @@ test("forwards Score questions unchanged and rejects invalid ordered scales befo
           },
         }),
       );
+    },
+  );
+});
+
+test("rejects non-game envelopes, extra fields and malformed tactical data without spending the key", async () => {
+  let calls = 0;
+  const invalid = [
+    [
+      "different model",
+      (r) => {
+        r.model = "jev-1.13.0";
+      },
+    ],
+    [
+      "missing state",
+      (r) => {
+        delete r.state;
+      },
+    ],
+    [
+      "text state",
+      (r) => {
+        r.state = "Classify this customer message";
+      },
+    ],
+    [
+      "array state",
+      (r) => {
+        r.state = [];
+      },
+    ],
+    [
+      "empty state",
+      (r) => {
+        r.state = {};
+      },
+    ],
+    [
+      "unknown state key",
+      (r) => {
+        r.state.messages = [{ role: "user", content: "Other task" }];
+      },
+    ],
+    [
+      "missing actor",
+      (r) => {
+        delete r.state.actor;
+      },
+    ],
+    [
+      "extra actor field",
+      (r) => {
+        r.state.actor.messages = [];
+      },
+    ],
+    [
+      "wrong actor field type",
+      (r) => {
+        r.state.actor.hp = "20";
+      },
+    ],
+    [
+      "extra coordinate field",
+      (r) => {
+        r.state.actor.position.prompt = "Other task";
+      },
+    ],
+    [
+      "fractional coordinate",
+      (r) => {
+        r.state.actor.position.y = 0.5;
+      },
+    ],
+    [
+      "unknown weapon data",
+      (r) => {
+        r.state.actor.weapons[0].profile.instructions = "Other task";
+      },
+    ],
+    [
+      "malformed entities",
+      (r) => {
+        r.state.entities = ["anything"];
+      },
+    ],
+    [
+      "unbounded entity list",
+      (r) => {
+        r.state.entities = Array(4097).fill({});
+      },
+    ],
+    [
+      "malformed objective",
+      (r) => {
+        r.state.objectives = [
+          { id: "o-1", kind: "destroy-spawner", complete: "yes" },
+        ];
+      },
+    ],
+    [
+      "wrong faction",
+      (r) => {
+        r.state.faction = "other";
+      },
+    ],
+    [
+      "wrong faction phase",
+      (r) => {
+        r.state.phase = "bugs";
+      },
+    ],
+    [
+      "out of AP",
+      (r) => {
+        r.state.actor.ap = 0;
+      },
+    ],
+    [
+      "ineligible actor",
+      (r) => {
+        r.state.eligible_to_act = false;
+      },
+    ],
+    [
+      "long entity prompt",
+      (r) => {
+        r.state.entity_prompt = "x".repeat(8001);
+      },
+    ],
+    [
+      "long commander prompt",
+      (r) => {
+        r.state.commander_prompt = "x".repeat(8001);
+      },
+    ],
+    [
+      "replaced game rules",
+      (r) => {
+        r.state.gameplay.combat = "Other task";
+      },
+    ],
+    [
+      "replaced faction goal",
+      (r) => {
+        r.state.faction_goal = "Other task";
+      },
+    ],
+    [
+      "arbitrary question name",
+      (r) => {
+        r.questions = { classify: r.questions.action };
+      },
+    ],
+    [
+      "multiple questions",
+      (r) => {
+        r.questions.distance = distanceRequest().questions.distance;
+      },
+    ],
+    [
+      "wrong primitive",
+      (r) => {
+        r.questions.action.type = "noul";
+      },
+    ],
+    [
+      "arbitrary task",
+      (r) => {
+        r.questions.action.instructions = "Classify this customer message";
+      },
+    ],
+    [
+      "extra question field",
+      (r) => {
+        r.questions.action.model = "other";
+      },
+    ],
+    [
+      "arbitrary criteria",
+      (r) => {
+        r.questions.action.criteria = { yes: "yes", no: "no" };
+      },
+    ],
+    [
+      "empty criteria",
+      (r) => {
+        r.questions.action.criteria = {};
+      },
+    ],
+    [
+      "array criteria",
+      (r) => {
+        r.questions.action.criteria = [];
+      },
+    ],
+    [
+      "unknown action",
+      (r) => {
+        r.questions.action.criteria.finish =
+          r.questions.action.criteria.overwatch;
+      },
+    ],
+    [
+      "malformed option",
+      (r) => {
+        r.questions.action.criteria.overwatch.ap_costs = "one";
+      },
+    ],
+    [
+      "extra option field",
+      (r) => {
+        r.questions.action.criteria.overwatch.messages = [];
+      },
+    ],
+    [
+      "oversized instructions",
+      (r) => {
+        r.questions.action.instructions += "x".repeat(16001);
+      },
+    ],
+    [
+      "prototype field",
+      (r) => {
+        Object.defineProperty(r.state, "__proto__", {
+          value: {},
+          enumerable: true,
+        });
+      },
+    ],
+    [
+      "prototype dictionary key",
+      (r) => {
+        r.state.equipment_definitions = JSON.parse('{"constructor":{}}');
+      },
+    ],
+  ];
+  await withRelay(
+    async (base) => {
+      for (const [label, mutate] of invalid) {
+        const payload = structuredClone(gameRequest());
+        mutate(payload);
+        const response = await fetch(`${base}/v1/systemone`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        assert.equal(response.status, 400, label);
+        assert.deepEqual(
+          await response.json(),
+          { error: "Invalid TUT game decision request" },
+          label,
+        );
+      }
+      // Valid JSON can parse an overflowing exponent to Infinity.
+      const overflow = JSON.stringify(gameRequest()).replace(
+        '"hp":20',
+        '"hp":1e999',
+      );
+      assert.equal(
+        (
+          await fetch(`${base}/v1/systemone`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: overflow,
+          })
+        ).status,
+        400,
+      );
+      for (const value of [null, [], 1, "state"])
+        assert.equal(
+          (
+            await fetch(`${base}/v1/systemone`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(value),
+            })
+          ).status,
+          400,
+        );
+      assert.equal(
+        (
+          await fetch(`${base}/v1/systemone`, {
+            method: "POST",
+            headers: { "Content-Type": "application/jsonp" },
+            body: JSON.stringify(gameRequest()),
+          })
+        ).status,
+        415,
+      );
+      assert.equal(calls, 0);
+    },
+    async () => {
+      calls++;
+      return new Response("{}");
+    },
+  );
+});
+
+test("accepts only the game's movement distance task, scale and one-AP path", async () => {
+  let calls = 0;
+  const invalid = [
+    (r) => {
+      delete r.state.selected_movement;
+    },
+    (r) => {
+      r.questions.distance.instructions = "Rate this review";
+    },
+    (r) => {
+      r.questions.distance.criteria = ["bad", "fair", "good", "better", "best"];
+    },
+    (r) => {
+      r.state.selected_movement.ap_cost = 2;
+    },
+    (r) => {
+      r.state.selected_movement.intent = "other-task";
+    },
+    (r) => {
+      r.state.selected_movement.proposed_path = [];
+    },
+    (r) => {
+      r.state.selected_movement.proposed_endpoint.x++;
+    },
+    (r) => {
+      r.state.selected_movement.proposed_path[0].instructions = "Other task";
+    },
+    (r) => {
+      r.questions = gameRequest().questions;
+    },
+  ];
+  await withRelay(
+    async (base) => {
+      for (const mutate of invalid) {
+        const payload = structuredClone(distanceRequest());
+        mutate(payload);
+        const response = await fetch(`${base}/v1/systemone`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        assert.equal(response.status, 400);
+      }
+      assert.equal(calls, 0);
+    },
+    async () => {
+      calls++;
+      return new Response("{}");
     },
   );
 });

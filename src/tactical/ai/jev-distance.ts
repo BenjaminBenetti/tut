@@ -1,14 +1,6 @@
+import JEV_PROTOCOL from "../data/jev-protocol.json";
 import type { JevCandidate, JevSnapshot } from "../model/jev-control";
 import type { JevChoicePage } from "./jev-request";
-
-/** Five ordered movement levels, mapped by the game to a normalized extent. */
-const DISTANCE_LEVELS = [
-  "Minimal movement: take only the smallest legal step along the selected route.",
-  "Short movement: use about one quarter of the available distance along the selected route.",
-  "Half movement: use about half of the available distance along the selected route.",
-  "Mostly full movement: use about three quarters of the available distance along the selected route.",
-  "Full movement: use all available distance along the selected route.",
-] as const;
 
 /** Follow destination selection with the same full metadata plus the proposed one-AP move. */
 export function jevDistancePage(
@@ -23,7 +15,7 @@ export function jevDistancePage(
     stage: "movement-distance",
     movement: candidate,
     request: {
-      model: "jev-latest",
+      model: JEV_PROTOCOL.model,
       state: {
         ...snapshot.state,
         selected_movement: {
@@ -43,9 +35,8 @@ export function jevDistancePage(
       questions: {
         distance: {
           type: "score",
-          instructions:
-            "How much of the available movement should the actor use to follow its orders? Follow commander_prompt over conflicting entity_prompt; otherwise use faction_goal. The movement destination has already been selected in selected_movement. Consider all actor and entity metadata; capability_ref points to shared capabilities. Rate the desired movement extent using the ordered levels. Any move costs exactly 1 AP, even a short move; unused movement points are lost. A shorter move does not preserve AP. The game divides the score by 4, scales the proposed route's movement-point cost, and rounds up to the next legal nonzero stopping point that still follows the selected intent, capped at the proposed endpoint. A fresh state and decision follow this move while AP remains. Arrival does not attack, harvest or complete an objective. If selected_movement.extract_on_arrival_with_last_ap is true and this move reaches the extraction zone using the last AP, the actor extracts for zero AP after the walk; stopping short will not extract it.",
-          criteria: DISTANCE_LEVELS,
+          instructions: JEV_PROTOCOL.distanceInstructions,
+          criteria: JEV_PROTOCOL.distanceLevels,
         },
       },
     },

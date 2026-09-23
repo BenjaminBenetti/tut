@@ -1,3 +1,4 @@
+import JEV_PROTOCOL from "../data/jev-protocol.json";
 import type {
   JevCandidate,
   JevRequest,
@@ -82,8 +83,6 @@ export interface JevChoicePage {
 const MAX_LEAF_CHOICES = 32;
 const MAX_CRITERIA_CHARACTERS = 8000;
 const MAX_GROUP_CHOICES = 32;
-const INSTRUCTIONS =
-  "Choose the actor's next action in a turn-based tactical battle using `gameplay` for rules and only observed or remembered facts in the state. Follow `commander_prompt` for faction priorities and `entity_prompt` for this entity's role; commander priorities win explicit conflicts. When no specific order applies, use `faction_goal`. AP means action points: actor.ap is the remaining budget, each action spends its listed cost. An action marked ends_activation ends the actor's activation and forfeits any remaining AP; otherwise a new decision follows if AP remains. HP means health points. capability_ref refers to the shared capabilities dictionary. The game handles pathfinding; north is -z, east +x, south +z and west -x. Resolve names in orders against actor.name and entities[].name. Historical sightings and radar pings are not visible attack targets. Consider objectives, cover, hazards, survival and friendly fire. Select only an offered option; choosing a group does not spend AP or execute an action.";
 
 /** Route by the actor's specific weapon or item; follow-ups contain only that action's targets. */
 export function jevChoicePage(
@@ -193,29 +192,22 @@ export function jevChoicePage(
 /** Build the exact wire request; stage metadata stays in the inspector trace. */
 function choicePage(
   snapshot: JevSnapshot,
-  stage: JevChoicePage["stage"],
+  stage: Exclude<JevChoicePage["stage"], "movement-distance">,
   criteria: Readonly<Record<string, unknown>>,
   groups?: JevChoicePage["groups"],
   selected?: JevCandidate,
 ): JevChoicePage {
-  const task =
-    stage === "action-type"
-      ? "Choose the best specific action to take next. Each available weapon, usable item, and other ability is listed separately for this actor. Choose the weapon or item now; its target or destination will be selected in a follow-up containing ONLY that action."
-      : stage === "action-group"
-        ? "The action type has been chosen. Choose a region or target group within that type; a subsequent request will choose the concrete action."
-        : stage === "movement-target"
-          ? "Which destination or direction should actor move toward to follow its orders? Match entity names and metadata, including shared capabilities. Choose a known entity, objective, extraction zone, compass direction or retreat. The game finds a legal route to a free tile beside an entity, toward an objective, into the extraction zone, or in that direction. Reaching extraction does not board the actor; a TDF unit must choose Extract once inside. A follow-up decides how much of the one-AP route to use. Questions spend no AP."
-          : "The specific action, including its weapon or item, has been chosen. Choose the best target or destination from ONLY the offered options for that action.";
+  const task = JEV_PROTOCOL.choiceTasks[stage];
   return {
     stage,
     groups,
     request: {
-      model: "jev-latest",
+      model: JEV_PROTOCOL.model,
       state: snapshot.state,
       questions: {
         action: {
           type: "choice",
-          instructions: `${INSTRUCTIONS} ${task}${selected ? ` ${jevSelectedActionInstructions(snapshot.state, selected)}` : " Read each option's instructions and capability before choosing."}`,
+          instructions: `${JEV_PROTOCOL.choiceInstructions} ${task}${selected ? ` ${jevSelectedActionInstructions(snapshot.state, selected)}` : JEV_PROTOCOL.actionTypeSuffix}`,
           criteria,
         },
       },

@@ -44,6 +44,8 @@ inspector: pause at each question; retain inputs, responses and command
 
 ## Consequences
 
+The public relay enforces a closed, bounded game request contract before using its key: the fixed model, one recognized decision question, tactical observation fields and stage-specific options. Shared protocol data keeps the fixed rules, task wording and movement scale aligned with the browser. Content IDs remain dynamic, while new schema fields or action families require explicit validation changes and compatibility coverage. This is payload validation, not authentication or authoritative game-state verification; a caller can still forge game-shaped state and free-form orders. Fixed-prompt or wire changes require coordinated frontend and relay deployment.
+
 Simulation remains deterministic for recorded commands, but fresh Jev decisions are external inputs and are not reproducible from the game seed alone. The inspector makes model version, probabilities, request size, latency, errors and grouped requests reviewable. A relay deployment and frontend rebuild are needed when the public address is first supplied or changed.
 
 Current tactical actors are units. Existing commandable bugs, squads and mechs expose their available actions. Passive entities and autonomous equipment retain their existing lifecycle rules; adding a new controllable ability still requires a real game command and a corresponding candidate provider. Enemy health and weapon descriptions are treated as observable in the same way as the game's unit cards. History stores last-seen positions without inventing sighting timestamps the existing vision state does not record.

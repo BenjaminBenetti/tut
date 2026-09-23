@@ -2,3 +2,8 @@
 !relay/
 !relay/*.mjs
 relay/*.test.mjs
+relay/*.test-helper.mjs
+!src/
+!src/tactical/
+!src/tactical/data/
+!src/tactical/data/jev-protocol.json

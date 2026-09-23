@@ -1,3 +1,4 @@
+import JEV_PROTOCOL from "../data/jev-protocol.json";
 import type {} from "./tactical-command";
 import type {} from "../../overworld/model/overworld-command";
 import type { Tile } from "../../mapgen/model/tile";
@@ -8,7 +9,7 @@ import type { TacticalCommand, TacticalCommandFor } from "./tactical-command";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 
 /** Shared limit for editable entity and faction orders. */
-export const JEV_PROMPT_MAX_LENGTH = 8000;
+export const JEV_PROMPT_MAX_LENGTH = JEV_PROTOCOL.promptMaxLength;
 
 /**
  * Derive entity orders from the game's command registry. New commands require a

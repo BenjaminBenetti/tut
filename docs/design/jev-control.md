@@ -119,6 +119,16 @@ The default port is 8080 (`PORT` overrides it). The relay allows at most 512 KiB
 
 If the GHCR package is private, the host needs a package-read credential to pull it. No TypeSafe credential is needed to build or publish the image.
 
+### Game request contract
+
+The relay accepts only `jev-latest` and exactly one game decision: an `action` Choice or the five-level movement `distance` Score. It validates the full tactical observation, including actor/resources, shared capability references, equipment definitions, objectives, intel and optional selected movement. Unknown fields, wrong types, non-finite numbers, missing data, excessive lists, arbitrary question IDs and alternate models are rejected with HTTP 400 **before contacting TypeSafe**. Entity and commander prompts are each limited to 8,000 characters; the 512 KiB total request budget and rate/concurrency limits still apply.
+
+Each decision stage has its own allowed options. Weapon and equipment IDs come from the supplied loadout, movement IDs reference the supplied destination sources, and distance scoring requires the game's exact scale and a one-AP path whose endpoint matches its final step. The fixed task wording, game rules, faction goals and distance scale are shared between the browser and relay in `src/tactical/data/jev-protocol.json`. Follow-up capability descriptions and player orders remain bounded text. Valid requests are forwarded unchanged, so the inspector still displays the input Jev receives. Upstream redirects are refused.
+
+This validates **shape**, not the caller or the truth of their game state. The relay is still public: another client can imitate a valid game request, and free-form orders cannot prove that a request is genuine gameplay. CORS is not authentication. Restricting who can spend the key would require separate authentication and per-user quotas; shape checks and the current process-wide rate limit do not provide that guarantee.
+
+Redeploy or restart the relay to activate the policy. Future wire-format or fixed-prompt changes should ship matching frontend and relay versions. New weapon/item IDs using existing mechanics require no policy changes; new fields or action families must update the contract checks. `tools/jev/relay-contract.test.mjs` checks family coverage against the command and mech-action registries, then sends real game-built requests through the policy and relay, covering both factions, fitted mechs, every item kind, all five decision stages and 100 observed entities.
+
 ## Validation
 
 ```sh

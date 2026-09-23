@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { validGameRequest } from "./game-request.mjs";
 
 const UPSTREAM = "https://api.typesafe.ai/v1/systemone";
 const MAX_BYTES = 512 * 1024;
@@ -42,7 +43,10 @@ export function createRelay({
       return;
     }
     if (req.method !== "POST") return reply(405, { error: "Use POST" });
-    if (!req.headers["content-type"]?.startsWith("application/json"))
+    if (
+      req.headers["content-type"]?.split(";")[0].trim().toLowerCase() !==
+      "application/json"
+    )
       return reply(415, { error: "Use application/json" });
     if (Date.now() - windowStart >= 60000) {
       windowStart = Date.now();
@@ -78,13 +82,14 @@ export function createRelay({
       } catch {
         return reply(400, { error: "Invalid JSON" });
       }
-      if (!validRequest(payload))
+      if (!validGameRequest(payload))
         return reply(400, {
-          error: "Expected Jev state, model and Choice or Score questions",
+          error: "Invalid TUT game decision request",
         });
       context = requestContext(payload, key);
       const upstream = await fetchUpstream(UPSTREAM, {
         method: "POST",
+        redirect: "error",
         headers: {
           Authorization: `Bearer ${key}`,
           "Content-Type": "application/json",
@@ -145,50 +150,4 @@ function requestContext(payload, key) {
       (question) => question.type,
     ),
   };
-}
-
-/** Bound the evaluation interface; callers cannot choose an upstream or send credentials. */
-function validRequest(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  if (
-    Object.keys(value).some(
-      (key) => !["model", "state", "questions"].includes(key),
-    )
-  )
-    return false;
-  if (
-    typeof value.model !== "string" ||
-    !/^jev-[a-z0-9.-]{1,40}$/.test(value.model) ||
-    value.state == null
-  )
-    return false;
-  if (
-    !value.questions ||
-    typeof value.questions !== "object" ||
-    Array.isArray(value.questions)
-  )
-    return false;
-  const questions = Object.values(value.questions);
-  return (
-    questions.length > 0 &&
-    questions.length <= 16 &&
-    questions.every(
-      (q) =>
-        q &&
-        typeof q.instructions === "string" &&
-        q.criteria &&
-        typeof q.criteria === "object" &&
-        ((q.type === "choice" &&
-          !Array.isArray(q.criteria) &&
-          Object.keys(q.criteria).length >= 1 &&
-          Object.keys(q.criteria).length <= 255) ||
-          (q.type === "score" &&
-            Array.isArray(q.criteria) &&
-            q.criteria.length >= 2 &&
-            q.criteria.length <= 10 &&
-            q.criteria.every(
-              (level) => typeof level === "string" && level.length > 0,
-            ))),
-    )
-  );
 }

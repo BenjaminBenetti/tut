@@ -3,6 +3,7 @@ import { launchMission } from "./mission-capture.helper";
 import { CITY_MISSION_FIXTURE } from "./fixtures/mission-maps";
 import type { GameState } from "../src/save/model/game-state";
 import type { SaveEnvelope } from "../src/save/model/save-envelope";
+import { drawnFrame } from "./capture-frame.helper";
 
 /** Read saved settings so the checks cover the command and persistence pipeline. */
 async function savedMission(page: Page) {
@@ -16,7 +17,7 @@ async function savedMission(page: Page) {
   );
 }
 
-/** Track world points to detect accidental row selection, camera rotation or zoom. */
+/** Track world points to detect accidental camera rotation or zoom while editing. */
 async function cameraProjection(page: Page) {
   const mission = await savedMission(page);
   return page.evaluate(
@@ -31,7 +32,7 @@ async function cameraProjection(page: Page) {
   );
 }
 
-test("unit rows toggle Jev and edit independent orders without moving the camera or spending AP", async ({
+test("compact squad rows select units whose card controls Jev and independent orders", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -47,8 +48,25 @@ test("unit rows toggle Jev and edit independent orders without moving the camera
   const secondRow = rows.nth(1);
   const id = (await row.getAttribute("data-unit-id"))!;
   const secondId = (await secondRow.getAttribute("data-unit-id"))!;
-  const toggle = row.getByTestId("unit-jev-toggle");
-  const flag = row.getByTestId("entity-command-toggle");
+  const card = page.locator("#unit-card");
+  const toggle = card.getByTestId("unit-jev-toggle");
+  const flag = card.getByTestId("entity-command-toggle");
+  await expect(rows.locator("button")).toHaveCount(0);
+  await expect(toggle).toBeHidden();
+  await row.click();
+  await drawnFrame(page);
+  const rowBounds = (await row.boundingBox())!;
+  expect(rowBounds.height).toBeLessThan(48);
+  const aligned = await row.evaluate((element) =>
+    [...element.children].map((child) => {
+      const bounds = child.getBoundingClientRect();
+      return bounds.y + bounds.height / 2;
+    }),
+  );
+  expect(Math.max(...aligned) - Math.min(...aligned)).toBeLessThan(2);
+  await expect(
+    card.locator(".tut-panel__title").first().getByTestId("unit-jev-toggle"),
+  ).toBeVisible();
   const panel = page.locator(
     '[data-testid="entity-orders-popover"]:not([hidden])',
   );
@@ -57,9 +75,6 @@ test("unit rows toggle Jev and edit independent orders without moving the camera
     exact: true,
   });
   const original = await savedMission(page);
-  const selection = await page
-    .locator("body")
-    .getAttribute("data-selected-unit");
   const camera = await cameraProjection(page);
   await expect(toggle).toBeEnabled();
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
@@ -110,7 +125,9 @@ test("unit rows toggle Jev and edit independent orders without moving the camera
   await flag.click();
   await expect(input).toHaveValue(orders);
   await input.fill("Discard this draft");
-  await secondRow.getByTestId("entity-command-toggle").click();
+  await page.evaluate((id) => window.__tutTactical__!.selectUnit(id), secondId);
+  await expect(panel).toHaveCount(0);
+  await flag.click();
   await expect(panel).toHaveCount(1);
   await expect(input).toHaveValue("");
   await input.fill("Guard extraction");
@@ -119,6 +136,7 @@ test("unit rows toggle Jev and edit independent orders without moving the camera
     enabled: false,
     entityPrompt: "Guard extraction",
   });
+  await page.evaluate((id) => window.__tutTactical__!.selectUnit(id), id);
   await flag.click();
   await expect(input).toHaveValue(orders);
   await panel.getByRole("button", { name: "Cancel" }).click();
@@ -132,18 +150,25 @@ test("unit rows toggle Jev and edit independent orders without moving the camera
   expect(saved.units).toEqual(original.units);
   expect(saved.jev?.commanders).toEqual({ tdf: "Protect the force", bugs: "" });
   expect(await cameraProjection(page)).toEqual(camera);
-  expect(await page.locator("body").getAttribute("data-selected-unit")).toBe(
-    selection,
-  );
+  await expect(row).toHaveAttribute("data-selected", "true");
   await flag.click();
   await page.screenshot({ path: "docs/design/jev-unit-orders.png" });
   await page.reload();
   await page.locator('[data-action="continue"]').click();
   await expect(page.locator("body")).toHaveAttribute("data-screen", "tactical");
+  await expect(toggle).toBeHidden();
+  await row.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
   await flag.click();
   await expect(input).toHaveValue(orders);
   await page.setViewportSize({ width: 800, height: 720 });
+  // Browser resize listeners run on the next rendering step, after setViewportSize returns.
+  await expect
+    .poll(async () => {
+      const bounds = (await panel.boundingBox())!;
+      return bounds.x + bounds.width;
+    })
+    .toBeLessThanOrEqual(800);
   const bounds = await panel.boundingBox();
   expect(bounds!.x).toBeGreaterThanOrEqual(0);
   expect(bounds!.y).toBeGreaterThanOrEqual(0);

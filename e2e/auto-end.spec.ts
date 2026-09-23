@@ -166,8 +166,8 @@ test("Auto end waits for Jev, can be cancelled, and respects the inspector pause
   const toggle = page.getByTestId("auto-end-toggle");
   await page
     .locator('[data-role="squad-list"] [data-unit-id="unit-1"]')
-    .getByTestId("unit-jev-toggle")
     .click();
+  await page.locator("#unit-card").getByTestId("unit-jev-toggle").click();
   await toggle.click();
   for (const unit of mission.units.filter(
     (unit) => unit.team === "tdf" && unit.id !== "unit-1" && unit.ap > 0,

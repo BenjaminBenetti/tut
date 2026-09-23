@@ -46,7 +46,7 @@ export class OrdersPromptView {
     private readonly options: OrdersPromptOptions,
   ) {}
 
-  /** Mount a flag; an optional overlay host keeps row popovers outside a scrolling rail. */
+  /** Mount a flag; an optional overlay host keeps the popover outside a scrolling panel. */
   mount(parent: HTMLElement, overlay?: HTMLElement): void {
     const doc = parent.ownerDocument;
     const options = this.options;
@@ -174,7 +174,7 @@ export class OrdersPromptView {
     this.update(this.model);
   }
 
-  /** Keep open drafts intact across selections, animations and other mission updates. */
+  /** Keep drafts through mission updates; changing the orders context discards them. */
   update(model: OrdersPromptModel | undefined): void {
     if (model?.contextId !== this.model?.contextId || !model?.editable)
       this.show(false, false);
@@ -231,7 +231,7 @@ export class OrdersPromptView {
     }
   }
 
-  /** Keep a row editor beside its flag and wholly inside the viewport. */
+  /** Keep a floating editor beside its flag and wholly inside the viewport. */
   private position(): void {
     if (!this.open || !this.floating || !this.panel || !this.toggle) return;
     const win = this.panel.ownerDocument.defaultView;

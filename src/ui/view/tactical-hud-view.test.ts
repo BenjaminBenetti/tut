@@ -126,7 +126,7 @@ function twoWeaponMission() {
 }
 
 describe("TacticalHudView", () => {
-  it("edits unit orders independently and preserves a draft through row refreshes", () => {
+  it("edits selected-unit orders independently and preserves a draft through card refreshes", () => {
     const onLookAt = vi.fn();
     const { hud, commands, mission } = setup({ onLookAt });
     const configured: TacticalState = {
@@ -137,16 +137,18 @@ describe("TacticalHudView", () => {
       },
     };
     hud.update(configured);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     const row = root.querySelector<HTMLElement>(
       '[data-role="squad-list"] [data-unit-id="s1"]',
     )!;
-    const flag = row.querySelector<HTMLButtonElement>(
+    expect(row.querySelector("button")).toBeNull();
+    const flag = card()!.querySelector<HTMLButtonElement>(
       '[data-testid="entity-command-toggle"]',
     )!;
     expect(flag.textContent).toBe("");
     expect(flag.querySelector('[data-icon="command"]')).not.toBeNull();
     flag.click();
-    const panel = root.querySelector<HTMLElement>("#entity-orders-s1")!;
+    const panel = root.querySelector<HTMLElement>("#entity-orders")!;
     const input = panel.querySelector<HTMLTextAreaElement>("textarea")!;
     expect(panel.hidden).toBe(false);
     expect(input.value).toBe("Follow Alpha");
@@ -163,7 +165,7 @@ describe("TacticalHudView", () => {
     expect(row.isConnected).toBe(true);
     expect(input.value).toBe("Cover the medic");
     expect(document.activeElement).toBe(input);
-    expect(hud.getSelectedUnitId()).toBeUndefined();
+    expect(hud.getSelectedUnitId()).toBe("s1");
     expect(onLookAt).not.toHaveBeenCalled();
     panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
     expect(commands).toEqual([
@@ -179,13 +181,12 @@ describe("TacticalHudView", () => {
     expect(panel.isConnected).toBe(false);
   });
 
-  it("can release Jev control without the service, preserving orders and row selection", () => {
+  it("can release Jev control from the card without the service, preserving orders and selection", () => {
     const onLookAt = vi.fn();
     const { hud, commands, mission } = setup({ onLookAt });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     const button = (): HTMLButtonElement =>
-      root.querySelector(
-        '[data-unit-id="s1"] [data-testid="unit-jev-toggle"]',
-      )!;
+      root.querySelector('#unit-card [data-testid="unit-jev-toggle"]')!;
     expect(button().disabled).toBe(true);
     hud.update({
       ...mission,
@@ -204,18 +205,19 @@ describe("TacticalHudView", () => {
         "Hold",
       ),
     ]);
-    expect(hud.getSelectedUnitId()).toBeUndefined();
+    expect(hud.getSelectedUnitId()).toBe("s1");
     expect(onLookAt).not.toHaveBeenCalled();
     hud.unmount();
   });
 
   it("prepares unit orders without enabling Jev and discards a removed unit's open editor", () => {
     const { hud, commands, mission } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
     const flag = root.querySelector<HTMLButtonElement>(
-      '[data-unit-id="s2"] [data-testid="entity-command-toggle"]',
+      '#unit-card [data-testid="entity-command-toggle"]',
     )!;
     flag.click();
-    const panel = root.querySelector<HTMLElement>("#entity-orders-s2")!;
+    const panel = root.querySelector<HTMLElement>("#entity-orders")!;
     panel.querySelector<HTMLTextAreaElement>("textarea")!.value =
       "Guard extraction";
     panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
@@ -232,7 +234,50 @@ describe("TacticalHudView", () => {
       ...mission,
       units: mission.units.filter((unit) => unit.id !== "s2"),
     });
-    expect(panel.isConnected).toBe(false);
+    expect(panel.hidden).toBe(true);
+    expect(root.querySelector<HTMLElement>(".tut-unit-controls")!.hidden).toBe(
+      true,
+    );
+    hud.unmount();
+  });
+
+  it("closes unit orders when selection changes and hides controls on enemy and turret cards", () => {
+    const { hud, mission, commands } = setup();
+    const controls = root.querySelector<HTMLElement>(".tut-unit-controls")!;
+    const flag = controls.querySelector<HTMLButtonElement>(
+      '[data-testid="entity-command-toggle"]',
+    )!;
+    const panel = root.querySelector<HTMLElement>("#entity-orders")!;
+    const input = panel.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(controls.hidden).toBe(true);
+    hud.update({
+      ...mission,
+      jev: {
+        entities: { s2: { enabled: false, entityPrompt: "Guard extraction" } },
+        commanders: { tdf: "", bugs: "" },
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(controls.hidden).toBe(false);
+    flag.click();
+    input.value = "Only for the first unit";
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(panel.hidden).toBe(true);
+    flag.click();
+    expect(input.value).toBe("Guard extraction");
+    expect(commands).toEqual([]);
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(controls.hidden).toBe(true);
+    expect(panel.hidden).toBe(true);
+    hud.update({
+      ...mission,
+      units: [
+        ...mission.units,
+        { ...hudUnit("turret", "tdf", "rifle", 2, 2), kind: "turret" },
+      ],
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "turret" });
+    expect(controls.hidden).toBe(true);
     hud.unmount();
   });
 

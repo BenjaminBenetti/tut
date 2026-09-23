@@ -42,11 +42,11 @@ Orders are saved with the mission. Applying them costs no AP and preserves each 
 
 ## Control individual units
 
-Each tactical squad row has a **Jev** toggle and an icon-only **command flag**. Jev lights blue when that unit is controlled by Jev; click again to return it to player control. Switching preserves its saved orders and costs no AP. Enabling requires an available Jev service; turning control off remains available.
+Select a TDF unit to find its **Jev** toggle and icon-only **command flag** in the header of the right-hand unit panel. The squad list keeps compact, single-line rows with name, HP and AP. Jev lights blue when the selected unit is controlled by Jev; click again to return it to player control. Switching preserves its saved orders and costs no AP. Enabling requires an available Jev service; turning control off remains available.
 
-The row's flag opens **Unit orders**, which edits only that entity's `entity_prompt`. Apply saves the text without changing its control setting or the faction orders. You can prepare orders before enabling Jev. Cancel, Escape or clicking outside discards the draft. The editor stays outside the scrolling squad panel, preserves drafts across HUD updates, and keeps typing and scrolling out of the battlefield. Both settings persist with the mission.
+The flag opens **Unit orders**, which edits only that entity's `entity_prompt`. Apply saves the text without changing its control setting or the faction orders. You can prepare orders before enabling Jev. Cancel, Escape, clicking outside or selecting another unit discards the draft. The editor stays outside the scrolling unit panel, preserves drafts across updates to the same unit, and keeps typing and scrolling out of the battlefield. Both settings persist with the mission. Enemy and autonomous turret cards show no player command controls.
 
-![Unit row Jev toggle and individual orders editor](jev-unit-orders.png)
+![Selected-unit Jev toggle and individual orders editor](jev-unit-orders.png)
 
 ## Inspect a decision
 

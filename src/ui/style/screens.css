@@ -1342,46 +1342,31 @@
   cursor: pointer;
 }
 
-.tut-hud__squad .tut-list > li > .tut-icon {
-  grid-column: 1;
-  grid-row: 1;
+.tut-hud__card > .tut-panel__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
-.tut-hud__squad .tut-squad__name {
-  grid-column: 2 / 4;
-  grid-row: 1;
-}
-
-.tut-hud__squad [data-role="squad-ap"] {
-  grid-column: 4;
-  grid-row: 1;
-}
-
-.tut-hud__squad [data-role="squad-hp"] {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.tut-squad__controls {
-  grid-column: 3 / 5;
-  grid-row: 2;
+.tut-unit-controls {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.tut-squad__controls .tut-btn {
+.tut-unit-controls .tut-btn {
   padding: 3px 7px;
   min-height: 26px;
   font-size: 11px;
 }
 
-.tut-squad__controls .tut-command__toggle .tut-icon {
+.tut-unit-controls .tut-command__toggle .tut-icon {
   width: 16px;
   height: 16px;
 }
 
-.tut-squad__jev[aria-pressed="true"] {
+.tut-unit-controls__jev[aria-pressed="true"] {
   color: #8ed8ff;
   border-color: #8ed8ff;
   background: #8ed8ff18;

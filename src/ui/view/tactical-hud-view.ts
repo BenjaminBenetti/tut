@@ -97,6 +97,7 @@ import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import type { CardHover } from "./unit-card-view";
 import { UnitCardView } from "./unit-card-view";
+import { UnitControlView } from "./unit-control-view";
 import type { UnitStatusChip } from "./unit-status-layer-view";
 import { UnitStatusLayerView } from "./unit-status-layer-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
@@ -300,11 +301,14 @@ export class TacticalHudView {
   private readonly card: UnitCardView;
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
-  /** The force at a glance; a row selects and recovers a unit (#1041). */
-  private readonly squad = new SquadStripView({
+  /** Orders and controller choice for the friendly unit shown in the card. */
+  private readonly unitControl = new UnitControlView({
     onToggleJev: (unitId) => this.configureUnitJev(unitId, true),
     onEntityPrompt: (unitId, prompt) =>
       this.configureUnitJev(unitId, false, prompt),
+  });
+  /** The force at a glance; a row selects and recovers a unit (#1041). */
+  private readonly squad = new SquadStripView({
     onPick: (unitId) => {
       if (this.playbackLocked) {
         return;
@@ -526,9 +530,11 @@ export class TacticalHudView {
     this.status.mount(hud);
     // The force first, then the objectives: the strip is the overview
     // (#1041), and it heads the rail the way it used to head the column.
-    this.squad.mount(panels, hud);
+    this.squad.mount(panels);
     this.objectives.mount(panels);
-    this.card.mount(side);
+    const unitControls = doc.createElement("div");
+    this.unitControl.mount(unitControls, hud);
+    this.card.mount(side, unitControls);
     this.preview.mount(side);
     const radarLegend = doc.createElement("section");
     radarLegend.className = "tut-panel tut-mono";
@@ -669,6 +675,7 @@ export class TacticalHudView {
     this.debugMenu?.unmount();
     this.jevInspector?.unmount();
     this.commander.unmount();
+    this.unitControl.unmount();
     this.debugToggle = undefined;
     this.debugOpen = false;
     this.armedPlacement = undefined;
@@ -2184,7 +2191,7 @@ export class TacticalHudView {
     this.status.show(chips);
   }
 
-  /** Apply a row edit against live settings so one field never overwrites another. */
+  /** Apply a unit-card edit against live settings so one field never overwrites another. */
   private configureUnitJev(
     unitId: UnitId,
     toggle: boolean,
@@ -2247,6 +2254,7 @@ export class TacticalHudView {
     if (!mission) {
       this.banner.update(undefined);
       this.card.update(undefined, undefined);
+      this.unitControl.update(undefined);
       this.preview.update(undefined);
       this.objectives.update([], []);
       this.squad.update(undefined);
@@ -2293,6 +2301,18 @@ export class TacticalHudView {
       shown?.team === "tdf" ? this.attacksLeftFor(shown) : undefined,
       shown ? namesFor(mission, this.campaign).unit(shown.id) : undefined,
     );
+    this.unitControl.update(
+      shown?.team === "tdf" && shown.hp > 0 && !isAutonomous(shown)
+        ? {
+            missionId: mission.missionId,
+            unitId: shown.id,
+            name: namesFor(mission, this.campaign).unit(shown.id),
+            control: mission.jev?.entities[shown.id],
+            jevAvailable: this.deps.jev?.configured === true,
+            editable: !mission.outcome,
+          }
+        : undefined,
+    );
     // A preview that stays up across a move is recomputed from where the
     // unit stands now, and one for a unit no longer selected goes.
     this.previewRowRange(this.card.hoveredRow());
@@ -2321,9 +2341,6 @@ export class TacticalHudView {
     const railNames = namesFor(mission, this.campaign);
     this.squad.update({
       missionId: mission.missionId,
-      controls: mission.jev?.entities,
-      jevAvailable: this.deps.jev?.configured === true,
-      editable: !mission.outcome,
       units: playerUnits(mission),
       selectedId: this.selected,
       nameOf: (unitId) => railNames.unit(unitId),

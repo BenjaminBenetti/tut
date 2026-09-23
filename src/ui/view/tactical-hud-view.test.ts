@@ -20,7 +20,10 @@ import { withVision } from "../../tactical/service/vision-service";
 import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
-import { setJevCommanderPrompt } from "../../tactical/model/jev-command";
+import {
+  configureJev,
+  setJevCommanderPrompt,
+} from "../../tactical/model/jev-command";
 
 let root: HTMLElement;
 const card = (): HTMLElement | null =>
@@ -123,6 +126,116 @@ function twoWeaponMission() {
 }
 
 describe("TacticalHudView", () => {
+  it("edits unit orders independently and preserves a draft through row refreshes", () => {
+    const onLookAt = vi.fn();
+    const { hud, commands, mission } = setup({ onLookAt });
+    const configured: TacticalState = {
+      ...mission,
+      jev: {
+        entities: { s1: { enabled: true, entityPrompt: "Follow Alpha" } },
+        commanders: { tdf: "Protect the squad", bugs: "Defend nests" },
+      },
+    };
+    hud.update(configured);
+    const row = root.querySelector<HTMLElement>(
+      '[data-role="squad-list"] [data-unit-id="s1"]',
+    )!;
+    const flag = row.querySelector<HTMLButtonElement>(
+      '[data-testid="entity-command-toggle"]',
+    )!;
+    expect(flag.textContent).toBe("");
+    expect(flag.querySelector('[data-icon="command"]')).not.toBeNull();
+    flag.click();
+    const panel = root.querySelector<HTMLElement>("#entity-orders-s1")!;
+    const input = panel.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(panel.hidden).toBe(false);
+    expect(input.value).toBe("Follow Alpha");
+    expect(document.activeElement).toBe(input);
+    input.value = "Cover the medic";
+    // The shared orders can change while this unit's draft is open.
+    hud.update({
+      ...configured,
+      jev: {
+        ...configured.jev!,
+        commanders: { tdf: "Withdraw together", bugs: "Defend nests" },
+      },
+    });
+    expect(row.isConnected).toBe(true);
+    expect(input.value).toBe("Cover the medic");
+    expect(document.activeElement).toBe(input);
+    expect(hud.getSelectedUnitId()).toBeUndefined();
+    expect(onLookAt).not.toHaveBeenCalled();
+    panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
+    expect(commands).toEqual([
+      configureJev(
+        "s1",
+        { enabled: true, entityPrompt: "Cover the medic" },
+        "Withdraw together",
+      ),
+    ]);
+    expect(panel.hidden).toBe(true);
+    expect(document.activeElement).toBe(flag);
+    hud.unmount();
+    expect(panel.isConnected).toBe(false);
+  });
+
+  it("can release Jev control without the service, preserving orders and row selection", () => {
+    const onLookAt = vi.fn();
+    const { hud, commands, mission } = setup({ onLookAt });
+    const button = (): HTMLButtonElement =>
+      root.querySelector(
+        '[data-unit-id="s1"] [data-testid="unit-jev-toggle"]',
+      )!;
+    expect(button().disabled).toBe(true);
+    hud.update({
+      ...mission,
+      jev: {
+        entities: { s1: { enabled: true, entityPrompt: "Cover Alpha" } },
+        commanders: { tdf: "Hold", bugs: "Defend" },
+      },
+    });
+    expect(button().getAttribute("aria-pressed")).toBe("true");
+    expect(button().disabled).toBe(false);
+    button().click();
+    expect(commands).toEqual([
+      configureJev(
+        "s1",
+        { enabled: false, entityPrompt: "Cover Alpha" },
+        "Hold",
+      ),
+    ]);
+    expect(hud.getSelectedUnitId()).toBeUndefined();
+    expect(onLookAt).not.toHaveBeenCalled();
+    hud.unmount();
+  });
+
+  it("prepares unit orders without enabling Jev and discards a removed unit's open editor", () => {
+    const { hud, commands, mission } = setup();
+    const flag = root.querySelector<HTMLButtonElement>(
+      '[data-unit-id="s2"] [data-testid="entity-command-toggle"]',
+    )!;
+    flag.click();
+    const panel = root.querySelector<HTMLElement>("#entity-orders-s2")!;
+    panel.querySelector<HTMLTextAreaElement>("textarea")!.value =
+      "Guard extraction";
+    panel.querySelector<HTMLButtonElement>(".tut-btn--primary")!.click();
+    expect(commands).toEqual([
+      configureJev(
+        "s2",
+        { enabled: false, entityPrompt: "Guard extraction" },
+        "",
+      ),
+    ]);
+    flag.click();
+    expect(panel.hidden).toBe(false);
+    hud.update({
+      ...mission,
+      units: mission.units.filter((unit) => unit.id !== "s2"),
+    });
+    expect(panel.isConnected).toBe(false);
+    hud.unmount();
+  });
+
   it("offers faction orders without selection or dev tools, preserves drafts and emits only an explicit save", () => {
     const { hud, commands, mission } = setup();
     const toggle = root.querySelector<HTMLButtonElement>(

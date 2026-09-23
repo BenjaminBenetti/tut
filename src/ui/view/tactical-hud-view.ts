@@ -1,7 +1,10 @@
 import type { JevInspector } from "../model/jev-inspector";
 import { JevInspectorView } from "./jev-inspector-view";
 import { CommanderPromptView } from "./commander-prompt-view";
-import { setJevCommanderPrompt } from "../../tactical/model/jev-command";
+import {
+  configureJev,
+  setJevCommanderPrompt,
+} from "../../tactical/model/jev-command";
 import { mechAction } from "../../tactical/model/mech-action-command";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -189,7 +192,7 @@ export interface TacticalHudHandlers {
 
 /** What the HUD needs injected. */
 export interface TacticalHudDeps {
-  /** App controller's inspector port; its menu is gated by development tools. */
+  /** Jev availability for normal controls and the development-only inspector. */
   readonly jev?: JevInspector;
   /** Tuning handed to `previewAttack`; the HUD never computes a number itself. */
   readonly combatTuning: CombatTuning;
@@ -295,6 +298,9 @@ export class TacticalHudView {
   private readonly objectives = new ObjectiveTrackerView();
   /** The force at a glance; a row selects and recovers a unit (#1041). */
   private readonly squad = new SquadStripView({
+    onToggleJev: (unitId) => this.configureUnitJev(unitId, true),
+    onEntityPrompt: (unitId, prompt) =>
+      this.configureUnitJev(unitId, false, prompt),
     onPick: (unitId) => {
       if (this.playbackLocked) {
         return;
@@ -512,7 +518,7 @@ export class TacticalHudView {
     this.status.mount(hud);
     // The force first, then the objectives: the strip is the overview
     // (#1041), and it heads the rail the way it used to head the column.
-    this.squad.mount(panels);
+    this.squad.mount(panels, hud);
     this.objectives.mount(panels);
     this.card.mount(side);
     this.preview.mount(side);
@@ -2164,6 +2170,38 @@ export class TacticalHudView {
     this.status.show(chips);
   }
 
+  /** Apply a row edit against live settings so one field never overwrites another. */
+  private configureUnitJev(
+    unitId: UnitId,
+    toggle: boolean,
+    prompt?: string,
+  ): void {
+    const mission = this.mission;
+    const unit = mission?.units.find((entry) => entry.id === unitId);
+    if (
+      !mission ||
+      mission.outcome ||
+      !unit ||
+      unit.hp <= 0 ||
+      unit.team !== "tdf" ||
+      isAutonomous(unit)
+    )
+      return;
+    const current = mission.jev?.entities[unitId];
+    const enabled = toggle ? !current?.enabled : current?.enabled === true;
+    if (toggle && enabled && !this.deps.jev?.configured) return;
+    this.handlers.onCommand(
+      configureJev(
+        unitId,
+        {
+          enabled,
+          entityPrompt: prompt ?? current?.entityPrompt ?? "",
+        },
+        mission.jev?.commanders.tdf ?? "",
+      ),
+    );
+  }
+
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
     this.commander.update(
@@ -2267,6 +2305,10 @@ export class TacticalHudView {
     // banner and the log (#1040).
     const railNames = namesFor(mission, this.campaign);
     this.squad.update({
+      missionId: mission.missionId,
+      controls: mission.jev?.entities,
+      jevAvailable: this.deps.jev?.configured === true,
+      editable: !mission.outcome,
       units: playerUnits(mission),
       selectedId: this.selected,
       nameOf: (unitId) => railNames.unit(unitId),

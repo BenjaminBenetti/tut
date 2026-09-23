@@ -1219,6 +1219,15 @@
   display: none;
 }
 
+/* Unit editors sit outside the scrolling rail and follow their row's flag. */
+.tut-command__popover--floating {
+  position: fixed;
+  transform: none;
+  max-height: calc(100vh - 24px);
+  z-index: 20;
+  pointer-events: auto;
+}
+
 .tut-command__popover p {
   margin: 0;
   font-size: 12px;
@@ -1327,8 +1336,55 @@
 }
 
 .tut-hud__squad .tut-list > li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
   gap: var(--space-2);
   cursor: pointer;
+}
+
+.tut-hud__squad .tut-list > li > .tut-icon {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.tut-hud__squad .tut-squad__name {
+  grid-column: 2 / 4;
+  grid-row: 1;
+}
+
+.tut-hud__squad [data-role="squad-ap"] {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.tut-hud__squad [data-role="squad-hp"] {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.tut-squad__controls {
+  grid-column: 3 / 5;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tut-squad__controls .tut-btn {
+  padding: 3px 7px;
+  min-height: 26px;
+  font-size: 11px;
+}
+
+.tut-squad__controls .tut-command__toggle .tut-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tut-squad__jev[aria-pressed="true"] {
+  color: #8ed8ff;
+  border-color: #8ed8ff;
+  background: #8ed8ff18;
 }
 
 .tut-hud__squad .tut-list > li > span:not(.tut-icon) {
@@ -1358,7 +1414,7 @@
  * question the strip answers is "who still has a turn", and an absent
  * row would answer "who exists" instead.
  */
-.tut-hud__squad .tut-list > li[data-spent="true"] {
+.tut-hud__squad .tut-list > li[data-spent="true"] > span {
   opacity: 0.55;
 }
 

@@ -40,6 +40,14 @@ Orders are saved with the mission. Applying them costs no AP and preserves each 
 
 ![TDF command editor centered under the tactical top bar](jev-command.png)
 
+## Control individual units
+
+Each tactical squad row has a **Jev** toggle and an icon-only **command flag**. Jev lights blue when that unit is controlled by Jev; click again to return it to player control. Switching preserves its saved orders and costs no AP. Enabling requires an available Jev service; turning control off remains available.
+
+The row's flag opens **Unit orders**, which edits only that entity's `entity_prompt`. Apply saves the text without changing its control setting or the faction orders. You can prepare orders before enabling Jev. Cancel, Escape or clicking outside discards the draft. The editor stays outside the scrolling squad panel, preserves drafts across HUD updates, and keeps typing and scrolling out of the battlefield. Both settings persist with the mission.
+
+![Unit row Jev toggle and individual orders editor](jev-unit-orders.png)
+
 ## Inspect a decision
 
 ![Jev development inspector showing a real evaluated request](jev-inspector.png)
@@ -107,7 +115,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Focused coverage lives in `jev-movement.test.ts` (named destinations, walls, elevation, footprints, compass/retreat intent and terrain-weighted round-up scaling), `jev-destinations.test.ts` (every destination source, harvest approach/execution, intel privacy and upstairs radar investigation), `jev-request.test.ts` (knowledge boundaries and contextual weapon/item choices), `jev-controller.test.ts` (all three movement stages, failures, fresh state after each AP, opt-in, mixed turns, stale responses and resume), `jev-client.test.ts` (Choice/Score validation), `relay/server.test.mjs` (real HTTP relay), and `e2e/jev-inspector.spec.ts` (stepped inspection and TDF turn scheduling in Chromium). The earlier ASCII projection remains available to the evaluation tools through `navigation-snapshot.mjs`; it is not sent during gameplay.
+Focused coverage lives in `jev-movement.test.ts` (named destinations, walls, elevation, footprints, compass/retreat intent and terrain-weighted round-up scaling), `jev-destinations.test.ts` (every destination source, harvest approach/execution, intel privacy and upstairs radar investigation), `jev-request.test.ts` (knowledge boundaries and contextual weapon/item choices), `jev-controller.test.ts` (all three movement stages, failures, fresh state after each AP, opt-in, mixed turns, stale responses and resume), `jev-client.test.ts` (Choice/Score validation), `relay/server.test.mjs` (real HTTP relay), `e2e/jev-inspector.spec.ts` (stepped inspection and TDF turn scheduling in Chromium), and `e2e/unit-orders.spec.ts` (row toggles, individual orders, input isolation and save/resume). The earlier ASCII projection remains available to the evaluation tools through `navigation-snapshot.mjs`; it is not sent during gameplay.
 
 A live integration smoke test used the fully visible `holdout-1-small-named-ally` scene with 100 stationary entities. Through the actual relay and browser transport code, Jev selected `move`, the correct named ally, and distance score **3.11/4**. The game rounded the five-point route up to four tiles and executed it for exactly one AP. The three requests used **17,705 / 20,360 / 17,098 input tokens**. This validates one complete decision; it does not establish full-mission performance or solve navigation under fog.
 

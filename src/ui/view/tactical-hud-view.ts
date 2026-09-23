@@ -125,6 +125,10 @@ export interface TacticalHudHandlers {
   readonly onCommand: (command: TacticalCommand) => void;
   /** The player asked to leave the mission (#1132); the owner confirms and dispatches. */
   readonly onLeave: () => void;
+  /** Change the screen's automatic turn-ending preference. */
+  readonly onAutoEndChange?: (enabled: boolean) => void;
+  /** Hold automatic turn ending while the development inspector is open. */
+  readonly onAutomationPause?: (paused: boolean) => void;
   /**
    * Bring a unit on screen (#1041). Absent in headless callers, which
    * then simply do not move the camera.
@@ -342,6 +346,7 @@ export class TacticalHudView {
   private readonly log = new EventLogView();
   /** The actions with their keys along the bottom; a press is the key (#1113 review). */
   private readonly actions: ActionBarView;
+  private autoEnd = false;
   /** Cancels the frame loop that keeps an open wheel on its tile as the camera moves. */
   private stopFollowing: (() => void) | undefined;
   /** The status chips above every visible unit while Shift is held. */
@@ -441,6 +446,7 @@ export class TacticalHudView {
     });
     this.actions = new ActionBarView(
       {
+        onAutoEndChange: handlers.onAutoEndChange,
         onAction: (action) => {
           this.handleIntent(
             action === "end-turn"
@@ -452,7 +458,9 @@ export class TacticalHudView {
       deps.shortcuts ?? {},
     );
     this.jevInspector =
-      deps.devTools && deps.jev ? new JevInspectorView(deps.jev) : undefined;
+      deps.devTools && deps.jev
+        ? new JevInspectorView(deps.jev, handlers.onAutomationPause)
+        : undefined;
     this.debugMenu =
       deps.devTools === undefined
         ? undefined
@@ -888,6 +896,12 @@ export class TacticalHudView {
   /** Whether the controls are held for a playing bug phase. */
   isPlaybackLocked(): boolean {
     return this.playbackLocked;
+  }
+
+  /** Display the screen-owned preference without issuing any tactical command. */
+  setAutoEnd(enabled: boolean): void {
+    this.autoEnd = enabled;
+    this.refresh();
   }
 
   /**
@@ -2237,6 +2251,7 @@ export class TacticalHudView {
       this.objectives.update([], []);
       this.squad.update(undefined);
       this.actions.update({
+        autoEnd: this.autoEnd,
         playerPhase: false,
         unavailable: [],
         hasActor: false,
@@ -2314,6 +2329,7 @@ export class TacticalHudView {
       nameOf: (unitId) => railNames.unit(unitId),
     });
     this.actions.update({
+      autoEnd: this.autoEnd,
       playerPhase: mission.phase === "player",
       unavailable: this.unavailableActions(),
       hasActor: this.actingSelection() !== undefined,

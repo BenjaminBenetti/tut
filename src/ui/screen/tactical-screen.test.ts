@@ -322,6 +322,20 @@ function ended(state: GameState): GameState {
   return { ...state, activeMission: { ...mission, outcome: "won" } };
 }
 
+/** Spend all TDF AP without altering the opposing faction or ending the mission. */
+function exhausted(state: GameState): GameState {
+  const mission = state.activeMission!;
+  return {
+    ...state,
+    activeMission: {
+      ...mission,
+      units: mission.units.map((unit) =>
+        unit.team === "tdf" ? { ...unit, ap: 0 } : unit,
+      ),
+    },
+  };
+}
+
 const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   store,
   get state() {
@@ -1211,6 +1225,12 @@ describe("TacticalScreen playback lock (#1130)", () => {
     );
   const hudPlaying = (): string | undefined =>
     root.querySelector<HTMLElement>("#mission-hud")?.dataset.phasePlaying;
+  const autoEndButton = (): HTMLButtonElement =>
+    root.querySelector<HTMLButtonElement>('[data-testid="auto-end-toggle"]')!;
+
+  /** Let queued state checks and scene-completion promises finish. */
+  const flush = (): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, 0));
 
   /** A mounted screen over a scene that holds its settle until told. */
   function playing() {
@@ -1289,6 +1309,249 @@ describe("TacticalScreen playback lock (#1130)", () => {
       jev,
     };
   }
+
+  it("leaves spent turns open by default and places Auto end immediately after End turn", async () => {
+    const { store, state, host } = playing();
+    store.command(exhausted(state), []);
+    host.settle();
+    await flush();
+    expect(autoEndButton().getAttribute("aria-pressed")).toBe("false");
+    expect(endTurnButton()?.nextElementSibling).toBe(autoEndButton());
+    expect(store.dispatched).toEqual([]);
+    autoEndButton().click();
+    await flush();
+    expect(autoEndButton().getAttribute("aria-pressed")).toBe("true");
+    expect(store.dispatched.map((command) => command.type)).toEqual([END_TURN]);
+  });
+
+  it("waits for every last-action animation, then ends once and remains enabled next turn", async () => {
+    const { store, state, host } = playing();
+    autoEndButton().click();
+    await flush();
+    expect(store.dispatched).toEqual([]); // Manual units still have AP.
+    const spent = exhausted(state);
+    store.command(spent, []);
+    store.command(spent, []);
+    await flush();
+    expect(hudPlaying()).toBe("false"); // Ordinary actions do not lock the whole HUD.
+    expect(store.dispatched).toEqual([]);
+    host.settle();
+    await flush();
+    expect(store.dispatched).toEqual([]);
+    host.settle();
+    await flush();
+    expect(store.dispatched.map((command) => command.type)).toEqual([END_TURN]);
+    store.command(spent, []); // Duplicate state notifications cannot double-end.
+    host.settle();
+    await flush();
+    expect(store.dispatched).toHaveLength(1);
+    store.command(
+      {
+        ...state,
+        activeMission: { ...state.activeMission!, turn: 2 },
+      },
+      [],
+    );
+    host.settle();
+    await flush();
+    expect(store.dispatched).toHaveLength(1);
+    store.command(
+      {
+        ...spent,
+        activeMission: { ...spent.activeMission!, turn: 2 },
+      },
+      [],
+    );
+    host.settle();
+    await flush();
+    expect(store.dispatched).toHaveLength(2);
+    expect(autoEndButton().getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("ignores dead units and autonomous turrets when checking remaining actions", async () => {
+    const { store, state, host } = playing();
+    const spent = exhausted(state);
+    const mission = spent.activeMission!;
+    const actors = mission.units.filter((unit) => unit.team === "tdf");
+    const dead = actors[0]!;
+    const turret = actors[1]!;
+    store.command(
+      {
+        ...spent,
+        activeMission: {
+          ...mission,
+          units: mission.units.map((unit) =>
+            unit.id === dead.id
+              ? { ...unit, hp: 0, ap: 2 }
+              : unit.id === turret.id
+                ? { ...unit, kind: "turret", ap: 2 }
+                : unit,
+          ),
+        },
+      },
+      [],
+    );
+    autoEndButton().click();
+    host.settle();
+    await flush();
+    expect(store.dispatched.map((command) => command.type)).toEqual([END_TURN]);
+  });
+
+  it.each(["AP", "pending extraction"])(
+    "waits for Jev's %s before ending",
+    async (remaining) => {
+      const { store, state, host } = playing();
+      const spent = exhausted(state);
+      const mission = spent.activeMission!;
+      const actor = mission.units.find((unit) => unit.team === "tdf")!;
+      const waiting: GameState = {
+        ...spent,
+        activeMission: {
+          ...mission,
+          units: mission.units.map((unit) =>
+            unit.id === actor.id && remaining === "AP"
+              ? { ...unit, ap: 1 }
+              : unit,
+          ),
+          jev: {
+            entities: { [actor.id]: { enabled: true, entityPrompt: "" } },
+            commanders: { tdf: "", bugs: "" },
+            activation: {
+              turn: mission.turn,
+              phase: "player",
+              externalBugs: false,
+              finished: [],
+              pendingExtractions:
+                remaining === "pending extraction" ? [actor.id] : [],
+            },
+          },
+        },
+      };
+      autoEndButton().click();
+      store.command(waiting, []);
+      host.settle();
+      await flush();
+      expect(store.dispatched).toEqual([]);
+      const jev = waiting.activeMission!.jev!;
+      store.command(
+        {
+          ...waiting,
+          activeMission: {
+            ...waiting.activeMission!,
+            units: mission.units,
+            jev: {
+              ...jev,
+              activation: {
+                ...jev.activation!,
+                finished: [actor.id],
+                pendingExtractions: [],
+              },
+            },
+          },
+        },
+        [],
+      );
+      await flush();
+      expect(store.dispatched).toEqual([]);
+      host.settle();
+      await flush();
+      expect(store.dispatched.map((command) => command.type)).toEqual([
+        END_TURN,
+      ]);
+    },
+  );
+
+  it("can be cancelled during playback and does not end a turn after leaving the screen", async () => {
+    const { store, state, host, screen, endTurn } = playing();
+    autoEndButton().click();
+    endTurn();
+    expect(autoEndButton().disabled).toBe(false);
+    autoEndButton().click();
+    store.command(exhausted(state), []);
+    host.settle();
+    host.settle();
+    await flush();
+    expect(store.dispatched).toEqual([]);
+    autoEndButton().click();
+    screen.unmount();
+    await flush();
+    expect(store.dispatched).toEqual([]);
+  });
+
+  it("waits for both bug playback and its banner even when the watchdog unlocks input", async () => {
+    const { store, state, host, banner, watchdog, endTurn } = playing();
+    autoEndButton().click();
+    endTurn();
+    store.command(exhausted(state), []);
+    watchdog.fire();
+    await flush();
+    expect(store.dispatched).toEqual([]);
+    host.settle();
+    host.settle();
+    await flush();
+    expect(store.dispatched).toEqual([]); // Banner still says Bug phase.
+    banner.fire();
+    await flush();
+    expect(store.dispatched.map((command) => command.type)).toEqual([END_TURN]);
+  });
+
+  it("does not compete with an explicit End Turn already awaiting Jev", async () => {
+    const { store, state, host } = playing();
+    const spent = exhausted(state);
+    store.command(
+      {
+        ...spent,
+        activeMission: {
+          ...spent.activeMission!,
+          jev: {
+            entities: {},
+            commanders: { tdf: "", bugs: "" },
+            activation: {
+              turn: 1,
+              phase: "player",
+              externalBugs: false,
+              finished: [],
+              endTurnRequested: true,
+            },
+          },
+        },
+      },
+      [],
+    );
+    autoEndButton().click();
+    host.settle();
+    await flush();
+    expect(store.dispatched).toEqual([]);
+  });
+
+  it.each(["bugs", "outcome", "no mission"])(
+    "does not auto-end with %s",
+    async (kind) => {
+      const { store, state, host } = playing();
+      const spent = exhausted(state);
+      store.command(
+        {
+          ...spent,
+          activeMission:
+            kind === "no mission"
+              ? undefined
+              : {
+                  ...spent.activeMission!,
+                  ...(kind === "bugs"
+                    ? { phase: "bugs" as const }
+                    : { outcome: "won" as const }),
+                },
+        },
+        [],
+      );
+      autoEndButton().click();
+      host.settle();
+      await flush();
+      expect(store.dispatched.map((command) => command.type)).not.toContain(
+        END_TURN,
+      );
+    },
+  );
 
   it("holds automatic play through scene loading, bug animation and its phase banner", async () => {
     const { jev, endTurn, host, banner } = playing();

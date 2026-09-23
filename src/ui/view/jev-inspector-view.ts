@@ -35,8 +35,11 @@ export class JevInspectorView {
   // Lifecycle
   // ===========================================
 
-  /** The port is also used by autonomous turns; this view has no separate Jev prompt implementation. */
-  constructor(private readonly inspector: JevInspector) {}
+  /** Pause both autonomous decisions and automatic turn ending while inspecting. */
+  constructor(
+    private readonly inspector: JevInspector,
+    private readonly onPause?: (paused: boolean) => void,
+  ) {}
 
   /** Place the entity menu button in the HUD and a resizable inspection panel above the battlefield. */
   mount(parent: HTMLElement, toolbar: HTMLElement): void {
@@ -178,7 +181,9 @@ export class JevInspectorView {
     this.unsubscribe?.();
     this.panel?.remove();
     this.toggle?.remove();
+    this.open = false;
     this.inspector.pause(false);
+    this.onPause?.(false);
   }
 
   // ===========================================
@@ -192,6 +197,7 @@ export class JevInspectorView {
     if (this.panel) this.panel.hidden = !open;
     this.toggle?.setAttribute("aria-expanded", String(open));
     this.inspector.pause(open);
+    this.onPause?.(open);
     if (open) this.loadEntity();
   }
 

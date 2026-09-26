@@ -44,14 +44,17 @@ describe("Intel II, Pod Telemetry (campaign arc §4)", () => {
     expect(node.requires).toEqual([]);
   });
 
-  it("costs 240, between Intel I and Intel III, 700 for the three", () => {
+  it("costs 240, between Intel I and Intel III, 600 for the three", () => {
     expect(node.cost).toBe(POD_TELEMETRY_COST);
     expect(POD_TELEMETRY_COST).toBe(240);
     expect(PHEROMONE_ANALYSIS_COST).toBeLessThan(POD_TELEMETRY_COST);
     expect(POD_TELEMETRY_COST).toBeLessThan(PLATFORM_APPROACH_COST);
+    // Arc C3's 700 was 180 + 240 + 280. The campaign retune (arc §12) cut
+    // Intel I to 80; 600 is about 41% of an Average campaign's income,
+    // near arc §10's 45%.
     expect(
       PHEROMONE_ANALYSIS_COST + POD_TELEMETRY_COST + PLATFORM_APPROACH_COST,
-    ).toBe(700);
+    ).toBe(600);
   });
 
   it("stays hidden until the first Hive Assault brings home a core sample", () => {

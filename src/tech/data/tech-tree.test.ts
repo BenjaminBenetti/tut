@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { CAMPAIGN_FLAG_IDS } from "../../content/model/campaign-flag-id";
+import type { ActId } from "../../content/model/act-id";
+import { ACT_IDS } from "../../content/model/act-id";
+import { ACTS } from "../../overworld/data/acts";
+import { GREAT_HIVE_TUNING } from "../../overworld/data/great-hive-tuning";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
+import { greatHiveTechPoints } from "../../overworld/service/story/great-hive-pin-trigger";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { partIdsOf } from "../model/tech-effect";
 import type { TechNode } from "../model/tech-node";
@@ -44,6 +49,63 @@ function flagLeaks(nodes: readonly TechNode[]): string[] {
     }
   }
   return leaks;
+}
+
+/**
+ * Missions per act on arc §3's fifty-mission campaign, in act order.
+ * The Great Hives are the last `GREAT_HIVE_TUNING.count` of Act III's.
+ */
+const ARC_ACT_MISSIONS: Readonly<Record<ActId, number>> = {
+  "act-1": 12,
+  "act-2": 20,
+  "act-3": 15,
+  finale: 3,
+};
+
+/**
+ * The tech points a campaign has earned after each of arc §3's fifty
+ * missions, cumulatively (index 0 is mission 1): each act's missions
+ * ramp evenly across its difficulty band, and each is a won
+ * Infestation Clearance plus a carcass on the tuned share of maps,
+ * except the Great Hives that close Act III, which pay their own award.
+ *
+ * ```
+ *   act-1 ×12  d1 ──► d4   clearance + chance × carcass
+ *   act-2 ×20  d3 ──► d7
+ *   act-3 ×12  d5 ──► d9,  then 3 Great Hives at their fixed difficulty
+ *   finale ×3  d8 ──► d10
+ * ```
+ */
+function campaignIncome(): number[] {
+  const clearance = MISSION_TYPES["infestation-clearance"];
+  const carcass = MISSION_TUNING.techCarcass;
+  const ctx = { tuning: MISSION_TUNING, missionTypes: MISSION_TYPES };
+  const earned: number[] = [];
+  let total = 0;
+  const pay = (points: number): void => {
+    total += points;
+    earned.push(total);
+  };
+  for (const act of ACT_IDS) {
+    const band = ACTS[act].difficultyBand;
+    const hives = act === GREAT_HIVE_TUNING.act ? GREAT_HIVE_TUNING.count : 0;
+    const missions = ARC_ACT_MISSIONS[act] - hives;
+    for (let i = 0; i < missions; i += 1) {
+      const difficulty = Math.round(
+        band.min + ((band.max - band.min) * i) / (missions - 1),
+      );
+      pay(
+        clearance.techRewardBase +
+          clearance.techRewardPerDifficulty * difficulty +
+          carcass.chance *
+            (carcass.basePoints + carcass.pointsPerDifficulty * difficulty),
+      );
+    }
+    for (let i = 0; i < hives; i += 1) {
+      pay(greatHiveTechPoints(GREAT_HIVE_TUNING.difficulty, ctx));
+    }
+  }
+  return earned;
 }
 
 describe("TECH_NODES", () => {
@@ -180,28 +242,27 @@ describe("TECH_NODES", () => {
     expect(flagLeaks(leaky)).toHaveLength(1);
   });
 
-  it("prices the part nodes at about what 25 clearance missions and their carcasses pay (#1171)", () => {
-    // The campaign model the part nodes are paced against: difficulty
-    // ramps from 2 to 8 over 25 missions, every one is won, and a
-    // carcass turns up on the tuned share of maps and is always
-    // harvested. Intel, autopsy, infantry and story nodes are left out;
-    // the whole-tree ratio of campaign arc §10 arrives with them.
-    const type = MISSION_TYPES["infestation-clearance"];
-    const carcass = MISSION_TUNING.techCarcass;
-    const missions = 25;
-    let income = 0;
-    for (let i = 0; i < missions; i += 1) {
-      const difficulty = Math.round(2 + (6 * i) / (missions - 1));
-      income += type.techRewardBase + type.techRewardPerDifficulty * difficulty;
-      income +=
-        carcass.chance *
-        (carcass.basePoints + carcass.pointsPerDifficulty * difficulty);
-    }
-    const partTreeCost = PART_NODES.reduce((sum, node) => sum + node.cost, 0);
-    // Within a mission or two either way: the parts are finished close
-    // to the 25th mission, not long before and not long after.
-    expect(partTreeCost).toBeGreaterThan(income * 0.9);
-    expect(partTreeCost).toBeLessThan(income * 1.1);
+  it("prices the whole tree at 1.3–1.6× what a campaign earns, and the part nodes at about what it has earned by mission 35 (#1171, campaign arc §10)", () => {
+    // The campaign model the tree is paced against (`campaignIncome`):
+    // arc §3's fifty missions, each act's difficulty ramping across its
+    // band, every one a won clearance with a carcass on the tuned share
+    // of maps, and the three Great Hives closing Act III. The campaign
+    // sweep measures the modelled players against the same two targets
+    // (app/service/campaign-sweep.sim.test.ts); this holds the prices
+    // against the income data without playing a campaign.
+    const income = campaignIncome();
+    const cost = (nodes: readonly TechNode[]): number =>
+      nodes.reduce((sum, node) => sum + node.cost, 0);
+    const whole = income[income.length - 1] ?? 0;
+    // More than a campaign can buy, so research is a real choice, but
+    // not so much that most of it is out of reach.
+    expect(cost(TECH_NODES) / whole).toBeGreaterThanOrEqual(1.3);
+    expect(cost(TECH_NODES) / whole).toBeLessThanOrEqual(1.6);
+    // Within a mission or two either way: the income pays for the part
+    // nodes close to the 35th mission, not long before and not long after.
+    const by35 = income[34] ?? 0;
+    expect(cost(PART_NODES)).toBeGreaterThan(by35 * 0.9);
+    expect(cost(PART_NODES)).toBeLessThan(by35 * 1.1);
   });
 });
 
@@ -210,10 +271,12 @@ describe("Intel I, Pheromone Analysis (#1179, campaign arc §4)", () => {
   const rich = { techPoints: 10_000 };
   const fresh = { unlocked: [] };
 
-  it("is an intel node at its starting price on a real family", () => {
+  it("is an intel node at its retuned price on a real family", () => {
     expect(node?.kind).toBe("intel");
     expect(node?.cost).toBe(PHEROMONE_ANALYSIS_COST);
-    expect(PHEROMONE_ANALYSIS_COST).toBe(180);
+    // Arc §4's starting price was 180; the campaign retune (arc §12) set
+    // 80, so the Average player ends Act I at about mission 13, not 21.
+    expect(PHEROMONE_ANALYSIS_COST).toBe(80);
     expect(TECH_FAMILY_IDS).toContain(node?.family);
     expect(node?.requires).toEqual([]);
   });

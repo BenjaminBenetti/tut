@@ -152,12 +152,12 @@ describe("GREAT_HIVE_PIN_TRIGGER", () => {
     }
   });
 
-  it("pays the ordinary Hive Assault's tech points times 2.5", () => {
+  it("pays the ordinary Hive Assault's tech points times 1.5", () => {
     const ctx = offerContext(1);
-    expect(hiveAssaultTechPoints(8, ctx)).toBe(68);
-    expect(greatHiveTechPoints(8, ctx)).toBe(170);
+    expect(hiveAssaultTechPoints(8, ctx)).toBe(46);
+    expect(greatHiveTechPoints(8, ctx)).toBe(69);
     for (const offer of pin(revealed())) {
-      expect(offer.rewards.techPoints).toBe(170);
+      expect(offer.rewards.techPoints).toBe(69);
     }
   });
 

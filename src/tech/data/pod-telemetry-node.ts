@@ -5,14 +5,16 @@ import type { TechNode } from "../model/tech-node";
 // ===========================================
 //
 // Intel is priced by the story, not by a tier (ADR 0013 §2.7), and left
-// out of the parts pacing. Campaign arc §4 puts the three Intel nodes at
-// about 700 TP in all, each dearer than the one before:
+// out of the parts pacing. Campaign arc §4 put the three Intel nodes at
+// about 700 TP in all, each dearer than the one before; the campaign
+// retune (arc §12) cut Intel I, so they come to 600, about 41% of what
+// an Average campaign earns (about 1,460 TP; arc §10 says about 45%):
 //
-//   Intel I    Pheromone Analysis   180   (tech-tree.ts)
+//   Intel I    Pheromone Analysis    80   (tech-tree.ts; the arc's 180)
 //   Intel II   Pod Telemetry        240   (this file)
 //   Intel III  Platform Approach    280   (endgame-intel-nodes.ts)
 //                                   ───
-//                                   700
+//                                   600
 
 /** Tech points Intel II, Pod Telemetry, costs (campaign arc §4). */
 export const POD_TELEMETRY_COST = 240;

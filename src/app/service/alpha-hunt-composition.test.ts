@@ -94,7 +94,7 @@ function huntStarted(game: GameComposition): {
       size: "medium",
       seed: "alpha-hunt-live",
     },
-    rewards: { credits: 1200, techPoints: 20 },
+    rewards: { credits: 1200, techPoints: 13 },
     createdDay: fresh.overworld.day,
     expiresDay: fresh.overworld.day + 4,
     ignorePenalty: 15,

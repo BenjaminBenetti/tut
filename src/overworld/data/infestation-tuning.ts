@@ -8,8 +8,16 @@ import type { InfestationTuning } from "../model/infestation-tuning";
  * Default infestation tuning. Placeholders until the tick pipeline (#68)
  * is playable end to end:
  *
- * - `baseGrowthRate` 3: an untouched city goes from a foothold to overrun
- *   in roughly a month at zero threat.
+ * - `baseGrowthRate` 1.5 (the campaign retune, arc §12): a city's
+ *   infestation is a whole number and the tick rounds each day's growth
+ *   (`infestation-growth-service`), so an untouched city grows 2 a day
+ *   below threat 67 and 3 a day above it, and goes from a foothold to
+ *   overrun in about seven weeks. The campaign sweep pins what that buys:
+ *   an Average player reaches the finale at about mission 48 and threat
+ *   49 (arc §3: missions 48–50; D7: threat 40–55), and an Earth nobody
+ *   defends falls at about day 77. At 3 (4 a day from threat 17)
+ *   threat overran the Average player in three campaigns in ten, at
+ *   about day 60, barely later than an idle one (58.5).
  * - `threatFactor` 1: growth doubles at maximum threat.
  * - `spreadThreshold` 60, `spreadAmount` 10, `spreadCooldownDays` 5: a
  *   city past the threshold pushes a foothold into a neighbour every
@@ -25,13 +33,13 @@ import type { InfestationTuning } from "../model/infestation-tuning";
  *   only form from Act II (`HIVE_TUNING.formsFromAct`), so Act I spreads
  *   exactly as before.
  * - `regionDetectionThreshold` 15, `cityDetectionThreshold` 30 (GDD
- *   §5.3): a lone foothold seeded at 5 grows 3 a day and is found on its
- *   own after about eight days; in a region whose mean has reached 15
+ *   §5.3): a lone foothold seeded at 5 grows 2 a day and is found on its
+ *   own after about thirteen days; in a region whose mean has reached 15
  *   every infested city is found at once. A sensor array scales both
  *   down (`deployable-types`).
  */
 export const INFESTATION_TUNING: InfestationTuning = {
-  baseGrowthRate: 3,
+  baseGrowthRate: 1.5,
   threatFactor: 1,
   spreadThreshold: 60,
   spreadAmount: 10,

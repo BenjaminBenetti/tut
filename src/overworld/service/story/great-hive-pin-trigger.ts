@@ -34,7 +34,7 @@ const HIVE_ASSAULT = "hive-assault";
 /**
  * The tech points a Great Hive assault at `difficulty` pays on a win:
  * an ordinary Hive Assault's award at that difficulty times
- * `greatHive.techRewardMultiplier`, rounded down (170 at d8).
+ * `greatHive.techRewardMultiplier`, rounded down (69 at d8).
  */
 export function greatHiveTechPoints(
   difficulty: number,

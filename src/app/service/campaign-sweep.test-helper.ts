@@ -1,21 +1,28 @@
 import type { ActId } from "../../content/model/act-id";
 import { ACT_IDS } from "../../content/model/act-id";
 import type { CampaignFlagId } from "../../content/model/campaign-flag-id";
+import type { MissionTypeId } from "../../content/model/mission-type-id";
+import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import { STORY_MISSION_IDS } from "../../content/model/story-mission-id";
 import type { DomainEvent } from "../../core/model/domain-event";
 import { ACT_ADVANCED } from "../../overworld/model/act-advanced-event";
 import type { ActAdvancedPayload } from "../../overworld/model/act-advanced-event";
 import { advanceDay } from "../../overworld/model/advance-day-command";
+import { buildDeployable } from "../../overworld/model/build-deployable-command";
+import { buildMech } from "../../overworld/model/build-mech-command";
 import { CAMPAIGN_FLAG_SET } from "../../overworld/model/campaign-flag-set-event";
 import type { CampaignFlagSetPayload } from "../../overworld/model/campaign-flag-set-event";
+import { DEPLOYABLE_BUILT } from "../../overworld/model/deployable-built-event";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import { GAME_ENDED } from "../../overworld/model/game-ended-event";
 import { HIVE_FORMED } from "../../overworld/model/hive-formed-event";
 import { launchMission } from "../../overworld/model/launch-mission-command";
+import type { Mission } from "../../overworld/model/mission";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { MISSION_OFFERED } from "../../overworld/model/mission-offered-event";
 import type { MissionOfferedPayload } from "../../overworld/model/mission-offered-event";
+import type { MissionResult } from "../../overworld/model/mission-result";
 import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
 import type { MissionResolvedPayload } from "../../overworld/model/mission-resolved-event";
 import { unlockTech } from "../../overworld/model/unlock-tech-command";
@@ -24,6 +31,8 @@ import type { StoryDeps } from "../../overworld/service/story-service";
 import { actExists } from "../../overworld/service/story-service";
 import { STORY_MISSION_RULES } from "../../overworld/service/story/story-mission-rules";
 import { STORY_SPINE } from "../../overworld/data/story-spine";
+import { regionInfestation } from "../../overworld/service/threat-service";
+import { MECH_BUILT, MECH_DESTROYED } from "../../roster/model/roster-event";
 import type { GameState } from "../../save/model/game-state";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
 import { SITREP_TUNING } from "../../tactical/data/sitrep-tuning";
@@ -81,6 +90,24 @@ export interface StoryTrack {
   readonly won?: CampaignMark;
   /** How many times it was played and not won (an extraction counts). */
   readonly losses: number;
+  /** Tech points its plays brought home. */
+  readonly tp: number;
+}
+
+/**
+ * What one mission type's ordinary offers did over a campaign: how often
+ * it was offered, played and won, and the tech points it brought home
+ * (harvests included). Story missions are counted in their `StoryTrack`
+ * instead, so a type built on another (Uplink on Defend Installation, a
+ * Great Hive on Hive Assault) does not hide that type's own offers. The
+ * model's honesty check: a type never offered or never played is a gap
+ * in the model, not a finding about the game.
+ */
+export interface TypeTrack {
+  readonly offered: number;
+  readonly played: number;
+  readonly won: number;
+  readonly tp: number;
 }
 
 /**
@@ -120,6 +147,14 @@ export interface CampaignRecord {
   readonly peakThreat: number;
   readonly endThreat: number;
   readonly hivesFormed: number;
+  /** Every mission type's offers, plays, wins and tech points. */
+  readonly types: Readonly<Record<MissionTypeId, TypeTrack>>;
+  /** Mechs destroyed on missions (`MechDestroyed`). */
+  readonly mechsLost: number;
+  /** Mechs built to replace them (`MechBuilt`). */
+  readonly mechsBuilt: number;
+  /** Installations built (`DeployableBuilt`). */
+  readonly installations: number;
   /** One point per mission played, in order: `series[n - 1]` is right after mission `n`. */
   readonly series: readonly SeriesPoint[];
   /**
@@ -227,6 +262,8 @@ export function endlessStory(): StoryDeps {
  *
  * ```
  *   every day, until an outcome or the day cap:
+ *     spend     BuildDeployable (its one installation, while none stands),
+ *               BuildMech (a lost mech, from the first saved template), when affordable
  *     research  nextResearch → UnlockTech, until the player waits
  *     play      on a play day, chooseOffer → LaunchMission (resolver, settle,
  *               consequences, story), with every squad and mech
@@ -253,6 +290,12 @@ export function playCampaign(
     state.overworld.outcome === undefined &&
     state.overworld.day - tracker.startDay < tuning.dayCap
   ) {
+    state = spendCredits(
+      player,
+      state,
+      tracker.startMechs,
+      (current, command) => tracker.tryApply(current, command),
+    );
     state = research(game, player, state, tracker);
     if (playsOn(player, state.overworld.day, tracker.startDay)) {
       const offer = chooseOffer(state.overworld.missions, ctx);
@@ -260,7 +303,7 @@ export function playCampaign(
         state = tracker.apply(
           state,
           launchMission(offer.id, deploymentFor(offer, state.roster)),
-          offer.storyId,
+          offer,
         );
       }
     }
@@ -313,6 +356,15 @@ export function campaignHeader(intelNodes: readonly TechNode[]): string[] {
     "platform_failures",
     "last_hope",
     "live_specimen_gate_lag",
+    ...MISSION_TYPE_IDS.flatMap((id) => [
+      `${id}_offered`,
+      `${id}_played`,
+      `${id}_won`,
+      `${id}_tp`,
+    ]),
+    "mechs_lost",
+    "mechs_built",
+    "installations",
   ];
 }
 
@@ -363,6 +415,13 @@ export function campaignRow(
     String(record.stories["spore-platform"].losses),
     record.research[LAST_HOPE_NODE] === undefined ? "no" : "yes",
     cell(record.gateLags["live-specimen"]),
+    ...MISSION_TYPE_IDS.flatMap((id) => {
+      const track = record.types[id];
+      return [track.offered, track.played, track.won, track.tp].map(String);
+    }),
+    String(record.mechsLost),
+    String(record.mechsBuilt),
+    String(record.installations),
   ];
 }
 
@@ -409,7 +468,8 @@ export const SUMMARY_HEADER: readonly string[] = [
 /**
  * The per-player summary the sweep reports (campaign arc §12): outcome
  * shares, each act's start and each story win in missions, days and
- * threat, research timings, tech-point income, and spending by kind.
+ * threat, research timings, tech-point income, spending by kind, and
+ * each mission type's offers, plays, wins and tech points.
  * An outcome share is the mean of a 0/1 metric.
  */
 export function summarise(
@@ -453,6 +513,7 @@ export function summarise(
     add(`${id}.won.missions`, (record) => record.stories[id].won?.missions);
     add(`${id}.won.days`, (record) => record.stories[id].won?.days);
     add(`${id}.won.threat`, (record) => record.stories[id].won?.threat);
+    add(`${id}.tp`, (record) => record.stories[id].tp);
   }
   for (const node of intelNodes) {
     add(`${node.id}.missions`, (record) => record.research[node.id]?.missions);
@@ -476,6 +537,15 @@ export function summarise(
   }
   add("parts_done.missions", (record) => record.partsDoneMissions);
   add("hives_formed", (record) => record.hivesFormed);
+  for (const id of MISSION_TYPE_IDS) {
+    add(`type.${id}.offered`, (record) => record.types[id].offered);
+    add(`type.${id}.played`, (record) => record.types[id].played);
+    add(`type.${id}.won`, (record) => record.types[id].won);
+    add(`type.${id}.tp`, (record) => record.types[id].tp);
+  }
+  add("mechs_lost", (record) => record.mechsLost);
+  add("mechs_built", (record) => record.mechsBuilt);
+  add("installations", (record) => record.installations);
   return lines;
 }
 
@@ -551,12 +621,17 @@ class CampaignTracker {
   // ===========================================
 
   startDay = 0;
+  /** Mechs the roster fielded on the first day: what a lost mech is rebuilt up to. */
+  startMechs = 0;
   private startPool = 0;
   private missions = 0;
   private won = 0;
   private extracted = 0;
   private lost = 0;
   private hivesFormed = 0;
+  private mechsLost = 0;
+  private mechsBuilt = 0;
+  private installations = 0;
   private peakThreat = 0;
   private partsDone: number | undefined;
   private ended: CampaignMark | undefined;
@@ -567,6 +642,7 @@ class CampaignTracker {
   private readonly flagDays: Partial<Record<CampaignFlagId, number>> = {};
   private readonly spent: Record<TechNodeKind, number>;
   private readonly bought: Record<TechNodeKind, number>;
+  private readonly types: Record<MissionTypeId, TypeTrack>;
   private readonly nodes: readonly TechNode[];
 
   // ===========================================
@@ -582,10 +658,16 @@ class CampaignTracker {
   ) {
     this.nodes = game.content.tech.listNodes();
     this.stories = Object.fromEntries(
-      STORY_MISSION_IDS.map((id) => [id, { losses: 0 }]),
+      STORY_MISSION_IDS.map((id) => [id, { losses: 0, tp: 0 }]),
     ) as Record<StoryMissionId, StoryTrack>;
     this.spent = byKind(0);
     this.bought = byKind(0);
+    this.types = Object.fromEntries(
+      MISSION_TYPE_IDS.map((id) => [
+        id,
+        { offered: 0, played: 0, won: 0, tp: 0 },
+      ]),
+    ) as Record<MissionTypeId, TypeTrack>;
   }
 
   // ===========================================
@@ -595,6 +677,7 @@ class CampaignTracker {
   /** Notes the fresh campaign: its first day, act, pool and threat. */
   start(state: GameState): void {
     this.startDay = state.overworld.day;
+    this.startMechs = state.roster.mechs.length;
     this.startPool = state.economy.techPoints;
     this.peakThreat = state.overworld.threat;
     this.acts[state.overworld.progress.act] = this.mark(state);
@@ -604,13 +687,13 @@ class CampaignTracker {
   }
 
   /**
-   * Dispatches `command` and records what it applied. `storyId` names
-   * the story mission a launch played, if any.
+   * Dispatches `command` and records what it applied. `offer` is the
+   * mission a launch played, if the command is one.
    */
   apply(
     state: GameState,
     command: OverworldCommand,
-    storyId?: StoryMissionId,
+    offer?: Mission,
   ): GameState {
     const applied = this.game.dispatcher.process(state, command);
     if (!applied.ok) {
@@ -621,9 +704,26 @@ class CampaignTracker {
     }
     const next = applied.value.state;
     for (const event of applied.value.events) {
-      this.observe(event, next, storyId);
+      this.observe(event, next, offer);
     }
     this.peakThreat = Math.max(this.peakThreat, next.overworld.threat);
+    return next;
+  }
+
+  /**
+   * Dispatches `command` like `apply`, but a refusal (a purchase the
+   * credits do not cover) is an answer rather than a harness bug: it
+   * returns `undefined` and records nothing.
+   */
+  tryApply(state: GameState, command: OverworldCommand): GameState | undefined {
+    const applied = this.game.dispatcher.process(state, command);
+    if (!applied.ok) {
+      return undefined;
+    }
+    const next = applied.value.state;
+    for (const event of applied.value.events) {
+      this.observe(event, next, undefined);
+    }
     return next;
   }
 
@@ -660,6 +760,10 @@ class CampaignTracker {
       peakThreat: this.peakThreat,
       endThreat: state.overworld.threat,
       hivesFormed: this.hivesFormed,
+      types: { ...this.types },
+      mechsLost: this.mechsLost,
+      mechsBuilt: this.mechsBuilt,
+      installations: this.installations,
       series: [...this.series],
       gateLags: this.gateLags(state),
     };
@@ -677,14 +781,14 @@ class CampaignTracker {
   private observe(
     event: DomainEvent,
     state: GameState,
-    storyId: StoryMissionId | undefined,
+    offer: Mission | undefined,
   ): void {
     switch (event.type) {
       case MISSION_RESOLVED:
         this.resolved(
-          (event.payload as MissionResolvedPayload).result.outcome,
+          (event.payload as MissionResolvedPayload).result,
           state,
-          storyId,
+          offer,
         );
         return;
       case ACT_ADVANCED:
@@ -697,7 +801,9 @@ class CampaignTracker {
       }
       case MISSION_OFFERED: {
         const { mission } = event.payload as MissionOfferedPayload;
-        if (mission.storyId !== undefined) {
+        if (mission.storyId === undefined) {
+          this.countType(mission.typeId, { offered: 1 });
+        } else {
           const track = this.stories[mission.storyId];
           if (track.pinnedDays === undefined) {
             this.stories[mission.storyId] = {
@@ -714,36 +820,59 @@ class CampaignTracker {
       case HIVE_FORMED:
         this.hivesFormed += 1;
         return;
+      case MECH_DESTROYED:
+        this.mechsLost += 1;
+        return;
+      case MECH_BUILT:
+        this.mechsBuilt += 1;
+        return;
+      case DEPLOYABLE_BUILT:
+        this.installations += 1;
+        return;
       case GAME_ENDED:
         this.ended ??= this.mark(state);
         return;
     }
   }
 
-  /** Counts a resolved mission and, for a story mission, its win or loss. */
+  /**
+   * Counts a resolved mission against its outcome and its type and, for
+   * a story mission, its win or loss.
+   */
   private resolved(
-    outcome: string,
+    result: MissionResult,
     state: GameState,
-    storyId: StoryMissionId | undefined,
+    offer: Mission | undefined,
   ): void {
+    const { outcome } = result;
     this.missions += 1;
     if (outcome === "won") this.won += 1;
     else if (outcome === "extracted") this.extracted += 1;
     else this.lost += 1;
     this.series.push({ ...this.mark(state), tpEarned: this.earned(state) });
+    if (offer === undefined) {
+      return;
+    }
+    const storyId = offer.storyId;
     if (storyId === undefined) {
+      this.countType(offer.typeId, {
+        played: 1,
+        won: outcome === "won" ? 1 : 0,
+        tp: result.techPointsAwarded,
+      });
       return;
     }
     const track = this.stories[storyId];
+    const paid = { ...track, tp: track.tp + result.techPointsAwarded };
     const storyWon = (state.overworld.progress.storyWon ?? []).includes(
       storyId,
     );
     this.stories[storyId] =
       storyWon && track.won === undefined
-        ? { ...track, won: this.mark(state) }
+        ? { ...paid, won: this.mark(state) }
         : storyWon
-          ? track
-          : { ...track, losses: track.losses + 1 };
+          ? paid
+          : { ...paid, losses: track.losses + 1 };
   }
 
   /** Counts a researched node's cost by kind and times the Intel-funded ones. */
@@ -802,6 +931,17 @@ class CampaignTracker {
     return lags;
   }
 
+  /** Adds `counts` to mission type `typeId`'s track. */
+  private countType(typeId: MissionTypeId, counts: Partial<TypeTrack>): void {
+    const track = this.types[typeId];
+    this.types[typeId] = {
+      offered: track.offered + (counts.offered ?? 0),
+      played: track.played + (counts.played ?? 0),
+      won: track.won + (counts.won ?? 0),
+      tp: track.tp + (counts.tp ?? 0),
+    };
+  }
+
   /** Tech points in by `state`, from every source: the pool, plus what was spent, less the start. */
   private earned(state: GameState): number {
     const spent = TECH_NODE_KINDS.reduce(
@@ -829,6 +969,77 @@ class CampaignTracker {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * A purchase attempt: the state after `command`, or `undefined` when the
+ * game refused it (the credits do not cover it).
+ */
+export type TryCommand = (
+  state: GameState,
+  command: OverworldCommand,
+) => GameState | undefined;
+
+/**
+ * Spends credits the way a modelled player does (see `ModelledPlayer`):
+ * its one installation, in the most infested region, while none stands;
+ * then a replacement for each mech lost below `startMechs`, from the
+ * first saved template. Each is bought only when `attempt` succeeds, so a
+ * purchase the credits do not cover waits for a later day.
+ *
+ * ```
+ *   installation set, none standing ──► BuildDeployable(installation, most infested region)
+ *   while mechs < startMechs         ──► BuildMech(savedLoadouts[0]), until one is refused
+ * ```
+ */
+export function spendCredits(
+  player: ModelledPlayer,
+  state: GameState,
+  startMechs: number,
+  attempt: TryCommand,
+): GameState {
+  let current = state;
+  if (
+    player.installation !== undefined &&
+    current.overworld.deployables.length === 0
+  ) {
+    const region = mostInfestedRegion(current);
+    current =
+      attempt(current, buildDeployable(player.installation, region)) ?? current;
+  }
+  const template = current.roster.savedLoadouts[0];
+  while (template !== undefined && current.roster.mechs.length < startMechs) {
+    const built = attempt(
+      current,
+      buildMech(
+        template.name,
+        `${template.name} ${current.roster.mechs.length + 1}`,
+      ),
+    );
+    if (built === undefined) {
+      break;
+    }
+    current = built;
+  }
+  return current;
+}
+
+/** The region with the highest mean infestation, map order on a tie. */
+export function mostInfestedRegion(state: GameState): string {
+  const { map } = state.overworld;
+  let best = map.regions[0];
+  for (const region of map.regions) {
+    if (
+      best === undefined ||
+      regionInfestation(map, region.id) > regionInfestation(map, best.id)
+    ) {
+      best = region;
+    }
+  }
+  if (best === undefined) {
+    throw new Error("the map has no region");
+  }
+  return best.id;
+}
 
 /**
  * Buys every node the player's research policy picks, one at a time,

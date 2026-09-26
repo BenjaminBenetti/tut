@@ -10,7 +10,7 @@ third falls, the `great-hives-destroyed` flag is set, and together with
   uplink-won ──► next day tick: great-hive-reveal
                    3 Great Hives, one per continent  ──► GreatHivesRevealed (story beat)
                    pinned hive-assault { great: true } per standing Great Hive, d8
-  assault won  ──► destroyedDay, continent liberated, 170 TP
+  assault won  ──► destroyedDay, continent liberated, 69 TP
                    third one ──► setCampaignFlag(great-hives-destroyed)
                                  + platform-approach ──► Launch Window pins
   assault lost ──► level +1 (max 2), retryDay = day + STORY_RETRY_DAYS
@@ -101,7 +101,7 @@ hive's level is the only thing that climbs, and only on a lost assault.
 | Guards | 2 | **6** (packed ring) | +1, max 8 |
 | Brood size (route/side/core) | 13 / 10 / 18 | 8 / 6 / 12 | |
 | Mix | the act's | Act III, armoured variants included | |
-| Reward | 68 TP | **170 TP** (×2.5) | |
+| Reward | 46 TP | **69 TP** (×1.5; ×2.5 before the campaign retune) | |
 
 The cavern's size was measured over eight seeds for each of four
 candidates. The TSV is in the package report. Generation time on the
@@ -129,7 +129,7 @@ count. Without it, gh-2's crowded core placed only 4 of 6 guards.
   - `destroyedDay` is set, and every region of the continent is
     liberated with `liberateRegionCities`, the same cut and growth pause
     as an ordinary hive's region;
-  - the reward is 170 TP plus any carcass bounty;
+  - the reward is 69 TP plus any carcass bounty;
   - `GreatHiveDestroyed` is emitted;
   - on the third, `setCampaignFlag("great-hives-destroyed")`.
 - **Lost or extracted without the core:**

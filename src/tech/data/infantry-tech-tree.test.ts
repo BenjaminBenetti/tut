@@ -65,12 +65,12 @@ describe("INFANTRY_TECH_NODES (campaign arc §10.3)", () => {
   });
 
   /**
-   * An upgrade reaches every squad, so it costs a little more than the
-   * part node of its tier and less than twice the next tier's: the
-   * family's 265 TP is about an eighth of the §10 whole-tree budget
-   * (1.3–1.6× a campaign's 1,400–1,500 TP).
+   * An upgrade reaches every squad, so it costs more than the part node
+   * of its tier and less than the next rung up (a tier 3 part, or twice
+   * one): the family's 344 TP is about a sixth of the §10 whole-tree
+   * budget (1.3–1.6× a campaign's 1,400–1,500 TP).
    */
-  it("prices each rung above the part node of its tier and the family at 265 TP", () => {
+  it("prices each rung above the part node of its tier and the family at 344 TP", () => {
     for (const node of INFANTRY_TECH_NODES) {
       const [low, high] =
         node.tier === 2
@@ -81,7 +81,7 @@ describe("INFANTRY_TECH_NODES (campaign arc §10.3)", () => {
       expect(node.cost, node.id).toBeLessThan(high);
     }
     const total = INFANTRY_TECH_NODES.reduce((sum, node) => sum + node.cost, 0);
-    expect(total).toBe(265);
+    expect(total).toBe(344);
     expect(total).toBeGreaterThan(1_820 * 0.1);
     expect(total).toBeLessThan(1_820 * 0.2);
   });

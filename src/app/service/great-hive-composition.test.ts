@@ -212,7 +212,7 @@ describe("a Great Hive through the shipped composition (#1179)", () => {
       offer.rewards.techPoints +
         (after?.lastMissionResult?.techPointsBounty ?? 0),
     );
-    expect(offer.rewards.techPoints).toBe(170);
+    expect(offer.rewards.techPoints).toBe(69);
     expect(after?.greatHives?.find((h) => h.id === last.id)?.destroyedDay).toBe(
       atFinish.day,
     );

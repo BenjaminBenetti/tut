@@ -126,7 +126,7 @@ describe("createTunnelSabotageOffer", () => {
       tunnelSabotage: { cityId: "c2", spreadDueDay: 21 },
     });
     expect(created.rewards.credits).toBe(created.difficulty * 300);
-    expect(created.rewards.techPoints).toBe(8 + created.difficulty * 3);
+    expect(created.rewards.techPoints).toBe(5 + created.difficulty * 2);
     expect(created.ignorePenalty).toBe(0);
   });
 });

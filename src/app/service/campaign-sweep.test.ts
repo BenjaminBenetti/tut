@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import type { OverworldCommand } from "../../overworld/model/overworld-command";
+import { regionInfestation } from "../../overworld/service/threat-service";
+import type { GameState } from "../../save/model/game-state";
 import type { CampaignRecord } from "./campaign-sweep.test-helper";
 import {
   campaignHeader,
@@ -8,9 +11,12 @@ import {
   endlessStory,
   intelNodesOf,
   lastActOf,
+  mostInfestedRegion,
   playCampaign,
   quantile,
   SHIPPED_STORY,
+  spendCredits,
+  SWEEP_NOW,
   toTsv,
 } from "./campaign-sweep.test-helper";
 import {
@@ -43,6 +49,24 @@ function sweepTsv(seeds: readonly number[]): string {
     );
   });
   return toTsv(campaignHeader(intel), rows);
+}
+
+/** A fresh campaign of the Average player's game, and the purchase attempt it spends through. */
+function freshCampaign(): {
+  state: GameState;
+  attempt: (
+    state: GameState,
+    command: OverworldCommand,
+  ) => GameState | undefined;
+} {
+  const game = composeSweepGame(CAMPAIGN_SWEEP_TUNING.players.average);
+  return {
+    state: game.createCampaign({ seed: 4, createdAt: SWEEP_NOW }),
+    attempt: (state, command) => {
+      const applied = game.dispatcher.process(state, command);
+      return applied.ok ? applied.value.state : undefined;
+    },
+  };
 }
 
 // ===========================================
@@ -110,6 +134,49 @@ describe("campaign sweep harness", () => {
     expect(record.missions).toBeGreaterThan(
       record.stories["live-specimen"].won?.missions ?? 0,
     );
+  });
+
+  it("builds the player's one installation in the most infested region, and only one", () => {
+    const { state, attempt } = freshCampaign();
+    const player = CAMPAIGN_SWEEP_TUNING.players.average;
+    const spent = spendCredits(player, state, 1, attempt);
+    const region = mostInfestedRegion(state);
+    expect(spent.overworld.deployables).toHaveLength(1);
+    expect(spent.overworld.deployables[0]).toMatchObject({
+      typeId: player.installation,
+      regionId: region,
+    });
+    for (const other of state.overworld.map.regions) {
+      expect(
+        regionInfestation(state.overworld.map, other.id),
+      ).toBeLessThanOrEqual(regionInfestation(state.overworld.map, region));
+    }
+    expect(spent.economy.credits).toBeLessThan(state.economy.credits);
+    expect(spendCredits(player, spent, 1, attempt)).toBe(spent);
+    const idle = CAMPAIGN_SWEEP_TUNING.players.idle;
+    expect(spendCredits(idle, state, 1, attempt)).toBe(state);
+  });
+
+  it("rebuilds a lost mech from the first saved template when the credits cover it, and waits when they do not", () => {
+    const { state, attempt } = freshCampaign();
+    const player = { ...CAMPAIGN_SWEEP_TUNING.players.average };
+    const { installation: _none, ...noInstallation } = player;
+    const lostMech: GameState = {
+      ...state,
+      roster: { ...state.roster, mechs: [] },
+    };
+    const rebuilt = spendCredits(noInstallation, lostMech, 1, attempt);
+    expect(rebuilt.roster.mechs).toHaveLength(1);
+    expect(rebuilt.roster.mechs[0]?.loadout.chassisId).toBe(
+      state.roster.savedLoadouts[0]?.chassisId,
+    );
+    expect(rebuilt.economy.credits).toBeLessThan(lostMech.economy.credits);
+    const broke: GameState = {
+      ...lostMech,
+      economy: { ...lostMech.economy, credits: 0 },
+    };
+    expect(spendCredits(noInstallation, broke, 1, attempt)).toBe(broke);
+    expect(spendCredits(noInstallation, state, 1, attempt)).toBe(state);
   });
 
   it("interpolates quartiles between order statistics (type 7)", () => {

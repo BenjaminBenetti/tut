@@ -6,11 +6,12 @@ import type { TechNode } from "../model/tech-node";
 //
 // Story nodes are priced by the story, not by a tier (ADR 0013 §2.7),
 // and are left out of the parts pacing. Campaign arc §4 sets both
-// prices: Intel III after Intel I's 180, and Last Hope cheap, because
-// the player buys it straight after losing the platform, on whatever the
-// failed assault left in the bank.
+// prices: Intel III after Intel I's (180 in the arc, 80 since the
+// campaign retune), and Last Hope cheap, because the player buys it
+// straight after losing the platform, on whatever the failed assault
+// left in the bank.
 //
-//   Intel I    Pheromone Analysis   180   (tech-tree.ts)
+//   Intel I    Pheromone Analysis    80   (tech-tree.ts)
 //   Intel III  Platform Approach    280
 //   story      Last Hope            100
 

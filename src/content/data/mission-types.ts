@@ -10,10 +10,14 @@ import type { MissionTypeId } from "../model/mission-type-id";
 //
 //   • rewardPerDifficulty 300 → a difficulty-5 clearance pays 1500,
 //     roughly three days of full stipend or three fresh rifle squads.
-//   • techRewardBase 8 + techRewardPerDifficulty 3 → a difficulty-5
-//     clearance pays 23 tech points, so the 728-point tech tree spans
-//     about 25 missions on the campaign's difficulty ramp (#1171; the
-//     pacing check lives in tech/data/tech-tree.test.ts).
+//   • techRewardBase 5 + techRewardPerDifficulty 2 → a difficulty-5
+//     clearance pays 15 tech points. Paced against the whole campaign
+//     (campaign arc §10, #1171): the 728 points of part nodes are paid
+//     for by about mission 35, and the whole tree costs 1.3–1.6× what an
+//     Average campaign earns. At 8 + 3 the parts were paid for by about
+//     mission 25, and an Average campaign earned 94% of the tree. The model
+//     check lives in tech/data/tech-tree.test.ts, the measurement in the
+//     campaign sweep (app/service/campaign-sweep.sim.test.ts).
 //   • expiryDays 5 is the base; generation (#61) adds an intel bonus.
 //   • ignorePenalty 10 is on the 0–100 city infestation scale; new
 //     campaigns seed cities at 10–30, so ignoring a mission hurts but is
@@ -29,8 +33,8 @@ export const INFESTATION_CLEARANCE: MissionType = {
     "Bugs have seeded a city with egg spawners. Deploy, destroy every spawner, and extract before the swarm digs in.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
-  techRewardBase: 8,
-  techRewardPerDifficulty: 3,
+  techRewardBase: 5,
+  techRewardPerDifficulty: 2,
   expiryDays: 5,
   ignorePenalty: 10,
   requiredHooks: [
@@ -65,8 +69,8 @@ export const DEFEND_INSTALLATION: MissionType = {
     "The swarm is moving on an installation you built. Hold the generators through every wave, then bring the force home.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
-  techRewardBase: 10,
-  techRewardPerDifficulty: 3,
+  techRewardBase: 7,
+  techRewardPerDifficulty: 2,
   expiryDays: 3,
   ignorePenalty: 15,
   requiredHooks: [
@@ -100,8 +104,8 @@ export const CRASH_SITE: MissionType = {
     "A spore pod has come down near a city. Reach the crater, destroy the pod before it matures at the end of turn 8, then extract.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
-  techRewardBase: 8,
-  techRewardPerDifficulty: 3,
+  techRewardBase: 5,
+  techRewardPerDifficulty: 2,
   expiryDays: 4,
   ignorePenalty: 15,
   requiredHooks: [
@@ -176,8 +180,8 @@ export const EVACUATION: MissionType = {
     "Civilians are trapped in an infested city. Free the groups holed up in its buildings, walk them to the drop ship, and extract.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
-  techRewardBase: 5,
-  techRewardPerDifficulty: 2,
+  techRewardBase: 3,
+  techRewardPerDifficulty: 1,
   expiryDays: 4,
   ignorePenalty: 0,
   requiredHooks: [
@@ -212,8 +216,8 @@ export const HIVE_ASSAULT: MissionType = {
     "A hive has dug in beneath the region. Push into the cavern, destroy the hive core in its deepest chamber, and get the squad back out.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
-  techRewardBase: 10,
-  techRewardPerDifficulty: 3,
+  techRewardBase: 7,
+  techRewardPerDifficulty: 2,
   expiryDays: 7,
   ignorePenalty: 0,
   requiredHooks: [
@@ -252,8 +256,8 @@ export const TUNNEL_SABOTAGE: MissionType = {
     "The swarm is tunnelling toward the next city. Set a charge on each of the three tunnel mouths, hold while the fuses burn, then extract.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
-  techRewardBase: 8,
-  techRewardPerDifficulty: 3,
+  techRewardBase: 5,
+  techRewardPerDifficulty: 2,
   expiryDays: 2,
   ignorePenalty: 0,
   requiredHooks: [
@@ -272,10 +276,11 @@ export const TUNNEL_SABOTAGE: MissionType = {
  * stronger as a nemesis.
  *
  * Numbers against the clearance:
- *   • the ordinary credit and tech scale (300 per difficulty, 8 + 3 per
- *     difficulty). There is no separate bounty on a nemesis: her level
+ *   • the ordinary credit and tech scale (300 per difficulty, 5 + 2 per
+ *     difficulty, the clearance's since the campaign retune; it was
+ *     8 + 3). There is no separate bounty on a nemesis: her level
  *     adds a difficulty step to the hunt, which pays 300 credits and
- *     3 TP more per level, and the Broodmother autopsy her first kill
+ *     2 TP more per level, and the Broodmother autopsy her first kill
  *     unlocks is the real prize (arc §6.8, §10);
  *   • a shorter expiry (4 days): she is on the move, as a pod is;
  *   • an ignore penalty of 15, the crash site's and the defence's: a
@@ -294,8 +299,8 @@ export const ALPHA_HUNT: MissionType = {
     "A Broodmother is laying clutches across the region. Kill her before she reaches the map edge, then extract.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
-  techRewardBase: 8,
-  techRewardPerDifficulty: 3,
+  techRewardBase: 5,
+  techRewardPerDifficulty: 2,
   expiryDays: 4,
   ignorePenalty: 15,
   requiredHooks: [

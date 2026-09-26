@@ -1,5 +1,7 @@
+import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { Rng } from "../../core/model/rng";
 import type { EconomyState } from "../../economy/model/economy-state";
+import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import type { Deployment } from "../../overworld/model/deployment";
 import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 import type { Mission } from "../../overworld/model/mission";
@@ -65,6 +67,18 @@ export interface ModelledPlayer {
   readonly intelShare: number;
   /** Whether its squads strip every tech carcass on the map (#1171). */
   readonly harvests: boolean;
+  /**
+   * The share of its lost missions that destroy the first mech it
+   * deployed, so Wreck Recovery (arc §6.6) is offered. A lost mech is
+   * rebuilt from the first saved template once the credits cover it.
+   */
+  readonly mechLoss: number;
+  /**
+   * The installation it builds once, in the most infested region, on
+   * the campaign's first day, so the Defend Installation trigger (arc
+   * §5) has something to defend; none when absent.
+   */
+  readonly installation?: DeployableTypeId;
 }
 
 /** Everything the campaign sweep is tuned by, in one object. */
@@ -96,14 +110,33 @@ export interface CampaignSweepTuning {
 const PLAY_CADENCE: PlayCadence = { playDays: 3, cycleDays: 4 };
 
 /**
+ * The share of lost missions that destroy a mech: the auto-resolver's
+ * chance for each deployed mech on a lost mission, the game's own scale
+ * for it. The sweep deploys one mech, so this is the chance a loss
+ * leaves a wreck.
+ */
+const MECH_LOSS_ON_A_LOSS = AUTO_RESOLVE_TUNING.mechDestructionChance.lost;
+
+/**
+ * The installation every playing player builds on its first day. A
+ * defensive battery's effect, garrison turrets, is tactical and outside
+ * the model, so it changes the overworld only through the Defend
+ * Installation offers it draws; the installations that do move the
+ * overworld (a repellent's growth cut, a sensor array's detection and
+ * board slots) are left out, which makes the modelled Earth a little
+ * harder than a player who builds them sees.
+ */
+const MODELLED_INSTALLATION: DeployableTypeId = "defensive-battery";
+
+/**
  * The campaign sweep's tuning (campaign arc §12).
  *
  * ```
- *   player      won / extracted / lost   Intel share   plays
- *   average     70 / 10 / 20             0.5           3 days in 4
- *   strong      95 /  2 /  3             0.8           3 days in 4
- *   story-only  70 / 10 / 20             1.0           3 days in 4
- *   idle        –                        –             never
+ *   player      won / extracted / lost   Intel share   plays         mech lost on a loss   builds
+ *   average     70 / 10 / 20             0.5           3 days in 4   30%                   a battery
+ *   strong      95 /  2 /  3             0.8           3 days in 4   30%                   a battery
+ *   story-only  70 / 10 / 20             1.0           3 days in 4   30%                   a battery
+ *   idle        –                        –             never         –                     nothing
  * ```
  *
  * The Strong player's 5% that is not a win splits 2 extracted, 3 lost.
@@ -118,6 +151,8 @@ export const CAMPAIGN_SWEEP_TUNING: CampaignSweepTuning = {
       cadence: PLAY_CADENCE,
       intelShare: 0.5,
       harvests: true,
+      mechLoss: MECH_LOSS_ON_A_LOSS,
+      installation: MODELLED_INSTALLATION,
     },
     strong: {
       id: "strong",
@@ -125,6 +160,8 @@ export const CAMPAIGN_SWEEP_TUNING: CampaignSweepTuning = {
       cadence: PLAY_CADENCE,
       intelShare: 0.8,
       harvests: true,
+      mechLoss: MECH_LOSS_ON_A_LOSS,
+      installation: MODELLED_INSTALLATION,
     },
     "story-only": {
       id: "story-only",
@@ -132,6 +169,8 @@ export const CAMPAIGN_SWEEP_TUNING: CampaignSweepTuning = {
       cadence: PLAY_CADENCE,
       intelShare: 1,
       harvests: true,
+      mechLoss: MECH_LOSS_ON_A_LOSS,
+      installation: MODELLED_INSTALLATION,
     },
     idle: {
       id: "idle",
@@ -139,6 +178,7 @@ export const CAMPAIGN_SWEEP_TUNING: CampaignSweepTuning = {
       cadence: { playDays: 0, cycleDays: 1 },
       intelShare: 0,
       harvests: false,
+      mechLoss: 0,
     },
   },
   dayCap: 400,
@@ -163,10 +203,12 @@ export const CAMPAIGN_SWEEP_TUNING: CampaignSweepTuning = {
  *   u < won+extracted  ──► extracted
  *   otherwise          ──► lost
  *        └──► modelledResult(mission, outcome, ctx)
+ *   lost, a mech deployed: v = rng.next() < mechLoss ──► the first mech destroyed
  * ```
  *
- * One draw per mission, so two players on the same seed who launch the
- * same mission id draw the same `u` (common random numbers).
+ * The outcome is the stream's first draw, so two players on the same
+ * seed who launch the same mission id draw the same `u` (common random
+ * numbers); the mech's draw comes after it, and only on a loss.
  */
 export class ModelledMissionResolver implements MissionResolver {
   // ===========================================
@@ -186,15 +228,21 @@ export class ModelledMissionResolver implements MissionResolver {
   /** The modelled result of `mission`: an outcome by the player's shares, built by its type's row. */
   resolve(
     mission: Mission,
-    _deployment: Deployment,
+    deployment: Deployment,
     _state: MissionResolutionState,
     rng: Rng,
   ): MissionResult {
-    return modelledResult(
-      mission,
-      rollOutcome(this.player.outcomes, rng.next()),
-      this.results,
-    );
+    const outcome = rollOutcome(this.player.outcomes, rng.next());
+    const result = modelledResult(mission, outcome, this.results);
+    const mechId = deployment.mechIds[0];
+    if (
+      outcome !== "lost" ||
+      mechId === undefined ||
+      rng.next() >= this.player.mechLoss
+    ) {
+      return result;
+    }
+    return { ...result, mechsDestroyed: [mechId] };
   }
 }
 
@@ -289,6 +337,14 @@ export interface ResearchView {
 export const INTEL_FUND_KINDS: readonly TechNodeKind[] = ["intel", "story"];
 
 /**
+ * The kinds the other fund buys first when one is open, before the
+ * cheapest node: an autopsy is the counter to a species the squads have
+ * just met (campaign arc §10.2), so a player researches it when it
+ * appears rather than after every cheaper part.
+ */
+export const OTHER_FUND_FIRST_KINDS: readonly TechNodeKind[] = ["autopsy"];
+
+/**
  * The next node a modelled player buys, or `undefined` when it waits.
  * An envelope model: of every tech point earned so far, `intelShare`
  * is the Intel fund and the rest the other fund, and each fund pays
@@ -301,7 +357,8 @@ export const INTEL_FUND_KINDS: readonly TechNodeKind[] = ["intel", "story"];
  *   other fund = earned × (1 − share) − spent on other nodes
  *
  *   for intel, then other:
- *     node = the cheapest open node of the fund's kinds (tree order on a tie)
+ *     node = the cheapest open node of the fund's kinds (tree order on a tie);
+ *            for the other fund, the cheapest open autopsy first, if any
  *     buy it when both the fund and the pool cover its cost
  * ```
  *
@@ -320,7 +377,9 @@ export function nextResearch(
   const spentOther = spentOn(view, false);
   const earned = view.economy.techPoints + spentIntel + spentOther;
   const otherFund = earned * (1 - intelShare) - spentOther;
-  const other = cheapestOpen(view, false);
+  const other =
+    cheapestOpen(view, false, OTHER_FUND_FIRST_KINDS) ??
+    cheapestOpen(view, false);
   const intelFund =
     earned * intelShare - spentIntel + (other === undefined ? otherFund : 0);
   const intel = cheapestOpen(view, true);
@@ -383,14 +442,22 @@ function spentOn(view: ResearchView, intel: boolean): number {
   return spent;
 }
 
-/** The cheapest open node of a fund's kinds, tree order on a tie. */
+/**
+ * The cheapest open node of a fund's kinds, tree order on a tie; only
+ * among `kinds` when they are given.
+ */
 function cheapestOpen(
   view: ResearchView,
   intel: boolean,
+  kinds?: readonly TechNodeKind[],
 ): TechNode | undefined {
   let found: TechNode | undefined;
   for (const node of view.nodes) {
-    if (isIntelFunded(node) !== intel || !isOpen(view, node)) {
+    if (
+      isIntelFunded(node) !== intel ||
+      (kinds !== undefined && !kinds.includes(node.kind)) ||
+      !isOpen(view, node)
+    ) {
       continue;
     }
     if (found === undefined || node.cost < found.cost) {

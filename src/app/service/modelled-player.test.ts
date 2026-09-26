@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { Rng } from "../../core/model/rng";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { advanceDay } from "../../overworld/model/advance-day-command";
 import type { Mission } from "../../overworld/model/mission";
@@ -76,6 +77,32 @@ function realOffers(): readonly Mission[] {
   return [offer, { ...offer, id: `${offer.id}-copy` }];
 }
 
+/**
+ * An Rng whose `next()` answers `draws` in order and throws once they
+ * run out, so a test fixes every draw the resolver makes and sees it
+ * make no other.
+ */
+function scripted(draws: readonly number[]): Rng {
+  const queue = [...draws];
+  const unused = (): never => {
+    throw new Error("the resolver draws only with next()");
+  };
+  return {
+    next: () => {
+      const draw = queue.shift();
+      if (draw === undefined) throw new Error("no draw left");
+      return draw;
+    },
+    nextInt: unused,
+    chance: unused,
+    pick: unused,
+    pickWeighted: unused,
+    shuffle: unused,
+    fork: unused,
+    getState: unused,
+  };
+}
+
 // ===========================================
 // Tuning and cadence
 // ===========================================
@@ -148,6 +175,56 @@ describe("ModelledMissionResolver", () => {
     expect(won).toBeLessThan(0.74);
     expect(extracted).toBeGreaterThan(0.07);
     expect(extracted).toBeLessThan(0.13);
+  });
+});
+
+describe("ModelledMissionResolver casualties", () => {
+  const average = CAMPAIGN_SWEEP_TUNING.players.average;
+  const offer = realOffers()[0]!;
+  const withMech = {
+    missionId: offer.id,
+    squadIds: ["squad-1"],
+    mechIds: ["mech-1", "mech-2"],
+  };
+  const resolverFor = (mechLoss: number) =>
+    new ModelledMissionResolver(
+      { ...average, mechLoss },
+      resultContextFor(average, SWEEP_RESULTS),
+    );
+  const resolve = (
+    mechLoss: number,
+    draws: readonly number[],
+    mechIds = withMech.mechIds,
+  ) =>
+    resolverFor(mechLoss).resolve(
+      offer,
+      { ...withMech, mechIds },
+      undefined as never,
+      scripted(draws),
+    );
+
+  it("destroys the first deployed mech on a loss whose second draw falls under the share", () => {
+    const lost = resolve(0.3, [0.9, 0.29]);
+    expect(lost.outcome).toBe("lost");
+    expect(lost.mechsDestroyed).toEqual(["mech-1"]);
+    expect(resolve(0.3, [0.9, 0.3]).mechsDestroyed).toEqual([]);
+  });
+
+  it("draws once for a win or an extraction and never loses a mech on one", () => {
+    expect(resolve(1, [0.1]).mechsDestroyed).toEqual([]);
+    expect(resolve(1, [0.75]).mechsDestroyed).toEqual([]);
+  });
+
+  it("loses nothing when no mech went, and nothing at a share of 0", () => {
+    expect(resolve(1, [0.9], []).mechsDestroyed).toEqual([]);
+    expect(resolve(0, [0.9, 0]).mechsDestroyed).toEqual([]);
+  });
+
+  it("the Idle player loses no mech; the playing players lose one on the auto-resolver's share of losses", () => {
+    expect(CAMPAIGN_SWEEP_TUNING.players.idle.mechLoss).toBe(0);
+    for (const id of ["average", "strong", "story-only"] as const) {
+      expect(CAMPAIGN_SWEEP_TUNING.players[id].mechLoss).toBe(0.3);
+    }
   });
 });
 
@@ -260,6 +337,21 @@ describe("nextResearch", () => {
         1,
       )?.id,
     ).toBe("intel-h");
+  });
+
+  it("buys an open autopsy before any cheaper part, and waits for it rather than skip to a part", () => {
+    const autopsy = node("autopsy-a", "autopsy", 30);
+    expect(nextResearch(view([cheap, autopsy], 100), 0.5)?.id).toBe(
+      "autopsy-a",
+    );
+    // Earned 40: the other fund's 20 covers the part but not the autopsy.
+    expect(nextResearch(view([cheap, autopsy], 40), 0.5)).toBeUndefined();
+    // Once it is bought the fund goes back to the cheapest node.
+    expect(
+      nextResearch(view([cheap, autopsy], 100, ["autopsy-a"]), 0.5)?.id,
+    ).toBe("part-b");
+    // Intel's fund never pays for an autopsy.
+    expect(nextResearch(view([autopsy], 500), 1)).toBeUndefined();
   });
 
   it("never buys a node whose prerequisite is not bought", () => {

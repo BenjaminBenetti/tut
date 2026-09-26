@@ -14,6 +14,15 @@ export interface UnknownSquadTypeError {
   readonly typeId: SquadTypeId;
 }
 
+/**
+ * A hire named a squad type the tech tree has not opened yet (campaign
+ * arc §10.3): the type exists, but its node is not researched.
+ */
+export interface SquadTypeLockedError {
+  readonly code: "squad-type-locked";
+  readonly typeId: SquadTypeId;
+}
+
 /** A reinforcement named a squad not in the roster. */
 export interface UnknownSquadError {
   readonly code: "unknown-squad";
@@ -100,6 +109,7 @@ export interface RosterInsufficientCreditsError {
  * | code                     | command                    |
  * |--------------------------|----------------------------|
  * | `unknown-squad-type`     | HireSquad                  |
+ * | `squad-type-locked`      | HireSquad                  |
  * | `unknown-squad`          | ReinforceSquad             |
  * | `invalid-reinforcement`  | ReinforceSquad             |
  * | `unknown-mech`           | RepairMech, RenameMech     |
@@ -114,6 +124,7 @@ export interface RosterInsufficientCreditsError {
  */
 export type RosterError =
   | UnknownSquadTypeError
+  | SquadTypeLockedError
   | UnknownSquadError
   | InvalidReinforcementError
   | UnknownMechError
@@ -138,6 +149,8 @@ export function describeRosterError(error: RosterError): string {
   switch (error.code) {
     case "unknown-squad-type":
       return `No squad type "${error.typeId}" exists.`;
+    case "squad-type-locked":
+      return `Squad type "${error.typeId}" must be researched in the tech tree before it can be hired.`;
     case "unknown-squad":
       return `No squad "${error.squadId}" is in the roster.`;
     case "invalid-reinforcement":

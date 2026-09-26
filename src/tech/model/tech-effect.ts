@@ -1,3 +1,4 @@
+import type { InfantryUpgradeId } from "../../roster/model/infantry-upgrade";
 import type { PartId } from "../../roster/model/mech-part";
 import type { SquadTypeId } from "../../roster/model/squad-type";
 
@@ -28,10 +29,14 @@ export interface SquadTypeTechEffect {
   readonly squadTypeId: SquadTypeId;
 }
 
-/** The node grants an upgrade to every infantry squad (campaign arc §10, D8). */
+/**
+ * The node grants an upgrade to every infantry squad (campaign arc §10,
+ * D8). The id names a row of the roster's closed upgrade table, so a
+ * node granting an upgrade nobody defined fails to compile.
+ */
 export interface InfantryUpgradeTechEffect {
   readonly kind: "infantry-upgrade";
-  readonly upgradeId: string;
+  readonly upgradeId: InfantryUpgradeId;
 }
 
 /**
@@ -80,6 +85,42 @@ export function partIdsOf(node: TechEffectHolder): readonly PartId[] {
   for (const effect of node.effects) {
     if (effect.kind === "part") {
       ids.push(effect.partId);
+    }
+  }
+  return ids;
+}
+
+/**
+ * The squad types a node opens for hire, in effect order. Empty for a
+ * node with no squad-type effect.
+ *
+ * @param node - Anything carrying effects, normally a `TechNode`.
+ * @returns The squad type ids of its squad-type effects.
+ */
+export function squadTypeIdsOf(node: TechEffectHolder): readonly SquadTypeId[] {
+  const ids: SquadTypeId[] = [];
+  for (const effect of node.effects) {
+    if (effect.kind === "squad-type") {
+      ids.push(effect.squadTypeId);
+    }
+  }
+  return ids;
+}
+
+/**
+ * The infantry upgrades a node grants, in effect order. Empty for a node
+ * with no infantry-upgrade effect.
+ *
+ * @param node - Anything carrying effects, normally a `TechNode`.
+ * @returns The upgrade ids of its infantry-upgrade effects.
+ */
+export function infantryUpgradeIdsOf(
+  node: TechEffectHolder,
+): readonly InfantryUpgradeId[] {
+  const ids: InfantryUpgradeId[] = [];
+  for (const effect of node.effects) {
+    if (effect.kind === "infantry-upgrade") {
+      ids.push(effect.upgradeId);
     }
   }
   return ids;

@@ -17,6 +17,7 @@ import { registerTechCommands } from "../../overworld/service/tech-command-handl
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
+import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { GameState } from "../../save/model/game-state";
@@ -50,6 +51,7 @@ import type {
   TechGraphHost,
   TechGraphListener,
 } from "../model/tech-graph-host";
+import { TECH_EFFECT_LABELS } from "../data/tech-effect-labels";
 import type { TechEffectLabels } from "../model/tech-effect-labels";
 import type { TechGraphLayout } from "../model/tech-graph-layout";
 import { TechTreeScreen } from "./tech-tree-screen";
@@ -227,6 +229,7 @@ function mountWith(
     tech?: TechCatalogue;
     conditionsOf?: (state: GameState) => TechConditions;
     effectLabels?: TechEffectLabels;
+    squadTypes?: SquadTypeCatalogue;
   } = {},
 ): { navigate: NavigateMock; screen: TechTreeScreen } {
   const navigate: NavigateMock = vi.fn();
@@ -627,6 +630,42 @@ describe("TechTreeScreen with hidden and conditional nodes", () => {
     expect(effectItems().map((li) => li.textContent)).toEqual([
       PARTS.getPart("legs-jumper")?.name,
     ]);
+  });
+
+  it("draws the shipped infantry family and says what each of its nodes does, with the shipped labels (campaign arc §10.3)", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(funded()), root, {
+      graph,
+      effectLabels: TECH_EFFECT_LABELS,
+      squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+    });
+    expect(familyIds()).toContain("infantry");
+    expect(q('[data-family="infantry"]').textContent).toBe("Infantry");
+    const infantry = TECH_NODES.filter((n) => n.family === "infantry");
+    expect(infantry).toHaveLength(6);
+    for (const node of infantry) {
+      expect(labelIds()).toContain(node.id);
+    }
+    const said = (nodeId: string): (string | null)[] => {
+      graph.listener?.picked(nodeId);
+      return effectItems().map((li) => li.textContent);
+    };
+    expect(said("tech.squad-armour-1")).toEqual([
+      "Squad armour I (+1 armour on every squad)",
+    ]);
+    expect(said("tech.squad-armour-2")).toEqual([
+      "Squad armour II (+1 more armour on every squad, +2 in all)",
+    ]);
+    expect(said("tech.frag-grenades")).toEqual([
+      "Frag grenades (grenades hit for 8 and lose less to the edge)",
+    ]);
+    expect(said("tech.incendiary-grenades")).toEqual([
+      "Incendiary grenades (frag grenades that leave the blast burning)",
+    ]);
+    expect(said("tech.field-medic-training")).toEqual([
+      "Field medic training (the medic squad's medkit mends 15, not 10)",
+    ]);
+    expect(said("tech.heavy-weapons")).toEqual(["Heavy Weapons Squad"]);
   });
 
   it("re-lays the graph out when an unlock reveals a node, keeping the selection", () => {

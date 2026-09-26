@@ -50,11 +50,11 @@ export interface TechGraphLayoutTuning {
  * keeps a ring of its own 6 units further out, where two children of
  * one node sit 3 apart and 4.5 from the next node's children.
  *
- * The radii are floors, not fixed: with more families (intel,
- * xenobiology and infantry are coming, ADR 0013) each sector narrows,
- * and the rings grow just enough that the widest family still fits its
- * sector at these spacings. Six families of the shipped tree need no
- * growth, so they lay out exactly as before.
+ * The radii are floors, not fixed: with more families (infantry is the
+ * seventh, and intel and xenobiology are coming, ADR 0013) each sector
+ * narrows, and the rings grow just enough that the widest family still
+ * fits its sector at these spacings. Six families need no growth; the
+ * seven shipped grow the tier 2 ring to about 26.7.
  *
  * The tier 2 spacing was 3 on a ring of 12; the Executive Director
  * found that tight and asked for twice the gap (#1171).

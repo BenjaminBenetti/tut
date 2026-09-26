@@ -31,6 +31,13 @@ import {
 //     medic squad carries a medkit, and the engineer squad a repair kit
 //     and two deployable turrets (#1138). The items and their uses are
 //     defined in `tactical/data/equipment.ts`.
+//   • heavy weapons (campaign arc §10.3, #1179) is the one type the tech
+//     tree gates: it is hired only once its infantry node is researched.
+//     It sits between the rifle and the rocket squad: a crew-served
+//     machine gun that hits harder than a carbine, reaches further and
+//     punches a point of plate, two bursts a turn from a belt of two, so
+//     a turn of full fire is paid for with a reload. Rated just above
+//     the rocket squad and priced above every other type.
 
 /** General-purpose infantry; the starter squad type. */
 export const RIFLE_SQUAD: SquadType = {
@@ -104,7 +111,22 @@ export const RADIO_SQUAD: SquadType = {
   equipment: [GRENADE.id, RADAR_DISH.id],
 };
 
-/** Every available squad type, in catalogue order. */
+/**
+ * Crew-served machine guns (campaign arc §10.3, D8). Hired only once the
+ * tech tree's Heavy Weapons Infantry node is researched.
+ */
+export const HEAVY_WEAPONS_SQUAD: SquadType = {
+  id: "heavy-weapons",
+  name: "Heavy Weapons Squad",
+  hireCost: 900,
+  reinforceCostPerSoldier: 150,
+  combatRating: 60,
+  description:
+    "A crew-served heavy machine gun and the soldiers who feed it: two long bursts a turn out to ten tiles, harder-hitting than a carbine and able to punch a point of plate, but the belt runs dry after two and the gun has to be reloaded. Researched in the tech tree's infantry branch.",
+  equipment: [GRENADE.id],
+};
+
+/** Every squad type in the game, in catalogue order; heavy weapons is tech-gated. */
 export const SQUAD_TYPES: readonly SquadType[] = [
   RIFLE_SQUAD,
   ROCKET_SQUAD,
@@ -112,4 +134,5 @@ export const SQUAD_TYPES: readonly SquadType[] = [
   ENGINEER_SQUAD,
   MEDIC_SQUAD,
   RADIO_SQUAD,
+  HEAVY_WEAPONS_SQUAD,
 ];

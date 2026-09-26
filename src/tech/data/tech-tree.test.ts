@@ -121,6 +121,34 @@ describe("TECH_NODES", () => {
     }
   });
 
+  it("names only known nodes as prerequisites, and never in a cycle", () => {
+    // Depth-first over `requires`: a node met again while still on the
+    // path is a cycle, and a cycle would leave every node on it locked.
+    const done = new Set<string>();
+    const cycles: string[] = [];
+    const visit = (id: string, path: readonly string[]): void => {
+      if (path.includes(id)) {
+        cycles.push([...path, id].join(" -> "));
+        return;
+      }
+      if (done.has(id)) {
+        return;
+      }
+      for (const requiredId of byId(id)?.requires ?? []) {
+        expect(NODE_IDS.has(requiredId), `${id} requires ${requiredId}`).toBe(
+          true,
+        );
+        visit(requiredId, [...path, id]);
+      }
+      done.add(id);
+    };
+    for (const node of TECH_NODES) {
+      visit(node.id, []);
+    }
+    expect(cycles).toEqual([]);
+    expect(done.size).toBe(TECH_NODES.length);
+  });
+
   it("never shows a node whose prerequisite can still be hidden (ADR 0013 §2.7)", () => {
     expect(flagLeaks(TECH_NODES)).toEqual([]);
     for (const node of TECH_NODES) {

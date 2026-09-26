@@ -1,3 +1,4 @@
+import type { InfantryUpgradeDefinition } from "../../roster/model/infantry-upgrade";
 import type { RankLadder, RankTuning } from "../../roster/model/rank";
 import type { RosterState } from "../../roster/model/roster-state";
 import type { Squad } from "../../roster/model/squad";
@@ -23,6 +24,17 @@ export interface SquadListViewHandlers {
 export interface SquadListModel {
   readonly roster: RosterState;
   readonly credits: number;
+  /**
+   * Squad types the tech tree has not opened yet (campaign arc §10.3),
+   * each mapped to the name of the node that opens it. Absent means
+   * every type may be hired.
+   */
+  readonly lockedTypes?: ReadonlyMap<SquadTypeId, string>;
+  /**
+   * The campaign's infantry upgrades, in application order, for the
+   * research line under the title. Absent means none.
+   */
+  readonly upgrades?: readonly InfantryUpgradeDefinition[];
 }
 
 // ===========================================
@@ -35,13 +47,18 @@ export interface SquadListModel {
  * rate for every missing soldier, plus a hire form whose type picker
  * shows each type's cost. Buttons the treasury cannot cover are
  * disabled; the rows are rebuilt on every `update` since the roster is
- * small.
+ * small. A line under the title names the infantry upgrades the tech
+ * tree has researched for every squad, and a type the tree has not
+ * opened yet stays in the picker, disabled, naming the node that opens
+ * it (campaign arc §10.3).
  *
  * ```
  *   ┌ Squads ─────────────────────────────────────────────┐
+ *   │ Infantry research: Squad armour I · Frag grenades    │
  *   │ name  │ type   │ rank │ strength │ kills │ xp │ [Reinforce ¢160] │
  *   │ …                                                    │
  *   │ Hire: [type ▾ (¢500)] [name____] [Hire ¢500]          │
+ *   │         Heavy Weapons Squad · ¢900 · research Heavy Weapons Infantry (disabled) │
  *   └──────────────────────────────────────────────────────┘
  * ```
  */
@@ -61,7 +78,9 @@ export class SquadListView {
   private nameInput: HTMLInputElement | undefined;
   private hireButton: HTMLButtonElement | undefined;
   private hireDescription: HTMLElement | undefined;
+  private research: HTMLElement | undefined;
   private credits = 0;
+  private lockedTypes: ReadonlyMap<SquadTypeId, string> = new Map();
   private readonly disposers: (() => void)[] = [];
   private squads: readonly Squad[] = [];
 
@@ -125,7 +144,12 @@ export class SquadListView {
 
     const form = this.createHireForm(doc);
 
-    panel.append(title, table, form.root);
+    const research = doc.createElement("p");
+    research.className = "tut-dim";
+    research.dataset.field = "infantry-upgrades";
+    this.research = research;
+
+    panel.append(title, research, table, form.root);
     const description = doc.createElement("p");
     description.className = "tut-dim";
     description.id = "hire-description";
@@ -148,10 +172,13 @@ export class SquadListView {
       return;
     }
     this.credits = model.credits;
+    this.lockedTypes = model.lockedTypes ?? new Map();
     const doc = this.rows.ownerDocument;
     this.rows.replaceChildren(
       ...model.roster.squads.map((squad) => this.createRow(doc, squad)),
     );
+    this.renderResearch(model.upgrades ?? []);
+    this.refreshPickerLocks();
     this.refreshHireForm();
   }
 
@@ -165,6 +192,7 @@ export class SquadListView {
     this.rows = undefined;
     this.typePicker = undefined;
     this.hireDescription = undefined;
+    this.research = undefined;
     this.nameInput = undefined;
     this.hireButton = undefined;
   }
@@ -239,6 +267,41 @@ export class SquadListView {
   }
 
   // ===========================================
+  // Research
+  // ===========================================
+
+  /**
+   * The line naming the campaign's infantry upgrades (campaign arc
+   * §10.3), each with what it does on hover, or saying there are none.
+   */
+  private renderResearch(upgrades: readonly InfantryUpgradeDefinition[]): void {
+    if (!this.research) {
+      return;
+    }
+    const doc = this.research.ownerDocument;
+    const label = doc.createTextNode("Infantry research: ");
+    if (upgrades.length === 0) {
+      this.research.replaceChildren(
+        label,
+        doc.createTextNode("none yet (the tech tree's Infantry branch)"),
+      );
+      return;
+    }
+    const parts: Node[] = [label];
+    upgrades.forEach((upgrade, index) => {
+      if (index > 0) {
+        parts.push(doc.createTextNode(" · "));
+      }
+      const name = doc.createElement("span");
+      name.dataset.upgradeId = upgrade.id;
+      name.title = upgrade.summary;
+      name.textContent = upgrade.name;
+      parts.push(name);
+    });
+    this.research.replaceChildren(...parts);
+  }
+
+  // ===========================================
   // Hire form
   // ===========================================
 
@@ -258,7 +321,7 @@ export class SquadListView {
     for (const type of this.squadTypes.listSquadTypes()) {
       const option = doc.createElement("option");
       option.value = type.id;
-      option.textContent = `${type.name} · ${formatCredits(type.hireCost)}`;
+      option.textContent = optionLabel(type, undefined);
       picker.appendChild(option);
     }
 
@@ -314,7 +377,42 @@ export class SquadListView {
       : undefined;
   }
 
-  /** Re-labels and enables the Hire button for the selected type and balance. */
+  /**
+   * Locks and unlocks the picker's options to match the tech tree: a
+   * locked type stays listed, disabled, naming the node that opens it.
+   * If the selection is a type that has just been locked, the picker
+   * moves to the first type that is not.
+   */
+  private refreshPickerLocks(): void {
+    if (!this.typePicker) {
+      return;
+    }
+    for (const option of Array.from(this.typePicker.options)) {
+      const type = this.squadTypes.getSquadType(option.value);
+      if (type === undefined) {
+        continue;
+      }
+      const node = this.lockedTypes.get(type.id);
+      option.disabled = node !== undefined;
+      option.textContent = optionLabel(type, node);
+      if (node === undefined) {
+        delete option.dataset.locked;
+      } else {
+        option.dataset.locked = "true";
+      }
+    }
+    const selected = this.typePicker.selectedOptions[0];
+    if (selected?.disabled === true) {
+      const open = Array.from(this.typePicker.options).find(
+        (option) => !option.disabled,
+      );
+      if (open) {
+        this.typePicker.value = open.value;
+      }
+    }
+  }
+
+  /** Re-labels and enables the Hire button for the selected type, its lock and the balance. */
   private refreshHireForm(): void {
     if (!this.hireButton) {
       return;
@@ -328,6 +426,12 @@ export class SquadListView {
       return;
     }
     this.hireButton.textContent = `Hire ${formatCredits(type.hireCost)}`;
+    const node = this.lockedTypes.get(type.id);
+    if (node !== undefined) {
+      this.hireButton.disabled = true;
+      this.hireButton.title = `Research ${node} first`;
+      return;
+    }
     const affordable = type.hireCost <= this.credits;
     this.hireButton.disabled = !affordable;
     this.hireButton.title = affordable ? "" : "Not enough credits";
@@ -353,6 +457,20 @@ export class SquadListView {
 // ===========================================
 // Naming
 // ===========================================
+
+/**
+ * A picker option's text: the type and its price, and for a type the
+ * tech tree has not opened, the node to research.
+ *
+ * ```
+ *   Rifle Squad · ¢500
+ *   Heavy Weapons Squad · ¢900 · research Heavy Weapons Infantry
+ * ```
+ */
+function optionLabel(type: SquadType, lockedBy: string | undefined): string {
+  const base = `${type.name} · ${formatCredits(type.hireCost)}`;
+  return lockedBy === undefined ? base : `${base} · research ${lockedBy}`;
+}
 
 /**
  * A default name for a hired squad when the player leaves the field

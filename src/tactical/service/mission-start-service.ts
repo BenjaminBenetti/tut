@@ -21,6 +21,7 @@ import {
   MAX_DEPLOYED_UNITS,
 } from "../../overworld/model/deployment";
 import type { MissionId } from "../../overworld/model/mission";
+import type { InfantryUpgradeDefinition } from "../../roster/model/infantry-upgrade";
 import type { Mech } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
@@ -79,6 +80,15 @@ export interface MissionStartDeps extends MissionSetupDeps {
    * archetype no shipped type asks for yet by substituting its own.
    */
   readonly mapRules?: MissionMapRules;
+  /**
+   * The campaign's infantry upgrades (campaign arc §10.3), read off the
+   * campaign as the mission starts and folded into every squad deployed.
+   * The composition root derives them from the unlocked tech; left out,
+   * squads deploy with none.
+   */
+  readonly infantryUpgradesFor?: (
+    state: MissionCampaignState,
+  ) => readonly InfantryUpgradeDefinition[];
 }
 
 /** Id prefixes the mission start issues; the first two moved beside the ids they prefix. */
@@ -104,7 +114,8 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *   mission ──► missionToMapRecipe ──► generateTacticalMap ──► map
  *                                                               │
  *   deployment ──► squadUnit / mechUnit ──► units on deploy-zone tiles
- *                                          (mechs on mech-passable ones first)
+ *                                          (mechs on mech-passable ones first;
+ *                                           squads with the campaign's infantry upgrades)
  *   map.hooks.objectives (tech-carcass) ──► carcasses, worth mapParams.techCarcass (#1171)
  *   map.hooks.extraction               ──► extraction tiles
  *   mission.bugMix?                    ──► bugMix, the species the spawns roll
@@ -282,7 +293,11 @@ function placeDeployment(
   deps: MissionStartDeps,
 ): Result<Placed, TacticalError> {
   const index = new TileIndex(map);
-  const factoryDeps = { ids: deps.ids, tuning: deps.unitTuning };
+  const factoryDeps = {
+    ids: deps.ids,
+    tuning: deps.unitTuning,
+    infantryUpgrades: deps.infantryUpgradesFor?.(state) ?? [],
+  };
   const zoneTiles = map.hooks.deployZones.flatMap((zone) => zone.tiles);
   const facing = facingToward(zoneTiles[0], map);
   const used = new Set<string>();

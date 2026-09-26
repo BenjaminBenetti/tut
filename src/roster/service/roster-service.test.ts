@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { ALL_PARTS_AVAILABLE } from "../model/part-availability";
+import { ALL_SQUAD_TYPES_AVAILABLE } from "../model/squad-type-availability";
 import type { EconomyState } from "../../economy/model/economy-state";
 import { CREDITS_CHANGED } from "../../economy/model/economy-event";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
@@ -80,6 +81,7 @@ function setup(credits = 10_000): {
     transactions: new LedgerTransactionService(ids),
     ids,
     availability: ALL_PARTS_AVAILABLE,
+    squadTypeAvailability: ALL_SQUAD_TYPES_AVAILABLE,
   };
   const economy: EconomyState = { credits, ledger: [], techPoints: 0 };
   const slices = { roster: ROSTER, economy };
@@ -153,6 +155,27 @@ describe("hireSquad", () => {
     expect(expectErr(hireSquad(slices, "cavalry", "X", DAY, deps))).toEqual({
       code: "unknown-squad-type",
       typeId: "cavalry",
+    });
+  });
+
+  it("refuses a type the tech tree has not opened, without drawing an id or spending (campaign arc §10.3)", () => {
+    const { deps, slices, snapshot } = setup();
+    const gated: RosterServiceDeps = {
+      ...deps,
+      squadTypeAvailability: { isAvailable: (id) => id !== "heavy-weapons" },
+    };
+    expect(
+      expectErr(hireSquad(slices, "heavy-weapons", "Anvil", DAY, gated)),
+    ).toEqual({ code: "squad-type-locked", typeId: "heavy-weapons" });
+    expect(deps.ids.getState().counters).toEqual({});
+    expect(slices).toEqual(snapshot);
+    // The same hire goes through once the type is open.
+    const hired = expectOk(
+      hireSquad(slices, "heavy-weapons", "Anvil", DAY, deps),
+    );
+    expect(hired.roster.squads.at(-1)).toMatchObject({
+      typeId: "heavy-weapons",
+      name: "Anvil",
     });
   });
 
@@ -522,6 +545,7 @@ describe("describeRosterError", () => {
   it("names the offending value for every code", () => {
     const cases: [RosterError, string][] = [
       [{ code: "unknown-squad-type", typeId: "cav" }, "cav"],
+      [{ code: "squad-type-locked", typeId: "heavy-weapons" }, "researched"],
       [{ code: "unknown-squad", squadId: "squad-7" }, "squad-7"],
       [
         {

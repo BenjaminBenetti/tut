@@ -113,6 +113,7 @@ import {
   DEFAULT_PHASE_STEPS,
 } from "../../tactical/service/turn-service";
 import type { MapGenRegistries } from "../../mapgen/model/registries";
+import { infantryUpgradesFor } from "../../tech/service/infantry-upgrade-service";
 import type { GameContent } from "./game-composition";
 
 // ===========================================
@@ -122,7 +123,13 @@ import type { GameContent } from "./game-composition";
 /** The content the tactical side reads: a subset of `GameContent`. */
 export type TacticalContent = Pick<
   GameContent,
-  "squadTypes" | "parts" | "rating" | "upgrades" | "missionTypes"
+  | "squadTypes"
+  | "parts"
+  | "rating"
+  | "upgrades"
+  | "missionTypes"
+  | "tech"
+  | "infantryUpgrades"
 >;
 
 /**
@@ -232,6 +239,10 @@ export function composeTactical(
     garrison: GARRISON_TUNING,
     generator: GENERATOR_TUNING,
     setupRules: MISSION_SETUP_RULES,
+    // Every squad deployed carries what the tree has researched for the
+    // infantry (campaign arc §10.3), read off the campaign at the start.
+    infantryUpgradesFor: (state) =>
+      infantryUpgradesFor(content.tech, content.infantryUpgrades, state.tech),
   });
   return {
     handlers,

@@ -38,13 +38,24 @@ function distance(a: GroundPoint, b: GroundPoint): number {
 }
 
 /**
- * The shipped six families plus three made-up ones as crowded as the
- * busiest shipped family (four tier 2 nodes, three tier 3 nodes under
- * one of them), the shape the intel, xenobiology and infantry families
- * will add. Family ids outside the closed union are cast: the layout
- * never reads them as anything but keys.
+ * The shipped tree without its infantry family (campaign arc §10.3):
+ * the six families the tuned rings were drawn for.
  */
-function nineFamilyCatalogue(): StaticTechCatalogue {
+function sixFamilyCatalogue(): StaticTechCatalogue {
+  return new StaticTechCatalogue(
+    TECH_NODES.filter((node) => node.family !== "infantry"),
+    Object.values(TECH_FAMILIES).filter((family) => family.id !== "infantry"),
+  );
+}
+
+/**
+ * The shipped families plus three made-up ones as crowded as the
+ * busiest shipped family (four tier 2 nodes, three tier 3 nodes under
+ * one of them), the shape the intel and xenobiology families will add.
+ * Family ids outside the closed union are cast: the layout never reads
+ * them as anything but keys.
+ */
+function crowdedCatalogue(): StaticTechCatalogue {
   const extra = ["extra-a", "extra-b", "extra-c"].map((id): TechFamily => ({
     id: id as TechFamilyId,
     name: id,
@@ -177,15 +188,36 @@ describe("layoutTechGraph", () => {
     );
   });
 
-  it("lays the shipped six families out on the tuned rings, exactly as before the rings could grow", () => {
-    expect(layout.rings).toEqual({
+  it("lays the six pre-infantry families out on the tuned rings, exactly as before the rings could grow", () => {
+    const six = layoutTechGraph(sixFamilyCatalogue(), NO_TECH_CONDITIONS);
+    expect(six.families).toHaveLength(6);
+    expect(six.rings).toEqual({
       family: TECH_GRAPH_LAYOUT_TUNING.familyRadius,
       tier2: TECH_GRAPH_LAYOUT_TUNING.tier2Radius,
       tier3: TECH_GRAPH_LAYOUT_TUNING.tier3Radius,
     });
-    expect(layout.radius).toBe(
+    expect(six.radius).toBe(
       TECH_GRAPH_LAYOUT_TUNING.tier3Radius + TECH_GRAPH_LAYOUT_TUNING.margin,
     );
+  });
+
+  /**
+   * The infantry family is the seventh (campaign arc §10.3): each sector
+   * narrows to 2π / 7, and the rings grow just enough that four tier 2
+   * nodes six apart still fit one, the tier 3 ring keeping its six
+   * units beyond.
+   *
+   * ```
+   *   family = 6 · 7 / 2π      ≈  6.68
+   *   tier 2 = 4 · 6 · 7 / 2π  ≈ 26.74
+   *   tier 3 = tier 2 + 6      ≈ 32.74
+   * ```
+   */
+  it("grows the rings just enough for the shipped seven families", () => {
+    expect(layout.families).toHaveLength(7);
+    expect(layout.rings.family).toBeCloseTo(6.685, 3);
+    expect(layout.rings.tier2).toBeCloseTo(26.738, 3);
+    expect(layout.rings.tier3).toBeCloseTo(32.738, 3);
   });
 
   it("puts tier 2 on the inner ring and tier 3 on the outer, each inside its family's sector, linked from its family or prerequisite and clear of the others", () => {
@@ -198,15 +230,13 @@ describe("layoutTechGraph", () => {
     expect(jump?.partIds).toEqual(["legs-jumper"]);
   });
 
-  it("keeps the same invariants with nine families, growing the rings to fit", () => {
-    const nine = nineFamilyCatalogue();
-    const crowded = layoutTechGraph(nine, NO_TECH_CONDITIONS);
-    expect(crowded.families).toHaveLength(9);
+  it("keeps the same invariants with three more families, growing the rings further to fit", () => {
+    const more = crowdedCatalogue();
+    const crowded = layoutTechGraph(more, NO_TECH_CONDITIONS);
+    expect(crowded.families).toHaveLength(layout.families.length + 3);
     expect(crowded.nodes).toHaveLength(TECH_NODES.length + 3 * 7);
-    expect(brokenInvariants(nine, crowded)).toEqual([]);
-    expect(crowded.rings.tier2).toBeGreaterThan(
-      TECH_GRAPH_LAYOUT_TUNING.tier2Radius,
-    );
+    expect(brokenInvariants(more, crowded)).toEqual([]);
+    expect(crowded.rings.tier2).toBeGreaterThan(layout.rings.tier2);
     expect(crowded.rings.tier3 - crowded.rings.tier2).toBeCloseTo(
       TECH_GRAPH_LAYOUT_TUNING.tier3Radius -
         TECH_GRAPH_LAYOUT_TUNING.tier2Radius,

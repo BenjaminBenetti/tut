@@ -5,6 +5,7 @@ import { SequentialIdGenerator } from "../../core/service/sequential-id-generato
 import { PassMask } from "../../mapgen/model/pass-mask";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
+import { INFANTRY_UPGRADES } from "../../roster/data/infantry-upgrades";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
@@ -89,6 +90,16 @@ const SWARMER: BugUnitSource = {
 // ===========================================
 // Squads
 // ===========================================
+
+/** `deps()` with the campaign's infantry upgrades. */
+function upgradedDeps(
+  ...ids: (keyof typeof INFANTRY_UPGRADES)[]
+): UnitFactoryDeps {
+  return {
+    ...deps(),
+    infantryUpgrades: ids.map((id) => INFANTRY_UPGRADES[id]),
+  };
+}
 
 describe("squadUnit", () => {
   it("derives the template from the squad type and the unit from the squad", () => {
@@ -249,6 +260,18 @@ describe("squadUnit", () => {
         endsTurn: true,
         charges: 1,
       },
+      // Researched, not hired from the start (campaign arc §10.3): a
+      // crew-served gun that reaches as far as the rocket, punches one
+      // plate through, and still leaves the second action free.
+      "heavy-weapons": {
+        name: "Heavy Machine Gun",
+        range: 10,
+        accuracy: 60,
+        damage: 5,
+        armorPen: 1,
+        endsTurn: undefined,
+        charges: 2,
+      },
     });
     // The rocket keeps its blast and its force (#1121).
     const rocket = squadUnit(squad(5, "rocket"), ROCKET, AT, deps()).template
@@ -285,6 +308,67 @@ describe("squadUnit", () => {
 // ===========================================
 // Ranks (#1130)
 // ===========================================
+
+describe("squadUnit with infantry upgrades (campaign arc §10.3)", () => {
+  const MEDIC = SQUAD_TYPES.find((t) => t.id === "medic");
+  if (!MEDIC) throw new Error("shipped medic squad missing");
+
+  it("adds each armour rung to every squad's plate, +1 then +2", () => {
+    const armorWith = (d: UnitFactoryDeps, type: SquadType): number =>
+      squadUnit(squad(5, type.id), type, AT, d).template.armor;
+    for (const type of [RIFLE, ROCKET, MEDIC]) {
+      expect(armorWith(deps(), type)).toBe(0);
+      expect(armorWith(upgradedDeps("squad-armour-1"), type)).toBe(1);
+      expect(
+        armorWith(upgradedDeps("squad-armour-1", "squad-armour-2"), type),
+      ).toBe(2);
+    }
+  });
+
+  it("swaps the kit the upgrades name and carries the rest as it was", () => {
+    const kitOf = (d: UnitFactoryDeps, type: SquadType): readonly string[] =>
+      squadUnit(squad(5, type.id), type, AT, d).template.equipment ?? [];
+    expect(kitOf(upgradedDeps("frag-grenades"), ROCKET)).toEqual([
+      "frag-grenade",
+      "breaching-charge",
+    ]);
+    expect(
+      kitOf(upgradedDeps("frag-grenades", "incendiary-grenades"), RIFLE),
+    ).toEqual(["incendiary-grenade"]);
+    expect(kitOf(upgradedDeps("field-medic-training"), MEDIC)).toEqual(
+      (MEDIC.equipment ?? []).map((id) =>
+        id === "medkit" ? "field-medkit" : id,
+      ),
+    );
+    expect(kitOf(upgradedDeps("field-medic-training"), MEDIC)).toContain(
+      "field-medkit",
+    );
+    // No research, no change: the type's own kit.
+    expect(kitOf(deps(), MEDIC)).toEqual(MEDIC.equipment ?? []);
+  });
+
+  it("leaves the weapon, hit points and rank bonuses alone", () => {
+    const plain = squadUnit({ ...squad(), xp: 100 }, RIFLE, AT, deps());
+    const upgraded = squadUnit(
+      { ...squad(), xp: 100 },
+      RIFLE,
+      AT,
+      upgradedDeps(
+        "squad-armour-1",
+        "squad-armour-2",
+        "frag-grenades",
+        "incendiary-grenades",
+        "field-medic-training",
+      ),
+    );
+    expect({
+      ...upgraded.template,
+      armor: plain.template.armor,
+      equipment: plain.template.equipment,
+    }).toEqual(plain.template);
+    expect(upgraded.unit).toEqual(plain.unit);
+  });
+});
 
 describe("rank bonuses", () => {
   const rifle = () => squadUnit(squad(), RIFLE, AT, deps()).template;

@@ -20,6 +20,7 @@ import {
 } from "../../roster/model/roster-event";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import { ALL_PARTS_AVAILABLE } from "../../roster/model/part-availability";
+import { ALL_SQUAD_TYPES_AVAILABLE } from "../../roster/model/squad-type-availability";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { CampaignState } from "../model/campaign-state";
 import type { CommandDispatcher } from "../model/command-dispatcher";
@@ -102,6 +103,7 @@ const DEPS: RosterHandlerDeps = {
   upgrades: UPGRADE_TUNING,
   transactionsFor: (ids) => new LedgerTransactionService(ids),
   availabilityFor: () => ALL_PARTS_AVAILABLE,
+  squadTypeAvailabilityFor: () => ALL_SQUAD_TYPES_AVAILABLE,
 };
 
 /** A dispatcher with only the roster commands registered. */
@@ -269,6 +271,34 @@ describe("roster handlers through the dispatcher", () => {
       expect(outcome.error.message.length).toBeGreaterThan(0);
     },
   );
+
+  it("asks the campaign's own squad-type availability before a hire (campaign arc §10.3)", () => {
+    const d = createOverworldCommandDispatcher<CampaignState>();
+    registerRosterCommands(d, {
+      ...DEPS,
+      // What the composition root wires from the tech tree.
+      squadTypeAvailabilityFor: (state) => ({
+        isAvailable: (id) =>
+          id !== "heavy-weapons" ||
+          state.tech.unlocked.includes("tech.heavy-weapons"),
+      }),
+    });
+    const refused = d.process(BASE, hireSquad("heavy-weapons", "Anvil"));
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error.code).toBe("squad-type-locked");
+    expect(refused.error.message).toContain("heavy-weapons");
+    const researched: CampaignState = {
+      ...BASE,
+      tech: { unlocked: ["tech.heavy-weapons"] },
+    };
+    const hired = d.process(researched, hireSquad("heavy-weapons", "Anvil"));
+    expect(hired.ok).toBe(true);
+    if (!hired.ok) return;
+    expect(hired.value.state.roster.squads.at(-1)?.typeId).toBe(
+      "heavy-weapons",
+    );
+  });
 
   it("leaves the campaign untouched, counters included, on an unaffordable build", () => {
     const poor: CampaignState = {

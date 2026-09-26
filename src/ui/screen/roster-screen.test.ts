@@ -19,12 +19,17 @@ import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
+import { INFANTRY_UPGRADES } from "../../roster/data/infantry-upgrades";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
+import { TECH_FAMILIES } from "../../tech/data/tech-families";
+import { TECH_NODES } from "../../tech/data/tech-tree";
+import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
+import { createSquadTypeAvailability } from "../../tech/service/squad-type-availability-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
@@ -40,6 +45,12 @@ type NavigateMock = Mock<(id: ScreenId) => void>;
 const SQUAD_TYPE_CATALOGUE = new DataSquadTypeCatalogue(SQUAD_TYPES);
 const PART_CATALOGUE = new StaticPartCatalogue(STARTER_PARTS);
 const RIFLE_HIRE = SQUAD_TYPES.find((t) => t.id === "rifle")!.hireCost;
+const TECH = new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES));
+
+/** `state` with exactly `unlocked` researched. */
+function researched(state: GameState, ...unlocked: string[]): GameState {
+  return { ...state, tech: { unlocked } };
+}
 
 const newGame = (): GameState =>
   createNewGame(
@@ -109,6 +120,10 @@ class RealStore implements CampaignStore {
       upgrades: UPGRADE_TUNING,
       transactionsFor: (ids) => new LedgerTransactionService(ids),
       availabilityFor: () => ALL_PARTS_AVAILABLE,
+      // The real gate (campaign arc §10.3), so a locked type is refused
+      // by the store exactly as the picker says.
+      squadTypeAvailabilityFor: (campaign) =>
+        createSquadTypeAvailability(TECH, campaign.tech),
     });
   }
   getState(): GameState {
@@ -183,6 +198,8 @@ function mountWith(
     squadTypes: SQUAD_TYPE_CATALOGUE,
     parts: PART_CATALOGUE,
     rosterTuning: ROSTER_TUNING,
+    tech: TECH,
+    infantryUpgrades: INFANTRY_UPGRADES,
   });
   screen.mount(root);
   return { store, navigate, screen };
@@ -395,6 +412,84 @@ describe("RosterScreen", () => {
     screen.unmount();
     expect(store?.listenerCount).toBe(0);
     expect(root.childElementCount).toBe(0);
+  });
+
+  it("locks the heavy weapons squad in the picker until its node is researched, and the store refuses it too (campaign arc §10.3)", () => {
+    const { store } = mountWith(newGame(), root);
+    const option = q<HTMLOptionElement>(
+      '[data-field="hire-type"] option[value="heavy-weapons"]',
+    );
+    expect(option.disabled).toBe(true);
+    expect(option.dataset.locked).toBe("true");
+    expect(option.textContent).toBe(
+      "Heavy Weapons Squad · ¢900 · research Heavy Weapons Infantry",
+    );
+    // Every other type is open and says nothing about research.
+    const open = [
+      ...root.querySelectorAll<HTMLOptionElement>(
+        '[data-field="hire-type"] option:not([value="heavy-weapons"])',
+      ),
+    ];
+    expect(open.length).toBeGreaterThan(0);
+    expect(open.every((o) => !o.disabled && !o.dataset.locked)).toBe(true);
+    // Forced past the picker, the hire is refused and nothing is spent.
+    const picker = q<HTMLSelectElement>('[data-field="hire-type"]');
+    picker.value = "heavy-weapons";
+    picker.dispatchEvent(new Event("change"));
+    const hire = q<HTMLButtonElement>('[data-action="hire"]');
+    expect(hire.disabled).toBe(true);
+    expect(hire.title).toBe("Research Heavy Weapons Infantry first");
+    const before = store!.getState();
+    const refused = store!.dispatch({
+      type: "roster:hire-squad",
+      payload: { typeId: "heavy-weapons", name: "Anvil" },
+    });
+    expect(refused.ok).toBe(false);
+    expect(store!.getState()).toBe(before);
+  });
+
+  it("hires the heavy weapons squad once its node is researched", () => {
+    const { store } = mountWith(
+      researched(newGame(), "tech.squad-armour-1", "tech.heavy-weapons"),
+      root,
+    );
+    const option = q<HTMLOptionElement>(
+      '[data-field="hire-type"] option[value="heavy-weapons"]',
+    );
+    expect(option.disabled).toBe(false);
+    expect(option.textContent).toBe("Heavy Weapons Squad · ¢900");
+    const picker = q<HTMLSelectElement>('[data-field="hire-type"]');
+    picker.value = "heavy-weapons";
+    picker.dispatchEvent(new Event("change"));
+    const hire = q<HTMLButtonElement>('[data-action="hire"]');
+    expect(hire.disabled).toBe(false);
+    hire.click();
+    expect(
+      squadRows().at(-1)?.querySelector('[data-field="type"]')?.textContent,
+    ).toBe("Heavy Weapons Squad");
+    expect(store?.getState().economy.credits).toBe(5000 - 900);
+  });
+
+  it("names the infantry upgrades the campaign has researched, each with what it does", () => {
+    mountWith(newGame(), root);
+    const line = (): HTMLElement =>
+      q('#squad-list [data-field="infantry-upgrades"]');
+    expect(line().textContent).toBe(
+      "Infantry research: none yet (the tech tree's Infantry branch)",
+    );
+    root.replaceChildren();
+    mountWith(
+      researched(newGame(), "tech.frag-grenades", "tech.squad-armour-1"),
+      root,
+    );
+    // Application order, not research order.
+    expect(line().textContent).toBe(
+      "Infantry research: Squad armour I · Frag grenades",
+    );
+    expect(
+      line().querySelector<HTMLElement>('[data-upgrade-id="squad-armour-1"]')
+        ?.title,
+    ).toBe("+1 armour on every squad");
   });
 
   it("notes when no campaign is active", () => {

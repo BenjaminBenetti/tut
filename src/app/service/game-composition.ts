@@ -55,6 +55,7 @@ import type { TechCatalogue } from "../../tech/model/tech-catalogue";
 import type { TechConditions } from "../../tech/model/tech-conditions";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import { createPartAvailability } from "../../tech/service/part-availability-service";
+import { createSquadTypeAvailability } from "../../tech/service/squad-type-availability-service";
 import type { DevTools, TacticalComposition } from "./tactical-composition";
 import { composeTactical } from "./tactical-composition";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
@@ -65,6 +66,7 @@ import { STARTER_PARTS } from "../../roster/data/parts";
 import { LoadoutMechRater } from "../../roster/service/loadout-mech-rater";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
+import { INFANTRY_UPGRADES } from "../../roster/data/infantry-upgrades";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -76,6 +78,10 @@ import type { SaveClock } from "../../save/model/save-clock";
 import type { GameSaveService } from "../../save/service/game-save-service";
 import { createGameSaveService } from "../../save/service/game-save-service";
 import type { NewGameOptions } from "../../save/service/game-state-factory";
+import type {
+  InfantryUpgradeDefinition,
+  InfantryUpgradeId,
+} from "../../roster/model/infantry-upgrade";
 import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
@@ -137,6 +143,14 @@ export interface GameContent {
   readonly eventTypes: EventTypeCatalogue;
   /** The tech tree (#1171): nodes, families and what each unlocks. */
   readonly tech: TechCatalogue;
+  /**
+   * What each infantry upgrade the tree grants does (campaign arc
+   * §10.3): the mission start folds the unlocked ones into every squad,
+   * and the roster names them.
+   */
+  readonly infantryUpgrades: Readonly<
+    Record<InfantryUpgradeId, InfantryUpgradeDefinition>
+  >;
   /** Hive levels for the region panel (campaign arc §6.5). */
   readonly hiveTuning: HiveTuning;
 }
@@ -236,6 +250,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
       EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
     ),
     tech: new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES)),
+    infantryUpgrades: INFANTRY_UPGRADES,
     hiveTuning: HIVE_TUNING,
   };
   const techPoints = new TechPointTreasury();
@@ -244,6 +259,8 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     transactionsFor: (ids) => new LedgerTransactionService(ids),
     availabilityFor: (state) =>
       createPartAvailability(content.tech, content.parts, state.tech),
+    squadTypeAvailabilityFor: (state) =>
+      createSquadTypeAvailability(content.tech, state.tech),
   });
   registerTechCommands(dispatcher, {
     catalogue: content.tech,

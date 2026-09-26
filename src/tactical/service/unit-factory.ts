@@ -4,7 +4,9 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Mech } from "../../roster/model/mech";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type { InfantryUpgradeDefinition } from "../../roster/model/infantry-upgrade";
 import type { RankTuning } from "../../roster/model/rank";
+import { upgradedEquipment } from "../../roster/service/infantry-upgrade-effect-service";
 import { rankBonuses, rankIndexOf } from "../../roster/service/rank-service";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType } from "../../roster/model/squad-type";
@@ -37,6 +39,12 @@ export interface UnitFactoryDeps {
   /** Issues unit ids with the `"unit"` prefix; the mission's generator. */
   readonly ids: IdGenerator;
   readonly tuning: UnitTuning;
+  /**
+   * The campaign's infantry upgrades (campaign arc §10.3), in
+   * application order, folded into every squad built: its armour and
+   * the items it carries. Absent means none, as before the branch.
+   */
+  readonly infantryUpgrades?: readonly InfantryUpgradeDefinition[];
 }
 
 /** A built unit and the template it references, for the mission state to store. */
@@ -67,8 +75,11 @@ export function templateIdFor(
  * derivation the screens print too — at the squad's own full strength:
  * `maxHp = maxStrength × hpPerSoldier`, and the unit starts at
  * `strength × hpPerSoldier`, so a depleted squad enters hurt. The
- * squad's rank (#1130) is folded in last, over everything the type
- * decided. Pure: reads only its arguments and draws one id.
+ * campaign's infantry upgrades (campaign arc §10.3) add their armour to
+ * the profile and swap the items the type carries (a grenade for a frag
+ * grenade, say). The squad's rank (#1130) is folded in last, over
+ * everything the type decided. Pure: reads only its arguments and draws
+ * one id.
  */
 export function squadUnit(
   squad: Squad,
@@ -77,7 +88,13 @@ export function squadUnit(
   deps: UnitFactoryDeps,
 ): UnitBuild {
   const { infantry } = deps.tuning;
-  const profile = squadCombatProfile(squadType, infantry, squad.maxStrength);
+  const upgrades = deps.infantryUpgrades ?? [];
+  const profile = squadCombatProfile(
+    squadType,
+    infantry,
+    squad.maxStrength,
+    upgrades,
+  );
   const template: UnitTemplate = {
     id: templateIdFor("squad", squad.id),
     name: squadType.name,
@@ -89,11 +106,12 @@ export function squadUnit(
     armor: profile.armor,
     passClass: "infantry",
     modelId: infantry.modelIdByType[squadType.id] ?? infantry.fallbackModelId,
-    // The type's kit rides on the template (#1132); uses are counted on
-    // the unit as it draws on them, full until it does.
+    // The type's kit rides on the template (#1132), upgraded by the
+    // campaign's research (§10.3); uses are counted on the unit as it
+    // draws on them, full until it does.
     ...(squadType.equipment === undefined
       ? {}
-      : { equipment: [...squadType.equipment] }),
+      : { equipment: [...upgradedEquipment(squadType.equipment, upgrades)] }),
   };
   return build(
     "squad",

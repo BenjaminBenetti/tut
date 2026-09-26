@@ -9,9 +9,10 @@ import type { TechEffect } from "./tech-effect";
 export type TechNodeId = string;
 
 /**
- * The six research families of the mech roster guide
- * (`docs/design/mech-roster.md`, "Future research families"). Closed so a
- * node naming a family the tree does not draw fails to compile.
+ * The research families: the six of the mech roster guide
+ * (`docs/design/mech-roster.md`, "Future research families") and the
+ * infantry branch of the campaign arc (§10.3, D8). Closed so a node
+ * naming a family the tree does not draw fails to compile.
  */
 export type TechFamilyId =
   | "mobility"
@@ -19,7 +20,8 @@ export type TechFamilyId =
   | "ballistics"
   | "energy"
   | "fire-support"
-  | "support";
+  | "support"
+  | "infantry";
 
 /** Every family, in the order the tree draws its columns. */
 export const TECH_FAMILY_IDS: readonly TechFamilyId[] = [
@@ -29,6 +31,7 @@ export const TECH_FAMILY_IDS: readonly TechFamilyId[] = [
   "energy",
   "fire-support",
   "support",
+  "infantry",
 ];
 
 /**

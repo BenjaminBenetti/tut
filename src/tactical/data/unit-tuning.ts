@@ -51,6 +51,7 @@ export const UNIT_TUNING: UnitTuning = {
     //   engineer  Shotgun            3    75   5   0     2       2   —
     //   sniper    Marksman Rifle    12    80   6   0     1       2   —
     //   rocket    Rocket Launcher   10    65   5   2     1       1   blast 1, demo 2
+    //   heavy     Heavy Machine Gun 10    60   5   1     2       2   —
     //
     // The carbine is the shared shape; a type with no entry fires it.
     // The SMG is the carbine traded down for range and up for hitting
@@ -63,7 +64,12 @@ export const UNIT_TUNING: UnitTuning = {
     // cracking brutes and egg spawners" is what its description has
     // promised since M1 — and brings down anything up to a dumpster or
     // a door; one shot a turn is the whole point of carrying it. The
-    // small arms mark nothing on the ground.
+    // heavy machine gun (campaign arc §10.3, #1179) is the tech-gated
+    // type's: it outreaches the carbine by two tiles, hits for five
+    // with a point of penetration, so a lurker's plate stops nothing,
+    // and fires twice a turn from a belt of two, so every turn of full
+    // fire is paid for with a reload. The small arms mark nothing on
+    // the ground.
     weaponByType: {
       rifle: { name: "Carbine" },
       medic: { name: "Carbine" },
@@ -90,6 +96,12 @@ export const UNIT_TUNING: UnitTuning = {
         demoForce: 2,
         endsTurn: true,
       },
+      "heavy-weapons": {
+        name: "Heavy Machine Gun",
+        range: 10,
+        accuracy: 60,
+        armorPen: 1,
+      },
     },
     fallbackWeaponName: "Carbine",
     sightRange: 12,
@@ -100,6 +112,9 @@ export const UNIT_TUNING: UnitTuning = {
       engineer: "tdf.infantry.engineer",
       medic: "tdf.infantry.medic",
       radio: "tdf.infantry.radio",
+      // The rifle squad's model until the heavy weapons crew has its own
+      // (campaign arc §10.3); the unit card and roster name the type.
+      "heavy-weapons": "tdf.infantry.rifle",
     },
     fallbackModelId: "tdf.infantry.rifle",
     chargesByType: {
@@ -109,6 +124,7 @@ export const UNIT_TUNING: UnitTuning = {
       engineer: 2,
       medic: 3,
       radio: 4,
+      "heavy-weapons": 2,
     },
     fallbackCharges: 3,
   },

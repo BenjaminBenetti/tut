@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ENGINEER_SQUAD,
+  HEAVY_WEAPONS_SQUAD,
   MEDIC_SQUAD,
   RADIO_SQUAD,
   RIFLE_SQUAD,
@@ -17,6 +18,7 @@ const REQUIRED_IDS = [
   "engineer",
   "medic",
   "radio",
+  "heavy-weapons",
 ];
 
 describe("squad-types data", () => {
@@ -36,6 +38,7 @@ describe("squad-types data", () => {
       ENGINEER_SQUAD,
       MEDIC_SQUAD,
       RADIO_SQUAD,
+      HEAVY_WEAPONS_SQUAD,
     ]) {
       expect(SQUAD_TYPES).toContain(type);
     }
@@ -71,7 +74,13 @@ describe("squad-types data", () => {
       expect(type.equipment).toContain("grenade");
     }
     // Nobody else carries a kit: the heal is what the two types are for.
-    for (const type of [RIFLE_SQUAD, ROCKET_SQUAD, SNIPER_SQUAD, RADIO_SQUAD]) {
+    for (const type of [
+      RIFLE_SQUAD,
+      ROCKET_SQUAD,
+      SNIPER_SQUAD,
+      RADIO_SQUAD,
+      HEAVY_WEAPONS_SQUAD,
+    ]) {
       expect(type.equipment).not.toContain("medkit");
       expect(type.equipment).not.toContain("repair-kit");
     }

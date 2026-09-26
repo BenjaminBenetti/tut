@@ -1,5 +1,6 @@
 import type { CoverLevel } from "../../mapgen/model/cover";
 import type { CombatTuning } from "../model/combat-tuning";
+import type { DamageResistances } from "../model/damage-resistance";
 import type { WeaponProfile } from "../model/weapon-profile";
 
 // ===========================================
@@ -55,19 +56,71 @@ export function hitChance(
 /**
  * Inclusive band a hit can do after armor: the weapon's damage spread by
  * `damageSpread` either way, less the armor the weapon cannot penetrate,
- * never below `minDamage`.
+ * never below `minDamage`; then less the target's resistance to the
+ * weapon's tags (campaign arc §10.2), never below zero.
+ *
+ * ```
+ *   band   = damage × (1 ± damageSpread)
+ *   armour = max(minDamage, band − max(0, armor − armorPen))
+ *   result = max(0, armour − resistanceTo(weapon, resist))
+ * ```
+ *
+ * Resistance comes off after the floor on purpose: the floor says a hit
+ * always scratches plain plate, and resistance is plate made for this
+ * one kind of hit, so a spit it fully absorbs does nothing, the way an
+ * ablative plate's absorption can take a hit to nothing
+ * (`protectedDamage`). A weapon with no tag, or a target that resists
+ * none of its tags, gets exactly the band it always did.
+ *
+ * @param weapon - The weapon landing the hit.
+ * @param armor - The target's per-hit armor.
+ * @param tuning - Spread and floor.
+ * @param resist - The target's resistances; absent resists nothing.
+ * @returns The inclusive `[low, high]` damage band.
  */
 export function damageRange(
   weapon: WeaponProfile,
   armor: number,
   tuning: CombatTuning,
+  resist?: DamageResistances,
 ): readonly [number, number] {
   if (weapon.damage <= 0) return [0, 0];
   const effectiveArmor = Math.max(0, armor - weapon.armorPen);
   const low = Math.round(weapon.damage * (1 - tuning.damageSpread));
   const high = Math.round(weapon.damage * (1 + tuning.damageSpread));
+  const resisted = resistanceTo(weapon, resist);
   return [
-    Math.max(tuning.minDamage, low - effectiveArmor),
-    Math.max(tuning.minDamage, high - effectiveArmor),
+    Math.max(0, Math.max(tuning.minDamage, low - effectiveArmor) - resisted),
+    Math.max(0, Math.max(tuning.minDamage, high - effectiveArmor) - resisted),
   ];
+}
+
+/**
+ * Points a target with `resist` takes off each hit of `weapon`
+ * (campaign arc §10.2): its best resistance among the weapon's tags,
+ * so two tags a plate both resists are not counted twice. Zero for an
+ * untagged weapon or a target that resists none of its tags.
+ *
+ * ```
+ *   tags ["acid"], resist { acid: 3 }   ──► 3
+ *   tags [],       resist { acid: 3 }   ──► 0
+ *   tags ["acid"], resist undefined     ──► 0
+ * ```
+ *
+ * @param weapon - The weapon, for its tags.
+ * @param resist - The target's resistances; absent resists nothing.
+ * @returns Non-negative whole points.
+ */
+export function resistanceTo(
+  weapon: Pick<WeaponProfile, "tags">,
+  resist: DamageResistances | undefined,
+): number {
+  if (resist === undefined) {
+    return 0;
+  }
+  let best = 0;
+  for (const tag of weapon.tags ?? []) {
+    best = Math.max(best, resist[tag] ?? 0);
+  }
+  return best;
 }

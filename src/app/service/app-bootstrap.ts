@@ -3,7 +3,9 @@ import { JevController } from "../controller/jev-controller";
 import { JevDefaultPolicy } from "../controller/jev-default-policy";
 import { KeyValueJevPreference } from "../repository/jev-preference-repository";
 import { PERSONAS } from "../../bugs/data/personas";
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { createPersonaLookup } from "../../bugs/service/persona-lookup";
+import { createSpeciesLookup } from "../../bugs/service/species-lookup";
 import { JevClient } from "./jev-client";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { MECH_BLUEPRINTS } from "../../roster/data/mech-blueprints";
@@ -59,6 +61,7 @@ import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import { TechTreeScreen } from "../../ui/screen/tech-tree-screen";
 import { TECH_EFFECT_LABELS } from "../../ui/data/tech-effect-labels";
+import { researchRevealedNotice } from "../../ui/service/research-notice-text";
 import { DomTechGraphHost } from "./tech-graph-host";
 import { NoticeBarView } from "../../ui/view/notice-bar-view";
 import type { TutTestHooks } from "../model/test-hooks";
@@ -145,6 +148,12 @@ export async function bootstrapApp(doc: Document): Promise<void> {
       });
     },
     onStore: mapSync.observe,
+    // New research (an autopsy after a species' first kill, campaign
+    // arc §8) is announced in the notice bar, which outlives the
+    // mission results screen the reveal lands on.
+    onResearchRevealed: (nodes) => {
+      notices.notify({ tone: "info", message: researchRevealedNotice(nodes) });
+    },
     ...(debug === undefined ? {} : { debug }),
     // The development tools (#1136) exist in dev builds only; this is
     // the one place the flag enters, and everything below reads what
@@ -283,6 +292,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             conditionsOf: game.techConditionsOf,
             squadTypes: game.content.squadTypes,
             effectLabels: TECH_EFFECT_LABELS,
+            speciesOf: createSpeciesLookup(BUG_SPECIES),
             graph: new DomTechGraphHost({
               baseUrl: import.meta.env.BASE_URL,
               onHooks: (hooks) => {

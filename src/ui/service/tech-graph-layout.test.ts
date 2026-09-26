@@ -13,6 +13,7 @@ import {
   SPORE_SAMPLE,
   withFlags,
 } from "../../tech/data/conditional-tech-tree.test-helper";
+import { AUTOPSY_NODES } from "../../tech/data/autopsy-nodes";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
@@ -24,7 +25,6 @@ import type {
   TechNode,
 } from "../../tech/model/tech-node";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
-import { isTechNodeHidden } from "../../tech/service/tech-status-service";
 import type { GroundPoint, TechGraphLayout } from "../model/tech-graph-layout";
 import { layoutTechGraph, TECH_GRAPH_LAYOUT_TUNING } from "./tech-graph-layout";
 
@@ -33,14 +33,18 @@ const CATALOGUE = new StaticTechCatalogue(
   Object.values(TECH_FAMILIES),
 );
 
-/**
- * The shipped nodes a campaign with no flags sees: every one but the
- * hidden Intel projects (#1179), which the layout leaves out until their
- * flags are set.
- */
-const VISIBLE_NODES = TECH_NODES.filter(
-  (node) => !isTechNodeHidden(node, NO_TECH_CONDITIONS),
+/** The shipped nodes a fresh campaign sees: every one no flag hides. */
+const SHOWN_AT_START = TECH_NODES.filter(
+  (node) => (node.requiresFlags ?? []).length === 0,
 );
+
+/**
+ * Conditions under which every autopsy shows: each species' kill flag
+ * (campaign arc §10.2), so the xenobiology family gets its spoke.
+ */
+const EVERY_AUTOPSY: TechConditions = {
+  flags: new Set(AUTOPSY_NODES.flatMap((node) => node.requiresFlags ?? [])),
+};
 
 /** Distance between two ground points. */
 function distance(a: GroundPoint, b: GroundPoint): number {
@@ -186,12 +190,14 @@ function brokenInvariants(
 describe("layoutTechGraph", () => {
   const layout = layoutTechGraph(CATALOGUE, NO_TECH_CONDITIONS);
 
-  it("places every node once, every family once, and reaches past the outer ring", () => {
+  it("places every node a fresh campaign sees once, every family with one once, and reaches past the outer ring", () => {
     expect(layout.nodes.map((n) => n.id).sort()).toEqual(
-      VISIBLE_NODES.map((n) => n.id).sort(),
+      SHOWN_AT_START.map((n) => n.id).sort(),
     );
     expect(layout.families.map((f) => f.id)).toEqual(
-      Object.values(TECH_FAMILIES).map((f) => f.id),
+      Object.values(TECH_FAMILIES)
+        .map((f) => f.id)
+        .filter((id) => SHOWN_AT_START.some((n) => n.family === id)),
     );
     expect(layout.radius).toBe(
       layout.rings.tier3 + TECH_GRAPH_LAYOUT_TUNING.margin,
@@ -224,10 +230,39 @@ describe("layoutTechGraph", () => {
    * ```
    */
   it("grows the rings just enough for the shipped seven families", () => {
+    // Xenobiology holds only autopsies, each hidden until its species'
+    // first kill, so a fresh campaign sees the seven without it.
     expect(layout.families).toHaveLength(7);
+    expect(layout.families.map((f) => f.id)).not.toContain("xenobiology");
     expect(layout.rings.family).toBeCloseTo(6.685, 3);
     expect(layout.rings.tier2).toBeCloseTo(26.738, 3);
     expect(layout.rings.tier3).toBeCloseTo(32.738, 3);
+  });
+
+  /**
+   * The first autopsy brings xenobiology in as the eighth family
+   * (campaign arc §10.2): each sector narrows to 2π / 8 and the rings
+   * grow again, by the same rule as the seventh.
+   *
+   * ```
+   *   family = 6 · 8 / 2π      ≈  7.64
+   *   tier 2 = 4 · 6 · 8 / 2π  ≈ 30.56
+   *   tier 3 = tier 2 + 6      ≈ 36.56
+   * ```
+   */
+  it("adds xenobiology as the eighth family once an autopsy shows, growing the rings to fit", () => {
+    const eight = layoutTechGraph(CATALOGUE, EVERY_AUTOPSY);
+    expect(eight.families.map((f) => f.id)).toEqual([
+      ...layout.families.map((f) => f.id),
+      "xenobiology",
+    ]);
+    expect(eight.nodes).toHaveLength(
+      layout.nodes.length + AUTOPSY_NODES.length,
+    );
+    expect(eight.rings.family).toBeCloseTo(7.639, 3);
+    expect(eight.rings.tier2).toBeCloseTo(30.558, 3);
+    expect(eight.rings.tier3).toBeCloseTo(36.558, 3);
+    expect(brokenInvariants(CATALOGUE, eight)).toEqual([]);
   });
 
   it("puts tier 2 on the inner ring and tier 3 on the outer, each inside its family's sector, linked from its family or prerequisite and clear of the others", () => {
@@ -244,7 +279,7 @@ describe("layoutTechGraph", () => {
     const more = crowdedCatalogue();
     const crowded = layoutTechGraph(more, NO_TECH_CONDITIONS);
     expect(crowded.families).toHaveLength(layout.families.length + 3);
-    expect(crowded.nodes).toHaveLength(VISIBLE_NODES.length + 3 * 7);
+    expect(crowded.nodes).toHaveLength(layout.nodes.length + 3 * 7);
     expect(brokenInvariants(more, crowded)).toEqual([]);
     expect(crowded.rings.tier2).toBeGreaterThan(layout.rings.tier2);
     expect(crowded.rings.tier3 - crowded.rings.tier2).toBeCloseTo(
@@ -273,7 +308,7 @@ describe("layoutTechGraph", () => {
     );
     expect(pheromone?.familyId).toBe("support");
     expect(pheromone?.kind).toBe("intel");
-    expect(revealed.nodes).toHaveLength(VISIBLE_NODES.length + 1);
+    expect(revealed.nodes).toHaveLength(SHOWN_AT_START.length + 1);
     expect(brokenInvariants(CATALOGUE, revealed)).toEqual([]);
   });
 });

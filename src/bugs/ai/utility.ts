@@ -509,7 +509,9 @@ export function clumpScore(
  * Expected value of `attacker` firing at `target` from `from`: hit
  * chance times mean damage, as a fraction of the target's remaining hit
  * points, capped at 1. Prices a finishing blow above a scratch on a
- * tank. Does not check range or line of sight; see `attackOptions`.
+ * tank. The damage is the one the attack would roll, so the target's
+ * armour and its resistance to the weapon's tags both come off. Does
+ * not check range or line of sight; see `attackOptions`.
  */
 export function targetValue(
   mission: TacticalState,
@@ -520,13 +522,19 @@ export function targetValue(
   index: TileIndex = new TileIndex(mission.map),
 ): Pick<AttackOption, "hitChance" | "meanDamage" | "value" | "canKill"> {
   const weapon = mission.templates[attacker.templateId]?.weapons[0]?.profile;
-  const armor = mission.templates[target.templateId]?.armor ?? 0;
+  const targetTemplate = mission.templates[target.templateId];
+  const armor = targetTemplate?.armor ?? 0;
   if (weapon === undefined) {
     return { hitChance: 0, meanDamage: 0, value: 0, canKill: false };
   }
   const terrain = attackTerrain(mission.map, from, target.pos, index);
   const chance = hitChance(weapon, terrain, combat);
-  const [low, high] = damageRange(weapon, armor, combat);
+  const [low, high] = damageRange(
+    weapon,
+    armor,
+    combat,
+    targetTemplate?.resist,
+  );
   const meanDamage = (low + high) / 2;
   const remaining = Math.max(1, target.hp);
   return {

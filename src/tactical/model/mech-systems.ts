@@ -1,3 +1,5 @@
+import type { DamageResistances } from "./damage-resistance";
+
 /** Capabilities supplied by fitted parts. Missing values preserve older templates. */
 export interface MechTraits {
   readonly heatCapacity?: number;
@@ -18,6 +20,12 @@ export interface MechTraits {
   /** Accuracy added to allied guided fire at this unit's designated target. */
   readonly designationAccuracy?: number;
   readonly equipment?: readonly string[];
+  /**
+   * Points each tagged hit loses (campaign arc §10.2), e.g. acid-resistant
+   * plating's `{ acid: 3 }`. Absent on every part and mech that resists
+   * nothing.
+   */
+  readonly resist?: DamageResistances;
 }
 
 /** Frozen thermal and fitting capabilities of a newly assembled mech. */

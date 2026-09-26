@@ -136,8 +136,9 @@ export const SPITTER: BugSpecies = {
   ap: 2,
   // Six tiles: inside a carbine's eight, so a squad that takes cover
   // can always answer. Acid bites through one point of plate, which
-  // is a scratch on a mech and all of it on a squad.
-  weapon: { range: 6, accuracy: 60, damage: 4, armorPen: 1 },
+  // is a scratch on a mech and all of it on a squad. Tagged acid, so
+  // the plating its autopsy unlocks resists it (campaign arc §10.2).
+  weapon: { range: 6, accuracy: 60, damage: 4, armorPen: 1, tags: ["acid"] },
   sightRange: SIGHT,
   behaviour: "snipe",
   modelId: "bug.spitter",
@@ -173,7 +174,9 @@ export const HIVE_GUARD: BugSpecies = {
   armor: 2,
   move: 0,
   ap: 2,
-  weapon: { range: 7, accuracy: 65, damage: 5, armorPen: 1 },
+  // Tagged spine, so the plate its autopsy unlocks resists it (campaign
+  // arc §10.2).
+  weapon: { range: 7, accuracy: 65, damage: 5, armorPen: 1, tags: ["spine"] },
   sightRange: SIGHT,
   behaviour: "guard",
   modelId: "bug.hive-guard",

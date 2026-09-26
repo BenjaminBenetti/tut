@@ -20,6 +20,12 @@ import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { SaveError } from "../../save/model/save-error";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
+import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
+import { buildMech } from "../../overworld/model/build-mech-command";
+import { saveLoadout } from "../../overworld/model/save-loadout-command";
+import type { Unit } from "../../tactical/model/unit";
+import { UNIT_DIED } from "../../tactical/model/unit-died-event";
 import { isTechNodeHidden } from "../../tech/service/tech-status-service";
 import type { GameComposition } from "./game-composition";
 import { composeGame } from "./game-composition";
@@ -28,8 +34,13 @@ const NOW = "2026-09-03T00:00:00.000Z";
 
 const build = (
   debug?: CampaignDebugOptions,
-): { game: GameComposition; failures: SaveError[] } => {
+): {
+  game: GameComposition;
+  failures: SaveError[];
+  revealed: string[][];
+} => {
   const failures: SaveError[] = [];
+  const revealed: string[][] = [];
   const game = composeGame({
     storage: new MemoryKeyValueStore(),
     clock: { now: () => NOW },
@@ -37,9 +48,12 @@ const build = (
     onAutosaveFailure: (error) => {
       failures.push(error);
     },
+    onResearchRevealed: (nodes) => {
+      revealed.push(nodes.map((node) => node.id));
+    },
     ...(debug === undefined ? {} : { debug }),
   });
-  return { game, failures };
+  return { game, failures, revealed };
 };
 
 /** A campaign with one small clearance mission on an infested city, ready to launch. */
@@ -454,6 +468,105 @@ describe("composeGame", () => {
         .map((upgrade) => upgrade.id);
     expect(upgradesOf(sampled)).toEqual([]);
     expect(upgradesOf(after)).toEqual(["capture-net"]);
+  });
+
+  // ===========================================
+  // Autopsies (campaign arc §8, §10.2)
+  // ===========================================
+
+  it("hides the spitter autopsy until a mission kills a spitter, then announces it, sells it and opens its plating", () => {
+    const { game, revealed } = build();
+    const { mission, deployment } = campaignWithMission(game);
+    const store = (): NonNullable<typeof game.session.store> => {
+      const live = game.session.store;
+      if (!live) throw new Error("no campaign");
+      return live;
+    };
+    const AUTOPSY = "tech.spitter-autopsy";
+    const autopsy = game.content.tech.getNode(AUTOPSY);
+    if (!autopsy) throw new Error("the shipped tree lost the spitter autopsy");
+    const hidden = (): boolean => {
+      const state = game.session.state;
+      if (!state) throw new Error("no campaign");
+      return isTechNodeHidden(autopsy, game.techConditionsOf(state));
+    };
+    const plated = {
+      ...STARTER_LOADOUT,
+      name: "Acid Proof",
+      utilityIds: [ACID_RESISTANT_PLATING],
+    };
+    const fund = (): void => {
+      const state = game.session.state;
+      if (!state) throw new Error("no campaign");
+      game.session.replace({
+        ...state,
+        economy: { ...state.economy, techPoints: 100, credits: 50_000 },
+      });
+    };
+
+    // A fresh campaign: hidden, refused as hidden, and a template with
+    // the plating saves but will not build, the plating being locked.
+    fund();
+    expect(hidden()).toBe(true);
+    const early = store().dispatch(unlockTech(AUTOPSY));
+    expect(!early.ok && early.error.code).toBe("tech-hidden");
+    expect(store().dispatch(saveLoadout(plated)).ok).toBe(true);
+    const locked = store().dispatch(buildMech(plated.name, "Sealed"));
+    expect(!locked.ok && locked.error.code).toBe("invalid-loadout");
+    expect(!locked.ok && locked.error.message).toContain(
+      '"Acid-Resistant Plating" has not been unlocked',
+    );
+
+    // A mission in which a spitter dies, finished through the real
+    // resolver and launch handler.
+    store().dispatch(startMission(mission.id, deployment));
+    const started = game.session.state;
+    const active = started?.activeMission;
+    const first = active?.units[0];
+    if (!started || !active || !first) throw new Error("mission did not start");
+    const spitter: Unit = {
+      ...first,
+      id: "unit-spitter",
+      kind: "bug",
+      team: "bugs",
+      sourceId: "spitter",
+      hp: 0,
+    };
+    game.session.replace({
+      ...started,
+      activeMission: {
+        ...active,
+        units: [...active.units, spitter],
+        objectives: active.objectives.map((o) => ({ ...o, complete: true })),
+        outcome: "won",
+        log: [
+          ...active.log,
+          {
+            type: UNIT_DIED,
+            payload: { unitId: spitter.id, killerId: first.id },
+          },
+        ],
+      },
+    });
+    expect(revealed).toEqual([]);
+    const finished = store().dispatch(finishMission(mission.id));
+    expect(finished.ok).toBe(true);
+
+    // Shown, announced once, and nothing else with it.
+    expect(game.session.state?.overworld.progress.speciesKilled).toEqual([
+      "spitter",
+    ]);
+    expect(hidden()).toBe(false);
+    expect(revealed).toEqual([[AUTOPSY]]);
+
+    // Researched, a mech with the plating can be built.
+    fund();
+    expect(store().dispatch(unlockTech(AUTOPSY)).ok).toBe(true);
+    expect(store().dispatch(buildMech(plated.name, "Sealed")).ok).toBe(true);
+    expect(
+      game.session.state?.roster.mechs.some((mech) => mech.name === "Sealed"),
+    ).toBe(true);
+    expect(revealed).toEqual([[AUTOPSY]]);
   });
 
   it("ships a tree whose every flag effect is a campaign flag the story records", () => {

@@ -1,3 +1,4 @@
+import type { DamageResistances } from "./damage-resistance";
 import type { MechSystems } from "./mech-systems";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
@@ -77,6 +78,13 @@ export interface UnitTemplate {
   readonly sightRange: number;
   /** Damage absorbed per hit before hit points. Non-negative integer. */
   readonly armor: number;
+  /**
+   * Points each tagged hit loses after armor (campaign arc §10.2): a
+   * mech's comes from its fitted parts through its combat profile.
+   * Absent on every template that resists nothing, which is every one
+   * frozen before resistances existed.
+   */
+  readonly resist?: DamageResistances;
   /** Which tiles the unit may stand on (GDD §6.1: mechs stay outside). */
   readonly passClass: PassClass;
   /**

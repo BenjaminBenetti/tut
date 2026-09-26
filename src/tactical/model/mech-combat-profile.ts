@@ -1,3 +1,4 @@
+import type { DamageResistances } from "./damage-resistance";
 import type { MechSystems } from "./mech-systems";
 import type { UnitWeapon } from "./unit-weapon";
 
@@ -30,6 +31,11 @@ export interface MechCombatProfile {
   readonly move: number;
   /** Damage absorbed per hit before hit points. Non-negative integer. */
   readonly armor: number;
+  /**
+   * Points each tagged hit loses (campaign arc §10.2), from the fitted
+   * parts' resistances; absent when the mech resists nothing.
+   */
+  readonly resist?: DamageResistances;
   /** Tiles the mech sees, for fog of war. Positive integer. */
   readonly sightRange: number;
   /** Every attack the mech can make, in slot order, each with its field numbers. */

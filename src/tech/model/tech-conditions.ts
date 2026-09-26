@@ -50,3 +50,24 @@ export const KILLED_FLAG_PREFIX = "killed:";
 export function killedFlag(species: string): string {
   return `${KILLED_FLAG_PREFIX}${species}`;
 }
+
+/**
+ * The species a `killed:<species>` flag names, or undefined for any
+ * other flag: the inverse of `killedFlag`, so the tree screen can say
+ * whose autopsy a node is from the flag that hides it.
+ *
+ * ```
+ *   "killed:spitter" ──► "spitter"
+ *   "spore-sample"   ──► undefined
+ *   "killed:"        ──► undefined
+ * ```
+ *
+ * @param flag - Any condition flag.
+ */
+export function killedSpeciesOf(flag: string): string | undefined {
+  if (!flag.startsWith(KILLED_FLAG_PREFIX)) {
+    return undefined;
+  }
+  const species = flag.slice(KILLED_FLAG_PREFIX.length);
+  return species === "" ? undefined : species;
+}

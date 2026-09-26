@@ -4,6 +4,7 @@ import type { ObjectiveRulesTable } from "../../model/objective-rules";
 import type { Objective } from "../../model/tactical-state";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
+import { RECOVER_POD_OBJECTIVE } from "./recover-pod-objective";
 import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
 import { sealBlownMouths } from "./seal-tunnels-objective";
 import {
@@ -66,6 +67,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
       sealBlownMouths,
+      RECOVER_POD_OBJECTIVE.phaseStep,
     ]);
     const extra = (): never => {
       throw new Error("not run");
@@ -81,6 +83,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
       sealBlownMouths,
+      RECOVER_POD_OBJECTIVE.phaseStep,
     ]);
   });
 });

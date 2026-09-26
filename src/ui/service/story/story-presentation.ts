@@ -8,6 +8,7 @@ import type {
 } from "../../model/mission-presentation";
 import type { StoryPresentationCatalogue } from "../../model/story-presentation";
 import { GREAT_HIVE_PRESENTATION } from "./great-hive-presentation";
+import { INTACT_POD_PRESENTATION } from "./intact-pod-presentation";
 import { LAUNCH_WINDOW_PRESENTATION } from "./launch-window-presentation";
 import { LIVE_SPECIMEN_PRESENTATION } from "./live-specimen-presentation";
 import { UPLINK_PRESENTATION } from "./uplink-presentation";
@@ -27,6 +28,8 @@ import { UPLINK_PRESENTATION } from "./uplink-presentation";
  *   uplink         ──► uplink-presentation.ts          } story defences, sharing
  *   great-hive     ──► great-hive-presentation.ts
  *   launch-window  ──► launch-window-presentation.ts   } story-defence-presentation.ts
+ *   intact-pod     ──► intact-pod-presentation.ts      (replaces the crash site's
+ *                                                       pod and landing rows)
  * ```
  */
 export const STORY_PRESENTATION: StoryPresentationCatalogue = {
@@ -34,6 +37,7 @@ export const STORY_PRESENTATION: StoryPresentationCatalogue = {
   uplink: UPLINK_PRESENTATION,
   "great-hive": GREAT_HIVE_PRESENTATION,
   "launch-window": LAUNCH_WINDOW_PRESENTATION,
+  "intact-pod": INTACT_POD_PRESENTATION,
 };
 
 // ===========================================
@@ -79,6 +83,28 @@ export function storyBriefingRowsOf(
   return mission.storyId === undefined
     ? []
     : (stories[mission.storyId]?.briefingRows(mission, ctx) ?? []);
+}
+
+/**
+ * The type's rows `mission` shows: all of them, less any its story
+ * replaces (`replacesTypeFields`, #1179).
+ *
+ * @param mission - The offer shown.
+ * @param typeRows - The rows its mission type fills.
+ * @param stories - The story presentations.
+ */
+export function typeBriefingRowsOf(
+  mission: Mission,
+  typeRows: readonly BriefingRow[],
+  stories: StoryPresentationCatalogue,
+): readonly BriefingRow[] {
+  const replaced =
+    mission.storyId === undefined
+      ? undefined
+      : stories[mission.storyId]?.replacesTypeFields;
+  return replaced === undefined
+    ? typeRows
+    : typeRows.filter((row) => !replaced.includes(row.field));
 }
 
 /**

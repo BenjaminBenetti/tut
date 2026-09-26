@@ -2,6 +2,7 @@ import type { TechNode } from "../model/tech-node";
 import { AUTOPSY_NODES } from "./autopsy-nodes";
 import { ENDGAME_INTEL_NODES } from "./endgame-intel-nodes";
 import { INFANTRY_TECH_NODES } from "./infantry-tech-tree";
+import { POD_TELEMETRY_NODE } from "./pod-telemetry-node";
 
 // ===========================================
 // Costs
@@ -44,7 +45,8 @@ export const PHEROMONE_ANALYSIS_COST = 180;
  * and land with the campaign content that reveals them: Intel I,
  * Pheromone Analysis, sits on the support spoke and stays hidden until
  * the spore sample is in hand (#1179), and the late story's Intel III and
- * Last Hope join it there (`ENDGAME_INTEL_NODES`). Tier 2 part nodes
+ * Last Hope join it there (`ENDGAME_INTEL_NODES`), as does Act II's
+ * Intel II, Pod Telemetry (`POD_TELEMETRY_NODE`). Tier 2 part nodes
  * have no prerequisites, so every family opens at once and the
  * first unlock is a real choice; each tier 3 node needs one tier 2 node
  * of its family, so a capital system is reached by building up to it.
@@ -60,6 +62,7 @@ export const PHEROMONE_ANALYSIS_COST = 180;
  *   support       Tracker · Surveyor · Recon ·    Marksman · Designator
  *                 Field Repair ·
  *                 Pheromone Analysis (intel, hidden until spore-sample) ·
+ *                 Pod Telemetry (intel, hidden until hive-core-sample) ·
  *                 Platform Approach (intel, hidden until uplink-won) ·
  *                 Last Hope (story, hidden until platform-failed)
  *   infantry      Armour I · Frag · Field Medic   Armour II · Heavy Weapons ·
@@ -420,4 +423,6 @@ export const TECH_NODES: readonly TechNode[] = [
   ...AUTOPSY_NODES,
   // ---- Support: the late story's research (campaign arc §4, D7) ----
   ...ENDGAME_INTEL_NODES,
+  // ---- Support: Intel II, Act II's research (campaign arc §4) ----
+  POD_TELEMETRY_NODE,
 ];

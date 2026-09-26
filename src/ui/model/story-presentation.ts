@@ -23,6 +23,7 @@ import type {
  *     ├ description     ──► the briefing's line, instead of the type's
  *     ├ briefingFields  ──► story slots, built once at mount
  *     ├ briefingRows    ──► the slots this mission fills; the rest hide
+ *     ├ replacesTypeFields ──► the type's rows the story says otherwise
  *     └ debriefTagline  ──► results banner line, asked before the type's
  * ```
  *
@@ -51,6 +52,14 @@ export interface StoryPresentation {
     mission: Mission,
     ctx: MissionPresentationContext,
   ): readonly BriefingRow[];
+  /**
+   * Fields of the mission type's rows that would mislead on this story,
+   * which the briefing then hides (#1179): Intact Pod is a crash site
+   * whose pod is kept, not burned, so the crash site's "matures" and
+   * "erased if the pod falls" rows give way to the story's own. Absent:
+   * every type row shows, as before.
+   */
+  readonly replacesTypeFields?: readonly string[];
   /**
    * The debrief's line for `result` in this story's words, or undefined
    * to fall through to the type's and then the outcome's. A result

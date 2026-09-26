@@ -32,6 +32,7 @@ const KINDS: Readonly<Record<ObjectiveKind, true>> = {
   "strip-wreck": true,
   "destroy-hive-core": true,
   "seal-tunnels": true,
+  "recover-pod": true,
 };
 
 const SPAWNER_OBJECTIVE: DestroySpawnerObjective = {

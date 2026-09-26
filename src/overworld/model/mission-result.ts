@@ -174,6 +174,20 @@ export interface MissionResult {
    */
   readonly hiveCoreDestroyed?: boolean;
   /**
+   * For Intact Pod (#1179, campaign arc §6.9): true when the drop ship
+   * lifted the spore pod alive at the recovery turn, false when it was
+   * destroyed or the mission ended before the drop. Absent when the
+   * mission had no pod to save. The story reads the outcome; this is for
+   * the debrief's tagline.
+   */
+  readonly podRecovered?: boolean;
+  /**
+   * For Intact Pod: the pod's hit points as it was lifted, or where it
+   * stood when the mission ended (0 once destroyed). Absent beside an
+   * absent `podRecovered`.
+   */
+  readonly podHpLeft?: number;
+  /**
    * For a rescue (campaign arc §6.4): civilian groups aboard the drop
    * ship at the end, beside `civiliansTotal`. Each group out adds to the
    * reward. Absent when the mission had no civilians.

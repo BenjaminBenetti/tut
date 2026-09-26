@@ -375,9 +375,11 @@ describe("the spine", () => {
   });
 
   it("keeps a Live Specimen win the campaign's victory while Intact Pod is unbuilt, whatever Act III holds", () => {
-    // Launch Window and Uplink ship in the table; Intact Pod does not.
+    // Launch Window and Uplink ship in the table; Intact Pod is left out.
+    const { "intact-pod": _unbuilt, ...shippedLessIntactPod } =
+      STORY_MISSION_RULES;
     const rules: StoryMissionRules = {
-      ...STORY_MISSION_RULES,
+      ...shippedLessIntactPod,
       "live-specimen": LIVE_SPECIMEN,
     };
     expect(rules["launch-window"]).toBeDefined();
@@ -390,6 +392,40 @@ describe("the spine", () => {
       kind: "victory",
       cause: "story",
     });
+  });
+
+  it("with the shipped table, Acts I to III exist and the finale does not (#1179)", () => {
+    // Intact Pod closes the gap at Act II; the Spore Platform is unbuilt.
+    const deps = { rules: STORY_MISSION_RULES, spine: STORY_SPINE };
+    expect(ACT_IDS.filter((act) => actExists(act, deps))).toEqual([
+      "act-1",
+      "act-2",
+      "act-3",
+    ]);
+    const livePlayed = play(
+      flagged([]),
+      LIVE_SPECIMEN,
+      "won",
+      STORY_MISSION_RULES,
+    );
+    expect(livePlayed.state.progress.act).toBe("act-2");
+    expect(livePlayed.state.progress.flags).toEqual([]);
+    const podPlayed = play(
+      flagged([], {}, "act-2"),
+      INTACT_POD,
+      "won",
+      STORY_MISSION_RULES,
+    );
+    expect(podPlayed.state.progress.act).toBe("act-3");
+    expect(podPlayed.state.progress.flags).toEqual([]);
+    const launched = play(
+      flagged([], {}, "act-3"),
+      LAUNCH_WINDOW,
+      "won",
+      STORY_MISSION_RULES,
+    );
+    expect(launched.state.progress.act).toBe("act-3");
+    expect(launched.state.progress.flags).toEqual(["campaign-won"]);
   });
 
   it("never enters an act through a gap: Act III needs Act I's ending too", () => {

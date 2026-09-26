@@ -464,6 +464,14 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:pod-recovered":
+      // The pod has left the map (#1179, Intact Pod), so the line names
+      // it by what it is rather than asking for a unit that is gone.
+      return {
+        text: `Recovery drop: the spore pod is aboard with ${formatWhole(event.payload.hp)} hp`,
+        icon: "extract",
+        tone: "ok",
+      };
     case "tactical:civilians-freed":
       return {
         text: `${nameOf(event.payload.unitId)} freed by ${nameOf(event.payload.rescuerId)}`,
@@ -658,9 +666,11 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:brood-woke":
     case "tactical:civilians-extracted":
     case "tactical:broodmother-escaped":
+    case "tactical:pod-recovered":
       // A brood is many bugs, and the scene stirs each of them; civilians
       // aboard and gone leave nobody on the map to mark, and neither does
-      // a Broodmother that escaped off its edge (#1179).
+      // a Broodmother that escaped off its edge or a pod the drop ship
+      // lifted (#1179).
       return undefined;
     default:
       return undefined;

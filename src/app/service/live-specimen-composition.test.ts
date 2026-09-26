@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { LURKER } from "../../bugs/data/species";
 import { CAPTURE_NET } from "../../tactical/data/equipment";
+import { ACT_ADVANCED } from "../../overworld/model/act-advanced-event";
 import { advanceDay } from "../../overworld/model/advance-day-command";
 import { CAMPAIGN_FLAG_SET } from "../../overworld/model/campaign-flag-set-event";
 import type { Mission } from "../../overworld/model/mission";
@@ -290,7 +291,7 @@ describe("Live Specimen through the composition root (#1179)", () => {
     expect(mission.spawners.length).toBeGreaterThan(0);
   });
 
-  it("is won when a netted lurker is carried home with every nest still standing, and the win ends the campaign", () => {
+  it("is won when a netted lurker is carried home with every nest still standing, and the win enters Act II", () => {
     const game = build();
     netResearched(game);
     nextDay(game);
@@ -328,21 +329,30 @@ describe("Live Specimen through the composition root (#1179)", () => {
       "first-skyfall",
       "live-specimen",
     ]);
-    expect(after.overworld.progress.flags).toContain("campaign-won");
+    // Intact Pod ends Act II now (#1179), so Act II exists and the win
+    // enters it, scripting the first hive, instead of ending the campaign.
+    expect(after.overworld.progress.act).toBe("act-2");
+    expect(after.overworld.progress.flags).not.toContain("campaign-won");
+    expect(after.overworld.hives).toHaveLength(1);
+    expect(
+      events.filter(
+        (e) =>
+          e.type === ACT_ADVANCED &&
+          e.payload.from === "act-1" &&
+          e.payload.to === "act-2",
+      ),
+    ).toHaveLength(1);
     expect(
       events.filter(
         (e) =>
           e.type === CAMPAIGN_FLAG_SET && e.payload.flag === "campaign-won",
       ),
-    ).toHaveLength(1);
+    ).toHaveLength(0);
     expect(after.overworld.outcome).toBeUndefined();
 
-    // The outcome step makes it victory the next day.
+    // The outcome step has nothing to end the next day.
     nextDay(game);
-    expect(live(game).overworld.outcome).toMatchObject({
-      kind: "victory",
-      cause: "story",
-    });
+    expect(live(game).overworld.outcome).toBeUndefined();
   });
 
   it("is extracted without the specimen when the squad comes home empty-handed, and pinned again five days on", () => {

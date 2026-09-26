@@ -154,6 +154,14 @@ export interface ObjectiveBase {
    * Absent reads as false, so every objective saved before it decides.
    */
   readonly optional?: boolean;
+  /**
+   * A tile the swarm makes for while the objective is open and a bug
+   * perceives nothing to hunt (#1179): static map knowledge, as a
+   * generator hook is (`huntSite`). Intact Pod sets it on the pod's tile,
+   * because the pod is why the bugs came. Absent (every other kind), the
+   * hunt is exactly what it was.
+   */
+  readonly huntedAt?: TileCoord;
 }
 
 /** Destroy one egg spawner (GDD §5.4): complete when it is wrecked. */
@@ -312,13 +320,44 @@ export interface SealTunnelsObjective extends ObjectiveBase {
 }
 
 /**
+ * Keep the spore pod alive until the recovery drop (#1179, campaign arc
+ * §6.9 Intact Pod). The pod is a unit of ours of kind `generator`, so the
+ * swarm hunts it as it hunts a generator; `deadlineTurn` is the recovery
+ * turn, and the countdown is the deadline's. At the start of the turn
+ * after it, a pod still standing is lifted off the map by the drop ship
+ * and the objective completes; the squad then extracts as usual.
+ *
+ * ```
+ *   turn > deadlineTurn, pod standing   ──► complete: lifted, recoveredHp set
+ *   pod destroyed before that           ──► failed
+ *   otherwise                           ──► open
+ * ```
+ *
+ * `complete` and `failed` mirror that as of the last phase step, for the
+ * log, the tracker and the swarm's hunt; the live answer is the rule's.
+ */
+export interface RecoverPodObjective extends ObjectiveBase {
+  readonly kind: "recover-pod";
+  /** The pod, a `generator`-kind unit of ours. */
+  readonly targetId: UnitId;
+  /** Always set: the recovery turn; the drop comes as it ends. */
+  readonly deadlineTurn: number;
+  /** Always written for a recovery, which starts open. */
+  readonly failed: boolean;
+  /** Always set: the pod's tile, which the swarm hunts. */
+  readonly huntedAt: TileCoord;
+  /** The pod's hit points when it was lifted; set once it is recovered. */
+  readonly recoveredHp?: number;
+}
+
+/**
  * What the player must achieve: wreck a spawner, hold the generators
  * (#1175), wreck a spore pod before it matures, bring a specimen home,
  * get the civilians out, strip a lost mech's wreck, bring down a hive
- * core and extract, or seal the tunnel mouths (#1179, campaign arc
- * §6.3, §6.4, §6.5, §6.6, §6.7, §6.9). Closed: a new kind adds its
- * interface here and its rules to `OBJECTIVE_RULES`, which the compiler
- * then insists on (ADR 0013 §2.3).
+ * core and extract, seal the tunnel mouths, or keep a pod alive until
+ * it is recovered (#1179, campaign arc §6.3, §6.4, §6.5, §6.6, §6.7,
+ * §6.9). Closed: a new kind adds its interface here and its rules to
+ * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
  */
 export type Objective =
   | DestroySpawnerObjective
@@ -328,7 +367,8 @@ export type Objective =
   | RescueCiviliansObjective
   | StripWreckObjective
   | DestroyHiveCoreObjective
-  | SealTunnelsObjective;
+  | SealTunnelsObjective
+  | RecoverPodObjective;
 
 /**
  * Swarm Tide's hold on the edge waves (campaign arc §11): each wave is

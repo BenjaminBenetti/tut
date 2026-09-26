@@ -22,6 +22,7 @@ import { citiesWithOffers } from "./mission-offer-builder";
 //   landedCity         the city as the offer is built on: landing included
 //   asCrashSiteOffer   stamps the landing spec and the ×1.5 tech points
 //   landCrashSite      the landing itself, made when the offer is (onOffered)
+//   sensedRegions      the regions an online sensor array watches (Act II on)
 //
 
 /**
@@ -143,8 +144,10 @@ export function landCrashSite(
 /**
  * The regions whose online sensor arrays pull landings towards them,
  * empty before `tuning.sensorArrayFromAct` (arc §6.3: from Act II).
+ * Intact Pod (#1179) reads it too: the pod the telemetry tracks comes
+ * down where an array can watch it.
  */
-function sensedRegions(
+export function sensedRegions(
   state: OverworldState,
   tuning: CrashSiteTuning,
 ): ReadonlySet<RegionId> {

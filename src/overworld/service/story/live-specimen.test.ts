@@ -328,8 +328,10 @@ describe("Live Specimen on a board with no free city (arc D2, #1179)", () => {
 
 describe("Live Specimen resolved", () => {
   it("wins the campaign when won while Act II has no ending built", () => {
-    const pinned = direct(campaign(["capture-net"])).state;
-    const won = play(pinned, "won");
+    // Intact Pod ships now (#1179), so the table here leaves it out.
+    const actOneOnly = storyRulesOf(LIVE_SPECIMEN);
+    const pinned = direct(campaign(["capture-net"]), 1, actOneOnly).state;
+    const won = play(pinned, "won", actOneOnly);
     expect(won.state.progress.storyWon).toEqual([
       "first-skyfall",
       "live-specimen",
@@ -341,6 +343,27 @@ describe("Live Specimen resolved", () => {
       kind: "victory",
       cause: "story",
     });
+    // Never pinned again.
+    expect(
+      specimen(direct({ ...won.state, day: 40 }, 1, actOneOnly).state),
+    ).toBeUndefined();
+  });
+
+  it("enters Act II with the shipped story table, now that Intact Pod ends it (#1179)", () => {
+    expect(STORY_MISSION_RULES["intact-pod"]).toBeDefined();
+    const pinned = direct(campaign(["capture-net"])).state;
+    const won = play(pinned, "won");
+    expect(won.state.progress).toMatchObject({
+      act: "act-2",
+      storyWon: ["first-skyfall", "live-specimen"],
+      flags: ["capture-net"],
+    });
+    expect(won.state.hives).toHaveLength(1);
+    expect(won.events.map((event) => event.type)).toEqual([
+      ACT_ADVANCED,
+      HIVE_FORMED,
+    ]);
+    expect(evaluateOutcome(campaignOf(won.state))).toBeUndefined();
     // Never pinned again.
     expect(specimen(direct({ ...won.state, day: 40 }).state)).toBeUndefined();
   });

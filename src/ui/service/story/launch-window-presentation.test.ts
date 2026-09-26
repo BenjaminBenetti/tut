@@ -42,12 +42,15 @@ describe("Launch Window's briefing (#1179)", () => {
       "story-objective",
       "story-win",
       "story-kit",
+      "story-lost",
+      // Intact Pod's lost and landing rows (#1179): Intact Pod comes before
+      // Launch Window, so Launch Window's Lost slot is already there.
+      "story-landing",
       "great-hive-target",
       "great-hive-objective",
       "great-hive-liberates",
       "great-hive-beacons",
       "great-hive-win",
-      "story-lost",
     ]);
   });
 

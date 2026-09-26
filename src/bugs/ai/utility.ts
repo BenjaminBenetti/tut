@@ -282,9 +282,17 @@ export function recalledSite(
  * there is nothing left to find. Only the side's own `explored` set is
  * read, so a group that walked off is never followed by smell.
  *
+ * An open objective with a `huntedAt` tile draws it too (#1179): Intact
+ * Pod's pod, which is what the swarm came down for. It stops drawing
+ * once the objective's flags say it is decided (the pod lifted or lost),
+ * or once a generator this side has seen wrecked stands on the tile.
+ * Hooks are read first and a tile only wins when strictly nearer, so a
+ * mission without one hunts exactly as before.
+ *
  * ```
  *   generator hooks − tiles of generators this side has seen at 0 hp
  *   + civilian hooks − tiles this side has explored
+ *   + huntedAt of open objectives − tiles of seen wrecked generators
  *     ├─ any left  ──► nearest by tile distance
  *     └─ none      ──► landingSite
  * ```
@@ -323,6 +331,22 @@ export function huntSite(
         bestDistance = distance;
         best = tile;
       }
+    }
+  }
+  for (const objective of mission.objectives) {
+    const tile = objective.huntedAt;
+    if (
+      tile === undefined ||
+      objective.complete ||
+      objective.failed === true ||
+      wrecked.has(tileKeyOf(mission, tile))
+    ) {
+      continue;
+    }
+    const distance = tileDistance(from, tile);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = tile;
     }
   }
   return best ?? landingSite(mission, from);

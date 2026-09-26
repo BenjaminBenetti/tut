@@ -14,6 +14,8 @@ import type { TechEffectLabels } from "../model/tech-effect-labels";
  *   Pheromone Analysis (#1179) unlocks
  *     infantry-upgrade capture-net  ──► "Capture net (…)", from the table
  *     flag capture-net              ──► "The Live Specimen mission"
+ *   Pod Telemetry unlocks
+ *     flag pod-telemetry            ──► "The Intact Pod mission"
  *   Platform Approach unlocks
  *     flag platform-approach        ──► "The Launch Window, once the Great Hives fall"
  *   Last Hope unlocks
@@ -28,6 +30,8 @@ export const TECH_EFFECT_LABELS: TechEffectLabels = {
     "platform-approach": "The Launch Window, once the Great Hives fall",
     // The story pins the Spore Platform again on this flag (arc D7).
     "last-hope": "A second assault on the Spore Platform",
+    // The story pins Intact Pod, the Act II ending, on this flag (arc §4).
+    "pod-telemetry": "The Intact Pod mission",
   },
   infantryUpgrades: Object.fromEntries(
     Object.values(INFANTRY_UPGRADES).map((upgrade) => [

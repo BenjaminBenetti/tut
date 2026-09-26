@@ -25,6 +25,7 @@ import {
   storyBriefingFieldsOf,
   storyBriefingRowsOf,
   storyDescriptionOf,
+  typeBriefingRowsOf,
 } from "../service/story/story-presentation";
 import { SitrepTagsView } from "./sitrep-tags-view";
 
@@ -277,7 +278,11 @@ export class MissionDetailsView {
     );
     fillRows(
       this.typeSlots,
-      this.presentations[mission.typeId].briefingRows(mission, { state }),
+      typeBriefingRowsOf(
+        mission,
+        this.presentations[mission.typeId].briefingRows(mission, { state }),
+        this.stories,
+      ),
     );
     this.sitrepTags.update(mission);
     const description =

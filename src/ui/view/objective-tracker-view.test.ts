@@ -104,6 +104,7 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
       "strip-wreck": OBJECTIVE_PRESENTATION["strip-wreck"],
       "destroy-hive-core": OBJECTIVE_PRESENTATION["destroy-hive-core"],
       "seal-tunnels": OBJECTIVE_PRESENTATION["seal-tunnels"],
+      "recover-pod": OBJECTIVE_PRESENTATION["recover-pod"],
     };
     const view = new ObjectiveTrackerView(presentations);
     view.mount(root);

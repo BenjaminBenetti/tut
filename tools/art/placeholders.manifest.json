@@ -5426,6 +5426,20 @@
     "bytes": 499468
   },
   {
+    "id": "bug.burrower",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-burrower.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.45,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 6928,
+    "bytes": 327064
+  },
+  {
     "id": "civ.group",
     "category": "units",
     "path": "assets/models/units/civ-group.glb",

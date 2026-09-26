@@ -36,4 +36,10 @@ export interface BugUnitSource {
   readonly xpValue?: number;
   /** Tiles per side it occupies (#1130); absent means one. Copied onto the template. */
   readonly footprint?: number;
+  /**
+   * Whether the species lives under the ground (#1179): it arrives
+   * `burrowed` and may tunnel, surface and dig back down. Absent means
+   * it walks like every other bug. Copied onto the template.
+   */
+  readonly burrows?: boolean;
 }

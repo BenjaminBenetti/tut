@@ -19,6 +19,7 @@ export type BugSpeciesId =
   | "lurker"
   | "brute"
   | "spitter"
+  | "burrower"
   | "hive-guard"
   | "swarmer-armoured"
   | "lurker-armoured"
@@ -27,13 +28,16 @@ export type BugSpeciesId =
 /**
  * Every bug species id, in a fixed order. New species append, so every
  * reader that walks the list in order (the bestiary's mix, the default
- * spawn roll) sees the earlier species exactly as before.
+ * spawn roll) sees the earlier species exactly as before. The burrower
+ * sits before the Hive Guard rather than after it: the guard is placed,
+ * never walked into a mix or a roll, so no rolled species moves.
  */
 export const BUG_SPECIES_IDS: readonly BugSpeciesId[] = [
   "swarmer",
   "lurker",
   "brute",
   "spitter",
+  "burrower",
   "hive-guard",
   "swarmer-armoured",
   "lurker-armoured",

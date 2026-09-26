@@ -11,7 +11,7 @@ import type { TacticalError } from "../model/tactical-error";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
 import type { Team, Unit } from "../model/unit";
-import { passMaskFor } from "../model/unit";
+import { isBurrowed, passMaskFor } from "../model/unit";
 import type { MoveGraph } from "./movement-service";
 import { buildMoveGraph, occupiedKeys } from "./movement-service";
 import type { PhaseStep } from "./turn-service";
@@ -198,7 +198,9 @@ export const drainRadarBatteries: PhaseStep = (mission) => {
  * still-running scanner's horizontal circle. Scans cross walls and
  * floors, update from current positions, and never change sight,
  * explored terrain, targeting, or the other side's intel. A burnt-out
- * scanner (#1130) contributes nothing.
+ * scanner (#1130) contributes nothing. A unit under the ground (#1179)
+ * is not reported: the dish reads movement on the surface, and finding
+ * burrowers is the seismic sensor's job (campaign arc §10.2).
  *
  * Nests are not reported here: since #1173 an open objective in the fog
  * is always marked (`objectiveMarkers`), so a radar square on top of it
@@ -226,6 +228,7 @@ export function radarContacts(
       (unit) =>
         unit.team !== team &&
         unit.hp > 0 &&
+        !isBurrowed(unit) &&
         !spotted.has(unit.id) &&
         scanned(unit.pos),
     )

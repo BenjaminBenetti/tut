@@ -1,3 +1,4 @@
+import type { Sprite } from "three";
 import { Box3, Object3D, Texture } from "three";
 import { describe, expect, it, vi } from "vitest";
 
@@ -52,6 +53,7 @@ const TIMING = {
   floaterSeconds: 0.2,
   deathSeconds: 0.2,
   revealSeconds: 0.2,
+  surfaceSeconds: 0.2,
 };
 
 const MOVE: TacticalEvent = {
@@ -648,6 +650,149 @@ describe("TacticalAnimationQueue brood stir (#1179)", () => {
     });
     queue.update(0.001);
     expect(done).toBe(true);
+  });
+});
+
+// ===========================================
+// Burrower (#1179)
+// ===========================================
+
+describe("TacticalAnimationQueue burrower", () => {
+  const surfaced: TacticalEvent = {
+    type: "tactical:unit-surfaced",
+    payload: { unitId: "unit-2", pos: { x: 4, y: 0, z: 0 }, beside: [] },
+  };
+  const spotted: TacticalEvent = {
+    type: "tactical:unit-spotted",
+    payload: { unitId: "unit-2", team: "tdf" },
+  };
+  const burrowed: TacticalEvent = {
+    type: "tactical:unit-burrowed",
+    payload: { unitId: "unit-2", pos: { x: 4, y: 0, z: 0 } },
+  };
+
+  /** The fixture scene, with unit-2 waiting hidden as an arrival does. */
+  function arrival() {
+    const s = scene();
+    const unit = s.objects.get("unit-2")!;
+    unit.visible = false;
+    const rest = unit.position.y;
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const dirt = () =>
+      queue.root.children.filter((child) => child.name === "vfx.tdf-death");
+    return { s, unit, rest, queue, dirt };
+  }
+
+  it("raises a burrower out of the ground through a burst of earth", () => {
+    const { unit, rest, queue, dirt } = arrival();
+    queue.enqueue([surfaced], () => undefined);
+    queue.update(0.001);
+    // Shown at once, but a body-height under the tile's top, so the
+    // ground hides it until it rises.
+    expect(unit.visible).toBe(true);
+    expect(unit.position.y).toBeLessThan(rest - 2.8 * 0.9);
+    const burst = dirt();
+    expect(burst).toHaveLength(1);
+    expect((burst[0] as Sprite).material.color.getHex()).toBe(0xb0814f);
+    queue.update(TIMING.surfaceSeconds / 2);
+    expect(unit.position.y).toBeGreaterThan(rest - 2.8);
+    expect(unit.position.y).toBeLessThan(rest);
+    queue.update(TIMING.surfaceSeconds);
+    expect(unit.position.y).toBe(rest);
+    expect(dirt()).toEqual([]);
+    expect(queue.busy).toBe(false);
+  });
+
+  it("plays the spot behind a surfacing as part of the rise, never swelling it a second time", () => {
+    const { unit, queue } = arrival();
+    const started: string[] = [];
+    let done = false;
+    queue.enqueue(
+      [surfaced, spotted],
+      () => {
+        done = true;
+      },
+      (event) => started.push(event.type),
+    );
+    queue.update(0.001);
+    // Both heard at once: the HUD writes the line as the ground breaks.
+    expect(started).toEqual([
+      "tactical:unit-surfaced",
+      "tactical:unit-spotted",
+    ]);
+    for (let t = 0; t < TIMING.surfaceSeconds; t += 0.02) {
+      queue.update(0.02);
+      expect(unit.scale.x).toBe(1);
+    }
+    queue.update(0.02);
+    expect(done).toBe(true);
+    expect(unit.scale.x).toBe(1);
+  });
+
+  it("still swells a spot that does not follow a surfacing", () => {
+    const { unit, queue } = arrival();
+    queue.enqueue([surfaced, TURN, spotted], () => undefined);
+    queue.update(TIMING.surfaceSeconds + 0.001);
+    queue.update(0.001);
+    expect(unit.scale.x).toBeLessThan(0.1);
+  });
+
+  it("sinks a burrower back into the ground and hides it once it is under", () => {
+    const { unit, rest, queue, dirt } = arrival();
+    unit.visible = true;
+    let done = false;
+    queue.enqueue([burrowed], () => {
+      done = true;
+    });
+    queue.update(0.001);
+    expect(dirt()).toHaveLength(1);
+    queue.update(TIMING.surfaceSeconds * 0.75);
+    expect(unit.visible).toBe(true);
+    expect(unit.position.y).toBeLessThan(rest - 1);
+    queue.update(TIMING.surfaceSeconds);
+    expect(done).toBe(true);
+    expect(unit.visible).toBe(false);
+    expect(unit.position.y).toBe(rest);
+    expect(dirt()).toEqual([]);
+  });
+
+  it("finishes whole when skipped: up and standing, or down and hidden", () => {
+    const up = arrival();
+    up.queue.enqueue([surfaced], () => undefined);
+    up.queue.update(0.001);
+    up.queue.skip();
+    expect(up.unit.visible).toBe(true);
+    expect(up.unit.position.y).toBe(up.rest);
+    expect(up.dirt()).toEqual([]);
+    const down = arrival();
+    down.unit.visible = true;
+    down.queue.setInstant(true);
+    down.queue.enqueue([burrowed], () => undefined);
+    expect(down.unit.visible).toBe(false);
+    expect(down.unit.position.y).toBe(down.rest);
+  });
+
+  it("plays nothing for a burrower the scene does not draw, and still calls back", () => {
+    const queue = new TacticalAnimationQueue({
+      scene: scene(),
+      sprites,
+      timing: TIMING,
+    });
+    let done = false;
+    const unseen = {
+      ...surfaced,
+      payload: { ...surfaced.payload, unitId: "never-placed" },
+    } as TacticalEvent;
+    queue.enqueue([unseen], () => {
+      done = true;
+    });
+    queue.update(0.001);
+    expect(done).toBe(true);
+    expect(queue.root.children).toEqual([]);
   });
 });
 

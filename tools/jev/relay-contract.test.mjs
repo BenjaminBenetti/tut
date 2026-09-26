@@ -21,7 +21,7 @@ import { EQUIPMENT } from "../../src/tactical/data/equipment.ts";
 import { COMBAT_TUNING } from "../../src/tactical/data/combat-tuning.ts";
 import { GENERATOR_TUNING } from "../../src/tactical/data/generator-tuning.ts";
 import { generatorUnit } from "../../src/tactical/service/unit-factory.ts";
-import { UNIT_KINDS } from "../../src/tactical/model/unit.ts";
+import { UNIT_KINDS, UNIT_STATUSES } from "../../src/tactical/model/unit.ts";
 import { SequentialIdGenerator } from "../../src/core/service/sequential-id-generator.ts";
 import { OBJECTIVE_TUNING } from "../../src/tactical/data/objective-tuning.ts";
 import {
@@ -248,6 +248,25 @@ describe("Relay compatibility with actual game requests", () => {
           (capability) => capability.kind === kind,
         ),
       ).toBe(true);
+      expect(validGameRequest(request)).toBe(true);
+    },
+  );
+
+  it.each(UNIT_STATUSES)(
+    "accepts an observed ally carrying status %s (a sleeping or burrowed kin, #1179)",
+    (status) => {
+      // A Jev bug sees its own side whole, sleepers and burrowers too.
+      const { state, rules } = scenario("bugs");
+      const mission = {
+        ...state,
+        units: state.units.map((unit) =>
+          unit.id === "ally" ? { ...unit, status: [status] } : unit,
+        ),
+      };
+      const request = requestsFor(mission, rules)[0].request;
+      expect(
+        request.state.entities.find((entity) => entity.id === "ally")?.status,
+      ).toEqual([status]);
       expect(validGameRequest(request)).toBe(true);
     },
   );

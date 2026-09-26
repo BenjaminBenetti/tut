@@ -144,7 +144,10 @@ export function livingBugIds(mission: TacticalState): readonly UnitId[] {
  * resting (`restingBugIds`, #1179) — a dormant brood, or one that woke
  * during this bug phase. They are dropped here, before any behaviour
  * scores, paths or calls out for them, which is what lets a cavern hold
- * fifty sleepers at the cost of the dozen that are awake.
+ * fifty sleepers at the cost of the dozen that are awake. A burrower is
+ * no exception (#1179): asleep under the ground, it is dropped here with
+ * the rest, so `BurrowerBehaviour` is never asked and it neither tunnels,
+ * surfaces nor burrows until its brood wakes.
  */
 export function actingBugIds(mission: TacticalState): readonly UnitId[] {
   const resting = restingBugIds(mission);

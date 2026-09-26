@@ -10,6 +10,7 @@ import type { UnitTemplate } from "../model/unit-template";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
 import { coordOf, facingToward } from "./missions/map-placement";
 import { footprintFits, occupiedKeys } from "./movement-service";
+import { buriedKeys } from "./tunnel-service";
 import { bugUnit } from "./unit-factory";
 
 // ===========================================
@@ -73,11 +74,17 @@ export function placeHiveGuards(
  * ```
  *   for each position, in order
  *     no tile there, or the footprint does not fit infantry  ──► skipped
- *     footprint overlaps a living unit, a live spawner,
- *       or a bug placed earlier in this call                 ──► skipped
+ *     footprint overlaps a living unit, a burrower under the ground,
+ *       a live spawner, or a bug placed earlier in this call ──► skipped
  *     otherwise ──► bugUnit(species) at full hit and action points,
  *                   facing the nearest enemy (else the map's centre)
  * ```
+ *
+ * A burrowed unit (#1179) holds no tile on the surface
+ * (`occupiedKeys` passes over it), but its column is taken here as a
+ * hatchling's is (`spawn-service`): a bug stood on top of it would leave
+ * it nowhere to come up. A dormant brood goes through this path too
+ * (`placeDormantBrood`), so no sleeper is laid over a buried burrower.
  *
  * The bugs arrive ready (full `ap`), unlike a hatchling: they were
  * there before the squad landed. Vision is not touched; the mission
@@ -105,6 +112,8 @@ export function placeBugsAt(
  * hold it (#1179), by the rules of `placeBugsAt`: the rest are never
  * tried. For a bug a mission wants somewhere in an area rather than on
  * one exact tile — Live Specimen's lurker in the ground around a nest.
+ * Both share `placeUpTo`, so a candidate over a burrower under the
+ * ground is passed over here as it is there.
  *
  * ```
  *   candidates, in order ──► the first that placeBugsAt would fill ──► one bug
@@ -149,6 +158,9 @@ function placeUpTo(
   const graph = { index: snapshot.index, reachability: snapshot.reach };
   const size = footprintSizeOf(species);
   const taken = new Set(occupiedKeys(state, snapshot.index));
+  for (const key of buriedKeys(state, snapshot.index)) {
+    taken.add(key);
+  }
   for (const spawner of state.spawners) {
     if (!spawner.destroyed && snapshot.index.inBounds(spawner.pos)) {
       taken.add(snapshot.index.keyOf(spawner.pos));

@@ -21,8 +21,11 @@ import type { Unit, UnitId } from "../../tactical/model/unit";
 import { UNIT_DIED } from "../../tactical/model/unit-died-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
+import { UNIT_SURFACED } from "../../tactical/model/unit-surfaced-event";
+import { UNIT_TUNNELLED } from "../../tactical/model/unit-tunnelled-event";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import {
+  burrowerAt,
   missionWith,
   openField,
   unitAt,
@@ -575,6 +578,79 @@ describe("placeArrivals (#1116)", () => {
       },
     ]);
     expect(stage.arrived).toEqual([]);
+    expect(placed.size).toBe(0);
+  });
+});
+
+describe("placeArrivals for a burrower (#1179)", () => {
+  const tunnelled = (from: TileCoord, to: TileCoord): TacticalEvent => ({
+    type: UNIT_TUNNELLED,
+    payload: { unitId: "d", from, to },
+  });
+  const surfaced = (pos: TileCoord): TacticalEvent => ({
+    type: UNIT_SURFACED,
+    payload: { unitId: "d", pos, beside: ["s1"] },
+  });
+
+  /** The squad at the origin and the burrower `d` at `pos`, looked at for real. */
+  function withDigger(pos: TileCoord, up: boolean) {
+    const base = missionWith(MAP, [
+      unitAt("s1", "infantry", { x: 0, y: 0, z: 0 }),
+      burrowerAt("d", pos, up ? { status: [] } : {}),
+    ]);
+    return withVision({ state: base, events: [] }).state;
+  }
+
+  it("places a burrower that came up in view on the tile it came up on, not where it dug from", async () => {
+    const mission = withDigger({ x: 1, y: 0, z: 0 }, true);
+    expect(mission.vision.tdf.spotted).toContain("d");
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, [
+      tunnelled({ x: 6, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }),
+      surfaced({ x: 1, y: 0, z: 0 }),
+    ]);
+    expect(stage.arrived).toEqual([
+      { unitId: "d", template: "bug:burrower", at: { x: 1, y: 0, z: 0 } },
+    ]);
+    expect([...placed]).toEqual(["d"]);
+  });
+
+  it("places it where it came up when it walked on afterwards", async () => {
+    const mission = withDigger({ x: 1, y: 0, z: 1 }, true);
+    const stage = new ArrivalRecorder(["s1"]);
+    await placeArrivals(stage, mission, [
+      surfaced({ x: 2, y: 0, z: 1 }),
+      {
+        type: UNIT_MOVED,
+        payload: {
+          unitId: "d",
+          from: { x: 2, y: 0, z: 1 },
+          to: { x: 1, y: 0, z: 1 },
+          path: [{ x: 1, y: 0, z: 1 }],
+        },
+      },
+    ]);
+    expect(stage.arrived.map((a) => a.at)).toEqual([{ x: 2, y: 0, z: 1 }]);
+  });
+
+  it("never places one still under the ground, however near it dug (ADR 0006)", async () => {
+    const mission = withDigger({ x: 1, y: 0, z: 0 }, false);
+    expect(mission.vision.tdf.spotted).not.toContain("d");
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, [
+      tunnelled({ x: 6, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }),
+    ]);
+    expect(stage.arrived).toEqual([]);
+    expect(placed.size).toBe(0);
+  });
+
+  it("never places one that came up out of sight", async () => {
+    const mission = withDigger({ x: 7, y: 0, z: 7 }, true);
+    expect(mission.vision.tdf.spotted).not.toContain("d");
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, [
+      surfaced({ x: 7, y: 0, z: 7 }),
+    ]);
     expect(placed.size).toBe(0);
   });
 });

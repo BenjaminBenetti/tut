@@ -554,6 +554,49 @@ describe("event vocabulary", () => {
     );
     expect(line?.text).toBe("Rifle Squad is suppressed");
   });
+
+  it("announces a burrower surfacing beside a squad, above the burrower, and nothing of its digging (#1179)", () => {
+    const names = {
+      ...NAMES,
+      unit: (id: string) =>
+        ({ digger: "Burrower", a: "Alpha", b: "Bravo" })[id] ?? id,
+    };
+    const surfaced = (beside: readonly string[]): never =>
+      ({
+        type: "tactical:unit-surfaced",
+        payload: { unitId: "digger", pos: { x: 3, y: 0, z: 3 }, beside },
+      }) as never;
+    expect(describeEvent(surfaced(["a"]), names)).toEqual({
+      text: "Burrower burst out of the ground beside Alpha",
+      icon: "warning",
+      tone: "bug",
+    });
+    expect(describeEvent(surfaced(["a", "b"]), names)?.text).toBe(
+      "Burrower burst out of the ground beside Alpha and Bravo",
+    );
+    expect(actorOf(surfaced(["a"]))).toBe("digger");
+    // Alone, it may have come up anywhere in the dark: no line, so no
+    // indicator either, and nothing says it exists.
+    expect(describeEvent(surfaced([]), names)).toBeUndefined();
+    const dug = [
+      {
+        type: "tactical:unit-tunnelled",
+        payload: {
+          unitId: "digger",
+          from: { x: 1, y: 0, z: 1 },
+          to: { x: 3, y: 0, z: 3 },
+        },
+      },
+      {
+        type: "tactical:unit-burrowed",
+        payload: { unitId: "digger", pos: { x: 3, y: 0, z: 3 } },
+      },
+    ] as never[];
+    for (const event of dug) {
+      expect(describeEvent(event, names)).toBeUndefined();
+      expect(actorOf(event)).toBeUndefined();
+    }
+  });
 });
 
 describe("TurnBannerView", () => {

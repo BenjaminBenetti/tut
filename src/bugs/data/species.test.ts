@@ -18,6 +18,7 @@ import {
   BRUTE,
   BRUTE_ARMOURED,
   BUG_SPECIES,
+  BURROWER,
   HIVE_GUARD,
   LURKER,
   LURKER_ARMOURED,
@@ -54,6 +55,7 @@ describe("bug species data", () => {
         LURKER,
         BRUTE,
         SPITTER,
+        BURROWER,
         HIVE_GUARD,
         SWARMER_ARMOURED,
         LURKER_ARMOURED,
@@ -124,6 +126,7 @@ describe("bug species data", () => {
       .map((s) => s.id);
     expect(rolled).toEqual(["swarmer", "lurker", "brute"]);
     expect(SPITTER.hatchWeight).toBe(0);
+    expect(BURROWER.hatchWeight).toBe(0);
     // The Hive Guard is never rolled at all: missions place it (#1179).
     expect(HIVE_GUARD.hatchWeight).toBe(0);
     // The armoured variants, like the spitter, arrive only through the
@@ -198,6 +201,7 @@ describe("the brute's block and cleavers (#1130)", () => {
     expect(SWARMER.footprint).toBeUndefined();
     expect(LURKER.footprint).toBeUndefined();
     expect(SPITTER.footprint).toBeUndefined();
+    expect(BURROWER.footprint).toBeUndefined();
     expect(HIVE_GUARD.footprint).toBeUndefined();
     // The armoured brute is the same block under more plate (#1179).
     expect(BRUTE_ARMOURED.footprint).toBe(2);
@@ -219,7 +223,7 @@ describe("the spitter's acid (#1179)", () => {
     // is the first bug a squad in cover is safer from.
     expect(isMelee(SPITTER.weapon)).toBe(false);
     expect(SPITTER.weapon.range).toBe(6);
-    for (const species of [SWARMER, LURKER, BRUTE]) {
+    for (const species of [SWARMER, LURKER, BRUTE, BURROWER]) {
       expect([species.id, isMelee(species.weapon)]).toEqual([species.id, true]);
     }
   });
@@ -235,6 +239,34 @@ describe("the spitter's acid (#1179)", () => {
     expect(SPITTER.move).toBeGreaterThan(BRUTE.move);
     expect(SPITTER.behaviour).toBe("snipe");
     expect(SPITTER.modelId).toBe("bug.spitter");
+  });
+});
+
+describe("the burrower's dig (#1179)", () => {
+  it("is the only species that burrows, and runs the burrow behaviour", () => {
+    const diggers = Object.values(BUG_SPECIES)
+      .filter((s) => s.burrows === true)
+      .map((s) => s.id);
+    expect(diggers).toEqual(["burrower"]);
+    expect(BURROWER.behaviour).toBe("burrow");
+    expect(BURROWER.modelId).toBe("bug.burrower");
+  });
+
+  it("is a mid-weight melee ambusher: tougher than a lurker, lighter than a brute", () => {
+    expect(isMelee(BURROWER.weapon)).toBe(true);
+    expect(BURROWER.hp).toBeGreaterThan(LURKER.hp);
+    expect(BURROWER.hp).toBeLessThan(BRUTE.hp);
+    expect(BURROWER.move).toBe(5);
+    expect(BURROWER.xpValue).toBeGreaterThan(LURKER.xpValue);
+    expect(BURROWER.xpValue).toBeLessThan(BRUTE.xpValue);
+  });
+
+  it("strikes hardest of the single-tile bugs when it comes up", () => {
+    for (const species of [SWARMER, LURKER, SPITTER]) {
+      expect(BURROWER.weapon.damage).toBeGreaterThan(species.weapon.damage);
+      expect(BURROWER.weapon.accuracy).toBeGreaterThan(species.weapon.accuracy);
+    }
+    expect(BURROWER.weapon.aoe).toBeUndefined();
   });
 });
 

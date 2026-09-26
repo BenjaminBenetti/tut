@@ -185,7 +185,11 @@ export function startedMission(
   return { ...started.value.activeMission, phase };
 }
 
-/** Adds one bug of `species` at `pos`, registering its template, and returns the unit. */
+/**
+ * Adds one bug of `species` at `pos`, registering its template, and
+ * returns the unit. A species that burrows (#1179) arrives burrowed and
+ * its template says it digs, as `bugUnit` builds it.
+ */
 export function withBug(
   mission: TacticalState,
   species: BugSpecies,
@@ -205,7 +209,7 @@ export function withBug(
     maxHp: species.hp,
     ap: species.ap,
     maxAp: species.ap,
-    status: [],
+    status: species.burrows === true ? ["burrowed"] : [],
     passClass: "infantry",
   };
   const withUnit: { bug: Unit; mission: TacticalState } = {
@@ -236,6 +240,7 @@ export function withBug(
           ...(species.footprint === undefined
             ? {}
             : { footprint: species.footprint }),
+          ...(species.burrows === true ? { burrows: true } : {}),
         },
       },
     },

@@ -22,7 +22,7 @@ import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
-import { isDormant } from "../model/unit";
+import { isBurrowed, isDormant } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { isTrapped } from "../model/civilian";
 import { leaveOverwatch, spendOverwatchShot } from "./overwatch-status";
@@ -278,7 +278,10 @@ function openNextPhase(
  * hit and damage formulae as a normal shot, drawing from the move
  * command's stream in order. Stops when the mover is down. A hidden
  * mover is never fired on. A dormant bug (#1179) neither draws the fire
- * nor keeps a watch: asleep, it is not moving and not watching.
+ * nor keeps a watch: asleep, it is not moving and not watching. Nor is
+ * a mover under the ground (#1179): a burrower tunnelling past a watcher
+ * draws no shot, and it is the moment it surfaces — when this runs on it
+ * standing — that it does.
  *
  * ```
  *   for watcher of enemies with `overwatch`:
@@ -302,7 +305,8 @@ export function overwatchReaction(
     mover === undefined ||
     mover.hp <= 0 ||
     mover.status.includes("hidden") ||
-    isDormant(mover)
+    isDormant(mover) ||
+    isBurrowed(mover)
   ) {
     return { state, events };
   }

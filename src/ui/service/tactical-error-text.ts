@@ -321,6 +321,14 @@ export function describeRefusal(
       return `No ${error.passClass} tile is left in the deploy zone for ${names.unit(error.unitId)}`;
     case "illegal-move":
       return `${names.unit(error.unitId)} cannot make that move: ${moveReason(error)}`;
+    case "illegal-burrow":
+      return `${names.unit(error.unitId)} cannot do that: ${moveReason(error)}`;
+    case "unit-burrowed":
+      // A burrower's own refusal (#1179); the player never orders one,
+      // but a log or a test reads this, and it names a unit.
+      return `${names.unit(error.unitId)} is under the ground`;
+    case "target-burrowed":
+      return `${names.target(error.targetId)} is under the ground`;
     case "invalid-loadout":
       return `${names.mech(error.mechId)} has a loadout that no longer validates`;
     case "objective-not-found":
@@ -412,9 +420,9 @@ export function refusalText(error: CommandError, names: TacticalNames): string {
   return cause === undefined ? error.message : describeRefusal(cause, names);
 }
 
-/** The move rejection's own words, taken from the shared text. */
+/** A move or burrow rejection's own words, taken from the shared text. */
 function moveReason(
-  error: Extract<TacticalError, { kind: "illegal-move" }>,
+  error: Extract<TacticalError, { kind: "illegal-move" | "illegal-burrow" }>,
 ): string {
   const full = describeTacticalError(error);
   const at = full.indexOf(": ");

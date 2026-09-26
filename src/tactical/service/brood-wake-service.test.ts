@@ -32,6 +32,7 @@ import { createAttackHandler } from "./combat-service";
 import { restingBugIds } from "./dormancy-service";
 import { createMoveHandler } from "./move-handler";
 import {
+  burrowerAt,
   ctxWith,
   fixtureAttackDeps,
   missionWith,
@@ -243,6 +244,41 @@ describe("wakeBroods: enter", () => {
     expect(applied.events.some((event) => event.type === BROOD_WOKE)).toBe(
       false,
     );
+  });
+
+  it("is not moved by a burrower underfoot: walking over one wakes only what walking there always would (#1179)", () => {
+    // Waking is about the squad's side and the zones. A burrower under
+    // the path — awake, or a lone sleeper — holds no tile, is not hurt
+    // by a boot on its column and is no zone, so the walk that stops
+    // short still wakes nothing, and one that goes on wakes A by
+    // entering, as it would over bare ground.
+    const underfoot = [
+      burrowerAt("awake-under", at(10, 16)),
+      burrowerAt("asleep-under", at(10, 15), {
+        status: ["burrowed", "dormant"],
+      }),
+    ];
+    const short = applyWaking(
+      MOVE_HANDLER,
+      twoBroods(underfoot),
+      move("u", [at(10, 17), at(10, 16), at(10, 15), at(10, 14)]),
+    );
+    expect(allAsleep(short.state, "brood-a")).toBe(true);
+    expect(isDormant(unitOf(short.state, "asleep-under"))).toBe(true);
+    expect(
+      short.events.filter(
+        (event) =>
+          event.type === BROOD_WOKE || event.type === UNIT_STATUS_CHANGED,
+      ),
+    ).toEqual([]);
+    const into = applyWaking(
+      MOVE_HANDLER,
+      twoBroods(underfoot),
+      move("u", [at(10, 17), at(10, 16), at(10, 15), at(10, 14), at(10, 13)]),
+    );
+    expect(brood(into.state, "brood-a").woke?.cause).toBe("enter");
+    expect(allAsleep(into.state, "brood-b")).toBe(true);
+    expect(isDormant(unitOf(into.state, "asleep-under"))).toBe(true);
   });
 
   it("measures the zone as a Euclidean circle: (12, 12) is inside radius 3, (13, 12) is not", () => {

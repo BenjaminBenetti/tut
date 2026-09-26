@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
-import { BRUTE, HIVE_GUARD, LURKER } from "../../bugs/data/species";
+import { BRUTE, HIVE_GUARD, LURKER, SWARMER } from "../../bugs/data/species";
 import { PropKindIds } from "../../mapgen/data/props";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
@@ -12,7 +12,11 @@ import {
   placeBugsAt,
   placeHiveGuards,
 } from "./placed-bug-service";
-import { missionWith, unitAt } from "./tactical-fixtures.test-helper";
+import {
+  burrowerAt,
+  missionWith,
+  unitAt,
+} from "./tactical-fixtures.test-helper";
 
 // ===========================================
 // Fixtures
@@ -178,6 +182,24 @@ describe("placeBugsAt", () => {
     expect(added(state, placed).map((u) => u.pos)).toEqual([at(2, 5)]);
     expect(placed.templates["bug:brute"]?.footprint).toBe(2);
   });
+
+  it("never stands a bug over a burrower under the ground, though the burrower holds no tile (#1179)", () => {
+    // A burrower under (4, 2), and a brute whose block anchored at (3, 1)
+    // would reach over it: both are skipped, and (8, 8) still takes one.
+    const base = field();
+    const state = {
+      ...base,
+      units: [...base.units, burrowerAt("dug-in", at(4, 2))],
+    };
+    const swarmers = placeBugsAt(state, SWARMER, [at(4, 2), at(8, 8)], {
+      ids: new SequentialIdGenerator(),
+    });
+    expect(added(state, swarmers).map((u) => u.pos)).toEqual([at(8, 8)]);
+    const brutes = placeBugsAt(state, BRUTE, [at(3, 1), at(2, 5)], {
+      ids: new SequentialIdGenerator(),
+    });
+    expect(added(state, brutes).map((u) => u.pos)).toEqual([at(2, 5)]);
+  });
 });
 
 describe("placeBugAtFirst (#1179)", () => {
@@ -209,5 +231,23 @@ describe("placeBugAtFirst (#1179)", () => {
     expect(placeBugAtFirst(state, LURKER, [], { ids })).toBe(state);
     expect(ids.nextId(UNIT_ID_PREFIX)).toBe(firstIds(1)[0]);
     expect(JSON.stringify(state)).toBe(frozen);
+  });
+
+  it("passes over a candidate above a burrower under the ground, as placeBugsAt does (#1179)", () => {
+    // Live Specimen's lurker goes through here: a burrower under (3, 3)
+    // holds no tile on the surface, yet its column is no place to stand
+    // a bug, so the next candidate takes it.
+    const base = field();
+    const state = {
+      ...base,
+      units: [...base.units, burrowerAt("dug-in", at(3, 3))],
+    };
+    const ids = new SequentialIdGenerator();
+    const placed = placeBugAtFirst(state, LURKER, [at(3, 3), at(4, 4)], {
+      ids,
+    });
+    expect(added(state, placed).map((u) => u.pos)).toEqual([at(4, 4)]);
+    // With the burrower's column the only candidate, nothing is placed.
+    expect(placeBugAtFirst(state, LURKER, [at(3, 3)], { ids })).toBe(state);
   });
 });

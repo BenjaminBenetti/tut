@@ -37,6 +37,8 @@ import type { UnitsHealedPayload } from "../../tactical/model/unit-healed-event"
 import { UNITS_HEALED } from "../../tactical/model/unit-healed-event";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
+import { UNIT_SURFACED } from "../../tactical/model/unit-surfaced-event";
+import { UNIT_BURROWED } from "../../tactical/model/unit-burrowed-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { SpriteId } from "../data/sprite-manifest";
 import type { SpriteAssetEntry, SpriteSheet } from "../data/sprite-manifest";
@@ -105,6 +107,8 @@ export interface AnimationTiming {
   readonly deathSeconds: number;
   /** Reveal of an enemy that has just been spotted (#585). */
   readonly revealSeconds: number;
+  /** A burrower's rise out of the ground, or its sink back in (#1179). */
+  readonly surfaceSeconds: number;
 }
 
 /** What the queue is composed from. */
@@ -170,6 +174,7 @@ export const DEFAULT_ANIMATION_TIMING: AnimationTiming = {
   floaterSeconds: 0.9,
   deathSeconds: 0.5,
   revealSeconds: 0.35,
+  surfaceSeconds: 0.45,
 };
 
 /** Text size on a chip drawn to fit its words, in canvas pixels of a 128 px chip. */
@@ -306,6 +311,16 @@ const BLAST_LIFT = 0.3;
 /** A falling structure's puff, and how far a blast's number rises above the tile. */
 const RUBBLE_SIZE = 1.1;
 const TILE_TEXT_LIFT = 0.6;
+
+/**
+ * The earth a burrower throws up as it breaks the surface or dives
+ * (#1179): the rubble puff's shards and smoke, tinted soil brown, a
+ * little wider than a tile and low over it so it reads as ground
+ * breaking rather than something exploding.
+ */
+const DIRT_SIZE = 1.3;
+const DIRT_LIFT = 0.25;
+const DIRT_COLOUR = 0xb0814f;
 
 // ===========================================
 // TacticalAnimationQueue
@@ -569,7 +584,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
    *   how many pending events it covers.
    */
   private begin(): Playback {
-    const count = this.blastGroupLength();
+    const surfacing = this.surfacingGroupLength();
+    const count = surfacing > 1 ? surfacing : this.blastGroupLength();
     const group = this.pending.slice(0, count);
     for (const entry of group) {
       entry.onStart?.(entry.event);
@@ -579,7 +595,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       return { animation: undefined, count: 0 };
     }
     const animation =
-      count > 1
+      count > 1 && surfacing <= 1
         ? this.volley(group.map((entry) => entry.event))
         : this.start(head.event);
     return { animation, count };
@@ -673,6 +689,35 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     return next;
   }
 
+  /**
+   * How many events from the head of the queue are one burrower coming
+   * up into view (#1179): its surfacing, and the spot `phaseEvents` put
+   * straight behind it. The rise out of the ground is the reveal, so
+   * the spot plays as part of it rather than swelling the burrower a
+   * second time once it is already up.
+   *
+   * ```
+   *   [UnitSurfaced d] [UnitSpotted d, tdf]   → 2, played as the rise
+   *   [UnitSurfaced d] anything else          → 1
+   * ```
+   *
+   * @returns 2 for a surfacing with its spot behind it, `1` for any
+   *   other head, and `0` for an empty queue.
+   */
+  private surfacingGroupLength(): number {
+    const head = this.pending[0]?.event;
+    if (head === undefined) {
+      return 0;
+    }
+    const next = this.pending[1]?.event;
+    return head.type === UNIT_SURFACED &&
+      next?.type === UNIT_SPOTTED &&
+      next.payload.team === "tdf" &&
+      next.payload.unitId === head.payload.unitId
+      ? 2
+      : 1;
+  }
+
   // ===========================================
   // Disposable
   // ===========================================
@@ -750,6 +795,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
           : undefined;
       case BROOD_WOKE:
         return this.stir(event.payload.unitIds);
+      case UNIT_SURFACED:
+        return this.surfacing(event.payload.unitId);
+      case UNIT_BURROWED:
+        return this.dive(event.payload.unitId);
       default:
         return undefined;
     }
@@ -1180,6 +1229,140 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       finish: () => {
         pose(0);
       },
+    };
+  }
+
+  /**
+   * A burrower breaking the surface (#1179): earth bursts over the tile
+   * and the burrower rises out of it to stand where it came up.
+   *
+   * ```
+   *   t = 0          dirt bursts; the model is one body-height under the
+   *                  tile's top, so the ground hides it
+   *   0 → surface    it rises, fast and then settling (ease-out)
+   *   end            it stands on the tile; the dirt has faded
+   * ```
+   *
+   * The burrower is always an arrival (`placeArrivals`): nothing under
+   * the ground is spotted, so the scene has no object for it until the
+   * host placed one, hidden, on the tile it came up on. The rise shows
+   * it. A surfacing the player cannot see has no object, and plays
+   * nothing.
+   *
+   * @param unitId - The burrower.
+   * @returns The rise, or undefined when the scene has no such unit.
+   */
+  private surfacing(unitId: UnitId): Animation | undefined {
+    const object = this.scene.unitObject(unitId);
+    if (!object) {
+      return undefined;
+    }
+    const restY = object.position.y;
+    const depth = this.scene.unitHeight(unitId) ?? FALLBACK_HEIGHT;
+    const dirt = this.dirt(object.position);
+    object.visible = true;
+    return this.plunge(
+      `surface:${unitId}`,
+      dirt,
+      (progress) => {
+        // Ease-out: it bursts up and settles onto its feet.
+        const risen = 1 - (1 - progress) ** 3;
+        object.position.y = restY - depth * (1 - risen);
+      },
+      () => {
+        object.position.y = restY;
+      },
+    );
+  }
+
+  /**
+   * A burrower going back under the ground (#1179): the surfacing played
+   * backwards. It sinks through a burst of earth and is hidden once it
+   * is under; the redraw after the batch removes it, since nothing under
+   * the ground is drawn.
+   *
+   * @param unitId - The burrower.
+   * @returns The dive, or undefined when the scene has no such unit.
+   */
+  private dive(unitId: UnitId): Animation | undefined {
+    const object = this.scene.unitObject(unitId);
+    if (!object) {
+      return undefined;
+    }
+    const restY = object.position.y;
+    const depth = this.scene.unitHeight(unitId) ?? FALLBACK_HEIGHT;
+    const dirt = this.dirt(object.position);
+    return this.plunge(
+      `burrow:${unitId}`,
+      dirt,
+      (progress) => {
+        // Ease-in: it tips over and drops away.
+        object.position.y = restY - depth * progress * progress;
+      },
+      () => {
+        object.visible = false;
+        object.position.y = restY;
+      },
+    );
+  }
+
+  /**
+   * The earth thrown up over a burrower's tile (#1179): the rubble puff,
+   * tinted soil.
+   *
+   * @param feet - Where the burrower's feet are on the tile.
+   * @returns The burst, for `plunge` to swell and fade.
+   */
+  private dirt(feet: Vec3): Sprite {
+    return this.billboard(
+      "vfx.tdf-death",
+      { x: feet.x, y: feet.y + DIRT_LIFT, z: feet.z },
+      DIRT_SIZE,
+      DIRT_COLOUR,
+    );
+  }
+
+  /**
+   * One surfacing or dive: `move` places the burrower at each moment of
+   * `surfaceSeconds` while the earth swells and fades, and `settle`
+   * leaves it where it ends, whether it played out or was skipped.
+   *
+   * @param name - The animation's name.
+   * @param dirt - The burst over the tile.
+   * @param move - Poses the burrower at a progress from 0 to 1.
+   * @param settle - Its end state.
+   * @returns The animation.
+   */
+  private plunge(
+    name: string,
+    dirt: Sprite,
+    move: (progress: number) => void,
+    settle: () => void,
+  ): Animation {
+    const seconds = this.timing.surfaceSeconds;
+    let elapsed = 0;
+    move(0);
+    const cleanup = (): void => {
+      settle();
+      this.removeSprite(dirt);
+    };
+    return {
+      name,
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const progress = elapsed / seconds;
+        move(progress);
+        const scale = DIRT_SIZE * (1 + progress * BURST_GROWTH);
+        dirt.scale.set(scale, scale, 1);
+        dirt.material.opacity = 1 - progress;
+        if (elapsed >= seconds) {
+          cleanup();
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: cleanup,
     };
   }
 

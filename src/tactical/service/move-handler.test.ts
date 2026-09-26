@@ -11,6 +11,7 @@ import { UNIT_MOVED } from "../model/unit-moved-event";
 import { createMoveHandler } from "./move-handler";
 import {
   blockUnitAt,
+  burrowerAt,
   missionWith,
   openField,
   twoFloorBuilding,
@@ -259,5 +260,16 @@ describe("Move with civilian groups (campaign arc §6.4)", () => {
     const fromEdge = withCivilian(base, "c", at(0, 2), { trapped: false });
     expect(reasonOf(fromEdge, "c", eight)).toBeUndefined();
     expect(reasonOf(fromEdge, "c", [...eight, at(7, 4)])).toBe("over-budget");
+  });
+});
+
+describe("moveHandler and a burrowed unit (#1179)", () => {
+  it("refuses to walk a unit that is under the ground: it tunnels instead", () => {
+    const mission = missionWith(
+      openField().build(),
+      [burrowerAt("d", at(1, 1))],
+      { phase: "bugs" },
+    );
+    expect(reasonOf(mission, "d", [at(1, 2)])).toBe("unit-burrowed");
   });
 });

@@ -22,6 +22,7 @@ import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import { perceivedSpecimens } from "../../tactical/service/specimen-service";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
+import { UNIT_SURFACED } from "../../tactical/model/unit-surfaced-event";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import {
   perceivedCarcasses,
@@ -242,6 +243,17 @@ export function frameMission(
  * The object exists only for the batch that brings the unit into view:
  * a unit that stays unspotted is never placed.
  *
+ * A burrower that comes up during the batch (#1179) had no object
+ * either: nothing under the ground is ever spotted. It is an arrival
+ * by the same rule with a surfacing for a walk, placed on the tile it
+ * came up on, so the queue can raise it out of the ground there.
+ *
+ * ```
+ *   first entrance in the batch    placed at
+ *   UnitMoved                      its `from`
+ *   UnitSurfaced                   its `pos`
+ * ```
+ *
  * @param stage - The scene to place into.
  * @param mission - The mission as it is after the batch.
  * @param events - The batch that just resolved.
@@ -256,12 +268,13 @@ export async function placeArrivals(
   const known = knownByTheEnd(mission, events);
   const starts = new Map<UnitId, TileCoord>();
   for (const event of events) {
-    if (event.type !== UNIT_MOVED) {
+    const entrance = entranceOf(event);
+    if (entrance === undefined) {
       continue;
     }
-    const { unitId, from } = event.payload;
+    const [unitId, at] = entrance;
     if (!starts.has(unitId) && !onBoard.has(unitId) && known.has(unitId)) {
-      starts.set(unitId, from);
+      starts.set(unitId, at);
     }
   }
   const placed = new Set<UnitId>();
@@ -278,6 +291,23 @@ export async function placeArrivals(
   }
   await Promise.all(loads);
   return placed;
+}
+
+/**
+ * Where an event would first put a unit on the board: the start of a
+ * walk, or the tile a burrower came up on (#1179). Anything else is no
+ * entrance.
+ */
+function entranceOf(
+  event: TacticalEvent,
+): readonly [UnitId, TileCoord] | undefined {
+  if (event.type === UNIT_MOVED) {
+    return [event.payload.unitId, event.payload.from];
+  }
+  if (event.type === UNIT_SURFACED) {
+    return [event.payload.unitId, event.payload.pos];
+  }
+  return undefined;
 }
 
 /**

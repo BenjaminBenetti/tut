@@ -17,6 +17,7 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import { turretUnit } from "./unit-factory";
 import {
   blockUnitAt,
+  burrowerAt,
   ctxWith,
   missionWith,
   openField,
@@ -163,6 +164,45 @@ describe("burn", () => {
         hp: 5,
       },
     });
+  });
+
+  it("burns a sleeper lying in the fire, and passes over a burrower asleep or awake beneath it (#1179)", () => {
+    // Dormant is no shelter; under the ground is, asleep or not.
+    const mission = missionWith(
+      openField().build(),
+      [
+        unitAt("asleep", "infantry", at(3, 3), {
+          team: "bugs",
+          status: ["dormant"],
+        }),
+        burrowerAt("under", at(4, 4)),
+        burrowerAt("asleep-under", at(5, 5), {
+          status: ["burrowed", "dormant"],
+        }),
+      ],
+      {
+        phase: "bugs",
+        effects: [
+          fire("effect-1", at(3, 3), 3),
+          fire("effect-2", at(4, 4), 3),
+          fire("effect-3", at(5, 5), 3),
+        ],
+      },
+    );
+    const burned = burn(
+      mission,
+      ctxWith(riggedRng(true, "high")),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
+    const hp = (id: string): number | undefined =>
+      burned.state.units.find((u) => u.id === id)?.hp;
+    expect(hp("asleep")).toBe(5);
+    expect(hp("under")).toBe(10);
+    expect(hp("asleep-under")).toBe(10);
+    expect(burned.events.filter((e) => e.type === EFFECT_DAMAGED)).toHaveLength(
+      1,
+    );
   });
 
   it("kills a unit it takes to zero and says so without a killer", () => {

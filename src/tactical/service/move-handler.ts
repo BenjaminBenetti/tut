@@ -17,7 +17,7 @@ import type {
 import type { TacticalState } from "../model/tactical-state";
 import { PHASE_FOR_TEAM } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
-import { passMaskFor } from "../model/unit";
+import { isBurrowed, passMaskFor } from "../model/unit";
 import { UNIT_MOVED } from "../model/unit-moved-event";
 import { unitFootprintSize } from "./footprint-service";
 import {
@@ -44,6 +44,7 @@ import {
  *
  * ```
  *   unit missing ─────────────────────► err unit-not-found
+ *   unit under the ground (#1179) ─────► err unit-burrowed (it tunnels instead)
  *   unit down / not its side's phase ──► err illegal-move (unit-down | wrong-phase)
  *   path empty / longer than budget ───► err illegal-move (empty-path | over-budget)
  *   a tile not in reachable(unit) ─────► err illegal-move (unreachable)
@@ -59,6 +60,10 @@ export function createMoveHandler(
     const unit = findUnit(mission, unitId);
     if (unit === undefined) {
       return err({ kind: "unit-not-found", unitId });
+    }
+    // A burrower under the ground walks nowhere: `Tunnel` moves it.
+    if (isBurrowed(unit)) {
+      return err({ kind: "unit-burrowed", unitId });
     }
     const reject = (reason: MoveRejection): TacticalOutcome =>
       err({ kind: "illegal-move", unitId, reason });

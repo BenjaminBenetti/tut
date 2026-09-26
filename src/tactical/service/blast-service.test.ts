@@ -8,6 +8,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { blastFootprint, blastVictims } from "./blast-service";
 import {
   blockUnitAt,
+  burrowerAt,
   missionWith,
   openField,
   unitAt,
@@ -205,5 +206,39 @@ describe("blastVictims with a unit on a 2×2 block (#1130)", () => {
         (v) => `${v.target.id}@${String(v.distance)}`,
       ),
     ).toEqual(["block@2"]);
+  });
+});
+
+describe("blastVictims and a burrowed unit (#1179)", () => {
+  it("never reaches under the ground, even at the point of impact; a surfaced one is caught", () => {
+    const map = openField().build();
+    const mission = missionWith(map, [
+      burrowerAt("under", at(3, 3)),
+      unitAt("beside", "infantry", at(3, 2), { team: "bugs" }),
+      burrowerAt("up", at(4, 3), { status: [] }),
+    ]);
+    const footprint = blastFootprint(map, at(3, 3), 1);
+    expect(
+      blastVictims(mission, footprint, new Set()).map((v) => v.target.id),
+    ).toEqual(["beside", "up"]);
+  });
+
+  it("catches a sleeper on the surface but not one asleep under the ground (#1179)", () => {
+    // The two statuses meet: dormant is no shelter, burrowed is, and a
+    // burrower asleep under the ground is still under the ground.
+    const map = openField().build();
+    const mission = missionWith(map, [
+      unitAt("asleep", "infantry", at(3, 2), {
+        team: "bugs",
+        status: ["dormant"],
+      }),
+      burrowerAt("asleep-under", at(3, 3), {
+        status: ["burrowed", "dormant"],
+      }),
+    ]);
+    const footprint = blastFootprint(map, at(3, 3), 1);
+    expect(
+      blastVictims(mission, footprint, new Set()).map((v) => v.target.id),
+    ).toEqual(["asleep"]);
   });
 });

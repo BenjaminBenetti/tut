@@ -43,6 +43,7 @@ import type {
 import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
+import { isBurrowed } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { UnitWeapon, WeaponId } from "../model/unit-weapon";
 import { weaponOf } from "../model/unit-weapon";
@@ -237,9 +238,12 @@ interface LivePair {
 }
 
 /**
- * The four refusals `validateAttack` and `validateTargeting` both open
+ * The refusals `validateAttack` and `validateTargeting` both open
  * with: attacker on the map, target resolvable, attacker still standing,
- * target not already down.
+ * target not already down, and neither of them under the ground
+ * (#1179) — a burrowed unit neither strikes nor is struck, and an
+ * overwatch reaction goes through here too, so a watcher never fires
+ * at one.
  *
  * One implementation rather than two (#992). They were written out twice
  * in the same order, and the #735 audit found that only the copy behind
@@ -272,7 +276,27 @@ function liveTargetingPair(
   if (down !== undefined) {
     return err(down);
   }
+  if (isBurrowed(attacker)) {
+    return err({ kind: "unit-burrowed", unitId: attackerId });
+  }
+  if (targetBurrowed(mission, target)) {
+    return err({ kind: "target-burrowed", targetId });
+  }
   return ok({ attacker, target });
+}
+
+/**
+ * Whether the target is a unit under the ground (#1179). A spawner
+ * never is. Read off the unit itself because `AttackTarget` carries no
+ * statuses: the projection is what the HUD shows, and nothing it shows
+ * is ever burrowed.
+ */
+function targetBurrowed(mission: TacticalState, target: AttackTarget): boolean {
+  if (target.kind !== "unit") {
+    return false;
+  }
+  const unit = mission.units.find((candidate) => candidate.id === target.id);
+  return unit !== undefined && isBurrowed(unit);
 }
 
 /**
@@ -437,7 +461,7 @@ export function validateTargeting(
  * one's own side or oneself.
  *
  * ```
- *   attacker      ──► unit-not-on-map · unit-dead · wrong-phase · no-action-points
+ *   attacker      ──► unit-not-on-map · unit-dead · unit-burrowed · wrong-phase · no-action-points
  *   weapon        ──► no-such-weapon · no-charges · no-area-weapon
  *   tile          ──► no-such-tile · out-of-range (reach, #1119) · tile-out-of-sight
  * ```
@@ -457,6 +481,10 @@ export function validateTileAttack(
   }
   if (attacker.hp <= 0) {
     return err({ kind: "unit-dead", unitId: attackerId });
+  }
+  // Nothing fires from under the ground (#1179).
+  if (isBurrowed(attacker)) {
+    return err({ kind: "unit-burrowed", unitId: attackerId });
   }
   const chosen = readyWeapon(mission, attacker, tuning, weaponId);
   if (!chosen.ok) {

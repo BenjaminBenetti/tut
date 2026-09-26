@@ -15,6 +15,8 @@ export const JEV_PROMPT_MAX_LENGTH = JEV_PROTOCOL.promptMaxLength;
  * Derive entity orders from the game's command registry. New commands require a
  * Jev provider and instructions at compile time, unless deliberately excluded
  * here as mission lifecycle, controller orchestration, configuration or debug.
+ * The burrower's orders (#1179) — tunnel, surface, burrow — are excluded too:
+ * no persona is a burrower, so the deterministic behaviour is their only user.
  */
 export type JevActionCommand = Exclude<
   TacticalCommand,
@@ -26,7 +28,10 @@ export type JevActionCommand = Exclude<
       | "tactical:default-bug-act"
       | "tactical:configure-jev"
       | "tactical:set-jev-commander-prompt"
-      | "tactical:place-unit";
+      | "tactical:place-unit"
+      | "tactical:tunnel"
+      | "tactical:surface"
+      | "tactical:burrow";
   }
 >;
 

@@ -10,10 +10,12 @@ import { STARTER_PARTS } from "../../roster/data/parts";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { mechAssemblyFor } from "../data/part-model-table";
+import { UNIT_MOTION_TUNING } from "../data/unit-motion-tuning";
 import type { ModelLoader } from "../model/model-loader";
 import { UnitMesh } from "../view/unit-mesh";
 import { flattenModel } from "./loadout-unit-model-source";
 import { MechAssembler } from "./mech-assembler";
+import { UnitMotionRig } from "./unit-motion-rig";
 
 const MODELS = [
   "tdf.infantry.rifle",
@@ -27,6 +29,7 @@ const MODELS = [
   "bug.lurker",
   "bug.brute",
   "bug.spitter",
+  "bug.burrower",
   "civ.group",
   "bug.swarmer-armoured",
   "bug.lurker-armoured",
@@ -127,9 +130,12 @@ describe("unit motion on the shipped models", () => {
         // Crescent bugs have four running legs and two independently
         // grouped blade arms; the beetle brute walks on six since #1134,
         // and the spitter (#1179) has no blades at all: it spits, and
-        // its shot plays as the body's recoil. An armoured variant has
+        // its shot plays as the body's recoil. The burrower (#1179) digs
+        // on six stub legs and two spade blades. An armoured variant has
         // its base's limbs. Joining the sculpt into one mesh must fail.
-        expect(legs).toHaveLength(id.startsWith("bug.brute") ? 6 : 4);
+        expect(legs).toHaveLength(
+          id.startsWith("bug.brute") || id === "bug.burrower" ? 6 : 4,
+        );
         const arms: Object3D[] = [];
         clone.traverse((part) => {
           if (part.name.startsWith("motion-arm-")) arms.push(part);
@@ -273,6 +279,42 @@ describe("unit motion on the armoured variants (#1179)", () => {
   );
 });
 
+describe("the swarmer family's stride and the burrower (#1179)", () => {
+  /**
+   * The widest any leg swings over one walk cycle, with the burrower's
+   * own geometry rigged under `rigAs`: the same legs every time, so any
+   * difference comes from the id alone.
+   */
+  async function widestLegSwing(rigAs: string): Promise<number> {
+    const model = await loadModel("bug.burrower");
+    const rig = new UnitMotionRig(model, rigAs);
+    let widest = 0;
+    for (let step = 0; step <= 100; step++) {
+      rig.walk(step / 100);
+      model.traverse((part) => {
+        if (part.name.startsWith("motion-leg-")) {
+          widest = Math.max(widest, Math.abs(part.rotation.x));
+        }
+      });
+    }
+    return widest;
+  }
+
+  it("walks the burrower at a plain bug's stride: `bug.burrower` is not of the `bug.swarmer` family", async () => {
+    // Both ids start `bug.`; only the swarmer and its armoured variant
+    // start `bug.swarmer`, and only they take the longer running stride.
+    expect(await widestLegSwing("bug.burrower")).toBeCloseTo(
+      UNIT_MOTION_TUNING.legSwing,
+      2,
+    );
+    // The check: the same legs under the swarmer's id do swing wider.
+    expect(await widestLegSwing("bug.swarmer")).toBeCloseTo(
+      UNIT_MOTION_TUNING.swarmerLegSwing,
+      2,
+    );
+  });
+});
+
 it.each([
   ["tdf.mech.assembled-a", "socket_muzzle"],
   // The leader kneels front-centre, and since #1132 every figure's upper
@@ -280,6 +322,7 @@ it.each([
   // the front marker where its rifle used to be.
   ["tdf.infantry.rifle", "fig0_upper"],
   ["bug.swarmer", "head"],
+  ["bug.burrower", "head"],
   ["bug.swarmer-armoured", "head"],
   // A rooted guard never walks, so turning toward its target is the only
   // way it aims (#1179): its head behind the shield must lead.

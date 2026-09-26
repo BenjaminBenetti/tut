@@ -29,6 +29,7 @@ import type { WeaponProfile } from "../model/weapon-profile";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import {
   blockUnitAt,
+  burrowerAt,
   ctxWith,
   fixtureAttackDeps,
   missionWith,
@@ -1897,5 +1898,93 @@ describe("a tagged hit on a mech that resists the tag (campaign arc §10.2)", ()
   it("turns the spitter's own spit, a one-point scratch on bare plate, to nothing", () => {
     expect(hit(spitter(), bare())).toBe(1);
     expect(hit(spitter(), plated())).toBe(0);
+  });
+});
+
+// ===========================================
+// Under the ground (#1179)
+// ===========================================
+
+describe("a burrowed unit is out of every exchange of fire (#1179)", () => {
+  /** A squad two tiles from a burrower, in the phase `phase`. */
+  const board = (phase: TacticalState["phase"]): TacticalState =>
+    missionWith(
+      openField().build(),
+      [
+        unitAt("s", "infantry", { x: 1, y: 0, z: 1 }),
+        burrowerAt("d", { x: 2, y: 0, z: 1 }),
+      ],
+      { phase },
+    );
+
+  it("cannot be targeted, previewed or shot at, however close", () => {
+    const m = board("player");
+    const refusal = { kind: "target-burrowed", targetId: "d" };
+    const targeting = validateTargeting(m, "s", "d", T);
+    expect(targeting.ok ? "ok" : targeting.error).toEqual(refusal);
+    const preview = previewAttack(m, "s", "d", T);
+    expect(preview.ok ? "ok" : preview.error).toEqual(refusal);
+    const shot = createAttackHandler(T, DEPS)(
+      m,
+      attack("s", "d"),
+      ctxWith(riggedRng(true)),
+    );
+    expect(shot.ok ? "ok" : shot.error).toEqual(refusal);
+  });
+
+  it("strikes at nothing from under the ground, at a unit or at a tile", () => {
+    const m = board("bugs");
+    const refusal = { kind: "unit-burrowed", unitId: "d" };
+    const targeting = validateTargeting(m, "d", "s", T);
+    expect(targeting.ok ? "ok" : targeting.error).toEqual(refusal);
+    const bite = createAttackHandler(T, DEPS)(
+      m,
+      attack("d", "s"),
+      ctxWith(riggedRng(true)),
+    );
+    expect(bite.ok ? "ok" : bite.error).toEqual(refusal);
+    const ground = createAttackHandler(T, DEPS)(
+      m,
+      attackTile("d", { x: 1, y: 0, z: 1 }),
+      ctxWith(riggedRng(true)),
+    );
+    expect(ground.ok ? "ok" : ground.error).toEqual(refusal);
+  });
+
+  it("is refused while it sleeps under the ground, and a sleeper on the surface is fair game (#1179)", () => {
+    // The two statuses meet: a dormant bug lies in plain sight and can
+    // be shot (the shot wakes it); burrowing is what hides a unit, asleep
+    // or not.
+    const m = board("player");
+    const withStatus = (status: TacticalState["units"][number]["status"]) => ({
+      ...m,
+      units: m.units.map((unit) =>
+        unit.id === "d" ? { ...unit, status } : unit,
+      ),
+    });
+    const under = validateTargeting(
+      withStatus(["burrowed", "dormant"]),
+      "s",
+      "d",
+      T,
+    );
+    expect(under.ok ? "ok" : under.error).toEqual({
+      kind: "target-burrowed",
+      targetId: "d",
+    });
+    expect(validateTargeting(withStatus(["dormant"]), "s", "d", T).ok).toBe(
+      true,
+    );
+  });
+
+  it("is fair game again once it has come up", () => {
+    const m = board("player");
+    const up = {
+      ...m,
+      units: m.units.map((unit) =>
+        unit.id === "d" ? { ...unit, status: [] } : unit,
+      ),
+    };
+    expect(validateTargeting(up, "s", "d", T).ok).toBe(true);
   });
 });

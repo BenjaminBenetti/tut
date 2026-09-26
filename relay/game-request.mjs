@@ -194,7 +194,13 @@ const identityFields = {
   position: coordinate,
   facing: oneOf("n", "e", "s", "w"),
   hp: stat,
-  status: list(oneOf("overwatch", "hidden", "suppressed"), 16),
+  // Every UnitStatus: a Jev bug observes its own side whole, a sleeping
+  // brood (`dormant`) and a burrower under the ground (`burrowed`) among
+  // them (#1179). The contract test walks UNIT_STATUSES against this.
+  status: list(
+    oneOf("overwatch", "hidden", "suppressed", "dormant", "burrowed"),
+    16,
+  ),
 };
 const resourceOptions = {
   ap: stat,

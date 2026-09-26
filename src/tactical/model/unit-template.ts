@@ -142,6 +142,13 @@ export interface UnitTemplate {
    * not a mech, such as a deployed turret) has to say so.
    */
   readonly construction?: Construction;
+  /**
+   * The unit can go under the ground (#1179), copied from the species:
+   * it may `Tunnel` while `burrowed`, `Surface`, and `Burrow` back down
+   * (`burrow-service`). Absent on every other template and on missions
+   * saved before burrowers, which then never dig.
+   */
+  readonly burrows?: boolean;
 }
 
 /**

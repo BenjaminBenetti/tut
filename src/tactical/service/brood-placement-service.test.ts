@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { LURKER, SPITTER, SWARMER } from "../../bugs/data/species";
+import { BURROWER, LURKER, SPITTER, SWARMER } from "../../bugs/data/species";
 import { BUG_SPECIES } from "../../bugs/data/species";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -359,6 +359,33 @@ describe("placeDormantBrood", () => {
     );
     expect(joined.broods?.length).toBe(1);
     expect(joined.broods?.[0]?.memberIds.length).toBe(3);
+  });
+
+  it("lays a burrower asleep under the ground, and no later sleeper over its column (#1179)", () => {
+    // A dormant burrower sleeps like any bug, under the ground where it
+    // arrives; the placement path takes its column as a hatchling's is.
+    const state = field();
+    const ids = new SequentialIdGenerator();
+    const dug = placeDormantBrood(
+      state,
+      { broodId: "brood-x", species: BURROWER, positions: [at(5, 5)], wake },
+      { ids },
+    );
+    expect(dug.units.at(-1)?.status).toEqual(["burrowed", "dormant"]);
+    const joined = placeDormantBrood(
+      dug,
+      {
+        broodId: "brood-x",
+        species: SWARMER,
+        positions: [at(5, 5), at(4, 5)],
+        wake,
+      },
+      { ids },
+    );
+    expect(joined.units.slice(dug.units.length).map((u) => u.pos)).toEqual([
+      at(4, 5),
+    ]);
+    expect(joined.broods?.[0]?.memberIds.length).toBe(2);
   });
 
   it("returns the mission itself when no position can hold a bug", () => {

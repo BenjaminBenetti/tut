@@ -340,6 +340,25 @@ export function describeEvent(
         icon: statusIcon(event.payload.status[0]),
         tone: "plain",
       };
+    case "tactical:unit-surfaced":
+      // The surfacing moment (#1179). Only a burrower that comes up
+      // beside a squad is announced: that squad sees it, and the line
+      // names who it is on. One that comes up alone may be far off in
+      // the dark, and a line would say it exists where nobody saw it.
+      return event.payload.beside.length === 0
+        ? undefined
+        : {
+            text: `${nameOf(event.payload.unitId)} burst out of the ground beside ${event.payload.beside
+              .map(nameOf)
+              .join(" and ")}`,
+            icon: "warning",
+            tone: "bug",
+          };
+    case "tactical:unit-tunnelled":
+    case "tactical:unit-burrowed":
+      // Digging is silent, as movement is (#1028), and more so: nobody
+      // on the surface can say where a burrower went.
+      return undefined;
     case "tactical:bugs-spawned":
       return {
         text: `${waveLabel(event.payload.wave, event.payload.totalWaves)}${formatWhole(event.payload.unitIds.length)} bugs ${
@@ -529,6 +548,10 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:blast-resolved":
       // Above the shooter: the blast is what they did (#1121).
       return event.payload.attackerId;
+    case "tactical:unit-surfaced":
+      // Above the burrower, where the ground broke (#1179); a surfacing
+      // with nothing to say shows nothing, as `describeEvent` decides.
+      return event.payload.unitId;
     case "tactical:structure-destroyed":
       return event.payload.unitId;
     case "tactical:wreck-worked":
@@ -546,6 +569,8 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:charge-detonated":
       return undefined;
     case "tactical:unit-moved":
+    case "tactical:unit-tunnelled":
+    case "tactical:unit-burrowed":
     case "tactical:turn-started":
     case "tactical:bugs-spawned":
     case "tactical:objective-updated":

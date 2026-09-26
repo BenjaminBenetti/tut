@@ -31,6 +31,11 @@ describe("BESTIARY", () => {
         shares: { "act-1": 10, "act-2": 15, "act-3": 13, finale: 12 },
         debut: { act: "act-1", missionsInAct: 7 },
       },
+      burrower: {
+        kind: "rolled",
+        shares: { "act-1": 0, "act-2": 15, "act-3": 12, finale: 10 },
+        debut: { act: "act-2", missionsInAct: 5 },
+      },
       "hive-guard": { kind: "placed" },
       "swarmer-armoured": {
         kind: "rolled",
@@ -56,6 +61,28 @@ describe("BESTIARY", () => {
     // `placed` one for a boss) when it lands.
     const missing = BUG_SPECIES_IDS.filter((id) => BESTIARY[id] === undefined);
     expect(missing).toEqual([]);
+  });
+
+  it("sums each act's rolled column as the arc §8 table does: 100 a column, the finale 85 until the Sovereign lands", () => {
+    // The burrower's row (#1179) and the armoured variants' (#1179) land
+    // in the same act-3 and finale columns: together they fill act-3 to
+    // the arc's 100 (20 + 12 + 8 + 13 + 12 + 35). The finale's missing
+    // 15 is the Sovereign's escort share (arc §8, footnote).
+    const totals = Object.fromEntries(
+      ACT_IDS.map((act) => [
+        act,
+        BUG_SPECIES_IDS.reduce((sum, id) => {
+          const entry = BESTIARY[id];
+          return sum + (entry?.kind === "rolled" ? entry.shares[act] : 0);
+        }, 0),
+      ]),
+    );
+    expect(totals).toEqual({
+      "act-1": 100,
+      "act-2": 100,
+      "act-3": 100,
+      finale: 85,
+    });
   });
 
   it("gives every rolled species non-negative shares and a whole debut in an act where it has a share", () => {

@@ -191,8 +191,11 @@ export function mechUnit(
  * (`"bug:<species>"`) and starts at full health; a species with a
  * footprint carries it onto the template (#1130). Explicit weapons and
  * equipment are copied into the same loadout used by player and Jev rules;
- * older species retain their single default attack. Pure: reads only its
- * arguments and draws one id.
+ * older species retain their single default attack. A species that
+ * burrows (#1179) says so on the template and arrives `burrowed`, so a
+ * burrower that hatches, walks in with a wave or is placed by a setup
+ * rule starts under the ground. Pure: reads only its arguments and
+ * draws one id.
  */
 export function bugUnit(
   species: BugUnitSource,
@@ -229,8 +232,10 @@ export function bugUnit(
     ...(species.footprint === undefined
       ? {}
       : { footprint: species.footprint }),
+    // Only a digger says so (#1179); every other template stays as it was.
+    ...(species.burrows === true ? { burrows: true } : {}),
   };
-  return build(
+  const built = build(
     "bug",
     "bugs",
     species.id,
@@ -239,6 +244,9 @@ export function bugUnit(
     placement,
     deps.ids,
   );
+  return template.burrows === true
+    ? { template, unit: { ...built.unit, status: ["burrowed"] } }
+    : built;
 }
 
 /**

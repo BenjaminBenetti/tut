@@ -26,6 +26,7 @@ const KINDS: Readonly<Record<ObjectiveKind, true>> = {
   "destroy-spawner": true,
   "defend-generators": true,
   "destroy-pod": true,
+  "capture-specimen": true,
 };
 
 const SPAWNER_OBJECTIVE: DestroySpawnerObjective = {

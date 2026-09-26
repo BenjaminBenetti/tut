@@ -24,12 +24,22 @@ import type {
   TechNode,
 } from "../../tech/model/tech-node";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
+import { isTechNodeHidden } from "../../tech/service/tech-status-service";
 import type { GroundPoint, TechGraphLayout } from "../model/tech-graph-layout";
 import { layoutTechGraph, TECH_GRAPH_LAYOUT_TUNING } from "./tech-graph-layout";
 
 const CATALOGUE = new StaticTechCatalogue(
   TECH_NODES,
   Object.values(TECH_FAMILIES),
+);
+
+/**
+ * The shipped nodes a campaign with no flags sees: every one but the
+ * hidden Intel projects (#1179), which the layout leaves out until their
+ * flags are set.
+ */
+const VISIBLE_NODES = TECH_NODES.filter(
+  (node) => !isTechNodeHidden(node, NO_TECH_CONDITIONS),
 );
 
 /** Distance between two ground points. */
@@ -178,7 +188,7 @@ describe("layoutTechGraph", () => {
 
   it("places every node once, every family once, and reaches past the outer ring", () => {
     expect(layout.nodes.map((n) => n.id).sort()).toEqual(
-      TECH_NODES.map((n) => n.id).sort(),
+      VISIBLE_NODES.map((n) => n.id).sort(),
     );
     expect(layout.families.map((f) => f.id)).toEqual(
       Object.values(TECH_FAMILIES).map((f) => f.id),
@@ -234,7 +244,7 @@ describe("layoutTechGraph", () => {
     const more = crowdedCatalogue();
     const crowded = layoutTechGraph(more, NO_TECH_CONDITIONS);
     expect(crowded.families).toHaveLength(layout.families.length + 3);
-    expect(crowded.nodes).toHaveLength(TECH_NODES.length + 3 * 7);
+    expect(crowded.nodes).toHaveLength(VISIBLE_NODES.length + 3 * 7);
     expect(brokenInvariants(more, crowded)).toEqual([]);
     expect(crowded.rings.tier2).toBeGreaterThan(layout.rings.tier2);
     expect(crowded.rings.tier3 - crowded.rings.tier2).toBeCloseTo(
@@ -249,6 +259,22 @@ describe("layoutTechGraph", () => {
 
   it("is deterministic", () => {
     expect(layoutTechGraph(CATALOGUE, NO_TECH_CONDITIONS)).toEqual(layout);
+  });
+
+  it("draws Pheromone Analysis on the support spoke once the spore sample is in hand, keeping every invariant (#1179)", () => {
+    expect(layout.nodes.map((n) => n.id)).not.toContain(
+      "tech.pheromone-analysis",
+    );
+    const revealed = layoutTechGraph(CATALOGUE, {
+      flags: new Set(["spore-sample"]),
+    });
+    const pheromone = revealed.nodes.find(
+      (n) => n.id === "tech.pheromone-analysis",
+    );
+    expect(pheromone?.familyId).toBe("support");
+    expect(pheromone?.kind).toBe("intel");
+    expect(revealed.nodes).toHaveLength(VISIBLE_NODES.length + 1);
+    expect(brokenInvariants(CATALOGUE, revealed)).toEqual([]);
   });
 });
 

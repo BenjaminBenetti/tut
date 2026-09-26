@@ -17,8 +17,12 @@ import type { Unit, UnitId } from "../model/unit";
  *
  * ```
  *   hp → 0 ──► kind turret ──► TurretDestroyed { turretId, pos, killerId? }
- *          └─► anything else ──► UnitDied { unitId, killerId? }
+ *          └─► anything else ──► UnitDied { unitId, killerId?, dropped? }
  * ```
+ *
+ * A squad that falls carrying a specimen (#1179) drops it where it
+ * stood: the unit keeps its `carrying` on its record, and the event
+ * says so in `dropped`, so the log and the scene learn of it together.
  *
  * @param unit - The unit as it stood before the blow.
  * @param killerId - Who dealt it, when a unit did.
@@ -38,5 +42,9 @@ export function downedEvent(unit: Unit, killerId?: UnitId): TacticalEvent {
       payload: { generatorId: unit.id, pos: unit.pos, ...credit },
     };
   }
-  return { type: UNIT_DIED, payload: { unitId: unit.id, ...credit } };
+  const dropped = unit.carrying === undefined ? {} : { dropped: unit.carrying };
+  return {
+    type: UNIT_DIED,
+    payload: { unitId: unit.id, ...credit, ...dropped },
+  };
 }

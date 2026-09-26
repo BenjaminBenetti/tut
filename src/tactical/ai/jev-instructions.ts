@@ -32,7 +32,7 @@ const ACTION_RULES: Readonly<Record<string, string>> = {
   extract:
     "Leave the mission from the extraction zone. This removes the actor from the battlefield, so it cannot help with remaining objectives. Choose this when its orders call for withdrawal or extraction.",
   interact:
-    "Plant demolition charges at the offered nearby nest objective, dealing objective damage immediately for the listed AP cost. This is not a move. The nest may require more damage to be destroyed; reaching its map marker alone does not complete the objective.",
+    "Work the offered nearby objective for the listed AP cost. This is not a move. At a nest objective it plants demolition charges, dealing objective damage immediately; the nest may require more damage to be destroyed, and reaching its map marker alone does not complete the objective. At a capture-specimen objective it picks up the specimen a fallen carrier dropped beside the actor, which the actor then carries home at a movement cost; carrying it does not complete the objective until the actor extracts.",
   "harvest-carcass":
     "Harvest an offered nearby bug carcass for campaign tech points. This spends AP without attacking, healing or completing a nest objective; weigh the research gain against the actor's current orders and safety.",
 } satisfies Readonly<Record<SimpleCategory | MechAction, string>>;
@@ -47,6 +47,7 @@ const EQUIPMENT_RULES: Readonly<Record<string, string>> = {
     "Deploy a radar at an offered tile to detect nearby hostile positions during its lifetime. Radar pings do not reveal terrain or make hidden enemies visible attack targets. Position it to cover useful unknown approaches.",
   turret:
     "Deploy an allied autonomous turret at an offered free tile. It watches for enemies and fires automatically with a limited battery; it does not receive normal movement orders. Consider its firing range, sight lines and friendly positions.",
+  net: "Throw the capture net over one offered adjacent enemy bug. It is offered only for a bug of the species a capture-specimen objective wants, worn down to net.captureAtHpFraction of its maximum HP or less. It cannot miss and deals no damage: the bug leaves the battlefield alive and the actor carries it, losing net.carryMovePenalty movement points per AP until it extracts. The objective completes only when the carrier extracts, so bring it home and keep it alive; if the carrier falls, another squad next to it must pick the specimen up with interact.",
 } satisfies Readonly<Record<EquipmentKind, string>>;
 
 // ===========================================

@@ -29,6 +29,8 @@ import type { UseEquipmentCommand } from "../model/use-equipment-command";
 import { actingUnit } from "./acting-unit";
 import type { AttackTerrain } from "./attack-formulae";
 import { damageRange, hitChance } from "./attack-formulae";
+import { captureSpecimen, validateCapture } from "./capture-service";
+import type { CaptureTarget } from "./capture-service";
 import type { AttackDeps, PreviewDeps } from "./combat-service";
 import {
   attackTerrain,
@@ -93,6 +95,8 @@ export interface EquipmentUse {
   readonly from: TileCoord;
   /** Cover, distance and elevation to the tile; absent for a radar, which is carried not thrown. */
   readonly terrain?: AttackTerrain;
+  /** The bug a capture net comes down on (#1179); absent for every other kind. */
+  readonly capture?: CaptureTarget;
 }
 
 // ===========================================
@@ -154,6 +158,8 @@ export function equipmentOf(
  *   blast  ──► no-such-tile · out-of-range · tile-out-of-sight
  *   charge ──► the same as a blast
  *   heal   ──► the same as a blast, then nothing-to-heal
+ *   net    ──► validateCapture: a wanted, weakened bug next to a squad
+ *              with free hands (#1179)
  * ```
  *
  * The one predicate the wheel and the handler share, so an entry the
@@ -205,6 +211,18 @@ export function validateEquipmentUse(
       graph ?? buildMoveGraph(mission.map),
     );
     return site.ok ? ok({ unit, definition, usesLeft, from: unit.pos }) : site;
+  }
+  if (definition.kind === "net") {
+    const capture = validateCapture(mission, unit, definition, tile);
+    return capture.ok
+      ? ok({
+          unit,
+          definition,
+          usesLeft,
+          from: capture.value.from,
+          capture: capture.value,
+        })
+      : capture;
   }
   const index = new TileIndex(mission.map);
   const impact = index.getAt(tile);
@@ -413,7 +431,8 @@ export function equipmentFootprintTiles(
  *                    ├─ blast  ──► [UnitDied…] BlastResolved [StructureDestroyed…] [EffectStarted…]
  *                    │             the same run a shot at the ground emits, delivery "thrown"
  *                    ├─ charge ──► ChargePlaced { detonatesOnTurn: turn + delay }
- *                    └─ heal   ──► UnitsHealed { healed… }        (resolveHealAt, #1138)
+ *                    ├─ heal   ──► UnitsHealed { healed… }        (resolveHealAt, #1138)
+ *                    └─ net    ──► SpecimenCaptured, the bug carried  (captureSpecimen, #1179)
  * ```
  *
  * A grenade that reaches the last spawner ends the mission as a shot
@@ -435,7 +454,7 @@ export function createUseEquipmentHandler(
     if (!checked.ok) {
       return checked;
     }
-    const { unit, definition, usesLeft, terrain } = checked.value;
+    const { unit, definition, usesLeft, terrain, capture } = checked.value;
     const remaining = usesLeft - 1;
     const billed: TacticalState = {
       ...mission,
@@ -532,6 +551,15 @@ export function createUseEquipmentHandler(
           tile,
         );
         return ok({ state: healed.state, events: [used, ...healed.events] });
+      }
+      case "net": {
+        if (capture === undefined) {
+          return err({ kind: "no-equipment", unitId, equipmentId });
+        }
+        // Holds without a roll: the validation found a bug worn down
+        // far enough, so the net takes it and draws nothing.
+        const caught = captureSpecimen(billed, unit.id, capture);
+        return ok({ state: caught.state, events: [used, ...caught.events] });
       }
     }
   };

@@ -1254,3 +1254,135 @@ describe("actionWheel with a turret (#1138)", () => {
     ]);
   });
 });
+
+describe("actionWheel with a capture net (#1179)", () => {
+  const CAPTURE = {
+    id: "objective-capture",
+    kind: "capture-specimen" as const,
+    species: "lurker" as const,
+    complete: false,
+    failed: false,
+  };
+
+  /**
+   * Live Specimen in miniature: the rifles carry a net, a lurker of
+   * `hp` out of 6 stands beside s1 at (2,1), and a capture wants one
+   * when `wanted`.
+   */
+  function netMission(hp: number, wanted = true): TacticalState {
+    const base = hudMission();
+    return withVision({
+      state: {
+        ...base,
+        units: base.units.map((u) =>
+          u.id === "b1"
+            ? { ...u, sourceId: "lurker", hp, pos: { x: 2, y: 0, z: 1 } }
+            : u,
+        ),
+        objectives: wanted ? [...base.objectives, CAPTURE] : base.objectives,
+        templates: {
+          ...base.templates,
+          rifle: {
+            ...hudTemplate("rifle", "Rifle Squad"),
+            equipment: ["capture-net"],
+          },
+        },
+      },
+      events: [],
+    }).state;
+  }
+
+  it("puts Net on a wanted bug's ring once it is worn down, with its cost and the nets left", () => {
+    const ring = actionWheel(
+      { kind: "unit", unitId: "b1" },
+      contextFor(netMission(3), "s1"),
+    );
+    expect(ids(ring)).toEqual([
+      "attack:b1",
+      "equipment:capture-net:2,0,1",
+      "overwatch",
+      "reload",
+    ]);
+    expect(ring.items[1]).toEqual({
+      id: "equipment:capture-net:2,0,1",
+      label: "Net",
+      icon: "bug",
+      detail: "1 AP · 1/1",
+    });
+    // Not an attack: the lone rifle is still the shot itself.
+    expect(ring.items[0]?.detail).not.toBe("2 options");
+  });
+
+  it("closes Net with the rules' reason while the bug is too strong or too far", () => {
+    const strong = actionWheel(
+      { kind: "unit", unitId: "b1" },
+      contextFor(netMission(4), "s1"),
+    );
+    expect(strong.items[1]).toMatchObject({
+      id: "equipment:capture-net:2,0,1",
+      disabled: true,
+      detail: "too strong",
+    });
+    // s2 stands at (1,3): two rows off.
+    const far = actionWheel(
+      { kind: "unit", unitId: "b1" },
+      contextFor(netMission(3), "s2"),
+    );
+    expect(far.items.find((item) => item.label === "Net")?.disabled).toBe(true);
+  });
+
+  it("leaves Net off the ring of a bug nobody wants alive", () => {
+    const ring = actionWheel(
+      { kind: "unit", unitId: "b1" },
+      contextFor(netMission(1, false), "s1"),
+    );
+    expect(ids(ring)).toEqual(["attack:b1", "overwatch", "reload"]);
+  });
+
+  it("puts Pick up on the tile where a fallen carrier dropped the specimen, closed out of reach", () => {
+    const base = netMission(3);
+    const fallen: TacticalState = {
+      ...base,
+      units: [
+        ...base.units.filter((u) => u.id !== "b1"),
+        hudUnit("s3", "tdf", "rifle", 2, 1, {
+          hp: 0,
+          carrying: {
+            unitId: "b9",
+            species: "lurker",
+            templateId: "swarmer",
+            movePenalty: 1,
+          },
+        }),
+      ],
+    };
+    const tile = { x: 2, y: 0, z: 1 };
+    const beside = actionWheel(
+      { kind: "tile", tile },
+      contextFor(fallen, "s1"),
+    );
+    expect(
+      beside.items.find((item) => item.id === "interact:objective-capture"),
+    ).toEqual({
+      id: "interact:objective-capture",
+      label: "Pick up",
+      icon: "interact",
+    });
+    const away = actionWheel(
+      { kind: "tile", tile: { x: 6, y: 0, z: 4 } },
+      contextFor(fallen, "s1"),
+    );
+    expect(ids(away)).not.toContain("interact:objective-capture");
+    const moved: TacticalState = {
+      ...fallen,
+      units: fallen.units.map((u) =>
+        u.id === "s1" ? { ...u, pos: { x: 5, y: 0, z: 4 } } : u,
+      ),
+    };
+    expect(
+      actionWheel({ kind: "tile", tile }, contextFor(moved, "s1")).items.find(
+        (item) => item.id === "interact:objective-capture",
+      ),
+    ).toMatchObject({ label: "Pick up", disabled: true });
+  });
+});

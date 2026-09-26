@@ -168,6 +168,36 @@ describe("squadUnit", () => {
     expect(rocket.template.modelId).toBe("tdf.infantry.rocket");
   });
 
+  it("adds the capture net after the type's own kit, once, and nothing without it (#1179)", () => {
+    const rifle = squadUnit(squad(), RIFLE, AT, upgradedDeps("capture-net"));
+    expect(rifle.template.equipment).toEqual(["grenade", "capture-net"]);
+    expect(rifle.unit.equipment).toBeUndefined();
+    // Swaps and the net together: the grenade upgraded in place, the net after it.
+    expect(
+      squadUnit(
+        squad(),
+        RIFLE,
+        AT,
+        upgradedDeps("frag-grenades", "capture-net"),
+      ).template.equipment,
+    ).toEqual(["frag-grenade", "capture-net"]);
+    // No upgrades: the very template the squad had before them.
+    expect(squadUnit(squad(), RIFLE, AT, upgradedDeps())).toEqual(
+      squadUnit(squad(), RIFLE, AT, deps()),
+    );
+    const bare: SquadType = { ...RIFLE, equipment: undefined };
+    expect(squadUnit(squad(), bare, AT, deps()).template).not.toHaveProperty(
+      "equipment",
+    );
+    expect(
+      squadUnit(squad(), bare, AT, upgradedDeps("squad-armour-1")).template,
+    ).not.toHaveProperty("equipment");
+    expect(
+      squadUnit(squad(), bare, AT, upgradedDeps("capture-net")).template
+        .equipment,
+    ).toEqual(["capture-net"]);
+  });
+
   it("falls back to the default model for an unknown squad type and never hits for zero", () => {
     const odd: SquadType = {
       ...RIFLE,

@@ -2210,6 +2210,10 @@ export class TacticalHudView {
         jevControlled,
         compact: !this.inspecting,
         charges,
+        // A netted specimen rides on its carrier's chip (#1179).
+        ...(unit.carrying === undefined
+          ? {}
+          : { carrying: `live ${unit.carrying.species}` }),
       });
     }
     this.status.show(chips);

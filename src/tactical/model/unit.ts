@@ -1,3 +1,4 @@
+import type { CarriedSpecimen } from "./carried-specimen";
 import type { EquipmentId } from "./equipment";
 import type { WeaponId } from "./unit-weapon";
 import type { Direction } from "../../core/model/direction";
@@ -164,6 +165,16 @@ export interface Unit {
    * every unit saved before personas, so no save needs a migration.
    */
   readonly persona?: PersonaId;
+  /**
+   * The bug this squad took alive with a capture net and is carrying
+   * home (#1179). It costs the carrier `movePenalty` movement points per
+   * action. Kept on the unit's record when it falls, which is what a
+   * dropped specimen is: a dead unit that still carries one, waiting for
+   * another squad to pick it up. Absent on every unit that carries
+   * nothing and on every unit saved before specimens, so no save needs a
+   * migration.
+   */
+  readonly carrying?: CarriedSpecimen;
 }
 
 // ===========================================

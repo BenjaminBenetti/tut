@@ -1,5 +1,6 @@
 import type { JevControl } from "./jev-control";
 import type { SpeciesMix } from "../../bugs/model/species-mix";
+import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { SitrepId } from "../../content/model/sitrep-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
@@ -170,13 +171,35 @@ export interface DefendGeneratorsObjective extends ObjectiveBase {
 }
 
 /**
+ * Take a bug of `species` alive with the capture net and bring it home
+ * (#1179, campaign arc §6.9 Live Specimen). Judged live off the units:
+ * complete once a squad carrying one has extracted, failed once nobody
+ * left on the map could still bring one home. `complete` and `failed`
+ * mirror that as of the last phase step, for the log and the tracker.
+ *
+ * ```
+ *   an extracted unit carries the species                    ──► complete
+ *   no carrier, no reachable dropped specimen, no net left   ──► failed
+ *   otherwise                                                ──► open
+ * ```
+ */
+export interface CaptureSpecimenObjective extends ObjectiveBase {
+  readonly kind: "capture-specimen";
+  /** The species wanted alive: a lurker for Live Specimen. */
+  readonly species: BugSpeciesId;
+}
+
+/**
  * What the player must achieve: wreck a spawner, hold the generators
- * (#1175), or wreck a spore pod before it matures. Closed: a new kind
- * adds its interface here and its rules to `OBJECTIVE_RULES`, which the
- * compiler then insists on (ADR 0013 §2.3).
+ * (#1175), wreck a spore pod before it matures, or bring a specimen home
+ * (#1179). Closed: a new kind adds its interface here and its rules to
+ * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
  */
 export type Objective =
-  DestroySpawnerObjective | DefendGeneratorsObjective | DestroyPodObjective;
+  | DestroySpawnerObjective
+  | DefendGeneratorsObjective
+  | DestroyPodObjective
+  | CaptureSpecimenObjective;
 
 /** When the next wave walks in from the map edge, and how many have so far. */
 export interface EdgeSpawnSchedule {

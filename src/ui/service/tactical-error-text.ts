@@ -357,6 +357,17 @@ export function describeRefusal(
       return "That tech carcass has already been stripped";
     case "carcass-out-of-reach":
       return `The tech carcass is ${String(error.distance)} tiles away; harvesting reaches ${String(error.range)}`;
+    case "no-capture-target":
+      // The capture net and its catch (#1179).
+      return "There is no bug there to net";
+    case "specimen-not-wanted":
+      return `Nobody asked for ${names.target(error.targetId)} alive`;
+    case "target-too-healthy":
+      return `${capitalise(names.target(error.targetId))} is too strong to net: ${String(error.hp)} hit points, and the net holds at ${String(error.threshold)} or less`;
+    case "already-carrying":
+      return `${names.unit(error.unitId)} is already carrying a specimen`;
+    case "cannot-carry":
+      return `${names.unit(error.unitId)} cannot carry a specimen; only an infantry squad can`;
     default:
       // Every remaining kind names nothing, so the developer wording is
       // already the player's. The test guards that claim.

@@ -1,14 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
+import { CAMPAIGN_FLAG_IDS } from "../../content/model/campaign-flag-id";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { partIdsOf } from "../model/tech-effect";
 import type { TechNode } from "../model/tech-node";
+import { NO_TECH_CONDITIONS } from "../model/tech-conditions";
 import { TECH_FAMILY_IDS, TECH_NODE_KINDS } from "../model/tech-node";
+import { techNodeStatus } from "../service/tech-status-service";
 import { CONDITIONAL_TECH_NODES } from "./conditional-tech-tree.test-helper";
 import { TECH_FAMILIES } from "./tech-families";
-import { TECH_NODES, TIER_2_COST, TIER_3_COST } from "./tech-tree";
+import {
+  PHEROMONE_ANALYSIS_COST,
+  TECH_NODES,
+  TIER_2_COST,
+  TIER_3_COST,
+} from "./tech-tree";
 
 const NODE_IDS = new Set(TECH_NODES.map((node) => node.id));
 const byId = (id: string) => TECH_NODES.find((node) => node.id === id);
@@ -194,5 +202,56 @@ describe("TECH_NODES", () => {
     // to the 25th mission, not long before and not long after.
     expect(partTreeCost).toBeGreaterThan(income * 0.9);
     expect(partTreeCost).toBeLessThan(income * 1.1);
+  });
+});
+
+describe("Intel I, Pheromone Analysis (#1179, campaign arc §4)", () => {
+  const node = byId("tech.pheromone-analysis");
+  const rich = { techPoints: 10_000 };
+  const fresh = { unlocked: [] };
+
+  it("is an intel node at its starting price on a real family", () => {
+    expect(node?.kind).toBe("intel");
+    expect(node?.cost).toBe(PHEROMONE_ANALYSIS_COST);
+    expect(PHEROMONE_ANALYSIS_COST).toBe(180);
+    expect(TECH_FAMILY_IDS).toContain(node?.family);
+    expect(node?.requires).toEqual([]);
+  });
+
+  it("stays hidden until the spore sample is in hand, then can be bought", () => {
+    if (node === undefined) {
+      throw new Error("Pheromone Analysis is missing");
+    }
+    expect(node.requiresFlags).toEqual(["spore-sample"]);
+    expect(techNodeStatus(node, fresh, rich, NO_TECH_CONDITIONS)).toBe(
+      "hidden",
+    );
+    expect(
+      techNodeStatus(node, fresh, rich, {
+        flags: new Set(["capture-net", "hive-core-sample"]),
+      }),
+    ).toBe("hidden");
+    expect(
+      techNodeStatus(node, fresh, rich, { flags: new Set(["spore-sample"]) }),
+    ).toBe("available");
+  });
+
+  it("grants the capture net as squad kit and sets the flag the story pins Live Specimen on", () => {
+    expect(node?.effects).toEqual([
+      { kind: "infantry-upgrade", upgradeId: "capture-net" },
+      { kind: "flag", flag: "capture-net" },
+    ]);
+    const flags = (node?.effects ?? []).flatMap((effect) =>
+      effect.kind === "flag" ? [effect.flag] : [],
+    );
+    for (const flag of [...flags, ...(node?.requiresFlags ?? [])]) {
+      expect(CAMPAIGN_FLAG_IDS as readonly string[]).toContain(flag);
+    }
+  });
+
+  it("leaves the parts pacing untouched: only part nodes are paced (#1171)", () => {
+    expect(PART_NODES.map((n) => n.id)).not.toContain(
+      "tech.pheromone-analysis",
+    );
   });
 });

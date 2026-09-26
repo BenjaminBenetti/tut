@@ -41,10 +41,13 @@ import type { FrameUpdatable } from "../model/frame-updatable";
 import { ChargeView } from "../view/charge-view";
 import { ObjectiveMarkerView } from "../view/objective-marker-view";
 import { RadarView } from "../view/radar-view";
+import type { SpecimenPlacement } from "../view/specimen-view";
+import { SpecimenView } from "../view/specimen-view";
 import { TurretView } from "../view/turret-view";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
+import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import {
   DEFAULT_FOOTPRINT,
   footprintSizeOf,
@@ -140,6 +143,10 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *     ├─ harvested or gone ──► mesh.dispose()
  *     └─ new               ──► models.load(CARCASS_MODEL_ID) ──► UnitMesh, not pickable
  *
+ *   updateSpecimens(specimens, templates)                        (#1179)
+ *     ├─ picked up or gone ──► removed
+ *     └─ new               ──► SpecimenView: the species' model, netted, not pickable
+ *
  *   pickUnit(ndc)    ──► raycast the unit meshes    ──► nearest hit's unit
  *   pickSpawner(ndc) ──► raycast the spawner meshes ──► nearest hit's spawner
  * ```
@@ -187,6 +194,8 @@ export class TacticalSceneBuilder
   private readonly objectiveView = new ObjectiveMarkerView();
   /** Sweeping guns and smoking husks for turrets (#1138); ticked as `turretUpdatable`. */
   private readonly turretView: TurretView;
+  /** Netted specimens lying where their carriers fell (#1179). */
+  private readonly specimenView: SpecimenView;
   /** What was last asked for, kept so a change of storey can redraw it through the cut (#1134). */
   private lastCharges: readonly PlacedCharge[] = [];
   private lastRadars: readonly Radar[] = [];
@@ -244,6 +253,7 @@ export class TacticalSceneBuilder
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
     this.radarView = new RadarView(options.models);
+    this.specimenView = new SpecimenView(options.models);
     this.turretView = new TurretView(options.models, (unitId) =>
       this.unitObject(unitId),
     );
@@ -273,6 +283,7 @@ export class TacticalSceneBuilder
       this.mapView.root,
       this.spawnersGroup,
       this.carcassesGroup,
+      this.specimenView.root,
       this.effects.root,
       this.charges.root,
       this.unitsGroup,
@@ -475,6 +486,11 @@ export class TacticalSceneBuilder
     return this.carcassMeshes.get(carcassId)?.worldPosition();
   }
 
+  /** Ids of the dropped specimens drawn or loading, named by their fallen carriers (#1179). */
+  specimenIds(): readonly string[] {
+    return this.specimenView.ids();
+  }
+
   /**
    * Brings the map in step with a mission whose map has changed (#1121):
    * every prop and wall the new map no longer has is collapsed out of
@@ -602,6 +618,34 @@ export class TacticalSceneBuilder
     await Promise.all(loads);
   }
 
+  /**
+   * Brings the netted specimens lying on the board in step with
+   * `specimens` (#1179): each is drawn as its species' model, looked up
+   * through the template it was captured with, under a net. One picked
+   * up is removed. Resolves when every new model has loaded.
+   *
+   * @param specimens - The dropped specimens the player knows of.
+   * @param templates - The mission's templates, for each species' model.
+   */
+  async updateSpecimens(
+    specimens: readonly DroppedSpecimen[],
+    templates: UnitTemplateLookup,
+  ): Promise<void> {
+    const placements = specimens.flatMap((dropped): SpecimenPlacement[] => {
+      const template = templates[dropped.specimen.templateId];
+      return template === undefined
+        ? []
+        : [
+            {
+              id: dropped.carrierId,
+              pos: dropped.pos,
+              modelId: template.modelId,
+            },
+          ];
+    });
+    await this.specimenView.updateSpecimens(placements);
+  }
+
   /** Shows friendly scanners and location-only radar contacts through the fog. */
   async updateRadar(
     radars: readonly Radar[],
@@ -666,6 +710,7 @@ export class TacticalSceneBuilder
       this.removeCarcass(id);
     }
     this.wantedCarcasses.clear();
+    this.specimenView.dispose();
     this.effects.dispose();
     this.charges.dispose();
     this.mapView.dispose();

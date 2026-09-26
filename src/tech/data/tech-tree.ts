@@ -21,6 +21,12 @@ import { INFANTRY_TECH_NODES } from "./infantry-tech-tree";
 export const TIER_2_COST = 18;
 /** Tech points a tier 3 part node costs. */
 export const TIER_3_COST = 40;
+/**
+ * Tech points Intel I, Pheromone Analysis, costs (campaign arc §4): its
+ * starting price. An Intel node is priced by the story, not by a tier,
+ * and it is left out of the parts pacing above.
+ */
+export const PHEROMONE_ANALYSIS_COST = 180;
 
 // ===========================================
 // Nodes
@@ -32,7 +38,9 @@ export const TIER_3_COST = 40;
  * `kind: "part"` nodes priced by tier (ADR 0011), then the infantry
  * family (`INFANTRY_TECH_NODES`, campaign arc §10.3). The other kinds
  * of ADR 0013 §2.7 (intel, autopsy, story) carry their own prices and
- * land with the campaign content that reveals them. Tier
+ * land with the campaign content that reveals them: Intel I, Pheromone
+ * Analysis, sits on the support spoke and stays hidden until the spore
+ * sample is in hand (#1179). Tier
  * 2 nodes have no prerequisites, so every family opens at once and the
  * first unlock is a real choice; each tier 3 node needs one tier 2 node
  * of its family, so a capital system is reached by building up to it.
@@ -46,7 +54,8 @@ export const TIER_3_COST = 40;
  *   fire support  Atlas · Guided · Incendiary ·   Howitzer · Cluster
  *                 Rotary
  *   support       Tracker · Surveyor · Recon ·    Marksman · Designator
- *                 Field Repair
+ *                 Field Repair ·
+ *                 Pheromone Analysis (intel, hidden until spore-sample)
  *   infantry      Armour I · Frag · Field Medic   Armour II · Heavy Weapons ·
  *                                                 Incendiary
  * ```
@@ -348,6 +357,27 @@ export const TECH_NODES: readonly TechNode[] = [
     cost: TIER_2_COST,
     requires: [],
     effects: [{ kind: "part", partId: "utility-field-repair-module" }],
+  },
+  {
+    // Intel I (campaign arc §4, #1179). Hidden until the first Crash Site
+    // brings home a spore sample. The capture net is an infantry upgrade:
+    // squad kit, which is what that effect kind is for, so no new kind of
+    // effect is needed. The `capture-net` flag is what the story pins
+    // Live Specimen on (campaign arc §4).
+    id: "tech.pheromone-analysis",
+    name: "Pheromone Analysis",
+    description:
+      "Decode the spore sample's pheromones: every squad carries a capture net to take a weakened bug alive.",
+    family: "support",
+    kind: "intel",
+    tier: 2,
+    cost: PHEROMONE_ANALYSIS_COST,
+    requires: [],
+    requiresFlags: ["spore-sample"],
+    effects: [
+      { kind: "infantry-upgrade", upgradeId: "capture-net" },
+      { kind: "flag", flag: "capture-net" },
+    ],
   },
   {
     id: "tech.marksman-arms",

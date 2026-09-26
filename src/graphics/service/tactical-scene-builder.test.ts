@@ -28,6 +28,8 @@ import type { UnitTemplate } from "../../tactical/model/unit-template";
 import { LAYER_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
+import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
+import { SPECIMEN_NET_NAME } from "../view/specimen-view";
 import {
   CARCASS_MODEL_ID,
   SPAWNER_MODEL_ID,
@@ -446,6 +448,48 @@ describe("TacticalSceneBuilder carcasses", () => {
     await builder.updateCarcasses([carcass("c1", 1, 1)]);
     builder.dispose();
     expect(builder.carcassIds()).toEqual([]);
+  });
+});
+
+// ===========================================
+// Dropped specimens (#1179)
+// ===========================================
+
+describe("TacticalSceneBuilder dropped specimens", () => {
+  /** A swarmer netted by `carrierId`, dropped where that squad fell at (x, z). */
+  function dropped(carrierId: string, x: number, z: number): DroppedSpecimen {
+    return {
+      carrierId,
+      pos: { x, y: 0, z },
+      specimen: {
+        unitId: "bug-1",
+        species: "swarmer",
+        templateId: "bug:swarmer",
+        movePenalty: 1,
+      },
+    };
+  }
+
+  it("draws the specimen with its species' model, named by the fallen carrier", async () => {
+    const { builder, models } = build();
+    await builder.updateSpecimens([dropped("squad-1", 2, 3)], TEMPLATES);
+    expect(builder.specimenIds()).toEqual(["squad-1"]);
+    expect(models.loads).toEqual(["bug.swarmer"]);
+    const drawn = builder.root.getObjectByName("specimen:squad-1");
+    expect(drawn?.getObjectByName(SPECIMEN_NET_NAME)).toBeDefined();
+  });
+
+  it("takes it off the board once picked up, and down with everything on dispose", async () => {
+    const { builder } = build();
+    await builder.updateSpecimens(
+      [dropped("squad-1", 2, 3), dropped("squad-2", 4, 4)],
+      TEMPLATES,
+    );
+    await builder.updateSpecimens([dropped("squad-2", 4, 4)], TEMPLATES);
+    expect(builder.specimenIds()).toEqual(["squad-2"]);
+    expect(builder.root.getObjectByName("specimen:squad-1")).toBeUndefined();
+    builder.dispose();
+    expect(builder.specimenIds()).toEqual([]);
   });
 });
 

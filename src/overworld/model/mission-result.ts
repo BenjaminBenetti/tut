@@ -160,6 +160,13 @@ export interface MissionResult {
    */
   readonly speciesKilled?: readonly BugSpeciesId[];
   /**
+   * The species of the specimen brought home alive (#1179): a capture
+   * objective whose specimen was extracted. The story's consequence
+   * rules read it (Live Specimen opens Act II). Absent when the mission
+   * wanted no specimen or none came home.
+   */
+  readonly specimenCaptured?: BugSpeciesId;
+  /**
    * How each of the mission's objectives ended (ADR 0013 §2.3), in the
    * mission's objective order, for the consequence rules. The tactical
    * resolver fills it from the finished mission, and leaves it out when

@@ -2243,6 +2243,13 @@
   font-size: 10px;
   color: var(--ui-text-dim);
 }
+
+/* A netted specimen on its carrier (#1179): the bugs' colour, so the
+   passenger reads as a bug at a glance. */
+.tut-status-chip__carrying {
+  font-size: 10px;
+  color: var(--ui-bug);
+}
 .tut-radar-key {
   color: var(--ui-danger);
 }

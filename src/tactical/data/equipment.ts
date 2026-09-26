@@ -24,6 +24,7 @@ import type { WeaponProfile } from "../model/weapon-profile";
 //   | Field medkit     | heal   | 4    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 15   |
 //   | Repair kit       | heal   | 2    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 25   |
 //   | Turret           | turret | 2    | 1  | 2     | —   | —   | —   | —                 | —    | —     | —    |
+//   | Capture net      | net    | 1    | 1  | 1     | —   | —   | —   | —                 | —    | —     | —    |
 //
 //   • The dish keeps its scan radius and battery in `radar-tuning.ts`;
 //     only where it may be put and what it costs live here.
@@ -55,6 +56,13 @@ import type { WeaponProfile } from "../model/weapon-profile";
 //     flamer's fire (`hazard-tuning.ts`); field medic training makes
 //     the medkit mend 15 in place of 10. The swaps themselves are
 //     `roster/data/infantry-upgrades.ts`.
+//   • A capture net (#1179, campaign arc §6.9) is thrown over a bug on a
+//     tile next to the squad once that bug is down to half its hit
+//     points or less, and takes it alive; the squad carries it home one
+//     movement point slower per action. One a mission, issued to every
+//     squad once Pheromone Analysis is researched, never by a squad type:
+//     it is the one infantry upgrade that adds an item rather than
+//     swapping one (`roster/data/infantry-upgrades.ts`).
 
 /**
  * How far a thrown kit goes and how wide it lands: the grenade's
@@ -207,6 +215,24 @@ export const TURRET: EquipmentDefinition = {
   range: 2,
 };
 
+/**
+ * The capture net (#1179): thrown over a bug next to the squad at half
+ * its hit points or less, it takes the bug alive for the squad to carry
+ * home. Half rather than the "0 HP" of the arc's one-line summary: a net
+ * that waited for the killing blow would ask the player to land a shot
+ * that must not kill, which no hit roll can promise. Issued by the
+ * Pheromone Analysis upgrade (`INFANTRY_UPGRADES`), not by any squad type.
+ */
+export const CAPTURE_NET: EquipmentDefinition = {
+  id: "capture-net",
+  name: "Capture net",
+  kind: "net",
+  uses: 1,
+  apCost: 1,
+  range: 1,
+  net: { captureAtHpFraction: 0.5, carryMovePenalty: 1 },
+};
+
 /** Every piece of equipment keyed by id, in catalogue order. */
 export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
   "mech-recon": {
@@ -236,4 +262,5 @@ export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
   [FRAG_GRENADE.id]: FRAG_GRENADE,
   [INCENDIARY_GRENADE.id]: INCENDIARY_GRENADE,
   [FIELD_MEDKIT.id]: FIELD_MEDKIT,
+  [CAPTURE_NET.id]: CAPTURE_NET,
 };

@@ -17,18 +17,23 @@ import type { EquipmentId } from "../../tactical/model/equipment";
  * | `frag-grenades`        | the grenade becomes a frag grenade             |
  * | `incendiary-grenades`  | the grenade becomes an incendiary grenade      |
  * | `field-medic-training` | the medic squad's medkit becomes a field medkit |
+ * | `capture-net`          | a capture net, on top of the squad's own kit   |
+ *
+ * All but the capture net come from the infantry family of the tree; the
+ * capture net comes from Intel I, Pheromone Analysis (campaign arc §4).
  */
 export type InfantryUpgradeId =
   | "squad-armour-1"
   | "squad-armour-2"
   | "frag-grenades"
   | "incendiary-grenades"
-  | "field-medic-training";
+  | "field-medic-training"
+  | "capture-net";
 
 /**
  * Every infantry upgrade id, in the order upgrades are applied: armour
- * first, then the grenade ladder bottom rung first, then the medkit.
- * Append, never insert.
+ * first, then the grenade ladder bottom rung first, then the medkit,
+ * then the capture net. Append, never insert.
  */
 export const INFANTRY_UPGRADE_IDS: readonly InfantryUpgradeId[] = [
   "squad-armour-1",
@@ -36,6 +41,7 @@ export const INFANTRY_UPGRADE_IDS: readonly InfantryUpgradeId[] = [
   "frag-grenades",
   "incendiary-grenades",
   "field-medic-training",
+  "capture-net",
 ];
 
 // ===========================================
@@ -54,14 +60,16 @@ export const INFANTRY_UPGRADE_IDS: readonly InfantryUpgradeId[] = [
  * ```
  *   InfantryUpgradeDefinition
  *   ├── armorBonus      added to every squad's per-hit armour
- *   └── equipmentSwaps  carried item id ──► the item it becomes
+ *   ├── equipmentSwaps  carried item id ──► the item it becomes
+ *   └── equipmentAdds   items handed out on top of the kit
  *
  *   squad type equipment [grenade, medkit]
  *        │  frag-grenades         grenade      ──► frag-grenade
  *        │  incendiary-grenades   frag-grenade ──► incendiary-grenade
  *        │  field-medic-training  medkit       ──► field-medkit
+ *        │  capture-net           + capture-net
  *        ▼
- *   template equipment   [incendiary-grenade, field-medkit]
+ *   template equipment   [incendiary-grenade, field-medkit, capture-net]
  * ```
  *
  * Upgrades are never stored on a squad: they are derived from the
@@ -81,4 +89,10 @@ export interface InfantryUpgradeDefinition {
    * Absent means the kit is untouched.
    */
   readonly equipmentSwaps?: Readonly<Partial<Record<EquipmentId, EquipmentId>>>;
+  /**
+   * Items this upgrade hands every squad on top of its kit, after the
+   * kit's own items, each carried once however many upgrades name it: a
+   * squad whose type carries nothing gets them too. Absent means none.
+   */
+  readonly equipmentAdds?: readonly EquipmentId[];
 }

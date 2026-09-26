@@ -1,4 +1,5 @@
 import type { DomainEvent } from "../../core/model/domain-event";
+import type { CarriedSpecimen } from "./carried-specimen";
 import type { UnitId } from "./unit";
 
 // ===========================================
@@ -13,6 +14,12 @@ export interface UnitDiedPayload {
   readonly unitId: UnitId;
   /** Who dealt the killing blow, if a unit did. */
   readonly killerId?: UnitId;
+  /**
+   * The specimen the unit was carrying (#1179), which now lies on its
+   * tile for another squad to pick up. Absent for a unit that carried
+   * nothing, so every other death reads exactly as before.
+   */
+  readonly dropped?: CarriedSpecimen;
 }
 
 /** A unit reached zero hit points. */

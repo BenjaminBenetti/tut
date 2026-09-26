@@ -85,6 +85,22 @@ describe("upgradedEquipment", () => {
     );
   });
 
+  it("adds the capture net after the kit, once, and to a squad that carries nothing (#1179)", () => {
+    expect(
+      upgradedEquipment(
+        ["grenade", "medkit"],
+        upgrades("frag-grenades", "capture-net"),
+      ),
+    ).toEqual(["frag-grenade", "medkit", "capture-net"]);
+    expect(
+      upgradedEquipment(["capture-net", "grenade"], upgrades("capture-net")),
+    ).toEqual(["capture-net", "grenade"]);
+    expect(upgradedEquipment([], upgrades("capture-net"))).toEqual([
+      "capture-net",
+    ]);
+    expect(upgradedEquipment([], upgrades("squad-armour-1"))).toEqual([]);
+  });
+
   it("returns the kit unchanged, as a new list, with no upgrades", () => {
     const kit = ["grenade", "medkit"];
     const out = upgradedEquipment(kit, []);

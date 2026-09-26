@@ -241,7 +241,8 @@ export function composeTactical(
     generator: GENERATOR_TUNING,
     setupRules: MISSION_SETUP_RULES,
     // Every squad deployed carries what the tree has researched for the
-    // infantry (campaign arc §10.3), read off the campaign at the start.
+    // infantry (campaign arc §10.3), the capture net among it (#1179),
+    // read off the campaign at the start.
     infantryUpgradesFor: (state) =>
       infantryUpgradesFor(content.tech, content.infantryUpgrades, state.tech),
   });

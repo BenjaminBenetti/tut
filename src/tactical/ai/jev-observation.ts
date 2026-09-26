@@ -9,6 +9,7 @@ import { jevSharedCapabilities } from "./jev-capabilities";
 import type { EquipmentCatalogue } from "../model/equipment";
 import { equipmentOf } from "../service/equipment-service";
 import { chargesLeft } from "../service/combat-service";
+import { movePerAction } from "../service/movement-service";
 
 /** Build a physically filtered rules input. Never hand Jev the raw mission or its event log. */
 export function jevPerception(
@@ -197,7 +198,9 @@ function describeUnit(
       ? {
           ap: unit.ap,
           max_ap: unit.maxAp,
-          movement: template?.move,
+          // Per action, less what a carried specimen costs (#1179).
+          movement:
+            template === undefined ? undefined : movePerAction(view, unit),
           heat: unit.heat,
           systems: template?.systems,
           charges: Object.fromEntries(
@@ -217,6 +220,9 @@ function describeUnit(
           moved_this_turn: unit.movedThisTurn,
           ablative_spent: unit.ablativeSpent,
           overwatch_shots: unit.overwatchShots,
+          // The species of the specimen it carries, or lies beside once
+          // it has fallen (#1179).
+          carrying: unit.carrying?.species,
         }
       : {}),
   };

@@ -43,6 +43,7 @@ import type { TechNodeId } from "../../tech/model/tech-node";
 import { TECH_FAMILY_IDS } from "../../tech/model/tech-node";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
+import { isTechNodeHidden } from "../../tech/service/tech-status-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
@@ -64,6 +65,14 @@ type NavigateMock = Mock<(id: ScreenId) => void>;
 
 const PARTS = new StaticPartCatalogue(STARTER_PARTS);
 const TECH = new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES));
+/**
+ * How many shipped nodes a campaign with no flags is shown: all but the
+ * hidden Intel projects (#1179). The screen's conditions are
+ * `NO_TECH_CONDITIONS` unless a test sets flags.
+ */
+const VISIBLE_NODE_COUNT = TECH_NODES.filter(
+  (node) => !isTechNodeHidden(node, NO_TECH_CONDITIONS),
+).length;
 
 const newGame = (): GameState =>
   createNewGame(
@@ -290,7 +299,7 @@ describe("TechTreeScreen", () => {
       TECH_FAMILIES.mobility.name,
     );
     expect(stage.querySelectorAll("[data-node]")).toHaveLength(
-      TECH_NODES.length,
+      VISIBLE_NODE_COUNT,
     );
     const jump = label("tech.jump-jets");
     expect(jump.querySelector('[data-field="name"]')?.textContent).toBe(
@@ -308,7 +317,7 @@ describe("TechTreeScreen", () => {
     const graph = new FakeGraphHost();
     const { screen } = mountWith(new RealStore(fixture()), root, { graph });
     expect(graph.container?.dataset.role).toBe("tech-graph");
-    expect(graph.layout?.nodes).toHaveLength(TECH_NODES.length);
+    expect(graph.layout?.nodes).toHaveLength(VISIBLE_NODE_COUNT);
     expect(graph.statuses.get("tech.all-terrain")).toBe("unlocked");
     expect(graph.statuses.get("tech.jump-jets")).toBe("available");
     expect(graph.statuses.get("tech.sprint-frame")).toBe("unaffordable");

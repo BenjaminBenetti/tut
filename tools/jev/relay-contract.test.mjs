@@ -52,6 +52,21 @@ function scenario(team, passClass = "infantry") {
       { x: 3, y: 0, z: 1 },
       { team: team === "tdf" ? "bugs" : "tdf" },
     ),
+    // A weakened lurker beside the actor that the capture objective
+    // wants (#1179), so a TDF squad has a legal capture net throw.
+    ...(team === "tdf"
+      ? [
+          {
+            ...unitAt(
+              "specimen",
+              "infantry",
+              { x: 1, y: 0, z: 0 },
+              { team: "bugs", hp: 4 },
+            ),
+            sourceId: "lurker",
+          },
+        ]
+      : []),
   ]);
   const items = Object.values(EQUIPMENT).map((item) => ({
     ...item,
@@ -119,6 +134,13 @@ function scenario(team, passClass = "infantry") {
           kind: "destroy-spawner",
           targetId: "nest",
           complete: false,
+        },
+        {
+          id: "capture",
+          kind: "capture-specimen",
+          species: "lurker",
+          complete: false,
+          failed: false,
         },
       ],
       spawners: [
@@ -345,9 +367,15 @@ describe("Relay compatibility with actual game requests", () => {
       );
       const top = pages[0].request.questions.action.criteria;
       expect(top).toHaveProperty("attack:new-weapon");
+      // Only a TDF squad carries a specimen, so the net is offered to
+      // nobody else (#1179); every other kind is offered to everyone.
+      const usable = Object.values(EQUIPMENT).filter(
+        (item) =>
+          item.kind !== "net" || (team === "tdf" && passClass === "infantry"),
+      );
       expect(
         Object.keys(top).filter((key) => key.startsWith("equipment:")),
-      ).toHaveLength(Object.keys(EQUIPMENT).length);
+      ).toHaveLength(usable.length);
       for (const page of pages)
         expect(
           validGameRequest(page.request),

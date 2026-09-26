@@ -86,18 +86,22 @@ describe("INFANTRY_TECH_NODES (campaign arc §10.3)", () => {
     expect(total).toBeLessThan(1_820 * 0.2);
   });
 
-  it("grants every infantry upgrade exactly once, and each from a node of its own", () => {
+  it("grants every infantry upgrade but the capture net exactly once, and each from a node of its own", () => {
     const granted = INFANTRY_TECH_NODES.flatMap((node) =>
       infantryUpgradeIdsOf(node),
     );
-    expect([...granted].sort()).toEqual([...INFANTRY_UPGRADE_IDS].sort());
+    expect([...granted].sort()).toEqual(
+      INFANTRY_UPGRADE_IDS.filter((id) => id !== "capture-net").sort(),
+    );
     for (const id of granted) {
       expect(INFANTRY_UPGRADES[id].id).toBe(id);
     }
-    // Nothing outside the family grants one.
-    expect(TECH_NODES.flatMap((node) => infantryUpgradeIdsOf(node))).toEqual(
-      granted,
-    );
+    // Outside the family only Intel I grants one: the capture net
+    // (campaign arc §4, #1179).
+    const outside = TECH_NODES.filter(
+      (node) => !INFANTRY_TECH_NODES.includes(node),
+    ).flatMap((node) => infantryUpgradeIdsOf(node).map((id) => [node.id, id]));
+    expect(outside).toEqual([["tech.pheromone-analysis", "capture-net"]]);
   });
 
   it("opens the heavy weapons squad, a shipped type, from one node and nothing else", () => {

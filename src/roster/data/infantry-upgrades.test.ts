@@ -31,7 +31,8 @@ describe("INFANTRY_UPGRADES (campaign arc §10.3)", () => {
       // Each does something.
       expect(
         (upgrade.armorBonus ?? 0) > 0 ||
-          Object.keys(upgrade.equipmentSwaps ?? {}).length > 0,
+          Object.keys(upgrade.equipmentSwaps ?? {}).length > 0 ||
+          (upgrade.equipmentAdds ?? []).length > 0,
         key,
       ).toBe(true);
     }
@@ -63,6 +64,20 @@ describe("INFANTRY_UPGRADES (campaign arc §10.3)", () => {
         expect(after.apCost, upgrade.id).toBe(before.apCost);
         expect(after.range, upgrade.id).toBe(before.range);
       }
+    }
+  });
+
+  it("adds only real items no shipped squad type carries itself: the capture net alone (#1179)", () => {
+    const carried = new Set<EquipmentId>(
+      SQUAD_TYPES.flatMap((type) => type.equipment ?? []),
+    );
+    const added = Object.values(INFANTRY_UPGRADES).flatMap((upgrade) =>
+      (upgrade.equipmentAdds ?? []).map((id) => [upgrade.id, id]),
+    );
+    expect(added).toEqual([["capture-net", "capture-net"]]);
+    for (const [, id] of added) {
+      expect(byId(id).kind).toBe("net");
+      expect(carried.has(id!)).toBe(false);
     }
   });
 

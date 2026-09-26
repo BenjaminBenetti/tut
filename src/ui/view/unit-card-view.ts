@@ -1,3 +1,4 @@
+import { carryMovePenaltyOf } from "../../tactical/model/carried-specimen";
 import type { Unit } from "../../tactical/model/unit";
 import { isAutonomous } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
@@ -95,6 +96,10 @@ interface CardEntry {
  * A deployed turret (#1138) reads its battery instead of an action
  * budget: it takes no orders, so the AP, Move and Attacks rows go and a
  * Battery row ("3 turns") takes their place.
+ *
+ * A squad carrying a netted specimen (#1179) gains a Carrying row
+ * ("live lurker"), and its Move reads what it can walk with it:
+ * "2 (−1 carrying)" for a squad of move 3.
  */
 export class UnitCardView {
   // ===========================================
@@ -184,6 +189,7 @@ export class UnitCardView {
       ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
       ["Equipment", "equipment", "ability"],
+      ["Carrying", "carrying", "bug"],
       ["Armor", "armor", "armor"],
       ["Heat", "heat", "warning"],
       ["Status", "status", "overwatch"],
@@ -295,7 +301,25 @@ export class UnitCardView {
       "unit-side",
       `${unit.team} · ${unit.kind}${size > 1 ? ` · ${String(size)}×${String(size)}` : ""}`,
     );
-    this.set("move", formatWhole(template.move));
+    // What it can walk now: a netted specimen weighs a tile per action
+    // (#1179), and the card says so rather than print a number the
+    // move preview will not honour.
+    const penalty = carryMovePenaltyOf(unit);
+    this.set(
+      "move",
+      penalty === 0
+        ? formatWhole(template.move)
+        : `${formatWhole(Math.max(0, template.move - penalty))} (−${formatWhole(penalty)} carrying)`,
+    );
+    for (const el of this.rows.get("carrying") ?? []) {
+      el.hidden = unit.carrying === undefined;
+    }
+    this.set(
+      "carrying",
+      unit.carrying === undefined
+        ? EMPTY_FIELD
+        : `live ${unit.carrying.species}`,
+    );
     this.set("unit-rank", template.rank?.name ?? "");
     const rankBadge = this.fields.get("unit-rank");
     if (rankBadge) {

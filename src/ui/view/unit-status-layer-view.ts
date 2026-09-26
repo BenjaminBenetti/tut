@@ -24,6 +24,11 @@ export interface UnitStatusChip {
    * and empty for a unit with no pool at all.
    */
   readonly charges: readonly UnitStatusCharge[];
+  /**
+   * What the unit carries (#1179), e.g. `"live lurker"`: a squad
+   * bringing home a netted specimen. Absent for empty hands.
+   */
+  readonly carrying?: string;
 }
 
 /** A shared reactor heat pool or individual weapon ammunition pool. */
@@ -51,6 +56,7 @@ export interface UnitStatusCharge {
  *        ┌ Hammerhead ──────────────────┐
  *        │ ████████████░░░░░   64 / 80  │   the bar, then the numbers
  *        │ heat 17 / 28                 │   one shared mech heat gauge
+ *        │ carrying live lurker         │   a netted specimen (#1179)
  *        └─────────────┬────────────────┘
  *                    (unit)
  * ```
@@ -149,7 +155,7 @@ export class UnitStatusLayerView {
 // Helpers
 // ===========================================
 
-/** One chip's DOM: name, bar, gauge. */
+/** One chip's DOM: name, bar, gauge, and what it carries. */
 function buildChip(doc: Document, unitId: UnitId): HTMLElement {
   const chip = doc.createElement("div");
   chip.className = "tut-status-chip";
@@ -177,7 +183,11 @@ function buildChip(doc: Document, unitId: UnitId): HTMLElement {
   const gauges = doc.createElement("div");
   gauges.className = "tut-status-chip__gauges tut-mono";
   gauges.dataset.field = "status-charges";
-  chip.append(jev, name, health, gauges);
+  const carrying = doc.createElement("div");
+  carrying.className = "tut-status-chip__carrying tut-mono";
+  carrying.dataset.field = "status-carrying";
+  carrying.hidden = true;
+  chip.append(jev, name, health, gauges, carrying);
   return chip;
 }
 
@@ -234,5 +244,15 @@ function fillChip(element: HTMLElement, chip: UnitStatusChip): void {
       );
     }
     gauges.hidden = lines.length === 0;
+  }
+  const carrying = element.querySelector<HTMLElement>(
+    '[data-field="status-carrying"]',
+  );
+  if (carrying) {
+    const text = chip.carrying === undefined ? "" : `carrying ${chip.carrying}`;
+    if (carrying.textContent !== text) {
+      carrying.textContent = text;
+    }
+    carrying.hidden = chip.carrying === undefined;
   }
 }

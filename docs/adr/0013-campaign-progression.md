@@ -43,6 +43,10 @@ interface CampaignProgress {
   readonly flags: readonly CampaignFlagId[]; // content/model/campaign-flag-id.ts, closed union
   readonly speciesKilled: readonly BugSpeciesId[]; // first-kill record, feeds autopsies
   readonly nemeses: readonly Nemesis[]; // overworld/model/nemesis.ts
+  // Optional, so older saves need no migration (§2.9):
+  readonly storyWon?: readonly StoryMissionId[]; // §2.5
+  readonly storyRetryDay?: Readonly<Partial<Record<StoryMissionId, number>>>; // §2.5
+  readonly chronicle?: CampaignChronicle; // overworld/model/campaign-chronicle.ts
 }
 ```
 
@@ -59,8 +63,13 @@ interface CampaignProgress {
 
 **Who changes progress:**
 
-- The launch handler (`launch-mission-service.ts`) is the single place that counts missions: `missionsPlayed`, `missionsWon`, `speciesKilled`.
-- Story services change `act` and `flags`.
+- The launch handler (`launch-mission-service.ts`) is the single place that counts missions: `missionsPlayed`, `missionsWon`, `speciesKilled`. The nemesis record in `nemeses` is settled through `nemesis-service.ts`, by the launch handler for Alpha Present and by the Alpha Hunt consequence (`missions/alpha-hunt-consequence.ts`): an escape adds or raises a nemesis, a kill strikes her from it.
+- Story services change `act`, `flags`, `storyWon` and `storyRetryDay`.
+- The **chronicle** is written as things happen, through `campaign-chronicle-service.ts`:
+  - `story-service` records each act's start (its day and missions played) and each story win;
+  - `nemesis-service` records a nemesis kill, with its name and day, before it strikes her from `nemeses`.
+
+  At the campaign's end, `outcome-chronicle-service` freezes it into `GameOutcomeSummary` for the victory and defeat screens. An outcome with no chronicle still renders.
 - Nothing else mutates `progress`.
 
 ### 2.2 Missions carry their campaign context

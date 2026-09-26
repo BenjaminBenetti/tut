@@ -39,7 +39,7 @@ Mission numbers are targets for an average player. Acts are gated by research, s
 | D8 | Infantry tech | **Yes.** Infantry get their own research branch. |
 | F1 | Act I mix | **A third each:** Infestation Clearance, Crash Site, Evacuation. Defend Installation sits on top, offered when an installation the player built is threatened. |
 | F2 | Smart enemies | **Jev drives them, on by default** when the relay is configured, for select named enemies only (Broodmother, named alphas, Sovereign). Every one has a deterministic fallback behaviour (§9). |
-| C3 | Intel pricing | The three Intel projects cost about 650–700 TP together. Each needs a recovered item or event as a prerequisite (§4). |
+| C3 | Intel pricing | The three Intel projects cost 600 TP together (80 + 240 + 280, after the #1179 pacing retune). Each needs a recovered item or event as a prerequisite (§4). |
 
 ## 3. Acts
 
@@ -62,7 +62,7 @@ Each gate is a hidden tech node (§10.1). It appears when its prerequisite item 
 
 | Intel project | Appears when | Starting price | On completion |
 |---|---|---|---|
-| I · Pheromone Analysis | The first Crash Site is won (a **spore sample** is recovered) | 180 TP | Grants the **capture net** and pins **Live Specimen** |
+| I · Pheromone Analysis | The first Crash Site is won (a **spore sample** is recovered) | 80 TP | Grants the **capture net** and pins **Live Specimen** |
 | II · Pod Telemetry | The first Hive Assault is won (a **hive core sample**) | 240 TP | Pins **Intact Pod** |
 | III · Platform Approach | **Uplink** is won (beacon tracking data) | 280 TP | With all three Great Hives destroyed, pins **Launch Window** |
 | Last Hope | The first Spore Platform assault fails | about 3 missions of TP (≈ 100 TP) | Re-pins the Spore Platform assault (§6.9) |

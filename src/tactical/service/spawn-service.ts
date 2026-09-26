@@ -15,6 +15,7 @@ import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalContext } from "../model/tactical-handler";
 import type {
   EdgeSpawnSchedule,
+  EdgeWaveSurge,
   Spawner,
   TacticalState,
 } from "../model/tactical-state";
@@ -22,7 +23,7 @@ import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
 import { footprintFits, occupiedKeys } from "./movement-service";
-import type { PhaseStep } from "./turn-service";
+import type { PhaseStep } from "../model/phase-step";
 import { bugUnit } from "./unit-factory";
 
 // ===========================================
@@ -92,7 +93,8 @@ export function createPodBurstStep(deps: SpawnDeps): PhaseStep {
  * ```
  *   for spawner in order:  destroyed ──► unchanged
  *                          timer − 1 > 0 ──► tick
- *                          otherwise ──► shuffle free hatch tiles, take hatchCount,
+ *                          otherwise ──► shuffle free hatch tiles,
+ *                                        take hatchCount + hatchBonus,
  *                                        one weighted species roll per bug
  *                                        (by bugMix, else hatchWeight),
  *                                        BugsSpawned { source: "spawner" }, timer ← interval
@@ -100,7 +102,9 @@ export function createPodBurstStep(deps: SpawnDeps): PhaseStep {
  *
  * Draws from `ctx.rng.fork("spawn:hatch")`, spawners in `spawners`
  * order, so the edge wave's rolls never perturb these. A variant that
- * does not hatch (a spore pod) is left as it is, timer and all.
+ * does not hatch (a spore pod) is left as it is, timer and all. A
+ * spawner Hardened Clutches toughened (`hatchBonus`) releases that many
+ * more bugs a hatch (campaign arc §11).
  */
 export function hatch(
   mission: TacticalState,
@@ -136,7 +140,7 @@ export function hatch(
       state,
       snapshot,
       room,
-      deps.tuning.hatchCount,
+      deps.tuning.hatchCount + (spawner.hatchBonus ?? 0),
       rng,
       ctx.ids,
       deps.species,
@@ -183,6 +187,16 @@ export function hatch(
  *
  * Draws from `ctx.rng.fork("spawn:edge")`: the hook first, then the
  * tile shuffle, then one weighted species roll per bug.
+ *
+ * Under Swarm Tide the schedule carries a `surge` (campaign arc §11):
+ * the wave is `⌈size × sizeScale⌉` bugs, and it may stand on the ground
+ * within `spillRadius` steps of its zone as well as on the zone, since
+ * a zone is four to six tiles and a shipped wave already fills it from
+ * difficulty 5. Without one, the wave is drawn exactly as it always was.
+ *
+ * ```
+ *   surge ──► bugs = ⌈waveSize(…) × sizeScale⌉ on the zone ∪ spillRadius around it
+ * ```
  */
 export function edgeWave(
   mission: TacticalState,
@@ -212,9 +226,12 @@ export function edgeWave(
   const rng = ctx.rng.fork("spawn:edge");
   const hook = rng.pick(hooks);
   const snapshot = snapshotMap(mission.map);
-  const tiles = hook.tiles
+  const zone = hook.tiles
     .map((coord) => snapshot.index.getAt(coord))
     .filter((tile): tile is Tile => tile !== undefined);
+  const surge = mission.edgeSpawn.surge;
+  const tiles =
+    surge === undefined ? zone : surgeRoom(snapshot, zone, surge.spillRadius);
   const centre: TileCoord = {
     x: (mission.map.width - 1) / 2,
     y: 0,
@@ -224,7 +241,10 @@ export function edgeWave(
     mission,
     snapshot,
     tiles,
-    waveSize(wave, mission.difficulty, mission.threat, deps.tuning),
+    surgedSize(
+      waveSize(wave, mission.difficulty, mission.threat, deps.tuning),
+      surge,
+    ),
     rng,
     ctx.ids,
     deps.species,
@@ -414,6 +434,59 @@ export function waveSize(
     steps(difficulty) * tuning.sizePerDifficulty +
     threatFraction(threat) * tuning.sizeAtMaxThreat;
   return Math.max(0, Math.min(tuning.maxWaveSize, Math.floor(size)));
+}
+
+// ===========================================
+// Surge
+// ===========================================
+
+/**
+ * An edge wave's size under Swarm Tide's surge: the spawn tuning's size
+ * multiplied by `sizeScale` and rounded up, so every wave of one or more
+ * gains at least one bug. The tuning's `maxWaveSize` capped the size
+ * before the surge, so a capped wave of 8 lands 12. Without a surge,
+ * the size as it came.
+ *
+ * @param size - The wave the spawn tuning makes.
+ * @param surge - Swarm Tide's hold on the schedule, when it has one.
+ */
+export function surgedSize(size: number, surge?: EdgeWaveSurge): number {
+  return surge === undefined ? size : Math.ceil(size * surge.sizeScale);
+}
+
+/**
+ * Where a surging wave may stand: its zone's tiles, then every tile
+ * infantry reach within `radius` steps of one of them that is not
+ * already listed, each zone tile's reach in discovery order. The zone's
+ * own tiles come first and are never lost; the candidates are shuffled
+ * before they are taken, so the order only fixes the draws.
+ *
+ * @param snapshot - The map's traversal snapshot.
+ * @param zone - The edge-spawn hook's tiles, in hook order.
+ * @param radius - How far past the zone the wave may spill.
+ */
+export function surgeRoom(
+  snapshot: ReachabilitySnapshot,
+  zone: readonly Tile[],
+  radius: number,
+): Tile[] {
+  const seen = new Set(zone.map((tile) => snapshot.index.keyOf(tile)));
+  const room: Tile[] = [...zone];
+  for (const origin of zone) {
+    for (const tile of hatchTiles(
+      snapshot,
+      origin,
+      radius,
+      PassMask.INFANTRY,
+    )) {
+      const key = snapshot.index.keyOf(tile);
+      if (!seen.has(key)) {
+        seen.add(key);
+        room.push(tile);
+      }
+    }
+  }
+  return room;
 }
 
 // ===========================================

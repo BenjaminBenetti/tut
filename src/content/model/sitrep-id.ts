@@ -11,19 +11,29 @@
  * definitions, tactical's rules, the UI's presentation) must name each
  * sitrep, and a missing entry fails to compile.
  *
- * | Sitrep         | Effect                                           | Helps |
- * |----------------|--------------------------------------------------|-------|
- * | `nightfall`    | sight −4 for both sides                          |       |
- * | `spore-fog`    | smoke clouds scattered at the start              |       |
- * | `city-ablaze`  | burning tiles that rekindle every three turns    |       |
- * | `salvage-rich` | two extra tech carcasses                         | yes   |
- * | `local-guides` | the map starts explored                          | yes   |
+ * | Sitrep              | Effect                                         | Helps |
+ * |---------------------|------------------------------------------------|-------|
+ * | `nightfall`         | sight −4 for both sides                        |       |
+ * | `spore-fog`         | smoke clouds scattered at the start            |       |
+ * | `city-ablaze`       | burning tiles that rekindle every three turns  |       |
+ * | `salvage-rich`      | two extra tech carcasses                       | yes   |
+ * | `local-guides`      | the map starts explored                        | yes   |
+ * | `hardened-clutches` | egg spawners +50% hp, one more bug a hatch     |       |
+ * | `swarm-tide`        | edge waves 50% larger, the first a turn sooner |       |
+ * | `dust-off-window`   | the drop ship leaves on a set turn             |       |
  *
- * Later sitreps (Hardened Clutches, Swarm Tide, Dust-off Window, Alpha
- * Present) append one member here and one entry per table.
+ * Alpha Present, the last of the arc's nine, appends one member here
+ * and one entry per table when the nemesis record lands.
  */
 export type SitrepId =
-  "nightfall" | "spore-fog" | "city-ablaze" | "salvage-rich" | "local-guides";
+  | "nightfall"
+  | "spore-fog"
+  | "city-ablaze"
+  | "salvage-rich"
+  | "local-guides"
+  | "hardened-clutches"
+  | "swarm-tide"
+  | "dust-off-window";
 
 /**
  * Every sitrep id, in a fixed order. Append, never insert: the offer
@@ -36,4 +46,7 @@ export const SITREP_IDS: readonly SitrepId[] = [
   "city-ablaze",
   "salvage-rich",
   "local-guides",
+  "hardened-clutches",
+  "swarm-tide",
+  "dust-off-window",
 ];

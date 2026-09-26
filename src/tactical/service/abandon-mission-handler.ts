@@ -2,15 +2,12 @@ import { err, ok } from "../../core/model/result";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { AbandonMissionCommand } from "../model/abandon-mission-command";
 import { MISSION_ENDED } from "../model/mission-ended-event";
-import type { TacticalEvent } from "../model/tactical-event";
 import type { TacticalHandler } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
-import type { Unit, UnitId } from "../model/unit";
-import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
+import type { UnitId } from "../model/unit";
+import { leaveBehind, standingForce } from "./left-behind-service";
 import { forceExtracted, objectivesComplete } from "./mission-end-service";
 
-import { isCivilian } from "../model/civilian";
-import { isGenerator } from "../model/generator";
 import { objectiveComplete } from "./objectives/objective-status";
 
 // ===========================================
@@ -53,7 +50,7 @@ export interface LeaveMissionSummary {
  *
  * ```
  *   leftBehind     = living TDF units in `units` (not in `extracted`),
- *                    generators and civilian groups aside
+ *                    generators and civilian groups aside (standingForce)
  *   objectivesOpen = objectives with complete: false
  *   outcome        = every objective complete and someone aboard ──► won
  *                    otherwise ─────────────────────────────────► lost
@@ -71,7 +68,7 @@ export interface LeaveMissionSummary {
 export function leaveMissionSummary(
   mission: TacticalState,
 ): LeaveMissionSummary {
-  const leftBehind = standingUnits(mission).map((unit) => ({
+  const leftBehind = standingForce(mission).map((unit) => ({
     unitId: unit.id,
     sourceId: unit.sourceId,
   }));
@@ -108,7 +105,8 @@ export function leaveMissionSummary(
  *
  * The lifting adapter refuses a mission that already has an outcome, so
  * the handler does not check it twice. Extracted units are untouched:
- * they are home, whatever happens to the rest.
+ * they are home, whatever happens to the rest. The stranding itself is
+ * `leaveBehind`'s, which Dust-off Window's departure shares.
  */
 export function createAbandonMissionHandler(): TacticalHandler<AbandonMissionCommand> {
   return (mission) => {
@@ -116,40 +114,16 @@ export function createAbandonMissionHandler(): TacticalHandler<AbandonMissionCom
       return err({ kind: "not-player-phase" });
     }
     const summary = leaveMissionSummary(mission);
-    const stranded = new Set(summary.leftBehind.map((unit) => unit.unitId));
-    const units = mission.units.map((unit) =>
-      stranded.has(unit.id) ? { ...unit, hp: 0 } : unit,
-    );
-    const events: TacticalEvent[] = summary.leftBehind.map((unit) => ({
-      type: UNIT_ABANDONED,
-      payload: { unitId: unit.unitId },
-    }));
-    events.push({
-      type: MISSION_ENDED,
-      payload: { outcome: summary.outcome, turn: mission.turn },
-    });
+    const left = leaveBehind(mission);
     return ok({
-      state: { ...mission, units, outcome: summary.outcome },
-      events,
+      state: { ...left.state, outcome: summary.outcome },
+      events: [
+        ...left.events,
+        {
+          type: MISSION_ENDED,
+          payload: { outcome: summary.outcome, turn: mission.turn },
+        },
+      ],
     });
   };
-}
-
-// ===========================================
-// Helpers
-// ===========================================
-
-/** The player's units still alive on the map. */
-function standingUnits(mission: TacticalState): readonly Unit[] {
-  // A generator is the installation's, not the force's (#1175): it is
-  // neither stranded nor written off when the squad leaves. Nor is a
-  // civilian group (campaign arc §6.4): it is not a roster entry, and
-  // the rescue objective's tally already counts it as not saved.
-  return mission.units.filter(
-    (unit) =>
-      unit.team === "tdf" &&
-      unit.hp > 0 &&
-      !isGenerator(unit) &&
-      !isCivilian(unit),
-  );
 }

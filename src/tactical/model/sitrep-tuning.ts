@@ -63,20 +63,61 @@ export interface SalvageRichTuning {
   readonly spacing: number;
 }
 
+/** Hardened Clutches: tougher egg spawners that hatch more. */
+export interface HardenedClutchesTuning {
+  /** Every hatching spawner's hit points are multiplied by this, rounded up. Above 1. */
+  readonly hpScale: number;
+  /** Bugs each hatch releases beyond the spawn tuning's `hatchCount`. Positive integer. */
+  readonly extraHatchlings: number;
+}
+
+/** Swarm Tide: bigger edge waves, the first sooner. */
+export interface SwarmTideTuning {
+  /** Every edge wave's size is multiplied by this, rounded up. Above 1. */
+  readonly sizeScale: number;
+  /** Turns the first edge wave is brought forward; never before the first turn. */
+  readonly turnsSooner: number;
+  /**
+   * How far past its zone a wave may spill, in infantry steps. A zone is
+   * four to six edge tiles, which a shipped wave already fills from
+   * difficulty 5, so without somewhere to stand the extra bugs would
+   * never arrive.
+   */
+  readonly spillRadius: number;
+}
+
+/** Dust-off Window: the drop ship leaves once a set turn has ended. */
+export interface DustOffWindowTuning {
+  /** Turns the window always gives, before the map's size adds any. */
+  readonly baseTurns: number;
+  /** Map tiles of `width + depth` per extra turn; the quotient rounds up. */
+  readonly tilesPerTurn: number;
+  /**
+   * On a mission that counts its waves (a defence), turns kept after the
+   * last wave's turn, so holding every wave always leaves time to clear
+   * up and board.
+   */
+  readonly turnsAfterLastWave: number;
+}
+
 // ===========================================
 // Sitrep tuning
 // ===========================================
 
 /**
- * Balance knobs for the Act I sitreps (campaign arc §11). Each sitrep's
- * rule is built from its own entry, so a test can hand a rule different
+ * Balance knobs for the sitreps (campaign arc §11). Each sitrep's rule
+ * is built from its own entry, so a test can hand a rule different
  * numbers. Defaults live in `tactical/data/sitrep-tuning.ts`.
  *
  * ```
- *   nightfall      sight − 4, never below 3
- *   spore-fog      one radius-2 cloud per 576 tiles (4 / 9 / 16), 16 phases
- *   city-ablaze    one 5-tile blaze per 1728 tiles, 2..4 (2 / 3 / 4), relit every 3 turns
- *   salvage-rich   2 more carcasses, priced like the offer's own
+ *   nightfall          sight − 4, never below 3
+ *   spore-fog          one radius-2 cloud per 576 tiles (4 / 9 / 16), 16 phases
+ *   city-ablaze        one 5-tile blaze per 1728 tiles, 2..4 (2 / 3 / 4), relit every 3 turns
+ *   salvage-rich       2 more carcasses, priced like the offer's own
+ *   hardened-clutches  spawner hp × 1.5 rounded up, one more bug a hatch
+ *   swarm-tide         waves × 1.5 rounded up, spilling 2 past the zone; first one turn sooner
+ *   dust-off-window    ship leaves after turn 8 + ⌈(w + d) / 12⌉ (16 / 20 / 24),
+ *                      and never before 12 turns after a defence's last wave
  * ```
  */
 export interface SitrepTuning {
@@ -84,4 +125,7 @@ export interface SitrepTuning {
   readonly sporeFog: SporeFogTuning;
   readonly cityAblaze: CityAblazeTuning;
   readonly salvageRich: SalvageRichTuning;
+  readonly hardenedClutches: HardenedClutchesTuning;
+  readonly swarmTide: SwarmTideTuning;
+  readonly dustOffWindow: DustOffWindowTuning;
 }

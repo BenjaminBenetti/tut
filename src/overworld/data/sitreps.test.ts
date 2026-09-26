@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { SITREP_IDS } from "../../content/model/sitrep-id";
-import { FIRST_SITREP_MISSION, SITREPS } from "./sitreps";
+import {
+  DUST_OFF_SITREP_MISSION,
+  FIRST_SITREP_MISSION,
+  SITREPS,
+  SPAWN_SITREP_MISSION,
+} from "./sitreps";
 
 describe("SITREPS", () => {
   it("keys every definition by its own id", () => {
@@ -10,11 +15,41 @@ describe("SITREPS", () => {
     }
   });
 
-  it("debuts all five Act I sitreps at mission 10 (arc §3, §11)", () => {
+  it("debuts the five Act I sitreps at M10, the spawn pair at M16 and Dust-off at M20 (arc §3, §11)", () => {
     expect(FIRST_SITREP_MISSION).toBe(10);
-    for (const id of SITREP_IDS) {
-      expect(SITREPS[id].debutMission).toBe(FIRST_SITREP_MISSION);
-    }
+    expect(SPAWN_SITREP_MISSION).toBe(16);
+    expect(DUST_OFF_SITREP_MISSION).toBe(20);
+    expect(
+      Object.fromEntries(
+        SITREP_IDS.map((id) => [id, SITREPS[id].debutMission]),
+      ),
+    ).toEqual({
+      nightfall: 10,
+      "spore-fog": 10,
+      "city-ablaze": 10,
+      "salvage-rich": 10,
+      "local-guides": 10,
+      "hardened-clutches": 16,
+      "swarm-tide": 16,
+      "dust-off-window": 20,
+    });
+  });
+
+  it("names the map hooks a sitrep needs to act, and only for the three that need one", () => {
+    expect(
+      Object.fromEntries(
+        SITREP_IDS.map((id) => [id, SITREPS[id].requiredHooks ?? []]),
+      ),
+    ).toEqual({
+      nightfall: [],
+      "spore-fog": [],
+      "city-ablaze": [],
+      "salvage-rich": [],
+      "local-guides": [],
+      "hardened-clutches": ["egg-spawner"],
+      "swarm-tide": ["edge-spawn"],
+      "dust-off-window": ["extraction"],
+    });
   });
 
   it("gives every sitrep a positive weight", () => {

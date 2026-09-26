@@ -486,6 +486,23 @@ describe("event vocabulary", () => {
     });
   });
 
+  it("says the drop ship has gone and how many it left behind (campaign arc §11)", () => {
+    const departed = (leftBehind: number) =>
+      describeEvent(
+        {
+          type: "tactical:drop-ship-departed",
+          payload: { turn: 16, leftBehind },
+        } as never,
+        NAMES,
+      );
+    expect(departed(3)).toEqual({
+      text: "Drop ship departed · 3 left behind",
+      icon: "warning",
+      tone: "danger",
+    });
+    expect(departed(0)?.text).toBe("Drop ship departed");
+  });
+
   it("says who a kit mended and by how much, repaired for metal (#1138)", () => {
     const names = {
       ...NAMES,

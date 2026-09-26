@@ -33,6 +33,9 @@ describe("SITREP_RULES", () => {
       "city-ablaze": "setup+phase",
       "salvage-rich": "setup",
       "local-guides": "setup",
+      "hardened-clutches": "setup",
+      "swarm-tide": "setup",
+      "dust-off-window": "setup+phase",
     });
   });
 });

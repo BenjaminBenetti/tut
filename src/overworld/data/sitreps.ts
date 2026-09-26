@@ -8,6 +8,12 @@ import type { SitrepDefinition } from "../model/sitrep-definition";
 /** The mission the first sitreps appear on (campaign arc §3, §11). */
 export const FIRST_SITREP_MISSION = 10;
 
+/** The mission Hardened Clutches and Swarm Tide appear from (arc §11). */
+export const SPAWN_SITREP_MISSION = 16;
+
+/** The mission Dust-off Window appears from (arc §11). */
+export const DUST_OFF_SITREP_MISSION = 20;
+
 // ===========================================
 // Sitreps
 // ===========================================
@@ -18,17 +24,22 @@ export const FIRST_SITREP_MISSION = 10;
  * to compile.
  *
  * ```
- *   sitrep         debut  helps  weight
- *   nightfall      M10           1
- *   spore-fog      M10           1
- *   city-ablaze    M10           1
- *   salvage-rich   M10    yes    1
- *   local-guides   M10    yes    1
+ *   sitrep             debut  needs         helps  weight
+ *   nightfall          M10                  -      1
+ *   spore-fog          M10                  -      1
+ *   city-ablaze        M10                  -      1
+ *   salvage-rich       M10                  yes    1
+ *   local-guides       M10                  yes    1
+ *   hardened-clutches  M16    egg-spawner   -      1
+ *   swarm-tide         M16    edge-spawn    -      1
+ *   dust-off-window    M20    extraction    -      1
  * ```
  *
  * Equal weights: with five debuted, a filled slot is one of the two
- * helping sitreps two times in five. The later four (arc §11) are all
- * hazards, so the share falls toward two in nine as they debut.
+ * helping sitreps two times in five. The later ones are all hazards, so
+ * the share falls to two in seven from M16 and two in eight from M20 on
+ * a clearance (two in six on a defence, which has no egg spawners for
+ * Hardened Clutches), and toward two in nine once Alpha Present lands.
  */
 export const SITREPS: Readonly<Record<SitrepId, SitrepDefinition>> = {
   nightfall: {
@@ -59,6 +70,27 @@ export const SITREPS: Readonly<Record<SitrepId, SitrepDefinition>> = {
     id: "local-guides",
     debutMission: FIRST_SITREP_MISSION,
     helpsPlayer: true,
+    weight: 1,
+  },
+  "hardened-clutches": {
+    id: "hardened-clutches",
+    debutMission: SPAWN_SITREP_MISSION,
+    requiredHooks: ["egg-spawner"],
+    helpsPlayer: false,
+    weight: 1,
+  },
+  "swarm-tide": {
+    id: "swarm-tide",
+    debutMission: SPAWN_SITREP_MISSION,
+    requiredHooks: ["edge-spawn"],
+    helpsPlayer: false,
+    weight: 1,
+  },
+  "dust-off-window": {
+    id: "dust-off-window",
+    debutMission: DUST_OFF_SITREP_MISSION,
+    requiredHooks: ["extraction"],
+    helpsPlayer: false,
     weight: 1,
   },
 };

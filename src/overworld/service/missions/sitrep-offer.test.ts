@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { MISSION_TYPES } from "../../../content/data/mission-types";
 import type { SitrepId } from "../../../content/model/sitrep-id";
 import { Mulberry32Rng } from "../../../core/service/mulberry32-rng";
 import { ACTS } from "../../data/acts";
@@ -8,9 +9,12 @@ import type { ActDefinition } from "../../model/act-definition";
 import type { Mission } from "../../model/mission";
 import type { SitrepCatalogue } from "../../model/sitrep-definition";
 import { missionAt, progressIn } from "./mission-fixtures.test-helper";
+import type { SitrepHost } from "./sitrep-offer";
 import {
   debutedSitreps,
+  eligibleSitreps,
   offeredMissionNumber,
+  sitrepFits,
   withSitreps,
 } from "./sitrep-offer";
 
@@ -28,6 +32,7 @@ function rollMany(
   played: number,
   mission: Mission = OFFER,
   catalogue: SitrepCatalogue = SITREPS,
+  host?: SitrepHost,
 ): (readonly SitrepId[] | undefined)[] {
   const progress = progressIn(act.id, played);
   const rolled: (readonly SitrepId[] | undefined)[] = [];
@@ -39,11 +44,38 @@ function rollMany(
         act,
         new Mulberry32Rng(seed).fork(`decorate:sitreps:${mission.id}`),
         catalogue,
+        host,
       ).sitreps,
     );
   }
   return rolled;
 }
+
+/** A type with every hook the three later sitreps need. */
+const EVERYTHING: SitrepHost = {
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "egg-spawner", count: 2 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+};
+
+/** `EVERYTHING` without the hook of `kind`. */
+function without(kind: string): SitrepHost {
+  return {
+    requiredHooks: EVERYTHING.requiredHooks.filter(
+      (hook) => hook.kind !== kind,
+    ),
+  };
+}
+
+/** The three sitreps that debut after Act I. */
+const LATER: readonly SitrepId[] = [
+  "hardened-clutches",
+  "swarm-tide",
+  "dust-off-window",
+];
 
 /** An act whose every slot fills. */
 function certain(act: ActDefinition): ActDefinition {
@@ -85,6 +117,128 @@ describe("offeredMissionNumber / debutedSitreps", () => {
     expect(debutedSitreps(progressIn("act-2", 15), catalogue)).toContain(
       "nightfall",
     );
+  });
+});
+
+describe("the later sitreps' debuts (arc §11)", () => {
+  it("debuts Hardened Clutches and Swarm Tide at mission 16, Dust-off Window at 20", () => {
+    const at = (played: number) =>
+      debutedSitreps(progressIn("act-2", played), SITREPS).filter((id) =>
+        LATER.includes(id),
+      );
+    expect(at(14)).toEqual([]);
+    expect(at(15)).toEqual(["hardened-clutches", "swarm-tide"]);
+    expect(at(18)).toEqual(["hardened-clutches", "swarm-tide"]);
+    expect(at(19)).toEqual(LATER);
+  });
+
+  it("never rolls one before its mission, even when every slot fills", () => {
+    const m15 = rollMany(
+      1000,
+      certain(ACTS["act-3"]),
+      14,
+      OFFER,
+      SITREPS,
+      EVERYTHING,
+    );
+    expect(m15.flatMap((s) => s ?? []).some((id) => LATER.includes(id))).toBe(
+      false,
+    );
+    const m19 = rollMany(
+      1000,
+      certain(ACTS["act-3"]),
+      18,
+      OFFER,
+      SITREPS,
+      EVERYTHING,
+    );
+    const drawn19 = m19.flatMap((s) => s ?? []);
+    expect(drawn19).not.toContain("dust-off-window");
+    // The fixture exhibits the other two by then.
+    expect(drawn19).toContain("hardened-clutches");
+    expect(drawn19).toContain("swarm-tide");
+    const m20 = rollMany(
+      1000,
+      certain(ACTS["act-3"]),
+      19,
+      OFFER,
+      SITREPS,
+      EVERYTHING,
+    );
+    expect(m20.flatMap((s) => s ?? [])).toContain("dust-off-window");
+  });
+});
+
+// ===========================================
+// Eligibility
+// ===========================================
+
+describe("sitrepFits / eligibleSitreps", () => {
+  it("fits a sitrep only to a type that requires every hook it needs", () => {
+    expect(sitrepFits(SITREPS["dust-off-window"], EVERYTHING)).toBe(true);
+    expect(sitrepFits(SITREPS["dust-off-window"], without("extraction"))).toBe(
+      false,
+    );
+    expect(sitrepFits(SITREPS["swarm-tide"], without("edge-spawn"))).toBe(
+      false,
+    );
+    expect(
+      sitrepFits(SITREPS["hardened-clutches"], without("egg-spawner")),
+    ).toBe(false);
+    // A hook the type lists with no hooks at its lowest difficulty is not one it has.
+    const none: SitrepHost = {
+      requiredHooks: [{ kind: "edge-spawn", count: 0, countPerDifficulty: 1 }],
+    };
+    expect(sitrepFits(SITREPS["swarm-tide"], none)).toBe(false);
+    // Needing nothing fits anything.
+    expect(sitrepFits(SITREPS.nightfall, { requiredHooks: [] })).toBe(true);
+  });
+
+  it("offers a defence everything but Hardened Clutches, and a clearance all of them", () => {
+    const late = progressIn("act-3", 36);
+    expect(
+      eligibleSitreps(late, SITREPS, MISSION_TYPES["defend-installation"]),
+    ).toEqual([
+      "nightfall",
+      "spore-fog",
+      "city-ablaze",
+      "salvage-rich",
+      "local-guides",
+      "swarm-tide",
+      "dust-off-window",
+    ]);
+    expect(
+      eligibleSitreps(late, SITREPS, MISSION_TYPES["infestation-clearance"]),
+    ).toEqual(debutedSitreps(late, SITREPS));
+    expect(eligibleSitreps(late, SITREPS)).toEqual(
+      debutedSitreps(late, SITREPS),
+    );
+  });
+
+  it("only rolls Dust-off Window where there is an extraction, Swarm Tide where there are edge waves", () => {
+    const drawn = (host: SitrepHost) =>
+      rollMany(1000, certain(ACTS["act-3"]), 36, OFFER, SITREPS, host).flatMap(
+        (s) => s ?? [],
+      );
+    const everything = drawn(EVERYTHING);
+    expect(everything).toContain("dust-off-window");
+    expect(everything).toContain("swarm-tide");
+    expect(everything).toContain("hardened-clutches");
+    expect(drawn(without("extraction"))).not.toContain("dust-off-window");
+    expect(drawn(without("edge-spawn"))).not.toContain("swarm-tide");
+    expect(drawn(without("egg-spawner"))).not.toContain("hardened-clutches");
+  });
+
+  it("leaves every Act I roll as it was: before mission 16 the check removes nothing", () => {
+    for (const host of [
+      EVERYTHING,
+      without("egg-spawner"),
+      MISSION_TYPES["defend-installation"],
+    ]) {
+      expect(rollMany(300, ACTS["act-1"], 12, OFFER, SITREPS, host)).toEqual(
+        rollMany(300, ACTS["act-1"], 12),
+      );
+    }
   });
 });
 
@@ -135,6 +289,34 @@ describe("withSitreps", () => {
     expect(rolled.every((s) => s === undefined || s.length <= 2)).toBe(true);
   });
 
+  it("rolls up to two in Act III from the whole pool, the later three included", () => {
+    const rolled = rollMany(
+      1000,
+      ACTS["act-3"],
+      36,
+      OFFER,
+      SITREPS,
+      MISSION_TYPES["infestation-clearance"],
+    );
+    expect(ACTS["act-3"].sitrepSlots).toBe(2);
+    expect(rolled.every((s) => s === undefined || s.length <= 2)).toBe(true);
+    const twos = rolled.filter((s) => s?.length === 2);
+    expect(twos.length).toBeGreaterThan(0);
+    expect(twos.every((pair) => new Set(pair).size === 2)).toBe(true);
+    const drawn = rolled.flatMap((s) => s ?? []);
+    for (const id of LATER) {
+      expect(drawn).toContain(id);
+    }
+    // Two hazards together happen: Dust-off beside a spawn sitrep.
+    expect(
+      twos.some(
+        (pair) =>
+          pair?.includes("dust-off-window") === true &&
+          (pair.includes("swarm-tide") || pair.includes("hardened-clutches")),
+      ),
+    ).toBe(true);
+  });
+
   it("leaves a slot empty when every debuted sitrep is already drawn", () => {
     const one: SitrepCatalogue = {
       ...SITREPS,
@@ -142,6 +324,12 @@ describe("withSitreps", () => {
       "spore-fog": { ...SITREPS["spore-fog"], debutMission: 99 },
       "city-ablaze": { ...SITREPS["city-ablaze"], debutMission: 99 },
       "local-guides": { ...SITREPS["local-guides"], debutMission: 99 },
+      "hardened-clutches": {
+        ...SITREPS["hardened-clutches"],
+        debutMission: 99,
+      },
+      "swarm-tide": { ...SITREPS["swarm-tide"], debutMission: 99 },
+      "dust-off-window": { ...SITREPS["dust-off-window"], debutMission: 99 },
     };
     const rolled = rollMany(50, certain(ACTS["act-3"]), 36, OFFER, one);
     expect(rolled.every((s) => s?.join() === "salvage-rich")).toBe(true);

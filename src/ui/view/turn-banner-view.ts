@@ -55,8 +55,9 @@ export interface TurnBannerModel {
     { readonly floor: number | undefined; readonly floors: number } | undefined;
   /**
    * The soonest deadline counting down on an open objective ("Pod
-   * matures in 3 turns"), or absent when nothing is. A clock the player
-   * is racing belongs where the turn number is, not only in the rail.
+   * matures in 3 turns") or a sitrep ("Drop ship leaves in 5 turns"),
+   * or absent when nothing is. A clock the player is racing belongs
+   * where the turn number is, not only in the rail.
    */
   readonly deadline?: ObjectiveCountdown;
 }
@@ -73,8 +74,8 @@ export interface TurnBannerModel {
  *   ┌ MISSION Lagos · TURN 7 · PLAYER PHASE · POD MATURES IN 2 TURNS ── …                                ┐
  * ```
  *
- * The deadline badge is hidden unless an objective is counting down,
- * and pulses in its last two turns.
+ * The deadline badge is hidden unless an objective or a sitrep is
+ * counting down, and pulses in its last two turns.
  */
 export class TurnBannerView {
   // ===========================================

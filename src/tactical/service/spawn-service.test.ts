@@ -5,6 +5,7 @@ import { manhattanDistance } from "../../core/service/grid-math";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { snapshotMap } from "../../mapgen/service/hatch-space";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { BUGS_SPAWNED } from "../model/bugs-spawned-event";
 import { endTurn } from "../model/end-turn-command";
@@ -19,6 +20,8 @@ import {
   createHatchStep,
   edgeWave,
   hatch,
+  surgedSize,
+  surgeRoom,
   waveInterval,
   waveSize,
 } from "./spawn-service";
@@ -723,6 +726,107 @@ describe("rolling species by the mission's bug mix (#1179)", () => {
       const once = hatch(ripe(mix), ctxFor(seed), FOUR);
       expect(hatch(ripe(mix), ctxFor(seed), FOUR)).toEqual(once);
       expect(once.state.bugMix).toBe(mix);
+    }
+  });
+});
+
+// ===========================================
+// Sitrep hooks (campaign arc §11)
+// ===========================================
+
+describe("a spawner's hatch bonus (Hardened Clutches)", () => {
+  it("releases hatchCount plus the bonus, and exactly hatchCount without one", () => {
+    const withBonus = missionWith(openField().build(), [], {
+      phase: "bugs",
+      spawners: [spawnerAt("ripe", at(4, 4), 1, { hatchBonus: 1 })],
+    });
+    const plain = missionWith(openField().build(), [], {
+      phase: "bugs",
+      spawners: [spawnerAt("ripe", at(4, 4), 1)],
+    });
+    for (let seed = 1; seed <= 5; seed++) {
+      expect(bugsOf(hatch(withBonus, ctxFor(seed), DEPS).state)).toHaveLength(
+        T.hatchCount + 1,
+      );
+      expect(bugsOf(hatch(plain, ctxFor(seed), DEPS).state)).toHaveLength(
+        T.hatchCount,
+      );
+    }
+  });
+});
+
+describe("surgedSize / surgeRoom (Swarm Tide)", () => {
+  it("scales a wave by the surge, rounding up, and leaves it alone without one", () => {
+    const surge = { sizeScale: 1.5, spillRadius: 2 };
+    expect(surgedSize(2, surge)).toBe(3);
+    expect(surgedSize(5, surge)).toBe(8);
+    expect(surgedSize(8, surge)).toBe(12);
+    expect(surgedSize(0, surge)).toBe(0);
+    expect(surgedSize(5)).toBe(5);
+  });
+
+  it("lists the zone first, then the ground within the radius of it, each tile once", () => {
+    const map = openField().build();
+    const snapshot = snapshotMap(map);
+    const zone = [at(0, 2), at(0, 3)].map((c) => snapshot.index.getAt(c)!);
+    const room = surgeRoom(snapshot, zone, 1);
+    expect(room.slice(0, 2)).toEqual(zone);
+    const keys = room.map((t) => `${String(t.x)},${String(t.z)}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    // (0,1) (1,2) (1,3) (0,4) beside the two zone tiles.
+    expect([...keys].sort()).toEqual(
+      ["0,1", "0,2", "0,3", "0,4", "1,2", "1,3"].sort(),
+    );
+    expect(surgeRoom(snapshot, zone, 0)).toEqual(zone);
+  });
+});
+
+describe("edgeWave under a surge (Swarm Tide)", () => {
+  it("lands the surged size, spilling past a zone too small for it", () => {
+    const surge = { sizeScale: 1.5, spillRadius: 2 };
+    const oneTile = openField()
+      .edgeSpawn([at(0, 2)])
+      .build();
+    const plain = missionWith(oneTile, [], {
+      phase: "bugs",
+      turn: 3,
+      edgeSpawn: { nextTurn: 3, wave: 0 },
+    });
+    const surging = {
+      ...plain,
+      edgeSpawn: { ...plain.edgeSpawn, surge },
+    };
+    for (let seed = 1; seed <= 6; seed++) {
+      // A one-tile zone holds one of the plain wave's two.
+      expect(bugsOf(edgeWave(plain, ctxFor(seed), DEPS).state)).toHaveLength(1);
+      const result = edgeWave(surging, ctxFor(seed), DEPS);
+      const bugs = bugsOf(result.state);
+      expect(bugs).toHaveLength(surgedSize(waveSize(0, 1, 0, T), surge));
+      for (const bug of bugs) {
+        expect(manhattanDistance(bug.pos, at(0, 2))).toBeLessThanOrEqual(2);
+      }
+      // The surge stays on the schedule for every later wave.
+      expect(result.state.edgeSpawn).toEqual({ nextTurn: 7, wave: 1, surge });
+    }
+  });
+
+  it("draws exactly as before when the schedule has no surge", () => {
+    const mission = missionWith(fieldWithEdges(), [], {
+      phase: "bugs",
+      turn: 3,
+      edgeSpawn: { nextTurn: 3, wave: 0 },
+    });
+    const surged = {
+      ...mission,
+      edgeSpawn: {
+        ...mission.edgeSpawn,
+        surge: { sizeScale: 1, spillRadius: 0 },
+      },
+    };
+    for (let seed = 1; seed <= 6; seed++) {
+      const a = edgeWave(mission, ctxFor(seed), DEPS);
+      const b = edgeWave(surged, ctxFor(seed), DEPS);
+      expect(bugsOf(b.state)).toEqual(bugsOf(a.state));
     }
   });
 });

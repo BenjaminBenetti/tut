@@ -11,7 +11,8 @@ import { withSitreps } from "./sitrep-offer";
 /**
  * The sitrep roll as an offer decorator (campaign arc §11): rolls the
  * act's slots on the decorator's own fork and freezes what it drew on
- * the offer. Built over a catalogue so tests can substitute one.
+ * the offer. Only sitreps that fit the offer's type (`ctx.missionTypes`)
+ * are drawn. Built over a catalogue so tests can substitute one.
  *
  * @param catalogue - Every sitrep's debut, weight and side.
  * @returns The decorator, id `"sitreps"`.
@@ -22,7 +23,14 @@ export function createSitrepDecorator(
   return {
     id: "sitreps",
     decorate: (mission, state, ctx) =>
-      withSitreps(mission, state.progress, ctx.act, ctx.rng, catalogue),
+      withSitreps(
+        mission,
+        state.progress,
+        ctx.act,
+        ctx.rng,
+        catalogue,
+        ctx.missionTypes[mission.typeId],
+      ),
   };
 }
 

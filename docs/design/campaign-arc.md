@@ -293,6 +293,14 @@ The #1171 pacing test changes from "the tree is finished at mission 25" to "the 
 - **Salvage Rich:** "two tech carcasses" is read as **two extra**, on top of any the offer reports. They are placed in tactical at mission start, not by map generation, and priced like the offer's own (10 + 2 per difficulty). Each is reachable by infantry from the deploy zone, at least 8 tiles from it, and 4 from objectives.
 - **Local Guides:** the squad's side starts with every tile explored. Terrain, nests and carcasses show at once, but units stay hidden until they are seen.
 
+**As built for Act II (#1179).** These are placeholders too, in the same `SITREP_TUNING`. All three are hazards.
+
+- **Eligibility:** a sitrep can name the map hooks it needs (`requiredHooks` on its definition). It is offered only on a mission type that places at least one of each. Hardened Clutches needs egg spawners, so a Defend Installation never gets it. Swarm Tide needs edge waves and Dust-off Window needs extraction; both shipped types have them.
+- **Hardened Clutches (M16):** every standing egg spawner has its hit points multiplied by 1.5, rounded up (20 becomes 30). "One extra hatch" is read as **one more bug per hatch** (2 becomes 3), not a second hatch event, so the hatch clock and its draws are unchanged. Spore pods are not touched.
+- **Swarm Tide (M16):** every edge wave is multiplied by 1.5, rounded up (2 becomes 3, 8 becomes 12). The first wave comes one turn sooner (turn 2 instead of 3), so every later wave does too, and a defence keeps its wave count. An edge zone is only four to six tiles, so the extra bugs may stand up to 2 steps outside it.
+- **Dust-off Window (M20):** the drop ship waits through turn 8 + ⌈(width + depth) / 12⌉: turn 16 on a small map, 20 on a medium one and 24 on a large one. A defence cannot be won before its last wave, so there the ship also waits at least 12 turns after that wave. A five-wave defence at a 4-turn interval has its last wave on turn 19, so the ship waits through turn 31. When the ship's last turn ends, every unit still on the map is lost, exactly as if the mission had been abandoned, and the mission ends on whoever boarded. The objective tracker and the turn banner count the turns down. See [`sitrep-dustoff-hud.png`](sitrep-dustoff-hud.png) and [`sitreps-act2-briefing.png`](sitreps-act2-briefing.png).
+- **Act III:** each of the two slots can hold any sitrep the offer can host, so Dust-off Window and Swarm Tide can come together.
+
 ## 12. Measurement
 
 **Campaign sweep:** `src/app/service/campaign-sweep.sim.test.ts`, run with `pnpm test:sim`. It composes the real game (`composeGame`) and drives `AdvanceDay` with modelled players.

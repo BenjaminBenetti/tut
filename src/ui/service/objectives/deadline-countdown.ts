@@ -75,7 +75,31 @@ export function deadlineCountdown(
   ) {
     return undefined;
   }
-  const turnsLeft = turnsUntilDeadline(objective.deadlineTurn, turn);
+  return countdownAt(objective.deadlineTurn, turn, phrase);
+}
+
+/**
+ * The countdown to any deadline on `turn`: an objective's, or a sitrep's
+ * (Dust-off Window's drop ship, campaign arc §11). Undefined once the
+ * deadline turn has ended. One builder, so every countdown on the HUD
+ * counts, words and pulses the same way.
+ *
+ * ```
+ *   deadlineTurn 20, turn 18 ──► "… in 3 turns"               plain
+ *                    turn 20 ──► "… at the end of this turn"   urgent
+ *                    turn 21 ──► undefined
+ * ```
+ *
+ * @param deadlineTurn - The last turn before it happens.
+ * @param turn - The mission's current turn.
+ * @param phrase - Subject and verb: "Pod matures", "Drop ship leaves".
+ */
+export function countdownAt(
+  deadlineTurn: number,
+  turn: number,
+  phrase: string,
+): ObjectiveCountdown | undefined {
+  const turnsLeft = turnsUntilDeadline(deadlineTurn, turn);
   if (turnsLeft < 1) {
     return undefined;
   }
@@ -126,8 +150,22 @@ export function objectiveCountdowns(
 export function soonestCountdown(
   countdowns: ObjectiveCountdowns,
 ): ObjectiveCountdown | undefined {
+  return soonestOf(countdowns.values());
+}
+
+/**
+ * The countdown with the fewest turns left among any, the first on a
+ * tie; undefined when there are none. The banner takes the soonest of
+ * the objectives' and the sitreps' countdowns together, objectives
+ * first, so a tie shows the objective.
+ *
+ * @param countdowns - Countdowns in the order a tie should fall.
+ */
+export function soonestOf(
+  countdowns: Iterable<ObjectiveCountdown>,
+): ObjectiveCountdown | undefined {
   let soonest: ObjectiveCountdown | undefined;
-  for (const countdown of countdowns.values()) {
+  for (const countdown of countdowns) {
     if (soonest === undefined || countdown.turnsLeft < soonest.turnsLeft) {
       soonest = countdown;
     }

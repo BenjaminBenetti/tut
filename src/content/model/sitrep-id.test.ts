@@ -14,6 +14,9 @@ describe("SITREP_IDS", () => {
       "city-ablaze",
       "salvage-rich",
       "local-guides",
+      "hardened-clutches",
+      "swarm-tide",
+      "dust-off-window",
     ]);
   });
 });

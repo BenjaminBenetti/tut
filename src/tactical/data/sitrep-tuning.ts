@@ -27,6 +27,19 @@ import type { SitrepTuning } from "../model/sitrep-tuning";
  * - **Salvage Rich** adds 2 carcasses, priced like the offer's own
  *   (`MISSION_TUNING.techCarcass`: 10 + 2 per difficulty), at least 8
  *   from the deploy zone, 4 from objectives and 8 from each other.
+ * - **Hardened Clutches** multiplies every hatching spawner's hit points
+ *   by 1.5, rounded up (20 → 30), and each hatch releases one more bug
+ *   (2 → 3). A spore pod does not hatch and is left as it is.
+ * - **Swarm Tide** multiplies every edge wave by 1.5, rounded up (2 → 3,
+ *   6 → 9, the cap of 8 → 12), and brings the first forward a turn (3 →
+ *   2). A wave may spill up to 2 steps past its four-to-six-tile zone,
+ *   which a shipped wave already fills from difficulty 5.
+ * - **Dust-off Window** holds the drop ship through turn
+ *   8 + ⌈(width + depth) / 12⌉: 16 on a small map, 20 on a medium one,
+ *   24 on a large one. Measured with the mission sweep's driver, which
+ *   neither kites nor regroups: on small maps it wins in 6–15 turns, on
+ *   medium ones (difficulty 3–7) in 6–17, and on a large difficulty-8
+ *   map in 21. A defence also keeps 12 turns after its last wave lands.
  */
 export const SITREP_TUNING: SitrepTuning = {
   nightfall: { sightPenalty: 4, sightFloor: 3 },
@@ -55,4 +68,7 @@ export const SITREP_TUNING: SitrepTuning = {
     objectiveClearance: 4,
     spacing: 8,
   },
+  hardenedClutches: { hpScale: 1.5, extraHatchlings: 1 },
+  swarmTide: { sizeScale: 1.5, turnsSooner: 1, spillRadius: 2 },
+  dustOffWindow: { baseTurns: 8, tilesPerTurn: 12, turnsAfterLastWave: 12 },
 };

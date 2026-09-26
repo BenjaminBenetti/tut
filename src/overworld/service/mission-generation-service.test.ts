@@ -820,9 +820,17 @@ describe("generateMissions — decorators", () => {
         }),
       ).state.missions;
     let carried = 0;
+    const onDefences: string[] = [];
     for (let seed = 1; seed <= 20; seed++) {
       const offers = shipped(seed);
       carried += offers.filter((m) => m.sitreps !== undefined).length;
+      // The decorator hands the roll the offer's type (arc §11): a
+      // defence has no egg spawners, so never Hardened Clutches.
+      onDefences.push(
+        ...offers
+          .filter((m) => m.typeId === "defend-installation")
+          .flatMap((m) => m.sitreps ?? []),
+      );
       // Strip the sitreps and the board is the one without the decorator.
       expect(offers.map(({ sitreps: _sitreps, ...rest }) => rest)).toEqual(
         bestiaryOnly(seed),
@@ -834,6 +842,8 @@ describe("generateMissions — decorators", () => {
       }
     }
     expect(carried).toBeGreaterThan(0);
+    expect(onDefences.length).toBeGreaterThan(0);
+    expect(onDefences).not.toContain("hardened-clutches");
   });
 });
 

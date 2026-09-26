@@ -12,6 +12,7 @@ import type {
   ObjectiveRow,
   ObjectiveRowDetail,
 } from "../model/objective-presentation";
+import type { SitrepCountdown } from "../model/sitrep-presentation";
 import { formatWhole } from "../service/format";
 import { OBJECTIVE_PRESENTATION } from "../service/objectives/objective-presentation";
 import { iconGlyph } from "./icon-glyph";
@@ -53,6 +54,12 @@ const DEADLINE_CLASS = "tut-deadline";
  *   OBJECTIVES  0 / 1
  *   └ ○ Destroy the spore pod · 40 hp
  *       Pod matures in 2 turns            (urgent: pulses)
+ *
+ *   OBJECTIVES  0 / 2
+ *   ├ ○ Destroy spawner 1 · 30 hp
+ *   ├ ○ Destroy spawner 2 · 30 hp
+ *   └ ⚠ Dust-off Window                   (a sitrep's deadline, not counted)
+ *       Drop ship leaves in 5 turns
  * ```
  *
  * The row marked `in reach` is the one Interact would work, so a player
@@ -60,7 +67,10 @@ const DEADLINE_CLASS = "tut-deadline";
  * kind with live numbers (a defence, #1175) reads them from the readings
  * the HUD takes, since the objective record only mirrors them at phase
  * ends. An objective with a deadline gets its countdown under its label,
- * whatever its kind, from the countdowns the HUD takes.
+ * whatever its kind, from the countdowns the HUD takes. A sitrep with a
+ * deadline (Dust-off Window, campaign arc §11) gets a row of its own
+ * after the objectives, `data-sitrep-id`, with its countdown under its
+ * name; it is not an objective, so the summary does not count it.
  */
 export class ObjectiveTrackerView {
   // ===========================================
@@ -116,7 +126,8 @@ export class ObjectiveTrackerView {
    * `progress` holds the live readings the HUD took, keyed by objective
    * id; a kind that takes one falls back to its stored flags without it.
    * `countdowns` holds each open objective's deadline countdown, keyed
-   * the same way; a row without one shows none.
+   * the same way; a row without one shows none. `hazards` are the
+   * sitreps' running countdowns, one row each after the objectives.
    */
   update(
     objectives: readonly Objective[],
@@ -124,6 +135,7 @@ export class ObjectiveTrackerView {
     inReachId?: ObjectiveId,
     progress?: ObjectiveProgressReadings,
     countdowns?: ObjectiveCountdowns,
+    hazards: readonly SitrepCountdown[] = [],
   ): void {
     if (!this.list || !this.summary) {
       return;
@@ -160,6 +172,9 @@ export class ObjectiveTrackerView {
           countdowns?.get(objective.id),
         ),
       );
+    }
+    for (const hazard of hazards) {
+      this.list.appendChild(sitrepRowElement(doc, hazard));
     }
   }
 
@@ -240,6 +255,27 @@ function rowElement(
     reach.textContent = "in reach";
     item.appendChild(reach);
   }
+  return item;
+}
+
+/**
+ * Draws a sitrep's countdown row: the warning glyph, the sitrep's name
+ * and its countdown under it, stacked as an objective's countdown is.
+ * `data-sitrep-id` names the sitrep; it has no objective id and no
+ * completion.
+ */
+function sitrepRowElement(
+  doc: Document,
+  hazard: SitrepCountdown,
+): HTMLLIElement {
+  const item = doc.createElement("li");
+  item.dataset.sitrepId = hazard.sitrepId;
+  const label = doc.createElement("span");
+  label.textContent = hazard.name;
+  const stack = doc.createElement("span");
+  stack.className = STACK_CLASS;
+  stack.append(label, countdownElement(doc, hazard));
+  item.append(iconGlyph(doc, "warning"), stack);
   return item;
 }
 

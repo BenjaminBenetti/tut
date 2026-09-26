@@ -261,3 +261,71 @@ describe("ObjectiveTrackerView counts a deadline down (ADR 0013 §2.3)", () => {
     expect(deadlineOf(POD.id)).toBeNull();
   });
 });
+
+// ===========================================
+// Sitrep deadlines
+// ===========================================
+
+describe("ObjectiveTrackerView counts a sitrep's deadline down (campaign arc §11)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  /** The tracker with one nest and Dust-off Window's countdown. */
+  function drawn(urgent: boolean): HTMLElement {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([NEST], SPAWNERS, undefined, undefined, undefined, [
+      {
+        sitrepId: "dust-off-window",
+        name: "Dust-off Window",
+        text: urgent
+          ? "Drop ship leaves at the end of this turn"
+          : "Drop ship leaves in 5 turns",
+        turnsLeft: urgent ? 1 : 5,
+        urgent,
+      },
+    ]);
+    return root;
+  }
+
+  it("draws a row of its own after the objectives, the name over the countdown, not counted", () => {
+    drawn(false);
+    const rows = [
+      ...root.querySelectorAll<HTMLElement>(
+        '[data-role="objective-list"] > li',
+      ),
+    ];
+    expect(rows).toHaveLength(2);
+    const hazard = rows[1]!;
+    expect(hazard.dataset.sitrepId).toBe("dust-off-window");
+    expect(hazard.dataset.objectiveId).toBeUndefined();
+    expect(hazard.querySelector("[data-icon]")?.getAttribute("data-icon")).toBe(
+      "warning",
+    );
+    const line = hazard.querySelector<HTMLElement>('[data-role="deadline"]');
+    expect(line?.textContent).toBe("Drop ship leaves in 5 turns");
+    expect(line?.dataset.urgent).toBe("false");
+    expect(line?.previousElementSibling?.textContent).toBe("Dust-off Window");
+    expect(
+      root.querySelector('[data-field="objective-summary"]')?.textContent,
+    ).toBe("0 / 1");
+  });
+
+  it("pulses in its last turns, and draws nothing without one", () => {
+    drawn(true);
+    expect(
+      root.querySelector<HTMLElement>('[data-sitrep-id] [data-role="deadline"]')
+        ?.dataset.urgent,
+    ).toBe("true");
+    root.replaceChildren();
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([NEST], SPAWNERS);
+    expect(root.querySelector("[data-sitrep-id]")).toBeNull();
+  });
+});

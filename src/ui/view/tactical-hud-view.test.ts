@@ -375,6 +375,63 @@ describe("TacticalHudView", () => {
     expect(field("deadline")?.hidden).toBe(true);
   });
 
+  it("shows Dust-off Window's countdown in the tracker and the banner as one reading (campaign arc §11)", () => {
+    const { hud } = setup();
+    const dustOff = hudMission({
+      turn: 15,
+      sitreps: ["dust-off-window"],
+      dustOffTurn: 16,
+    });
+    hud.update(dustOff);
+    const row = root.querySelector<HTMLElement>(
+      '[data-sitrep-id="dust-off-window"] [data-role="deadline"]',
+    );
+    expect(row?.textContent).toBe("Drop ship leaves in 2 turns");
+    expect(row?.dataset.urgent).toBe("true");
+    expect(field("deadline")?.hidden).toBe(false);
+    expect(field("deadline")?.textContent).toBe("Drop ship leaves in 2 turns");
+    expect(field("deadline")?.dataset.urgent).toBe("true");
+    // Ended: the ship has gone, and nothing counts down in either place.
+    hud.update({ ...dustOff, outcome: "extracted" });
+    expect(root.querySelector("[data-sitrep-id]")).toBeNull();
+    expect(field("deadline")?.hidden).toBe(true);
+  });
+
+  it("puts the soonest of the objectives' and the sitreps' countdowns on the banner (campaign arc §11)", () => {
+    const { hud } = setup();
+    const pod = {
+      id: "spawner-1",
+      variant: "spore-pod" as const,
+      pos: { x: 9, y: 0, z: 0 },
+      hatchRadius: 2,
+      timer: 0,
+      hp: 40,
+      destroyed: false,
+    };
+    const both = (dustOffTurn: number) =>
+      hudMission({
+        turn: 7,
+        sitreps: ["dust-off-window"],
+        dustOffTurn,
+        objectives: [
+          {
+            id: "objective-1",
+            kind: "destroy-pod",
+            targetId: "spawner-1",
+            complete: false,
+            deadlineTurn: 10,
+          },
+        ],
+        spawners: [pod],
+      });
+    hud.update(both(20));
+    expect(field("deadline")?.textContent).toBe("Pod matures in 4 turns");
+    hud.update(both(8));
+    expect(field("deadline")?.textContent).toBe("Drop ship leaves in 2 turns");
+    // Both still count down in the tracker.
+    expect(root.querySelectorAll('[data-role="deadline"]')).toHaveLength(2);
+  });
+
   it("selecting a unit fills the card; clicking it again opens its wheel (#1112)", () => {
     const { hud } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });

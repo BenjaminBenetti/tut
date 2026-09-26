@@ -7,12 +7,14 @@ import type {
 } from "../../../tactical/model/tactical-state";
 import type { ObjectivePresentationCatalogue } from "../../model/objective-presentation";
 import {
+  countdownAt,
   countdownText,
   DEADLINE_URGENT_TURNS,
   deadlineCountdown,
   DEFAULT_DEADLINE_PHRASE,
   objectiveCountdowns,
   soonestCountdown,
+  soonestOf,
   turnsUntilDeadline,
   urgentDeadlineTargets,
 } from "./deadline-countdown";
@@ -175,5 +177,33 @@ describe("urgentDeadlineTargets (#1179)", () => {
         missionOn(8, [{ ...POD_OBJECTIVE, complete: true }]),
       ),
     ]).toEqual([]);
+  });
+});
+
+describe("countdownAt and soonestOf (campaign arc §11)", () => {
+  it("counts any deadline down the way an objective's is", () => {
+    expect(countdownAt(20, 18, "Drop ship leaves")).toEqual({
+      text: "Drop ship leaves in 3 turns",
+      turnsLeft: 3,
+      urgent: false,
+    });
+    expect(countdownAt(20, 20, "Drop ship leaves")).toEqual({
+      text: "Drop ship leaves at the end of this turn",
+      turnsLeft: 1,
+      urgent: true,
+    });
+    expect(countdownAt(20, 21, "Drop ship leaves")).toBeUndefined();
+    expect(deadlineCountdown(POD_OBJECTIVE, 6, "Pod matures")).toEqual(
+      countdownAt(8, 6, "Pod matures"),
+    );
+  });
+
+  it("picks the soonest of any countdowns, the first on a tie", () => {
+    const pod = countdownAt(8, 6, "Pod matures")!;
+    const ship = countdownAt(7, 6, "Drop ship leaves")!;
+    const tie = countdownAt(8, 6, "Drop ship leaves")!;
+    expect(soonestOf([pod, ship])).toBe(ship);
+    expect(soonestOf([pod, tie])).toBe(pod);
+    expect(soonestOf([])).toBeUndefined();
   });
 });

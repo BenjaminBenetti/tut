@@ -96,6 +96,12 @@ export interface Spawner {
   readonly matured?: boolean;
   /** True from a pod's maturing until its burst has been released. Absent reads as false. */
   readonly burstPending?: boolean;
+  /**
+   * Bugs each of its hatches releases beyond the spawn tuning's
+   * `hatchCount`: Hardened Clutches' one more (campaign arc §11).
+   * Absent reads as 0, as every spawner saved before it does.
+   */
+  readonly hatchBonus?: number;
 }
 
 /**
@@ -228,6 +234,24 @@ export type Objective =
   | CaptureSpecimenObjective
   | RescueCiviliansObjective;
 
+/**
+ * Swarm Tide's hold on the edge waves (campaign arc §11): each wave is
+ * larger than the spawn tuning makes it, and may stand on the ground
+ * behind its zone as well as on the zone itself.
+ *
+ * ```
+ *   bugs  = ⌈ waveSize(…) × sizeScale ⌉
+ *   room  = the zone's tiles, then every tile infantry reach within
+ *           spillRadius steps of one of them
+ * ```
+ */
+export interface EdgeWaveSurge {
+  /** Multiplier on every wave's size, rounded up. Above 1. */
+  readonly sizeScale: number;
+  /** Infantry steps past its zone a wave may stand. */
+  readonly spillRadius: number;
+}
+
 /** When the next wave walks in from the map edge, and how many have so far. */
 export interface EdgeSpawnSchedule {
   /** Turn the next wave arrives on. */
@@ -239,6 +263,11 @@ export interface EdgeSpawnSchedule {
    * (#1175); absent, they never do.
    */
   readonly totalWaves?: number;
+  /**
+   * Swarm Tide's larger waves (campaign arc §11). Absent (the norm), a
+   * wave is exactly the spawn tuning's size on its zone's tiles.
+   */
+  readonly surge?: EdgeWaveSurge;
 }
 
 // ===========================================
@@ -315,6 +344,7 @@ export const NO_VISION: SideVision = {
  *   ├── bugMix?               the species the spawns roll, from the offer
  *   ├── sitreps?              the offer's situation reports (arc §11)
  *   ├── blazeSites?           tiles City Ablaze relights every three turns
+ *   ├── dustOffTurn?          the last turn Dust-off Window's drop ship waits through
  *   ├── map                   the generated TacticalMap (ADR 0004); recipe inside
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
@@ -366,6 +396,14 @@ export interface TacticalState {
    * mission carries City Ablaze.
    */
   readonly blazeSites?: readonly TileCoord[];
+  /**
+   * The last turn the drop ship waits through under Dust-off Window
+   * (campaign arc §11). Once it has ended, every unit of the force still
+   * on the map is left behind, as if the mission had been abandoned, and
+   * the mission ends on whoever boarded. Absent unless the mission
+   * carries the sitrep.
+   */
+  readonly dustOffTurn?: number;
   readonly map: TacticalMap;
   /** Every unit on the map, TDF and bugs, alive or not. */
   readonly units: readonly Unit[];

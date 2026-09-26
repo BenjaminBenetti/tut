@@ -203,6 +203,17 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:drop-ship-departed":
+      // Dust-off Window (campaign arc §11): the ship's last turn ended.
+      // Each unit it strands gets its own "left behind" line after this.
+      return {
+        text:
+          event.payload.leftBehind > 0
+            ? `Drop ship departed · ${formatWhole(event.payload.leftBehind)} left behind`
+            : "Drop ship departed",
+        icon: "warning",
+        tone: "danger",
+      };
     case "tactical:unit-reloaded":
       return {
         text: `${nameOf(event.payload.unitId)} reloaded`,
@@ -512,6 +523,7 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:mission-ended":
     case "tactical:unit-abandoned":
     case "tactical:spore-pod-matured":
+    case "tactical:drop-ship-departed":
     case "tactical:civilians-extracted":
       // Aboard and gone: there is nobody left on the map to mark.
       return undefined;

@@ -76,9 +76,10 @@ import {
 } from "../service/tactical-error-text";
 import {
   objectiveCountdowns,
-  soonestCountdown,
+  soonestOf,
 } from "../service/objectives/deadline-countdown";
 import { objectiveProgress } from "../service/objectives/objective-presentation";
+import { sitrepCountdowns } from "../service/objectives/sitrep-countdowns";
 import type { UnitAction } from "../service/action-availability";
 import { actionRefusal, interactTarget } from "../service/action-availability";
 import type { WheelContext, WheelPage } from "../service/action-wheel";
@@ -2338,8 +2339,10 @@ export class TacticalHudView {
       this.handlers.onMarkWeaponRange?.([]);
       return;
     }
-    // One reading of every deadline, for the rail and the banner both.
+    // One reading of every deadline, for the rail and the banner both:
+    // the objectives', then the sitreps' (Dust-off Window's drop ship).
     const countdowns = objectiveCountdowns(mission);
+    const hazards = sitrepCountdowns(mission);
     this.banner.update({
       // The name the screen resolved, never the id (#753). An em dash
       // when it has not been set: a visible absence is honest, where a
@@ -2360,7 +2363,7 @@ export class TacticalHudView {
       // storey is the roof going back on rather than a floor (#1136).
       layer:
         this.layerFocus === undefined ? undefined : floorOf(this.layerFocus),
-      deadline: soonestCountdown(countdowns),
+      deadline: soonestOf([...countdowns.values(), ...hazards]),
     });
     // The card shows the enemy being aimed at while one is (#1134): the
     // player who clicked a bug wants to read it, and the shot's own
@@ -2411,6 +2414,7 @@ export class TacticalHudView {
       inReach?.objective.id,
       objectiveProgress(mission),
       countdowns,
+      hazards,
     );
     // The rail names units through the same resolver as the card, the
     // banner and the log (#1040).

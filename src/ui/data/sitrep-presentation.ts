@@ -36,4 +36,23 @@ export const SITREP_PRESENTATION: SitrepPresentationCatalogue = {
     effect: "The map starts explored; bugs stay hidden.",
     helpsPlayer: true,
   },
+  "hardened-clutches": {
+    name: "Hardened Clutches",
+    effect: "Spawners have 50% more hp and each hatch adds a bug.",
+    helpsPlayer: false,
+  },
+  "swarm-tide": {
+    name: "Swarm Tide",
+    effect: "Edge waves are 50% larger and the first comes a turn early.",
+    helpsPlayer: false,
+  },
+  "dust-off-window": {
+    name: "Dust-off Window",
+    effect: "The drop ship leaves on a set turn; anyone left is lost.",
+    helpsPlayer: false,
+    deadline: {
+      phrase: "Drop ship leaves",
+      turn: (mission) => mission.dustOffTurn,
+    },
+  },
 };

@@ -50,7 +50,9 @@ try {
     JSON.parse(localStorage.getItem("tut:save:autosave")),
   );
   const records = [];
-  for (const kind of ["defeat", "victory-stub"]) {
+  // Victory comes only from the story (arc D1): a clean Earth is not a
+  // win, so the victory capture sets the story's `campaign-won` verdict.
+  for (const kind of ["defeat", "victory"]) {
     const day = kind === "defeat" ? 300 : 41;
     const infestation = kind === "defeat" ? 70 : 0;
     const map = {
@@ -68,6 +70,10 @@ try {
         map,
         hives: [],
         threat: computeThreat(map, day, THREAT_TUNING),
+        progress: {
+          ...base.state.overworld.progress,
+          flags: kind === "victory" ? ["campaign-won"] : [],
+        },
       },
     }).state;
     const outcome = state.overworld.outcome;
@@ -90,8 +96,8 @@ try {
       "game-over",
     );
     await expect(page.locator('[data-field="outcome-kind"]')).toHaveText(
-      kind === "victory-stub"
-        ? "Earth secured"
+      kind === "victory"
+        ? "Victory"
         : phase === "before"
           ? "Earth overrun"
           : "Threat limit reached",

@@ -8,6 +8,7 @@ import type { EarthMap } from "../model/earth-map";
 import type { IntelBonus } from "../model/intel-bonus";
 import type { Mission } from "../model/mission";
 import type { MissionOfferDecorator } from "../model/mission-offer-decorator";
+import type { MissionPinTrigger } from "../model/mission-pin-trigger";
 import type {
   MissionDebut,
   MissionOfferContext,
@@ -43,6 +44,11 @@ export interface MissionGenerationDeps {
   readonly acts: ActCatalogue;
   /** Applied to every new offer, in order (ADR 0013 §2.4). */
   readonly decorators: readonly MissionOfferDecorator[];
+  /**
+   * Sources of pinned offers that are not one mission type, run first
+   * (ADR 0013 §2.4): the story spine's pin trigger. Empty pins nothing.
+   */
+  readonly pinTriggers: readonly MissionPinTrigger[];
 }
 
 /** A drawable type today: its rule, its weight in the act, and its eligible sites. */
@@ -102,29 +108,35 @@ export function countsAgainstCap(
  *
  * ```
  *   act = acts[progress.act]
- *   1. triggers  for type in MISSION_TYPE_IDS with a trigger rule:
+ *   1. pins      for trigger in pinTriggers (the story spine):
+ *                  trigger.pin(state, rng.fork(`pin:${id}`)) ──► pinned offers (outside the cap)
+ *   2. triggers  for type in MISSION_TYPE_IDS with a trigger rule:
  *                  rule.trigger(state, rng.fork(`trigger:${type}`)) ──► offers (outside the cap)
- *   2. count     offers with pinned ≠ true whose type has an offer rule
- *   3. fill      while count < act.boardCap:
+ *   3. count     offers with pinned ≠ true whose type has an offer rule
+ *   4. fill      while count < act.boardCap:
  *                  pool = offer rules with a weight in act.typeWeights, debuted,
  *                         and ≥ 1 eligible site on a city without an offer
  *                  pool empty ──► stop
  *                  type = board.pickWeighted(pool, act weight)   (renormalised over the pool)
  *                  site = board.pickWeighted(type's sites, site weight)
  *                  rule.create(state, site) ──► offer; count + 1
- *   4. band      every offer's difficulty lies in act.difficultyBand: the rules
- *                clamp it (ctx.act) before deriving rewards, map size and carcass
+ *   5. band      every non-story offer's difficulty lies in act.difficultyBand: the
+ *                rules clamp it (ctx.act) before deriving rewards, map size and
+ *                carcass; a story offer keeps its own fixed difficulty
  *   each offer ──► decorators, in order, each on rng.fork(`decorate:${id}:${missionId}`)
  *              ──► MissionOffered
  * ```
  *
- * A city holds at most one offer: trigger rules skip occupied cities,
- * and the fill drops sites whose city already holds one. Every offer
- * sees the state with the offers made before it. Trigger rules and
- * decorators draw from labelled forks, so adding one never changes what
- * the board draws. The draw order is part of the determinism contract:
- * the same state, seed and deps always offer the same missions. Returns
- * the input state untouched when nothing was offered.
+ * A city holds at most one offer: pin triggers and trigger rules skip
+ * occupied cities, and the fill drops sites whose city already holds
+ * one. Pins run first, so a story mission claims its city before any
+ * other offer. Every offer sees the state with the offers made before
+ * it. Pin triggers, trigger rules and decorators draw from labelled
+ * forks, so adding one never changes what the board draws, and a pin
+ * trigger that pins nothing changes nothing at all. The draw order is
+ * part of the determinism contract: the same state, seed and deps always
+ * offer the same missions. Returns the input state untouched when
+ * nothing was offered.
  *
  * @throws {RangeError} if `intelBonus` names a region that is not on the
  *   map or holds a value that is not a non-negative integer. Those are
@@ -152,6 +164,13 @@ export function generateMissions(
     offered.push(decorated);
     current = { ...current, missions: [...current.missions, decorated] };
   };
+
+  for (const trigger of deps.pinTriggers) {
+    const ctx = contextOn(deps.rng.fork(`pin:${trigger.id}`));
+    for (const mission of trigger.pin(current, ctx)) {
+      offer(mission, ctx);
+    }
+  }
 
   for (const typeId of MISSION_TYPE_IDS) {
     const rule = deps.offerRules[typeId];

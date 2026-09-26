@@ -11,7 +11,12 @@ describe("GameOutcomeKind", () => {
     for (const kind of GAME_OUTCOME_KINDS) {
       expect(isGameOutcomeKind(kind)).toBe(true);
     }
-    expect(isGameOutcomeKind("victory")).toBe(false);
+    expect(isGameOutcomeKind("victory")).toBe(true);
+    expect(isGameOutcomeKind("won")).toBe(false);
     expect(isGameOutcomeKind("")).toBe(false);
+  });
+
+  it("keeps the retired victory stub so old saves still narrow", () => {
+    expect(isGameOutcomeKind("victory-stub")).toBe(true);
   });
 });

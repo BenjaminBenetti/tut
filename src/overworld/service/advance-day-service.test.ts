@@ -38,6 +38,7 @@ import type { TickDeps } from "./default-tick-steps";
 import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
 import { MISSION_OFFER_DECORATORS } from "./missions/mission-offer-decorators";
 import { MISSION_OFFER_RULES } from "./missions/mission-offer-rules";
+import { STORY_MISSION_RULES } from "./story/story-mission-rules";
 import { createDefaultTickSteps, TICK_STEP_NAMES } from "./default-tick-steps";
 
 // ===========================================
@@ -65,6 +66,7 @@ const TICK_DEPS: TickDeps = {
   ),
   eventTuning: EVENT_TUNING,
   hiveTuning: HIVE_TUNING,
+  storyMissions: STORY_MISSION_RULES,
 };
 
 function newGame(seed: number): GameState {

@@ -40,6 +40,10 @@ import { ACTS } from "../../overworld/data/acts";
 import { MISSION_CONSEQUENCE_RULES } from "../../overworld/service/missions/mission-consequence-rules";
 import { MISSION_OFFER_DECORATORS } from "../../overworld/service/missions/mission-offer-decorators";
 import { MISSION_OFFER_RULES } from "../../overworld/service/missions/mission-offer-rules";
+import { STORY_SPINE } from "../../overworld/data/story-spine";
+import { campaignTechConditions } from "../../overworld/service/campaign-tech-conditions";
+import { STORY_MISSION_RULES } from "../../overworld/service/story/story-mission-rules";
+import { onTechUnlocked } from "../../overworld/service/story-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { registerTechCommands } from "../../overworld/service/tech-command-handlers";
@@ -49,7 +53,6 @@ import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
 import type { TechConditions } from "../../tech/model/tech-conditions";
-import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import { createPartAvailability } from "../../tech/service/part-availability-service";
 import type { DevTools, TacticalComposition } from "./tactical-composition";
@@ -172,10 +175,11 @@ export interface GameComposition {
   readonly techDevTools: TechDevTools | undefined;
   /**
    * The campaign's conditions as the tech tree sees them (ADR 0013
-   * §2.7): which flags are set, so which nodes are hidden. The unlock
-   * handler was wired with this same function, and the tech tree screen
-   * must be handed it too, so a card never shows what the command
-   * refuses.
+   * §2.7): which flags are set, including a `killed:<species>` flag per
+   * species killed, so which nodes are hidden. The unlock handler was
+   * wired with this same function, and the tech tree screen and the
+   * mech bay must be handed it too, so a card never shows what the
+   * command refuses and a lock never names a hidden node.
    */
   readonly techConditionsOf: (state: GameState) => TechConditions;
 }
@@ -245,6 +249,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     catalogue: content.tech,
     techPoints,
     conditionsOf: techConditionsOf,
+    onUnlocked: onTechUnlocked,
     devTools: deps.devTools === true,
   });
   const tickDeps = composeTickDeps(deps.debug);
@@ -314,6 +319,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     techPoints,
     consequences: MISSION_CONSEQUENCE_RULES,
     missionTuning: MISSION_TUNING,
+    story: { rules: STORY_MISSION_RULES, spine: STORY_SPINE },
   });
   dispatcher.register(LAUNCH_MISSION, launch);
   registerStartMission(dispatcher, {
@@ -344,23 +350,15 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
 // ===========================================
 
 /**
- * The campaign's conditions for the tech tree (ADR 0013 §2.7). **For
- * now, no flags at all**: the campaign has no flags yet, so every node
- * with `requiresFlags` stays hidden, which is right for the shipped tree
- * (it has none). ADR 0013 §2.1 adds `state.overworld.progress.flags` in
- * a parallel package; once it lands the campaign coordinator wires it
- * here, and only here, as
- *
- * ```
- *   (state) => ({ flags: new Set(state.overworld.progress.flags) })
- * ```
- *
- * so the unlock handler and the tech tree screen pick it up together.
- * The unlock hook (`onUnlocked` on the tech handlers) is left unset
- * until the story spine (ADR 0013 §2.5) provides one.
+ * The campaign's conditions for the tech tree (ADR 0013 §2.7): the
+ * story's flags plus a `killed:<species>` flag per species killed
+ * (`campaignTechConditions`). The unlock handler, the tech tree screen
+ * and the mech bay are all handed this one function, so they agree on
+ * which nodes are hidden. The unlock hook (`onTechUnlocked`) is what
+ * turns a researched node's flag effects into flags here.
  */
-function techConditionsOf(): TechConditions {
-  return NO_TECH_CONDITIONS;
+function techConditionsOf(state: GameState): TechConditions {
+  return campaignTechConditions(state.overworld.progress);
 }
 
 /** The shipped content, tuning and services the day tick runs on. */
@@ -377,6 +375,7 @@ function composeTickDeps(debug: CampaignDebugOptions | undefined): TickDeps {
     missionConsequences: MISSION_CONSEQUENCE_RULES,
     offerDecorators: MISSION_OFFER_DECORATORS,
     acts: ACTS,
+    storyMissions: STORY_MISSION_RULES,
     threatTuning: applyDebugThreat(THREAT_TUNING, debug),
     economyTuning: ECONOMY_TUNING,
     eventTypes: new DataEventTypeCatalogue(

@@ -97,17 +97,23 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
   ```
 
 - **The overworld offers missions through a director over two more tables** ([ADR 0013](../adr/0013-campaign-progression.md) §2.3–2.5, campaign arc §5). Each `MissionTypeId` has one entry in `MISSION_OFFER_RULES` (`overworld/service/missions/`). An entry is either an offer rule (`debut`, `eligible → MissionSite[]`, `create`) that the director draws, or a trigger rule (`trigger → Mission[]`) that fires on its own condition; Defend Installation is a trigger rule. The type's entry in `MISSION_CONSEQUENCE_RULES` says what playing the offer (`onResolved`, called by the launch handler) or letting it lapse (`onExpired`, called by `expireMissions`) does to the map. The `mission-generation` tick step is the director:
-  1. It runs the trigger rules, each on its own RNG fork.
-  2. It fills the board to `ACTS[act].boardCap`, counting only offers that are unpinned and not triggered. Each draw picks a weighted type, renormalised over the types that have debuted and have an eligible site, then picks a site.
-  3. Every new offer passes through the injected `MissionOfferDecorator`s, each on its own fork.
+  1. It runs the pin triggers first, each on its own RNG fork. The story pin trigger pins each built story mission whose act and flags are due.
+  2. It runs the trigger rules, each on its own RNG fork.
+  3. It fills the board to `ACTS[act].boardCap`, counting only offers that are unpinned and not triggered. Each draw picks a weighted type, renormalised over the types that have debuted and have an eligible site, then picks a site.
+  4. Every new offer passes through the injected `MissionOfferDecorator`s, each on its own fork.
 
-  The act's `difficultyBand` clamps each offer's difficulty before its rewards and map size are derived. A city holds at most one offer. `Mission.pinned` means the offer never lapses, and the UI then shows no countdown (`ui/service/mission-countdown.ts`).
+  The act's `difficultyBand` clamps each offer's difficulty before its rewards and map size are derived; a story offer keeps its fixed difficulty. A city holds at most one offer. `Mission.pinned` means the offer never lapses, and the UI then shows no countdown (`ui/service/mission-countdown.ts`).
+
+- **The story spine decides victory** ([ADR 0013](../adr/0013-campaign-progression.md) §2.5). Story missions are modules in `STORY_MISSION_RULES` (`overworld/service/story/`), one file each, keyed by `StoryMissionId`. The table is `Partial`: a story mission lands with its package. After the type's `onResolved`, the launch handler calls `onStoryMissionResolved`: a win applies the rule's `onWon` (flags, `advance-act`, victory), a loss its `onLost` (a five-day retry, or D7 for the platform). `STORY_SPINE` names the mission that ends each act; `advance-act` into an act whose ending is not built sets `campaign-won` instead. Tech unlocks record flags through `onTechUnlocked`, and the director pins from flags, so there is one path to the board. The outcome step reads the story's verdict (`campaign-lost`, `campaign-won`) before threat ≥ 100.
 
   ```
-  mission-generation ──► MISSION_OFFER_RULES[type] (trigger) ──► offers, off the cap
+  mission-generation ──► pin triggers (story: STORY_MISSION_RULES, pinWhen flags) ──► pinned offers, off the cap
+                     ├─► MISSION_OFFER_RULES[type] (trigger) ──► offers, off the cap
                      ├─► fill to ACTS[act].boardCap: pickWeighted(type) ──► pickWeighted(site) ──► create
                      └─► each offer ──► decorators[0..n] ──► MissionOffered
   launch / expiry ──► MISSION_CONSEQUENCE_RULES[type].onResolved / onExpired ──► city infestation
+  launch (storyId) ──► onStoryMissionResolved ──► onWon / onLost ──► flags, act, campaign-won / -lost
+  unlockTech ──► onTechUnlocked ──► flags ──► (next tick) story pins
   ```
 
 ## 6. Testing strategy

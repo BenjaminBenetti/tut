@@ -15,6 +15,7 @@ import {
 } from "./mission-fixtures.test-helper";
 import {
   buildOffer,
+  buildOfferAtDifficulty,
   citiesWithOffers,
   clampToBand,
   difficultyFor,
@@ -253,6 +254,33 @@ describe("buildOffer", () => {
       offerContext(3, UNCLAMPED_ACT, { west: 4 }),
     );
     expect(mission.expiresDay).toBe(1 + CLEARANCE.expiryDays);
+  });
+});
+
+describe("buildOfferAtDifficulty", () => {
+  it("is buildOffer at the clamped difficulty, drawing the same", () => {
+    const state = fixtureState({ threat: 100 });
+    const full = getCity(state.map, "full");
+    const ctx = (): MissionOfferContext =>
+      withCarcassChance(offerContext(3, ACTS["act-1"]), 1);
+    expect(
+      buildOfferAtDifficulty(state, full, "infestation-clearance", 4, ctx()),
+    ).toEqual(buildOffer(state, full, "infestation-clearance", ctx()));
+  });
+
+  it("takes the difficulty as given, outside the act's band, and prices from it", () => {
+    const state = fixtureState();
+    const offer = buildOfferAtDifficulty(
+      state,
+      getCity(state.map, "low"),
+      "infestation-clearance",
+      9,
+      withCarcassChance(offerContext(3, ACTS["act-1"]), 1),
+    );
+    expect(offer.difficulty).toBe(9);
+    expect(offer.rewards.credits).toBe(9 * CLEARANCE.rewardPerDifficulty);
+    expect(offer.mapParams.size).toBe(mapSizeFor(9, RULE));
+    expect(offer.mapParams.techCarcass).toEqual({ techPoints: 10 + 2 * 9 });
   });
 });
 

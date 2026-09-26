@@ -103,13 +103,37 @@ export function buildOffer(
   typeId: MissionTypeId,
   ctx: MissionOfferContext,
 ): Mission {
+  const difficulty = clampToBand(
+    difficultyFor(
+      city.infestation,
+      state.threat,
+      ctx.missionTypes[typeId],
+      ctx.tuning.difficulty[typeId],
+    ),
+    ctx.act.difficultyBand,
+  );
+  return buildOfferAtDifficulty(state, city, typeId, difficulty, ctx);
+}
+
+/**
+ * The offer of type `typeId` at `city` on `state.day` at exactly
+ * `difficulty`, with everything that follows from it derived as
+ * `buildOffer` derives it (rewards, map size, carcass, expiry, act).
+ * `buildOffer` calls it with the clamped difficulty; a story offer calls
+ * it with its own fixed difficulty, which no band clamps (arc §3).
+ * Draws one id and one number (the map seed) from `ctx`, and the carcass
+ * roll on a labelled fork.
+ */
+export function buildOfferAtDifficulty(
+  state: OverworldState,
+  city: City,
+  typeId: MissionTypeId,
+  difficulty: number,
+  ctx: MissionOfferContext,
+): Mission {
   const type = ctx.missionTypes[typeId];
   const rule = ctx.tuning.difficulty[typeId];
   const region = getRegion(state.map, city.regionId);
-  const difficulty = clampToBand(
-    difficultyFor(city.infestation, state.threat, type, rule),
-    ctx.act.difficultyBand,
-  );
   const id = ctx.ids.nextId(MISSION_ID_PREFIX);
   const mapSeed = ctx.rng.nextInt(0, MAX_MAP_SEED);
   const intelDays = ctx.intelBonus[region.id] ?? 0;

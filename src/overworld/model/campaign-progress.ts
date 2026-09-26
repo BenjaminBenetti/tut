@@ -1,6 +1,7 @@
 import type { ActId } from "../../content/model/act-id";
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type { CampaignFlagId } from "../../content/model/campaign-flag-id";
+import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { Nemesis } from "./nemesis";
 
 // ===========================================
@@ -21,7 +22,9 @@ import type { Nemesis } from "./nemesis";
  *   ├── missionsWon     the won ones ───────────┤ counted by LaunchMission only
  *   ├── speciesKilled   first kills, in order ──┘
  *   ├── flags           story items and events; story services set them
- *   └── nemeses         named enemies that escaped
+ *   ├── nemeses         named enemies that escaped
+ *   ├── storyWon?       story missions won ──────┐ the story service keeps them
+ *   └── storyRetryDay?  lost ones' re-pin day ───┘ (ADR 0013 §2.5)
  * ```
  *
  * Who writes it: the launch handler (`launch-mission-service.ts`) is the
@@ -49,4 +52,18 @@ export interface CampaignProgress {
   readonly speciesKilled: readonly BugSpeciesId[];
   /** Named enemies that escaped and may return. */
   readonly nemeses: readonly Nemesis[];
+  /**
+   * Story missions won, in the order won; never holds a duplicate. A won
+   * story mission is never pinned again. Optional (ADR 0013 §2.9): absent
+   * reads as none, so a save from before the story spine needs no
+   * migration.
+   */
+  readonly storyWon?: readonly StoryMissionId[];
+  /**
+   * For each story mission lost under a retry rule, the first day it may
+   * be pinned again (arc §4: "losing a story mission delays it five
+   * days, then re-pins it"). An entry is dropped when the mission is
+   * won. Optional, like `storyWon`: absent reads as no delays.
+   */
+  readonly storyRetryDay?: Readonly<Partial<Record<StoryMissionId, number>>>;
 }

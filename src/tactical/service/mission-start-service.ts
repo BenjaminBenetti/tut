@@ -32,10 +32,12 @@ import type {
   MissionSetupRules,
 } from "../model/mission-setup-rule";
 import type { MissionStartOptions } from "../model/mission-start-options";
+import type { SitrepRules } from "../model/sitrep-rule";
 import type { TacticalError } from "../model/tactical-error";
 import type { TacticalState } from "../model/tactical-state";
 import { FIRST_TURN } from "../model/tactical-state";
 import type { TechCarcass } from "../model/tech-carcass";
+import { CARCASS_ID_PREFIX } from "../model/tech-carcass";
 import { TURN_STARTED } from "../model/turn-started-event";
 import { emptyVision, initialVision } from "./vision-service";
 import type { PassClass, Unit } from "../model/unit";
@@ -47,6 +49,7 @@ import { mechUnit, squadUnit } from "./unit-factory";
 import { placeGarrisonTurrets } from "./garrison-service";
 import { coordOf, facingToward, firstTile } from "./missions/map-placement";
 import { MISSION_SETUP_RULES } from "./missions/mission-setup-rules";
+import { applySitrepSetups } from "./sitreps/sitrep-service";
 
 // ===========================================
 // Types
@@ -89,14 +92,19 @@ export interface MissionStartDeps extends MissionSetupDeps {
   readonly infantryUpgradesFor?: (
     state: MissionCampaignState,
   ) => readonly InfantryUpgradeDefinition[];
+  /**
+   * What each sitrep does to a mission (campaign arc §11). The shipped
+   * `SITREP_RULES` when left out; tests substitute their own.
+   */
+  readonly sitrepRules?: SitrepRules;
 }
 
-/** Id prefixes the mission start issues; the first two moved beside the ids they prefix. */
+/** Id prefixes the mission start issues, each kept beside the ids it prefixes. */
 export {
   OBJECTIVE_ID_PREFIX,
   SPAWNER_ID_PREFIX,
 } from "../model/tactical-state";
-export const CARCASS_ID_PREFIX = "carcass";
+export { CARCASS_ID_PREFIX } from "../model/tech-carcass";
 
 /** Label of the mission-seed fork the garrison's sites are drawn from. */
 export const GARRISON_RNG_LABEL = "garrison-turrets";
@@ -122,6 +130,9 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *   setupRules[mission.typeId]         ──► the type's objectives, entities, schedules
  *                                          (a clearance's spawners, a defence's generators)
  *   options.garrisonTurrets            ──► garrison turrets on random clear tiles (#1155)
+ *   mission.sitreps?                   ──► each sitrep's setup, in SITREP_IDS order
+ *                                          (smoke, fire, carcasses, a known map)
+ *   initialVision                      ──► both sides' first look
  *                                                               │
  *                                                               ▼
  *                              ok { ...state, activeMission: TacticalState }
@@ -130,9 +141,10 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  * Deterministic: the same campaign state, deployment, options and id
  * counters always produce a deep-equal tactical state, because the map
  * comes from the mission's seed, placement walks hooks and tiles in
- * order, and the garrison draws its sites from a labelled fork of the
- * mission's seed. Generic over the campaign state so the app passes its
- * `GameState` while this domain never imports `save/` (ADR 0002 §3).
+ * order, and the garrison and each sitrep draw from their own labelled
+ * fork of the mission's seed (`garrison-turrets`, `sitrep:<id>`).
+ * Generic over the campaign state so the app passes its `GameState`
+ * while this domain never imports `save/` (ADR 0002 §3).
  *
  * @param state - The campaign, with no mission active.
  * @param missionId - The offered mission to start.
@@ -203,6 +215,10 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     // The species mix frozen on the offer (ADR 0013 §2.6); an older
     // offer has none and its spawns roll by hatch weight, as before.
     ...(mission.bugMix === undefined ? {} : { bugMix: mission.bugMix }),
+    // The sitreps frozen on the offer (campaign arc §11); set up below,
+    // after the type's rule and the garrison, and read by sight and the
+    // phase steps for the rest of the mission.
+    ...(mission.sitreps === undefined ? {} : { sitreps: mission.sitreps }),
     map,
     units: placed.value.units,
     templates: placed.value.templates,
@@ -253,19 +269,31 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     new Mulberry32Rng(seed).fork(GARRISON_RNG_LABEL),
     deps.ids,
   );
-  const { vision: _unseen, ...placedAll } = tactical;
-  const withGarrison: Omit<TacticalState, "vision"> = {
-    ...placedAll,
+  const withGarrison: TacticalState = {
+    ...tactical,
     units: garrison.state.units,
     templates: garrison.state.templates,
     log: [...tactical.log, ...garrison.events],
   };
+  // The offer's sitreps last (campaign arc §11, ADR 0013 §2.3): each on
+  // the ground everything else has claimed, from its own fork of the
+  // mission's seed, so a sitrep never moves the garrison, a spawner or
+  // another sitrep's draws.
+  const withSitreps = applySitrepSetups(
+    withGarrison,
+    map,
+    seed,
+    deps.ids,
+    deps.sitrepRules,
+  );
+  const { vision: known, ...placedAll } = withSitreps;
   return ok({
     ...state,
     // Both sides look once from where they deployed, so the first frame
     // is already fogged rather than blank (ADR 0006); the garrison looks
-    // with them, so a battery's ground is lit from the first turn.
-    activeMission: { ...withGarrison, vision: initialVision(withGarrison) },
+    // with them, so a battery's ground is lit from the first turn. What a
+    // sitrep told the squad beforehand (Local Guides) is kept.
+    activeMission: { ...placedAll, vision: initialVision(placedAll, known) },
   });
 }
 

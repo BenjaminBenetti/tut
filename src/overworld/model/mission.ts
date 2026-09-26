@@ -6,6 +6,7 @@ import type { DeployableId } from "./deployable";
 import type { MapSizeId } from "../../content/model/map-size-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { SettlementScale } from "../../content/model/settlement-scale";
+import type { SitrepId } from "../../content/model/sitrep-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { CityId } from "./city";
 
@@ -126,8 +127,8 @@ export interface MissionRewards {
  * Values copied from the type (`rewards`, `ignorePenalty`) are frozen
  * into the instance at generation so later tuning changes never alter a
  * mission the player can already see. The campaign context (`pinned`,
- * `storyId`, `act`, `bugMix`, ADR 0013 §2.2) is optional, so offers
- * saved before it existed stay valid.
+ * `storyId`, `act`, `sitreps`, `bugMix`, ADR 0013 §2.2) is optional, so
+ * offers saved before it existed stay valid.
  */
 export interface Mission {
   /** Unique id from the id generator. */
@@ -178,6 +179,14 @@ export interface Mission {
    * saved before acts existed.
    */
   readonly act?: ActId;
+  /**
+   * The situation reports rolled onto the offer (campaign arc §11),
+   * frozen at offer so the briefing, the map and the mission always
+   * agree. Never holds a duplicate; order is the roll's. Absent (the
+   * norm before mission 10, on story offers, and on every offer saved
+   * before sitreps existed) means none.
+   */
+  readonly sitreps?: readonly SitrepId[];
   /**
    * The species the mission's spawners and edge waves roll, frozen at
    * offer from the bestiary for the act and the missions played in it

@@ -640,7 +640,10 @@ describe("generateMissions — decorators", () => {
   });
 
   it("ships the bestiary decorator, which freezes the act's species mix on every new offer", () => {
-    expect(MISSION_OFFER_DECORATORS.map((d) => d.id)).toEqual(["bestiary"]);
+    expect(MISSION_OFFER_DECORATORS.map((d) => d.id)).toEqual([
+      "bestiary",
+      "sitreps",
+    ]);
     const progress = {
       ...state.progress,
       act: "act-2" as const,
@@ -654,7 +657,50 @@ describe("generateMissions — decorators", () => {
     expect(next.missions.length).toBeGreaterThan(0);
     for (const mission of next.missions) {
       expect(mission.bugMix).toEqual(bugMixFor("act-2", 2));
+      // Mission 6: before the first sitrep (arc §11).
+      expect(mission.sitreps).toBeUndefined();
     }
+  });
+
+  it("ships the sitrep decorator, which rolls on its own fork and shifts nothing else", () => {
+    const board = fixtureState({
+      map: boardMap([10, 25, 40, 60, 80, 95, 30, 50]),
+      deployables: [installation("dep-1", "north")],
+    });
+    const progress = { ...board.progress, act: "act-3" as const };
+    // Mission 37: every sitrep has debuted and Act III has two slots.
+    const late = { ...board, progress: { ...progress, missionsPlayed: 36 } };
+    const shipped = (seed: number) =>
+      generateMissions(
+        late,
+        deps(seed, {
+          tuning: ALWAYS_DEFEND,
+          decorators: MISSION_OFFER_DECORATORS,
+        }),
+      ).state.missions;
+    const bestiaryOnly = (seed: number) =>
+      generateMissions(
+        late,
+        deps(seed, {
+          tuning: ALWAYS_DEFEND,
+          decorators: MISSION_OFFER_DECORATORS.slice(0, 1),
+        }),
+      ).state.missions;
+    let carried = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const offers = shipped(seed);
+      carried += offers.filter((m) => m.sitreps !== undefined).length;
+      // Strip the sitreps and the board is the one without the decorator.
+      expect(offers.map(({ sitreps: _sitreps, ...rest }) => rest)).toEqual(
+        bestiaryOnly(seed),
+      );
+      for (const mission of offers) {
+        expect(new Set(mission.sitreps).size).toBe(
+          mission.sitreps?.length ?? 0,
+        );
+      }
+    }
+    expect(carried).toBeGreaterThan(0);
   });
 });
 

@@ -7,6 +7,7 @@ import type {
   BriefingRow,
   MissionPresentationCatalogue,
 } from "../model/mission-presentation";
+import type { SitrepPresentationCatalogue } from "../model/sitrep-presentation";
 import {
   formatCredits,
   formatTechPoints,
@@ -17,6 +18,7 @@ import {
   MISSION_PRESENTATION,
   briefingFieldsOf,
 } from "../service/missions/mission-presentation";
+import { SitrepTagsView } from "./sitrep-tags-view";
 
 // ===========================================
 // Types
@@ -33,6 +35,8 @@ export interface MissionDetailsViewDeps {
   readonly missionTypes: MissionTypeCatalogue;
   /** The rows each type adds (ADR 0013 §2.3); the shipped table when omitted. */
   readonly presentations?: MissionPresentationCatalogue;
+  /** Each sitrep's name and line (campaign arc §11); the shipped table when omitted. */
+  readonly sitreps?: SitrepPresentationCatalogue;
 }
 
 /** Shared fields before the type's own rows, in order. */
@@ -91,7 +95,12 @@ interface Slot {
  * the ones its type fills and the rest stay hidden, so a clearance keeps
  * the grid it always had and a defence adds its installation and waves.
  *
+ * Above the grid sit the offer's sitreps, one tag row each, and only
+ * when it carries any (campaign arc §11).
+ *
  * ```
+ *   description
+ *   ── sitreps (SitrepTagsView), hidden when none ──
  *   Type · City · Difficulty · Reward · Tech reward · Tech carcass
  *   ── type rows (MissionPresentation.briefingRows) ──
  *   Days left · Biome · Settlement · Map size · Ignore penalty
@@ -105,6 +114,7 @@ export class MissionDetailsView {
   private readonly deps: MissionDetailsViewDeps;
   private readonly presentations: MissionPresentationCatalogue;
   private readonly handlers: MissionDetailsViewHandlers;
+  private readonly sitrepTags: SitrepTagsView;
   private root: HTMLElement | undefined;
   private description: HTMLElement | undefined;
   private plan: HTMLButtonElement | undefined;
@@ -129,6 +139,7 @@ export class MissionDetailsView {
   ) {
     this.deps = deps;
     this.presentations = deps.presentations ?? MISSION_PRESENTATION;
+    this.sitrepTags = new SitrepTagsView(deps.sitreps);
     this.handlers = handlers;
   }
 
@@ -168,7 +179,9 @@ export class MissionDetailsView {
     plan.dataset.action = "plan-deployment";
     plan.textContent = "Plan deployment";
 
-    section.append(title, description, grid, plan);
+    section.append(title, description);
+    this.sitrepTags.mount(section);
+    section.append(grid, plan);
     parent.appendChild(section);
 
     this.onPlan = (): void => {
@@ -219,6 +232,7 @@ export class MissionDetailsView {
     this.fillTypeRows(
       this.presentations[mission.typeId].briefingRows(mission, { state }),
     );
+    this.sitrepTags.update(mission);
     if (this.description.textContent !== type.description) {
       this.description.textContent = type.description;
     }
@@ -232,6 +246,7 @@ export class MissionDetailsView {
     if (this.plan && this.onPlan) {
       this.plan.removeEventListener("click", this.onPlan);
     }
+    this.sitrepTags.unmount();
     this.root?.remove();
     this.root = undefined;
     this.description = undefined;

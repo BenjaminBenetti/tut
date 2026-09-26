@@ -1,6 +1,7 @@
 import type { JevControl } from "./jev-control";
 import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
+import type { SitrepId } from "../../content/model/sitrep-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { MissionId } from "../../overworld/model/mission";
@@ -262,6 +263,8 @@ export const NO_VISION: SideVision = {
  *   ├── missionId, seed       which mission; the RNG seed its rules fork from
  *   ├── difficulty, threat    launch-time inputs the edge waves escalate with
  *   ├── bugMix?               the species the spawns roll, from the offer
+ *   ├── sitreps?              the offer's situation reports (arc §11)
+ *   ├── blazeSites?           tiles City Ablaze relights every three turns
  *   ├── map                   the generated TacticalMap (ADR 0004); recipe inside
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
@@ -298,6 +301,21 @@ export interface TacticalState {
    * has.
    */
   readonly bugMix?: SpeciesMix;
+  /**
+   * The situation reports frozen on the offer (campaign arc §11),
+   * copied at launch. Each applies through its rule in `SITREP_RULES`:
+   * a setup once the map is set up, a sight modifier the vision service
+   * reads, a phase step. Absent (the norm) means none, and every mission
+   * saved before sitreps existed has none.
+   */
+  readonly sitreps?: readonly SitrepId[];
+  /**
+   * The tiles City Ablaze set alight at the start (campaign arc §11), in
+   * the order they were lit. The sitrep's phase step relights each one
+   * every three turns, whatever burnt out in between. Absent unless the
+   * mission carries City Ablaze.
+   */
+  readonly blazeSites?: readonly TileCoord[];
   readonly map: TacticalMap;
   /** Every unit on the map, TDF and bugs, alive or not. */
   readonly units: readonly Unit[];

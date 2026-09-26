@@ -21,21 +21,34 @@ import {
   unitFootprintTiles,
 } from "./footprint-service";
 import { hasLineOfSight } from "./sight-service";
+import { sitrepSightRange } from "./sitreps/sitrep-service";
 
 // ===========================================
 // Seeing
 // ===========================================
 
 /**
- * How far `unit` can see, in tiles. Zero for a unit whose template is
- * missing, so an unknown unit sees nothing rather than everything.
+ * How far `unit` can see, in tiles: its template's range, through the
+ * sight hook of every sitrep the mission carries (Nightfall takes 4 off
+ * both sides). Zero for a unit whose template is missing, so an unknown
+ * unit sees nothing rather than everything.
+ *
+ * ```
+ *   templates[unit.templateId].sightRange ──► sitrepSightRange (mission.sitreps) ──► range
+ * ```
+ *
+ * The one read of a unit's sight: fog, spotting, overwatch and the bug
+ * AI all come through here, so a sitrep changes them together.
  *
  * @param mission - The mission the unit is in.
  * @param unit - The unit doing the looking.
  * @returns Its sight range in tiles.
  */
 export function sightRangeOf(mission: TacticalState, unit: Unit): number {
-  return mission.templates[unit.templateId]?.sightRange ?? 0;
+  const range = mission.templates[unit.templateId]?.sightRange ?? 0;
+  return mission.sitreps === undefined
+    ? range
+    : sitrepSightRange(range, mission);
 }
 
 /**
@@ -279,12 +292,19 @@ function rememberSeen(
 /**
  * The vision a mission starts with: both sides look once from where they
  * deployed, so the first frame is already fogged correctly rather than
- * blank until someone moves.
+ * blank until someone moves. What each side already knew before that
+ * look — Local Guides' explored map — is kept, and the look unions into
+ * it as every later one does.
+ *
+ * @param mission - The mission with everything placed.
+ * @param prior - What each side knows before looking; nothing by default.
+ * @returns Both sides' vision after the first look.
  */
 export function initialVision(
   mission: Omit<TacticalState, "vision">,
+  prior: Readonly<Record<Team, SideVision>> = emptyVision(),
 ): Readonly<Record<Team, SideVision>> {
-  const seeded: TacticalState = { ...mission, vision: emptyVision() };
+  const seeded: TacticalState = { ...mission, vision: prior };
   return withVision({ state: seeded, events: [] }).state.vision;
 }
 

@@ -66,6 +66,42 @@ describe("MissionDetailsView", () => {
     );
   });
 
+  it("tags the offer's sitreps above the grid, and hides them for an offer without (#1179)", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const plain = missionAt("mission-1", "cairo", 7, 4);
+    const tagged = {
+      ...missionAt("mission-2", "lagos", 7, 4),
+      sitreps: ["city-ablaze", "local-guides"] as const,
+    };
+    const state = campaignOnDay(4, [plain, tagged]);
+    const sitreps = (): HTMLElement | null =>
+      root.querySelector<HTMLElement>('[data-role="sitreps"]');
+    view.update(state, plain);
+    expect(sitreps()?.hidden).toBe(true);
+    view.update(state, tagged);
+    expect(sitreps()?.hidden).toBe(false);
+    const tags = [...root.querySelectorAll<HTMLElement>("[data-sitrep]")];
+    expect(tags.map((tag) => tag.dataset.sitrep)).toEqual([
+      "city-ablaze",
+      "local-guides",
+    ]);
+    expect(tags[1]?.textContent).toContain("Helps you");
+    // Between the description and the grid.
+    const order = [...section()!.children].map(
+      (child) =>
+        (child as HTMLElement).dataset.role ??
+        (child as HTMLElement).dataset.field ??
+        child.tagName,
+    );
+    expect(order.indexOf("sitreps")).toBe(order.indexOf("description") + 1);
+    view.update(state, plain);
+    expect(sitreps()?.hidden).toBe(true);
+  });
+
   it("shows no countdown for a pinned offer (ADR 0013 §2.2)", () => {
     const view = new MissionDetailsView(
       { missionTypes: MISSION_TYPES },

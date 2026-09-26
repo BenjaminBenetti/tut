@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { HookKinds } from "../../../mapgen/model/hook";
 import { PassMask } from "../../../mapgen/model/pass-mask";
+import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
@@ -32,6 +33,7 @@ function deps(): MissionSetupDeps {
     ids: new SequentialIdGenerator(),
     spawnTuning: SPAWN_TUNING,
     generator: GENERATOR_TUNING,
+    civilian: CIVILIAN_TUNING,
   };
 }
 

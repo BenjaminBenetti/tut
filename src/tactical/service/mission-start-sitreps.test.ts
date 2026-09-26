@@ -22,6 +22,7 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
+import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
@@ -63,6 +64,7 @@ function deps(): MissionStartDeps {
     spawnTuning: SPAWN_TUNING,
     garrison: GARRISON_TUNING,
     generator: GENERATOR_TUNING,
+    civilian: CIVILIAN_TUNING,
     ids: new SequentialIdGenerator(),
     registries: createDefaultRegistries(),
   };

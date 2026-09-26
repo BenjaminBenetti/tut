@@ -22,6 +22,7 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -173,6 +174,7 @@ export function startedMission(
       spawnTuning: SPAWN_TUNING,
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
+      civilian: CIVILIAN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

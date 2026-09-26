@@ -39,7 +39,7 @@ import type {
   TacticalState,
 } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
-import { isAutonomous } from "../../tactical/model/unit";
+import { isStandingForce, takesOrders } from "../../tactical/model/unit";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import {
   enemyAttackTargets,
@@ -1703,14 +1703,14 @@ export class TacticalHudView {
       return;
     }
     const team = TEAM_FOR_PHASE[mission.phase];
-    // A turret is never an actor (#1138): Tab walks the units the
-    // player can give an order to.
+    // A turret is never an actor (#1138), nor is a trapped civilian
+    // group: Tab walks the units the player can give an order to.
     const actors = mission.units.filter(
       (u) =>
         u.team === team &&
         u.hp > 0 &&
         u.ap > 0 &&
-        !isAutonomous(u) &&
+        takesOrders(u) &&
         !mission.jev?.entities[u.id]?.enabled,
     );
     if (actors.length === 0) {
@@ -1845,7 +1845,7 @@ export class TacticalHudView {
       unit.hp > 0 &&
       unit.team === "tdf" &&
       unit.team === TEAM_FOR_PHASE[mission.phase] &&
-      !isAutonomous(unit)
+      takesOrders(unit)
       ? unit
       : undefined;
   }
@@ -2232,7 +2232,7 @@ export class TacticalHudView {
       !unit ||
       unit.hp <= 0 ||
       unit.team !== "tdf" ||
-      isAutonomous(unit)
+      !takesOrders(unit)
     )
       return;
     const current = mission.jev?.entities[unitId];
@@ -2349,7 +2349,9 @@ export class TacticalHudView {
       missionName: this.missionName ?? "—",
       turn: mission.turn,
       phase: mission.phase,
-      tdfUnits: countAlive(mission, "tdf"),
+      // The force only (`isStandingForce`): a civilian group, a turret
+      // or a generator is not one of the squad's own.
+      tdfUnits: mission.units.filter(isStandingForce).length,
       // Spotted bugs only: a count of every bug alive tells the player
       // how many are out there before anyone has seen one.
       bugUnits: this.view === undefined ? 0 : countAlive(this.view, "bugs"),
@@ -2371,7 +2373,7 @@ export class TacticalHudView {
       shown ? namesFor(mission, this.campaign).unit(shown.id) : undefined,
     );
     this.unitControl.update(
-      shown?.team === "tdf" && shown.hp > 0 && !isAutonomous(shown)
+      shown?.team === "tdf" && shown.hp > 0 && takesOrders(shown)
         ? {
             missionId: mission.missionId,
             unitId: shown.id,

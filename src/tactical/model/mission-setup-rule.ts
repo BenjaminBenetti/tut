@@ -3,6 +3,7 @@ import type { Result } from "../../core/model/result";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Mission } from "../../overworld/model/mission";
+import type { CivilianTuning } from "./civilian";
 import type { GeneratorTuning } from "./generator";
 import type { SpawnTuning } from "./spawn-tuning";
 import type { TacticalError } from "./tactical-error";
@@ -26,6 +27,8 @@ export interface MissionSetupDeps {
   readonly spawnTuning: SpawnTuning;
   /** What a defence's generators are made of (#1175). */
   readonly generator: GeneratorTuning;
+  /** What an evacuation's civilian groups are (campaign arc §6.4). */
+  readonly civilian: CivilianTuning;
 }
 
 // ===========================================

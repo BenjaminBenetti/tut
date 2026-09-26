@@ -7,6 +7,7 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
+import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { DEMOLITION_TUNING } from "../data/demolition-tuning";
 import { HAZARD_TUNING } from "../data/hazard-tuning";
 import type { TacticalContext } from "../model/tactical-handler";
@@ -15,6 +16,7 @@ import type { PassClass, Team, Unit, UnitStatus } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { AttackDeps } from "./combat-service";
 import { registryStructureCatalogue } from "./structure-catalogue";
+import { civilianUnit } from "./unit-factory";
 import { emptyVision } from "./vision-service";
 
 // ===========================================
@@ -321,4 +323,37 @@ export function twoFloorBuilding(): TacticalMap {
     { x: 5, y: STOREY_LAYERS, z: 5 },
   );
   return builder.build();
+}
+
+// ===========================================
+// Civilians
+// ===========================================
+
+/**
+ * `mission` with a civilian group of the shipped tuning at `pos` under
+ * the id `id` (campaign arc §6.4), its template registered. Trapped
+ * unless told otherwise, as the setup places one.
+ */
+export function withCivilian(
+  mission: TacticalState,
+  id: string,
+  pos: TileCoord,
+  options: { readonly trapped?: boolean; readonly hp?: number } = {},
+): TacticalState {
+  const built = civilianUnit(
+    CIVILIAN_TUNING,
+    { pos, facing: "n" },
+    new SequentialIdGenerator(),
+    options.trapped ?? true,
+  );
+  const unit: Unit = {
+    ...built.unit,
+    id,
+    ...(options.hp === undefined ? {} : { hp: options.hp }),
+  };
+  return {
+    ...mission,
+    units: [...mission.units, unit],
+    templates: { ...mission.templates, [built.template.id]: built.template },
+  };
 }

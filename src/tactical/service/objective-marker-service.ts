@@ -27,9 +27,12 @@ import {
  * ```
  *
  * A generator is a unit of ours, lit from the first turn (#1175), so a
- * defence marks nothing. Location only: like a radar contact it
- * discloses neither health nor hatch timer, and it never changes
- * vision, explored ground or what a behaviour may know.
+ * defence marks nothing. A rescue (campaign arc §6.4) marks every group
+ * still trapped, one blip each, through its kind's `markers`, and is
+ * blipped past its flags while a group waits (`workedUntilEmpty`).
+ * Location only: like a radar contact it discloses neither health nor
+ * hatch timer, and it never changes vision, explored ground or what a
+ * behaviour may know.
  *
  * @param mission - The mission whose objectives are marked.
  * @param team - The side looking. The objectives are the player's (GDD §6.3), so the bugs get none.
@@ -43,21 +46,26 @@ export function objectiveMarkers(
 ): readonly ObjectiveMarker[] {
   if (team !== "tdf") return [];
   const open = mission.objectives.filter(
-    (objective) => !objective.complete && objective.failed !== true,
+    (objective) =>
+      objectiveRulesFor(objective, rules).workedUntilEmpty === true ||
+      (!objective.complete && objective.failed !== true),
   );
   if (open.length === 0) return [];
   const index = new TileIndex(mission.map);
   const visible = new Set(mission.vision[team]?.visible ?? []);
   const markers: ObjectiveMarker[] = [];
   for (const objective of open) {
-    const pos = objectiveRulesFor(objective, rules).marker?.(
-      objective,
-      mission,
-    );
-    if (pos === undefined || visible.has(index.keyOf(pos))) {
-      continue;
+    const kind = objectiveRulesFor(objective, rules);
+    const single = kind.markers ? undefined : kind.marker?.(objective, mission);
+    const places =
+      kind.markers?.(objective, mission) ??
+      (single === undefined ? [] : [single]);
+    for (const pos of places) {
+      if (visible.has(index.keyOf(pos))) {
+        continue;
+      }
+      markers.push({ objectiveId: objective.id, pos });
     }
-    markers.push({ objectiveId: objective.id, pos });
   }
   return markers;
 }

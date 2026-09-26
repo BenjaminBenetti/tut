@@ -22,6 +22,7 @@ import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { ATTACK } from "../../tactical/model/attack-command";
@@ -93,6 +94,7 @@ function inMission(): GameState {
       spawnTuning: SPAWN_TUNING,
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
+      civilian: CIVILIAN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

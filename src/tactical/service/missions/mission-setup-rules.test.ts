@@ -4,6 +4,7 @@ import { MISSION_TYPE_IDS } from "../../../content/model/mission-type-id";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import type { Mission } from "../../../overworld/model/mission";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
+import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import {
   missionWith,
@@ -58,6 +59,7 @@ describe("MISSION_SETUP_RULES (ADR 0013 §2.3)", () => {
       ids: new SequentialIdGenerator(),
       spawnTuning: SPAWN_TUNING,
       generator: GENERATOR_TUNING,
+      civilian: CIVILIAN_TUNING,
     });
     expect(setUp).toEqual({ ok: true, value: state });
     expect(setUp.ok && setUp.value).toBe(state);

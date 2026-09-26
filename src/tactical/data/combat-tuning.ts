@@ -49,5 +49,9 @@ export const COMBAT_TUNING: CombatTuning = {
     bug: true,
     turret: true,
     generator: true,
+    // A civilian group carries no weapon (campaign arc §6.4); the entry
+    // exists because the table is total, and says what a stray attack
+    // would cost if one were ever validated.
+    civilian: true,
   },
 };

@@ -9,7 +9,9 @@ import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
+import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
+import { CIVILIAN_SOURCE_ID } from "../model/civilian";
 import { placeUnit } from "../model/place-unit-command";
 import type { TacticalState } from "../model/tactical-state";
 import { UNIT_PLACED } from "../model/unit-placed-event";
@@ -341,5 +343,84 @@ describe("placeableUnits (#1136)", () => {
       id: "starter",
       name: "Mech (starter)",
     });
+  });
+});
+
+describe("placing a civilian group (campaign arc §6.4)", () => {
+  const civilianDeps: PlaceUnitDeps = {
+    ...depsWith(true),
+    civilian: CIVILIAN_TUNING,
+  };
+  const place = createPlaceUnitHandler(civilianDeps);
+
+  it("stands a trapped group on the tile and tracks it with the mission's rescue, made when there is none", () => {
+    const mission = field();
+    const first = place(
+      mission,
+      placeUnit(mission.missionId, "civilian", CIVILIAN_SOURCE_ID, {
+        x: 3,
+        y: 0,
+        z: 3,
+      }),
+      ctx(),
+    );
+    if (!first.ok) throw new Error(`refused: ${first.error.kind}`);
+    const group = first.value.state.units.at(-1);
+    expect(group).toMatchObject({
+      kind: "civilian",
+      team: "tdf",
+      sourceId: CIVILIAN_SOURCE_ID,
+      ap: 0,
+      trapped: true,
+    });
+    const rescue = first.value.state.objectives[0];
+    expect(first.value.state.objectives).toEqual([
+      {
+        id: rescue?.id,
+        kind: "rescue-civilians",
+        groupIds: [group?.id],
+        complete: false,
+        failed: false,
+      },
+    ]);
+
+    // A second group joins the same rescue.
+    const second = place(
+      first.value.state,
+      placeUnit(mission.missionId, "civilian", CIVILIAN_SOURCE_ID, {
+        x: 5,
+        y: 0,
+        z: 3,
+      }),
+      ctx(),
+    );
+    if (!second.ok) throw new Error(`refused: ${second.error.kind}`);
+    const rescues = second.value.state.objectives;
+    expect(rescues).toHaveLength(1);
+    expect(rescues[0]).toMatchObject({
+      groupIds: [group?.id, second.value.state.units.at(-1)?.id],
+    });
+  });
+
+  it("offers a group only when the deps carry civilians, and refuses one otherwise", () => {
+    expect(placeableUnits(civilianDeps).at(-1)).toEqual({
+      kind: "civilian",
+      id: CIVILIAN_SOURCE_ID,
+      name: "Civilians (trapped)",
+    });
+    expect(
+      placeableUnits(depsWith(true)).some((entry) => entry.kind === "civilian"),
+    ).toBe(false);
+    const mission = field();
+    const refused = handler(
+      mission,
+      placeUnit(mission.missionId, "civilian", CIVILIAN_SOURCE_ID, {
+        x: 3,
+        y: 0,
+        z: 3,
+      }),
+      ctx(),
+    );
+    expect(refused.ok ? "ok" : refused.error.kind).toBe("unknown-unit-type");
   });
 });

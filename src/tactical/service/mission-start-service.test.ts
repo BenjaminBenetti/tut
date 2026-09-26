@@ -30,6 +30,7 @@ import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
+import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { err, ok } from "../../core/model/result";
 import type { MissionSetupRule } from "../model/mission-setup-rule";
@@ -66,6 +67,7 @@ function deps(): MissionStartDeps {
     spawnTuning: SPAWN_TUNING,
     garrison: GARRISON_TUNING,
     generator: GENERATOR_TUNING,
+    civilian: CIVILIAN_TUNING,
     ids: new SequentialIdGenerator(),
     registries: createDefaultRegistries(),
   };

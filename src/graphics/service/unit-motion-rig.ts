@@ -41,7 +41,10 @@ export class UnitMotionRig implements UnitMotion {
     modelId: string,
     private readonly tuning: UnitMotionTuning = UNIT_MOTION_TUNING,
   ) {
-    this.infantry = modelId.startsWith("tdf.infantry.");
+    // A civilian group is built like a squad (campaign arc §6.4): one
+    // `fig<n>_` set per person, so it walks as a squad walks.
+    this.infantry =
+      modelId.startsWith("tdf.infantry.") || modelId.startsWith("civ.");
     this.mech = modelId.startsWith("tdf.mech.");
     this.bug = modelId.startsWith("bug.");
     this.swarmer = modelId === "bug.swarmer";

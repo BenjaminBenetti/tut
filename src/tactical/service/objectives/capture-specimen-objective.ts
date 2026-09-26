@@ -10,7 +10,10 @@ import type {
   ObjectiveRules,
 } from "../../model/objective-rules";
 import type { PhaseStep } from "../../model/phase-step";
-import type { TacticalEvent } from "../../model/tactical-event";
+import type {
+  TacticalApplied,
+  TacticalEvent,
+} from "../../model/tactical-event";
 import type {
   CaptureSpecimenObjective,
   Objective,
@@ -127,7 +130,9 @@ export function addCaptureObjective(
  * `failed` flags at each phase start, and announces a change through
  * `ObjectiveUpdated` so the log and the tracker see it (#1179), the way
  * a defence's step does. A flag never goes back, and the two are never
- * both set.
+ * both set. Completion is mostly written at the moment the carrier
+ * boards (`onExtracted`), so this mostly records a capture gone out of
+ * reach.
  *
  * @param nets - The catalogue that says which carried items are nets.
  * @returns The step.
@@ -139,27 +144,90 @@ export function createCaptureStep(nets: EquipmentCatalogue): PhaseStep {
       if (objective.kind !== "capture-specimen") {
         return objective;
       }
-      const status = captureStatus(objective, mission, nets);
-      const complete =
-        objective.complete ||
-        (objective.failed !== true && status === "complete");
-      const failed =
-        objective.failed === true || (!complete && status === "failed");
-      if (
-        complete === objective.complete &&
-        failed === (objective.failed ?? false)
-      ) {
-        return objective;
-      }
-      events.push({
-        type: OBJECTIVE_UPDATED,
-        payload: { objectiveId: objective.id, complete, failed },
-      });
-      return { ...objective, complete, failed };
+      const next = mirrored(objective, mission, nets);
+      events.push(...next.events);
+      return next.objective;
     });
     return events.length === 0
       ? { state: mission, events: [] }
       : { state: { ...mission, objectives }, events };
+  };
+}
+
+/**
+ * What a capture hears when a unit boards the drop ship (#1179): a
+ * carrier of its species going home completes it there and then, with
+ * its `ObjectiveUpdated`, so the tracker and the log say so at once and
+ * no second net is thrown for a specimen already won. Called by the
+ * Extract handler (the rules' `onExtracted`), after the unit has left the
+ * map and before the terminal check.
+ *
+ * ```
+ *   unit carries the objective's species ──► flags mirrored, [ObjectiveUpdated]
+ *   anything else (an empty-handed squad,
+ *   a mech, a civilian group)             ──► mission unchanged, no events
+ * ```
+ *
+ * @param objective - The capture.
+ * @param mission - The mission with the unit already among the extracted.
+ * @param unit - The unit as it left.
+ * @param nets - The catalogue that says which carried items are nets.
+ * @returns The mission with the capture's flags brought up to date.
+ */
+export function captureOnExtracted(
+  objective: CaptureSpecimenObjective,
+  mission: TacticalState,
+  unit: Unit,
+  nets: EquipmentCatalogue,
+): TacticalApplied<TacticalState> {
+  if (unit.carrying?.species !== objective.species) {
+    return { state: mission, events: [] };
+  }
+  const next = mirrored(objective, mission, nets);
+  if (next.objective === objective) {
+    return { state: mission, events: [] };
+  }
+  return {
+    state: {
+      ...mission,
+      objectives: mission.objectives.map((candidate) =>
+        candidate.id === objective.id ? next.objective : candidate,
+      ),
+    },
+    events: next.events,
+  };
+}
+
+/**
+ * The capture with its flags brought up to the live status, and the
+ * `ObjectiveUpdated` announcing the change; the objective unchanged and
+ * no event when nothing moved. A flag never goes back, and the two are
+ * never both set.
+ */
+function mirrored(
+  objective: CaptureSpecimenObjective,
+  mission: TacticalState,
+  nets: EquipmentCatalogue,
+): { objective: CaptureSpecimenObjective; events: TacticalEvent[] } {
+  const status = captureStatus(objective, mission, nets);
+  const complete =
+    objective.complete || (objective.failed !== true && status === "complete");
+  const failed =
+    objective.failed === true || (!complete && status === "failed");
+  if (
+    complete === objective.complete &&
+    failed === (objective.failed ?? false)
+  ) {
+    return { objective, events: [] };
+  }
+  return {
+    objective: { ...objective, complete, failed },
+    events: [
+      {
+        type: OBJECTIVE_UPDATED,
+        payload: { objectiveId: objective.id, complete, failed },
+      },
+    ],
   };
 }
 
@@ -207,6 +275,7 @@ export const pickUpDroppedSpecimen: ObjectiveInteraction = (
  *   complete / failed   captureStatus, live
  *   interaction         pickUpDroppedSpecimen
  *   phaseStep           createCaptureStep
+ *   onExtracted         captureOnExtracted: the carrier boarding completes it
  *   reachable           the first dropped specimen, while one lies
  *   marker              the same tile: it lies still, like a nest
  *   destination         the dropped specimen's tile, and the carriers
@@ -232,6 +301,10 @@ export function createCaptureSpecimenObjective(
     },
     interaction: pickUpDroppedSpecimen,
     phaseStep: createCaptureStep(nets),
+    /** A carrier of the species boarding completes the capture at once. */
+    onExtracted(objective, mission, unit) {
+      return captureOnExtracted(objective, mission, unit, nets);
+    },
     /** The first dropped specimen of the species, where its carrier fell. */
     reachable(objective, mission) {
       const [dropped] = droppedSpecimens(mission, objective.species);

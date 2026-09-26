@@ -66,4 +66,12 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
       // so a 64 × 144 hive asks for 50 and gets about 110 (#1179).
       minDistanceFromDeploy: 60,
     },
+    [HookKinds.CIVILIAN]: {
+      // Infantry only: a mech cannot enter a building, and the group
+      // walks out the way its rescuer walked in (campaign arc §6.4).
+      requiredPass: Pass.INFANTRY,
+      // Out in the town rather than beside the drop ship, so a rescue
+      // is a walk there and back.
+      minDistanceFromDeploy: 6,
+    },
   };

@@ -345,6 +345,12 @@ export function describeRefusal(
       // A deployed turret (#1138): it fires by rule, and the player
       // clicked it to read its battery, not to command it.
       return `${names.unit(error.unitId)} takes no orders; it fires on its own`;
+    case "unit-trapped":
+      // Campaign arc §6.4: the group waits in its building until a
+      // squad or mech beside it uses Interact.
+      return `${names.unit(error.unitId)} are trapped; free them with Interact from beside them`;
+    case "cannot-interact":
+      return `${names.unit(error.unitId)} cannot work objectives; a squad or mech must`;
     case "unknown-unit-type":
       // A catalogue id, not an entity id, but it is still an id and
       // the menu that sent it already knows what it asked for (#1136).

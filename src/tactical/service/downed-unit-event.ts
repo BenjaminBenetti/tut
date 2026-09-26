@@ -1,3 +1,4 @@
+import { CIVILIANS_KILLED } from "../model/civilians-killed-event";
 import { GENERATOR_DESTROYED } from "../model/generator-destroyed-event";
 import type { TacticalEvent } from "../model/tactical-event";
 import { TURRET_DESTROYED } from "../model/turret-destroyed-event";
@@ -11,13 +12,17 @@ import type { Unit, UnitId } from "../model/unit";
 /**
  * The event for a unit that damage just took to zero hit points: a
  * `UnitDied` for a squad, a mech or a bug, a `TurretDestroyed` for a
- * turret (#1155). The one place the two are told apart, so a shot, a
- * blast and a fire all end a turret the same way and none of them
- * hands the debrief a turret to mourn or a kill to credit.
+ * turret (#1155), a `GeneratorDestroyed` for a generator (#1175) and a
+ * `CiviliansKilled` for a civilian group (campaign arc §6.4). The one
+ * place they are told apart, so a shot, a blast and a fire all end a
+ * turret the same way and none of them hands the debrief a turret or a
+ * townsperson to mourn, or a kill to credit.
  *
  * ```
- *   hp → 0 ──► kind turret ──► TurretDestroyed { turretId, pos, killerId? }
- *          └─► anything else ──► UnitDied { unitId, killerId?, dropped? }
+ *   hp → 0 ──► kind turret    ──► TurretDestroyed { turretId, pos, killerId? }
+ *          ├─► kind generator ──► GeneratorDestroyed { generatorId, pos, killerId? }
+ *          ├─► kind civilian  ──► CiviliansKilled { unitId, pos, killerId? }
+ *          └─► anything else  ──► UnitDied { unitId, killerId?, dropped? }
  * ```
  *
  * A squad that falls carrying a specimen (#1179) drops it where it
@@ -40,6 +45,14 @@ export function downedEvent(unit: Unit, killerId?: UnitId): TacticalEvent {
     return {
       type: GENERATOR_DESTROYED,
       payload: { generatorId: unit.id, pos: unit.pos, ...credit },
+    };
+  }
+  // A civilian group never carries a specimen (carrying is squads only,
+  // `SPECIMEN_CARRIER_KINDS`), so its death has nothing to drop.
+  if (unit.kind === "civilian") {
+    return {
+      type: CIVILIANS_KILLED,
+      payload: { unitId: unit.id, pos: unit.pos, ...credit },
     };
   }
   const dropped = unit.carrying === undefined ? {} : { dropped: unit.carrying };

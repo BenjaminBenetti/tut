@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "../../core/model/result";
 import type { TacticalNames } from "../service/tactical-error-text";
 import type { DefenceProgress } from "../../tactical/service/defence-service";
+import type { RescueProgress } from "../../tactical/service/objectives/rescue-civilians-objective";
+import type { Unit } from "../../tactical/model/unit";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { ActionBarView } from "./action-bar-view";
 import { TACTICAL_SHORTCUTS } from "../model/tactical-intent";
 import { HitPreviewView } from "./hit-preview-view";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
-import { describeEvent } from "./event-vocabulary";
+import { actorOf, describeEvent } from "./event-vocabulary";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
@@ -1157,6 +1159,201 @@ describe("capturing a specimen (#1179)", () => {
         } as never,
         names,
       ),
+    ).toBeUndefined();
+  });
+});
+
+// ===========================================
+// Civilians (campaign arc §6.4)
+// ===========================================
+
+describe("civilian groups in the HUD (campaign arc §6.4)", () => {
+  const RESCUE = {
+    id: "objective-r",
+    kind: "rescue-civilians" as const,
+    groupIds: ["c1", "c2", "c3", "c4"],
+    complete: false,
+    failed: false,
+  };
+  const progress = (
+    overrides: Partial<RescueProgress> = {},
+  ): ReadonlyMap<string, RescueProgress> =>
+    new Map([
+      [
+        RESCUE.id,
+        {
+          rescued: 1,
+          trapped: 2,
+          freed: 0,
+          lost: 1,
+          total: 4,
+          needed: 2,
+          status: "open" as const,
+          ...overrides,
+        },
+      ],
+    ]);
+  const row = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('[data-objective-id="objective-r"]');
+  const detail = (): string =>
+    row()?.querySelector('[data-role="rescue-progress"]')?.textContent ?? "";
+  const civilian = (overrides: Partial<Unit> = {}): Unit =>
+    hudUnit("c1", "tdf", "civilian:civilians", 2, 2, {
+      kind: "civilian",
+      hp: 10,
+      maxHp: 10,
+      ap: 0,
+      trapped: true,
+      ...overrides,
+    });
+  const civilianTemplate = {
+    ...hudTemplate("civilian:civilians", "Civilians"),
+    weapons: [],
+    maxHp: 10,
+    move: 4,
+  };
+
+  it("counts the groups aboard against the total and the half, with the trapped and the lost", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([RESCUE], [], undefined, progress());
+    expect(row()?.textContent).toContain("Rescue the civilians");
+    expect(row()?.dataset.status).toBe("open");
+    expect(detail()).toBe("1 / 4 aboard · need 2 · 2 trapped · 1 lost");
+    expect(row()?.textContent).not.toMatch(/\bc\d\b/);
+  });
+
+  it("drops the target once the half is out, and reads Lost once it cannot be", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update(
+      [{ ...RESCUE, complete: true }],
+      [],
+      undefined,
+      progress({ rescued: 2, trapped: 0, lost: 0, status: "complete" }),
+    );
+    expect(row()?.textContent).toContain("Civilians rescued");
+    expect(detail()).toBe("2 / 4 aboard");
+    view.update(
+      [{ ...RESCUE, failed: true }],
+      [],
+      undefined,
+      progress({ rescued: 0, trapped: 0, lost: 4, status: "failed" }),
+    );
+    expect(row()?.textContent).toContain("Civilians lost");
+    expect(row()?.dataset.failed).toBe("true");
+    expect(detail()).toBe("0 / 4 aboard · 4 lost");
+  });
+
+  it("gives a group a card with no weapon, and says it is trapped until freed", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    view.update(civilian(), civilianTemplate);
+    expect(field("unit-name")?.textContent).toBe("Civilians");
+    expect(field("unit-side")?.textContent).toBe("tdf · civilian");
+    expect(field("status")?.textContent).toBe("trapped");
+    for (const hidden of ["attacks", "weapon", "equipment"]) {
+      expect(field(hidden)?.hidden, hidden).toBe(true);
+    }
+    expect(field("ap")?.hidden).toBe(false);
+    expect(field("move")?.textContent).toBe("4");
+    view.update(civilian({ trapped: undefined, ap: 2 }), civilianTemplate);
+    expect(field("status")?.textContent).not.toContain("trapped");
+    // A squad after the group gets its weapon row back.
+    view.update(
+      hudUnit("s1", "tdf", "rifle", 1, 1),
+      hudTemplate("rifle", "Rifle Squad"),
+    );
+    expect(field("weapon")?.hidden).toBe(false);
+    expect(field("attacks")?.hidden).toBe(false);
+  });
+
+  it("leaves a trapped group off the squad strip, and puts it on once freed", () => {
+    const base = hudMission();
+    const withGroup = (unit: Unit) => ({
+      ...base,
+      units: [...base.units, unit],
+    });
+    expect(playerUnits(withGroup(civilian())).map((unit) => unit.id)).toEqual([
+      "s1",
+      "s2",
+    ]);
+    expect(
+      playerUnits(withGroup(civilian({ trapped: undefined, ap: 2 }))).map(
+        (unit) => unit.id,
+      ),
+    ).toEqual(["s1", "s2", "c1"]);
+  });
+
+  it("says who freed a group, counts it aboard, and names its killer", () => {
+    const names = {
+      ...NAMES,
+      unit: (id: string) =>
+        id === "c1" ? "Civilians" : id === "s1" ? "Alpha" : "Swarmer",
+    };
+    const freed = describeEvent(
+      {
+        type: "tactical:civilians-freed",
+        payload: { unitId: "c1", rescuerId: "s1", objectiveId: RESCUE.id },
+      },
+      names,
+    );
+    expect(freed).toEqual({
+      text: "Civilians freed by Alpha",
+      icon: "interact",
+      tone: "ok",
+    });
+    const aboard = describeEvent(
+      {
+        type: "tactical:civilians-extracted",
+        payload: {
+          unitId: "c1",
+          objectiveId: RESCUE.id,
+          rescued: 2,
+          total: 4,
+        },
+      },
+      names,
+    );
+    expect(aboard?.text).toBe("Civilians aboard: 2 of 4 rescued");
+    const killed = (killerId?: string) =>
+      describeEvent(
+        {
+          type: "tactical:civilians-killed",
+          payload: {
+            unitId: "c1",
+            pos: { x: 2, y: 0, z: 2 },
+            ...(killerId === undefined ? {} : { killerId }),
+          },
+        },
+        names,
+      );
+    expect(killed("b1")).toEqual({
+      text: "Civilians killed by Swarmer",
+      icon: "warning",
+      tone: "danger",
+    });
+    expect(killed()?.text).toBe("Civilians killed");
+  });
+
+  it("marks a freeing and a death above the group, and a boarding above nobody", () => {
+    expect(
+      actorOf({
+        type: "tactical:civilians-freed",
+        payload: { unitId: "c1", rescuerId: "s1", objectiveId: RESCUE.id },
+      }),
+    ).toBe("c1");
+    expect(
+      actorOf({
+        type: "tactical:civilians-killed",
+        payload: { unitId: "c1", pos: { x: 2, y: 0, z: 2 } },
+      }),
+    ).toBe("c1");
+    expect(
+      actorOf({
+        type: "tactical:civilians-extracted",
+        payload: { unitId: "c1", objectiveId: RESCUE.id, rescued: 1, total: 4 },
+      }),
     ).toBeUndefined();
   });
 });

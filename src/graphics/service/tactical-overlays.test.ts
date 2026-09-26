@@ -21,6 +21,7 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
@@ -71,6 +72,7 @@ function mission(): TacticalState {
       spawnTuning: SPAWN_TUNING,
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
+      civilian: CIVILIAN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

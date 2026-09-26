@@ -7,8 +7,9 @@ import type { TacticalHandler } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
-import { objectivesComplete } from "./mission-end-service";
+import { forceExtracted, objectivesComplete } from "./mission-end-service";
 
+import { isCivilian } from "../model/civilian";
 import { isGenerator } from "../model/generator";
 import { objectiveComplete } from "./objectives/objective-status";
 
@@ -51,7 +52,8 @@ export interface LeaveMissionSummary {
  * construction.
  *
  * ```
- *   leftBehind     = living TDF units in `units` (not in `extracted`)
+ *   leftBehind     = living TDF units in `units` (not in `extracted`),
+ *                    generators and civilian groups aside
  *   objectivesOpen = objectives with complete: false
  *   outcome        = every objective complete and someone aboard ──► won
  *                    otherwise ─────────────────────────────────► lost
@@ -77,9 +79,7 @@ export function leaveMissionSummary(
     (objective) => !objectiveComplete(mission, objective),
   ).length;
   const outcome: MissionOutcome =
-    objectivesComplete(mission) && mission.extracted.length > 0
-      ? "won"
-      : "lost";
+    objectivesComplete(mission) && forceExtracted(mission) ? "won" : "lost";
   return {
     leftBehind,
     objectivesOpen,
@@ -142,8 +142,14 @@ export function createAbandonMissionHandler(): TacticalHandler<AbandonMissionCom
 /** The player's units still alive on the map. */
 function standingUnits(mission: TacticalState): readonly Unit[] {
   // A generator is the installation's, not the force's (#1175): it is
-  // neither stranded nor written off when the squad leaves.
+  // neither stranded nor written off when the squad leaves. Nor is a
+  // civilian group (campaign arc §6.4): it is not a roster entry, and
+  // the rescue objective's tally already counts it as not saved.
   return mission.units.filter(
-    (unit) => unit.team === "tdf" && unit.hp > 0 && !isGenerator(unit),
+    (unit) =>
+      unit.team === "tdf" &&
+      unit.hp > 0 &&
+      !isGenerator(unit) &&
+      !isCivilian(unit),
   );
 }

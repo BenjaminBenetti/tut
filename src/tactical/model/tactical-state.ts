@@ -190,16 +190,43 @@ export interface CaptureSpecimenObjective extends ObjectiveBase {
 }
 
 /**
+ * Free the civilian groups trapped in the town's buildings and walk them
+ * to the drop ship (campaign arc §6.4). Complete once at least half the
+ * groups are aboard; failed once so many are dead that half can no
+ * longer get out. `complete` and `failed` mirror the rule as of the last
+ * extraction or phase step, for the log and the tracker; the live answer
+ * is always the rule's.
+ *
+ * ```
+ *   aboard ≥ ⌈groups / 2⌉                   ──► complete
+ *   aboard + alive on the map < ⌈groups / 2⌉ ──► failed
+ *   otherwise                                ──► open
+ * ```
+ *
+ * A group aboard after the half is reached still counts: every group
+ * out adds to the reward, so the objective stays workable past complete.
+ */
+export interface RescueCiviliansObjective extends ObjectiveBase {
+  readonly kind: "rescue-civilians";
+  /** Every civilian group the rescue tracks, in hook order. */
+  readonly groupIds: readonly UnitId[];
+  /** Always written for a rescue, which starts open. */
+  readonly failed: boolean;
+}
+
+/**
  * What the player must achieve: wreck a spawner, hold the generators
- * (#1175), wreck a spore pod before it matures, or bring a specimen home
- * (#1179). Closed: a new kind adds its interface here and its rules to
- * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
+ * (#1175), wreck a spore pod before it matures, bring a specimen home, or
+ * get the civilians out (#1179, campaign arc §6.3, §6.4, §6.9). Closed: a
+ * new kind adds its interface here and its rules to `OBJECTIVE_RULES`,
+ * which the compiler then insists on (ADR 0013 §2.3).
  */
 export type Objective =
   | DestroySpawnerObjective
   | DefendGeneratorsObjective
   | DestroyPodObjective
-  | CaptureSpecimenObjective;
+  | CaptureSpecimenObjective
+  | RescueCiviliansObjective;
 
 /** When the next wave walks in from the map edge, and how many have so far. */
 export interface EdgeSpawnSchedule {

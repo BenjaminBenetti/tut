@@ -14,13 +14,15 @@ import type { TacticalHandler } from "../model/tactical-handler";
 import type { Objective, TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
-import { isAutonomous } from "../model/unit";
+import { isAutonomous, isStandingForce } from "../model/unit";
+import { isCivilian, isTrapped } from "../model/civilian";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
 import { endIfOver } from "./mission-end-service";
 import {
   OBJECTIVE_RULES,
   objectiveRulesFor,
 } from "./objectives/objective-rules";
+import { objectiveWorkable } from "./objectives/objective-status";
 
 // ===========================================
 // Objective kinds
@@ -76,9 +78,10 @@ function interactionsOf(
  * ```
  *   unit missing ──► unit-not-on-map     down ──► unit-dead
  *   not a TDF unit ──► objective-not-yours
+ *   a civilian group ──► cannot-interact (campaign arc §6.4)
  *   other side's phase ──► wrong-phase   no actions ──► no-action-points
  *   unknown objective ──► objective-not-found
- *   already done ──► objective-complete
+ *   already done ──► objective-complete  (unless its kind is workedUntilEmpty)
  *          │
  *          ▼
  *   interactions[objective.kind](mission, objective, unit, tuning)
@@ -96,6 +99,7 @@ export function createInteractHandler(
   interactions: Readonly<
     Record<Objective["kind"], ObjectiveInteraction>
   > = DEFAULT_OBJECTIVE_INTERACTIONS,
+  rules: ObjectiveRulesTable = OBJECTIVE_RULES,
 ): TacticalHandler<InteractCommand> {
   return (mission, command) => {
     const { unitId, objectiveId } = command.payload;
@@ -114,6 +118,11 @@ export function createInteractHandler(
     if (unit.team !== "tdf") {
       return err({ kind: "objective-not-yours", unitId });
     }
+    // Only the force works objectives (campaign arc §6.4): a civilian
+    // group freeing another would empty a town without a squad in it.
+    if (isCivilian(unit)) {
+      return err({ kind: "cannot-interact", unitId });
+    }
     if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
       return err({ kind: "wrong-phase", unitId });
     }
@@ -126,7 +135,7 @@ export function createInteractHandler(
     if (objective === undefined) {
       return err({ kind: "objective-not-found", objectiveId });
     }
-    if (objective.complete) {
+    if (!objectiveWorkable(objective, rules)) {
       return err({ kind: "objective-complete", objectiveId });
     }
     const worked = interactions[objective.kind](
@@ -179,8 +188,9 @@ export interface ReachableObjective {
  * never hide one it would accept.
  *
  * ```
- *   unit missing, down, not TDF, off-phase, out of actions ──► []
- *   objective complete                           ──► skipped
+ *   unit missing, down, not TDF, a civilian group,
+ *     off-phase, out of actions                  ──► []
+ *   objective complete, kind not workedUntilEmpty ──► skipped
  *   kind has no reachable target, or it is gone  ──► skipped
  *   manhattan(unit, target) > interactRange      ──► skipped
  *   otherwise ──► { objective, target, distance }, nearest first
@@ -206,6 +216,7 @@ export function reachableObjectives(
     unit === undefined ||
     unit.hp <= 0 ||
     unit.team !== "tdf" ||
+    isCivilian(unit) ||
     unit.team !== TEAM_FOR_PHASE[mission.phase] ||
     unit.ap < tuning.interactApCost
   ) {
@@ -213,12 +224,13 @@ export function reachableObjectives(
   }
   const reachable: ReachableObjective[] = [];
   for (const objective of mission.objectives) {
-    if (objective.complete) {
+    if (!objectiveWorkable(objective, rules)) {
       continue;
     }
     const target = objectiveRulesFor(objective, rules).reachable?.(
       objective,
       mission,
+      unit,
     );
     if (target === undefined) {
       continue;
@@ -246,17 +258,24 @@ export function reachableObjectives(
  * ```
  *   unit missing ──► unit-not-on-map     down ──► unit-dead
  *   a bug ──► not-extractable            other side's phase ──► wrong-phase
+ *   a trapped group ──► unit-trapped (campaign arc §6.4)
  *   no actions ──► no-action-points      off the zone ──► not-in-extraction-zone
  *          │
  *          ▼
  *   units − unit, extracted + unit, UnitExtracted { remaining }
- *   nobody left standing ──► outcome extracted, MissionEnded
+ *   each objective's onExtracted (a rescue counting a group aboard)
+ *   nobody of the force left standing ──► outcome, MissionEnded
  * ```
+ *
+ * A civilian group boards like a squad (campaign arc §6.4); its
+ * objective hears of it through `onExtracted` before the terminal
+ * check, so the group that makes the half is counted in the outcome.
  *
  * Pure; draws nothing.
  */
 export function createExtractHandler(
   tuning: ObjectiveTuning,
+  rules: ObjectiveRulesTable = OBJECTIVE_RULES,
 ): TacticalHandler<ExtractCommand> {
   return (mission, command) => {
     const { unitId } = command.payload;
@@ -271,6 +290,11 @@ export function createExtractHandler(
     // is equipment the force leaves behind, not a passenger.
     if (unit.team !== "tdf" || isAutonomous(unit)) {
       return err({ kind: "not-extractable", unitId });
+    }
+    // Boarding is free by default, so a group's empty action points would
+    // not stop it: a trapped group must be freed first (campaign arc §6.4).
+    if (isTrapped(unit)) {
+      return err({ kind: "unit-trapped", unitId });
     }
     if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
       return err({ kind: "wrong-phase", unitId });
@@ -295,7 +319,25 @@ export function createExtractHandler(
         payload: { unitId, remaining: standingCount(units) },
       },
     ];
-    return ok(endIfOver(pulled, events));
+    // Each objective as it now stands: an earlier one's hook may have
+    // replaced the list.
+    let counted = pulled;
+    for (const { id } of pulled.objectives) {
+      const objective = counted.objectives.find((o) => o.id === id);
+      const heard =
+        objective === undefined
+          ? undefined
+          : objectiveRulesFor(objective, rules).onExtracted?.(
+              objective,
+              counted,
+              left,
+            );
+      if (heard !== undefined) {
+        counted = heard.state;
+        events.push(...heard.events);
+      }
+    }
+    return ok(endIfOver(counted, events));
   };
 }
 
@@ -303,9 +345,14 @@ export function createExtractHandler(
 // Helpers
 // ===========================================
 
-/** TDF units still standing on the map. */
+/**
+ * Members of the force still standing on the map (`isStandingForce`):
+ * squads and mechs only, so a civilian group waiting to board, a
+ * deployed turret or a generator never reads as somebody left to come
+ * home.
+ */
 function standingCount(units: readonly Unit[]): number {
-  return units.filter((unit) => unit.team === "tdf" && unit.hp > 0).length;
+  return units.filter(isStandingForce).length;
 }
 
 /** True when both coordinates name the same tile, level included. */

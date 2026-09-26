@@ -7,6 +7,8 @@ import { CAPTURE_NET, EQUIPMENT } from "../../data/equipment";
 import { OBJECTIVE_TUNING } from "../../data/objective-tuning";
 import { attack } from "../../model/attack-command";
 import type { CarriedSpecimen } from "../../model/carried-specimen";
+import { canCarrySpecimen } from "../../model/carried-specimen";
+import { CIVILIANS_EXTRACTED } from "../../model/civilians-extracted-event";
 import { extract } from "../../model/extract-command";
 import { interact } from "../../model/interact-command";
 import { MISSION_ENDED } from "../../model/mission-ended-event";
@@ -14,17 +16,23 @@ import { OBJECTIVE_UPDATED } from "../../model/objective-updated-event";
 import { SPECIMEN_PICKED_UP } from "../../model/specimen-picked-up-event";
 import type {
   CaptureSpecimenObjective,
+  RescueCiviliansObjective,
   TacticalState,
 } from "../../model/tactical-state";
 import type { Unit } from "../../model/unit";
 import { UNIT_DIED } from "../../model/unit-died-event";
+import { UNIT_EXTRACTED } from "../../model/unit-extracted-event";
 import { createEquipmentCatalogue } from "../../repository/equipment-catalogue";
 import { createAttackHandler } from "../combat-service";
 import {
   createExtractHandler,
   createInteractHandler,
 } from "../objective-service";
-import { droppedSpecimens, specimenCarriers } from "../specimen-service";
+import {
+  droppedSpecimens,
+  pickUpSpecimen,
+  specimenCarriers,
+} from "../specimen-service";
 import {
   ctxWith,
   FIXTURE_TEMPLATES,
@@ -33,6 +41,7 @@ import {
   openField,
   riggedRng,
   unitAt,
+  withCivilian,
 } from "../tactical-fixtures.test-helper";
 import { withVision } from "../vision-service";
 import {
@@ -280,16 +289,19 @@ describe("extracting the carrier (#1179)", () => {
       specimenCaptured: "lurker",
     });
 
-    // The phase step writes it down once, and the log hears of it.
-    const stepped = STEP(after, ctxWith(riggedRng(true)));
-    expect(capture(stepped.state).complete).toBe(true);
-    expect(stepped.events).toEqual([
-      {
-        type: OBJECTIVE_UPDATED,
-        payload: { objectiveId: "objective-1", complete: true, failed: false },
-      },
+    // Boarding writes it down at once (the rules' onExtracted), and the
+    // log hears of it right after the unit's own line; the phase step
+    // then has nothing left to say.
+    expect(capture(after).complete).toBe(true);
+    expect(result.value.events.map((event) => event.type)).toEqual([
+      UNIT_EXTRACTED,
+      OBJECTIVE_UPDATED,
     ]);
-    expect(STEP(stepped.state, ctxWith(riggedRng(true))).events).toEqual([]);
+    expect(result.value.events[1]).toEqual({
+      type: OBJECTIVE_UPDATED,
+      payload: { objectiveId: "objective-1", complete: true, failed: false },
+    });
+    expect(STEP(after, ctxWith(riggedRng(true))).events).toEqual([]);
 
     // The last squad out ends the mission won.
     const last = extractHandler(
@@ -319,6 +331,62 @@ describe("extracting the carrier (#1179)", () => {
     );
     if (!result.ok) throw new Error(result.error.kind);
     expect(objectiveComplete(result.value.state, WANT_LURKER)).toBe(false);
+    expect(capture(result.value.state)).toBe(WANT_LURKER);
+    expect(result.value.events.map((event) => event.type)).toEqual([
+      UNIT_EXTRACTED,
+    ]);
+  });
+
+  it("hears nothing of a civilian group boarding beside a rescue, and the rescue hears nothing of the carrier", () => {
+    const rescue: RescueCiviliansObjective = {
+      id: "objective-2",
+      kind: "rescue-civilians",
+      groupIds: ["civ"],
+      complete: false,
+      failed: false,
+    };
+    const base = field([
+      carrier("carrier", at(0, 0)),
+      unitAt("other", "infantry", at(5, 5)),
+    ]);
+    const mission = withCivilian(
+      { ...base, objectives: [WANT_LURKER, rescue] },
+      "civ",
+      at(0, 0),
+      { trapped: false },
+    );
+
+    const group = extractHandler(
+      mission,
+      extract("civ"),
+      ctxWith(riggedRng(true)),
+    );
+    if (!group.ok) throw new Error(group.error.kind);
+    expect(capture(group.value.state)).toBe(WANT_LURKER);
+    expect(group.value.events.map((event) => event.type)).toEqual([
+      UNIT_EXTRACTED,
+      CIVILIANS_EXTRACTED,
+      OBJECTIVE_UPDATED,
+    ]);
+    expect(group.value.events[2]?.payload).toMatchObject({
+      objectiveId: "objective-2",
+      complete: true,
+    });
+
+    const home = extractHandler(
+      group.value.state,
+      extract("carrier"),
+      ctxWith(riggedRng(true)),
+    );
+    if (!home.ok) throw new Error(home.error.kind);
+    expect(home.value.events.map((event) => event.type)).toEqual([
+      UNIT_EXTRACTED,
+      OBJECTIVE_UPDATED,
+    ]);
+    expect(home.value.events[1]?.payload).toMatchObject({
+      objectiveId: "objective-1",
+      complete: true,
+    });
   });
 });
 
@@ -372,5 +440,46 @@ describe("a capture out of reach (#1179)", () => {
     const stepped = STEP(plain, ctxWith(riggedRng(true)));
     expect(stepped.state).toBe(plain);
     expect(stepped.events).toEqual([]);
+  });
+});
+
+// ===========================================
+// Civilian groups (campaign arc §6.4)
+// ===========================================
+
+describe("civilian groups and the specimen (#1179, campaign arc §6.4)", () => {
+  it("never lets a group carry: it is no free pair of hands, and it cannot pick one up", () => {
+    expect(canCarrySpecimen({ kind: "civilian" })).toBe(false);
+    // A dropped lurker, and nobody left to fetch it but a freed group
+    // standing right beside it.
+    const mission = withCivilian(
+      field([{ ...carrier("carrier", at(3, 3)), hp: 0 }]),
+      "civ",
+      at(3, 4),
+      { trapped: false },
+    );
+    expect(captureStatus(WANT_LURKER, mission, NETS)).toBe("failed");
+
+    const group = mission.units.find((unit) => unit.id === "civ")!;
+    const picked = pickUpSpecimen(
+      mission,
+      group,
+      "lurker",
+      OBJECTIVE_TUNING.interactRange,
+      WANT_LURKER.id,
+    );
+    expect(picked.ok).toBe(false);
+    if (picked.ok) return;
+    expect(picked.error.kind).toBe("cannot-carry");
+
+    // Nor through Interact: only the force works objectives.
+    const worked = interactHandler(
+      mission,
+      interact("civ", WANT_LURKER.id),
+      ctxWith(riggedRng(true)),
+    );
+    expect(worked.ok).toBe(false);
+    if (worked.ok) return;
+    expect(worked.error.kind).toBe("cannot-interact");
   });
 });

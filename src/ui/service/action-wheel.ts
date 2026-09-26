@@ -37,6 +37,7 @@ import {
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
 import { overwatchShotsOf } from "../../tactical/model/weapon-profile";
+import { canBeNetted } from "../../tactical/model/carried-specimen";
 import type {
   EquipmentDefinition,
   EquipmentId,
@@ -160,6 +161,9 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "turret-out-of-reach": `range ${String(TURRET.range)}`,
     "turret-tile-blocked": "tile blocked",
     "takes-no-orders": "no orders",
+    "unit-trapped": "trapped",
+    "no-such-weapon": "unarmed",
+    "cannot-interact": "squads only",
     "no-equipment": "not carried",
     "equipment-spent": "none left",
     "nothing-to-heal": "nobody to heal",
@@ -979,7 +983,7 @@ function netItems(
   ctx: WheelContext,
 ): readonly RadialMenuItem[] {
   const bug = ctx.mission.units.find(
-    (candidate) => candidate.id === targetId && candidate.kind === "bug",
+    (candidate) => candidate.id === targetId && canBeNetted(candidate),
   );
   if (bug === undefined || !specimenWanted(ctx.mission, bug.sourceId)) {
     return [];

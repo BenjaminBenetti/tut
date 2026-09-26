@@ -13,6 +13,7 @@ import { buildMoveGraph } from "../../tactical/service/movement-service";
 import {
   missionWith,
   unitAt,
+  withCivilian,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import { SWARMER } from "../data/species";
 import { SWARMER_TUNING } from "../data/swarmer-tuning";
@@ -55,6 +56,11 @@ function field(
     mission = withBug(mission, SWARMER, pos, `swarmer-${i + 1}`).mission;
   });
   return mission;
+}
+
+/** A ground tile of the open field. */
+function at(x: number, z: number): TileCoord {
+  return { x, y: 0, z };
 }
 
 /** The unit with that id; the fixtures always have one. */
@@ -164,6 +170,29 @@ describe("SwarmerBehaviour", () => {
     expect(commands).toHaveLength(1);
     expect(commands[0]?.type).toBe(ATTACK);
     expect(commands[0]?.payload).toMatchObject({ targetId: "squad-1" });
+  });
+
+  it("bites a civilian group, trapped or not, before the squad beside it (campaign arc §6.4)", () => {
+    for (const trapped of [true, false]) {
+      const people = withCivilian(
+        missionWith(openField(8), [unitAt("squad-1", "infantry", at(4, 4))], {
+          phase: "bugs",
+        }),
+        "civ-1",
+        at(4, 2),
+        { trapped },
+      );
+      const mission = withBug(people, SWARMER, at(4, 3), "swarmer-1").mission;
+      const commands = new SwarmerBehaviour().choose(
+        bugView(mission),
+        "swarmer-1",
+        ctx(mission, 1),
+      );
+      expect(commands, `trapped ${String(trapped)}`).toHaveLength(1);
+      expect(commands[0]?.payload, `trapped ${String(trapped)}`).toMatchObject({
+        targetId: "civ-1",
+      });
+    }
   });
 
   it("groups up: between two tiles equally close to the target it takes the one beside its kin", () => {

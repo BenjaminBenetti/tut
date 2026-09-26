@@ -22,6 +22,7 @@ import {
   riggedRng,
   unitAt,
   walledField,
+  withCivilian,
   fixtureAttackDeps,
 } from "./tactical-fixtures.test-helper";
 import { computeVision, unitCanSee } from "./vision-service";
@@ -823,5 +824,33 @@ describe("overwatchReaction with a two-shot watch (#1138)", () => {
       pos: at(3, 0),
       hp: 6,
     });
+  });
+});
+
+describe("refreshSides with civilian groups (campaign arc §6.4)", () => {
+  it("gives a freed group its actions at the player's turn, and a trapped one none", () => {
+    const base = missionWith(
+      openField().build(),
+      [unitAt("u", "infantry", at(0, 0), { ap: 0 })],
+      // The step runs once the phase has turned to the side it refreshes.
+      { phase: "player", turn: 3 },
+    );
+    const town = withCivilian(
+      withCivilian(base, "trapped", at(3, 3)),
+      "freed",
+      at(5, 5),
+      { trapped: false },
+    );
+    const spent = {
+      ...town,
+      units: town.units.map((unit) =>
+        unit.id === "freed" ? { ...unit, ap: 0 } : unit,
+      ),
+    };
+    const next = refreshSides(spent, ctx).state;
+    expect(unitIn(next, "u").ap).toBe(2);
+    expect(unitIn(next, "freed").ap).toBe(unitIn(next, "freed").maxAp);
+    expect(unitIn(next, "trapped").ap).toBe(0);
+    expect(unitIn(next, "trapped").trapped).toBe(true);
   });
 });

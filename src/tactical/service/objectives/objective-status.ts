@@ -55,6 +55,33 @@ export function objectiveFailed(
   );
 }
 
+/**
+ * Whether the generic services should still offer the objective to be
+ * worked — the Interact handler, the reach query and the fog blips. An
+ * objective is workable until it is complete, unless its kind is
+ * `workedUntilEmpty` (a rescue, campaign arc §6.4), which is workable
+ * whatever its flags say and answers "nothing left" through its own
+ * rules instead.
+ *
+ * ```
+ *   kind workedUntilEmpty ──► true
+ *   objective.complete    ──► false
+ *   otherwise             ──► true
+ * ```
+ *
+ * @param objective - The objective to judge.
+ * @param rules - The table; the shipped one unless a test substitutes it.
+ */
+export function objectiveWorkable(
+  objective: Objective,
+  rules: ObjectiveRulesTable = OBJECTIVE_RULES,
+): boolean {
+  return (
+    objectiveRulesFor(objective, rules).workedUntilEmpty === true ||
+    !objective.complete
+  );
+}
+
 // ===========================================
 // Mission result
 // ===========================================

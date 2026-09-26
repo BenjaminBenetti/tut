@@ -102,6 +102,8 @@ export const MODEL_IDS = [
   "tdf.radar-scanner",
   "tdf.turret",
   "tdf.generator",
+  // Civilian group (campaign arc §6.4)
+  "civ.group",
   "tdf.infantry.rifle",
   "tdf.infantry.rocket",
   "tdf.infantry.sniper",

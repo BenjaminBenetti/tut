@@ -50,6 +50,28 @@ export const CRASH_SITE_MISSION_HOOKS: readonly HookRequirement[] = [
 ];
 
 /**
+ * The hook set an evacuation carries (campaign arc §6.4): one deploy
+ * zone, four trapped civilian groups in four buildings, two edge spawn
+ * zones for the bugs already in the town, and an extraction. No egg
+ * spawners — the threat is the swarm closing on the groups, not a nest.
+ * Distances match `HOOK_KIND_DEFAULTS`, which is what an Evacuation
+ * mission type's `requiredHooks` will be completed from; that type
+ * scales the groups with difficulty (3–5, `countPerDifficulty`), and
+ * four is the middle of that range.
+ */
+export const CIVILIAN_MISSION_HOOKS: readonly HookRequirement[] = [
+  { kind: HookKinds.DEPLOY, count: 1, requiredPass: PassMask.ALL },
+  {
+    kind: HookKinds.CIVILIAN,
+    count: 4,
+    requiredPass: PassMask.INFANTRY,
+    minDistanceFromDeploy: 6,
+  },
+  { kind: HookKinds.EDGE_SPAWN, count: 2, requiredPass: PassMask.INFANTRY },
+  { kind: HookKinds.EXTRACTION, count: 1, requiredPass: PassMask.ALL },
+];
+
+/**
  * The hook set the preview harness asks of each archetype, so Map Lab
  * shows a map with the objectives its missions will have. A new
  * archetype is a compile error here until it names one.

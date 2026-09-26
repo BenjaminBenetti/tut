@@ -1,3 +1,4 @@
+import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
@@ -200,6 +201,11 @@ export function previewMission(map: TacticalMap): TacticalState {
     base,
     map,
     { difficulty: base.difficulty },
-    { ids, spawnTuning: SPAWN_TUNING, generator: GENERATOR_TUNING },
+    {
+      ids,
+      spawnTuning: SPAWN_TUNING,
+      generator: GENERATOR_TUNING,
+      civilian: CIVILIAN_TUNING,
+    },
   );
 }

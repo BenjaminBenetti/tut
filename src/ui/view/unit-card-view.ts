@@ -1,5 +1,6 @@
 import { carryMovePenaltyOf } from "../../tactical/model/carried-specimen";
 import type { Unit } from "../../tactical/model/unit";
+import { isCivilian, isTrapped } from "../../tactical/model/civilian";
 import { isAutonomous } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
@@ -100,6 +101,10 @@ interface CardEntry {
  * A squad carrying a netted specimen (#1179) gains a Carrying row
  * ("live lurker"), and its Move reads what it can walk with it:
  * "2 (−1 carrying)" for a squad of move 3.
+ *
+ * A civilian group (campaign arc §6.4) keeps its HP, AP and Move but
+ * drops the Attacks, Weapon and Equipment rows, and its status reads
+ * "trapped" until a squad or mech frees it.
  */
 export class UnitCardView {
   // ===========================================
@@ -269,10 +274,16 @@ export class UnitCardView {
         delete this.root.dataset.inspectingEnemy;
       }
     }
+    // A civilian group's card (campaign arc §6.4): it carries nothing
+    // and never shoots, so the rows about fighting go.
+    const civilian = isCivilian(unit);
     for (const field of ["attacks", "equipment"]) {
       for (const el of this.rows.get(field) ?? []) {
-        el.hidden = enemy;
+        el.hidden = enemy || civilian;
       }
+    }
+    for (const el of this.rows.get("weapon") ?? []) {
+      el.hidden = civilian;
     }
     // A turret's card (#1138): no action budget to read, a battery to
     // read instead. The rows swap rather than both showing, so the card
@@ -280,7 +291,7 @@ export class UnitCardView {
     const autonomous = isAutonomous(unit);
     for (const field of ["ap", "move", "attacks"]) {
       for (const el of this.rows.get(field) ?? []) {
-        el.hidden = enemy || autonomous;
+        el.hidden = enemy || autonomous || (civilian && field === "attacks");
       }
     }
     // A garrison turret (#1155) runs on mains: the row stays, reading
@@ -382,6 +393,7 @@ export class UnitCardView {
     this.set(
       "status",
       [
+        ...(isTrapped(unit) ? ["trapped"] : []),
         ...unit.status,
         ...(unit.braced ? ["braced"] : []),
         ...(template.systems?.jumpRange

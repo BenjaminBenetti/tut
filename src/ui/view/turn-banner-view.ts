@@ -36,7 +36,7 @@ export interface TurnBannerModel {
   readonly missionName: string;
   readonly turn: number;
   readonly phase: TacticalPhase;
-  /** Living TDF units. */
+  /** Living squads and mechs: the force, not the civilians, turrets or generators beside it. */
   readonly tdfUnits: number;
   /** Living bugs. */
   readonly bugUnits: number;

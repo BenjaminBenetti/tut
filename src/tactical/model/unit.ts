@@ -7,6 +7,7 @@ import { PassMask as PASS } from "../../mapgen/model/pass-mask";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { UnitTemplateId } from "./unit-template";
 import type { PersonaId } from "../../content/model/persona-id";
+import { isTrapped } from "./civilian";
 
 // ===========================================
 // Ids and unions
@@ -24,9 +25,12 @@ export const UNIT_ID_PREFIX = "unit";
  * down that fights as a unit: it is shot at, it sees, it fires on
  * overwatch, and it is never given an order — or a generator (#1175),
  * the installation's plant the squad defends: it is shot at and it
- * sees, but it neither moves nor fires.
+ * sees, but it neither moves nor fires — or a civilian group (campaign
+ * arc §6.4), a huddle of townsfolk the squad frees and walks to the
+ * drop ship: it moves and boards like a squad, and never fires.
  */
-export type UnitKind = "squad" | "mech" | "bug" | "turret" | "generator";
+export type UnitKind =
+  "squad" | "mech" | "bug" | "turret" | "generator" | "civilian";
 
 /** Every `UnitKind`, in a fixed order. */
 export const UNIT_KINDS = [
@@ -35,6 +39,7 @@ export const UNIT_KINDS = [
   "bug",
   "turret",
   "generator",
+  "civilian",
 ] as const satisfies readonly UnitKind[];
 
 /** Which side a unit fights for. */
@@ -175,6 +180,14 @@ export interface Unit {
    * migration.
    */
   readonly carrying?: CarriedSpecimen;
+  /**
+   * True while a civilian group is still shut in the building it hid in
+   * (campaign arc §6.4): it takes no orders, sees nothing and holds no
+   * action points until a squad or mech beside it uses Interact, which
+   * clears the flag. Absent on every other unit, on a freed group and on
+   * every unit saved before civilians, so no save needs a migration.
+   */
+  readonly trapped?: boolean;
 }
 
 // ===========================================
@@ -196,4 +209,49 @@ export function passMaskFor(passClass: PassClass): UnitClass {
  */
 export function isAutonomous(unit: Pick<Unit, "kind">): boolean {
   return unit.kind === "turret" || unit.kind === "generator";
+}
+
+/**
+ * True for a member of the force (campaign arc §6.4): a squad or a mech,
+ * the units whose standing keeps a mission open and whose getting out is
+ * "somebody came home". A civilian group moves and boards like one, but
+ * it is who the force came for, not the force: when the last squad and
+ * mech are gone the mission ends, whoever else is still on the map.
+ *
+ * ```
+ *   squad, mech                     ──► true
+ *   civilian, turret, generator, bug ──► false
+ * ```
+ */
+export function isCombatUnit(unit: Pick<Unit, "kind">): boolean {
+  return unit.kind === "squad" || unit.kind === "mech";
+}
+
+/**
+ * True for a member of the force still on its feet (campaign arc §6.4):
+ * a living TDF squad or mech. The one reading of "who of ours is left"
+ * — what keeps a mission open (`missionOutcome`), what
+ * `UnitExtracted.remaining` counts and what the top bar's TDF stat
+ * shows — so a civilian group, a turret or a generator never pads it.
+ *
+ * ```
+ *   tdf squad or mech, hp > 0             ──► true
+ *   dead, a bug, a civilian group,
+ *   a turret or a generator               ──► false
+ * ```
+ */
+export function isStandingForce(
+  unit: Pick<Unit, "kind" | "team" | "hp">,
+): boolean {
+  return unit.team === "tdf" && unit.hp > 0 && isCombatUnit(unit);
+}
+
+/**
+ * True for a unit the player can give an order to when it is its side's
+ * turn: anything not autonomous, except a civilian group still trapped
+ * (campaign arc §6.4), which waits to be freed. The strip, Tab, the
+ * wheel and Jev's hand-off all ask this one question.
+ */
+export function takesOrders(unit: Pick<Unit, "kind" | "trapped">): boolean {
+  return !isAutonomous(unit) && !isTrapped(unit);
 }

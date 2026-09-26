@@ -10,6 +10,7 @@ import {
   openField,
   riggedRng,
   unitAt,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 
 // ===========================================
@@ -102,5 +103,24 @@ describe("overwatchHandler with a deployed turret (#1138)", () => {
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;
     expect(outcome.error).toEqual({ kind: "takes-no-orders", unitId: "t" });
+  });
+});
+
+describe("overwatchHandler with civilian groups (campaign arc §6.4)", () => {
+  it("refuses a trapped group, then a freed one for want of a weapon", () => {
+    const base = missionWith(openField().build(), [
+      unitAt("u", "infantry", at(0, 0)),
+    ]);
+    const trapped = withCivilian(base, "c", at(2, 2));
+    expect(overwatchHandler(trapped, overwatch("c"), ctx)).toEqual({
+      ok: false,
+      error: { kind: "unit-trapped", unitId: "c" },
+    });
+    const freed = withCivilian(base, "c", at(2, 2), { trapped: false });
+    expect(overwatchHandler(freed, overwatch("c"), ctx)).toEqual({
+      ok: false,
+      error: { kind: "no-such-weapon", unitId: "c" },
+    });
+    expect(overwatchHandler(freed, overwatch("u"), ctx).ok).toBe(true);
   });
 });

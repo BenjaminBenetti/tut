@@ -173,7 +173,7 @@ const equipment = object(equipmentFields, equipmentOptions);
 
 const staticFields = {
   type: label,
-  kind: oneOf("squad", "mech", "bug", "turret", "generator"),
+  kind: oneOf("squad", "mech", "bug", "turret", "generator", "civilian"),
   movement_class: oneOf("infantry", "mech"),
   max_hp: stat,
   armor: stat,

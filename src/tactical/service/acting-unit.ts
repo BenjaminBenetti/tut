@@ -6,6 +6,7 @@ import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import type { UnitId } from "../model/unit";
 import { isAutonomous } from "../model/unit";
+import { isTrapped } from "../model/civilian";
 
 // ===========================================
 // Acting preconditions
@@ -20,6 +21,7 @@ import { isAutonomous } from "../model/unit";
  *   not on the map ──► unit-not-on-map      wrong side's phase ──► wrong-phase
  *   hp <= 0        ──► unit-dead            ap < cost          ──► no-action-points
  *   a turret       ──► takes-no-orders      (#1138: it fires by rule, never on command)
+ *   trapped civilians ──► unit-trapped      (campaign arc §6.4: freed by Interact first)
  * ```
  *
  * One implementation, for the reason #992 gave: `overwatchHandler` and
@@ -53,6 +55,9 @@ export function actingUnit(
   }
   if (isAutonomous(unit)) {
     return err({ kind: "takes-no-orders", unitId });
+  }
+  if (isTrapped(unit)) {
+    return err({ kind: "unit-trapped", unitId });
   }
   if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
     return err({ kind: "wrong-phase", unitId });

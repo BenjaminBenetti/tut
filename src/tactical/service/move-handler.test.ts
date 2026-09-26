@@ -16,6 +16,7 @@ import {
   twoFloorBuilding,
   unitAt,
   walledField,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 
 // ===========================================
@@ -240,5 +241,23 @@ describe("moveHandler with a unit on a 2×2 block (#1130)", () => {
     expect(
       reasonOf(soldier, "u", [at(1, 2), at(2, 2), at(3, 2), at(4, 2)]),
     ).toBeUndefined();
+  });
+});
+
+describe("Move with civilian groups (campaign arc §6.4)", () => {
+  it("holds a trapped group where it waits and walks a freed one up to its move", () => {
+    const base = missionWith(openField().build(), [
+      unitAt("u", "infantry", at(0, 0)),
+    ]);
+    const step = [at(3, 2)];
+    const trapped = withCivilian(base, "c", at(2, 2));
+    expect(reasonOf(trapped, "c", step)).toBe("over-budget");
+    const freed = withCivilian(base, "c", at(2, 2), { trapped: false });
+    expect(reasonOf(freed, "c", step)).toBeUndefined();
+    // Move 4 a turn, two actions: eight tiles, and not nine.
+    const eight = [...[1, 2, 3, 4, 5, 6, 7].map((x) => at(x, 2)), at(7, 3)];
+    const fromEdge = withCivilian(base, "c", at(0, 2), { trapped: false });
+    expect(reasonOf(fromEdge, "c", eight)).toBeUndefined();
+    expect(reasonOf(fromEdge, "c", [...eight, at(7, 4)])).toBe("over-budget");
   });
 });

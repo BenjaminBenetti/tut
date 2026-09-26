@@ -7,7 +7,7 @@ import { chebyshevDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { CarriedSpecimen } from "../model/carried-specimen";
-import { canCarrySpecimen } from "../model/carried-specimen";
+import { canBeNetted, canCarrySpecimen } from "../model/carried-specimen";
 import type { EquipmentDefinition, NetProfile } from "../model/equipment";
 import { SPECIMEN_CAPTURED } from "../model/specimen-captured-event";
 import type { TacticalError } from "../model/tactical-error";
@@ -115,7 +115,8 @@ export function netDistance(from: TileCoord, to: TileCoord): number {
  *
  * ```
  *   thrower  ──► cannot-carry (not a squad) · already-carrying
- *   target   ──► no-capture-target  (no living bug the side can see on the tile)
+ *   target   ──► no-capture-target  (no living bug the side can see on the
+ *                                     tile; a civilian group is never one)
  *            ──► specimen-not-wanted (no open capture objective names its species)
  *   reach    ──► out-of-range        (more than the net's range by netDistance)
  *            ──► no-line-of-sight
@@ -151,9 +152,11 @@ export function validateCapture(
   if (unit.carrying !== undefined) {
     return err({ kind: "already-carrying", unitId: unit.id });
   }
+  // Only a bug is netted (`canBeNetted`): a civilian group on the tile
+  // is no specimen, so the net finds nothing there to take.
   const bug = mission.units.find(
     (candidate) =>
-      candidate.kind === "bug" &&
+      canBeNetted(candidate) &&
       candidate.team !== unit.team &&
       candidate.hp > 0 &&
       canSee(mission, unit.team, candidate.id) &&

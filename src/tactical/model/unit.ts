@@ -191,6 +191,34 @@ export interface Unit {
    */
   readonly fleeing?: boolean;
   /**
+   * Damage this bug's weapon adds to every hit for the current phase
+   * (#1179): the Sovereign's aura (campaign arc §9, "buff nearby
+   * bugs"). The aura step sets it on the bugs around her as each bug
+   * phase opens and clears it on every unit as every phase opens, so it
+   * never outlives the phase it was lent for; `aimedWeapon` adds it to
+   * the weapon, so the preview and the roll agree. Absent on every
+   * other unit and on every unit saved before the Sovereign, so no save
+   * needs a migration.
+   */
+  readonly auraDamage?: number;
+  /**
+   * The tile a guardian holds the ground around (#1179): the platform
+   * core the Sovereign was placed to protect (`placeSovereign`). Her
+   * behaviour ranges no further from it than her leash and falls back
+   * onto it when she is hurt. Absent on every other unit and on every
+   * unit saved before the Sovereign, so no save needs a migration.
+   */
+  readonly core?: TileCoord;
+  /**
+   * True once the Sovereign has fallen back onto her core (#1179): at
+   * or below her retreat threshold (campaign arc §9). Sticky, and
+   * announced once by the rule that marks it. She never leaves the map:
+   * unlike `fleeing`, a retreat ends at the core. Absent on every other
+   * unit and on every unit saved before the Sovereign, so no save needs
+   * a migration.
+   */
+  readonly retreating?: boolean;
+  /**
    * The bug this squad took alive with a capture net and is carrying
    * home (#1179). It costs the carrier `movePenalty` movement points per
    * action. Kept on the unit's record when it falls, which is what a

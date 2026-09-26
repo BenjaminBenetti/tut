@@ -18,9 +18,15 @@ import {
   BUG_SPECIES,
   BURROWER,
   HIVE_GUARD,
+  SOVEREIGN,
   SPITTER,
   SWARMER,
 } from "../../bugs/data/species";
+import { footprintDistance } from "../../bugs/ai/utility";
+import { SOVEREIGN_TUNING } from "../../bugs/data/sovereign-tuning";
+import { placeSovereign } from "../../bugs/service/sovereign-placement";
+import { groundGap, isSovereign } from "../../bugs/service/sovereign-service";
+import { sovereignMission } from "../../bugs/service/sovereign.test-helper";
 import { placeBroodmother } from "../../bugs/service/broodmother-placement";
 import {
   broodmotherEscaped,
@@ -50,6 +56,7 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import type { GameState } from "../../save/model/game-state";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
+import { BLAST_RESOLVED } from "../../tactical/model/blast-resolved-event";
 import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
 import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
 import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
@@ -57,6 +64,10 @@ import { BROODMOTHER_ESCAPED } from "../../tactical/model/broodmother-escaped-ev
 import { BROODMOTHER_FLEEING } from "../../tactical/model/broodmother-fleeing-event";
 import { CIVILIAN_SOURCE_ID } from "../../tactical/model/civilian";
 import { CLUTCH_LAID } from "../../tactical/model/clutch-laid-event";
+import { GUARDS_SUMMONED } from "../../tactical/model/guards-summoned-event";
+import { SOVEREIGN_AURA } from "../../tactical/model/sovereign-aura-event";
+import { SOVEREIGN_RETREATING } from "../../tactical/model/sovereign-retreating-event";
+import { STRUCTURE_DESTROYED } from "../../tactical/model/structure-destroyed-event";
 import { MOVE, move } from "../../tactical/model/move-command";
 import { isBurrowed, isDormant, passMaskFor } from "../../tactical/model/unit";
 import type { Unit } from "../../tactical/model/unit";
@@ -870,6 +881,8 @@ describe("shippedBugBehaviours", () => {
     expect(tags).toContain("burrow");
     // #1179: the Broodmother keeps her distance and runs.
     expect(tags).toContain("broodmother");
+    // #1179: the Sovereign guards the core.
+    expect(tags).toContain("sovereign");
     expect(new Set(tags).size).toBe(tags.length);
     expect(
       () => new MapBehaviourRegistry(shippedBugBehaviours()),
@@ -1330,6 +1343,224 @@ describe("the Broodmother in a live mission (#1179, campaign arc §6.8)", () => 
     };
     expect(endOf(walledFieldAt(20, 20, 7))).toEqual(anchor);
     expect(endOf(fieldMap(20, 20).build())).not.toEqual(anchor);
+  });
+});
+
+describe("the Sovereign in a live mission (#1179, campaign arc §9)", () => {
+  /** Her block's side. */
+  const SIZE = SOVEREIGN.footprint ?? 1;
+
+  /** The shipped EndTurn rule. */
+  function shippedEndTurn(): TacticalHandler<EndTurnCommand> {
+    const handler = shippedTacticalHandlers()[END_TURN];
+    if (handler === undefined) throw new Error("EndTurn is not shipped");
+    return handler;
+  }
+
+  /**
+   * A started mission in the player's phase with her placed through the
+   * mission seam twelve tiles off the first squad, guarding her own
+   * anchor unless `core` says otherwise, on `hp` when one is given; the
+   * nests and edge waves cleared so she and her guards are the only
+   * bugs, and the first look computed.
+   */
+  function withSovereign(
+    options: {
+      hp?: (maxHp: number) => number;
+      core?: (anchor: { x: number; y: number; z: number }) => {
+        x: number;
+        y: number;
+        z: number;
+      };
+    } = {},
+  ): { state: TacticalState; herId: string } {
+    const mission = startedMission("player");
+    const squad = mission.units.find((u) => u.team === "tdf")!;
+    const anchor = walkableTileNear(
+      mission,
+      { x: squad.pos.x + 12, y: squad.pos.y, z: squad.pos.z + 12 },
+      SIZE,
+    );
+    const placed = placeSovereign(mission, anchor, {
+      ids: new SequentialIdGenerator({ counters: { unit: 900 } }),
+      species: SOVEREIGN,
+      core: options.core?.(anchor) ?? anchor,
+    });
+    const her = placed.units.find(isSovereign);
+    if (her === undefined) throw new Error("the Sovereign was not placed");
+    const adjusted: TacticalState = {
+      ...placed,
+      spawners: [],
+      edgeSpawn: { ...placed.edgeSpawn, nextTurn: 99 },
+      units: placed.units.map((u) =>
+        u.id === her.id && options.hp !== undefined
+          ? { ...u, hp: options.hp(u.maxHp) }
+          : u,
+      ),
+    };
+    return {
+      state: withVision({ state: adjusted, events: [] }).state,
+      herId: her.id,
+    };
+  }
+
+  it("summons two guards on every third turn across nine live EndTurns, and only then", () => {
+    const { state: start, herId } = withSovereign();
+    const endTurnHandler = shippedEndTurn();
+    const rng = new Mulberry32Rng(3);
+    const ids = new SequentialIdGenerator({ counters: { unit: 500 } });
+    let state = start;
+    const guardsByTurn: number[] = [];
+    const guardIds: string[] = [];
+    for (let turn = 1; turn <= 9; turn++) {
+      expect(state.turn).toBe(turn);
+      const outcome = endTurnHandler(state, endTurn(), { rng, ids });
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      state = outcome.value.state;
+      expect(state.units.some((u) => u.id === herId && u.hp > 0)).toBe(true);
+      let summoned = 0;
+      for (const event of outcome.value.events) {
+        if (event.type === GUARDS_SUMMONED && event.payload.unitId === herId) {
+          summoned += event.payload.guardIds.length;
+          guardIds.push(...event.payload.guardIds);
+        }
+      }
+      guardsByTurn.push(summoned);
+    }
+    expect(guardsByTurn).toEqual([0, 0, 2, 0, 0, 2, 0, 0, 2]);
+    // Each guard is a bug of her escort on the board, and they alternate.
+    expect(new Set(guardIds).size).toBe(6);
+    const species = guardIds.map(
+      (id) => state.units.find((u) => u.id === id)?.sourceId,
+    );
+    expect(species).toEqual([
+      "swarmer-armoured",
+      "lurker-armoured",
+      "swarmer-armoured",
+      "lurker-armoured",
+      "swarmer-armoured",
+      "lurker-armoured",
+    ]);
+  });
+
+  it("lends her aura only to the bugs within its radius, and only for the bugs' phase", () => {
+    const { state: start, herId } = withSovereign();
+    const her = start.units.find((u) => u.id === herId)!;
+    const near = withBug(
+      start,
+      SWARMER,
+      walkableTileNear(start, {
+        x: her.pos.x + SIZE + 2,
+        y: her.pos.y,
+        z: her.pos.z + 1,
+      }),
+      "near-bug",
+    );
+    const far = withBug(
+      near.mission,
+      SWARMER,
+      walkableTileNear(near.mission, {
+        x: her.pos.x + SIZE + 14,
+        y: her.pos.y,
+        z: her.pos.z + 1,
+      }),
+      "far-bug",
+    );
+    // The fixture exhibits the case: one ally inside the radius, one out.
+    const radius = SOVEREIGN_TUNING.aura.radius;
+    expect(groundGap(her.pos, SIZE, near.bug.pos, 1)).toBeLessThanOrEqual(
+      radius,
+    );
+    expect(groundGap(her.pos, SIZE, far.bug.pos, 1)).toBeGreaterThan(radius);
+    const outcome = shippedEndTurn()(far.mission, endTurn(), {
+      rng: new Mulberry32Rng(3),
+      ids: new SequentialIdGenerator({ counters: { unit: 500 } }),
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const auras = outcome.value.events.filter((e) => e.type === SOVEREIGN_AURA);
+    expect(auras).toHaveLength(1);
+    const aura = auras[0];
+    expect(aura?.type === SOVEREIGN_AURA ? aura.payload : undefined).toEqual({
+      unitId: herId,
+      empowered: ["near-bug"],
+      damageBonus: SOVEREIGN_TUNING.aura.damageBonus,
+    });
+    // Back in the player's phase, nobody carries it.
+    expect(outcome.value.state.phase).toBe("player");
+    expect(
+      outcome.value.state.units.filter((u) => u.auraDamage !== undefined),
+    ).toEqual([]);
+  });
+
+  it("marks her retreat once at two fifths of her hit points, and walks her back onto the core", () => {
+    const { state: start, herId } = withSovereign({
+      hp: (maxHp) => Math.floor(maxHp * SOVEREIGN_TUNING.retreatAtHpFraction),
+      core: (anchor) => ({ x: anchor.x - 7, y: anchor.y, z: anchor.z }),
+    });
+    const her = start.units.find((u) => u.id === herId)!;
+    const core = her.core!;
+    const before = footprintDistance(her.pos, SIZE, core);
+    // The fixture exhibits the case: hurt, unmarked, off her hold.
+    expect(her.retreating).toBeUndefined();
+    expect(before).toBeGreaterThan(SOVEREIGN_TUNING.holdRadius);
+    const endTurnHandler = shippedEndTurn();
+    const rng = new Mulberry32Rng(3);
+    const ids = new SequentialIdGenerator({ counters: { unit: 500 } });
+    const first = endTurnHandler(start, endTurn(), { rng, ids });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(
+      first.value.events.filter((e) => e.type === SOVEREIGN_RETREATING),
+    ).toHaveLength(1);
+    const after = first.value.state.units.find((u) => u.id === herId)!;
+    expect(after.retreating).toBe(true);
+    expect(footprintDistance(after.pos, SIZE, core)).toBeLessThan(before);
+    const second = endTurnHandler(first.value.state, endTurn(), { rng, ids });
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(
+      second.value.events.filter((e) => e.type === SOVEREIGN_RETREATING),
+    ).toEqual([]);
+  });
+
+  it("reacts only to what her side sees: a squad behind a wall draws no step and no swing from her", () => {
+    // The runner hands every bug the bugs' view (viewFor); handed the
+    // whole state instead, she would cut the wall toward a squad she
+    // cannot see.
+    const squad = unitAt("squad", "infantry", { x: 16, y: 0, z: 11 });
+    const anchor = { x: 10, y: 0, z: 10 };
+    const endTurnHandler = shippedEndTurn();
+    const play = (map: Parameters<typeof sovereignMission>[0]) => {
+      const { mission, sovereign } = sovereignMission(map, [squad], anchor, {
+        phase: "player",
+      });
+      const outcome = endTurnHandler(mission, endTurn(), {
+        rng: new Mulberry32Rng(5),
+        ids: new SequentialIdGenerator(),
+      });
+      if (!outcome.ok) throw new Error("EndTurn failed");
+      return {
+        phase: outcome.value.state.phase,
+        pos: outcome.value.state.units.find((u) => u.id === sovereign.id)?.pos,
+        // A swing at the wall, whether or not it brings it down.
+        swung: outcome.value.events.some(
+          (e) =>
+            e.type === BLAST_RESOLVED ||
+            e.type === ATTACK_RESOLVED ||
+            e.type === STRUCTURE_DESTROYED,
+        ),
+      };
+    };
+    expect(play(walledFieldAt(30, 30, 13))).toEqual({
+      phase: "player",
+      pos: anchor,
+      swung: false,
+    });
+    // In the open the same squad draws her in: the fixture is not
+    // holding her still.
+    expect(play(fieldMap(30, 30).build()).pos).not.toEqual(anchor);
   });
 });
 

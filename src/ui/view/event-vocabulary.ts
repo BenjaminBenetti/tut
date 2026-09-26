@@ -403,6 +403,30 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:sovereign-aura":
+      // The Sovereign's aura (#1179, arc §9): which bugs hit harder this
+      // phase, so a squad knows why a swarmer bit for four.
+      return {
+        text: `${nameOf(event.payload.unitId)} drives ${formatWhole(event.payload.empowered.length)} ${
+          event.payload.empowered.length === 1 ? "bug" : "bugs"
+        } harder (+${formatWhole(event.payload.damageBonus)} damage)`,
+        icon: "bug",
+        tone: "bug",
+      };
+    case "tactical:guards-summoned":
+      return {
+        text: `${nameOf(event.payload.unitId)} summoned ${formatWhole(event.payload.guardIds.length)} ${
+          event.payload.guardIds.length === 1 ? "guard" : "guards"
+        }`,
+        icon: "bug",
+        tone: "bug",
+      };
+    case "tactical:sovereign-retreating":
+      return {
+        text: `${nameOf(event.payload.unitId)} is falling back to the core`,
+        icon: "warning",
+        tone: "danger",
+      };
     case "tactical:brood-woke":
       // The whole brood in one line (#1179): its members get the stir
       // on the map, not a status sentence each.
@@ -549,6 +573,11 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:clutch-laid":
     case "tactical:broodmother-fleeing":
       // Above the Broodmother: she laid it, and she turned.
+      return event.payload.unitId;
+    case "tactical:sovereign-aura":
+    case "tactical:guards-summoned":
+    case "tactical:sovereign-retreating":
+      // Above the Sovereign (#1179): her aura, her call, her retreat.
       return event.payload.unitId;
     case "tactical:civilians-freed":
       // Above the group: being let out is what happened to it.

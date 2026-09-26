@@ -1905,6 +1905,17 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "bug.sovereign": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-sovereign.glb",
+    // The finale's apex (#1179): a crowned centaur queen on six legs
+    // with two folded scythes, authored at her 4×4 tactical footprint.
+    // `socket_crown` marks the crest gem, where her aura is read from.
+    footprint: { w: 4, d: 4 },
+    height: 3.5,
+    sockets: ["socket_crown"],
+    quality: "final",
+  },
   "bug.spitter": {
     category: "bugs",
     path: "assets/models/bugs/bug-spitter.glb",

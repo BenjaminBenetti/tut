@@ -399,6 +399,12 @@ export class UnitCardView {
         // A Broodmother running for the edge (#1179): the one thing the
         // player needs to know about her before anything else.
         ...(unit.fleeing === true ? ["fleeing"] : []),
+        // The Sovereign falling back onto her core, and the bugs her aura
+        // drives harder this phase (#1179, arc §9).
+        ...(unit.retreating === true ? ["retreating"] : []),
+        ...(unit.auraDamage !== undefined && unit.auraDamage > 0
+          ? [`aura +${String(unit.auraDamage)} damage`]
+          : []),
         ...(unit.braced ? ["braced"] : []),
         ...(template.systems?.jumpRange
           ? [`jump ${String(template.systems.jumpRange)}`]

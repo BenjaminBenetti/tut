@@ -25,6 +25,7 @@ import {
   HIVE_GUARD,
   LURKER,
   LURKER_ARMOURED,
+  SOVEREIGN,
   SPITTER,
   SWARMER,
   SWARMER_ARMOURED,
@@ -64,6 +65,7 @@ describe("bug species data", () => {
         LURKER_ARMOURED,
         BRUTE_ARMOURED,
         BROODMOTHER,
+        SOVEREIGN,
       ].map((s) => s.id),
     ).toEqual(BUG_SPECIES_IDS);
   });
@@ -140,6 +142,7 @@ describe("bug species data", () => {
       expect([variant.id, variant.hatchWeight]).toEqual([variant.id, 0]);
     }
     expect(BROODMOTHER.hatchWeight).toBe(0);
+    expect(SOVEREIGN.hatchWeight).toBe(0);
     // The default mix itself is unchanged: six to three to one.
     expect([SWARMER, LURKER, BRUTE].map((s) => s.hatchWeight)).toEqual([
       6, 3, 1,
@@ -166,7 +169,7 @@ describe("bug species data", () => {
     expect(BRUTE.weapon.armorPen).toBeGreaterThan(SWARMER.weapon.armorPen);
   });
 
-  it("prices a kill by weight: a swarmer is the unit, a brute the most a nest rolls, the Broodmother more (#1130, #1179)", () => {
+  it("prices a kill by weight: a swarmer is the unit, a brute the most a nest rolls, the Broodmother more, the Sovereign most (#1130, #1179)", () => {
     expect(SWARMER.xpValue).toBe(10);
     expect(SWARMER.xpValue).toBeLessThan(LURKER.xpValue);
     expect(LURKER.xpValue).toBeLessThan(BRUTE.xpValue);
@@ -175,10 +178,15 @@ describe("bug species data", () => {
     // The Hive Guard sits between a lurker and a brute (#1179).
     expect(HIVE_GUARD.xpValue).toBeGreaterThan(LURKER.xpValue);
     expect(HIVE_GUARD.xpValue).toBeLessThan(BRUTE.xpValue);
-    // A boss is worth more than anything a nest hatches.
+    // A boss is worth more than anything a nest hatches; the finale's
+    // apex (#1179) more than the Broodmother, so she is left out of
+    // the Broodmother's comparison and held above every species.
     for (const species of Object.values(BUG_SPECIES)) {
-      if (species.id !== "broodmother") {
+      if (species.id !== "broodmother" && species.id !== "sovereign") {
         expect(BROODMOTHER.xpValue).toBeGreaterThan(species.xpValue);
+      }
+      if (species.id !== "sovereign") {
+        expect(SOVEREIGN.xpValue).toBeGreaterThan(species.xpValue);
       }
     }
     for (const species of Object.values(BUG_SPECIES)) {
@@ -210,9 +218,10 @@ describe("bug species data", () => {
 });
 
 describe("the brute's block and cleavers (#1130)", () => {
-  it("stands on a 2×2 block while the small species take one tile, and the Broodmother on a 3×3", () => {
+  it("stands on a 2×2 block while the small species take one tile, the Broodmother on a 3×3 and the Sovereign on a 4×4", () => {
     expect(BRUTE.footprint).toBe(2);
     expect(BROODMOTHER.footprint).toBe(3);
+    expect(SOVEREIGN.footprint).toBe(4);
     expect(SWARMER.footprint).toBeUndefined();
     expect(LURKER.footprint).toBeUndefined();
     expect(SPITTER.footprint).toBeUndefined();
@@ -318,7 +327,7 @@ describe("damage tags (campaign arc §10.2)", () => {
     // one only when its autopsy plates against it.
     expect(SPITTER.weapon.tags).toEqual(["acid"]);
     expect(HIVE_GUARD.weapon.tags).toEqual(["spine"]);
-    for (const species of [SWARMER, LURKER, BRUTE, BROODMOTHER]) {
+    for (const species of [SWARMER, LURKER, BRUTE, BROODMOTHER, SOVEREIGN]) {
       expect([species.id, species.weapon.tags]).toEqual([
         species.id,
         undefined,
@@ -329,6 +338,46 @@ describe("damage tags (campaign arc §10.2)", () => {
         expect(DAMAGE_TAGS, `${id} carries ${tag}`).toContain(tag);
       }
     }
+  });
+});
+
+describe("the Sovereign's scythes (#1179)", () => {
+  it("is placed, never rolled, and runs her own behaviour on the model the kit authored", () => {
+    expect(SOVEREIGN.hatchWeight).toBe(0);
+    expect(SOVEREIGN.behaviour).toBe("sovereign");
+    expect(SOVEREIGN.modelId).toBe("bug.sovereign");
+  });
+
+  it("strikes in melee harder and truer than any other bug, through plate, and opens walls", () => {
+    expect(isMelee(SOVEREIGN.weapon)).toBe(true);
+    for (const species of Object.values(BUG_SPECIES)) {
+      if (species.id === "sovereign") {
+        continue;
+      }
+      expect([
+        species.id,
+        SOVEREIGN.weapon.damage > species.weapon.damage,
+      ]).toEqual([species.id, true]);
+    }
+    expect(SOVEREIGN.weapon.armorPen).toBeGreaterThan(BRUTE.weapon.armorPen);
+    expect(SOVEREIGN.weapon.accuracy).toBeGreaterThan(BRUTE.weapon.accuracy);
+    expect(SOVEREIGN.weapon.demoForce).toBeGreaterThanOrEqual(
+      DEMOLITION_TUNING.wallForce.solid,
+    );
+  });
+
+  it("is the heaviest body in the bestiary but armoured below a brute, so a finale squad's guns bite", () => {
+    for (const species of Object.values(BUG_SPECIES)) {
+      if (species.id !== "sovereign") {
+        expect([species.id, SOVEREIGN.hp > species.hp]).toEqual([
+          species.id,
+          true,
+        ]);
+      }
+    }
+    expect(SOVEREIGN.armor).toBe(2);
+    expect(SOVEREIGN.armor).toBeLessThan(BRUTE.armor);
+    expect(SOVEREIGN.move).toBe(4);
   });
 });
 

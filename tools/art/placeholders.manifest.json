@@ -5512,5 +5512,21 @@
     "quality": "final",
     "triangles": 5202,
     "bytes": 430644
+  },
+  {
+    "id": "bug.sovereign",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-sovereign.glb",
+    "footprint": {
+      "w": 4,
+      "d": 4
+    },
+    "height": 3.5,
+    "sockets": [
+      "socket_crown"
+    ],
+    "quality": "final",
+    "triangles": 12424,
+    "bytes": 384576
   }
 ]

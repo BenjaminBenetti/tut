@@ -25,6 +25,7 @@
  * | `campaign-lost`         | the Spore Platform assault fails again (D7)     |
  * | `platform-approach`     | Intel III, Platform Approach, is researched     |
  * | `great-hives-destroyed` | the last Great Hive falls (Great Hives package) |
+ * | `pod-telemetry`         | Intel II, Pod Telemetry, is researched          |
  *
  * `campaign-won` and `campaign-lost` are the story's verdicts: the
  * outcome step ends the campaign on the next day tick once either is
@@ -46,7 +47,9 @@ export type CampaignFlagId =
    * falls (campaign arc §3, Act III); half of Launch Window's pin. Nothing
    * sets it yet: until the Great Hives are built, Launch Window never pins.
    */
-  | "great-hives-destroyed";
+  | "great-hives-destroyed"
+  /** Set by Intel II, Pod Telemetry (`tech.pod-telemetry`); pins Intact Pod, the Act II ending. */
+  | "pod-telemetry";
 
 /** Every campaign flag id, in a fixed order. Append, never insert. */
 export const CAMPAIGN_FLAG_IDS: readonly CampaignFlagId[] = [
@@ -60,6 +63,7 @@ export const CAMPAIGN_FLAG_IDS: readonly CampaignFlagId[] = [
   "campaign-lost",
   "platform-approach",
   "great-hives-destroyed",
+  "pod-telemetry",
 ];
 
 /**

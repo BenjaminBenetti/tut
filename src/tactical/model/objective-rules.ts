@@ -99,6 +99,8 @@ export type ObjectiveResultFields = Partial<
     | "hiveCoreDestroyed"
     | "tunnelsSealed"
     | "tunnelsTotal"
+    | "podRecovered"
+    | "podHpLeft"
   >
 >;
 

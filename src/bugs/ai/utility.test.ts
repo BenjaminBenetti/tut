@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { CarriedSpecimen } from "../../tactical/model/carried-specimen";
+import type { RecoverPodObjective } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import { HookKinds } from "../../mapgen/model/hook";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
@@ -270,6 +271,63 @@ describe("huntSite (#1175)", () => {
     const mission = missionWith(plain, []);
     expect(huntSite(mission, at(0, 0))).toEqual(landingSite(mission, at(0, 0)));
     expect(huntSite(mission, at(0, 0))).toEqual(at(11, 11));
+  });
+});
+
+describe("huntSite and an objective's huntedAt tile (#1179, Intact Pod)", () => {
+  const at = (x: number, z: number) => ({ x, y: 0, z });
+  const plain = new FixtureMapBuilder(12, 12, 2)
+    .fillGround()
+    .deploy([at(11, 11)])
+    .build();
+  /** An open recovery whose pod stands at (3, 3). */
+  const recovery = (
+    flags: Partial<RecoverPodObjective> = {},
+  ): RecoverPodObjective => ({
+    id: "objective-pod",
+    kind: "recover-pod",
+    targetId: "pod",
+    complete: false,
+    failed: false,
+    deadlineTurn: 8,
+    huntedAt: at(3, 3),
+    ...flags,
+  });
+  const withObjective = (objective: RecoverPodObjective, units: Unit[] = []) =>
+    missionWith(plain, units, { objectives: [objective] });
+
+  it("heads for the tile of an open objective rather than the landing zone", () => {
+    expect(huntSite(withObjective(recovery()), at(0, 0))).toEqual(at(3, 3));
+  });
+
+  it("stops heading there once the objective is decided, lifted or lost", () => {
+    for (const decided of [
+      recovery({ complete: true }),
+      recovery({ failed: true }),
+    ]) {
+      expect(huntSite(withObjective(decided), at(0, 0))).toEqual(at(11, 11));
+    }
+  });
+
+  it("passes the tile once a wrecked generator stands on it", () => {
+    const wreck: Unit = {
+      ...unitAt("pod", "infantry", at(3, 3), { hp: 0 }),
+      kind: "generator",
+    };
+    expect(huntSite(withObjective(recovery(), [wreck]), at(0, 0))).toEqual(
+      at(11, 11),
+    );
+  });
+
+  it("takes whichever is nearer, a hook or the objective's tile", () => {
+    const hooked = new FixtureMapBuilder(12, 12, 2)
+      .fillGround()
+      .deploy([at(11, 11)])
+      .objective(HookKinds.GENERATOR, [at(8, 8)])
+      .build();
+    const mission = missionWith(hooked, [], { objectives: [recovery()] });
+    expect(huntSite(mission, at(0, 0))).toEqual(at(3, 3));
+    expect(huntSite(mission, at(9, 9))).toEqual(at(8, 8));
   });
 });
 

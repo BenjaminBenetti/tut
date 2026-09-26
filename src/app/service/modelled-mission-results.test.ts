@@ -409,7 +409,7 @@ describe("MODELLED_STORY_RESULTS", () => {
     },
   });
 
-  it("a won Live Specimen brings the specimen home, and the story ends Act I (today: the campaign is won)", () => {
+  it("a won Live Specimen brings the specimen home and ends Act I: the campaign enters Act II", () => {
     const game = composeSweepGame(always("won"));
     const staged = withOffer(
       game,
@@ -423,7 +423,8 @@ describe("MODELLED_STORY_RESULTS", () => {
       LIVE_SPECIMEN_SPECIES,
     );
     expect(after.overworld.progress.storyWon).toContain("live-specimen");
-    expect(flagged(after, "campaign-won")).toBe(true);
+    expect(after.overworld.progress.act).toBe("act-2");
+    expect(flagged(after, "campaign-won")).toBe(false);
   });
 
   it("an extracted Live Specimen brings nothing home and is pinned again later", () => {

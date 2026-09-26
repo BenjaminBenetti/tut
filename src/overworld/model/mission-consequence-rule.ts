@@ -1,4 +1,5 @@
 import type { MissionTypeId } from "../../content/model/mission-type-id";
+import type { HiveTuning } from "./hive-tuning";
 import type { Mission } from "./mission";
 import type { MissionResult } from "./mission-result";
 import type { MissionTuning } from "./mission-tuning";
@@ -13,6 +14,8 @@ import type { OverworldState } from "./overworld-state";
 export interface MissionConsequenceContext {
   /** Per-type knobs; the clearance's mop-up threshold lives here. */
   readonly tuning: MissionTuning;
+  /** What liberating a hive's region does; the Hive Assault's win reads it. */
+  readonly hive: HiveTuning;
 }
 
 /**

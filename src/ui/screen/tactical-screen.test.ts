@@ -21,7 +21,9 @@ import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
@@ -95,6 +97,8 @@ function inMission(): GameState {
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
       civilian: CIVILIAN_TUNING,
+      hiveGuard: BUG_SPECIES["hive-guard"],
+      hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

@@ -51,7 +51,9 @@ describe("mission tuning", () => {
     for (const rule of Object.values(MISSION_TUNING.difficulty)) {
       expect(Number.isInteger(rule.mediumFromDifficulty)).toBe(true);
       expect(Number.isInteger(rule.largeFromDifficulty)).toBe(true);
-      expect(rule.mediumFromDifficulty).toBeGreaterThan(min);
+      // A type may be large at every difficulty: the hive cavern is one
+      // fixed large map, so the Hive Assault's thresholds sit at `min`.
+      expect(rule.mediumFromDifficulty).toBeGreaterThanOrEqual(min);
       expect(rule.largeFromDifficulty).toBeGreaterThanOrEqual(
         rule.mediumFromDifficulty,
       );

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { STARTER_LOADOUT } from "../../../roster/data/starter-roster";
 import { createMech } from "../../../roster/service/mech-factory";
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import type { Mission } from "../../model/mission";
 import { wreckOf } from "../wreck-service";
@@ -17,7 +18,7 @@ import { WRECK_RECOVERY_CONSEQUENCE } from "./wreck-recovery-consequence";
 // Fixtures
 // ===========================================
 
-const CTX = { tuning: MISSION_TUNING };
+const CTX = { tuning: MISSION_TUNING, hive: HIVE_TUNING };
 const LOST = wreckOf(
   createMech(STARTER_LOADOUT, "mech-1", "Hammerhead"),
   missionAt("mid", 9),

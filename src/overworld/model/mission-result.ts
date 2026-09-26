@@ -133,6 +133,12 @@ export interface MissionResult {
    */
   readonly partsAwarded?: readonly PartId[];
   /**
+   * The part of `techPointsAwarded` paid as bounties for optional targets
+   * wrecked on the way (the Hive Assault's chamber nests, campaign arc
+   * §6.5), so the debrief can say so. Absent when none was.
+   */
+  readonly techPointsBounty?: number;
+  /**
    * Signed integer added to the host city's infestation; negative on a
    * successful clearance. The applier clamps to the city's bounds.
    */
@@ -160,6 +166,13 @@ export interface MissionResult {
    * standing. Absent when the mission had no pod, or nobody played it.
    */
   readonly podDestroyed?: boolean;
+  /**
+   * For a Hive Assault (campaign arc §6.5): true when the squad brought
+   * the hive core down, whether or not it then got out. Absent when the
+   * mission had no core. The consequence rule reads the outcome; this is
+   * for the debrief's tagline.
+   */
+  readonly hiveCoreDestroyed?: boolean;
   /**
    * For a rescue (campaign arc §6.4): civilian groups aboard the drop
    * ship at the end, beside `civiliansTotal`. Each group out adds to the

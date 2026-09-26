@@ -22,7 +22,11 @@ import type {
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
-import { footprintFits, occupiedKeys } from "./movement-service";
+import {
+  footprintFits,
+  liveSpawnerKeys,
+  occupiedKeys,
+} from "./movement-service";
 import type { PhaseStep } from "../model/phase-step";
 import { buriedKeys } from "./tunnel-service";
 import { bugUnit } from "./unit-factory";
@@ -534,10 +538,8 @@ function placeBugs(
   }
   // A live spawner's tile is never stood on either: the room already
   // leaves out its own, and a block must not reach across onto one.
-  for (const spawner of mission.spawners) {
-    if (!spawner.destroyed && snapshot.index.inBounds(spawner.pos)) {
-      taken.add(snapshot.index.keyOf(spawner.pos));
-    }
+  for (const key of liveSpawnerKeys(mission, snapshot.index)) {
+    taken.add(key);
   }
   const free = candidates.filter(
     (tile) =>

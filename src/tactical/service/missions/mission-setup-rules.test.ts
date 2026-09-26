@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { MISSION_TYPE_IDS } from "../../../content/model/mission-type-id";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import type { Mission } from "../../../overworld/model/mission";
+import { BUG_SPECIES } from "../../../bugs/data/species";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import {
@@ -60,6 +62,8 @@ describe("MISSION_SETUP_RULES (ADR 0013 §2.3)", () => {
       spawnTuning: SPAWN_TUNING,
       generator: GENERATOR_TUNING,
       civilian: CIVILIAN_TUNING,
+      hiveGuard: BUG_SPECIES["hive-guard"],
+      hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
     });
     expect(setUp).toEqual({ ok: true, value: state });
     expect(setUp.ok && setUp.value).toBe(state);

@@ -45,6 +45,7 @@ export interface MissionPresentationContext {
  *     ├ icon            ──► mission list glyph
  *     ├ briefingFields  ──► briefing grid slots, built once at mount
  *     ├ briefingRows    ──► the slots this mission fills; the rest hide
+ *     ├ offerNote       ──► a line under the mission list row, if any
  *     └ debriefTagline  ──► results banner line, else the outcome's own
  * ```
  *
@@ -70,6 +71,15 @@ export interface MissionPresentation {
     mission: Mission,
     ctx: MissionPresentationContext,
   ): readonly BriefingRow[];
+  /**
+   * A short line the mission list shows under this offer's row, or
+   * undefined for none: what the player should know before opening the
+   * briefing, such as a hive's level and when it next grows (#1179).
+   */
+  offerNote?(
+    mission: Mission,
+    ctx: MissionPresentationContext,
+  ): string | undefined;
   /**
    * The debrief's line for `result` in this type's words, or undefined
    * to keep the outcome's generic line. A result carries no type id, so

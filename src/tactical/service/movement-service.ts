@@ -11,8 +11,10 @@ import { carryMovePenaltyOf } from "../model/carried-specimen";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { isBurrowed, passMaskFor } from "../model/unit";
+import { spawnerTraitsOf } from "../model/spawner-variant";
 import {
   footprintTiles,
+  spawnerFootprintTiles,
   unitFootprintSize,
   unitFootprintTiles,
 } from "./footprint-service";
@@ -359,13 +361,21 @@ export function searchMoves(
 
 /**
  * Keys of the tiles held by living units — every tile of a unit's
- * footprint (#1130) — optionally leaving one unit out (the mover).
- * Tiles off the map are not held.
+ * footprint (#1130) — optionally leaving one unit out (the mover), and
+ * every tile of a standing spawner whose variant is `solid` (the 3×3
+ * hive core, which nothing walks through or lands on). A nest or a pod
+ * is not solid, so this is exactly what it was for every mission
+ * before the hive core. Tiles off the map are not held.
  *
  * A unit under the ground (#1179) holds no tile: anything on the
  * surface walks over it and may stop there, so a burrower never shows
  * itself by blocking a path, and a squad standing on its tile is simply
  * one more reason it cannot come up there (`burrow-service`).
+ *
+ * ```
+ *   held = ⋃ footprint(unit)     for living, surfaced units ≠ except
+ *        ∪ ⋃ footprint(spawner)  for standing solid spawners
+ * ```
  */
 export function occupiedKeys(
   mission: TacticalState,
@@ -378,6 +388,44 @@ export function occupiedKeys(
       continue;
     }
     for (const tile of unitFootprintTiles(mission, other)) {
+      if (index.inBounds(tile)) {
+        keys.add(index.keyOf(tile));
+      }
+    }
+  }
+  for (const spawner of mission.spawners) {
+    if (
+      spawner.destroyed ||
+      spawner.hp <= 0 ||
+      spawnerTraitsOf(spawner).solid !== true
+    ) {
+      continue;
+    }
+    for (const tile of spawnerFootprintTiles(spawner)) {
+      if (index.inBounds(tile)) {
+        keys.add(index.keyOf(tile));
+      }
+    }
+  }
+  return keys;
+}
+
+/**
+ * Keys of every tile a spawner that still stands is on: its whole
+ * footprint, so no unit is ever placed, hatched or dropped onto any tile
+ * of the hive core, nor onto a nest's or a pod's own tile. Tiles off the
+ * map are left out. The placement rules add this to `occupiedKeys`.
+ */
+export function liveSpawnerKeys(
+  mission: TacticalState,
+  index: TileIndex,
+): ReadonlySet<TileKey> {
+  const keys = new Set<TileKey>();
+  for (const spawner of mission.spawners) {
+    if (spawner.destroyed) {
+      continue;
+    }
+    for (const tile of spawnerFootprintTiles(spawner)) {
       if (index.inBounds(tile)) {
         keys.add(index.keyOf(tile));
       }

@@ -5,7 +5,11 @@ import type {
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { Mission } from "../../overworld/model/mission";
 import type { HookKind } from "./hook";
-import type { HookRequirement, MapArchetype } from "./map-recipe";
+import type {
+  HookRequirement,
+  MapArchetype,
+  MapDimensions,
+} from "./map-recipe";
 
 // ===========================================
 // Mission map rule (ADR 0013 §2.3)
@@ -21,6 +25,19 @@ import type { HookRequirement, MapArchetype } from "./map-recipe";
  * the adapter scales them by difficulty and completes them from
  * `HOOK_KIND_DEFAULTS` exactly as it does `requiredHooks`, and appends
  * them after the carcass so the recipe's hook order is unchanged.
+ *
+ * An archetype with a board and hook list of its own (the hive cavern,
+ * #1179) names them in `size` and `hooks` instead: the adapter then uses
+ * that board in place of the mission's named size and that hook list in
+ * place of the type's `requiredHooks` and `extraHooks`, still appending
+ * the mission's carcass. A rule that sets neither is read exactly as
+ * before.
+ *
+ * ```
+ *   plan.hooks absent   requiredHooks + carcass + extraHooks, × difficulty
+ *   plan.hooks present  plan.hooks as given + carcass
+ *   plan.size present   that board, not mapParams.size
+ * ```
  *
  * `hookPlacement` lets one mission move a kind's hooks nearer or farther
  * than the kind's defaults, for every requirement of that kind: First
@@ -39,6 +56,13 @@ export interface MissionMapPlan {
   readonly landmark?: string;
   /** Distances from deploy this mission sets for a kind, over the kind's defaults. */
   readonly hookPlacement?: Readonly<Partial<Record<HookKind, HookPlacement>>>;
+  /** The board, in place of the mission's named size. */
+  readonly size?: MapDimensions;
+  /**
+   * The whole hook list in mapgen vocabulary, in place of the type's
+   * `requiredHooks` and `extraHooks`; the mission's carcass is appended.
+   */
+  readonly hooks?: readonly HookRequirement[];
 }
 
 /**
@@ -59,7 +83,7 @@ export type HookPlacement = Partial<
  * recipe a save stores is a function of the mission alone.
  *
  * ```
- *   Mission + MissionType ──► rule.recipe ──► { archetype, extraHooks, site?, landmark?, hookPlacement? }
+ *   Mission + MissionType ──► rule.recipe ──► { archetype, extraHooks, site?, landmark?, hookPlacement?, size?, hooks? }
  *                                                  │
  *                  missionToMapRecipe ◄────────────┘  + requiredHooks, carcass, size, biome
  * ```

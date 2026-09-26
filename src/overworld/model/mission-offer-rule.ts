@@ -4,6 +4,7 @@ import type { IdGenerator } from "../../core/model/id-generator";
 import type { Rng } from "../../core/model/rng";
 import type { ActDefinition } from "./act-definition";
 import type { CityId } from "./city";
+import type { HiveTuning } from "./hive-tuning";
 import type { IntelBonus } from "./intel-bonus";
 import type { Mission } from "./mission";
 import type { MissionTuning } from "./mission-tuning";
@@ -54,6 +55,7 @@ export interface MissionSite {
  *   missionTypes  names, rewards, expiry and ignore penalty per type
  *   intelBonus    extra days on offer per region (#66)
  *   act           ACTS[progress.act]: board cap, difficulty band, sitreps
+ *   hive          hive levelling and liberation (arc §6.5), for the Hive Assault
  * ```
  */
 export interface MissionOfferContext {
@@ -68,6 +70,8 @@ export interface MissionOfferContext {
    * the difficulty (arc §3).
    */
   readonly act: ActDefinition;
+  /** How hives level with age; the Hive Assault prices its offer with it. */
+  readonly hive: HiveTuning;
 }
 
 // ===========================================
@@ -126,6 +130,24 @@ export interface MissionTriggerRule {
    * city. Draws ids from `ctx.ids` and anything random from `ctx.rng`.
    */
   trigger(state: OverworldState, ctx: MissionOfferContext): readonly Mission[];
+  /**
+   * The offer this rule made on an earlier day, as it stands today, or
+   * `undefined` to withdraw it because the event behind it is gone. The
+   * director asks it of every offer of `typeId` already on the board
+   * before any trigger runs, so an offer that grows harder with time
+   * (the Hive Assault, re-levelled daily) is re-priced before anything
+   * is offered beside it. Optional: a rule without one keeps its offers
+   * exactly as made.
+   *
+   * Pure and draws nothing: it keeps the offer's id, seed, created day
+   * and any roll made at offer, and re-derives only what follows from
+   * the day. Returns `mission` itself when nothing changed.
+   */
+  refresh?(
+    mission: Mission,
+    state: OverworldState,
+    ctx: MissionOfferContext,
+  ): Mission | undefined;
 }
 
 /** One entry of the offer table: a director-drawn type or a triggered one. */

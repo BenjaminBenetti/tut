@@ -30,6 +30,7 @@ const KINDS: Readonly<Record<ObjectiveKind, true>> = {
   "capture-specimen": true,
   "rescue-civilians": true,
   "strip-wreck": true,
+  "destroy-hive-core": true,
 };
 
 const SPAWNER_OBJECTIVE: DestroySpawnerObjective = {

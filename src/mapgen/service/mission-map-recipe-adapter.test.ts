@@ -439,6 +439,57 @@ describe("missionToMapRecipe with the mission map rules (ADR 0013 §2.3)", () =>
     });
   });
 
+  it("takes a plan's own board and hook list in place of the size and the type's hooks", () => {
+    const own = [
+      { kind: HookKinds.DEPLOY, count: 1, requiredPass: PassMask.ALL },
+      { kind: HookKinds.EXTRACTION, count: 1, requiredPass: PassMask.ALL },
+    ];
+    const rules = withClearanceRule({
+      recipe: () => ({
+        archetype: "hive-cavern",
+        extraHooks: [{ kind: HookKinds.SPORE_POD, count: 1 }],
+        size: { width: 20, depth: 30 },
+        hooks: own,
+      }),
+    });
+    const recipe = unwrap(
+      missionToMapRecipe(
+        mission({}, { techCarcass: { techPoints: 9 } }),
+        INFESTATION_CLEARANCE,
+        registries,
+        rules,
+      ),
+    );
+    expect(recipe.params.size).toEqual({ width: 20, depth: 30 });
+    // The plan's list as given, then the carcass fitted to the plan's
+    // board (8 fits a 20 × 30 board); the type's hooks and the extras
+    // are not asked for.
+    expect(recipe.params.hooks.slice(0, 2)).toEqual(own);
+    expect(recipe.params.hooks.slice(2)).toEqual([
+      expect.objectContaining({
+        kind: HookKinds.TECH_CARCASS,
+        count: 1,
+        minDistanceFromDeploy: 8,
+      }),
+    ]);
+  });
+
+  it("refuses a kind no placer serves in a plan's own hook list", () => {
+    const rules = withClearanceRule({
+      recipe: () => ({
+        archetype: "hive-cavern",
+        extraHooks: [],
+        hooks: [{ kind: "warp-gate", count: 1, requiredPass: PassMask.ALL }],
+      }),
+    });
+    expect(
+      missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries, rules),
+    ).toEqual({
+      ok: false,
+      error: { kind: "unknown-hook-kind", id: "warp-gate" },
+    });
+  });
+
   it("builds a crash site the generator accepts, pod and all, from a crash-site rule", () => {
     const crashSite: MissionType = {
       ...INFESTATION_CLEARANCE,

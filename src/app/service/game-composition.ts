@@ -364,6 +364,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     techPoints,
     consequences: MISSION_CONSEQUENCE_RULES,
     missionTuning: MISSION_TUNING,
+    hiveTuning: tickDeps.hiveTuning,
     story,
   });
   dispatcher.register(LAUNCH_MISSION, launch);

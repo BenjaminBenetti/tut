@@ -266,7 +266,7 @@ function missionExpiryStep<TState extends CampaignState>(
     run: (state) => {
       const expired = expireMissions(state.overworld, {
         consequences: deps.missionConsequences,
-        context: { tuning: deps.missionTuning },
+        context: { tuning: deps.missionTuning, hive: deps.hiveTuning },
       });
       if (expired.state === state.overworld) {
         return { state, events: [] };
@@ -298,6 +298,7 @@ function missionGenerationStep<TState extends CampaignState>(
         acts: deps.acts,
         decorators: deps.offerDecorators,
         pinTriggers,
+        hiveTuning: deps.hiveTuning,
       });
       if (generated.state === state.overworld) {
         return { state, events: [] };

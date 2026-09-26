@@ -12,6 +12,7 @@ import { hatchTiles, snapshotMap } from "../../../mapgen/service/hatch-space";
 import type { Mission } from "../../../overworld/model/mission";
 import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import type { BugUnitSource } from "../../model/bug-unit-source";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
@@ -105,6 +106,8 @@ function bareDeps(): MissionSetupDeps {
     spawnTuning: SPAWN_TUNING,
     generator: GENERATOR_TUNING,
     civilian: CIVILIAN_TUNING,
+    hiveGuard: BUG_SPECIES["hive-guard"],
+    hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
   };
 }
 

@@ -7,6 +7,7 @@ import type { Spawner, TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { isBurrowed } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
+import { spawnerFootprintSize } from "./footprint-service";
 
 // ===========================================
 // Constants
@@ -55,11 +56,14 @@ export function unitAttackTarget(
 
 /**
  * The spawner as an attack target. Spawners are the bugs' (GDD §5.4), so
- * TDF fire may hit them; an egg spawner and a spore pod alike, each by
- * its variant's name and armour.
+ * TDF fire may hit them; an egg spawner, a spore pod and the hive core
+ * alike, each by its variant's name and armour. A spawner wider than a
+ * tile (the 3×3 core) says so, as a brute does, so range and sight are
+ * judged to its nearest tile.
  */
 export function spawnerAttackTarget(spawner: Spawner): AttackTarget {
   const traits = spawnerTraitsOf(spawner);
+  const footprint = spawnerFootprintSize(spawner);
   return {
     kind: "spawner",
     id: spawner.id,
@@ -68,6 +72,7 @@ export function spawnerAttackTarget(spawner: Spawner): AttackTarget {
     hp: spawner.hp,
     armor: traits.armor,
     team: "bugs",
+    ...(footprint > 1 ? { footprint } : {}),
   };
 }
 

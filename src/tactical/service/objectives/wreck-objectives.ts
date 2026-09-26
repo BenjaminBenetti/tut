@@ -4,6 +4,7 @@ import type {
   ObjectiveTarget,
 } from "../../model/objective-rules";
 import type {
+  DestroyHiveCoreObjective,
   DestroyPodObjective,
   DestroySpawnerObjective,
   Objective,
@@ -11,25 +12,28 @@ import type {
   SpawnerId,
   TacticalState,
 } from "../../model/tactical-state";
+import { spawnerFootprintSize } from "../footprint-service";
 
 // ===========================================
 // Wreck objectives
 // ===========================================
 
 /**
- * An objective whose job is to wreck one spawner-like target on a tile:
- * an egg spawner's `destroy-spawner`, a spore pod's `destroy-pod`. They
- * share how the target is found, worked with charges, blipped in the
- * fog and credited when it falls; what differs (a deadline, a burst) is
- * in each kind's own module.
+ * An objective whose job is to wreck one spawner-like target: an egg
+ * spawner's `destroy-spawner`, a spore pod's `destroy-pod`, the hive
+ * core's `destroy-hive-core`. They share how the target is found, worked
+ * with charges, blipped in the fog and credited when it falls; what
+ * differs (a deadline, a burst, the extraction a core also needs) is in
+ * each kind's own module.
  *
  * ```
- *   destroy-spawner ──┐
- *                     ├── targetId ──► mission.spawners
- *   destroy-pod     ──┘
+ *   destroy-spawner   ──┐
+ *   destroy-pod       ──┼── targetId ──► mission.spawners
+ *   destroy-hive-core ──┘
  * ```
  */
-export type WreckObjective = DestroySpawnerObjective | DestroyPodObjective;
+export type WreckObjective =
+  DestroySpawnerObjective | DestroyPodObjective | DestroyHiveCoreObjective;
 
 /**
  * The kinds that are wreck objectives. Kept beside the type so the two
@@ -38,6 +42,7 @@ export type WreckObjective = DestroySpawnerObjective | DestroyPodObjective;
 const WRECK_KINDS: Readonly<Record<WreckObjective["kind"], true>> = {
   "destroy-spawner": true,
   "destroy-pod": true,
+  "destroy-hive-core": true,
 };
 
 /**
@@ -66,8 +71,9 @@ export function isWreckObjective(
  * never both set. (A matured pod is already gone, so it cannot be
  * wrecked at all.)
  *
- * This module imports no service, so `damageSpawner` can read it without
- * the import cycle a lookup through `OBJECTIVE_RULES` would close.
+ * This module imports no rule service (only the footprint geometry), so
+ * `damageSpawner` can read it without the import cycle a lookup through
+ * `OBJECTIVE_RULES` would close.
  *
  * @param objectives - The mission's objectives, in order.
  * @param spawnerId - The spawner just destroyed.
@@ -106,7 +112,9 @@ export function wreckTarget(
 }
 
 /**
- * The target to plant charges on, until it is destroyed or gone.
+ * The target to plant charges on, until it is destroyed or gone, with
+ * its footprint when it covers more than a tile (the 3×3 hive core), so
+ * reach is measured to its nearest face.
  *
  * @param objective - A wreck objective.
  * @param mission - The mission it belongs to.
@@ -116,14 +124,20 @@ export function wreckReachable(
   mission: TacticalState,
 ): ObjectiveTarget | undefined {
   const spawner = wreckTarget(objective, mission);
-  return spawner === undefined || spawner.destroyed
-    ? undefined
-    : { id: spawner.id, pos: spawner.pos };
+  if (spawner === undefined || spawner.destroyed) {
+    return undefined;
+  }
+  const footprint = spawnerFootprintSize(spawner);
+  return {
+    id: spawner.id,
+    pos: spawner.pos,
+    ...(footprint > 1 ? { footprint } : {}),
+  };
 }
 
 /**
- * The target's tile while it stands (#1173): location only, never its
- * health.
+ * The target's middle tile while it stands (#1173): location only, never
+ * its health. A one-tile nest or pod is its own middle.
  *
  * @param objective - A wreck objective.
  * @param mission - The mission it belongs to.
@@ -135,7 +149,7 @@ export function wreckMarker(
   const spawner = wreckTarget(objective, mission);
   return spawner === undefined || spawner.destroyed || spawner.hp <= 0
     ? undefined
-    : spawner.pos;
+    : spawnerMiddleTile(spawner);
 }
 
 /**
@@ -149,5 +163,29 @@ export function wreckDestination(
   objective: WreckObjective,
   mission: TacticalState,
 ): ObjectiveDestination {
-  return { position: wreckTarget(objective, mission)?.pos };
+  const spawner = wreckTarget(objective, mission);
+  return {
+    position: spawner === undefined ? undefined : spawnerMiddleTile(spawner),
+  };
+}
+
+/**
+ * The middle tile of the square a spawner stands on: `pos` for a one-tile
+ * nest or pod, one step in on both axes for the 3×3 hive core.
+ *
+ * ```
+ *   size 3, anchor A     middle M
+ *     A . .
+ *     . M .
+ *     . . .
+ * ```
+ *
+ * @param spawner - The spawner.
+ * @returns The tile at the middle of its footprint, on its level.
+ */
+export function spawnerMiddleTile(
+  spawner: Pick<Spawner, "pos" | "variant">,
+): TileCoord {
+  const half = Math.floor(spawnerFootprintSize(spawner) / 2);
+  return { x: spawner.pos.x + half, y: spawner.pos.y, z: spawner.pos.z + half };
 }

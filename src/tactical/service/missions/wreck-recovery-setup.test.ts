@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { BUG_SPECIES } from "../../../bugs/data/species";
 import { MISSION_TYPES } from "../../../content/data/mission-types";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { ECONOMY_TUNING } from "../../../economy/data/economy-tuning";
@@ -29,6 +30,7 @@ import { createNewGame } from "../../../save/service/new-game-service";
 import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { GARRISON_TUNING } from "../../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import { UNIT_TUNING } from "../../data/unit-tuning";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
@@ -102,6 +104,8 @@ function setupDeps(): MissionSetupDeps {
     spawnTuning: SPAWN_TUNING,
     generator: GENERATOR_TUNING,
     civilian: CIVILIAN_TUNING,
+    hiveGuard: BUG_SPECIES["hive-guard"],
+    hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
   };
 }
 
@@ -216,6 +220,8 @@ describe("a wreck recovery started from the campaign", () => {
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
       civilian: CIVILIAN_TUNING,
+      hiveGuard: BUG_SPECIES["hive-guard"],
+      hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     };

@@ -9,6 +9,7 @@ import { jevSharedCapabilities } from "./jev-capabilities";
 import type { EquipmentCatalogue } from "../model/equipment";
 import { equipmentOf } from "../service/equipment-service";
 import { chargesLeft } from "../service/combat-service";
+import { spawnerFootprintTiles } from "../service/footprint-service";
 import { movePerAction } from "../service/movement-service";
 
 /** Build a physically filtered rules input. Never hand Jev the raw mission or its event log. */
@@ -85,7 +86,9 @@ export function jevPerception(
         ? { tdf: vision, bugs: NO_VISION }
         : { bugs: vision, tdf: NO_VISION },
     spawners: mission.spawners.filter((nest) =>
-      visible.has(index.keyOf(nest.pos)),
+      spawnerFootprintTiles(nest).some(
+        (tile) => index.inBounds(tile) && visible.has(index.keyOf(tile)),
+      ),
     ),
     effects: mission.effects.filter((effect) =>
       visible.has(index.keyOf(effect.tile)),

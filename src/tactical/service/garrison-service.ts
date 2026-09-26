@@ -13,6 +13,7 @@ import { passMaskFor } from "../model/unit";
 import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
 import { overwatchShotsOf } from "../model/weapon-profile";
 import type { MoveGraph } from "./movement-service";
+import { spawnerFootprintTiles } from "./footprint-service";
 import { buildMoveGraph, occupiedKeys } from "./movement-service";
 import { armTurret } from "./turret-service";
 import { turretUnit } from "./unit-factory";
@@ -133,7 +134,7 @@ export function garrisonCandidates(
   );
   const spawnerSites = mission.spawners
     .filter((spawner) => !spawner.destroyed && spawner.hp > 0)
-    .map((spawner) => spawner.pos);
+    .flatMap((spawner) => spawnerFootprintTiles(spawner));
   return mission.map.tiles.filter((tile) => {
     const key = graph.index.keyOf(tile);
     return (

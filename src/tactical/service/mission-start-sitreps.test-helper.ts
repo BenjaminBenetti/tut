@@ -30,6 +30,7 @@ import { COMBAT_TUNING } from "../data/combat-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { HAZARD_TUNING } from "../data/hazard-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { endTurn } from "../model/end-turn-command";
@@ -67,6 +68,8 @@ export function startDeps(): MissionStartDeps {
     garrison: GARRISON_TUNING,
     generator: GENERATOR_TUNING,
     civilian: CIVILIAN_TUNING,
+    hiveGuard: BUG_SPECIES["hive-guard"],
+    hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
     ids: new SequentialIdGenerator(),
     registries: createDefaultRegistries(),
   };

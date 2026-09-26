@@ -9,6 +9,7 @@ import type {
 } from "../../model/objective-presentation";
 import { CAPTURE_SPECIMEN_PRESENTATION } from "./capture-specimen-presentation";
 import { DEFEND_GENERATORS_PRESENTATION } from "./defend-generators-presentation";
+import { DESTROY_HIVE_CORE_PRESENTATION } from "./destroy-hive-core-presentation";
 import { DESTROY_POD_PRESENTATION } from "./destroy-pod-presentation";
 import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
 import { RESCUE_CIVILIANS_PRESENTATION } from "./rescue-civilians-presentation";
@@ -31,6 +32,7 @@ import { STRIP_WRECK_PRESENTATION } from "./strip-wreck-presentation";
  *   capture-specimen   ──► capture-specimen-presentation.ts
  *   rescue-civilians   ──► rescue-civilians-presentation.ts
  *   strip-wreck        ──► strip-wreck-presentation.ts
+ *   destroy-hive-core  ──► destroy-hive-core-presentation.ts
  * ```
  */
 export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
@@ -40,6 +42,7 @@ export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
   "capture-specimen": CAPTURE_SPECIMEN_PRESENTATION,
   "rescue-civilians": RESCUE_CIVILIANS_PRESENTATION,
   "strip-wreck": STRIP_WRECK_PRESENTATION,
+  "destroy-hive-core": DESTROY_HIVE_CORE_PRESENTATION,
 } satisfies { readonly [K in ObjectiveKind]: { readonly kind: K } };
 
 // ===========================================

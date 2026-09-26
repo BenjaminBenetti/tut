@@ -19,15 +19,19 @@ import type { ActDefinition } from "../model/act-definition";
  * ```
  *
  * `typeWeights` holds only the types that have shipped. The arc's other
- * director-drawn types (Hive Assault, Tunnel Sabotage, Alpha Hunt) add
- * their weights here when they land; the draw renormalises, so the
- * weights are the arc's percentages as written. Crash Site's and
- * Evacuation's weights apply only once the type has debuted (each offer
- * rule's `debut`: the third mission of Act I, after two have resolved)
- * and, for Evacuation, only while some detected city is at infestation
- * 25 or more; the director skips a type with no eligible site.
- * Defend Installation is trigger-driven (arc §5) and has no weight. The
- * finale draws no director offers: its missions are pinned story ones.
+ * director-drawn types (Tunnel Sabotage, Alpha Hunt) add their weights
+ * here when they land; the draw renormalises, so the weights are the
+ * arc's percentages as written. Crash Site's and Evacuation's weights
+ * apply only once the type has debuted (each offer rule's `debut`: the
+ * third mission of Act I, after two have resolved) and, for Evacuation,
+ * only while some detected city is at infestation 25 or more; the
+ * director skips a type with no eligible site. Defend Installation is
+ * trigger-driven (arc §5) and has no weight. Hive Assault has none
+ * either: its trigger pins an offer for every hive that stands
+ * (`hive-assault-trigger.ts`), so no hive is ever left over for the
+ * board, and the arc's "20% for non-pinned hives" row has nothing to
+ * draw. The finale draws no director offers: its missions are pinned
+ * story ones.
  */
 export const ACTS: Readonly<Record<ActId, ActDefinition>> = {
   "act-1": {

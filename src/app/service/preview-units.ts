@@ -1,5 +1,7 @@
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -206,6 +208,8 @@ export function previewMission(map: TacticalMap): TacticalState {
       spawnTuning: SPAWN_TUNING,
       generator: GENERATOR_TUNING,
       civilian: CIVILIAN_TUNING,
+      hiveGuard: BUG_SPECIES["hive-guard"],
+      hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
     },
   );
 }

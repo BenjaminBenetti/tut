@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { HookKinds } from "../../../mapgen/model/hook";
 import { PassMask } from "../../../mapgen/model/pass-mask";
+import { BUG_SPECIES } from "../../../bugs/data/species";
 import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
 import { DEFAULT_HATCH_RADIUS } from "../../model/tactical-state";
@@ -34,6 +36,8 @@ function deps(): MissionSetupDeps {
     spawnTuning: SPAWN_TUNING,
     generator: GENERATOR_TUNING,
     civilian: CIVILIAN_TUNING,
+    hiveGuard: BUG_SPECIES["hive-guard"],
+    hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
   };
 }
 

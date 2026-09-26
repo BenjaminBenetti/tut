@@ -55,6 +55,7 @@ import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import {
   DEFAULT_FOOTPRINT,
   footprintSizeOf,
+  spawnerFootprintSize,
 } from "../../tactical/service/footprint-service";
 import { authoredFootprint } from "./model-footprint";
 import { SPAWNER_MODELS } from "../data/spawner-models";
@@ -998,9 +999,18 @@ export class TacticalSceneBuilder
     ) {
       return;
     }
-    // A ripened spawner's earlier mesh goes only now its new one is here.
+    // A ripened or damaged spawner's earlier mesh goes only now its new
+    // one is here.
     this.dropSpawnerMesh(spawner.id);
-    const mesh = new UnitMesh(spawner.id, model);
+    // The 3×3 hive core stands centred on its footprint and its art is
+    // authored at 3×3 (#1179); every other spawner is one tile.
+    const mesh = new UnitMesh(
+      spawner.id,
+      model,
+      undefined,
+      spawnerFootprintSize(spawner),
+      authoredFootprint(modelId),
+    );
     // A spawner does not turn; north is as good a rest pose as any.
     mesh.setPose(spawner.pos, "n");
     this.spawnerMeshes.set(spawner.id, mesh);

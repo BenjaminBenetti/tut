@@ -59,3 +59,24 @@ export function hiveLevel(
   const age = day - hive.formedDay;
   return Math.max(0, Math.floor(age / tuning.difficultyStepDays));
 }
+
+/**
+ * Days from `day` until the hive gains its next level: 1 on the eve of a
+ * step, `difficultyStepDays` on the day of one. A day before
+ * `formedDay` counts as the day it formed. The offer card's "grows in
+ * N d" reads it.
+ *
+ * ```
+ *   daysToNextLevel = difficultyStepDays − (max(0, day − formedDay) mod difficultyStepDays)
+ *
+ *   formedDay 5, step 7:  day 5 ──► 7   day 11 ──► 1   day 12 ──► 7 (level 1)
+ * ```
+ */
+export function daysToNextHiveLevel(
+  hive: Hive,
+  day: number,
+  tuning: Pick<HiveTuning, "difficultyStepDays">,
+): number {
+  const age = Math.max(0, day - hive.formedDay);
+  return tuning.difficultyStepDays - (age % tuning.difficultyStepDays);
+}

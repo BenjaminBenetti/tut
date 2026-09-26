@@ -36,6 +36,7 @@ import {
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
@@ -175,6 +176,8 @@ function startedMission(seed: number, mapSeed: string): TacticalState {
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
       civilian: CIVILIAN_TUNING,
+      hiveGuard: BUG_SPECIES["hive-guard"],
+      hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

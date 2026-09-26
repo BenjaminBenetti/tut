@@ -5,23 +5,25 @@
 /**
  * Mission types the game ships (GDD §5.4). A closed union so the
  * `MISSION_TYPES` record in `content/data/mission-types` must define every
- * member; adding a type (M3: hive assault, rescue) is one new member here
- * plus one entry there, and the compiler flags any table keyed by this id
- * that forgets it. `defend-installation` (#1175) is the first M3 type:
- * waves of bugs against the generators of an installation the player
- * built. `crash-site` (campaign arc §6.3) is a spore pod come down near
- * a city, to be destroyed before it matures at the end of turn 8.
+ * member; adding a type (M3: rescue) is one new member here plus one
+ * entry there, and the compiler flags any table keyed by this id that
+ * forgets it. `defend-installation` (#1175) is the first M3 type: waves
+ * of bugs against the generators of an installation the player built.
+ * `crash-site` (campaign arc §6.3) is a spore pod come down near a city,
+ * to be destroyed before it matures at the end of turn 8.
  * `wreck-recovery` is the event offer a mech lost on a lost or abandoned
  * mission leaves behind (arc §6.6): strip its parts. `evacuation`
  * (campaign arc §6.4) is civilians trapped in an infested city, to be
- * freed and walked to the drop ship.
+ * freed and walked to the drop ship. `hive-assault` (campaign arc §6.5)
+ * is one pinned offer per hive, fought in a hive cavern.
  */
 export type MissionTypeId =
   | "infestation-clearance"
   | "defend-installation"
   | "crash-site"
   | "wreck-recovery"
-  | "evacuation";
+  | "evacuation"
+  | "hive-assault";
 
 /**
  * Every mission type id, in a fixed order. The order is the order the
@@ -34,4 +36,5 @@ export const MISSION_TYPE_IDS: readonly MissionTypeId[] = [
   "crash-site",
   "wreck-recovery",
   "evacuation",
+  "hive-assault",
 ];

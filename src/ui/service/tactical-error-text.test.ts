@@ -389,6 +389,7 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
       "capture-specimen": OBJECTIVE_PRESENTATION["capture-specimen"],
       "rescue-civilians": OBJECTIVE_PRESENTATION["rescue-civilians"],
       "strip-wreck": OBJECTIVE_PRESENTATION["strip-wreck"],
+      "destroy-hive-core": OBJECTIVE_PRESENTATION["destroy-hive-core"],
     };
     const names = namesFor(
       {

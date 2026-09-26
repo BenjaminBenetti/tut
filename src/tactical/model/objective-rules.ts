@@ -55,7 +55,13 @@ export type ObjectiveInteraction = (
 export interface ObjectiveTarget {
   /** The target's own id: a spawner's, a unit's, a hook entity's. */
   readonly id: string;
+  /** Its tile; the anchor (lowest `x` and `z`) when it covers several. */
   readonly pos: TileCoord;
+  /**
+   * Tiles per side it covers, anchored at `pos` (the 3×3 hive core).
+   * Absent means one tile. Reach is measured to its nearest tile.
+   */
+  readonly footprint?: number;
 }
 
 /**
@@ -90,6 +96,7 @@ export type ObjectiveResultFields = Partial<
     | "civiliansRescued"
     | "civiliansTotal"
     | "wreck"
+    | "hiveCoreDestroyed"
   >
 >;
 

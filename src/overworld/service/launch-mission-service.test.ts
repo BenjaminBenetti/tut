@@ -29,6 +29,7 @@ import type { MissionResolutionState } from "../model/mission-resolution-state";
 import type { MissionResolver } from "../model/mission-resolver";
 import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
+import { HIVE_TUNING } from "../data/hive-tuning";
 import { MISSION_TUNING } from "../data/mission-tuning";
 import { STORY_SPINE } from "../data/story-spine";
 import { CAMPAIGN_FLAG_SET } from "../model/campaign-flag-set-event";
@@ -238,6 +239,7 @@ function deps(
     techPoints: new TechPointTreasury(),
     consequences,
     missionTuning: MISSION_TUNING,
+    hiveTuning: HIVE_TUNING,
     story: { rules, spine: STORY_SPINE },
   };
 }

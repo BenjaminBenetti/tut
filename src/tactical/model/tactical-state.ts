@@ -99,6 +99,17 @@ export interface Spawner {
   /** True from a pod's maturing until its burst has been released. Absent reads as false. */
   readonly burstPending?: boolean;
   /**
+   * Hit points it started with, for a spawner whose health is shown or
+   * drawn against its whole (the hive core's tracker row and its damaged
+   * model). Absent on every spawner that never needed it.
+   */
+  readonly maxHp?: number;
+  /**
+   * Tech points its destruction pays (the Hive Assault's chamber nests,
+   * optional pressure with a bonus). Absent or zero pays nothing.
+   */
+  readonly bounty?: number;
+  /**
    * Bugs each of its hatches releases beyond the spawn tuning's
    * `hatchCount`: Hardened Clutches' one more (campaign arc §11).
    * Absent reads as 0, as every spawner saved before it does.
@@ -167,6 +178,25 @@ export interface DestroyPodObjective extends ObjectiveBase {
   readonly targetId: SpawnerId;
   /** Always set: a pod ripens on a clock. */
   readonly deadlineTurn: number;
+}
+
+/**
+ * Bring down the hive core and get out (campaign arc §6.5): the Hive
+ * Assault's one objective. The core is a 3×3 `hive-core` spawner, so
+ * charges, gunfire, blasts and fire all wear it down; `complete` is set
+ * the moment it falls, and the objective counts as done only once a
+ * unit is also aboard the drop ship.
+ *
+ * ```
+ *   core destroyed                       ──► complete flag set
+ *   complete flag and someone extracted  ──► objective done (won)
+ *   mission lost                         ──► failed
+ * ```
+ */
+export interface DestroyHiveCoreObjective extends ObjectiveBase {
+  readonly kind: "destroy-hive-core";
+  /** The hive core (a `hive-core` spawner) this objective tracks. */
+  readonly targetId: SpawnerId;
 }
 
 /**
@@ -271,10 +301,10 @@ export interface StripWreckObjective extends ObjectiveBase {
 /**
  * What the player must achieve: wreck a spawner, hold the generators
  * (#1175), wreck a spore pod before it matures, bring a specimen home,
- * get the civilians out, or strip a lost mech's wreck (#1179, campaign
- * arc §6.3, §6.4, §6.6, §6.9). Closed: a new kind adds its interface
- * here and its rules to `OBJECTIVE_RULES`, which the compiler then
- * insists on (ADR 0013 §2.3).
+ * get the civilians out, strip a lost mech's wreck, or bring down a hive
+ * core and extract (#1179, campaign arc §6.3, §6.4, §6.5, §6.6, §6.9).
+ * Closed: a new kind adds its interface here and its rules to
+ * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
  */
 export type Objective =
   | DestroySpawnerObjective
@@ -282,7 +312,8 @@ export type Objective =
   | DestroyPodObjective
   | CaptureSpecimenObjective
   | RescueCiviliansObjective
-  | StripWreckObjective;
+  | StripWreckObjective
+  | DestroyHiveCoreObjective;
 
 /**
  * Swarm Tide's hold on the edge waves (campaign arc §11): each wave is

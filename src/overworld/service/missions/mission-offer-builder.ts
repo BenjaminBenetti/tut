@@ -162,6 +162,56 @@ export function buildOfferAtDifficulty(
   };
 }
 
+/**
+ * `mission` re-priced at `difficulty`: everything `buildOfferAtDifficulty`
+ * derives from the difficulty is derived again — the credit and
+ * tech-point rewards, the map size, and a carcass's worth when the offer
+ * rolled one — and everything else is kept, the id, seed, created day,
+ * expiry and whether a carcass was rolled among it. For a rule's
+ * `refresh`, which re-prices an offer already on the board. Pure; draws
+ * nothing. Returns `mission` itself when `difficulty` is its own.
+ *
+ * ```
+ *   difficulty ──► rewards    credits = d × rewardPerDifficulty; TP = base + d × perDifficulty
+ *              ──► map size   mapSizeFor(d, tuning.difficulty[type])
+ *              ──► carcass    basePoints + d × pointsPerDifficulty, only if one was rolled
+ * ```
+ */
+export function repriceOffer(
+  mission: Mission,
+  difficulty: number,
+  ctx: Pick<MissionOfferContext, "tuning" | "missionTypes">,
+): Mission {
+  if (difficulty === mission.difficulty) {
+    return mission;
+  }
+  const type = ctx.missionTypes[mission.typeId];
+  const carcass = ctx.tuning.techCarcass;
+  const { techCarcass } = mission.mapParams;
+  return {
+    ...mission,
+    difficulty,
+    mapParams: {
+      ...mission.mapParams,
+      size: mapSizeFor(difficulty, ctx.tuning.difficulty[mission.typeId]),
+      ...(techCarcass === undefined
+        ? {}
+        : {
+            techCarcass: {
+              ...techCarcass,
+              techPoints:
+                carcass.basePoints + carcass.pointsPerDifficulty * difficulty,
+            },
+          }),
+    },
+    rewards: {
+      credits: difficulty * type.rewardPerDifficulty,
+      techPoints:
+        type.techRewardBase + difficulty * type.techRewardPerDifficulty,
+    },
+  };
+}
+
 /** The cities that already hold an offer; a city holds at most one. */
 export function citiesWithOffers(state: OverworldState): Set<CityId> {
   return new Set(state.missions.map((mission) => mission.cityId));

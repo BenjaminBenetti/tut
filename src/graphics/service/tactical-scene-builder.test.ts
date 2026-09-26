@@ -742,6 +742,48 @@ describe("TacticalSceneBuilder spawners", () => {
     expect(drawn(builder)).toEqual(["box:bug.spore-pod"]);
   });
 
+  // ===========================================
+  // Hive core (#1179)
+  // ===========================================
+
+  /** A standing 3×3 hive core anchored at the tile, with `hp` of 90. */
+  function core(id: string, x: number, z: number, hp = 90): Spawner {
+    return {
+      ...spawner(id, x, z),
+      variant: "hive-core",
+      hp,
+      maxHp: 90,
+      timer: 0,
+    };
+  }
+
+  it("stands the hive core in the middle of its 3×3 footprint", async () => {
+    const { builder, models } = build();
+    await builder.updateSpawners([core("c1", 1, 1), spawner("s1", 5, 5)]);
+
+    expect(models.loads).toEqual(["bug.hive-core", SPAWNER_MODEL_ID]);
+    const middle = builder.spawnerWorldPosition("c1");
+    expect(middle?.x).toBeCloseTo(2.5);
+    expect(middle?.z).toBeCloseTo(2.5);
+    // A one-tile spawner still stands on its own tile's centre.
+    expect(builder.spawnerWorldPosition("s1")?.x).toBeCloseTo(5.5);
+  });
+
+  it("swaps the broken core in once it is below half its hit points", async () => {
+    const { builder, models } = build();
+    await builder.updateSpawners([core("c1", 1, 1)]);
+    await builder.updateSpawners([core("c1", 1, 1, 45)]);
+    expect(drawn(builder)).toEqual(["box:bug.hive-core"]);
+
+    await builder.updateSpawners([core("c1", 1, 1, 44)]);
+
+    expect(drawn(builder)).toEqual(["box:bug.hive-core-damaged"]);
+    expect(models.loads).toEqual(["bug.hive-core", "bug.hive-core-damaged"]);
+    // Further damage keeps the broken model: no reload.
+    await builder.updateSpawners([core("c1", 1, 1, 10)]);
+    expect(models.loads).toHaveLength(2);
+  });
+
   it("discards a ripe load the pod no longer wants", async () => {
     const { builder, models } = build();
     await builder.updateSpawners([pod("p1", 2, 3)]);

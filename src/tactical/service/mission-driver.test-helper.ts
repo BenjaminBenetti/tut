@@ -22,6 +22,7 @@ import { passMaskFor } from "../model/unit";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { findAttackTarget } from "./attack-target-service";
 import { attackDistance, withinReach } from "./weapon-reach-service";
+import { nearestFootprintTile } from "./footprint-service";
 import type { MoveGraph, TileKey } from "./movement-service";
 import {
   buildMoveGraph,
@@ -145,14 +146,13 @@ export function positionsWithin(
     if (!occupiable(tile, unitClass)) {
       continue;
     }
-    if (!withinReach(range, tile, target.pos, COMBAT_TUNING)) {
+    // The target's nearest tile: any face of a brute or the hive core.
+    const aim = aimTile(target, tile);
+    if (!withinReach(range, tile, aim, COMBAT_TUNING)) {
       continue;
     }
-    const distance = attackDistance(tile, target.pos);
-    if (
-      requireSight &&
-      !hasLineOfSight(mission.map, tile, target.pos, graph.index)
-    ) {
+    const distance = attackDistance(tile, aim);
+    if (requireSight && !hasLineOfSight(mission.map, tile, aim, graph.index)) {
       continue;
     }
     found.push({ tile: { x: tile.x, y: tile.y, z: tile.z }, distance });
@@ -292,7 +292,8 @@ function chargeAction(
     return undefined;
   }
   if (
-    manhattanDistance(unit.pos, target.pos) <= tuning.interactRange &&
+    manhattanDistance(unit.pos, aimTile(target, unit.pos)) <=
+      tuning.interactRange &&
     unit.ap >= tuning.interactApCost
   ) {
     return { kind: "interact", command: interact(unit.id, objective.id) };
@@ -327,9 +328,10 @@ function fireAction(
   // a mech's guns is a player decision, not one this harness makes.
   const weapon = template?.weapons[0];
   const range = weapon?.profile.range ?? 0;
+  const aim = aimTile(target, unit.pos);
   const inRange =
-    withinReach(range, unit.pos, target.pos, COMBAT_TUNING) &&
-    hasLineOfSight(mission.map, unit.pos, target.pos, graph.index);
+    withinReach(range, unit.pos, aim, COMBAT_TUNING) &&
+    hasLineOfSight(mission.map, unit.pos, aim, graph.index);
   if (inRange) {
     const left =
       weapon?.charges === undefined
@@ -450,6 +452,15 @@ function costsFrom(
     }
   }
   return costs;
+}
+
+/**
+ * The tile of `target` nearest `from`: its own tile for a one-tile
+ * target, the nearest tile of its footprint for a brute or the 3×3 hive
+ * core, which the rules measure reach to the same way.
+ */
+function aimTile(target: AttackTarget, from: TileCoord): TileCoord {
+  return nearestFootprintTile(target.pos, target.footprint ?? 1, from);
 }
 
 /** Whether a class may stand on a tile. */

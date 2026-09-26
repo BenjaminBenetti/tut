@@ -1975,6 +1975,22 @@ export const MODEL_MANIFEST = {
     sockets: ["socket_hatch"],
     quality: "final",
   },
+  "bug.hive-core": {
+    category: "props",
+    path: "assets/models/props/bug-hive-core.glb",
+    footprint: { w: 3, d: 3 },
+    height: 2.5,
+    sockets: [],
+    quality: "final",
+  },
+  "bug.hive-core-damaged": {
+    category: "props",
+    path: "assets/models/props/bug-hive-core-damaged.glb",
+    footprint: { w: 3, d: 3 },
+    height: 2.5,
+    sockets: [],
+    quality: "final",
+  },
   "bug.tech-carcass": {
     category: "bugs",
     path: "assets/models/bugs/bug-tech-carcass.glb",

@@ -6,6 +6,7 @@ import type { Connector, ConnectorKind } from "../../mapgen/model/connector";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { passMaskFor } from "../model/unit";
+import { spawnerFootprintSize } from "../service/footprint-service";
 import type {
   JevMapLayer,
   JevMapMarker,
@@ -55,7 +56,12 @@ export function jevNavigation(
     })),
     ...view.spawners
       .filter((nest) => !nest.destroyed && nest.hp > 0)
-      .map((nest) => ({ symbol: "n", id: nest.id, position: nest.pos })),
+      .map((nest) => ({
+        symbol: "n",
+        id: nest.id,
+        position: nest.pos,
+        footprint: spawnerFootprintSize(nest),
+      })),
     ...objectives,
     ...view.units
       .filter((unit) => unit.hp > 0 && unit.id !== actor.id)

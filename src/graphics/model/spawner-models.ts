@@ -15,11 +15,15 @@ import type { SpawnerVariant } from "../../tactical/model/spawner-variant";
  *   ripe       swapped in while the objective tracking it is in its last
  *              turns before a deadline (the spore pod split open); a
  *              variant without one stays as it is
+ *   damaged    swapped in once it is below half its full hit points (the
+ *              hive core's broken ribs and torn membrane, #1179); only a
+ *              spawner that knows its full hit points (`maxHp`) can be
  * ```
  */
 export interface SpawnerModels {
   readonly standing: ModelAssetId;
   readonly ripe?: ModelAssetId;
+  readonly damaged?: ModelAssetId;
 }
 
 /** Every variant's models. */

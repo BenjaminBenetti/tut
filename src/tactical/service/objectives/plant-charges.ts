@@ -1,6 +1,7 @@
 import { err, ok } from "../../../core/model/result";
 import { manhattanDistance } from "../../../core/service/grid-math";
 import type { ObjectiveInteraction } from "../../model/objective-rules";
+import { nearestSpawnerTile } from "../footprint-service";
 import { damageSpawner } from "../spawner-damage-service";
 import { isWreckObjective, wreckTarget } from "./wreck-objectives";
 
@@ -17,7 +18,7 @@ import { isWreckObjective, wreckTarget } from "./wreck-objectives";
  * ```
  *   not a wreck objective ──► objective-not-interactive
  *   target gone (wrecked, matured) ──► objective-target-missing
- *   manhattan(unit, target) > interactRange ──► objective-out-of-reach
+ *   manhattan(unit, nearest target tile) > interactRange ──► objective-out-of-reach
  *          │
  *          ▼
  *   target.hp − chargeDamage, SpawnerDamaged
@@ -44,7 +45,12 @@ export const plantCharges: ObjectiveInteraction = (
       targetId: objective.targetId,
     });
   }
-  const distance = manhattanDistance(unit.pos, spawner.pos);
+  // The nearest tile of the target, so any face of the 3×3 hive core
+  // takes charges; a nest or a pod is its own single tile.
+  const distance = manhattanDistance(
+    unit.pos,
+    nearestSpawnerTile(spawner, unit.pos),
+  );
   if (distance > tuning.interactRange) {
     return err({
       kind: "objective-out-of-reach",

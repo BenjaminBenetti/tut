@@ -8,6 +8,7 @@ import type { Objective } from "../../model/tactical-state";
 import { SHIPPED_EQUIPMENT } from "../../repository/equipment-catalogue";
 import { createCaptureSpecimenObjective } from "./capture-specimen-objective";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
+import { DESTROY_HIVE_CORE_OBJECTIVE } from "./destroy-hive-core-objective";
 import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
 import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
@@ -32,6 +33,7 @@ import { STRIP_WRECK_OBJECTIVE } from "./strip-wreck-objective";
  *                          equipment, to tell a net from the rest)
  *   rescue-civilians   ──► rescue-civilians-objective.ts
  *   strip-wreck        ──► strip-wreck-objective.ts
+ *   destroy-hive-core  ──► destroy-hive-core-objective.ts
  * ```
  *
  * Typed by `ObjectiveRulesTable`, so a kind added to `Objective` without
@@ -46,6 +48,7 @@ export const OBJECTIVE_RULES: ObjectiveRulesTable = {
   "capture-specimen": createCaptureSpecimenObjective(SHIPPED_EQUIPMENT),
   "rescue-civilians": RESCUE_CIVILIANS_OBJECTIVE,
   "strip-wreck": STRIP_WRECK_OBJECTIVE,
+  "destroy-hive-core": DESTROY_HIVE_CORE_OBJECTIVE,
 };
 
 // ===========================================

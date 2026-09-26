@@ -5,6 +5,7 @@ import { MISSION_TYPES } from "../../../content/data/mission-types";
 import { Mulberry32Rng } from "../../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { ACTS } from "../../data/acts";
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import { STORY_SPINE } from "../../data/story-spine";
 import { ACT_ADVANCED } from "../../model/act-advanced-event";
@@ -83,6 +84,7 @@ function direct(
     acts: ACTS,
     decorators: [],
     pinTriggers: [createStoryPinTrigger(rules)],
+    hiveTuning: HIVE_TUNING,
   });
 }
 

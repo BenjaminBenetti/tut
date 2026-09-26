@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MISSION_TYPES } from "../../../content/data/mission-types";
 import { STARTER_LOADOUT } from "../../../roster/data/starter-roster";
 import { createMech } from "../../../roster/service/mech-factory";
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import { isMissionExpired } from "../../model/mission";
 import type { OverworldState } from "../../model/overworld-state";
@@ -171,7 +172,7 @@ describe("WRECK_RECOVERY_TRIGGER", () => {
       { ...onBoard, day: 8 },
       {
         consequences: MISSION_CONSEQUENCE_RULES,
-        context: { tuning: MISSION_TUNING },
+        context: { tuning: MISSION_TUNING, hive: HIVE_TUNING },
       },
     );
     expect(expired.state.missions).toEqual([]);

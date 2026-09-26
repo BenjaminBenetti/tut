@@ -15,6 +15,7 @@ import type { City } from "../model/city";
 import type { CommandDispatcher } from "../model/command-dispatcher";
 import type { CommandHandler } from "../model/command-handler";
 import type { Deployment } from "../model/deployment";
+import type { HiveTuning } from "../model/hive-tuning";
 import { deploymentSize, MAX_DEPLOYED_UNITS } from "../model/deployment";
 import type { LaunchMissionCommand } from "../model/launch-mission-command";
 import { LAUNCH_MISSION } from "../model/launch-mission-command";
@@ -53,6 +54,8 @@ export interface LaunchMissionDeps {
   readonly consequences: MissionConsequenceRules;
   /** Handed to the consequence rules; the clearance's mop-up threshold lives here. */
   readonly missionTuning: MissionTuning;
+  /** Handed to the consequence rules; a won Hive Assault liberates with it. */
+  readonly hiveTuning: HiveTuning;
   /**
    * The story missions built so far and each act's gate: a played story
    * offer is resolved by the story service after its type's consequence
@@ -234,7 +237,10 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
     const day = state.overworld.day;
 
     const rule = deps.consequences[mission.typeId];
-    const consequenceCtx = { tuning: deps.missionTuning };
+    const consequenceCtx = {
+      tuning: deps.missionTuning,
+      hive: deps.hiveTuning,
+    };
     const resolved = deps.resolver.resolve(
       mission,
       deployment,

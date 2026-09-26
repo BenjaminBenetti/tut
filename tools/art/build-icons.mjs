@@ -99,6 +99,9 @@ const ICONS = {
   ammo: '<path d="M9 3 H15 V7 H9 Z"/><path d="M7 7 H17 V21 H7 Z"/><path d="M10 11 H14 M10 15 H14"/>',
   // A crash site (campaign arc §6.3): a spore pod falling into its crater.
   pod: '<path d="M2 21 H6 L8 18 H16 L18 21 H22"/><circle cx="14" cy="11" r="3.5"/><path d="M3 2 L11 8.5 M7 2 L10.5 5 M3 6 L6.5 9"/>',
+  // An evacuation (campaign arc §6.4): a civilian walking out, an arrow to the drop ship.
+  evacuate:
+    '<circle cx="7" cy="4" r="2"/><path d="M7 7 V14 M7 14 L4 21 M7 14 L10 21 M3 10 L7 9 L11 11"/><path d="M14 13 H22 M19 10 L22 13 L19 16"/>',
   // The development tools' toggle (#1136): a beetle, seen from above.
   bug: '<circle cx="12" cy="14" r="6"/><circle cx="12" cy="6" r="2.5"/><path d="M12 8 V20"/><path d="M6 12 L2 9 M6 16 H2 M6 19 L3 22 M18 12 L22 9 M18 16 H22 M18 19 L21 22"/><path d="M10 4 L9 2 M14 4 L15 2"/>',
 };

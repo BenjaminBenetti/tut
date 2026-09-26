@@ -5,6 +5,7 @@ import {
   formatTechPoints,
   formatWhole,
 } from "../service/format";
+import { stipendModifierSummary } from "../service/stipend-modifier-text";
 import { threatTone } from "../service/threat-band";
 import { iconGlyph } from "./icon-glyph";
 
@@ -38,9 +39,12 @@ export interface TopBarViewHandlers {
  * the left, the campaign's navigation and Advance Day on the right.
  * Built once in `mount`; `update` rewrites only the text and colour
  * band of the values that can change, so a tick never rebuilds the bar.
+ * While the stipend is scaled (an evacuation's +50% or −10%, an event's
+ * window) a small badge beside the credits gives the net change and the
+ * days to its next change; it is hidden otherwise.
  *
  * ```
- *   ┌ DAY 4 │ ¢5,120 │ TECH 42 TP │ THREAT 42 ▮warn ── status ── [Roster] [Tech] [Main menu] [ADVANCE DAY] ┐
+ *   ┌ DAY 4 │ ¢5,120 ▮+50% · 10 d │ TECH 42 TP │ THREAT 42 ▮warn ── status ── [Roster] [Tech] [Main menu] [ADVANCE DAY] ┐
  * ```
  */
 export class TopBarView {
@@ -55,6 +59,9 @@ export class TopBarView {
   private techPoints: HTMLElement | undefined;
   private threat: HTMLElement | undefined;
   private threatBadge: HTMLElement | undefined;
+  private stipendBadge: HTMLElement | undefined;
+  private stipendPercent: HTMLElement | undefined;
+  private stipendDays: HTMLElement | undefined;
   private outcome: HTMLElement | undefined;
   private status: HTMLElement | undefined;
   private advance: HTMLButtonElement | undefined;
@@ -83,6 +90,15 @@ export class TopBarView {
 
     const day = this.createStat(doc, "Day", "day", "day");
     const credits = this.createStat(doc, "Credits", "credits", "credits");
+    const stipend = doc.createElement("span");
+    stipend.className = "tut-badge";
+    stipend.dataset.field = "stipend-modifier";
+    stipend.hidden = true;
+    const stipendPercent = doc.createElement("span");
+    const stipendDays = doc.createElement("span");
+    stipendDays.className = "tut-topbar__stipend-days";
+    stipend.append(stipendPercent, stipendDays);
+    credits.stat.appendChild(stipend);
     const techPoints = this.createStat(doc, "Tech", "techPoints", "ability");
     const threat = this.createStat(doc, "Threat", "threat", "threat");
     const badge = doc.createElement("span");
@@ -154,6 +170,9 @@ export class TopBarView {
     this.techPoints = techPoints.value;
     this.threat = threat.value;
     this.threatBadge = badge;
+    this.stipendBadge = stipend;
+    this.stipendPercent = stipendPercent;
+    this.stipendDays = stipendDays;
     this.outcome = outcome;
     this.status = status;
     this.advance = advance;
@@ -183,6 +202,7 @@ export class TopBarView {
       this.techPoints.textContent = "—";
       this.threat.textContent = "—";
       this.threatBadge.hidden = true;
+      this.setStipend(undefined);
       this.setOutcome(undefined);
       this.setAdvanceEnabled(false);
       return;
@@ -190,6 +210,11 @@ export class TopBarView {
     const { overworld, economy } = state;
     this.setText(this.day, formatWhole(overworld.day));
     this.setText(this.credits, formatCredits(economy.credits));
+    // An ended campaign draws no more stipends, and its outcome badge
+    // needs the room at 800 px.
+    this.setStipend(
+      overworld.outcome === undefined ? overworld.stipendModifiers : undefined,
+    );
     this.setText(this.techPoints, formatTechPoints(economy.techPoints));
     this.setText(this.threat, formatWhole(overworld.threat));
     const tone = threatTone(overworld.threat);
@@ -237,6 +262,9 @@ export class TopBarView {
     this.techPoints = undefined;
     this.threat = undefined;
     this.threatBadge = undefined;
+    this.stipendBadge = undefined;
+    this.stipendPercent = undefined;
+    this.stipendDays = undefined;
     this.outcome = undefined;
     this.status = undefined;
     this.advance = undefined;
@@ -301,6 +329,32 @@ export class TopBarView {
     if (element.textContent !== text) {
       element.textContent = text;
     }
+  }
+
+  /**
+   * Shows the stipend badge for the active modifiers, toned green while
+   * the stipend is up and amber while it is down, with each modifier in
+   * its tooltip; hides it when there are none. The days sit in their own
+   * span so a narrow bar can drop them and keep the percentage.
+   */
+  private setStipend(
+    modifiers: GameState["overworld"]["stipendModifiers"],
+  ): void {
+    if (!this.stipendBadge || !this.stipendPercent || !this.stipendDays) {
+      return;
+    }
+    const summary = stipendModifierSummary(modifiers);
+    if (summary === undefined) {
+      this.stipendBadge.hidden = true;
+      delete this.stipendBadge.dataset.tone;
+      return;
+    }
+    this.setText(this.stipendPercent, summary.percent);
+    this.setText(this.stipendDays, summary.days);
+    this.stipendBadge.className = `tut-badge tut-badge--${summary.tone}`;
+    this.stipendBadge.dataset.tone = summary.tone;
+    this.stipendBadge.title = summary.title;
+    this.stipendBadge.hidden = false;
   }
 
   /** Shows the outcome badge for an ended campaign, or hides it. */

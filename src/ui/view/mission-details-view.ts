@@ -113,6 +113,10 @@ interface Slot {
  * Above the grid sit the offer's sitreps, one tag row each, and only
  * when it carries any (campaign arc §11).
  *
+ * The Ignore penalty row shows only when ignoring the offer costs the
+ * city infestation; a type whose cost lies elsewhere (an evacuation's
+ * stipend cut) freezes a penalty of 0 and says so in its own rows.
+ *
  * ```
  *   Briefing · <story title, on a story mission>
  *   description (the story's, else the type's)
@@ -142,6 +146,8 @@ export class MissionDetailsView {
   private readonly typeSlots = new Map<string, Slot>();
   /** The rows story missions add, keyed by their field. */
   private readonly storySlots = new Map<string, Slot>();
+  /** The Ignore penalty row, hidden when the offer's penalty is 0. */
+  private penaltySlot: Slot | undefined;
   private shown: MissionId | undefined;
   private onPlan: (() => void) | undefined;
 
@@ -196,7 +202,11 @@ export class MissionDetailsView {
       this.typeSlots.set(field, appendSlot(grid, field, label));
     }
     for (const field of TAIL_FIELDS) {
-      this.values.set(field, appendSlot(grid, field, LABELS[field]).value);
+      const slot = appendSlot(grid, field, LABELS[field]);
+      this.values.set(field, slot.value);
+      if (field === "penalty") {
+        this.penaltySlot = slot;
+      }
     }
 
     const plan = doc.createElement("button");
@@ -256,6 +266,11 @@ export class MissionDetailsView {
         element.textContent = values[field];
       }
     }
+    if (this.penaltySlot) {
+      const noPenalty = mission.ignorePenalty === 0;
+      this.penaltySlot.term.hidden = noPenalty;
+      this.penaltySlot.value.hidden = noPenalty;
+    }
     fillRows(
       this.storySlots,
       storyBriefingRowsOf(mission, { state }, this.stories),
@@ -293,6 +308,7 @@ export class MissionDetailsView {
     this.values.clear();
     this.typeSlots.clear();
     this.storySlots.clear();
+    this.penaltySlot = undefined;
     this.shown = undefined;
     this.onPlan = undefined;
   }

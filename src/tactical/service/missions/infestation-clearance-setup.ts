@@ -67,8 +67,9 @@ export function placeEggSpawners(
 /**
  * Stands one egg spawner on every egg-spawner hook, appended to the
  * mission's spawners, with no objective to destroy them: the nests are
- * the threat, not the job. A wreck recovery's bugs come from these
- * (arc §6.6); the clearance adds its objectives on top.
+ * the threat, not the job. A wreck recovery's (arc §6.6) and an
+ * evacuation's (arc §6.4) bugs come from these; the clearance adds its
+ * objectives on top.
  *
  * ```
  *   map.hooks.objectives (egg-spawner), in hook order

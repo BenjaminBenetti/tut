@@ -1,6 +1,7 @@
 import type { MissionSetupRules } from "../../model/mission-setup-rule";
 import { CRASH_SITE_SETUP } from "./crash-site-setup";
 import { DEFEND_INSTALLATION_SETUP } from "./defend-installation-setup";
+import { EVACUATION_SETUP } from "./evacuation-setup";
 import { INFESTATION_CLEARANCE_SETUP } from "./infestation-clearance-setup";
 import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
 
@@ -18,6 +19,7 @@ import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
  *   defend-installation    ──► defend-installation-setup.ts     generators + defend-generators, totalWaves
  *   crash-site             ──► crash-site-setup.ts              spore pod + destroy-pod (turn 8), totalWaves
  *   wreck-recovery         ──► wreck-recovery-setup.ts          spawners (no objective) + wreck + strip-wreck
+ *   evacuation             ──► evacuation-setup.ts              nests (no objective) + civilians + rescue-civilians
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -30,4 +32,5 @@ export const MISSION_SETUP_RULES: MissionSetupRules = {
   "defend-installation": DEFEND_INSTALLATION_SETUP,
   "crash-site": CRASH_SITE_SETUP,
   "wreck-recovery": WRECK_RECOVERY_SETUP,
+  evacuation: EVACUATION_SETUP,
 };

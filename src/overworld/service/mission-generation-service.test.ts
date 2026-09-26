@@ -148,7 +148,7 @@ function fakeOffer(
 /**
  * Every mission type drawn by the board, through `fakeOffer` unless
  * given. The type-draw tests weigh only clearance and defence, so the
- * crash site's fake is never drawn there.
+ * crash site's and the evacuation's fakes are never drawn there.
  */
 function bothDrawn(
   defend: MissionOfferRule = fakeOffer("defend-installation"),
@@ -158,6 +158,7 @@ function bothDrawn(
     "defend-installation": defend,
     "crash-site": fakeOffer("crash-site"),
     "wreck-recovery": MISSION_OFFER_RULES["wreck-recovery"],
+    evacuation: fakeOffer("evacuation"),
   };
 }
 
@@ -172,6 +173,7 @@ function firstDraws(
     "defend-installation": 0,
     "crash-site": 0,
     "wreck-recovery": 0,
+    evacuation: 0,
   };
   const acts = actsWith({ boardCap: 1, typeWeights });
   for (let seed = 1; seed <= runs; seed += 1) {
@@ -414,6 +416,7 @@ describe("generateMissions — type draw", () => {
       "defend-installation": 0,
       "crash-site": 0,
       "wreck-recovery": 0,
+      evacuation: 0,
     });
   });
 
@@ -433,6 +436,7 @@ describe("generateMissions — type draw", () => {
       "defend-installation": 0,
       "crash-site": 0,
       "wreck-recovery": 0,
+      evacuation: 0,
     });
   });
 
@@ -444,6 +448,7 @@ describe("generateMissions — type draw", () => {
       "defend-installation": 0,
       "crash-site": 0,
       "wreck-recovery": 0,
+      evacuation: 0,
     });
   });
 
@@ -667,12 +672,18 @@ describe("generateMissions — a pin on an occupied city (#1179)", () => {
     const ctx = seen[0];
     expect(ctx?.displaceable(missionAt("c0", 30))).toBe(true);
     expect(ctx?.displaceable(missionAt("c0", 30, 10, "crash-site"))).toBe(true);
+    // An evacuation is an ordinary, board-drawn offer (arc §6.4).
+    expect(ctx?.displaceable(missionAt("c0", 30, 0, "evacuation"))).toBe(true);
     expect(ctx?.displaceable({ ...missionAt("c0", 30), pinned: true })).toBe(
       false,
     );
     expect(
       ctx?.displaceable(missionAt("c0", 30, 10, "defend-installation")),
     ).toBe(false);
+    // A wreck recovery is triggered, never drawn: its one attempt stays.
+    expect(ctx?.displaceable(missionAt("c0", 30, 0, "wreck-recovery"))).toBe(
+      false,
+    );
   });
 
   it("refuses a pin on a city whose offer is pinned or triggered", () => {
@@ -729,6 +740,7 @@ describe("generateMissions — onOffered (arc §6.3)", () => {
       ),
       "crash-site": spy(MISSION_CONSEQUENCE_RULES["crash-site"]),
       "wreck-recovery": spy(MISSION_CONSEQUENCE_RULES["wreck-recovery"]),
+      evacuation: spy(MISSION_CONSEQUENCE_RULES.evacuation),
     };
   }
 

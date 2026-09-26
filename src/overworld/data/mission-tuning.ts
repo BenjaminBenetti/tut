@@ -39,6 +39,15 @@ import type { MissionTuning } from "../model/mission-tuning";
  *   its map stays small longer: medium from 5, large from 9. Difficulty
  *   weighs the city as the clearance does. A wreck whose city is taken
  *   waits up to 3 days for its offer, as long as the offer itself lasts.
+ * - An evacuation (arc §6.4) is offered to a detected city at 25
+ *   infestation or more, larger cities more often: a city's weight is
+ *   one plus the decades of its population over 100 000, so a town of
+ *   80 000 weighs 1, a city of a million 2 and Tokyo about 3.6. It
+ *   takes its difficulty like a clearance, on a medium map from 3 (the
+ *   groups want buildings to shelter in). It traps 3 groups at d1–3, 4
+ *   at d4–6 and 5 from d7, pays 100 credits for each one brought home,
+ *   and a saved city lifts the stipend by half for ten days; a lost or
+ *   ignored one cuts it by a tenth for ten days.
  */
 export const MISSION_TUNING: MissionTuning = {
   difficulty: {
@@ -65,6 +74,12 @@ export const MISSION_TUNING: MissionTuning = {
       threatWeight: 0.3,
       mediumFromDifficulty: 5,
       largeFromDifficulty: 9,
+    },
+    evacuation: {
+      infestationWeight: 0.7,
+      threatWeight: 0.3,
+      mediumFromDifficulty: 3,
+      largeFromDifficulty: 8,
     },
   },
   techCarcass: {
@@ -103,5 +118,15 @@ export const MISSION_TUNING: MissionTuning = {
   wreck: {
     offerWindowDays: 3,
     stripTurns: 2,
+  },
+  evacuation: {
+    minInfestation: 25,
+    populationWeightUnit: 100_000,
+    minGroups: 3,
+    maxGroups: 5,
+    difficultyPerGroup: 3,
+    creditsPerGroup: 100,
+    savedStipend: { factor: 1.5, days: 10 },
+    lostStipend: { factor: 0.9, days: 10 },
   },
 };

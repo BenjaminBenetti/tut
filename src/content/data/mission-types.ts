@@ -152,6 +152,44 @@ export const WRECK_RECOVERY: MissionType = {
 };
 
 /**
+ * Civilians trapped in an infested city (campaign arc §6.4): free the
+ * groups holed up in its buildings, walk at least half of them to the
+ * drop ship, and extract. The map is a settlement, and the civilian
+ * hooks, one per group, come from the offer (`Mission.evacuation`) by
+ * way of the map rule, so the hook list here names only the rest: a
+ * deploy zone, a modest egg-spawner count (one, growing to two at
+ * difficulty 6; the groups the bugs hunt are the pressure, not the
+ * nests), two edge spawn zones and the extraction.
+ *
+ * Numbers against the clearance: the same credits per difficulty, of
+ * which the per-group extra and the stipend bonus are the larger part
+ * (the overworld's evacuation tuning pays them); less tech, since the
+ * squad escorts rather than kills; a shorter expiry, since the people
+ * are trapped now. No infestation penalty: an evacuation left alone
+ * costs the stipend (−10% for 10 days, arc §6.4), which the
+ * consequence rule applies, not the city.
+ */
+export const EVACUATION: MissionType = {
+  id: "evacuation",
+  name: "Evacuation",
+  description:
+    "Civilians are trapped in an infested city. Free the groups holed up in its buildings, walk them to the drop ship, and extract.",
+  difficultyBand: { min: 1, max: 10 },
+  rewardPerDifficulty: 300,
+  techRewardBase: 5,
+  techRewardPerDifficulty: 2,
+  expiryDays: 4,
+  ignorePenalty: 0,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "egg-spawner", count: 1, countPerDifficulty: 0.2 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "medium",
+};
+
+/**
  * Every mission type keyed by id. Typed as a record over the closed
  * `MissionTypeId` union so a new id without a definition (or a definition
  * whose key and `id` disagree, see the data test) fails at compile time
@@ -162,4 +200,5 @@ export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   "defend-installation": DEFEND_INSTALLATION,
   "crash-site": CRASH_SITE,
   "wreck-recovery": WRECK_RECOVERY,
+  evacuation: EVACUATION,
 };

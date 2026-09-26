@@ -272,4 +272,88 @@ describe("TopBarView", () => {
     expect(button("advance-day").disabled).toBe(false);
     expect(button("advance-day").title).toBe("");
   });
+
+  it("shows the stipend modifier with its days left beside the credits, and hides it when none is active", () => {
+    const view = new TopBarView({ onAdvanceDay: vi.fn(), onMainMenu: vi.fn() });
+    view.mount(root);
+    const base = newGame();
+    view.update(base);
+    const badge = field("stipend-modifier");
+    expect(badge.hidden).toBe(true);
+    expect(field("credits").parentElement).toBe(badge.parentElement);
+
+    view.update({
+      ...base,
+      overworld: {
+        ...base.overworld,
+        stipendModifiers: [
+          { factor: 1.5, daysLeft: 7, source: "evacuation-saved" },
+        ],
+      },
+    });
+    expect(field("stipend-modifier")).toBe(badge);
+    expect(badge.hidden).toBe(false);
+    expect(badge.textContent).toBe("+50% · 7 d");
+    expect(badge.dataset.tone).toBe("ok");
+    expect(badge.classList.contains("tut-badge--ok")).toBe(true);
+    expect(badge.title).toContain("a city evacuated");
+
+    view.update({
+      ...base,
+      overworld: {
+        ...base.overworld,
+        stipendModifiers: [
+          { factor: 0.9, daysLeft: 3, source: "evacuation-lost" },
+        ],
+      },
+    });
+    expect(badge.textContent).toBe("\u221210% · 3 d");
+    expect(badge.dataset.tone).toBe("warn");
+    expect(badge.classList.contains("tut-badge--ok")).toBe(false);
+
+    view.update(base);
+    expect(badge.hidden).toBe(true);
+  });
+
+  it("keeps the days in a span of their own, and drops the badge once the campaign has ended", () => {
+    const view = new TopBarView({ onAdvanceDay: vi.fn(), onMainMenu: vi.fn() });
+    view.mount(root);
+    const base = newGame();
+    const saved = {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        stipendModifiers: [
+          { factor: 1.5, daysLeft: 4, source: "evacuation-saved" },
+        ],
+      },
+    };
+    view.update(saved);
+    const badge = field("stipend-modifier");
+    expect(badge.querySelector(".tut-topbar__stipend-days")?.textContent).toBe(
+      " · 4 d",
+    );
+    expect(badge.firstElementChild?.textContent).toBe("+50%");
+
+    view.update({
+      ...saved,
+      overworld: {
+        ...saved.overworld,
+        outcome: {
+          kind: "defeat",
+          day: 30,
+          summary: {
+            citiesLost: 1,
+            citiesInfested: 2,
+            citiesTotal: 36,
+            missionsRun: 0,
+            daysSurvived: 30,
+            finalThreat: 100,
+          },
+        },
+      },
+    });
+    expect(field("outcome").hidden).toBe(false);
+    expect(badge.hidden).toBe(true);
+  });
 });

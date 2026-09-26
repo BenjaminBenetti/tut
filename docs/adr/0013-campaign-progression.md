@@ -1,6 +1,6 @@
 # ADR 0013 — Campaign progression and mission-type modules
 
-- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built; §2.3 and §2.4 add `onOffered` and `hookPlacement` for Crash Site (#1179); §2.3 adds optional objectives and §2.5 the story setup and presentation tables for Live Specimen (#1179).
+- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built; §2.3 and §2.4 add `onOffered` and `hookPlacement` for Crash Site (#1179); §2.3 adds optional objectives and §2.5 the story setup and presentation tables for Live Specimen (#1179); §2.3 adds `settle` and source-keyed stipend windows for Evacuation (#1179).
 - Context doc: [Campaign Arc](../design/campaign-arc.md)
 - Supersedes: nothing. It extends ADR 0003 (state, commands, data) and ADR 0011 (tech tree).
 
@@ -89,7 +89,7 @@ Each domain owns a small interface and a table keyed by `MissionTypeId`. A `Read
 | Domain | Interface (model file) | Table | Replaces |
 |---|---|---|---|
 | overworld | `MissionOfferRule`: `debut`, `eligible(state, ctx) → MissionSite[]`, `create(state, site, ctx) → Mission` (director-drawn types); **or** `MissionTriggerRule`: `trigger(state, ctx) → Mission[]` (pinned and event types) | `MISSION_OFFER_RULES` in `overworld/service/missions/mission-offer-rules.ts` | the `trigger` switch and `defenceFor` in `mission-generation-service.ts` |
-| overworld | `MissionConsequenceRule`: `onOffered?(state, mission, ctx) → OverworldApplied`, `onResolved(state, mission, result, ctx) → OverworldApplied`, `onExpired(state, mission, ctx) → OverworldApplied` | `MISSION_CONSEQUENCE_RULES` in `overworld/service/missions/mission-consequence-rules.ts` | `infestationDeltaFor` for every type; `ignorePenalty` handling |
+| overworld | `MissionConsequenceRule`: `onOffered?(state, mission, ctx) → OverworldApplied`, `settle?(mission, result, ctx) → MissionSettlement`, `onResolved(state, mission, result, ctx) → OverworldApplied`, `onExpired(state, mission, ctx) → OverworldApplied` | `MISSION_CONSEQUENCE_RULES` in `overworld/service/missions/mission-consequence-rules.ts` | `infestationDeltaFor` for every type; `ignorePenalty` handling |
 | mapgen | `MissionMapRule`: `recipe(mission, type) → { archetype, extraHooks, site?, landmark?, hookPlacement? }` | `MISSION_MAP_RULES` in `mapgen/service/missions/mission-map-rules.ts` | the hard-coded `archetype: "settlement"`, `generatorHooks`, `site: mission.defence…` |
 | tactical | `MissionSetupRule`: `setup(state, map, mission, deps) → TacticalState` adds the type's objectives, entities and schedules | `MISSION_SETUP_RULES` in `tactical/service/missions/mission-setup-rules.ts` | the spawner, generator and `totalWaves` conditionals in `mission-start-service.ts` |
 | ui | `MissionPresentation`: `icon`, `briefingRows(mission)`, `debriefTagline?(result)` | `MISSION_PRESENTATION` in `ui/service/missions/mission-presentation.ts` | `TYPE_ICONS`, `DEFENCE_FIELDS`, `defenceTagline` |
@@ -101,6 +101,16 @@ Each domain owns a small interface and a table keyed by `MissionTypeId`. A `Read
 - **Deadlines:** an objective may carry `deadlineTurn?: number`. A generic deadline phase step fails it when the turn ends past its deadline, and the kind's `onDeadline?` rule may add consequences (a pod releasing a wave).
 - **Optional objectives** (#1179): an objective may carry `optional?: true`. `decidingObjectives` in `objective-status.ts` drops those, and `missionOutcome`, `objectivesComplete`, the leave summary and the tracker's count read only what it keeps. An optional objective still plays and still reports its row in the result. A mission whose objectives are all optional can be extracted from, never won.
 - **Results:** the `Objective` union stays closed in `tactical-state.ts`. `MissionResult.objectives?: readonly ObjectiveResult[]`, with `{ kind: string; complete; failed; done?; total? }`, is filled generically by both resolvers. Overworld consequence rules read it. Overworld never imports tactical types.
+
+**Settle** (#1179). A consequence rule cannot touch the economy, yet an evacuation pays ¢100 for each group aboard on top of its reward. A rule may therefore declare `settle(mission, result, ctx) → { creditsAwarded?, infestationDelta? }`. The launch handler lays it over the resolved result **before** anything reads it:
+
+```
+  resolver ──► result ──► settle? ──► settled result ──► MissionResolved, credits, lastMissionResult, onResolved
+```
+
+So the payment, the event, the debrief and `onResolved` all see one figure. `settle` is pure and draws nothing. Evacuation also zeroes `infestationDelta`: its stakes are the stipend, not the city. A type without `settle` pays what it paid before.
+
+**Timed stipend windows** (#1179). An evacuation's +50% (saved) or −10% (lost, abandoned, ignored or expired) for 10 days is a `StipendModifier` with a `source`. Queuing a window with a `source` replaces any window of that source, so a second saved evacuation refreshes the first. Windows of different sources multiply, and a window with no source (an event's) stacks as before. `source` is optional, so there is no save bump.
 
 **Ordering is part of determinism.** `MISSION_TYPE_IDS`, `MISSION_OFFER_RULES` iteration and every RNG draw keep an append-only order.
 

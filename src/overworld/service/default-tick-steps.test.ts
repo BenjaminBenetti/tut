@@ -35,7 +35,9 @@ import type { RegionId } from "../model/region";
 import { createAdvanceDayHandler } from "./advance-day-service";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { TickDeps } from "./default-tick-steps";
+import { EVACUATION_CONSEQUENCE } from "./missions/evacuation-consequence";
 import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
+import { missionAt, resultFor } from "./missions/mission-fixtures.test-helper";
 import { MISSION_OFFER_DECORATORS } from "./missions/mission-offer-decorators";
 import { MISSION_OFFER_RULES } from "./missions/mission-offer-rules";
 import {
@@ -161,6 +163,42 @@ describe("stipend step with event modifiers", () => {
     const { state: day2 } = stipendStep().run(day1, ctx(3));
     expect(day2.economy.credits - day1.economy.credits).toBe(scaled(1.5));
     expect("stipendModifiers" in day2.overworld).toBe(false);
+  });
+
+  it("pays a saved evacuation's +50% on the ten days after day 1's win and drops it on day 11", () => {
+    const base = newGame();
+    expect(base.overworld.day).toBe(1);
+    const evacuation = missionAt("tokyo", 5, 0, "evacuation");
+    const won = EVACUATION_CONSEQUENCE.onResolved(
+      base.overworld,
+      evacuation,
+      resultFor(evacuation, "won", 0),
+      { tuning: MISSION_TUNING },
+    );
+    let state: GameState = { ...base, overworld: won.state };
+    /** What a day pays with the base and floor scaled by `factor`. */
+    const scaled = (factor: number): number =>
+      computeStipend(unfestedFraction(state.overworld.map), {
+        ...ECONOMY_TUNING,
+        baseStipend: Math.round(ECONOMY_TUNING.baseStipend * factor),
+        stipendFloor: Math.round(ECONOMY_TUNING.stipendFloor * factor),
+      });
+    const paid: number[] = [];
+    const lastDayHeld: number[] = [];
+    for (let day = 2; day <= 12; day += 1) {
+      const { state: next } = stipendStep().run(state, ctx(day));
+      paid.push(next.economy.credits - state.economy.credits);
+      if (next.overworld.stipendModifiers !== undefined) lastDayHeld.push(day);
+      state = next;
+    }
+    expect(paid).toEqual([
+      ...Array.from({ length: 10 }, () => scaled(1.5)),
+      scaled(1),
+    ]);
+    expect(scaled(1.5)).toBeGreaterThan(scaled(1));
+    // Held after every payment up to day 10's; day 11's is its last.
+    expect(lastDayHeld.at(-1)).toBe(10);
+    expect("stipendModifiers" in state.overworld).toBe(false);
   });
 });
 

@@ -11,6 +11,7 @@ import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { PartId } from "../../roster/model/mech-part";
 import type { CityId } from "./city";
 import type { CrashSiteSpec } from "./crash-site-spec";
+import type { EvacuationSpec } from "./evacuation-spec";
 import type { WreckRecoverySpec } from "./wreck-recovery-spec";
 
 // ===========================================
@@ -183,6 +184,13 @@ export interface Mission {
    * its loadout.
    */
   readonly wreck?: WreckRecoverySpec;
+  /**
+   * The civilian groups an evacuation (campaign arc §6.4) must free and
+   * what each one brought home pays. Present on every `"evacuation"`
+   * offer; absent on every other type and on offers saved before
+   * evacuations existed.
+   */
+  readonly evacuation?: EvacuationSpec;
   /** What success pays. */
   readonly rewards: MissionRewards;
   /** Overworld day the mission appeared. */

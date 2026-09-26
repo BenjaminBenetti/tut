@@ -131,6 +131,13 @@ export type TacticalError =
       readonly range: number;
     }
   | { readonly kind: "no-objective-in-reach"; readonly unitId: string }
+  // Stripping a wreck (arc §6.6): one turn's work a turn, and nothing
+  // left to work once its parts are loose.
+  | {
+      readonly kind: "objective-worked-this-turn";
+      readonly objectiveId: string;
+    }
+  | { readonly kind: "wreck-stripped"; readonly objectiveId: string }
   // Stripping a tech carcass (#1171): only an infantry squad can, only
   // once, and only from beside it.
   | { readonly kind: "not-a-squad"; readonly unitId: string }
@@ -288,6 +295,10 @@ export function describeTacticalError(error: TacticalError): string {
       return `Objective is ${String(error.distance)} tiles away; charges reach ${String(error.range)}`;
     case "no-objective-in-reach":
       return `Unit "${error.unitId}" has no objective within reach`;
+    case "objective-worked-this-turn":
+      return `Objective "${error.objectiveId}" has already been worked this turn`;
+    case "wreck-stripped":
+      return `Objective "${error.objectiveId}" is stripped; its parts only need carrying out`;
     case "not-a-squad":
       return `Unit "${error.unitId}" is not an infantry squad; only a squad can harvest`;
     case "unknown-carcass":
@@ -392,6 +403,8 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "objective-target-missing": true,
   "objective-out-of-reach": true,
   "no-objective-in-reach": true,
+  "objective-worked-this-turn": true,
+  "wreck-stripped": true,
   "not-a-squad": true,
   "unknown-carcass": true,
   "carcass-already-harvested": true,

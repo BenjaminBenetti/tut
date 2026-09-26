@@ -14,6 +14,7 @@ import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import type { Mech } from "../../roster/model/mech";
 import {
   MECH_DESTROYED,
+  PARTS_STOCKED,
   SQUAD_WIPED,
   UNIT_DAMAGED,
 } from "../../roster/model/roster-event";
@@ -47,6 +48,15 @@ import { buildEarthMap } from "./earth-map-builder";
 import type { LaunchMissionDeps } from "./launch-mission-service";
 import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
 import { MAX_DEPLOYED_UNITS } from "../model/deployment";
+import { AUTO_RESOLVE_TUNING } from "../data/auto-resolve-tuning";
+import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { leaveBehind } from "../../tactical/service/left-behind-service";
+import {
+  missionWith,
+  openField,
+  unitAt,
+} from "../../tactical/service/tactical-fixtures.test-helper";
+import { tacticalMissionResult } from "../../tactical/service/tactical-mission-resolver";
 import {
   createLaunchMissionHandler,
   DEPLOYMENT_MISMATCH,
@@ -726,6 +736,164 @@ describe("createLaunchMissionHandler", () => {
     );
   });
 });
+describe("createLaunchMissionHandler — wrecks (arc §6.6)", () => {
+  /** Launches the fixture mission from `state` with the stub reporting `result`. */
+  function launch(
+    result: MissionResult,
+    state: CampaignState = campaign(),
+  ): CampaignState {
+    const applied = createLaunchMissionHandler<CampaignState>(
+      deps(new StubResolver(result)),
+    )(state, launchMission("mission-1", DEPLOYMENT), context());
+    if (!applied.ok) throw new Error(applied.error.message);
+    return applied.value.state;
+  }
+
+  it("records the wreck of a mech destroyed on a lost mission, as the roster knew it", () => {
+    const next = launch(LOSS);
+    // The roster has forgotten the mech; the wreck has not.
+    expect(next.roster.mechs).toEqual([]);
+    expect(next.overworld.wrecks).toEqual([
+      {
+        mechId: "mech-1",
+        mechName: "mech-1",
+        chassisId: STARTER_LOADOUT.chassisId,
+        parts: [
+          STARTER_LOADOUT.legsId,
+          STARTER_LOADOUT.armsId,
+          STARTER_LOADOUT.armWeaponId,
+          STARTER_LOADOUT.backWeaponId,
+          ...STARTER_LOADOUT.utilityIds,
+        ],
+        loadout: STARTER_LOADOUT,
+        cityId: "hub",
+        missionId: "mission-1",
+        lostDay: DAY,
+        stripTurns: MISSION_TUNING.wreck.stripTurns,
+      },
+    ]);
+  });
+
+  // Leave and Dust-off Window both strand the force through `leaveBehind`
+  // (#1179): the resolver reads a stranded mech as destroyed, so its
+  // wreck is recorded exactly as for one that fell, from the roster as
+  // it stood at launch, though the casualties then remove the mech.
+  it("records the wreck of a mech left behind on the map as of one that fell", () => {
+    const stranding: MissionResolver = {
+      resolve: (mission, deployment, state) => {
+        const left = leaveBehind(
+          missionWith(openField().build(), [
+            unitAt("squad-1", "infantry", { x: 1, y: 0, z: 1 }),
+            unitAt("mech-1", "mech", { x: 4, y: 0, z: 1 }),
+          ]),
+        );
+        return tacticalMissionResult(
+          {
+            tactical: { ...left.state, outcome: "lost", log: left.events },
+            mission,
+            deployment,
+            state,
+          },
+          {
+            hpPerSoldier: UNIT_TUNING.infantry.hpPerSoldier,
+            tuning: AUTO_RESOLVE_TUNING,
+          },
+        );
+      },
+    };
+    const applied = createLaunchMissionHandler<CampaignState>(deps(stranding))(
+      campaign(),
+      launchMission("mission-1", DEPLOYMENT),
+      context(),
+    );
+    if (!applied.ok) throw new Error(applied.error.message);
+    const next = applied.value.state;
+    expect(next.overworld.lastMissionResult).toMatchObject({
+      outcome: "lost",
+      leftBehind: ["squad-1", "mech-1"],
+      mechsDestroyed: ["mech-1"],
+    });
+    expect(next.roster.mechs).toEqual([]);
+    expect(next.overworld.wrecks).toEqual(launch(LOSS).overworld.wrecks);
+    expect(next.overworld.wrecks?.[0]?.loadout).toEqual(STARTER_LOADOUT);
+  });
+
+  it("records no wreck when the mission was won or extracted, even with a mech destroyed", () => {
+    for (const outcome of ["won", "extracted"] as const) {
+      const next = launch({ ...LOSS, outcome });
+      expect(next.overworld.wrecks, outcome).toBeUndefined();
+    }
+  });
+
+  it("records no wreck for a lost mission that lost no mech", () => {
+    const next = launch({ ...LOSS, mechsDestroyed: [], mechDamage: [] });
+    expect(next.overworld.wrecks).toBeUndefined();
+  });
+
+  it("stocks the parts a won recovery brought home, and spends its wreck", () => {
+    const lost = launch(LOSS);
+    const wreck = lost.overworld.wrecks?.[0];
+    if (wreck === undefined) throw new Error("no wreck recorded");
+    const recovery: Mission = {
+      ...MISSION,
+      typeId: "wreck-recovery",
+      wreck,
+      rewards: { credits: 0, techPoints: 0, parts: wreck.parts },
+    };
+    const before: CampaignState = {
+      ...campaign({ missions: [recovery], wrecks: [wreck] }),
+    };
+    const handler = createLaunchMissionHandler<CampaignState>(
+      deps(
+        new StubResolver({
+          ...WIN,
+          creditsAwarded: 0,
+          techPointsAwarded: 0,
+          partsAwarded: wreck.parts,
+        }),
+      ),
+    );
+    const applied = handler(
+      before,
+      launchMission("mission-1", DEPLOYMENT),
+      context(),
+    );
+    if (!applied.ok) throw new Error(applied.error.message);
+    const next = applied.value.state;
+    expect(next.roster.partStock).toEqual({
+      [STARTER_LOADOUT.legsId]: 1,
+      [STARTER_LOADOUT.armsId]: 1,
+      [STARTER_LOADOUT.armWeaponId]: 1,
+      [STARTER_LOADOUT.backWeaponId]: 1,
+      "utility-radiator": 1,
+    });
+    expect(next.roster.partStock?.[STARTER_LOADOUT.chassisId]).toBeUndefined();
+    expect(next.overworld.wrecks).toBeUndefined();
+    expect(applied.value.events.map((e) => e.type)).toContain(PARTS_STOCKED);
+    // The recovery pays parts only: the city is where it was.
+    expect(
+      next.overworld.map.cities.find((c) => c.id === "hub")?.infestation,
+    ).toBe(50);
+  });
+
+  it("stocks nothing when the recovery was lost, and still spends its wreck", () => {
+    const wreck = launch(LOSS).overworld.wrecks?.[0];
+    if (wreck === undefined) throw new Error("no wreck recorded");
+    const recovery: Mission = {
+      ...MISSION,
+      typeId: "wreck-recovery",
+      wreck,
+      rewards: { credits: 0, techPoints: 0, parts: wreck.parts },
+    };
+    const next = launch(
+      { ...LOSS, mechsDestroyed: [], mechDamage: [] },
+      campaign({ missions: [recovery], wrecks: [wreck] }),
+    );
+    expect(next.roster.partStock).toBeUndefined();
+    expect(next.overworld.wrecks).toBeUndefined();
+  });
+});
+
 describe("validateLaunch deployment size (#487)", () => {
   /** A campaign whose roster holds `count` squads, all deployable. */
   const rosterOf = (count: number): CampaignState => {

@@ -4,6 +4,9 @@ import type { MissionTypeId } from "../../../content/model/mission-type-id";
 import { MISSION_TYPE_IDS } from "../../../content/model/mission-type-id";
 import type { Mission } from "../../../overworld/model/mission";
 import type { MissionResult } from "../../../overworld/model/mission-result";
+import { wreckOf } from "../../../overworld/service/wreck-service";
+import { STARTER_LOADOUT } from "../../../roster/data/starter-roster";
+import { createMech } from "../../../roster/service/mech-factory";
 import { ICON_MANIFEST } from "../../data/icon-manifest";
 import type {
   MissionPresentation,
@@ -44,6 +47,18 @@ const CRASH: Mission = {
   crashSite: { landingCityId: "cairo", preLandingInfestation: 7 },
 };
 
+const RECOVERY: Mission = {
+  ...CLEARANCE,
+  id: "mission-4",
+  typeId: "wreck-recovery",
+  wreck: wreckOf(
+    createMech(STARTER_LOADOUT, "mech-9", "Hammerhead"),
+    CLEARANCE,
+    3,
+    2,
+  ),
+};
+
 /**
  * One offer per type, carrying the type's payload. Keyed by the union,
  * so a new type cannot join the table without a fixture here.
@@ -52,6 +67,7 @@ const OFFERS: Readonly<Record<MissionTypeId, Mission>> = {
   "infestation-clearance": CLEARANCE,
   "defend-installation": DEFENCE,
   "crash-site": CRASH,
+  "wreck-recovery": RECOVERY,
 };
 
 const CTX = { state: campaignOnDay(4, [CLEARANCE, DEFENCE]) };
@@ -180,6 +196,7 @@ describe("briefingFieldsOf", () => {
         ],
       }),
       "crash-site": stub("crash-site"),
+      "wreck-recovery": stub("wreck-recovery"),
     };
     expect(briefingFieldsOf(catalogue).map((f) => f.field)).toEqual([
       "hives",
@@ -188,13 +205,16 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows and the crash site's three", () => {
+  it("gives the shipped briefing the defence's two rows, the crash site's three and the wreck's three", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
       { field: "pod", label: "Spore pod" },
       { field: "landing", label: "Fresh landing" },
       { field: "tech-bonus", label: "Tech bonus" },
+      { field: "wreck", label: "Wreck" },
+      { field: "parts", label: "Parts" },
+      { field: "strip", label: "Strip time" },
     ]);
   });
 });
@@ -252,6 +272,7 @@ describe("debriefTaglineFor", () => {
         debriefTagline: second,
       }),
       "crash-site": stub("crash-site"),
+      "wreck-recovery": stub("wreck-recovery"),
     };
     expect(debriefTaglineFor(RESULT, CTX, catalogue)).toBe("second");
     expect(first).toHaveBeenCalledWith(RESULT, CTX);
@@ -268,6 +289,7 @@ describe("debriefTaglineFor", () => {
           debriefTagline: skipped,
         }),
         "crash-site": stub("crash-site"),
+        "wreck-recovery": stub("wreck-recovery"),
       }),
     ).toBe("first");
     expect(skipped).not.toHaveBeenCalled();

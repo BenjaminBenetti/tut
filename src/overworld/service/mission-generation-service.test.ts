@@ -50,6 +50,12 @@ import {
 } from "./story/story-fixtures.test-helper";
 import { STORY_MISSION_RULES } from "./story/story-mission-rules";
 import { createStoryPinTrigger } from "./story/story-pin-trigger";
+import { debutedSitreps, eligibleSitreps } from "./missions/sitrep-offer";
+import { SITREPS } from "../data/sitreps";
+import type { SitrepId } from "../../content/model/sitrep-id";
+import { wreckOf } from "./wreck-service";
+import { createMech } from "../../roster/service/mech-factory";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 
 // ===========================================
 // Fixtures
@@ -145,6 +151,7 @@ function bothDrawn(
     "infestation-clearance": fakeOffer("infestation-clearance"),
     "defend-installation": defend,
     "crash-site": fakeOffer("crash-site"),
+    "wreck-recovery": MISSION_OFFER_RULES["wreck-recovery"],
   };
 }
 
@@ -158,6 +165,7 @@ function firstDraws(
     "infestation-clearance": 0,
     "defend-installation": 0,
     "crash-site": 0,
+    "wreck-recovery": 0,
   };
   const acts = actsWith({ boardCap: 1, typeWeights });
   for (let seed = 1; seed <= runs; seed += 1) {
@@ -399,6 +407,7 @@ describe("generateMissions — type draw", () => {
       "infestation-clearance": 200,
       "defend-installation": 0,
       "crash-site": 0,
+      "wreck-recovery": 0,
     });
   });
 
@@ -417,6 +426,7 @@ describe("generateMissions — type draw", () => {
       "infestation-clearance": 200,
       "defend-installation": 0,
       "crash-site": 0,
+      "wreck-recovery": 0,
     });
   });
 
@@ -427,6 +437,7 @@ describe("generateMissions — type draw", () => {
       "infestation-clearance": 200,
       "defend-installation": 0,
       "crash-site": 0,
+      "wreck-recovery": 0,
     });
   });
 
@@ -634,6 +645,7 @@ describe("generateMissions — onOffered (arc §6.3)", () => {
         MISSION_CONSEQUENCE_RULES["defend-installation"],
       ),
       "crash-site": spy(MISSION_CONSEQUENCE_RULES["crash-site"]),
+      "wreck-recovery": spy(MISSION_CONSEQUENCE_RULES["wreck-recovery"]),
     };
   }
 
@@ -844,6 +856,54 @@ describe("generateMissions — decorators", () => {
     expect(carried).toBeGreaterThan(0);
     expect(onDefences.length).toBeGreaterThan(0);
     expect(onDefences).not.toContain("hardened-clutches");
+  });
+
+  // A wreck recovery is triggered, not drawn, and the decorators still
+  // see it: its map has nests, edge waves and a drop ship, so every
+  // debuted sitrep fits it, Act II's three included (#1179).
+  it("decorates a triggered wreck recovery with the sitreps its hooks allow", () => {
+    const lost = wreckOf(
+      createMech(STARTER_LOADOUT, "mech-1", "Hammerhead"),
+      missionAt("mid", 9),
+      4,
+      MISSION_TUNING.wreck.stripTurns,
+    );
+    const late = fixtureState({
+      wrecks: [lost],
+      progress: progressIn("act-3", 36),
+    });
+    const allowed = eligibleSitreps(
+      late.progress,
+      SITREPS,
+      MISSION_TYPES["wreck-recovery"],
+    );
+    expect(allowed).toEqual(debutedSitreps(late.progress, SITREPS));
+    expect(allowed).toEqual(
+      expect.arrayContaining([
+        "hardened-clutches",
+        "swarm-tide",
+        "dust-off-window",
+      ]),
+    );
+
+    const carried: SitrepId[] = [];
+    for (let seed = 1; seed <= 40; seed++) {
+      const recovery = generateMissions(
+        late,
+        deps(seed, { decorators: MISSION_OFFER_DECORATORS }),
+      ).state.missions.find((m) => m.typeId === "wreck-recovery");
+      expect(recovery?.wreck?.mechId).toBe("mech-1");
+      carried.push(...(recovery?.sitreps ?? []));
+    }
+    expect(carried.length).toBeGreaterThan(0);
+    expect(carried.filter((id) => !allowed.includes(id))).toEqual([]);
+    expect(carried).toEqual(
+      expect.arrayContaining([
+        "hardened-clutches",
+        "swarm-tide",
+        "dust-off-window",
+      ]),
+    );
   });
 });
 

@@ -6,6 +6,7 @@ import type {
   DestroyPodObjective,
   DestroySpawnerObjective,
   Spawner,
+  StripWreckObjective,
   TacticalState,
 } from "../../tactical/model/tactical-state";
 import { objectiveCountdowns } from "../service/objectives/deadline-countdown";
@@ -13,7 +14,10 @@ import type {
   ObjectivePresentationCatalogue,
   ObjectiveRow,
 } from "../model/objective-presentation";
-import { OBJECTIVE_PRESENTATION } from "../service/objectives/objective-presentation";
+import {
+  OBJECTIVE_PRESENTATION,
+  objectiveProgress,
+} from "../service/objectives/objective-presentation";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
 
 // ===========================================
@@ -96,6 +100,7 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
       "destroy-pod": OBJECTIVE_PRESENTATION["destroy-pod"],
       "capture-specimen": OBJECTIVE_PRESENTATION["capture-specimen"],
       "rescue-civilians": OBJECTIVE_PRESENTATION["rescue-civilians"],
+      "strip-wreck": OBJECTIVE_PRESENTATION["strip-wreck"],
     };
     const view = new ObjectiveTrackerView(presentations);
     view.mount(root);
@@ -142,7 +147,7 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
       "3 / 4 up",
     ]);
 
-    // The summary stays the tracker's: it counts records, not rows.
+    // Rows that say nothing of completion leave the count to the records.
     expect(
       root.querySelector('[data-field="objective-summary"]')?.textContent,
     ).toBe("1 / 2");
@@ -171,6 +176,38 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
     view.update([NEST, HOLD], SPAWNERS);
     expect(rowOf(NEST.id)?.textContent).toBe("Destroy spawner 120 hp");
     expect(rowOf(HOLD.id)?.textContent).toBe("Held the bank");
+  });
+
+  // A wreck's parts are home when a worker boards (arc §6.6), and the
+  // Extract handler never writes that on the objective: the summary
+  // read "0 / 1" above a row reading "Recovered the wreck's parts".
+  it("counts a wreck whose parts are home, as its row reads it, though the flag never moved", () => {
+    const strip: StripWreckObjective = {
+      id: "objective-w",
+      kind: "strip-wreck",
+      targetId: "wreck-1",
+      turnsNeeded: 2,
+      turnsWorked: 2,
+      lastWorkedTurn: 2,
+      workedBy: ["squad-1"],
+      complete: false,
+    };
+    const aboard = {
+      objectives: [strip],
+      units: [],
+      extracted: [{ id: "squad-1", team: "tdf", kind: "squad", hp: 10 }],
+      wrecks: [],
+      turn: 3,
+    } as unknown as TacticalState;
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([strip], [], undefined, objectiveProgress(aboard));
+
+    expect(rowOf(strip.id)?.textContent).toBe("Recovered the wreck's parts");
+    expect(rowOf(strip.id)?.dataset.complete).toBe("true");
+    expect(
+      root.querySelector('[data-field="objective-summary"]')?.textContent,
+    ).toBe("1 / 1 — board the drop ship");
   });
 });
 

@@ -9,6 +9,7 @@ import type { Mission } from "./mission";
 import type { MissionResult } from "./mission-result";
 import type { RegionId } from "./region";
 import type { SpreadCooldowns } from "./spread-cooldown";
+import type { WreckRecoverySpec } from "./wreck-recovery-spec";
 
 // ===========================================
 // Time
@@ -34,6 +35,7 @@ export const FIRST_DAY = 1;
  *   ├── threatOffset        signed, lasting shift from event choices, folded into threat
  *   ├── spreadCooldowns     days until each city may spread again
  *   ├── missions[]          offers attached to cities
+ *   ├── wrecks?             mechs lost on lost missions, awaiting their one recovery
  *   ├── pendingEvents[]     choices awaiting the player
  *   ├── stipendModifiers?   event-driven scales on upcoming stipends
  *   ├── deployables[]       regional installations
@@ -71,6 +73,17 @@ export interface OverworldState {
   readonly spreadCooldowns: SpreadCooldowns;
   /** Missions currently on offer. */
   readonly missions: readonly Mission[];
+  /**
+   * Mechs destroyed on a lost or abandoned mission whose wreck still
+   * waits for its one recovery attempt (arc §6.6), oldest first. The
+   * launch handler records one at the loss, while the roster still
+   * knows the mech; the Wreck Recovery trigger offers it; its
+   * consequence rule removes it once the offer is played or lapses, and
+   * the launch handler drops one whose offer window passed unmade.
+   * Absent until the first such loss, which is also how every save
+   * written before the field existed reads.
+   */
+  readonly wrecks?: readonly WreckRecoverySpec[];
   /** Events waiting for the player's choice. */
   readonly pendingEvents: readonly PendingEvent[];
   /**

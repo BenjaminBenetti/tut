@@ -116,6 +116,33 @@ export function specimenExtracted(
 // ===========================================
 
 /**
+ * Why `unit` cannot take a specimen into its hands (#1179), or
+ * undefined when it can. The pick-up, the net and the capture's
+ * `reachable` all ask this one question, so none offers what another
+ * refuses.
+ *
+ * ```
+ *   not a kind that carries (a mech, a civilian group, …) ──► cannot-carry
+ *   hands already full                                     ──► already-carrying
+ *   otherwise                                              ──► undefined
+ * ```
+ *
+ * @param unit - The unit that would take one.
+ * @returns The refusal, or undefined.
+ */
+export function carryRefusal(
+  unit: Pick<Unit, "id" | "kind" | "carrying">,
+): TacticalError | undefined {
+  if (!canCarrySpecimen(unit)) {
+    return { kind: "cannot-carry", unitId: unit.id };
+  }
+  if (unit.carrying !== undefined) {
+    return { kind: "already-carrying", unitId: unit.id };
+  }
+  return undefined;
+}
+
+/**
  * Picks up a dropped specimen of `species` within `range` of the unit
  * (#1179): the nearest, first in unit order on a tie. The specimen moves
  * from the fallen carrier's record to the unit's, and the unit carries
@@ -146,11 +173,9 @@ export function pickUpSpecimen(
   range: number,
   objectiveId: string,
 ): Result<TacticalApplied<TacticalState>, TacticalError> {
-  if (!canCarrySpecimen(unit)) {
-    return err({ kind: "cannot-carry", unitId: unit.id });
-  }
-  if (unit.carrying !== undefined) {
-    return err({ kind: "already-carrying", unitId: unit.id });
+  const refused = carryRefusal(unit);
+  if (refused !== undefined) {
+    return err(refused);
   }
   const nearest = nearestDropped(droppedSpecimens(mission, species), unit.pos);
   if (nearest === undefined) {
@@ -198,8 +223,15 @@ export function pickUpSpecimen(
 // Helpers
 // ===========================================
 
-/** The dropped specimen nearest `from` by manhattan distance; the first on a tie. */
-function nearestDropped(
+/**
+ * The dropped specimen nearest `from` by manhattan distance; the first
+ * on a tie. The one a pick-up from `from` would take.
+ *
+ * @param dropped - The specimens lying on the map.
+ * @param from - Where the unit stands.
+ * @returns The nearest, or undefined when none lies anywhere.
+ */
+export function nearestDropped(
   dropped: readonly DroppedSpecimen[],
   from: TileCoord,
 ): DroppedSpecimen | undefined {

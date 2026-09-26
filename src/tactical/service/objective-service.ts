@@ -196,14 +196,20 @@ export interface ReachableObjective {
  *   otherwise ──► { objective, target, distance }, nearest first
  * ```
  *
- * The kind's rules say what its target is (ADR 0013 §2.3): a spawner
- * while it stands, nothing for a defence, which is held rather than
- * worked. A failed objective whose target still stands is still
- * offered, as the handler still accepts it: the charges still wreck
- * the target, though the objective stays failed.
+ * The kind's rules say what its target is for this unit (ADR 0013
+ * §2.3, `ObjectiveRules.reachable`): a spawner while it stands, nothing
+ * for a defence, which is held rather than worked, the trapped group
+ * nearest the unit for a rescue, the dropped specimen nearest a squad
+ * with free hands for a capture, and a wreck's nearest tile for a squad
+ * that may still work it this turn. A failed objective whose target
+ * still stands is still offered, as the handler still accepts it: the
+ * charges still wreck the target, though the objective stays failed.
  *
  * Ties keep `objectives` order, so the same mission always suggests the
- * same objective. Pure; reads only its arguments.
+ * same objective: a squad beside both a trapped group and a wreck
+ * (#1179) is offered first whichever of the two the mission lists
+ * first, and the wheel lists the other after it. Pure; reads only its
+ * arguments.
  */
 export function reachableObjectives(
   mission: TacticalState,

@@ -35,7 +35,12 @@ describe("mission-types data", () => {
   it("uses positive rewards and expiry, and non-negative penalties", () => {
     for (const type of Object.values(MISSION_TYPES)) {
       expect(Number.isInteger(type.rewardPerDifficulty)).toBe(true);
-      expect(type.rewardPerDifficulty).toBeGreaterThan(0);
+      // Wreck Recovery pays parts only (arc D6); every other type pays credits.
+      if (type.id === "wreck-recovery") {
+        expect(type.rewardPerDifficulty).toBe(0);
+      } else {
+        expect(type.rewardPerDifficulty).toBeGreaterThan(0);
+      }
       expect(Number.isInteger(type.expiryDays)).toBe(true);
       expect(type.expiryDays).toBeGreaterThan(0);
       expect(Number.isInteger(type.ignorePenalty)).toBe(true);
@@ -62,6 +67,15 @@ describe("mission-types data", () => {
       }
       expect(["small", "medium", "large"]).toContain(type.mapSize);
     }
+  });
+
+  it("makes Wreck Recovery a parts-only, three-day, penalty-free offer (arc §6.6)", () => {
+    const wreck = MISSION_TYPES["wreck-recovery"];
+    expect(wreck.rewardPerDifficulty).toBe(0);
+    expect(wreck.techRewardBase).toBe(0);
+    expect(wreck.techRewardPerDifficulty).toBe(0);
+    expect(wreck.expiryDays).toBe(3);
+    expect(wreck.ignorePenalty).toBe(0);
   });
 
   it("round-trips through JSON unchanged", () => {

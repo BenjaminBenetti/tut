@@ -10,6 +10,7 @@ import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { TechCarcass, TechCarcassId } from "../model/tech-carcass";
 import type { Unit, UnitId } from "../model/unit";
+import { isInfantrySquad } from "../model/unit";
 
 // ===========================================
 // Types
@@ -184,9 +185,8 @@ function actingSquad(
   if (unit.hp <= 0) {
     return err({ kind: "unit-dead", unitId });
   }
-  // Stripping a carcass is infantry work (GDD §6.3): a mech has no hands
-  // for it, a turret no orders, and a bug no interest.
-  if (unit.team !== "tdf" || unit.kind !== "squad") {
+  // Stripping a carcass is infantry work (GDD §6.3).
+  if (!isInfantrySquad(unit)) {
     return err({ kind: "not-a-squad", unitId });
   }
   if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {

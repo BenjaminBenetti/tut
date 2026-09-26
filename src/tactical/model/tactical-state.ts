@@ -13,6 +13,7 @@ import type { TileEffect } from "./tile-effect";
 import type { Team, Unit, UnitId } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 import type { PlacedCharge } from "./equipment";
+import type { MechWreck, MechWreckId } from "./mech-wreck";
 import type { Radar } from "./radar";
 import type { TechCarcass } from "./tech-carcass";
 import type { SpawnerVariant } from "./spawner-variant";
@@ -222,18 +223,50 @@ export interface RescueCiviliansObjective extends ObjectiveBase {
 }
 
 /**
+ * Strip a lost mech's wreck and carry the parts home (arc §6.6). A
+ * squad beside the wreck works it once a turn with the interact action;
+ * after `turnsNeeded` turns the parts are loose, and the objective is
+ * done once a squad that worked it has boarded the drop ship.
+ *
+ * ```
+ *   turnsWorked < turnsNeeded           ──► open: work it, one turn at a time
+ *   stripped, no worker aboard yet      ──► open: get a worker to the drop ship
+ *   stripped, a worker in `extracted`   ──► complete
+ *   mission lost, or nobody left to finish ──► failed
+ * ```
+ *
+ * `complete` is read live from the mission by the kind's rule; the
+ * stored flag stays false, as a defence's does between phase ends.
+ */
+export interface StripWreckObjective extends ObjectiveBase {
+  readonly kind: "strip-wreck";
+  /** The wreck this objective strips. */
+  readonly targetId: MechWreckId;
+  /** Turns of work the wreck takes; at least 1. */
+  readonly turnsNeeded: number;
+  /** Turns a squad has worked it so far, never above `turnsNeeded`. */
+  readonly turnsWorked: number;
+  /** The turn it was last worked on: once a turn, however many squads stand by. */
+  readonly lastWorkedTurn?: number;
+  /** The squads that worked it, in the order they first did; any of them carries the parts. */
+  readonly workedBy: readonly UnitId[];
+}
+
+/**
  * What the player must achieve: wreck a spawner, hold the generators
- * (#1175), wreck a spore pod before it matures, bring a specimen home, or
- * get the civilians out (#1179, campaign arc §6.3, §6.4, §6.9). Closed: a
- * new kind adds its interface here and its rules to `OBJECTIVE_RULES`,
- * which the compiler then insists on (ADR 0013 §2.3).
+ * (#1175), wreck a spore pod before it matures, bring a specimen home,
+ * get the civilians out, or strip a lost mech's wreck (#1179, campaign
+ * arc §6.3, §6.4, §6.6, §6.9). Closed: a new kind adds its interface
+ * here and its rules to `OBJECTIVE_RULES`, which the compiler then
+ * insists on (ADR 0013 §2.3).
  */
 export type Objective =
   | DestroySpawnerObjective
   | DefendGeneratorsObjective
   | DestroyPodObjective
   | CaptureSpecimenObjective
-  | RescueCiviliansObjective;
+  | RescueCiviliansObjective
+  | StripWreckObjective;
 
 /**
  * Swarm Tide's hold on the edge waves (campaign arc §11): each wave is
@@ -352,6 +385,7 @@ export const NO_VISION: SideVision = {
  *   ├── objectives[], spawners[]
  *   ├── broods?[]             dormant bugs that wake together, a cavern's chambers (#1179)
  *   ├── carcasses[]           tech carcasses on the map, stripped or not (#1171)
+ *   ├── wrecks[]?             lost mechs lying on the map (arc §6.6)
  *   ├── effects[]             fires burning on tiles, each with a clock (#1121)
  *   ├── charges[]             breaching charges waiting to go off (#1132)
  *   ├── edgeSpawn             when the next edge wave arrives
@@ -428,6 +462,12 @@ export interface TacticalState {
    * Empty on most missions: the offer decides whether one lies here.
    */
   readonly carcasses: readonly TechCarcass[];
+  /**
+   * Lost mechs lying on the map (arc §6.6), in hook order. Absent on
+   * every mission but a wreck recovery, and on every mission saved
+   * before them: read it as empty.
+   */
+  readonly wrecks?: readonly MechWreck[];
   /**
    * Tile effects burning on the map (#1121), in the order they were lit.
    * Each acts at the start of every phase against the side whose phase

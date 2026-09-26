@@ -95,6 +95,15 @@ export interface ObjectiveRow {
   readonly layout: "inline" | "stacked";
   /** The row's numbers, when it shows any now. */
   readonly detail?: ObjectiveRowDetail;
+  /**
+   * Whether the row reads the objective done, for a kind whose
+   * completion is live rather than recorded: a wreck's parts are home
+   * the moment a worker boards, and the Extract handler never writes
+   * that on the objective (arc §6.6). The tracker's `data-complete` and
+   * its "done / total" summary read this, so the count never lags the
+   * row under it. Absent, both read the objective's stored `complete`.
+   */
+  readonly complete?: boolean;
 }
 
 // ===========================================

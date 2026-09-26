@@ -1,5 +1,7 @@
 import { MISSION_TYPE_IDS } from "../../../content/model/mission-type-id";
 import type { MissionResult } from "../../../overworld/model/mission-result";
+import { STARTER_PARTS } from "../../../roster/data/parts";
+import { StaticPartCatalogue } from "../../../roster/repository/static-part-catalogue";
 import type {
   BriefingField,
   MissionPresentationCatalogue,
@@ -8,6 +10,7 @@ import type {
 import { CRASH_SITE_PRESENTATION } from "./crash-site-presentation";
 import { DEFEND_INSTALLATION_PRESENTATION } from "./defend-installation-presentation";
 import { INFESTATION_CLEARANCE_PRESENTATION } from "./infestation-clearance-presentation";
+import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
 
 // ===========================================
 // Table
@@ -22,12 +25,19 @@ import { INFESTATION_CLEARANCE_PRESENTATION } from "./infestation-clearance-pres
  *   infestation-clearance  ──► infestation-clearance-presentation.ts
  *   defend-installation    ──► defend-installation-presentation.ts
  *   crash-site             ──► crash-site-presentation.ts
+ *   wreck-recovery         ──► wreck-recovery-presentation.ts (over the shipped parts)
  * ```
+ *
+ * The wreck's rows name parts, so its entry is built over the shipped
+ * part catalogue, as the defence's reads the shipped installation sites.
  */
 export const MISSION_PRESENTATION: MissionPresentationCatalogue = {
   "infestation-clearance": INFESTATION_CLEARANCE_PRESENTATION,
   "defend-installation": DEFEND_INSTALLATION_PRESENTATION,
   "crash-site": CRASH_SITE_PRESENTATION,
+  "wreck-recovery": createWreckRecoveryPresentation(
+    new StaticPartCatalogue(STARTER_PARTS),
+  ),
 };
 
 // ===========================================

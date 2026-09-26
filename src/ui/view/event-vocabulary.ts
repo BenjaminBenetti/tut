@@ -416,6 +416,20 @@ export function describeEvent(
         icon: "bug",
         tone: "dim",
       };
+    case "tactical:wreck-worked":
+      // One turn's work on a lost mech's wreck (arc §6.6); the last
+      // turn names the step that is left.
+      return event.payload.turnsWorked >= event.payload.turnsNeeded
+        ? {
+            text: `${nameOf(event.payload.unitId)} stripped the wreck; carry the parts to the drop ship`,
+            icon: "extract",
+            tone: "ok",
+          }
+        : {
+            text: `${nameOf(event.payload.unitId)} worked the wreck: ${formatWhole(event.payload.turnsWorked)} / ${formatWhole(event.payload.turnsNeeded)} turns`,
+            icon: "interact",
+            tone: "accent",
+          };
     case "tactical:objective-updated":
       return event.payload.failed === true
         ? {
@@ -516,6 +530,9 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       // Above the shooter: the blast is what they did (#1121).
       return event.payload.attackerId;
     case "tactical:structure-destroyed":
+      return event.payload.unitId;
+    case "tactical:wreck-worked":
+      // Above the squad at the wreck: the work is what it did.
       return event.payload.unitId;
     case "tactical:effect-damaged":
       // Above whoever burned; a spawner has no head to put it over.

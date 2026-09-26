@@ -64,8 +64,13 @@ export const MECH_BUILT = "roster:mech-built";
 export interface MechBuiltPayload {
   readonly mech: Mech;
   readonly statSheet: MechStatSheet;
-  /** Credits paid; equals `statSheet.totalCost`. */
+  /**
+   * Credits paid: `statSheet.totalCost` less the base cost of every part
+   * drawn from the stock (arc §6.6).
+   */
   readonly cost: number;
+  /** Parts fitted from the stock rather than bought; absent when none were. */
+  readonly salvaged?: readonly PartId[];
 }
 
 /** A mech was built and joined the roster. */
@@ -269,6 +274,27 @@ export type PartUpgradedEvent = DomainEvent<
 >;
 
 // ===========================================
+// Parts stocked
+// ===========================================
+
+/** Event type emitted when recovered parts join the stock (arc §6.6). */
+export const PARTS_STOCKED = "roster:parts-stocked";
+
+/** What presentation needs to announce the recovery. */
+export interface PartsStockedPayload {
+  /** The parts added, repeats kept, in the order they were recovered. */
+  readonly parts: readonly PartId[];
+  /** The mission that brought them home. */
+  readonly missionId: string;
+}
+
+/** Loose parts were added to the stock. */
+export type PartsStockedEvent = DomainEvent<
+  typeof PARTS_STOCKED,
+  PartsStockedPayload
+>;
+
+// ===========================================
 // Union and applied shape
 // ===========================================
 
@@ -285,7 +311,8 @@ export type RosterEvent =
   | UnitPromotedEvent
   | MechRepairedEvent
   | MechRenamedEvent
-  | PartUpgradedEvent;
+  | PartUpgradedEvent
+  | PartsStockedEvent;
 
 /**
  * What a roster command returns: the next roster and economy slices plus

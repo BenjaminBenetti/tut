@@ -146,9 +146,10 @@ export function canExtract(mission: TacticalState, unit: Unit): boolean {
 
 /**
  * The objective Interact would work: the nearest one the unit can reach,
- * or undefined when there is none. The rules answer this
- * (`reachableObjectives`), so the wheel offers exactly what the handler
- * would accept.
+ * the first in `mission.objectives` on a tie, or undefined when there is
+ * none. The rules answer this (`reachableObjectives`), so the Interact
+ * key and the tracker's "in reach" offer exactly what the handler would
+ * accept; the wheel lists every reachable one, this one first.
  *
  * @param mission - The mission the unit is in.
  * @param unitId - The unit that would act.

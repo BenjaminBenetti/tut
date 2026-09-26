@@ -30,6 +30,8 @@ import type { ModelLoader } from "../model/model-loader";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import { SPECIMEN_NET_NAME } from "../view/specimen-view";
+import type { MechWreck } from "../../tactical/model/mech-wreck";
+import { WRECK_NAME_PREFIX } from "../view/wreck-view";
 import { DORMANT_POSE } from "../view/dormant-look";
 import {
   CARCASS_MODEL_ID,
@@ -508,6 +510,45 @@ describe("TacticalSceneBuilder dropped specimens", () => {
     expect(builder.root.getObjectByName("specimen:squad-1")).toBeUndefined();
     builder.dispose();
     expect(builder.specimenIds()).toEqual([]);
+  });
+});
+
+// ===========================================
+// Mech wrecks (arc §6.6)
+// ===========================================
+
+describe("TacticalSceneBuilder wrecks", () => {
+  /** Anvil's wreck over the 3 × 3 square with its corner at (1, 1). */
+  const WRECK: MechWreck = {
+    id: "wreck-1",
+    pos: { x: 2, y: 0, z: 2 },
+    tiles: [1, 2, 3].flatMap((z) => [1, 2, 3].map((x) => ({ x, y: 0, z }))),
+    mechName: "Anvil",
+    loadout: STARTER_LOADOUT,
+  };
+
+  it("draws the lost mech from its loadout's parts, and leaves it out of the pick", async () => {
+    const { builder, models } = build();
+    await builder.updateWrecks([WRECK]);
+    const assembly = mechAssemblyFor(STARTER_LOADOUT);
+    expect(builder.wreckIds()).toEqual(["wreck-1"]);
+    expect(models.loads).toContain(assembly.legs);
+    expect(models.loads).toContain(assembly.armWeapon);
+    const wreck = builder.root.getObjectByName(`${WRECK_NAME_PREFIX}wreck-1`);
+    expect(wreck).toBeDefined();
+    // Straight down onto its middle tile: the squad's wheel finds the
+    // strip, and a click there must reach the tile, not a unit.
+    expect(builder.pickUnit(ndcOf(2.5, 2.5), topDownCamera())).toBeUndefined();
+  });
+
+  it("removes a wreck gone from the list, and dispose takes the rest", async () => {
+    const { builder } = build();
+    await builder.updateWrecks([WRECK]);
+    await builder.updateWrecks([]);
+    expect(builder.wreckIds()).toEqual([]);
+    await builder.updateWrecks([WRECK]);
+    builder.dispose();
+    expect(builder.wreckIds()).toEqual([]);
   });
 });
 

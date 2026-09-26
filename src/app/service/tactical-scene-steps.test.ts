@@ -13,6 +13,8 @@ import type {
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
+import type { MechWreck } from "../../tactical/model/mech-wreck";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import type { Unit, UnitId } from "../../tactical/model/unit";
@@ -47,6 +49,7 @@ class StageRecorder {
   ripe: ReadonlySet<SpawnerId> | undefined;
   carcasses: readonly TechCarcass[] = [];
   specimens: readonly DroppedSpecimen[] = [];
+  wrecks: readonly MechWreck[] = [];
   effects: readonly TileEffect[] = [];
   markers: readonly ObjectiveMarker[] = [];
 
@@ -119,6 +122,13 @@ class StageRecorder {
   ): Promise<void> {
     this.calls.push("updateSpecimens");
     this.specimens = specimens;
+    return Promise.resolve();
+  }
+
+  /** Records the wrecks the scene was asked to draw (arc §6.6). */
+  updateWrecks(wrecks: readonly MechWreck[]): Promise<void> {
+    this.calls.push("updateWrecks");
+    this.wrecks = wrecks;
     return Promise.resolve();
   }
 }
@@ -236,6 +246,7 @@ describe("drawPerceived", () => {
       "updateSpawners",
       "updateCarcasses",
       "updateSpecimens",
+      "updateWrecks",
       "updateRadar",
     ]);
   });
@@ -296,6 +307,32 @@ describe("drawPerceived", () => {
     await drawPerceived(stage, withVision({ state: base, events: [] }).state);
     expect(stage.specimens.map((s) => s.carrierId)).toEqual(["s2"]);
     expect(stage.specimens[0]?.pos).toEqual({ x: 1, y: 0, z: 1 });
+  });
+
+  it("draws only the wrecks the player has explored a tile of (arc §6.6)", async () => {
+    /** A 3 × 3 wreck with its corner at (x, z). */
+    const wreckAt = (id: string, x: number, z: number): MechWreck => ({
+      id,
+      pos: { x: x + 1, y: 0, z: z + 1 },
+      tiles: [z, z + 1, z + 2].flatMap((tz) =>
+        [x, x + 1, x + 2].map((tx) => ({ x: tx, y: 0, z: tz })),
+      ),
+      mechName: "Anvil",
+      loadout: STARTER_LOADOUT,
+    });
+    const base = {
+      ...missionWith(MAP, [unitAt("s1", "infantry", { x: 0, y: 0, z: 0 })]),
+      wrecks: [wreckAt("near", 1, 1), wreckAt("dark", 5, 5)],
+    };
+    // Nobody has looked yet: an empty explored set hides both.
+    const stage = new StageRecorder();
+    await drawPerceived(stage, base);
+    expect(stage.wrecks).toEqual([]);
+    const seen = withVision({ state: base, events: [] }).state;
+    const lit = new StageRecorder();
+    await drawPerceived(lit, seen);
+    expect(lit.wrecks.map((w) => w.id)).toContain("near");
+    expect(lit.wrecks.map((w) => w.id)).not.toContain("dark");
   });
 
   it("marks the open objective in the fog and withholds its model until explored (#1173)", async () => {

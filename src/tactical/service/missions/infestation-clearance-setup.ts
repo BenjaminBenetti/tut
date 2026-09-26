@@ -50,12 +50,8 @@ export function placeEggSpawners(
   mission: Mission,
   deps: MissionSetupDeps,
 ): TacticalState {
-  const spawners = spawnersFrom(
-    map,
-    deps.ids,
-    deps.spawnTuning,
-    mission.difficulty,
-  );
+  const stood = standEggSpawners(state, map, mission, deps);
+  const spawners = stood.spawners.slice(state.spawners.length);
   const objectives = spawners.map((spawner): Objective => ({
     id: deps.ids.nextId(OBJECTIVE_ID_PREFIX),
     kind: "destroy-spawner",
@@ -63,10 +59,40 @@ export function placeEggSpawners(
     complete: false,
   }));
   return {
-    ...state,
-    objectives: [...state.objectives, ...objectives],
-    spawners: [...state.spawners, ...spawners],
+    ...stood,
+    objectives: [...stood.objectives, ...objectives],
   };
+}
+
+/**
+ * Stands one egg spawner on every egg-spawner hook, appended to the
+ * mission's spawners, with no objective to destroy them: the nests are
+ * the threat, not the job. A wreck recovery's bugs come from these
+ * (arc §6.6); the clearance adds its objectives on top.
+ *
+ * ```
+ *   map.hooks.objectives (egg-spawner), in hook order
+ *     ──► spawners, a full hatch interval from hatching   ids: spawner-*
+ * ```
+ *
+ * @param state - The mission so far.
+ * @param map - The generated map whose hooks the spawners stand on.
+ * @param mission - The offer; its difficulty sets the hatch interval.
+ * @param deps - Ids and the spawn tuning.
+ */
+export function standEggSpawners(
+  state: TacticalState,
+  map: TacticalMap,
+  mission: Mission,
+  deps: MissionSetupDeps,
+): TacticalState {
+  const spawners = spawnersFrom(
+    map,
+    deps.ids,
+    deps.spawnTuning,
+    mission.difficulty,
+  );
+  return { ...state, spawners: [...state.spawners, ...spawners] };
 }
 
 // ===========================================

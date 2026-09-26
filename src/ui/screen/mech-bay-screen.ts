@@ -18,8 +18,13 @@ import {
   fitPart,
   removeUtility,
 } from "../../roster/service/loadout-fit-service";
+import { EMPTY_PART_STOCK } from "../../roster/model/part-stock";
 import type { LoadoutDescription } from "../../roster/service/loadout-validation-service";
 import { describeLoadout } from "../../roster/service/loadout-validation-service";
+import {
+  mechBuildQuote,
+  stockOf,
+} from "../../roster/service/part-stock-service";
 import type { GameState } from "../../save/model/game-state";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
 import type { TechConditions } from "../../tech/model/tech-conditions";
@@ -505,7 +510,9 @@ export class MechBayScreen implements Screen {
 
   /**
    * Save needs a campaign and a valid draft; Build additionally needs the
-   * treasury to cover the sheet's total cost, which the button shows.
+   * treasury to cover what the build charges, which the button shows:
+   * the sheet's total less the base cost of every part the stock covers
+   * (recovered from a wreck, arc §6.6), the same quote `BuildMech` bills.
    */
   private refreshButtons(state: GameState | undefined): void {
     if (!this.buildButton) {
@@ -514,13 +521,21 @@ export class MechBayScreen implements Screen {
     const result = this.result();
     const hasCampaign = state !== undefined;
     this.saved.setSaveEnabled(hasCampaign && result.ok);
-    if (result.ok) {
-      const cost = result.value.totalCost;
-      const affordable = hasCampaign && state.economy.credits >= cost;
-      this.buildButton.textContent = `Build ${formatCredits(cost)}`;
+    if (result.ok && this.draft !== undefined) {
+      const quote = mechBuildQuote(
+        this.draft,
+        result.value,
+        state === undefined ? EMPTY_PART_STOCK : stockOf(state.roster),
+        this.deps.parts,
+      );
+      const affordable = hasCampaign && state.economy.credits >= quote.cost;
+      this.buildButton.textContent = `Build ${formatCredits(quote.cost)}`;
       this.buildButton.disabled = !affordable;
+      this.buildButton.dataset.salvaged = String(quote.salvaged.length);
       this.buildButton.title =
-        hasCampaign && !affordable ? "Not enough credits" : "";
+        hasCampaign && !affordable
+          ? "Not enough credits"
+          : salvageTitle(quote.salvaged.length);
     } else {
       this.buildButton.textContent = "Build";
       this.buildButton.disabled = true;
@@ -606,4 +621,19 @@ export class MechBayScreen implements Screen {
       target.removeEventListener("click", handler);
     });
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The Build button's tooltip when parts come from the stock: how many,
+ * so the lower price explains itself. Empty when none do.
+ */
+function salvageTitle(salvaged: number): string {
+  if (salvaged === 0) {
+    return "";
+  }
+  return `${String(salvaged)} ${salvaged === 1 ? "part" : "parts"} fitted from recovered stock`;
 }

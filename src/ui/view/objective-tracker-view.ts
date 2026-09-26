@@ -128,6 +128,10 @@ export class ObjectiveTrackerView {
    * `countdowns` holds each open objective's deadline countdown, keyed
    * the same way; a row without one shows none. `hazards` are the
    * sitreps' running countdowns, one row each after the objectives.
+   *
+   * The summary counts what the rows read (`ObjectiveRow.complete`, else
+   * the stored flag), so a wreck whose parts are home reads "1 / 1"
+   * above a row reading "Recovered", not "0 / 1".
    */
   update(
     objectives: readonly Objective[],
@@ -140,7 +144,20 @@ export class ObjectiveTrackerView {
     if (!this.list || !this.summary) {
       return;
     }
-    const done = objectives.filter((o) => o.complete).length;
+    const drawn = objectives.map((objective, index) => {
+      const presentation: ObjectivePresentation =
+        this.presentations[objective.kind];
+      // The ordinal, not the target id (#949): the index is stable for
+      // the length of the mission because a finished objective stays in
+      // the array.
+      const row = presentation.row(objective, {
+        ordinal: index + 1,
+        spawners,
+        progress: progress?.get(objective.id),
+      });
+      return { objective, row, complete: row.complete ?? objective.complete };
+    });
+    const done = drawn.filter((entry) => entry.complete).length;
     // Finishing the objectives no longer ends the mission; the force
     // has to board the drop ship. The tracker is where the player looks
     // to see what is left to do, so this is where the last step is
@@ -152,22 +169,13 @@ export class ObjectiveTrackerView {
       : `${formatWhole(done)} / ${formatWhole(objectives.length)}`;
     const doc = this.list.ownerDocument;
     this.list.replaceChildren();
-    for (const [index, objective] of objectives.entries()) {
-      const presentation: ObjectivePresentation =
-        this.presentations[objective.kind];
-      // The ordinal, not the target id (#949): the index is stable for
-      // the length of the mission because a finished objective stays in
-      // the array.
-      const row = presentation.row(objective, {
-        ordinal: index + 1,
-        spawners,
-        progress: progress?.get(objective.id),
-      });
+    for (const { objective, row, complete } of drawn) {
       this.list.appendChild(
         rowElement(
           doc,
           objective,
           row,
+          complete,
           objective.id === inReachId,
           countdowns?.get(objective.id),
         ),
@@ -192,22 +200,23 @@ export class ObjectiveTrackerView {
 // ===========================================
 
 /**
- * Draws one row: the objective's id and completion, the kind's `data-*`,
- * then the glyph and the label with the detail beside it (`inline`) or
- * under it (`stacked`), and the `in reach` mark last. A countdown goes
- * under the label (and under a stacked detail), which stacks an inline
- * row's label for it.
+ * Draws one row: the objective's id and completion (`complete`, as the
+ * summary counted it), the kind's `data-*`, then the glyph and the label
+ * with the detail beside it (`inline`) or under it (`stacked`), and the
+ * `in reach` mark last. A countdown goes under the label (and under a
+ * stacked detail), which stacks an inline row's label for it.
  */
 function rowElement(
   doc: Document,
   objective: Objective,
   row: ObjectiveRow,
+  complete: boolean,
   inReach: boolean,
   countdown: ObjectiveCountdown | undefined,
 ): HTMLLIElement {
   const item = doc.createElement("li");
   item.dataset.objectiveId = objective.id;
-  item.dataset.complete = objective.complete ? "true" : "false";
+  item.dataset.complete = complete ? "true" : "false";
   for (const [key, value] of Object.entries(row.data)) {
     item.dataset[key] = value;
   }

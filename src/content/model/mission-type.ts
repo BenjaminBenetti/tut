@@ -40,6 +40,12 @@ export interface MissionHookRequirement {
   readonly count: number;
   /** Extra hooks per difficulty step above the lowest; fractional allowed. */
   readonly countPerDifficulty?: number;
+  /**
+   * Metadata the hook needs beyond its kind's defaults, laid over them
+   * key by key: a wreck's footprint sized from the lost chassis (arc
+   * §6.6). Plain scalars, so it serialises; absent keeps the defaults.
+   */
+  readonly meta?: Readonly<Record<string, number | string | boolean>>;
 }
 
 // ===========================================

@@ -493,6 +493,49 @@ describe("buildMech", () => {
     expect(deps.ids.getState().counters).toEqual({});
     expect(slices).toEqual(snapshot);
   });
+
+  it("fits stocked parts free and takes them out of the stock (arc §6.6)", () => {
+    const { deps, slices } = setup();
+    const stocked: RosterSlices = {
+      ...slices,
+      roster: {
+        ...slices.roster,
+        // Legs 350 and radiator 250 are in the starter loadout; the
+        // missile pod's twin is not, so it stays in stock.
+        partStock: { "legs-strider": 2, "utility-radiator": 1 },
+      },
+    };
+    const applied = expectOk(
+      buildMech(stocked, STARTER_LOADOUT.name, "Anvil", DAY, deps),
+    );
+    const cost = STARTER_COST - 350 - 250;
+    expect(applied.economy.credits).toBe(10_000 - cost);
+    expect(applied.roster.partStock).toEqual({ "legs-strider": 1 });
+    expect(applied.events[1]).toMatchObject({
+      type: MECH_BUILT,
+      payload: {
+        cost,
+        salvaged: ["legs-strider", "utility-radiator"],
+        statSheet: { totalCost: STARTER_COST },
+      },
+    });
+  });
+
+  it("charges only the quote, so a build the stock makes affordable goes through", () => {
+    const cost = STARTER_COST - 350;
+    const { deps, slices } = setup(cost);
+    const stocked: RosterSlices = {
+      ...slices,
+      roster: { ...slices.roster, partStock: { "legs-strider": 1 } },
+    };
+    const applied = expectOk(
+      buildMech(stocked, STARTER_LOADOUT.name, "Anvil", DAY, deps),
+    );
+    expect(applied.economy.credits).toBe(0);
+    expect("partStock" in applied.roster && applied.roster.partStock).toEqual(
+      {},
+    );
+  });
 });
 
 // ===========================================

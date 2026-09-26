@@ -269,3 +269,24 @@ export function isStandingForce(
 export function takesOrders(unit: Pick<Unit, "kind" | "trapped">): boolean {
   return !isAutonomous(unit) && !isTrapped(unit);
 }
+
+/**
+ * True for a TDF infantry squad: the only unit with hands for salvage
+ * (GDD §6.3). A mech has no hands for it, a turret no orders, and a bug
+ * no interest. A civilian group (campaign arc §6.4) is who the force
+ * came for, not its salvage crew: it neither strips anything nor, by
+ * standing on the map, keeps a strip open. Stripping a tech carcass
+ * (#1171) and a mech wreck (arc §6.6) both ask this, and refuse
+ * anything else as `not-a-squad`.
+ *
+ * ```
+ *   tdf squad (carrying a specimen or not)        ──► true
+ *   mech, turret, generator, civilian group, bug  ──► false
+ * ```
+ *
+ * Narrower than `isCombatUnit`, which also counts mechs: that one says
+ * who keeps a mission open, this one who can do the work by hand.
+ */
+export function isInfantrySquad(unit: Pick<Unit, "team" | "kind">): boolean {
+  return unit.team === "tdf" && unit.kind === "squad";
+}

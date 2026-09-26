@@ -2,6 +2,7 @@ import type { MissionMapRules } from "../../model/mission-map-rule";
 import { CRASH_SITE_MAP_RULE } from "./crash-site-map";
 import { DEFEND_INSTALLATION_MAP_RULE } from "./defend-installation-map";
 import { INFESTATION_CLEARANCE_MAP_RULE } from "./infestation-clearance-map";
+import { WRECK_RECOVERY_MAP_RULE } from "./wreck-recovery-map";
 
 // ===========================================
 // Mission map rules (ADR 0013 §2.3)
@@ -17,10 +18,12 @@ import { INFESTATION_CLEARANCE_MAP_RULE } from "./infestation-clearance-map";
  *   infestation-clearance ─► infestation-clearance-map.ts   settlement
  *   defend-installation   ─► defend-installation-map.ts     settlement + site + generators
  *   crash-site            ─► crash-site-map.ts              crater; First Skyfall's pod near deploy
+ *   wreck-recovery        ─► wreck-recovery-map.ts          settlement + a chassis-sized wreck
  * ```
  */
 export const MISSION_MAP_RULES: MissionMapRules = {
   "infestation-clearance": INFESTATION_CLEARANCE_MAP_RULE,
   "defend-installation": DEFEND_INSTALLATION_MAP_RULE,
   "crash-site": CRASH_SITE_MAP_RULE,
+  "wreck-recovery": WRECK_RECOVERY_MAP_RULE,
 };

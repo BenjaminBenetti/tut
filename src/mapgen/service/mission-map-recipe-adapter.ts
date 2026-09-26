@@ -8,6 +8,7 @@ import { err, ok } from "../../core/model/result";
 import type { Mission } from "../../overworld/model/mission";
 import type { HookKindDefaults } from "../data/hook-kind-defaults";
 import { HOOK_KIND_DEFAULTS } from "../data/hook-kind-defaults";
+import type { HookMeta } from "../model/hook";
 import { HookKinds } from "../model/hook";
 import type { MapDimensions } from "../model/map-recipe";
 import type { HookRequirement, MapRecipe } from "../model/map-recipe";
@@ -162,8 +163,9 @@ function carcassHooks(mission: Mission): readonly MissionHookRequirement[] {
 }
 
 /**
- * Completes a content requirement with the kind's mapgen defaults, and
- * the mission's own `placement` for the kind laid over them.
+ * Completes a content requirement with the kind's mapgen defaults, the
+ * mission's own `placement` for the kind laid over them, and the
+ * requirement's own `meta` keys over the defaults'.
  */
 function toHookRequirement(
   requirement: MissionHookRequirement,
@@ -186,8 +188,23 @@ function toHookRequirement(
       : {
           maxNearestDistanceFromDeploy: defaults.maxNearestDistanceFromDeploy,
         }),
-    ...(defaults?.meta === undefined ? {} : { meta: defaults.meta }),
+    ...hookMeta(defaults?.meta, requirement.meta),
   };
+}
+
+/**
+ * The requirement's metadata: the kind's defaults with the mission's own
+ * keys laid over them, or none when neither has any, so a requirement
+ * without metadata of its own completes exactly as it always did.
+ */
+function hookMeta(
+  defaults: HookMeta | undefined,
+  own: HookMeta | undefined,
+): { readonly meta?: HookMeta } {
+  if (own === undefined) {
+    return defaults === undefined ? {} : { meta: defaults };
+  }
+  return { meta: { ...defaults, ...own } };
 }
 
 /**

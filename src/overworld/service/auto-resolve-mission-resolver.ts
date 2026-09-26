@@ -21,6 +21,7 @@ import {
 import {
   creditsFor,
   infestationDeltaFor,
+  partsFor,
   techPointsFor,
 } from "./mission-reward-service";
 
@@ -157,6 +158,7 @@ export class AutoResolveMissionResolver implements MissionResolver {
 
     // No `objectives` (ADR 0013 §2.3): nothing was played, so there is
     // no objective to report on, and consequence rules read `outcome`.
+    const parts = partsFor(outcome, mission);
     return {
       missionId: mission.id,
       cityId: mission.cityId,
@@ -168,6 +170,7 @@ export class AutoResolveMissionResolver implements MissionResolver {
       creditsAwarded: creditsFor(outcome, mission, tuning),
       techPointsAwarded: techPointsFor(outcome, mission, tuning),
       infestationDelta: infestationDeltaFor(outcome, mission, tuning),
+      ...(parts.length > 0 ? { partsAwarded: parts } : {}),
     };
   }
 

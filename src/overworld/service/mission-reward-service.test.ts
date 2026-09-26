@@ -6,6 +6,7 @@ import { MISSION_OUTCOMES } from "../model/mission-result";
 import {
   creditsFor,
   infestationDeltaFor,
+  partsFor,
   techPointsFor,
 } from "./mission-reward-service";
 
@@ -82,5 +83,26 @@ describe("infestationDeltaFor", () => {
     expect(infestationDeltaFor("lost", mission(0), T)).toBe(
       T.lossInfestationPenalty,
     );
+  });
+});
+
+describe("partsFor", () => {
+  const PARTS = ["legs-strider", "utility-radiator", "utility-radiator"];
+
+  it("pays exactly the offer's parts, repeats kept, on a win and nothing otherwise (arc §6.6)", () => {
+    const m: Mission = {
+      ...mission(0),
+      typeId: "wreck-recovery",
+      rewards: { credits: 0, techPoints: 0, parts: PARTS },
+    };
+    expect(partsFor("won", m)).toEqual(PARTS);
+    expect(partsFor("extracted", m)).toEqual([]);
+    expect(partsFor("lost", m)).toEqual([]);
+  });
+
+  it("pays no parts for an offer that promises none", () => {
+    for (const outcome of MISSION_OUTCOMES) {
+      expect(partsFor(outcome, mission(1000)), outcome).toEqual([]);
+    }
   });
 });

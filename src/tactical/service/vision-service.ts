@@ -13,6 +13,7 @@ import type {
 import { NO_VISION, TEAMS_BY_VISION } from "../model/tactical-state";
 import type { TechCarcass } from "../model/tech-carcass";
 import { isTrapped } from "../model/civilian";
+import type { MechWreck } from "../model/mech-wreck";
 import type { Team, Unit, UnitId } from "../model/unit";
 import { isDormant } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
@@ -441,6 +442,23 @@ export function perceivedCarcasses(
   const explored = new Set(mission.vision[team]?.explored ?? []);
   return mission.carcasses.filter((carcass) =>
     explored.has(index.keyOf(carcass.pos)),
+  );
+}
+
+/**
+ * The mech wrecks `team` has explored any tile of (arc §6.6), the way
+ * `perceivedCarcasses` answers for a carcass: a wreck lies still, so
+ * once seen it stays known. A wreck spans its hook's tiles, so a squad
+ * that has seen one corner of it has seen the wreck.
+ */
+export function perceivedWrecks(
+  mission: TacticalState,
+  team: Team,
+  index: TileIndex = new TileIndex(mission.map),
+): readonly MechWreck[] {
+  const explored = new Set(mission.vision[team]?.explored ?? []);
+  return (mission.wrecks ?? []).filter((wreck) =>
+    wreck.tiles.some((tile) => explored.has(index.keyOf(tile))),
   );
 }
 

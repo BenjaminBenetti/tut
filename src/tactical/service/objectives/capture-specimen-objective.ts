@@ -22,7 +22,9 @@ import type {
 import { OBJECTIVE_ID_PREFIX } from "../../model/tactical-state";
 import type { Unit } from "../../model/unit";
 import {
+  carryRefusal,
   droppedSpecimens,
+  nearestDropped,
   pickUpSpecimen,
   specimenCarriers,
   specimenExtracted,
@@ -276,7 +278,8 @@ export const pickUpDroppedSpecimen: ObjectiveInteraction = (
  *   interaction         pickUpDroppedSpecimen
  *   phaseStep           createCaptureStep
  *   onExtracted         captureOnExtracted: the carrier boarding completes it
- *   reachable           the first dropped specimen, while one lies
+ *   reachable           the dropped specimen nearest the asking squad,
+ *                       while one lies and its hands are free
  *   marker              the same tile: it lies still, like a nest
  *   destination         the dropped specimen's tile, and the carriers
  *   tally               specimens home / one wanted
@@ -305,12 +308,23 @@ export function createCaptureSpecimenObjective(
     onExtracted(objective, mission, unit) {
       return captureOnExtracted(objective, mission, unit, nets);
     },
-    /** The first dropped specimen of the species, where its carrier fell. */
-    reachable(objective, mission) {
-      const [dropped] = droppedSpecimens(mission, objective.species);
-      return dropped === undefined
+    /**
+     * The dropped specimen the asking unit's pick-up would take: the one
+     * nearest it, where its carrier fell. Undefined for a unit the
+     * pick-up refuses whatever its distance (not a squad, or hands full),
+     * so the HUD never offers a pick-up that would be refused. Asked by
+     * nobody, the first one lying anywhere.
+     */
+    reachable(objective, mission, unit) {
+      if (unit !== undefined && carryRefusal(unit) !== undefined) {
+        return undefined;
+      }
+      const dropped = droppedSpecimens(mission, objective.species);
+      const target =
+        unit === undefined ? dropped[0] : nearestDropped(dropped, unit.pos);
+      return target === undefined
         ? undefined
-        : { id: dropped.carrierId, pos: dropped.pos };
+        : { id: target.carrierId, pos: target.pos };
     },
     /** A dropped specimen's tile (#1173): it lies still, so its place stays known. */
     marker(objective, mission) {

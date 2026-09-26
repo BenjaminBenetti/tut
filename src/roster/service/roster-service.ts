@@ -30,6 +30,7 @@ import type { SquadTypeCatalogue } from "../model/squad-type-catalogue";
 import type { UpgradeTuning } from "../model/upgrade-tuning";
 import { validateLoadout } from "./loadout-validation-service";
 import { createMech } from "./mech-factory";
+import { mechBuildQuote, stockOf, withdrawParts } from "./part-stock-service";
 import { createSquad } from "./squad-factory";
 
 // ===========================================
@@ -260,15 +261,17 @@ export function deleteLoadout(
 
 /**
  * Builds a mech named `mechName` from the saved template `loadoutName`,
- * charging the stat sheet's `totalCost` as a `purchase` against the new
- * mech's id (GDD §5.8). The template is re-validated at build time,
- * against what the tech tree has unlocked (#1171), so a catalogue change
- * since it was saved cannot produce an unbuildable mech and a locked
- * part cannot be bought through an old template. Rejects without
- * drawing an id or touching either slice.
+ * charging its `mechBuildQuote` as a `purchase` against the new mech's
+ * id (GDD §5.8): the stat sheet's `totalCost`, less the base cost of each
+ * part the stock covers, which the build takes out of the stock (arc
+ * §6.6). The template is re-validated at build time, against what the
+ * tech tree has unlocked (#1171), so a catalogue change since it was
+ * saved cannot produce an unbuildable mech and a locked part cannot be
+ * bought through an old template. Rejects without drawing an id or
+ * touching either slice.
  *
  * ```
- *   loadoutName ──► saved? ──► valid & unlocked? ──► affordable? ──► mech + MechBuilt
+ *   loadoutName ──► saved? ──► valid & unlocked? ──► quote affordable? ──► mech + MechBuilt
  *                     │               │                   │
  *              unknown-loadout  invalid-loadout    insufficient-credits
  * ```
@@ -305,8 +308,10 @@ export function buildMech(
     });
   }
   const statSheet: MechStatSheet = validated.value;
-  if (!deps.transactions.canAfford(slices.economy, statSheet.totalCost)) {
-    return insufficient(slices.economy, statSheet.totalCost);
+  const stock = stockOf(slices.roster);
+  const quote = mechBuildQuote(loadout, statSheet, stock, deps.parts);
+  if (!deps.transactions.canAfford(slices.economy, quote.cost)) {
+    return insufficient(slices.economy, quote.cost);
   }
   const mech: Mech = createMech(
     loadout,
@@ -315,7 +320,7 @@ export function buildMech(
   );
   const paid = spend(
     slices.economy,
-    statSheet.totalCost,
+    quote.cost,
     "purchase",
     mech.id,
     day,
@@ -325,13 +330,24 @@ export function buildMech(
     return paid;
   }
   return ok({
-    roster: { ...slices.roster, mechs: [...slices.roster.mechs, mech] },
+    roster: {
+      ...slices.roster,
+      mechs: [...slices.roster.mechs, mech],
+      ...(quote.salvaged.length > 0
+        ? { partStock: withdrawParts(stock, quote.salvaged) }
+        : {}),
+    },
     economy: paid.value.economy,
     events: [
       ...paid.value.events,
       {
         type: MECH_BUILT,
-        payload: { mech, statSheet, cost: statSheet.totalCost },
+        payload: {
+          mech,
+          statSheet,
+          cost: quote.cost,
+          ...(quote.salvaged.length > 0 ? { salvaged: quote.salvaged } : {}),
+        },
       },
     ],
   });

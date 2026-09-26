@@ -8,6 +8,7 @@ import type { TransactionService } from "../../economy/model/transaction-service
 import type { CasualtyReport } from "../../roster/model/casualty-report";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
 import { applyCasualties } from "../../roster/service/roster-casualty-service";
+import { stockParts } from "../../roster/service/part-stock-service";
 import type { CampaignEvent } from "../model/campaign-event";
 import type { CampaignState } from "../model/campaign-state";
 import type { City } from "../model/city";
@@ -29,6 +30,7 @@ import { recordMission } from "./campaign-progress-service";
 import { findCity } from "./earth-map-query-service";
 import type { StoryDeps } from "./story-service";
 import { onStoryMissionResolved } from "./story-service";
+import { recordWrecks } from "./wreck-service";
 
 // ===========================================
 // Types
@@ -191,10 +193,14 @@ export function validateLaunch(
  *        │
  *   1. MissionResolved { result }
  *   2. roster  ── applyCasualties ──► losses, damage, wipes, graveyard, xp   (roster events)
+ *              ── stockParts(partsAwarded) ──► recovered parts (arc §6.6)  (PartsStocked)
  *   3. economy ── earn(creditsAwarded, "reward", mission.id)                 (CreditsChanged)
  *   4. mission removed from the offers; lastMissionResult := result
  *   5. progress ── recordMission(outcome, speciesKilled): missionsPlayed,
  *                 missionsWon on a win, first kills (ADR 0013 §2.1)
+ *      wrecks  ── recordWrecks: a lost mission's destroyed mechs, read from
+ *                 the roster as it stood at launch, await Wreck Recovery;
+ *                 records past their offer window are dropped (arc §6.6)
  *   6. overworld ── consequences[mission.typeId].onResolved(overworld,      (the rule's events,
  *                 mission, result): the type's own effect, e.g. the         e.g. CityInfestationChanged)
  *                 clearance's infestation cut and mop-up (ADR 0013 §2.3)
@@ -243,6 +249,12 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
       deps.rosterTuning,
     );
     events.push(...casualties.events);
+    const stocked = stockParts(
+      casualties.roster,
+      result.partsAwarded ?? [],
+      mission.id,
+    );
+    events.push(...stocked.events);
 
     let economy = state.economy;
     if (result.creditsAwarded > 0) {
@@ -263,16 +275,24 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
       events.push(...earned.events);
     }
 
-    const settled: OverworldState = {
-      ...state.overworld,
-      missions: state.overworld.missions.filter((m) => m.id !== mission.id),
-      lastMissionResult: result,
-      progress: recordMission(
-        state.overworld.progress,
-        result.outcome,
-        result.speciesKilled ?? [],
-      ),
-    };
+    // The wrecks are read from `state.roster`, which still holds the
+    // mechs `applyCasualties` just removed.
+    const settled: OverworldState = recordWrecks(
+      {
+        ...state.overworld,
+        missions: state.overworld.missions.filter((m) => m.id !== mission.id),
+        lastMissionResult: result,
+        progress: recordMission(
+          state.overworld.progress,
+          result.outcome,
+          result.speciesKilled ?? [],
+        ),
+      },
+      mission,
+      result,
+      state.roster.mechs,
+      deps.missionTuning.wreck,
+    );
     const consequence = deps.consequences[mission.typeId].onResolved(
       settled,
       mission,
@@ -290,7 +310,7 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
       state: {
         ...state,
         overworld: story.state,
-        roster: casualties.roster,
+        roster: stocked.roster,
         economy,
       },
       events,

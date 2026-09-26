@@ -1,6 +1,7 @@
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { MechId } from "../../roster/model/mech";
+import type { PartId } from "../../roster/model/mech-part";
 import type { SquadId } from "../../roster/model/squad";
 import type { CityId } from "./city";
 import type { MissionId } from "./mission";
@@ -126,6 +127,12 @@ export interface MissionResult {
    */
   readonly techPointsHarvested?: number;
   /**
+   * Parts paid into the stock, repeats kept (arc §6.6): the offer's
+   * `rewards.parts` on a win, and nothing otherwise. The launch handler
+   * hands them to the roster. Absent when none were.
+   */
+  readonly partsAwarded?: readonly PartId[];
+  /**
    * Signed integer added to the host city's infestation; negative on a
    * successful clearance. The applier clamps to the city's bounds.
    */
@@ -145,6 +152,8 @@ export interface MissionResult {
   readonly leftBehind?: readonly string[];
   /** For a defence (#1175): which installation, and whether a generator still ran at the end. */
   readonly defence?: MissionResultDefence;
+  /** For a wreck recovery (arc §6.6): how far the stripping got. */
+  readonly wreck?: MissionResultWreck;
   /**
    * For a crash site (campaign arc §6.3): true when the squad wrecked the
    * spore pod before it matured, false when it matured or was left
@@ -213,4 +222,17 @@ export interface ObjectiveResult {
 export interface MissionResultDefence {
   readonly installation: DeployableTypeId;
   readonly held: boolean;
+}
+
+/**
+ * How far a wreck recovery's stripping got (arc §6.6): the turns a squad
+ * spent on the wreck, out of the turns it takes, and whether the parts
+ * came off. Stripped is not recovered: the parts only come home with a
+ * win, which needs the squad that stripped them to extract.
+ */
+export interface MissionResultWreck {
+  /** True once the wreck was worked for every turn it takes. */
+  readonly stripped: boolean;
+  readonly turnsWorked: number;
+  readonly turnsNeeded: number;
 }

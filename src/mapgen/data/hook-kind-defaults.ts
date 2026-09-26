@@ -60,6 +60,18 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
       // edge band, so the floor's centre clears this with room.
       minDistanceFromDeploy: 10,
     },
+    [HookKinds.WRECK]: {
+      // Infantry strip it (arc §6.6): the squad has to walk there, and a
+      // mech need not.
+      requiredPass: Pass.INFANTRY,
+      // Where the fight was lost, not on the landing pad: a few turns in,
+      // like a nest, and no farther than a squad can walk there, work
+      // two turns and still make the drop ship.
+      minDistanceFromDeploy: 12,
+      maxNearestDistanceFromDeploy: 30,
+      // A mech chassis; the map rule sizes it from the lost chassis.
+      meta: { footprint: 3 },
+    },
     [HookKinds.HIVE_CORE]: {
       requiredPass: Pass.ALL,
       // The far end of the cavern: the adapter fits this to the board,

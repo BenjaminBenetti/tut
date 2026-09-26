@@ -16,7 +16,10 @@ import type {
   MapArchetype,
   MapSizePreset,
 } from "../../mapgen/model/map-recipe";
-import { MAP_SIZE_PRESETS } from "../../mapgen/model/map-recipe";
+import {
+  MAP_ARCHETYPES,
+  MAP_SIZE_PRESETS,
+} from "../../mapgen/model/map-recipe";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { ASCII_LEGEND } from "../../mapgen/service/ascii-map-renderer";
 import type { MapAssessment } from "../../tactical/model/map-assessment";
@@ -38,9 +41,8 @@ export interface PreviewControlsState {
   readonly settlement: SettlementScale;
   readonly size: MapSizePreset;
   /**
-   * Which pass list to run. The panel has no control for it — a
-   * prototype archetype is reached with `?archetype=` and nothing else
-   * offers one (#447) — so it rides through the state untouched.
+   * Which pass list to run: the Archetype control, or `?archetype=` in
+   * the URL (`crash-site` for the crater, #1179).
    */
   readonly archetype: MapArchetype;
   /**
@@ -71,6 +73,16 @@ export interface MapgenPreviewScreenOptions {
 }
 
 // ===========================================
+// Constants
+// ===========================================
+
+/** What the Archetype control calls each pass list. */
+const ARCHETYPE_NAMES: Readonly<Record<MapArchetype, string>> = {
+  settlement: "Settlement",
+  "crash-site": "Crash site",
+};
+
+// ===========================================
 // MapgenPreviewScreen
 // ===========================================
 
@@ -84,6 +96,7 @@ export interface MapgenPreviewScreenOptions {
  * ```
  *   ┌ controls ────────┐
  *   │ seed [____] [⟳]  │
+ *   │ archetype ▾      │
  *   │ biome ▾ scale ▾  │
  *   │ size ▾ [Generate]│
  *   │ level ──●──── all│
@@ -99,6 +112,7 @@ export class MapgenPreviewScreen {
 
   private readonly options: MapgenPreviewScreenOptions;
   private readonly seedInput: HTMLInputElement;
+  private readonly archetypeSelect: HTMLSelectElement;
   private readonly biomeSelect: HTMLSelectElement;
   private readonly placeSelect: HTMLSelectElement;
   private readonly settlementSelect: HTMLSelectElement;
@@ -117,8 +131,6 @@ export class MapgenPreviewScreen {
   private previousMetrics: MapMetrics | undefined;
   /** Assessment of the last map shown, for the delta column. */
   private previousAssessment: MapAssessment | undefined;
-  /** Archetype the caller opened the harness with; not editable here. */
-  private readonly archetype: MapArchetype;
 
   // ===========================================
   // Constructor
@@ -131,7 +143,6 @@ export class MapgenPreviewScreen {
     options: MapgenPreviewScreenOptions,
   ) {
     this.options = options;
-    this.archetype = initial.archetype;
     const doc = root.ownerDocument;
 
     const form = el(doc, "form", "tut-panel mapgen-controls");
@@ -161,6 +172,17 @@ export class MapgenPreviewScreen {
       this.advanceSeed();
     });
     form.appendChild(labelled(doc, "Seed", this.seedInput, reroll, next));
+
+    this.archetypeSelect = select(
+      doc,
+      "archetype",
+      MAP_ARCHETYPES,
+      initial.archetype,
+    );
+    for (const option of this.archetypeSelect.options) {
+      option.textContent = ARCHETYPE_NAMES[option.value as MapArchetype];
+    }
+    form.appendChild(labelled(doc, "Archetype", this.archetypeSelect));
 
     this.biomeSelect = select(doc, "biome", BIOME_IDS, initial.biome);
     for (const option of this.biomeSelect.options) {
@@ -300,7 +322,7 @@ export class MapgenPreviewScreen {
         : {}),
       settlement: this.settlementSelect.value as SettlementScale,
       size: this.sizeSelect.value as MapSizePreset,
-      archetype: this.archetype,
+      archetype: this.archetypeSelect.value as MapArchetype,
       slopeShare: Number(this.slopeSlider.value) / 100,
       infestation: Number(this.infestationSlider.value),
     };

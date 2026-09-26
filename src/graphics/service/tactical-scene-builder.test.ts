@@ -19,6 +19,7 @@ import { mechAssemblyFor } from "../data/part-model-table";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { Building } from "../../mapgen/model/building";
+import { HookKinds } from "../../mapgen/model/hook";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { tileTop } from "../view/tactical-map-view";
 import type { Spawner } from "../../tactical/model/tactical-state";
@@ -959,6 +960,35 @@ describe("TacticalSceneBuilder marks under the storey cut (#1134)", () => {
     expect(builder.radarCounts().contacts).toBe(1);
     builder.setLayerFocus(uncut);
     expect(builder.radarCounts().contacts).toBe(2);
+  });
+
+  it("draws objective hook slabs only when asked, as the mapgen preview does", () => {
+    const map = new FixtureMapBuilder(6, 6, 1)
+      .fillGround()
+      .deploy([{ x: 0, y: 0, z: 0 }])
+      .objective(HookKinds.SPORE_POD, [{ x: 3, y: 0, z: 3 }])
+      .build();
+    const slabs = (builder: TacticalSceneBuilder): string[] => {
+      const names: string[] = [];
+      builder.root.traverse((object) => {
+        if (object.name.startsWith("hooks:hook:")) names.push(object.name);
+      });
+      return names;
+    };
+    const mission = new TacticalSceneBuilder({
+      map,
+      models: new FakeModelLoader(),
+    });
+    const preview = new TacticalSceneBuilder({
+      map,
+      models: new FakeModelLoader(),
+      objectiveMarkers: true,
+    });
+    expect(slabs(mission)).toContain("hooks:hook:deploy:0");
+    expect(slabs(mission).some((n) => n.includes("spore-pod"))).toBe(false);
+    expect(slabs(preview)).toContain("hooks:hook:spore-pod:0");
+    mission.dispose();
+    preview.dispose();
   });
 
   it("withholds an objective marker on a peeled floor and redraws it when the view rises (#1173)", () => {

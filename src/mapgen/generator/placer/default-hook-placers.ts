@@ -4,6 +4,7 @@ import { EdgeSpawnPlacer } from "./edge-spawn-placer";
 import { EggSpawnerPlacer } from "./egg-spawner-placer";
 import { ExtractionPlacer } from "./extraction-placer";
 import { GeneratorPlacer } from "./generator-placer";
+import { SporePodPlacer } from "./spore-pod-placer";
 import { TechCarcassPlacer } from "./tech-carcass-placer";
 
 // ===========================================
@@ -22,4 +23,5 @@ export const DEFAULT_HOOK_PLACERS: readonly HookPlacer[] = [
   new ExtractionPlacer(),
   new TechCarcassPlacer(),
   new GeneratorPlacer(),
+  new SporePodPlacer(),
 ];

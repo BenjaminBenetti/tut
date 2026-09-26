@@ -11,7 +11,7 @@ import type { TileCoord } from "./tile-coord";
  */
 export type HookKind = string;
 
-/** Hook kinds every settlement map carries. */
+/** The hook kinds the shipped placers serve (`DEFAULT_HOOK_PLACERS`). */
 export const HookKinds = {
   DEPLOY: "deploy",
   EGG_SPAWNER: "egg-spawner",
@@ -24,6 +24,12 @@ export const HookKinds = {
    * point hook per generator, placed at its facility's service sockets.
    */
   GENERATOR: "generator",
+  /**
+   * The spore pod a crash site is fought over (campaign arc §6.3): one
+   * point hook on the crater floor, near the centre of the bowl, that
+   * the squad destroys before it matures.
+   */
+  SPORE_POD: "spore-pod",
 } as const;
 
 /** Scalar metadata a hook or requirement may carry, e.g. `hatchRadius`. */

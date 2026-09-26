@@ -138,6 +138,9 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   [HookKinds.TECH_CARCASS]: 0xd9c9a3,
   // Something of ours to hold: TDF amber, apart from the drop-zone green (#1175).
   [HookKinds.GENERATOR]: 0xffb347,
+  // Alien and alive: spore violet, apart from every TDF and terrain hue
+  // and from the spawners' green, so the crater's objective reads at once.
+  [HookKinds.SPORE_POD]: 0xc15bff,
 };
 
 /** Warning yellow for hook kinds the palette does not know. */

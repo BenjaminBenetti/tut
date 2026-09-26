@@ -50,4 +50,14 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
       minDistanceFromDeploy: 6,
       maxNearestDistanceFromDeploy: 30,
     },
+    [HookKinds.SPORE_POD]: {
+      // Mechs as well as infantry: the pod is the whole mission, and a
+      // crater only one class can walk into is half a squad watching.
+      requiredPass: Pass.ALL,
+      // A push, not a stroll: the pod matures on a clock (campaign arc
+      // §6.3), so it sits a few turns' walk in. The crater keeps its
+      // bowl six columns off every edge and the dropship lands in an
+      // edge band, so the floor's centre clears this with room.
+      minDistanceFromDeploy: 10,
+    },
   };

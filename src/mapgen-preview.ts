@@ -22,8 +22,9 @@ import { OrthographicCameraRig } from "./graphics/service/orthographic-camera-ri
 import { PlaceholderModelFactory } from "./graphics/service/placeholder-model-factory";
 import { SceneService } from "./graphics/service/scene-service";
 import { TacticalSceneBuilder } from "./graphics/service/tactical-scene-builder";
-import { DEFAULT_MISSION_HOOKS } from "./mapgen/data/hook-requirements";
-import type { MapRecipe } from "./mapgen/model/map-recipe";
+import { ARCHETYPE_MISSION_HOOKS } from "./mapgen/data/hook-requirements";
+import type { MapArchetype, MapRecipe } from "./mapgen/model/map-recipe";
+import { MAP_ARCHETYPES } from "./mapgen/model/map-recipe";
 import type { TacticalMap } from "./mapgen/model/tactical-map";
 import { renderAscii } from "./mapgen/service/ascii-map-renderer";
 import { createDefaultRegistries } from "./mapgen/service/default-registries";
@@ -63,10 +64,18 @@ function clampShare(raw: string | null): number {
   return Math.min(1, Math.max(0, percent / 100));
 }
 
+/** The URL's `?archetype=` when it names one, else the default. */
+function archetypeFrom(raw: string | null): MapArchetype {
+  return (
+    MAP_ARCHETYPES.find((archetype) => archetype === raw) ??
+    DEFAULT_STATE.archetype
+  );
+}
+
 /**
  * Reads `?seed=&biome=&settlement=&size=&archetype=` with defaults for
- * anything missing. `archetype` has no control in the panel: it is how a
- * prototype pass list is looked at (#447), and nothing else offers one.
+ * anything missing. `?archetype=crash-site` opens the crater with its
+ * spore pod (#1179); the panel's Archetype control switches it too.
  */
 function stateFromUrl(): PreviewControlsState {
   const query = new URLSearchParams(window.location.search);
@@ -84,9 +93,7 @@ function stateFromUrl(): PreviewControlsState {
     size:
       (query.get("size") as PreviewControlsState["size"] | null) ??
       DEFAULT_STATE.size,
-    archetype:
-      (query.get("archetype") as PreviewControlsState["archetype"] | null) ??
-      DEFAULT_STATE.archetype,
+    archetype: archetypeFrom(query.get("archetype")),
     // `?slope=` is a percent, the way the slider shows it (#799).
     slopeShare: clampShare(query.get("slope")),
     infestation: mapInfestationLevel(Number(query.get("infestation")) * 10),
@@ -212,11 +219,13 @@ async function main(): Promise<void> {
         settlement: state.settlement,
         size: state.size,
         ...(state.site === undefined ? {} : { site: state.site }),
+        // Each archetype's own mission hooks: egg spawners in a
+        // settlement, the spore pod in a crash site's crater.
         hooks:
           state.site === undefined
-            ? DEFAULT_MISSION_HOOKS
+            ? ARCHETYPE_MISSION_HOOKS[state.archetype]
             : [
-                ...DEFAULT_MISSION_HOOKS.filter(
+                ...ARCHETYPE_MISSION_HOOKS[state.archetype].filter(
                   (hook) => hook.kind !== HookKinds.EGG_SPAWNER,
                 ),
                 {
@@ -242,7 +251,15 @@ async function main(): Promise<void> {
       input?.detach();
       hud?.unmount();
       view?.dispose();
-      const builder = new TacticalSceneBuilder({ map, models, textures });
+      // Objective slabs (spawners, carcass, generators, the spore pod)
+      // are the diagnostic view Map Lab judges a map by; the unit
+      // preview plays a mission, which marks them its own way (#1173).
+      const builder = new TacticalSceneBuilder({
+        map,
+        models,
+        textures,
+        objectiveMarkers: !showUnits,
+      });
       view = builder;
       content.add(builder.root);
       rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });

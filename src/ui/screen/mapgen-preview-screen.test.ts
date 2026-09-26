@@ -77,6 +77,58 @@ describe("MapgenPreviewScreen", () => {
     expect(screen.getState().seed).toBe("terra-03");
   });
 
+  it("offers every archetype and generates the one picked (#1179)", () => {
+    const onGenerate = vi.fn();
+    const root = document.createElement("div");
+    const screen = new MapgenPreviewScreen(
+      root,
+      {
+        seed: "s",
+        biome: "temperate",
+        settlement: "rural",
+        size: "small",
+        archetype: "settlement",
+        slopeShare: 1,
+      },
+      { onGenerate, onLevelChange: vi.fn() },
+    );
+    const control = root.querySelector<HTMLSelectElement>("#archetype")!;
+    expect([...control.options].map((o) => o.value)).toEqual([
+      "settlement",
+      "crash-site",
+    ]);
+    expect(control.value).toBe("settlement");
+    expect(control.closest("label")?.textContent).toContain("Crash site");
+    control.value = "crash-site";
+    root
+      .querySelector("form")
+      ?.dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(screen.getState().archetype).toBe("crash-site");
+    expect(onGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ archetype: "crash-site" }),
+    );
+  });
+
+  it("opens on the archetype the URL asked for", () => {
+    const root = document.createElement("div");
+    const screen = new MapgenPreviewScreen(
+      root,
+      {
+        seed: "s",
+        biome: "temperate",
+        settlement: "rural",
+        size: "small",
+        archetype: "crash-site",
+        slopeShare: 1,
+      },
+      { onGenerate: vi.fn(), onLevelChange: vi.fn() },
+    );
+    expect(root.querySelector<HTMLSelectElement>("#archetype")?.value).toBe(
+      "crash-site",
+    );
+    expect(screen.getState().archetype).toBe("crash-site");
+  });
+
   it("shows metric deltas from the second map on", () => {
     const root = document.createElement("div");
     const screen = new MapgenPreviewScreen(

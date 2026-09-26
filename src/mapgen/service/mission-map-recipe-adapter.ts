@@ -10,8 +10,10 @@ import { HOOK_KIND_DEFAULTS } from "../data/hook-kind-defaults";
 import { HookKinds } from "../model/hook";
 import type { MapDimensions } from "../model/map-recipe";
 import type { HookRequirement, MapRecipe } from "../model/map-recipe";
+import type { MissionMapRules } from "../model/mission-map-rule";
 import type { MapGenRegistries } from "../model/registries";
 import { createDefaultRegistries } from "./default-registries";
+import { MISSION_MAP_RULES } from "./missions/mission-map-rules";
 
 // ===========================================
 // Types
@@ -57,21 +59,27 @@ const MAP_EDGE_MARGIN = 2;
  * and metadata. Deterministic. Ids the registries do not know come back
  * as typed errors rather than throws, so overworld code can report them.
  *
+ * What differs by type — the archetype, extra hooks, an authored site or
+ * a landmark — comes from the type's `MissionMapRule` in `rules`
+ * (ADR 0013 §2.3); everything else is generic and stays here.
+ *
  * ```
  *   Mission.mapParams { biome, settlement, size, seed }
  *   MissionType.requiredHooks [{ kind, count, countPerDifficulty }]
  *   + { kind: "tech-carcass", count: 1 } when mapParams.techCarcass is set (#1171)
- *   + { kind: "generator", count: defence.generators } and the installation's
- *     composed site id when the mission is a defence (#1175)
+ *   + rules[mission.typeId].recipe(mission, type).extraHooks
  *          │  × difficulty, + HOOK_KIND_DEFAULTS[kind]
  *          ▼
- *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks, site? } }
+ *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks,
+ *                               infestation?, placeProfile?, site?, landmark? } }
+ *                ▲ archetype, site and landmark from the rule
  * ```
  */
 export function missionToMapRecipe(
   mission: Mission,
   missionType: MissionType,
   registries: AdapterRegistries = createDefaultRegistries(),
+  rules: MissionMapRules = MISSION_MAP_RULES,
 ): Result<MapRecipe, MapRecipeError> {
   const { biome, settlement, size, seed } = mission.mapParams;
   if (!registries.biomes.has(biome)) {
@@ -84,11 +92,12 @@ export function missionToMapRecipe(
     return err({ kind: "unknown-size", id: size });
   }
   const dimensions = registries.mapSizes.get(size);
+  const plan = rules[mission.typeId].recipe(mission, missionType);
   const hooks: HookRequirement[] = [];
   for (const requirement of [
     ...missionType.requiredHooks,
     ...carcassHooks(mission),
-    ...generatorHooks(mission),
+    ...plan.extraHooks,
   ]) {
     if (!registries.hookPlacers.has(requirement.kind)) {
       return err({ kind: "unknown-hook-kind", id: requirement.kind });
@@ -98,7 +107,7 @@ export function missionToMapRecipe(
   return ok({
     seed,
     params: {
-      archetype: "settlement",
+      archetype: plan.archetype,
       biome,
       settlement,
       size,
@@ -109,11 +118,8 @@ export function missionToMapRecipe(
       ...(isPlaceProfileId(mission.cityId)
         ? { placeProfile: mission.cityId }
         : {}),
-      ...(mission.defence === undefined
-        ? {}
-        : {
-            site: mission.defence.installation,
-          }),
+      ...(plan.site === undefined ? {} : { site: plan.site }),
+      ...(plan.landmark === undefined ? {} : { landmark: plan.landmark }),
     },
   });
 }
@@ -145,17 +151,6 @@ function carcassHooks(mission: Mission): readonly MissionHookRequirement[] {
   return mission.mapParams.techCarcass === undefined
     ? []
     : [{ kind: HookKinds.TECH_CARCASS, count: 1 }];
-}
-
-/**
- * The generator hooks a defence carries (#1175): one per generator of
- * the installation under attack, none for any other mission. Like the
- * carcass they are the mission's, not the type's.
- */
-function generatorHooks(mission: Mission): readonly MissionHookRequirement[] {
-  return mission.defence === undefined
-    ? []
-    : [{ kind: HookKinds.GENERATOR, count: mission.defence.generators }];
 }
 
 /** Completes a content requirement with the kind's mapgen defaults. */

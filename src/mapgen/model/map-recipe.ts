@@ -11,16 +11,29 @@ import type { PassMask } from "./pass-mask";
 // ===========================================
 
 /**
- * Which pass list generates the map (ADR 0004 §7.3). `settlement` is what
- * every mission generates today.
+ * Which pass list generates the map (ADR 0004 §7.3). A mission's type
+ * picks it through its `MissionMapRule` (ADR 0013 §2.3).
  *
- * `crash-site` is a **prototype**: no mission type asks for it and the
- * adapter cannot produce one, so it reaches the generator only from the
- * preview harness or a test. It exists to be looked at and measured
- * before M3 commits to the shape (#447). Hives and the space platform
- * follow the same route when their turn comes.
+ * - `settlement`: a town or city on its terrain; every shipped mission
+ *   type fights on one.
+ * - `crash-site`: open ground with a terraced impact crater and a debris
+ *   field (#447, #662), where a spore pod came down (campaign arc §6.3).
+ *   It carries the `spore-pod` hook on the crater floor; the Crash Site
+ *   mission type's rule selects it.
+ *
+ * Hives and the space platform follow the same route when their turn
+ * comes.
  */
 export type MapArchetype = "settlement" | "crash-site";
+
+/**
+ * Every archetype, in a fixed order: what the parameter resolver accepts
+ * and what the preview harness offers.
+ */
+export const MAP_ARCHETYPES: readonly MapArchetype[] = [
+  "settlement",
+  "crash-site",
+];
 
 /**
  * Named map sizes, resolved through `mapgen/data/map-sizes`. The union

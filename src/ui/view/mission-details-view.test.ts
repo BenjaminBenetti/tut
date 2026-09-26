@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import type { MissionPresentationCatalogue } from "../model/mission-presentation";
+import { NO_COUNTDOWN_TEXT } from "../service/mission-countdown";
 import { MISSION_PRESENTATION } from "../service/missions/mission-presentation";
 import { MissionDetailsView } from "./mission-details-view";
 import { campaignOnDay, missionAt } from "./mission-fixtures.test-helper";
@@ -63,6 +64,17 @@ describe("MissionDetailsView", () => {
     expect(root.querySelector('[data-field="description"]')?.textContent).toBe(
       MISSION_TYPES["infestation-clearance"].description,
     );
+  });
+
+  it("shows no countdown for a pinned offer (ADR 0013 §2.2)", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const pinned = { ...missionAt("mission-1", "cairo", 5, 4), pinned: true };
+    view.update(campaignOnDay(4, [pinned]), pinned);
+    expect(field("days-left")).toBe(NO_COUNTDOWN_TEXT);
   });
 
   it("hides again when the mission goes away and reports Plan deployment with the id", () => {

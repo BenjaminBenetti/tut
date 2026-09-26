@@ -8,7 +8,7 @@ import { launchMission } from "../../overworld/model/launch-mission-command";
 import { startMission } from "../../tactical/model/start-mission-command";
 import type { Mission } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
-import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
+import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { MechId } from "../../roster/model/mech";
 import type { SquadId } from "../../roster/model/squad";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
@@ -18,6 +18,7 @@ import type { OverworldSelection } from "../model/overworld-selection";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { formatCredits, formatWhole } from "../service/format";
+import { missionCountdownText } from "../service/mission-countdown";
 import { DeploymentPickerView } from "../view/deployment-picker-view";
 
 // ===========================================
@@ -327,7 +328,7 @@ export class DeploymentScreen implements Screen {
       city: cityName,
       difficulty: `D${formatWhole(mission.difficulty)}`,
       reward: formatCredits(mission.rewards.credits),
-      "days-left": `${formatWhole(mission.expiresDay - state.overworld.day)} d`,
+      "days-left": missionCountdownText(mission, state.overworld.day),
     };
     for (const [field, cell] of this.brief) {
       if (cell.textContent !== values[field]) {

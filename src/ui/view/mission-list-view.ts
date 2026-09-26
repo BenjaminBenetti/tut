@@ -5,7 +5,7 @@ import {
   findCity,
   findRegion,
 } from "../../overworld/service/earth-map-query-service";
-import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
+import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { iconUrl } from "../data/icon-manifest";
 import type { MissionPresentationCatalogue } from "../model/mission-presentation";
@@ -15,6 +15,11 @@ import {
   formatTechPoints,
   formatWhole,
 } from "../service/format";
+import {
+  compareByExpiry,
+  missionCountdownText,
+  missionCountdownTitle,
+} from "../service/mission-countdown";
 import { MISSION_PRESENTATION } from "../service/missions/mission-presentation";
 
 // ===========================================
@@ -283,7 +288,7 @@ export class MissionListView {
       difficulty: `D${formatWhole(mission.difficulty)}`,
       reward: formatCredits(mission.rewards.credits),
       tech: `+${formatTechPoints(mission.rewards.techPoints)}`,
-      "days-left": `${formatWhole(mission.expiresDay - day)} d`,
+      "days-left": missionCountdownText(mission, day),
     };
     const carcass = mission.mapParams.techCarcass;
     for (const cell of row.querySelectorAll<HTMLElement>("[data-field]")) {
@@ -315,6 +320,12 @@ export class MissionListView {
         }
         continue;
       }
+      if (field === "days-left") {
+        const title = missionCountdownTitle(mission);
+        if (cell.title !== title) {
+          cell.title = title;
+        }
+      }
       const text = values[field] ?? "";
       if (cell.textContent !== text) {
         cell.textContent = text;
@@ -342,11 +353,14 @@ export function missionsInRegion(
   );
 }
 
-/** Soonest expiry first; ties by creation day, then id, so the order is stable. */
+/**
+ * Soonest expiry first, pinned offers (which never lapse) after the
+ * rest; ties by creation day, then id, so the order is stable.
+ */
 export function sortByExpiry(missions: readonly Mission[]): Mission[] {
   return [...missions].sort(
     (a, b) =>
-      a.expiresDay - b.expiresDay ||
+      compareByExpiry(a, b) ||
       a.createdDay - b.createdDay ||
       a.id.localeCompare(b.id),
   );

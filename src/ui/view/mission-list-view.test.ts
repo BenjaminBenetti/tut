@@ -5,6 +5,10 @@ import { MISSION_TYPES } from "../../content/data/mission-types";
 import { campaignOnDay, missionAt } from "./mission-fixtures.test-helper";
 import type { MissionPresentationCatalogue } from "../model/mission-presentation";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
+import {
+  NO_COUNTDOWN_TEXT,
+  NO_COUNTDOWN_TITLE,
+} from "../service/mission-countdown";
 import { MISSION_PRESENTATION } from "../service/missions/mission-presentation";
 import {
   MissionListView,
@@ -114,6 +118,32 @@ describe("MissionListView", () => {
     expect(
       root.querySelector<HTMLElement>('[data-role="no-missions"]')?.hidden,
     ).toBe(true);
+  });
+
+  it("shows a pinned offer with no countdown, after the offers that lapse (ADR 0013 §2.2)", () => {
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
+    );
+    view.mount(root);
+    view.update(
+      campaignOnDay(4, [
+        { ...missionAt("mission-story", "lagos", 5), pinned: true },
+        missionAt("mission-1", "cairo", 9),
+      ]),
+      NONE,
+    );
+    const [first, pinned] = rows();
+    expect(first?.dataset.missionId).toBe("mission-1");
+    expect(cell(first!, "days-left")).toBe("5 d");
+    expect(
+      first?.querySelector<HTMLElement>('[data-field="days-left"]')?.title,
+    ).toBe("");
+    expect(pinned?.dataset.missionId).toBe("mission-story");
+    expect(cell(pinned!, "days-left")).toBe(NO_COUNTDOWN_TEXT);
+    expect(
+      pinned?.querySelector<HTMLElement>('[data-field="days-left"]')?.title,
+    ).toBe(NO_COUNTDOWN_TITLE);
   });
 
   it("highlights the selected mission and reports clicks with the city", () => {

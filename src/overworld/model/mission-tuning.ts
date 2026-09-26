@@ -1,53 +1,26 @@
+import type { ActId } from "../../content/model/act-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 
 // ===========================================
-// Triggers
-// ===========================================
-
-/** Which state a mission type's daily offer roll reads; see `MissionTypeGenerationRule.trigger`. */
-export type MissionTrigger = "city-infestation" | "region-installation";
-
-// ===========================================
-// Per-type rule
+// Per-type difficulty
 // ===========================================
 
 /**
- * How one mission type is offered (GDD §5.4). Kept as data keyed by
- * `MissionTypeId` so an M3 type registers by adding a rule, never by
- * editing the generation service.
+ * How one mission type's difficulty and map size follow from where it
+ * is offered (GDD §5.4). Kept as data keyed by `MissionTypeId`, so a new
+ * type registers its weights here and its offer rule reads them. Which
+ * city is offered a mission, and when, is the type's offer rule's
+ * business (ADR 0013 §2.3), not this table's.
  *
  * ```
- *   chance(infestation)
- *   chanceAtMax        ┤                        ●
- *                      │                   ╱
- *   chanceAtThreshold  ┤            ●─────╱
- *                    0 ┼────────────┘
- *                      └────────────┴────────────┴──► city infestation
- *                      0     minInfestation    100
+ *   pressure   = infestationWeight × infestation/100 + threatWeight × threat/100
+ *   difficulty = band.min + (band.max − band.min) × pressure, rounded,
+ *                then clamped into the act's band (arc §3)
  *
- *   difficulty = band.min + (band.max − band.min)
- *                × (infestationWeight × infestation/100 + threatWeight × threat/100)
+ *   size       small ──► medium at mediumFromDifficulty ──► large at largeFromDifficulty
  * ```
  */
-export interface MissionTypeGenerationRule {
-  /**
-   * What the daily roll is made against (#1175):
-   *
-   * | trigger               | rolled per | infestation read        | needs                      |
-   * |-----------------------|------------|-------------------------|----------------------------|
-   * | `city-infestation`    | city       | the city's own          | the city detected, free    |
-   * | `region-installation` | region     | the region's mean       | a built installation there |
-   *
-   * A region-triggered type still attaches to a city: the most
-   * infested detected city in the region without a mission of its own.
-   */
-  readonly trigger: MissionTrigger;
-  /** Infestation (city or region mean, per `trigger`) below which this type is never offered. `0..100`. */
-  readonly minInfestation: number;
-  /** Daily offer chance at exactly `minInfestation`. `0..1`. */
-  readonly chanceAtThreshold: number;
-  /** Daily offer chance at maximum infestation. `0..1`, at least `chanceAtThreshold`. */
-  readonly chanceAtMax: number;
+export interface MissionDifficultyRule {
   /** Share of difficulty pressure that comes from the host city's infestation. */
   readonly infestationWeight: number;
   /** Share of difficulty pressure that comes from global threat. Weights sum to `1`. */
@@ -59,22 +32,77 @@ export interface MissionTypeGenerationRule {
 }
 
 // ===========================================
+// Offer chance
+// ===========================================
+
+/**
+ * A daily chance that climbs with infestation, for a trigger rule that
+ * rolls (#1175):
+ *
+ * ```
+ *   chance(infestation)
+ *   chanceAtMax        ┤                        ●
+ *                      │                   ╱
+ *   chanceAtThreshold  ┤            ●─────╱
+ *                    0 ┼────────────┘
+ *                      └────────────┴────────────┴──► infestation
+ *                      0     minInfestation    100
+ * ```
+ */
+export interface OfferChanceCurve {
+  /** Infestation below which the roll is never made. `0..100`. */
+  readonly minInfestation: number;
+  /** Daily chance at exactly `minInfestation`. `0..1`. */
+  readonly chanceAtThreshold: number;
+  /** Daily chance at maximum infestation. `0..1`, at least `chanceAtThreshold`. */
+  readonly chanceAtMax: number;
+}
+
+// ===========================================
 // Tuning
 // ===========================================
 
 /**
- * Balance knobs for mission generation. The tick receives a tuning
- * object rather than importing the defaults, so tests and future
- * difficulty settings can substitute their own. Defaults live in
+ * Balance knobs for mission offers. The tick receives a tuning object
+ * rather than importing the defaults, so tests and future difficulty
+ * settings can substitute their own. Defaults live in
  * `overworld/data/mission-tuning.ts`.
  */
 export interface MissionTuning {
-  /** One rule per shipped mission type; a type without a rule fails to compile. */
-  readonly rules: Readonly<Record<MissionTypeId, MissionTypeGenerationRule>>;
-  /** How often a generated mission carries a tech carcass and what it is worth (#1171). */
+  /** One difficulty rule per shipped mission type; a type without one fails to compile. */
+  readonly difficulty: Readonly<Record<MissionTypeId, MissionDifficultyRule>>;
+  /** How often an offer carries a tech carcass and what it is worth (#1171). */
   readonly techCarcass: TechCarcassTuning;
-  /** How many waves a defend-installation mission sends (#1175). */
+  /** Where an infestation clearance may be offered, and its mop-up (arc §5, §6.1). */
+  readonly clearance: ClearanceTuning;
+  /** When a defend-installation mission is triggered and how many waves it sends (#1175). */
   readonly defence: InstallationDefenceTuning;
+}
+
+// ===========================================
+// Infestation clearance
+// ===========================================
+
+/**
+ * The clearance's two campaign rules (arc §5, §6.1):
+ *
+ * ```
+ *   eligible   detected city, no offer, infestation ≥ minInfestationByAct[act]
+ *   mop-up     won, and the city is left under mopUpBelow ──► purged to 0
+ * ```
+ */
+export interface ClearanceTuning {
+  /**
+   * Least city infestation at which a detected city may be offered a
+   * clearance, per act. Act I reaches lower, so the first offers come
+   * while the landings are still small.
+   */
+  readonly minInfestationByAct: Readonly<Record<ActId, number>>;
+  /**
+   * A won clearance that leaves its city below this purges it to 0.
+   * `0` would turn the mop-up off.
+   */
+  readonly mopUpBelow: number;
 }
 
 // ===========================================
@@ -82,8 +110,10 @@ export interface MissionTuning {
 // ===========================================
 
 /**
- * The wave count frozen into a defend-installation offer (#1175), a
- * linear function of the host region's mean infestation, capped:
+ * How a defend-installation mission is triggered and sized (#1175). The
+ * trigger rolls `offer` against a region's mean infestation, once a day
+ * per region holding an installation. The wave count frozen into the
+ * offer is a linear function of the same infestation, capped:
  *
  * ```
  *   waves = min(maxWaves, baseWaves + floor(wavesPerInfestationPoint × regionInfestation))
@@ -96,6 +126,8 @@ export interface MissionTuning {
  * ```
  */
 export interface InstallationDefenceTuning {
+  /** The daily trigger roll, read against the region's mean infestation. */
+  readonly offer: OfferChanceCurve;
   /** Waves at zero regional infestation; the least a defend mission ever sends. */
   readonly baseWaves: number;
   /** Extra waves per point of regional infestation, floored. */
@@ -109,7 +141,7 @@ export interface InstallationDefenceTuning {
 // ===========================================
 
 /**
- * The tech carcass roll (#1171), made once per generated mission:
+ * The tech carcass roll (#1171), made once per offer:
  *
  * ```
  *   rng.fork(`carcass:${missionId}`).chance(chance)
@@ -117,7 +149,7 @@ export interface InstallationDefenceTuning {
  * ```
  */
 export interface TechCarcassTuning {
-  /** Probability a generated mission carries a carcass. `0..1`. */
+  /** Probability an offer carries a carcass. `0..1`. */
   readonly chance: number;
   /** Tech points a carcass is worth at difficulty 0. */
   readonly basePoints: number;

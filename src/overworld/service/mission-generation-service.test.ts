@@ -1,745 +1,614 @@
 import { describe, expect, it } from "vitest";
 
+import { MISSION_TYPES } from "../../content/data/mission-types";
+import type { ActId } from "../../content/model/act-id";
+import { ACT_IDS } from "../../content/model/act-id";
+import type { MissionTypeId } from "../../content/model/mission-type-id";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
-import { MISSION_TYPES } from "../../content/data/mission-types";
-import { MISSION_DIFFICULTY_RANGE } from "../../content/model/mission-type";
-import type { ActId } from "../../content/model/act-id";
-import type { DeployableTypeId } from "../../content/model/deployable-type-id";
+import { ACTS } from "../data/acts";
 import { MISSION_TUNING } from "../data/mission-tuning";
-import type { Deployable } from "../model/deployable";
-import { MAX_INFESTATION } from "../model/city";
-import type { EarthMap } from "../model/earth-map";
+import type { ActCatalogue, ActDefinition } from "../model/act-definition";
 import type { Mission } from "../model/mission";
+import type { MissionOfferDecorator } from "../model/mission-offer-decorator";
 import type {
-  MissionTuning,
-  MissionTypeGenerationRule,
-} from "../model/mission-tuning";
-import {
-  CITY_INFESTATION_CHANGED,
-  MISSION_EXPIRED,
-  MISSION_OFFERED,
-} from "../model/overworld-domain-event";
+  MissionDebut,
+  MissionOfferRule,
+  MissionOfferRules,
+  MissionSite,
+} from "../model/mission-offer-rule";
+import { MISSION_OFFERED } from "../model/mission-offered-event";
+import type { MissionTuning } from "../model/mission-tuning";
 import type { OverworldState } from "../model/overworld-state";
-import { createInitialCampaignProgress } from "./campaign-progress-factory";
-import { buildEarthMap } from "./earth-map-builder";
+import { getCity } from "./earth-map-query-service";
 import type { MissionGenerationDeps } from "./mission-generation-service";
 import {
-  difficultyFor,
-  expireMissions,
+  countsAgainstCap,
   generateMissions,
-  mapSizeFor,
-  offerChance,
-  wavesFor,
+  hasDebuted,
 } from "./mission-generation-service";
+import {
+  boardMap,
+  fixtureState,
+  installation,
+  missionAt,
+  progressIn,
+} from "./missions/mission-fixtures.test-helper";
+import { buildOffer } from "./missions/mission-offer-builder";
+import { MISSION_OFFER_DECORATORS } from "./missions/mission-offer-decorators";
+import { MISSION_OFFER_RULES } from "./missions/mission-offer-rules";
 
 // ===========================================
 // Fixtures
 // ===========================================
 
-const RULE: MissionTypeGenerationRule =
-  MISSION_TUNING.rules["infestation-clearance"];
-const DEFEND_RULE: MissionTypeGenerationRule =
-  MISSION_TUNING.rules["defend-installation"];
-const CLEARANCE = MISSION_TYPES["infestation-clearance"];
-
-/** A rule that offers to every eligible city, every day; the defend type never. */
-const ALWAYS: MissionTuning = {
-  rules: {
-    "infestation-clearance": { ...RULE, chanceAtThreshold: 1, chanceAtMax: 1 },
-    "defend-installation": {
-      ...DEFEND_RULE,
-      chanceAtThreshold: 0,
-      chanceAtMax: 0,
-    },
-  },
-  techCarcass: MISSION_TUNING.techCarcass,
-  defence: MISSION_TUNING.defence,
-};
-
-/** A rule that never offers. */
-const NEVER: MissionTuning = {
-  rules: {
-    "infestation-clearance": { ...RULE, chanceAtThreshold: 0, chanceAtMax: 0 },
-    "defend-installation": {
-      ...DEFEND_RULE,
-      chanceAtThreshold: 0,
-      chanceAtMax: 0,
-    },
-  },
-  techCarcass: MISSION_TUNING.techCarcass,
-  defence: MISSION_TUNING.defence,
-};
-
-/** Every eligible region is offered a defend mission every day; the clearance never. */
-const ALWAYS_DEFEND: MissionTuning = {
-  rules: {
-    "infestation-clearance": { ...RULE, chanceAtThreshold: 0, chanceAtMax: 0 },
-    "defend-installation": {
-      ...DEFEND_RULE,
-      chanceAtThreshold: 1,
-      chanceAtMax: 1,
-    },
-  },
-  techCarcass: MISSION_TUNING.techCarcass,
-  defence: MISSION_TUNING.defence,
-};
-
-/** A built installation in `regionId`. */
-function installation(
-  id: string,
-  regionId: string,
-  typeId: DeployableTypeId = "sensor-array",
-): Deployable {
-  return { id, typeId, regionId, level: 1, builtDay: 1, online: true };
-}
-
-/**
- * Two regions, four cities:
- *
- *   west (temperate): clean=0 (city)   low=10 (town)
- *   east (desert):    mid=50 (city)    full=100 (town)
- */
-function fixtureMap(): EarthMap {
-  return buildEarthMap({
-    regions: [
-      {
-        id: "west",
-        name: "West",
-        biome: "temperate",
-        cities: [
-          { id: "clean", name: "Clean", layout: { x: 0.1, y: 0.1 } },
-          {
-            id: "low",
-            name: "Low",
-            layout: { x: 0.2, y: 0.1 },
-            infestation: 10,
-            scale: "town",
-          },
-        ],
-      },
-      {
-        id: "east",
-        name: "East",
-        biome: "desert",
-        cities: [
-          {
-            id: "mid",
-            name: "Mid",
-            layout: { x: 0.8, y: 0.1 },
-            infestation: 50,
-          },
-          {
-            id: "full",
-            name: "Full",
-            layout: { x: 0.9, y: 0.1 },
-            infestation: 100,
-            scale: "town",
-          },
-        ],
-      },
-    ],
-    links: [
-      ["clean", "low"],
-      ["low", "mid"],
-      ["mid", "full"],
-    ],
-  });
-}
-
-function fixtureState(overrides: Partial<OverworldState> = {}): OverworldState {
+/** The shipped director on `seed`, with `overrides`. */
+function deps(
+  seed: number,
+  overrides: Partial<MissionGenerationDeps> = {},
+): MissionGenerationDeps {
   return {
-    day: 5,
-    map: fixtureMap(),
-    threat: 40,
-    threatOffset: 0,
-    spreadCooldowns: {},
-    missions: [],
-    pendingEvents: [],
-    deployables: [],
-    hives: [],
-    progress: createInitialCampaignProgress(),
+    intelBonus: {},
+    rng: new Mulberry32Rng(seed),
+    ids: new SequentialIdGenerator(),
+    tuning: MISSION_TUNING,
+    missionTypes: MISSION_TYPES,
+    offerRules: MISSION_OFFER_RULES,
+    acts: ACTS,
+    decorators: [],
     ...overrides,
   };
 }
 
-function deps(
-  seed: number,
-  tuning: MissionTuning = MISSION_TUNING,
-  intelBonus: Record<string, number> = {},
-): MissionGenerationDeps {
-  return {
-    intelBonus,
-    rng: new Mulberry32Rng(seed),
-    ids: new SequentialIdGenerator(),
-    tuning,
-    missionTypes: MISSION_TYPES,
-  };
-}
-
-function missionAt(cityId: string, expiresDay: number, penalty = 10): Mission {
-  return {
-    id: `mission-${cityId}`,
-    typeId: "infestation-clearance",
-    cityId,
-    difficulty: 3,
-    mapParams: {
-      biome: "temperate",
-      settlement: "city",
-      size: "small",
-      seed: "1",
+/** Shipped tuning whose defend roll succeeds in every installed region at or above 40. */
+const ALWAYS_DEFEND: MissionTuning = {
+  ...MISSION_TUNING,
+  defence: {
+    ...MISSION_TUNING.defence,
+    offer: {
+      ...MISSION_TUNING.defence.offer,
+      chanceAtThreshold: 1,
+      chanceAtMax: 1,
     },
-    rewards: { credits: 900, techPoints: 0 },
-    createdDay: expiresDay - 5,
-    expiresDay,
-    ignorePenalty: penalty,
+  },
+};
+
+/** `count` detected cities in one region, all at `infestation`. */
+function wideBoard(
+  count: number,
+  infestation = 50,
+  overrides: Partial<OverworldState> = {},
+): OverworldState {
+  return fixtureState({
+    map: boardMap(Array.from({ length: count }, () => infestation)),
+    ...overrides,
+  });
+}
+
+/** Every act of the shipped catalogue with `patch` applied. */
+function actsWith(patch: Partial<ActDefinition>): ActCatalogue {
+  const acts = {} as Record<ActId, ActDefinition>;
+  for (const id of ACT_IDS) {
+    acts[id] = { ...ACTS[id], ...patch };
+  }
+  return acts;
+}
+
+/**
+ * A test offer rule for `typeId`: every detected city is a site of
+ * weight 1 unless `eligible` says otherwise, and the offer is the
+ * shared builder's.
+ */
+function fakeOffer(
+  typeId: MissionTypeId,
+  debut: MissionDebut = { act: "act-1", missionsInAct: 0 },
+  eligible?: (state: OverworldState) => readonly MissionSite[],
+): MissionOfferRule {
+  return {
+    kind: "offer",
+    typeId,
+    debut,
+    eligible: (state) =>
+      eligible?.(state) ??
+      state.map.cities
+        .filter((city) => city.detected)
+        .map((city) => ({ cityId: city.id, weight: 1 })),
+    create: (state, site, ctx) =>
+      buildOffer(state, getCity(state.map, site.cityId), typeId, ctx),
   };
 }
 
-// ===========================================
-// Formulae
-// ===========================================
+/** Both mission types drawn by the board, through `fakeOffer` unless given. */
+function bothDrawn(
+  defend: MissionOfferRule = fakeOffer("defend-installation"),
+): MissionOfferRules {
+  return {
+    "infestation-clearance": fakeOffer("infestation-clearance"),
+    "defend-installation": defend,
+  };
+}
 
-describe("offerChance", () => {
-  it("is zero below the threshold and linear up to the maximum", () => {
-    expect(offerChance(RULE.minInfestation - 1, RULE)).toBe(0);
-    expect(offerChance(RULE.minInfestation, RULE)).toBeCloseTo(
-      RULE.chanceAtThreshold,
-    );
-    expect(offerChance(MAX_INFESTATION, RULE)).toBeCloseTo(RULE.chanceAtMax);
-    const mid = (RULE.minInfestation + MAX_INFESTATION) / 2;
-    expect(offerChance(mid, RULE)).toBeCloseTo(
-      (RULE.chanceAtThreshold + RULE.chanceAtMax) / 2,
-    );
-  });
-
-  it("treats a threshold at maximum infestation as an all-or-nothing gate", () => {
-    const gate = { ...RULE, minInfestation: MAX_INFESTATION };
-    expect(offerChance(99, gate)).toBe(0);
-    expect(offerChance(100, gate)).toBeCloseTo(RULE.chanceAtMax);
-  });
-});
-
-describe("difficultyFor", () => {
-  it("stays inside the type's band and the global range", () => {
-    for (const infestation of [0, 20, 50, 100]) {
-      for (const threat of [0, 50, 100]) {
-        const d = difficultyFor(infestation, threat, CLEARANCE, RULE);
-        expect(Number.isInteger(d)).toBe(true);
-        expect(d).toBeGreaterThanOrEqual(CLEARANCE.difficultyBand.min);
-        expect(d).toBeLessThanOrEqual(CLEARANCE.difficultyBand.max);
-        expect(d).toBeGreaterThanOrEqual(MISSION_DIFFICULTY_RANGE.min);
-        expect(d).toBeLessThanOrEqual(MISSION_DIFFICULTY_RANGE.max);
-      }
+/** How often each type is offered first, over `runs` seeds, on a one-slot board. */
+function firstDraws(
+  offerRules: MissionOfferRules,
+  typeWeights: ActDefinition["typeWeights"],
+  runs: number,
+): Record<MissionTypeId, number> {
+  const counts: Record<MissionTypeId, number> = {
+    "infestation-clearance": 0,
+    "defend-installation": 0,
+  };
+  const acts = actsWith({ boardCap: 1, typeWeights });
+  for (let seed = 1; seed <= runs; seed += 1) {
+    const [offer] = generateMissions(
+      wideBoard(4),
+      deps(seed, { offerRules, acts }),
+    ).state.missions;
+    if (offer !== undefined) {
+      counts[offer.typeId] += 1;
     }
-  });
+  }
+  return counts;
+}
 
-  it("rises with infestation and with threat, from the band's floor to its ceiling", () => {
-    expect(difficultyFor(0, 0, CLEARANCE, RULE)).toBe(
-      CLEARANCE.difficultyBand.min,
-    );
-    expect(difficultyFor(100, 100, CLEARANCE, RULE)).toBe(
-      CLEARANCE.difficultyBand.max,
-    );
-    expect(difficultyFor(80, 20, CLEARANCE, RULE)).toBeGreaterThan(
-      difficultyFor(20, 20, CLEARANCE, RULE),
-    );
-    expect(difficultyFor(50, 90, CLEARANCE, RULE)).toBeGreaterThanOrEqual(
-      difficultyFor(50, 10, CLEARANCE, RULE),
-    );
-  });
-
-  it("clamps into a narrow band", () => {
-    const narrow = { ...CLEARANCE, difficultyBand: { min: 4, max: 6 } };
-    expect(difficultyFor(0, 0, narrow, RULE)).toBe(4);
-    expect(difficultyFor(100, 100, narrow, RULE)).toBe(6);
-  });
-});
-
-describe("mapSizeFor", () => {
-  it("steps through small, medium and large at the rule's thresholds", () => {
-    expect(mapSizeFor(RULE.mediumFromDifficulty - 1, RULE)).toBe("small");
-    expect(mapSizeFor(RULE.mediumFromDifficulty, RULE)).toBe("medium");
-    expect(mapSizeFor(RULE.largeFromDifficulty - 1, RULE)).toBe("medium");
-    expect(mapSizeFor(RULE.largeFromDifficulty, RULE)).toBe("large");
-  });
-});
-
-// ===========================================
-// Expiry
-// ===========================================
-
-describe("expireMissions", () => {
-  it("returns the same state when nothing has expired", () => {
-    const state = fixtureState({ missions: [missionAt("mid", 6)] });
-    const result = expireMissions(state);
-    expect(result.state).toBe(state);
-    expect(result.events).toEqual([]);
-  });
-
-  it("removes missions whose expiry day has arrived and penalises their cities", () => {
-    const state = fixtureState({
-      day: 5,
-      missions: [missionAt("mid", 5, 10), missionAt("low", 8)],
-    });
-    const result = expireMissions(state);
-    expect(result.state.missions.map((m) => m.cityId)).toEqual(["low"]);
-    const mid = result.state.map.cities.find((c) => c.id === "mid");
-    expect(mid?.infestation).toBe(60);
-    expect(result.events).toEqual([
-      {
-        type: MISSION_EXPIRED,
-        payload: {
-          missionId: "mission-mid",
-          typeId: "infestation-clearance",
-          cityId: "mid",
-          ignorePenalty: 10,
+/** A decorator that appends `|<tag>` to the map seed, recording the first draw of its stream. */
+function tagging(
+  tag: string,
+  draws?: Map<string, number>,
+): MissionOfferDecorator {
+  return {
+    id: tag,
+    decorate: (mission, _state, ctx) => {
+      draws?.set(mission.id, ctx.rng.next());
+      return {
+        ...mission,
+        mapParams: {
+          ...mission.mapParams,
+          seed: `${mission.mapParams.seed}|${tag}`,
         },
-      },
-      {
-        type: CITY_INFESTATION_CHANGED,
-        payload: { cityId: "mid", from: 50, to: 60 },
-      },
-    ]);
-    expect(state.missions).toHaveLength(2);
-    expect(state.map.cities.find((c) => c.id === "mid")?.infestation).toBe(50);
+      };
+    },
+  };
+}
+
+/** The ids of cities holding an offer in `state`. */
+function offeredCities(state: OverworldState): string[] {
+  return state.missions.map((mission) => mission.cityId);
+}
+
+// ===========================================
+// Queries
+// ===========================================
+
+describe("hasDebuted", () => {
+  const debut: MissionDebut = { act: "act-2", missionsInAct: 3 };
+
+  it("waits for the debut act and for enough missions played in it", () => {
+    expect(hasDebuted(debut, progressIn("act-1", 9))).toBe(false);
+    expect(hasDebuted(debut, progressIn("act-2", 2))).toBe(false);
+    expect(hasDebuted(debut, progressIn("act-2", 3))).toBe(true);
   });
 
-  it("clamps the penalty at maximum infestation and emits no change event then", () => {
-    const state = fixtureState({
-      day: 9,
-      missions: [missionAt("full", 9, 25)],
-    });
-    const result = expireMissions(state);
-    const full = result.state.map.cities.find((c) => c.id === "full");
-    expect(full?.infestation).toBe(MAX_INFESTATION);
-    expect(result.events.map((e) => e.type)).toEqual([MISSION_EXPIRED]);
-  });
-
-  it("keeps a mission that expires tomorrow", () => {
-    const state = fixtureState({ day: 4, missions: [missionAt("mid", 5)] });
-    expect(expireMissions(state).state.missions).toHaveLength(1);
-  });
-
-  it("never expires a pinned mission, however late (ADR 0013 §2.2)", () => {
-    const pinned: Mission = { ...missionAt("mid", 5, 10), pinned: true };
-    const state = fixtureState({
-      day: 30,
-      missions: [pinned, missionAt("low", 5)],
-    });
-    const result = expireMissions(state);
-    expect(result.state.missions).toEqual([pinned]);
-    expect(result.state.missions[0]).toBe(pinned);
+  it("counts only the missions played in the current act", () => {
     expect(
-      result.events.filter((e) => e.type === MISSION_EXPIRED),
-    ).toHaveLength(1);
-    expect(result.state.map.cities.find((c) => c.id === "mid")).toBe(
-      state.map.cities.find((c) => c.id === "mid"),
-    );
+      hasDebuted(debut, {
+        ...progressIn("act-2", 10),
+        actStartedAt: 8,
+      }),
+    ).toBe(false);
+  });
+
+  it("stays debuted in every later act", () => {
+    expect(hasDebuted(debut, progressIn("act-3"))).toBe(true);
+    expect(hasDebuted(debut, progressIn("finale"))).toBe(true);
+  });
+});
+
+describe("countsAgainstCap", () => {
+  it("counts an unpinned drawn offer and nothing pinned or triggered", () => {
+    const clearance = missionAt("mid", 9);
+    expect(countsAgainstCap(clearance, MISSION_OFFER_RULES)).toBe(true);
     expect(
-      expireMissions(fixtureState({ day: 30, missions: [pinned] })).events,
-    ).toEqual([]);
+      countsAgainstCap({ ...clearance, pinned: true }, MISSION_OFFER_RULES),
+    ).toBe(false);
+    expect(
+      countsAgainstCap(
+        missionAt("mid", 9, 10, "defend-installation"),
+        MISSION_OFFER_RULES,
+      ),
+    ).toBe(false);
   });
 });
 
 // ===========================================
-// Generation
+// The board
 // ===========================================
 
-describe("generateMissions", () => {
-  it("is deterministic for the same state, seed and deps", () => {
-    const state = fixtureState();
-    const a = generateMissions(state, deps(7, ALWAYS));
-    const b = generateMissions(state, deps(7, ALWAYS));
-    expect(a).toEqual(b);
-    const c = generateMissions(state, deps(8, ALWAYS));
-    expect(c.state.missions.map((m) => m.mapParams.seed)).not.toEqual(
-      a.state.missions.map((m) => m.mapParams.seed),
+describe("generateMissions — the board", () => {
+  it("fills the board to the act's cap: 3, 4, 5 (arc §5)", () => {
+    const offered = (act: ActId) =>
+      generateMissions(
+        wideBoard(8, 50, { progress: progressIn(act) }),
+        deps(1),
+      );
+    for (const [act, cap] of [
+      ["act-1", 3],
+      ["act-2", 4],
+      ["act-3", 5],
+    ] as const) {
+      const { state, events } = offered(act);
+      expect(ACTS[act].boardCap).toBe(cap);
+      expect(state.missions).toHaveLength(cap);
+      expect(events.map((e) => e.type)).toEqual(
+        Array.from({ length: cap }, () => MISSION_OFFERED),
+      );
+    }
+    // The finale draws no type yet: its story missions are pinned.
+    expect(offered("finale").state.missions).toEqual([]);
+  });
+
+  it("stops short of the cap when no more sites are eligible", () => {
+    // Act II needs 20: c0 qualifies, c1 does not, c2 is clean.
+    const { state } = generateMissions(
+      fixtureState({
+        map: boardMap([50, 15, 0]),
+        progress: progressIn("act-2"),
+      }),
+      deps(1),
     );
+    expect(offeredCities(state)).toEqual(["c0"]);
   });
 
-  it("offers to every city above the threshold and none below it", () => {
-    const result = generateMissions(fixtureState(), deps(1, ALWAYS));
-    expect(result.state.missions.map((m) => m.cityId)).toEqual(["mid", "full"]);
-    expect(result.events.map((e) => e.type)).toEqual([
-      MISSION_OFFERED,
-      MISSION_OFFERED,
-    ]);
+  it("counts the offers already on the board", () => {
+    const two = wideBoard(8, 50, {
+      missions: [missionAt("c0", 20), missionAt("c1", 20)],
+    });
+    const { state } = generateMissions(two, deps(1));
+    expect(state.missions).toHaveLength(3);
+    expect(state.missions.slice(0, 2)).toEqual(two.missions);
+
+    const full = wideBoard(8, 50, {
+      missions: [missionAt("c0", 20), missionAt("c1", 20), missionAt("c2", 20)],
+    });
+    const same = generateMissions(full, deps(1));
+    expect(same.state).toBe(full);
+    expect(same.events).toEqual([]);
   });
 
-  it("offers nothing to a city the player has not detected, however infested (GDD §5.3)", () => {
-    const map = fixtureMap();
-    const hidden = {
-      ...map,
-      cities: map.cities.map((c) =>
-        c.id === "mid" ? { ...c, detected: false } : c,
+  it("does not count pinned offers against the cap (ADR 0013 §2.2)", () => {
+    const pinned = (cityId: string): Mission => ({
+      ...missionAt(cityId, 20),
+      pinned: true,
+    });
+    const { state } = generateMissions(
+      wideBoard(8, 50, {
+        missions: [pinned("c0"), pinned("c1"), pinned("c2")],
+      }),
+      deps(1),
+    );
+    expect(state.missions).toHaveLength(6);
+    expect(state.missions.filter((m) => m.pinned !== true)).toHaveLength(3);
+  });
+
+  it("does not count triggered defences against the cap", () => {
+    const defences = ["c0", "c1", "c2"].map((cityId) =>
+      missionAt(cityId, 20, 15, "defend-installation"),
+    );
+    const { state } = generateMissions(
+      wideBoard(8, 50, { missions: defences }),
+      deps(1),
+    );
+    expect(
+      state.missions.filter((m) => m.typeId === "infestation-clearance"),
+    ).toHaveLength(3);
+  });
+
+  it("never offers at a city that already holds an offer", () => {
+    const { state } = generateMissions(
+      wideBoard(4, 50, {
+        missions: [missionAt("c1", 20, 10, "defend-installation")],
+      }),
+      deps(1),
+    );
+    const cities = offeredCities(state);
+    expect(cities).toHaveLength(4);
+    expect(new Set(cities).size).toBe(4);
+  });
+
+  it("weights the site draw by infestation", () => {
+    const acts = actsWith({ boardCap: 1 });
+    let worse = 0;
+    const runs = 1000;
+    for (let seed = 1; seed <= runs; seed += 1) {
+      const { state } = generateMissions(
+        fixtureState({ map: boardMap([20, 80]) }),
+        deps(seed, { acts }),
+      );
+      if (state.missions[0]?.cityId === "c1") worse += 1;
+    }
+    expect(worse / runs).toBeGreaterThan(0.75);
+    expect(worse / runs).toBeLessThan(0.85);
+  });
+
+  it("stamps the campaign's act on every offer", () => {
+    for (const act of ["act-1", "act-2", "act-3"] as const) {
+      const { state } = generateMissions(
+        wideBoard(8, 50, { progress: progressIn(act) }),
+        deps(3),
+      );
+      expect(state.missions.length).toBeGreaterThan(0);
+      expect(state.missions.every((m) => m.act === act)).toBe(true);
+    }
+  });
+});
+
+// ===========================================
+// Type draw
+// ===========================================
+
+describe("generateMissions — type draw", () => {
+  it("draws types in proportion to the act's weights", () => {
+    const counts = firstDraws(
+      bothDrawn(),
+      { "infestation-clearance": 1, "defend-installation": 3 },
+      2000,
+    );
+    const share = counts["defend-installation"] / 2000;
+    expect(share).toBeGreaterThan(0.71);
+    expect(share).toBeLessThan(0.79);
+  });
+
+  it("renormalises over the types with an eligible site", () => {
+    const nowhere = fakeOffer(
+      "defend-installation",
+      { act: "act-1", missionsInAct: 0 },
+      () => [],
+    );
+    expect(
+      firstDraws(
+        bothDrawn(nowhere),
+        { "infestation-clearance": 1, "defend-installation": 3 },
+        200,
       ),
-    };
-    const result = generateMissions(
-      fixtureState({ map: hidden }),
-      deps(1, ALWAYS),
-    );
-    expect(result.state.missions.map((m) => m.cityId)).toEqual(["full"]);
+    ).toEqual({ "infestation-clearance": 200, "defend-installation": 0 });
   });
 
-  it("returns the same state when the chance is zero", () => {
-    const state = fixtureState();
-    const result = generateMissions(state, deps(1, NEVER));
+  it("renormalises over the types that have debuted (arc §3)", () => {
+    const later = fakeOffer("defend-installation", {
+      act: "act-2",
+      missionsInAct: 0,
+    });
+    expect(
+      firstDraws(
+        bothDrawn(later),
+        { "infestation-clearance": 1, "defend-installation": 3 },
+        200,
+      ),
+    ).toEqual({ "infestation-clearance": 200, "defend-installation": 0 });
+  });
+
+  it("never draws a type without a weight in the act", () => {
+    expect(
+      firstDraws(bothDrawn(), { "infestation-clearance": 1 }, 200),
+    ).toEqual({ "infestation-clearance": 200, "defend-installation": 0 });
+  });
+
+  it("gates a type on its debut: the act, then missions played in it", () => {
+    const offerRules = bothDrawn(
+      fakeOffer("defend-installation", { act: "act-1", missionsInAct: 2 }),
+    );
+    const acts = actsWith({ typeWeights: { "defend-installation": 1 } });
+    const offered = (act: ActId, played: number) =>
+      generateMissions(
+        wideBoard(8, 50, { progress: progressIn(act, played) }),
+        deps(1, { offerRules, acts }),
+      ).state.missions.map((m) => m.typeId);
+    expect(offered("act-1", 1)).toEqual([]);
+    expect(offered("act-1", 2)).toEqual(
+      Array.from({ length: 3 }, () => "defend-installation"),
+    );
+    expect(offered("act-2", 0)).toHaveLength(4);
+  });
+});
+
+// ===========================================
+// Difficulty band
+// ===========================================
+
+describe("generateMissions — difficulty band", () => {
+  it("clamps every offer into the act's band (arc §3)", () => {
+    const hot = generateMissions(
+      wideBoard(8, 100, {
+        threat: 100,
+        deployables: [installation("d", "north")],
+      }),
+      deps(1, { tuning: ALWAYS_DEFEND }),
+    ).state.missions;
+    expect(hot.map((m) => m.typeId)).toContain("defend-installation");
+    expect(hot.every((m) => m.difficulty === 4)).toBe(true);
+
+    const calm = generateMissions(
+      wideBoard(8, 20, { threat: 0, progress: progressIn("act-3") }),
+      deps(1),
+    ).state.missions;
+    expect(calm).toHaveLength(5);
+    expect(calm.every((m) => m.difficulty === 5)).toBe(true);
+  });
+});
+
+// ===========================================
+// Triggers
+// ===========================================
+
+describe("generateMissions — Defend Installation", () => {
+  it("keeps its trigger: offered on top of a full board, on the region's worst city", () => {
+    const { state } = generateMissions(
+      fixtureState({ deployables: [installation("dep-1", "east")] }),
+      deps(1, { tuning: ALWAYS_DEFEND }),
+    );
+    const defend = state.missions.filter(
+      (m) => m.typeId === "defend-installation",
+    );
+    expect(defend.map((m) => m.cityId)).toEqual(["full"]);
+    expect(defend[0]).not.toHaveProperty("pinned");
+    // Act I cap of 3: the defence takes no slot, so every other eligible
+    // city (low at 10, mid at 50) still gets a clearance.
+    expect(
+      state.missions
+        .filter((m) => m.typeId === "infestation-clearance")
+        .map((m) => m.cityId)
+        .sort(),
+    ).toEqual(["low", "mid"]);
+  });
+
+  it("offers nothing below the regional threshold or without an installation", () => {
+    const below = generateMissions(
+      fixtureState({ deployables: [installation("dep-1", "west")] }),
+      deps(1, { tuning: ALWAYS_DEFEND }),
+    );
+    const none = generateMissions(
+      fixtureState(),
+      deps(1, { tuning: ALWAYS_DEFEND }),
+    );
+    for (const { state } of [below, none]) {
+      expect(state.missions.map((m) => m.typeId)).not.toContain(
+        "defend-installation",
+      );
+    }
+  });
+
+  it("draws the same board when the trigger offers nothing", () => {
+    const board = (tuning: MissionTuning) =>
+      generateMissions(
+        fixtureState({ deployables: [installation("dep-1", "west")] }),
+        deps(3, { tuning }),
+      );
+    expect(board(ALWAYS_DEFEND)).toEqual(board(MISSION_TUNING));
+  });
+});
+
+// ===========================================
+// Decorators
+// ===========================================
+
+describe("generateMissions — decorators", () => {
+  const state = fixtureState({ deployables: [installation("dep-1", "east")] });
+
+  it("applies every decorator to every new offer, in list order", () => {
+    const { state: next, events } = generateMissions(
+      state,
+      deps(2, {
+        tuning: ALWAYS_DEFEND,
+        decorators: [tagging("a"), tagging("b")],
+      }),
+    );
+    expect(next.missions.map((m) => m.typeId)).toContain("defend-installation");
+    for (const mission of next.missions) {
+      expect(mission.mapParams.seed).toMatch(/^\d+\|a\|b$/);
+    }
+    expect(
+      events.map((e) => (e.payload as { mission: Mission }).mission),
+    ).toEqual(next.missions);
+
+    const swapped = generateMissions(
+      state,
+      deps(2, {
+        tuning: ALWAYS_DEFEND,
+        decorators: [tagging("b"), tagging("a")],
+      }),
+    ).state.missions;
+    for (const mission of swapped) {
+      expect(mission.mapParams.seed).toMatch(/^\d+\|b\|a$/);
+    }
+  });
+
+  it("leaves existing offers alone", () => {
+    const existing = missionAt("low", 20);
+    const { state: next } = generateMissions(
+      { ...state, missions: [existing] },
+      deps(2, { decorators: [tagging("a")] }),
+    );
+    expect(next.missions[0]).toBe(existing);
+  });
+
+  it("gives each decorator its own stream, so decorators never shift the board or each other", () => {
+    const bare = generateMissions(state, deps(2, { tuning: ALWAYS_DEFEND }));
+    const alone = new Map<string, number>();
+    const first = new Map<string, number>();
+    const decorated = generateMissions(
+      state,
+      deps(2, {
+        tuning: ALWAYS_DEFEND,
+        decorators: [tagging("x", first), tagging("a", alone)],
+      }),
+    );
+    const again = new Map<string, number>();
+    generateMissions(
+      state,
+      deps(2, { tuning: ALWAYS_DEFEND, decorators: [tagging("a", again)] }),
+    );
+
+    // Stripping the tags gives back the undecorated board, draw for draw.
+    const untagged = decorated.state.missions.map((m) => ({
+      ...m,
+      mapParams: { ...m.mapParams, seed: m.mapParams.seed.split("|")[0] },
+    }));
+    expect(untagged).toEqual(bare.state.missions);
+    // "a" draws the same whether or not "x" runs before it; "x" draws differently.
+    expect([...alone.entries()]).toEqual([...again.entries()]);
+    expect([...first.values()]).not.toEqual([...alone.values()]);
+  });
+
+  it("ships with no decorators", () => {
+    expect(MISSION_OFFER_DECORATORS).toEqual([]);
+  });
+});
+
+// ===========================================
+// Contract
+// ===========================================
+
+describe("generateMissions — contract", () => {
+  it("is deterministic: the same state, seed and deps offer the same board", () => {
+    const state = fixtureState({
+      map: boardMap([10, 25, 40, 60, 80, 95]),
+      deployables: [installation("dep-1", "north")],
+    });
+    const a = generateMissions(state, deps(7, { tuning: ALWAYS_DEFEND }));
+    const b = generateMissions(state, deps(7, { tuning: ALWAYS_DEFEND }));
+    expect(a).toEqual(b);
+    const c = generateMissions(state, deps(8, { tuning: ALWAYS_DEFEND }));
+    expect(
+      c.state.missions.map((m) => [m.cityId, m.mapParams.seed]),
+    ).not.toEqual(a.state.missions.map((m) => [m.cityId, m.mapParams.seed]));
+  });
+
+  it("returns the same state when nothing can be offered", () => {
+    const state = fixtureState({ map: boardMap([0, 0]) });
+    const result = generateMissions(state, deps(1));
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
-  });
-
-  it("never offers a second mission to a city that already has one", () => {
-    const state = fixtureState({ missions: [missionAt("mid", 20)] });
-    const result = generateMissions(state, deps(1, ALWAYS));
-    expect(result.state.missions.map((m) => m.cityId)).toEqual(["mid", "full"]);
-    expect(result.state.missions[0]).toBe(state.missions[0]);
-  });
-
-  it("fills each mission from its type, city and region", () => {
-    const state = fixtureState({ day: 12, threat: 40 });
-    const result = generateMissions(state, deps(3, ALWAYS, { east: 2 }));
-    const [mid, full] = result.state.missions;
-    if (!mid || !full) {
-      throw new Error("expected two missions");
-    }
-
-    expect(mid.id).toBe("mission-1");
-    expect(full.id).toBe("mission-2");
-    expect(mid.typeId).toBe("infestation-clearance");
-    expect(mid.cityId).toBe("mid");
-    expect(mid.difficulty).toBe(difficultyFor(50, 40, CLEARANCE, RULE));
-    expect(mid.rewards.credits).toBe(
-      mid.difficulty * CLEARANCE.rewardPerDifficulty,
-    );
-    expect(mid.rewards.techPoints).toBe(
-      CLEARANCE.techRewardBase +
-        mid.difficulty * CLEARANCE.techRewardPerDifficulty,
-    );
-    expect(mid.createdDay).toBe(12);
-    expect(mid.expiresDay).toBe(12 + CLEARANCE.expiryDays + 2);
-    expect(mid.ignorePenalty).toBe(CLEARANCE.ignorePenalty);
-    expect(mid.mapParams).toEqual({
-      infestation: 5,
-      biome: "desert",
-      settlement: "city",
-      size: mapSizeFor(mid.difficulty, RULE),
-      seed: mid.mapParams.seed,
-      ...(mid.mapParams.techCarcass === undefined
-        ? {}
-        : { techCarcass: mid.mapParams.techCarcass }),
-    });
-    expect(mid.mapParams.seed).toMatch(/^\d+$/);
-    expect(full.mapParams.settlement).toBe("town");
-    expect(full.mapParams.infestation).toBe(10);
-    expect(full.difficulty).toBeGreaterThanOrEqual(mid.difficulty);
-    expect(result.events[0]).toEqual({
-      type: MISSION_OFFERED,
-      payload: { mission: mid },
-    });
-  });
-
-  it("freezes the campaign's act on every offer without drawing anything more (ADR 0013 §2.2)", () => {
-    const inAct = (act: ActId, tuning: MissionTuning) =>
-      generateMissions(
-        fixtureState({
-          deployables: [installation("dep-1", "east")],
-          progress: { ...createInitialCampaignProgress(), act },
-        }),
-        deps(3, tuning),
-      ).state.missions;
-    const withoutAct = (missions: readonly Mission[]) =>
-      missions.map(({ act: _act, ...rest }) => rest);
-    for (const tuning of [ALWAYS, ALWAYS_DEFEND]) {
-      const first = inAct("act-1", tuning);
-      const third = inAct("act-3", tuning);
-      expect(first.length).toBeGreaterThan(0);
-      expect(first.every((m) => m.act === "act-1")).toBe(true);
-      expect(third.every((m) => m.act === "act-3")).toBe(true);
-      expect(withoutAct(third)).toEqual(withoutAct(first));
-    }
-    expect(inAct("act-2", ALWAYS_DEFEND).map((m) => m.typeId)).toEqual([
-      "defend-installation",
-    ]);
-  });
-
-  it("rolls a tech carcass per mission on its own stream, worth the tuned points (#1171)", () => {
-    const state = fixtureState({ day: 12, threat: 40 });
-    const never: MissionTuning = {
-      ...ALWAYS,
-      techCarcass: { ...ALWAYS.techCarcass, chance: 0 },
-    };
-    const always: MissionTuning = {
-      ...ALWAYS,
-      techCarcass: { chance: 1, basePoints: 10, pointsPerDifficulty: 2 },
-    };
-    const none = generateMissions(state, deps(3, never));
-    for (const mission of none.state.missions) {
-      expect(mission.mapParams).not.toHaveProperty("techCarcass");
-    }
-    const all = generateMissions(state, deps(3, always));
-    expect(all.state.missions.length).toBeGreaterThan(0);
-    for (const mission of all.state.missions) {
-      expect(mission.mapParams.techCarcass).toEqual({
-        techPoints: 10 + 2 * mission.difficulty,
-      });
-    }
-    // The roll is a fork, so it perturbs nothing else the generator draws.
-    expect(
-      all.state.missions.map((m) => [m.id, m.difficulty, m.mapParams.seed]),
-    ).toEqual(
-      none.state.missions.map((m) => [m.id, m.difficulty, m.mapParams.seed]),
-    );
-  });
-
-  it("carries a carcass on roughly the tuned share of missions over many days", () => {
-    let carcasses = 0;
-    let offers = 0;
-    for (let seed = 1; seed <= 200; seed += 1) {
-      const result = generateMissions(
-        fixtureState({ day: seed }),
-        deps(seed, ALWAYS),
-      );
-      for (const mission of result.state.missions) {
-        offers += 1;
-        if (mission.mapParams.techCarcass !== undefined) carcasses += 1;
-      }
-    }
-    expect(offers).toBeGreaterThan(100);
-    expect(carcasses / offers).toBeGreaterThan(
-      MISSION_TUNING.techCarcass.chance - 0.12,
-    );
-    expect(carcasses / offers).toBeLessThan(
-      MISSION_TUNING.techCarcass.chance + 0.12,
-    );
-  });
-
-  it("uses a city's local biome for new missions without rewriting existing offers", () => {
-    const state = fixtureState({ missions: [missionAt("full", 20)] });
-    const local = {
-      ...state,
-      map: {
-        ...state.map,
-        cities: state.map.cities.map((city) => ({
-          ...city,
-          biome: "alpine" as const,
-        })),
-      },
-    };
-    const result = generateMissions(local, deps(3, ALWAYS));
-    expect(
-      result.state.missions.find((m) => m.cityId === "mid")?.mapParams.biome,
-    ).toBe("alpine");
-    expect(result.state.missions.find((m) => m.cityId === "full")).toBe(
-      state.missions[0],
-    );
-  });
-
-  it("applies no intel bonus to regions without an entry", () => {
-    const state = fixtureState({ day: 1 });
-    const result = generateMissions(state, deps(3, ALWAYS, { west: 4 }));
-    for (const mission of result.state.missions) {
-      expect(mission.expiresDay).toBe(1 + CLEARANCE.expiryDays);
-    }
-  });
-
-  it("offers roughly in proportion to the tuned chance over many days", () => {
-    const state = fixtureState({ threat: 0 });
-    let offers = 0;
-    const days = 400;
-    for (let seed = 0; seed < days; seed++) {
-      const result = generateMissions(state, deps(seed));
-      offers += result.state.missions.filter((m) => m.cityId === "full").length;
-    }
-    const rate = offers / days;
-    expect(rate).toBeGreaterThan(RULE.chanceAtMax - 0.1);
-    expect(rate).toBeLessThan(RULE.chanceAtMax + 0.1);
   });
 
   it("does not mutate the input state", () => {
-    const state = fixtureState();
+    const state = fixtureState({
+      deployables: [installation("dep-1", "east")],
+    });
     const snapshot = JSON.parse(JSON.stringify(state)) as OverworldState;
-    generateMissions(state, deps(5, ALWAYS));
+    generateMissions(state, deps(5, { tuning: ALWAYS_DEFEND }));
     expect(state).toEqual(snapshot);
   });
 
   it("rejects intel entries for unknown regions or with bad values", () => {
     const state = fixtureState();
     expect(() =>
-      generateMissions(state, deps(1, ALWAYS, { nowhere: 1 })),
+      generateMissions(state, deps(1, { intelBonus: { nowhere: 1 } })),
     ).toThrow(/unknown region "nowhere"/);
     expect(() =>
-      generateMissions(state, deps(1, ALWAYS, { east: -1 })),
+      generateMissions(state, deps(1, { intelBonus: { east: -1 } })),
     ).toThrow(/non-negative integer/);
     expect(() =>
-      generateMissions(state, deps(1, ALWAYS, { east: 1.5 })),
+      generateMissions(state, deps(1, { intelBonus: { east: 1.5 } })),
     ).toThrow(/non-negative integer/);
-  });
-});
-
-// ===========================================
-// Defend installation (#1175)
-// ===========================================
-
-describe("wavesFor", () => {
-  it("adds a wave per twenty points of regional infestation and caps", () => {
-    const tuning = MISSION_TUNING.defence;
-    expect(wavesFor(0, tuning)).toBe(tuning.baseWaves);
-    expect(wavesFor(40, tuning)).toBe(tuning.baseWaves + 2);
-    expect(wavesFor(60, tuning)).toBe(tuning.baseWaves + 3);
-    expect(wavesFor(100, tuning)).toBe(tuning.maxWaves);
-    expect(wavesFor(1000, tuning)).toBe(tuning.maxWaves);
-  });
-
-  it("never sends fewer than one wave", () => {
-    expect(
-      wavesFor(0, { baseWaves: 0, wavesPerInfestationPoint: 0, maxWaves: 0 }),
-    ).toBe(1);
-  });
-});
-
-describe("generateMissions — defend installation", () => {
-  it("offers nothing to a region without an installation, however infested", () => {
-    const { state, events } = generateMissions(
-      fixtureState(),
-      deps(1, ALWAYS_DEFEND),
-    );
-    expect(events).toEqual([]);
-    expect(state.missions).toEqual([]);
-  });
-
-  it("offers a defend mission to an installed region above the threshold, on its worst city", () => {
-    const { state, events } = generateMissions(
-      fixtureState({ deployables: [installation("dep-1", "east", "bank")] }),
-      deps(1, ALWAYS_DEFEND),
-    );
-    expect(events.map((e) => e.type)).toEqual([MISSION_OFFERED]);
-    const [mission] = state.missions;
-    expect(mission?.typeId).toBe("defend-installation");
-    expect(mission?.cityId).toBe("full");
-    expect(mission?.defence).toEqual({
-      installation: "bank",
-      deployableId: "dep-1",
-      generators: 3,
-      waves: wavesFor(75, MISSION_TUNING.defence),
-    });
-    expect(mission?.mapParams.settlement).toBe("town");
-    expect(mission?.expiresDay).toBe(
-      5 + MISSION_TYPES["defend-installation"].expiryDays,
-    );
-  });
-
-  it("offers nothing to an installed region below the regional threshold", () => {
-    const { events } = generateMissions(
-      fixtureState({ deployables: [installation("dep-1", "west")] }),
-      deps(1, ALWAYS_DEFEND),
-    );
-    expect(events).toEqual([]);
-  });
-
-  it("falls back to the next city when the worst one already has a mission", () => {
-    const { state } = generateMissions(
-      fixtureState({
-        deployables: [installation("dep-1", "east")],
-        missions: [missionAt("full", 9)],
-      }),
-      deps(1, ALWAYS_DEFEND),
-    );
-    const offered = state.missions.filter(
-      (m) => m.typeId === "defend-installation",
-    );
-    expect(offered.map((m) => m.cityId)).toEqual(["mid"]);
-  });
-
-  it("offers at most one defend mission per region per day", () => {
-    const { state } = generateMissions(
-      fixtureState({
-        deployables: [
-          installation("dep-1", "east", "bank"),
-          installation("dep-2", "east", "sensor-array"),
-        ],
-      }),
-      deps(1, ALWAYS_DEFEND),
-    );
-    expect(state.missions).toHaveLength(1);
-  });
-
-  it("picks which installation is attacked on a fork keyed by the mission id", () => {
-    const state = fixtureState({
-      deployables: [
-        installation("dep-1", "east", "bank"),
-        installation("dep-2", "east", "sensor-array"),
-        installation("dep-3", "east", "defensive-battery"),
-      ],
-    });
-    const picks = new Set<string>();
-    for (let seed = 1; seed <= 40; seed++) {
-      const { state: next } = generateMissions(
-        state,
-        deps(seed, ALWAYS_DEFEND),
-      );
-      picks.add(next.missions[0]?.defence?.deployableId ?? "none");
-    }
-    expect([...picks].sort()).toEqual(["dep-1", "dep-2", "dep-3"]);
-    const a = generateMissions(state, deps(7, ALWAYS_DEFEND));
-    const b = generateMissions(state, deps(7, ALWAYS_DEFEND));
-    expect(a).toEqual(b);
-  });
-
-  it("does not give a city both a clearance and a defend mission on the same day", () => {
-    const both: MissionTuning = {
-      ...ALWAYS,
-      rules: {
-        ...ALWAYS.rules,
-        "defend-installation": ALWAYS_DEFEND.rules["defend-installation"],
-      },
-    };
-    const { state } = generateMissions(
-      fixtureState({ deployables: [installation("dep-1", "east")] }),
-      deps(1, both),
-    );
-    const cities = state.missions.map((m) => m.cityId);
-    expect(new Set(cities).size).toBe(cities.length);
-    expect(state.missions.some((m) => m.typeId === "defend-installation")).toBe(
-      false,
-    );
-  });
-
-  it("draws exactly what it drew before when no region has an installation", () => {
-    const before = generateMissions(fixtureState(), deps(3, ALWAYS));
-    const withDefend: MissionTuning = {
-      ...ALWAYS,
-      rules: {
-        ...ALWAYS.rules,
-        "defend-installation": ALWAYS_DEFEND.rules["defend-installation"],
-      },
-    };
-    const after = generateMissions(fixtureState(), deps(3, withDefend));
-    expect(after).toEqual(before);
-  });
-
-  it("offers roughly in proportion to the tuned chance over many days", () => {
-    const state = fixtureState({
-      deployables: [installation("dep-1", "east")],
-    });
-    const tuning: MissionTuning = {
-      ...ALWAYS_DEFEND,
-      rules: {
-        ...ALWAYS_DEFEND.rules,
-        "defend-installation": {
-          ...DEFEND_RULE,
-          chanceAtThreshold: 0.1,
-          chanceAtMax: 0.1,
-        },
-      },
-    };
-    let offered = 0;
-    const days = 2000;
-    for (let seed = 0; seed < days; seed++) {
-      offered += generateMissions(state, deps(seed, tuning)).state.missions
-        .length;
-    }
-    expect(offered / days).toBeGreaterThan(0.07);
-    expect(offered / days).toBeLessThan(0.13);
   });
 });

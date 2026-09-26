@@ -35,7 +35,11 @@ import { createOverworldCommandDispatcher } from "../../overworld/service/comman
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import { registerEventCommands } from "../../overworld/service/event-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
-import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
+import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
+import { ACTS } from "../../overworld/data/acts";
+import { MISSION_CONSEQUENCE_RULES } from "../../overworld/service/missions/mission-consequence-rules";
+import { MISSION_OFFER_DECORATORS } from "../../overworld/service/missions/mission-offer-decorators";
+import { MISSION_OFFER_RULES } from "../../overworld/service/missions/mission-offer-rules";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { registerTechCommands } from "../../overworld/service/tech-command-handlers";
@@ -308,6 +312,8 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     rosterTuning: content.rosterTuning,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
     techPoints,
+    consequences: MISSION_CONSEQUENCE_RULES,
+    missionTuning: MISSION_TUNING,
   });
   dispatcher.register(LAUNCH_MISSION, launch);
   registerStartMission(dispatcher, {
@@ -367,6 +373,10 @@ function composeTickDeps(debug: CampaignDebugOptions | undefined): TickDeps {
     infestationTuning: INFESTATION_TUNING,
     missionTuning: MISSION_TUNING,
     missionTypes: MISSION_TYPES,
+    missionOffers: MISSION_OFFER_RULES,
+    missionConsequences: MISSION_CONSEQUENCE_RULES,
+    offerDecorators: MISSION_OFFER_DECORATORS,
+    acts: ACTS,
     threatTuning: applyDebugThreat(THREAT_TUNING, debug),
     economyTuning: ECONOMY_TUNING,
     eventTypes: new DataEventTypeCatalogue(

@@ -1,7 +1,7 @@
 import { BIOME_INFO } from "../../content/data/biome-info";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
-import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
+import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import type {
   BriefingRow,
@@ -12,6 +12,7 @@ import {
   formatTechPoints,
   formatWhole,
 } from "../service/format";
+import { missionCountdownText } from "../service/mission-countdown";
 import {
   MISSION_PRESENTATION,
   briefingFieldsOf,
@@ -204,7 +205,7 @@ export class MissionDetailsView {
       carcass: mission.mapParams.techCarcass
         ? `Reported · +${formatTechPoints(mission.mapParams.techCarcass.techPoints)}`
         : "None reported",
-      "days-left": `${formatWhole(mission.expiresDay - state.overworld.day)} d`,
+      "days-left": missionCountdownText(mission, state.overworld.day),
       biome: BIOME_INFO[mission.mapParams.biome].name,
       settlement: mission.mapParams.settlement,
       size: mission.mapParams.size,

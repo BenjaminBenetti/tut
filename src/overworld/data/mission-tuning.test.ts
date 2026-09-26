@@ -1,25 +1,21 @@
 import { describe, expect, it } from "vitest";
 
+import { ACT_IDS } from "../../content/model/act-id";
 import { MISSION_DIFFICULTY_RANGE } from "../../content/model/mission-type";
 import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
 import { MAX_INFESTATION, MIN_INFESTATION } from "../model/city";
-import { offerChance } from "../service/mission-generation-service";
+import { offerChance } from "../service/missions/defend-installation-trigger";
 import { MISSION_TUNING } from "./mission-tuning";
 
 describe("mission tuning", () => {
-  it("has a rule for every shipped mission type", () => {
-    expect(Object.keys(MISSION_TUNING.rules).sort()).toEqual(
+  it("has a difficulty rule for every shipped mission type", () => {
+    expect(Object.keys(MISSION_TUNING.difficulty).sort()).toEqual(
       [...MISSION_TYPE_IDS].sort(),
     );
   });
 
-  it("keeps thresholds, chances and weights in range", () => {
-    for (const rule of Object.values(MISSION_TUNING.rules)) {
-      expect(rule.minInfestation).toBeGreaterThanOrEqual(MIN_INFESTATION);
-      expect(rule.minInfestation).toBeLessThanOrEqual(MAX_INFESTATION);
-      expect(rule.chanceAtThreshold).toBeGreaterThanOrEqual(0);
-      expect(rule.chanceAtMax).toBeLessThanOrEqual(1);
-      expect(rule.chanceAtThreshold).toBeLessThanOrEqual(rule.chanceAtMax);
+  it("keeps difficulty weights in range", () => {
+    for (const rule of Object.values(MISSION_TUNING.difficulty)) {
       expect(rule.infestationWeight).toBeGreaterThanOrEqual(0);
       expect(rule.threatWeight).toBeGreaterThanOrEqual(0);
       expect(rule.infestationWeight + rule.threatWeight).toBeCloseTo(1, 9);
@@ -30,17 +26,29 @@ describe("mission tuning", () => {
     // The Executive Director's numbers (2026-09-20): the baseline roll
     // at the threshold stays where it was, and climbs to about a
     // quarter chance a day at full infestation.
-    const rule = MISSION_TUNING.rules["defend-installation"];
-    expect(rule.trigger).toBe("region-installation");
-    expect(offerChance(39, rule)).toBe(0);
-    expect(offerChance(40, rule)).toBeCloseTo(0.05);
-    expect(offerChance(70, rule)).toBeCloseTo(0.15);
-    expect(offerChance(100, rule)).toBeCloseTo(0.25);
+    const curve = MISSION_TUNING.defence.offer;
+    expect(curve.minInfestation).toBeGreaterThanOrEqual(MIN_INFESTATION);
+    expect(curve.minInfestation).toBeLessThanOrEqual(MAX_INFESTATION);
+    expect(offerChance(39, curve)).toBe(0);
+    expect(offerChance(40, curve)).toBeCloseTo(0.05);
+    expect(offerChance(70, curve)).toBeCloseTo(0.15);
+    expect(offerChance(100, curve)).toBeCloseTo(0.25);
+  });
+
+  it("offers a clearance from 20 infestation, from 10 in Act I, and mops up under 15 (arc §5, §6.1)", () => {
+    const { minInfestationByAct, mopUpBelow } = MISSION_TUNING.clearance;
+    expect(Object.keys(minInfestationByAct).sort()).toEqual(
+      [...ACT_IDS].sort(),
+    );
+    expect(minInfestationByAct["act-1"]).toBe(10);
+    expect(minInfestationByAct["act-2"]).toBe(20);
+    expect(minInfestationByAct["act-3"]).toBe(20);
+    expect(mopUpBelow).toBe(15);
   });
 
   it("orders map size thresholds inside the difficulty range", () => {
     const { min, max } = MISSION_DIFFICULTY_RANGE;
-    for (const rule of Object.values(MISSION_TUNING.rules)) {
+    for (const rule of Object.values(MISSION_TUNING.difficulty)) {
       expect(Number.isInteger(rule.mediumFromDifficulty)).toBe(true);
       expect(Number.isInteger(rule.largeFromDifficulty)).toBe(true);
       expect(rule.mediumFromDifficulty).toBeGreaterThan(min);

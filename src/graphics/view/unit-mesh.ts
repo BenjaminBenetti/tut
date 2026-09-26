@@ -10,6 +10,7 @@ import { UnitMotionRig } from "../service/unit-motion-rig";
 import type { Disposable } from "../model/disposable";
 import { DEFAULT_FOOTPRINT } from "../../tactical/service/footprint-service";
 import { unitFeetAt } from "../service/unit-placement";
+import { DormantLook } from "./dormant-look";
 
 // ===========================================
 // Constants
@@ -116,6 +117,7 @@ export class UnitMesh implements Disposable {
   private readonly model: Object3D;
   private readonly hoverRing: Mesh;
   private readonly selectionRing: Mesh;
+  private readonly sleep: DormantLook;
   private readonly disposables: Disposable[] = [];
 
   // ===========================================
@@ -150,6 +152,9 @@ export class UnitMesh implements Disposable {
     // built. Applied to the model rather than the group so the animation
     // queue's grow and fade, which scale the group, still run from 0 to 1.
     this.model.scale.multiplyScalar(footprint / authoredFootprint);
+    // Taken after the footprint scale: that scale is the awake pose.
+    this.sleep = new DormantLook(this.model);
+    this.disposables.push(this.sleep);
     // A unit throws a shadow and takes one; its selection rings do not,
     // being flat markers on the ground (#507).
     this.model.traverse((part) => {
@@ -197,6 +202,21 @@ export class UnitMesh implements Disposable {
    */
   setHidden(hidden: boolean): void {
     this.object.visible = !hidden;
+  }
+
+  /**
+   * Draws the unit asleep — curled and dim — or awake again (#1179).
+   * Idempotent; the scene calls it with the unit's status each update.
+   *
+   * @param dormant - Whether the unit carries the `dormant` status.
+   */
+  setDormant(dormant: boolean): void {
+    this.sleep.set(dormant);
+  }
+
+  /** Whether the unit is drawn asleep. */
+  get dormant(): boolean {
+    return this.sleep.dormant;
   }
 
   /** Shows or hides the rings. */

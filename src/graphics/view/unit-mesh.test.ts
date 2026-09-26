@@ -3,6 +3,7 @@ import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from "three";
 import { describe, expect, it } from "vitest";
 
 import { LAYER_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
+import { DORMANT_POSE } from "./dormant-look";
 import { FACING_YAW, UnitMesh } from "./unit-mesh";
 
 /** A stand-in model: one box mesh, pivot at base centre. */
@@ -83,6 +84,18 @@ describe("UnitMesh", () => {
     expect(mesh.object.visible).toBe(false);
     mesh.setHidden(false);
     expect(mesh.object.visible).toBe(true);
+  });
+
+  it("draws a sleeper curled on its model, leaving the group to the animation queue (#1179)", () => {
+    const mesh = new UnitMesh("b1", model(), undefined, 2);
+    const sleeper = mesh.object.getObjectByName("unit-model:b1")!;
+    mesh.setDormant(true);
+    expect(mesh.dormant).toBe(true);
+    expect(sleeper.scale.y).toBeCloseTo(2 * DORMANT_POSE.height);
+    expect(mesh.object.scale.toArray()).toEqual([1, 1, 1]);
+    mesh.setDormant(false);
+    expect(mesh.dormant).toBe(false);
+    expect(sleeper.scale.toArray()).toEqual([2, 2, 2]);
   });
 
   it("dispose detaches the group", () => {

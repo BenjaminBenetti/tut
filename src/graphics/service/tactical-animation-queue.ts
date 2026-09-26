@@ -21,6 +21,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { BLAST_RESOLVED } from "../../tactical/model/blast-resolved-event";
+import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
 import type { EffectDamagedPayload } from "../../tactical/model/effect-damaged-event";
 import { EFFECT_DAMAGED } from "../../tactical/model/effect-damaged-event";
 import type { StructureDestroyedPayload } from "../../tactical/model/structure-destroyed-event";
@@ -246,6 +247,14 @@ const NOTICE_HOLD = 0.6;
 
 /** Height for a unit whose model is not registered; keeps effects on screen. */
 const FALLBACK_HEIGHT = 1;
+
+/**
+ * A woken brood's stir (#1179): how many reveals long it lasts, how
+ * many times each bug heaves up, and how far (a share of its height).
+ */
+const STIR_REVEALS = 2;
+const STIR_HEAVES = 2;
+const STIR_RISE = 0.25;
 
 /** Egg burst size in tiles, and how far it swells as it fades (#697). */
 const BURST_SIZE = 1.6;
@@ -739,6 +748,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         return event.payload.team === "tdf"
           ? this.reveal(event.payload.unitId)
           : undefined;
+      case BROOD_WOKE:
+        return this.stir(event.payload.unitIds);
       default:
         return undefined;
     }
@@ -1116,6 +1127,59 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         return undefined;
       },
       finish: settle,
+    };
+  }
+
+  /**
+   * A brood waking (#1179): every member the player can see heaves up
+   * and settles, together, twice. Played after the redraw
+   * (`phaseEvents`), so the scene has already uncurled them and a
+   * member spotted by the same step has been placed; one the player
+   * cannot see has no object and does nothing, so the stir gives away
+   * no bug that vision hides (ADR 0006).
+   *
+   * ```
+   *   y scale  1 ─╱╲─╱╲─ 1      heaves: STIR_HEAVES, each smaller
+   *   x, z     1 ─╲╱─╲╱─ 1      pulled in by a third of the rise
+   * ```
+   *
+   * @param unitIds - The brood's members.
+   * @returns The stir, or undefined when none of them is drawn.
+   */
+  private stir(unitIds: readonly UnitId[]): Animation | undefined {
+    const objects = unitIds
+      .map((unitId) => this.scene.unitObject(unitId))
+      .filter((object): object is Object3D => object !== undefined);
+    if (objects.length === 0) {
+      return undefined;
+    }
+    const seconds = this.timing.revealSeconds * STIR_REVEALS;
+    let elapsed = 0;
+    const pose = (lift: number): void => {
+      for (const object of objects) {
+        object.scale.set(1 - lift / 3, 1 + lift, 1 - lift / 3);
+      }
+    };
+    return {
+      name: `stir:${String(objects.length)}`,
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const t = elapsed / seconds;
+        pose(
+          STIR_RISE *
+            Math.abs(Math.sin(Math.PI * STIR_HEAVES * t)) *
+            (1 - t / 2),
+        );
+        if (elapsed >= seconds) {
+          pose(0);
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: () => {
+        pose(0);
+      },
     };
   }
 

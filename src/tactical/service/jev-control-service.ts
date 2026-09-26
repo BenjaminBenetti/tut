@@ -16,6 +16,7 @@ import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { TacticalCommand } from "../model/tactical-command";
 import type { TacticalHandlers } from "./tactical-command-handlers";
 import { applyTacticalCommand } from "./tactical-command-handlers";
+import { restingBugIds } from "./dormancy-service";
 import { withVision } from "./vision-service";
 import { isAutonomous } from "../model/unit";
 import { extract } from "../model/extract-command";
@@ -35,17 +36,26 @@ export function startJevPhase(mission: TacticalState): TacticalState {
         turn: mission.turn,
         phase: mission.phase,
         finished: [],
-        externalBugs:
-          mission.phase === "bugs" &&
-          mission.units.some(
-            (unit) =>
-              unit.team === "bugs" &&
-              unit.hp > 0 &&
-              mission.jev?.entities[unit.id]?.enabled,
-          ),
+        externalBugs: mission.phase === "bugs" && hasAwakeJevBug(mission),
       },
     },
   };
+}
+
+/**
+ * Whether a living, Jev-enabled bug is awake to act this phase. A
+ * resting one (`restingBugIds`: a dormant brood, #1179) does not make
+ * the phase external: a sleeper costs the relay nothing.
+ */
+function hasAwakeJevBug(mission: TacticalState): boolean {
+  const resting = restingBugIds(mission);
+  return mission.units.some(
+    (unit) =>
+      unit.team === "bugs" &&
+      unit.hp > 0 &&
+      !resting.has(unit.id) &&
+      mission.jev?.entities[unit.id]?.enabled === true,
+  );
 }
 
 /** Whether this actor has already finished in this phase. */

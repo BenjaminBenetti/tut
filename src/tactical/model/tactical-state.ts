@@ -1,4 +1,5 @@
 import type { JevControl } from "./jev-control";
+import type { Brood } from "./brood";
 import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
@@ -349,6 +350,7 @@ export const NO_VISION: SideVision = {
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
  *   ├── objectives[], spawners[]
+ *   ├── broods?[]             dormant bugs that wake together, a cavern's chambers (#1179)
  *   ├── carcasses[]           tech carcasses on the map, stripped or not (#1171)
  *   ├── effects[]             fires burning on tiles, each with a clock (#1121)
  *   ├── charges[]             breaching charges waiting to go off (#1132)
@@ -414,6 +416,13 @@ export interface TacticalState {
   readonly phase: TacticalPhase;
   readonly objectives: readonly Objective[];
   readonly spawners: readonly Spawner[];
+  /**
+   * Dormant broods (#1179, campaign arc §7.5): groups of `dormant` bugs
+   * that wake together, each with the zone that wakes it. Placed by
+   * `placeCavernBroods` in a hive cavern; absent on every other mission
+   * and on every save made before broods, which is the same as none.
+   */
+  readonly broods?: readonly Brood[];
   /**
    * Tech carcasses on the map (#1171), harvested or not, in hook order.
    * Empty on most missions: the offer decides whether one lies here.

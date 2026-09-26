@@ -363,6 +363,17 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:brood-woke":
+      // The whole brood in one line (#1179): its members get the stir
+      // on the map, not a status sentence each.
+      return {
+        text:
+          event.payload.label === undefined
+            ? "A brood stirs"
+            : `A brood stirs in the ${event.payload.label}`,
+        icon: "warning",
+        tone: "bug",
+      };
     case "tactical:generator-destroyed":
       return {
         text:
@@ -524,8 +535,10 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:unit-abandoned":
     case "tactical:spore-pod-matured":
     case "tactical:drop-ship-departed":
+    case "tactical:brood-woke":
     case "tactical:civilians-extracted":
-      // Aboard and gone: there is nobody left on the map to mark.
+      // A brood is many bugs, and the scene stirs each of them; civilians
+      // aboard and gone leave nobody on the map to mark.
       return undefined;
     default:
       return undefined;
@@ -609,6 +622,10 @@ function statusPhrase(status: string): string {
       return "is hidden";
     case "suppressed":
       return "is suppressed";
+    case "dormant":
+      // A lone sleeper placed without a brood (#1179); a brood's wake
+      // is its own line.
+      return "is dormant";
     default:
       return `is ${status}`;
   }

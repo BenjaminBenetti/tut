@@ -33,6 +33,13 @@ describe("phaseEvents", () => {
     expect(phases.before).toEqual([MOVED]);
   });
 
+  it("plays a brood's wake after placement, behind the spots of the same step (#1179)", () => {
+    const woke = event("tactical:brood-woke");
+    const phases = phaseEvents([MOVED, SPOTTED, woke, ATTACKED]);
+    expect(phases.before).toEqual([MOVED, ATTACKED]);
+    expect(phases.after).toEqual([SPOTTED, woke]);
+  });
+
   it("splits an empty batch into two empty phases", () => {
     expect(phaseEvents([])).toEqual({ before: [], after: [] });
   });

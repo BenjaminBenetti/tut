@@ -14,6 +14,7 @@ import { NO_VISION, TEAMS_BY_VISION } from "../model/tactical-state";
 import type { TechCarcass } from "../model/tech-carcass";
 import { isTrapped } from "../model/civilian";
 import type { Team, Unit, UnitId } from "../model/unit";
+import { isDormant } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
 import {
@@ -127,7 +128,7 @@ function eyeSees(
  * hides in stays dark until someone comes to look.
  *
  * ```
- *   for each living unit of the side, trapped civilians aside:
+ *   for each living unit of the side, dormant bugs (#1179) and trapped civilians aside:
  *     tiles within sightRange (manhattan) with hasLineOfSight ──► visible
  *   enemies standing on a visible tile ──────────────────────────► spotted
  * ```
@@ -142,8 +143,11 @@ export function computeVision(
   index: TileIndex = new TileIndex(mission.map),
 ): Pick<SideVision, "visible" | "spotted"> {
   const visible = new Set<VisionTileKey>();
+  // A dormant bug's eyes are shut (#1179): a sleeping brood adds nothing
+  // to what the bugs see, and costs nothing to compute.
   const watchers = mission.units.filter(
-    (unit) => unit.team === team && unit.hp > 0 && !isTrapped(unit),
+    (unit) =>
+      unit.team === team && unit.hp > 0 && !isDormant(unit) && !isTrapped(unit),
   );
   for (const watcher of watchers) {
     const range = sightRangeOf(mission, watcher);
@@ -352,9 +356,10 @@ function sameVantage(before: TacticalState, after: TacticalState): boolean {
 /**
  * Whether one unit presents the same vantage in both missions. Vision
  * reads life, not health: a shot that hurts without killing changes
- * nothing about who can see what, and most shots are that. Freeing a
- * trapped civilian group changes it, since a trapped group watches
- * nothing (campaign arc §6.4).
+ * nothing about who can see what, and most shots are that. It does read
+ * sleep: a brood that wakes opens its eyes (#1179). Freeing a trapped
+ * civilian group changes it too, since a trapped group watches nothing
+ * (campaign arc §6.4).
  */
 function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
   if (a === undefined) {
@@ -363,6 +368,7 @@ function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
   return (
     a.id === b.id &&
     a.hp > 0 === b.hp > 0 &&
+    isDormant(a) === isDormant(b) &&
     a.pos.x === b.pos.x &&
     a.pos.y === b.pos.y &&
     a.pos.z === b.pos.z &&

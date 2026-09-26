@@ -13,6 +13,7 @@ import { buildMoveGraph } from "../../tactical/service/movement-service";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { applyTacticalCommand } from "../../tactical/service/tactical-command-handlers";
 import type { PhaseStep } from "../../tactical/service/turn-service";
+import { restingBugIds } from "../../tactical/service/dormancy-service";
 import { missionOutcome } from "../../tactical/service/mission-end-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
 import { withVision } from "../../tactical/service/vision-service";
@@ -55,7 +56,7 @@ export interface BugPhaseDeps {
  * `EndTurn` handler flips on to the player once it returns.
  *
  * ```
- *   for bug of living bugs (units order, snapshot at phase start):
+ *   for bug of acting bugs (living and not resting, units order, snapshot at phase start):
  *     decided? ──► stop                        (the bugs wiped the squad)
  *     unitRng = ctx.rng.fork("bug:<id>")
  *     commands = behaviour.choose(mission, id, { rng: unitRng.fork("choose"), combat, graph })
@@ -77,7 +78,7 @@ export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
       return { state: mission, events: [] };
     }
     const graphOnce = sharedGraph(mission);
-    const actors = livingBugIds(mission);
+    const actors = actingBugIds(mission);
     let state = mission;
     const events: TacticalEvent[] = [];
     for (const unitId of actors) {
@@ -131,11 +132,26 @@ function sharedGraph(mission: TacticalState): () => MoveGraph {
   return () => (graph ??= buildMoveGraph(mission.map));
 }
 
-/** The living bugs' ids in `units` order: the phase's acting order. */
+/** The living bugs' ids in `units` order. */
 export function livingBugIds(mission: TacticalState): readonly UnitId[] {
   return mission.units
     .filter((unit) => unit.team === "bugs" && unit.hp > 0)
     .map((unit) => unit.id);
+}
+
+/**
+ * The bugs that act this phase, in `units` order: the living, less the
+ * resting (`restingBugIds`, #1179) — a dormant brood, or one that woke
+ * during this bug phase. They are dropped here, before any behaviour
+ * scores, paths or calls out for them, which is what lets a cavern hold
+ * fifty sleepers at the cost of the dozen that are awake.
+ */
+export function actingBugIds(mission: TacticalState): readonly UnitId[] {
+  const resting = restingBugIds(mission);
+  const living = livingBugIds(mission);
+  return resting.size === 0
+    ? living
+    : living.filter((unitId) => !resting.has(unitId));
 }
 
 /**

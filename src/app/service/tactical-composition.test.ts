@@ -38,8 +38,14 @@ import type { GameState } from "../../save/model/game-state";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
+import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
+import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
 import { CIVILIAN_SOURCE_ID } from "../../tactical/model/civilian";
-import { MOVE } from "../../tactical/model/move-command";
+import { MOVE, move } from "../../tactical/model/move-command";
+import { isDormant } from "../../tactical/model/unit";
+import type { Unit } from "../../tactical/model/unit";
+import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
+import { placeDormantBrood } from "../../tactical/service/brood-placement-service";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { PLACE_UNIT, placeUnit } from "../../tactical/model/place-unit-command";
 import { UNIT_PLACED } from "../../tactical/model/unit-placed-event";
@@ -623,6 +629,14 @@ describe("composeTactical", () => {
     ).toEqual([{ objectiveId: timed.id, complete: false, failed: true }]);
   });
 
+  it("mission-start deps carry the brood content a hive cavern's setup places from (#1179)", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    const deps = tactical.missionStartDepsFor(new SequentialIdGenerator());
+    expect(deps.broods?.tuning).toBe(BROOD_TUNING);
+    expect(deps.broods?.species).toEqual(Object.values(BUG_SPECIES));
+  });
+
   it("mission-start deps carry the shipped mission setup rules", () => {
     const dispatcher = createOverworldCommandDispatcher<GameState>();
     const tactical = composeTactical(dispatcher, CONTENT);
@@ -980,5 +994,137 @@ describe("shippedBugBehaviours", () => {
         `${species.id} (${species.behaviour}) registered`,
       ).toBe(expected);
     }
+  });
+});
+
+// ===========================================
+// Dormant broods (#1179)
+// ===========================================
+
+describe("dormant broods through the shipped rules (#1179)", () => {
+  /**
+   * A started mission in the player's phase with a sleeping swarmer
+   * brood three tiles off the first squad (zone `radius` around the
+   * sleeper) and an awake swarmer on the squad's other side, both
+   * within a bug's sight of it.
+   */
+  function broodBesideSquad(radius: number): {
+    mission: TacticalState;
+    squad: Unit;
+    sleeperId: string;
+    awakeId: string;
+  } {
+    const start = startedMission("player");
+    const squad = start.units.find((u) => u.kind === "squad");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    const awake = withBug(
+      start,
+      SWARMER,
+      walkableTileNear(start, {
+        x: squad.pos.x - 3,
+        y: squad.pos.y,
+        z: squad.pos.z - 3,
+      }),
+      "awake-1",
+    );
+    const bed = walkableTileNear(awake.mission, {
+      x: squad.pos.x + 3,
+      y: squad.pos.y,
+      z: squad.pos.z + 3,
+    });
+    const slept = placeDormantBrood(
+      awake.mission,
+      {
+        broodId: "brood-test",
+        species: SWARMER,
+        positions: [bed],
+        wake: { centre: bed, radius },
+        label: "east chamber",
+      },
+      // Numbered past the started mission's own units.
+      { ids: new SequentialIdGenerator({ counters: { unit: 100 } }) },
+    );
+    const sleeper = slept.units.at(-1);
+    if (sleeper === undefined || !isDormant(sleeper))
+      throw new Error("the brood was not placed");
+    return {
+      mission: withVision({ state: slept, events: [] }).state,
+      squad,
+      sleeperId: sleeper.id,
+      awakeId: awake.bug.id,
+    };
+  }
+
+  it("a dormant bug never acts through live EndTurns, while an awake swarmer beside it does", () => {
+    const { mission, sleeperId, awakeId } = broodBesideSquad(1);
+    const endTurnHandler = shippedTacticalHandlers()[END_TURN];
+    if (endTurnHandler === undefined) throw new Error("EndTurn is not shipped");
+    const rng = new Mulberry32Rng(11);
+    const ids = new SequentialIdGenerator();
+    const sleeper = mission.units.find((u) => u.id === sleeperId);
+    let state = mission;
+    let awakeMoved = false;
+    for (let turn = 0; turn < 3 && state.outcome === undefined; turn++) {
+      const outcome = endTurnHandler(state, endTurn(), { rng, ids });
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      for (const event of outcome.value.events) {
+        if (event.type === UNIT_MOVED) {
+          expect(event.payload.unitId).not.toBe(sleeperId);
+          if (event.payload.unitId === awakeId) awakeMoved = true;
+        }
+        if (event.type === ATTACK_RESOLVED) {
+          expect(event.payload.attackerId).not.toBe(sleeperId);
+        }
+      }
+      state = outcome.value.state;
+      expect(state.units.find((u) => u.id === sleeperId)).toEqual(sleeper);
+    }
+    expect(awakeMoved).toBe(true);
+  });
+
+  it("a squad step into the zone through the shipped Move wakes the brood, and the next EndTurn plays it", () => {
+    const { mission, squad, sleeperId } = broodBesideSquad(6);
+    const handlers = shippedTacticalHandlers();
+    const moveHandler = handlers[MOVE];
+    const endTurnHandler = handlers[END_TURN];
+    if (moveHandler === undefined || endTurnHandler === undefined)
+      throw new Error("Move or EndTurn is not shipped");
+    const ctx = { rng: new Mulberry32Rng(3), ids: new SequentialIdGenerator() };
+    const steps = [
+      { x: 1, z: 0 },
+      { x: 0, z: 1 },
+      { x: -1, z: 0 },
+      { x: 0, z: -1 },
+    ];
+    const moved = steps
+      .map((step) =>
+        moveHandler(
+          mission,
+          move(squad.id, [
+            walkableTileNear(mission, {
+              x: squad.pos.x + step.x,
+              y: squad.pos.y,
+              z: squad.pos.z + step.z,
+            }),
+          ]),
+          ctx,
+        ),
+      )
+      .find((outcome) => outcome.ok);
+    if (!moved?.ok) throw new Error("the squad could not step");
+    const woke = moved.value.events.filter((e) => e.type === BROOD_WOKE);
+    expect(woke).toHaveLength(1);
+    expect(woke[0]?.type === BROOD_WOKE && woke[0].payload.cause).toBe("enter");
+    const awakened = moved.value.state.units.find((u) => u.id === sleeperId);
+    expect(awakened && isDormant(awakened)).toBe(false);
+    const ended = endTurnHandler(moved.value.state, endTurn(), ctx);
+    if (!ended.ok) throw new Error("EndTurn was refused");
+    const acted = ended.value.events.some(
+      (e) =>
+        (e.type === UNIT_MOVED && e.payload.unitId === sleeperId) ||
+        (e.type === ATTACK_RESOLVED && e.payload.attackerId === sleeperId),
+    );
+    expect(acted).toBe(true);
   });
 });

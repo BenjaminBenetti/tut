@@ -4,6 +4,7 @@ import {
   jevEndTurnPending,
   pendingJevTdf,
 } from "./jev-control-service";
+import { restingBugIds } from "./dormancy-service";
 import { refreshMechSystems } from "./mech-heat-service";
 import { err, ok } from "../../core/model/result";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
@@ -21,6 +22,7 @@ import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
+import { isDormant } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { isTrapped } from "../model/civilian";
 import { leaveOverwatch, spendOverwatchShot } from "./overwatch-status";
@@ -163,10 +165,7 @@ export function createEndTurnHandler(
     if (
       mission.phase === "bugs" &&
       mission.jev?.activation?.externalBugs &&
-      mission.units.some(
-        (unit) =>
-          unit.team === "bugs" && unit.hp > 0 && !jevFinished(mission, unit.id),
-      )
+      unfinishedBugs(mission)
     ) {
       return err({
         kind: "systems-unavailable",
@@ -222,6 +221,23 @@ function endMission(
   };
 }
 
+/**
+ * Whether an externally driven bug phase still has a bug to act: a
+ * living one Jev has not finished. A resting bug (`restingBugIds`, a
+ * dormant brood) is not waiting to act, so it never holds the phase
+ * open (#1179).
+ */
+function unfinishedBugs(mission: TacticalState): boolean {
+  const resting = restingBugIds(mission);
+  return mission.units.some(
+    (unit) =>
+      unit.team === "bugs" &&
+      unit.hp > 0 &&
+      !resting.has(unit.id) &&
+      !jevFinished(mission, unit.id),
+  );
+}
+
 /** Flips to the next phase, announces `TurnStarted` and runs the phase steps in order. */
 function openNextPhase(
   mission: TacticalState,
@@ -261,7 +277,8 @@ function openNextPhase(
  * spent its actions going on watch) but obey range, sight, and the same
  * hit and damage formulae as a normal shot, drawing from the move
  * command's stream in order. Stops when the mover is down. A hidden
- * mover is never fired on.
+ * mover is never fired on. A dormant bug (#1179) neither draws the fire
+ * nor keeps a watch: asleep, it is not moving and not watching.
  *
  * ```
  *   for watcher of enemies with `overwatch`:
@@ -281,7 +298,12 @@ export function overwatchReaction(
   const events: TacticalEvent[] = [];
   let state = mission;
   const mover = findUnit(state, movedUnitId);
-  if (mover === undefined || mover.hp <= 0 || mover.status.includes("hidden")) {
+  if (
+    mover === undefined ||
+    mover.hp <= 0 ||
+    mover.status.includes("hidden") ||
+    isDormant(mover)
+  ) {
     return { state, events };
   }
   const watcherIds = state.units
@@ -289,7 +311,8 @@ export function overwatchReaction(
       (unit) =>
         unit.team !== mover.team &&
         unit.hp > 0 &&
-        unit.status.includes("overwatch"),
+        unit.status.includes("overwatch") &&
+        !isDormant(unit),
     )
     .map((unit) => unit.id);
   const index = new TileIndex(state.map);

@@ -30,6 +30,7 @@ import type { ModelLoader } from "../model/model-loader";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import { SPECIMEN_NET_NAME } from "../view/specimen-view";
+import { DORMANT_POSE } from "../view/dormant-look";
 import {
   CARCASS_MODEL_ID,
   SPAWNER_MODEL_ID,
@@ -192,6 +193,23 @@ describe("TacticalSceneBuilder", () => {
     expect(builder.unitMotion("m")?.braceAmount).toBe(1);
     await builder.update([{ ...mech, braced: false }], TEMPLATES);
     expect(builder.unitMotion("m")?.braceAmount).toBe(0);
+    builder.dispose();
+  });
+
+  it("places a dormant bug curled and uncurls it when its brood wakes (#1179)", async () => {
+    const { builder } = build();
+    const sleeper: Unit = {
+      ...unit("b1", "bug:swarmer", 4, 2),
+      status: ["dormant"],
+    };
+    const awake = unit("b2", "bug:swarmer", 4, 4);
+    const modelOf = (id: string) =>
+      builder.unitObject(id)?.getObjectByName(`unit-model:${id}`);
+    await builder.update([sleeper, awake], TEMPLATES);
+    const rest = modelOf("b2")!.scale.y;
+    expect(modelOf("b1")!.scale.y).toBeCloseTo(rest * DORMANT_POSE.height);
+    await builder.update([{ ...sleeper, status: [] }, awake], TEMPLATES);
+    expect(modelOf("b1")!.scale.y).toBeCloseTo(rest);
     builder.dispose();
   });
 

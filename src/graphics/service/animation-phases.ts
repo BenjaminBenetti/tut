@@ -1,3 +1,4 @@
+import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { UnitId } from "../../tactical/model/unit";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
@@ -53,6 +54,11 @@ export interface AnimationPhases {
  *        └─ after:  (nothing)
  * ```
  *
+ * A **brood waking** (#1179) plays after placement too: the redraw is
+ * what uncurls its sleepers, and a member first seen in the same step
+ * exists only then, so its stir plays on the awake bugs the player can
+ * now see rather than on curled ones about to pop upright.
+ *
  * Order within each phase is otherwise preserved, so a move still plays
  * before the attack that followed it.
  *
@@ -70,6 +76,10 @@ export function phaseEvents(
   /** Spots pulled ahead of a move, so they are not played twice. */
   const pulled = new Set<TacticalEvent>();
   for (const event of events) {
+    if (event.type === BROOD_WOKE) {
+      after.push(event);
+      continue;
+    }
     if (event.type === UNIT_SPOTTED) {
       if (!arrivals.has(event.payload.unitId)) {
         after.push(event);

@@ -801,6 +801,42 @@ describe("vision for units on a 2×2 block (#1130)", () => {
   });
 });
 
+describe("vision with dormant bugs (#1179)", () => {
+  it("a dormant bug's eyes are shut: it adds nothing to what the bugs see, though it can be seen", () => {
+    const mission = missionWith(OPEN, [
+      unitAt("u", "infantry", at(0, 0)),
+      unitAt("b", "infantry", at(3, 0), { team: "bugs", status: ["dormant"] }),
+    ]);
+    const bugs = computeVision(mission, "bugs");
+    expect(bugs.visible).toEqual([]);
+    expect(bugs.spotted).toEqual([]);
+    expect(computeVision(mission, "tdf").spotted).toEqual(["b"]);
+  });
+
+  it("recomputes when a brood wakes: the woken bug's first look spots the squad", () => {
+    const asleep = withVision({
+      state: missionWith(OPEN, [
+        unitAt("u", "infantry", at(0, 0)),
+        unitAt("b", "infantry", at(3, 0), {
+          team: "bugs",
+          status: ["dormant"],
+        }),
+      ]),
+      events: [],
+    }).state;
+    expect(asleep.vision.bugs.spotted).toEqual([]);
+    const woken = {
+      ...asleep,
+      units: asleep.units.map((unit) =>
+        unit.id === "b" ? { ...unit, status: [] } : unit,
+      ),
+    };
+    const seen = withVision({ state: woken, events: [] }, asleep);
+    expect(seen.state.vision.bugs.spotted).toEqual(["u"]);
+    expect(seen.events.map((event) => event.type)).toContain(UNIT_SPOTTED);
+  });
+});
+
 // ===========================================
 // Civilian groups (campaign arc §6.4)
 // ===========================================

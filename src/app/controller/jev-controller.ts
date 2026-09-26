@@ -27,6 +27,7 @@ import {
   jevExtractionPending,
   manualTdfHasActions,
 } from "../../tactical/service/jev-control-service";
+import { restingBugIds } from "../../tactical/service/dormancy-service";
 import { missionOutcome } from "../../tactical/service/mission-end-service";
 import { JevRequestError } from "../service/jev-client";
 import type { JevTransport } from "../service/jev-client";
@@ -229,10 +230,14 @@ export class JevController implements JevInspector {
         this.store.dispatch(endTurn());
         return;
       }
+      // A resting bug (a dormant brood, #1179) is not an actor: it never
+      // reaches the relay or the default behaviour.
+      const resting = restingBugIds(mission);
       const actor = mission.units.find(
         (unit) =>
           unit.hp > 0 &&
           unit.team === TEAM_FOR_PHASE[mission.phase] &&
+          !resting.has(unit.id) &&
           !jevFinished(mission, unit.id) &&
           (externalBugs === true ||
             (unit.ap > 0 && mission.jev?.entities[unit.id]?.enabled)),

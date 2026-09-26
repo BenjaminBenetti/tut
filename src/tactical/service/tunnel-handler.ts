@@ -1,6 +1,6 @@
 import { ok } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { TacticalHandler } from "../model/tactical-handler";
 import type { TunnelCommand } from "../model/tunnel-command";
 import { UNIT_TUNNELLED } from "../model/unit-tunnelled-event";
@@ -29,12 +29,7 @@ export const tunnelHandler: TacticalHandler<TunnelCommand> = (
   command,
 ) => {
   const { unitId, to } = command.payload;
-  const checked = validateTunnel(
-    mission,
-    unitId,
-    to,
-    new TileIndex(mission.map),
-  );
+  const checked = validateTunnel(mission, unitId, to, tileIndexOf(mission.map));
   if (!checked.ok) {
     return checked;
   }

@@ -1,5 +1,6 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { HealProfile } from "../model/equipment";
 import type { EquipmentId } from "../model/equipment";
 import type { TacticalEvent } from "../model/tactical-event";
@@ -79,7 +80,7 @@ export function healReach(
   user: Unit,
   profile: HealProfile,
   impact: TileCoord,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): HealReach {
   const footprint = blastFootprint(mission.map, impact, profile.radius, index);
   const beneficiaries: HealBeneficiary[] = [];

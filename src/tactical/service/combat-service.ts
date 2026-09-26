@@ -19,7 +19,8 @@ import { footprintSizeOf } from "./footprint-service";
 import { CoverLevel as Cover } from "../../mapgen/model/cover";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { AttackCommand } from "../model/attack-command";
 import type { AttackTarget } from "../model/attack-target";
 import type { AttackPreview, BlastPreview } from "../model/attack-preview";
@@ -138,7 +139,7 @@ export function attackTerrain(
   map: TacticalMap,
   attacker: TileCoord,
   target: TileCoord,
-  index: TileIndex = new TileIndex(map),
+  index: TileIndex = tileIndexOf(map),
 ): AttackTerrain {
   const cover = coverAgainst(map, target, attacker, index);
   const anyCover = SIDE_PROBES.some(
@@ -412,7 +413,7 @@ export function validateTargeting(
   }
   const refusal = weaponSystemRefusal(mission, attacker, weapon);
   if (refusal) return err(refusal);
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const targetSize = target.footprint ?? 1;
   const { from, to } = closestTiles(
     attacker.pos,
@@ -494,7 +495,7 @@ export function validateTileAttack(
   if (!canTargetTile(weapon.profile)) {
     return err({ kind: "no-area-weapon", unitId: attackerId });
   }
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const impact = index.getAt(tile);
   if (impact === undefined) {
     return err({ kind: "no-such-tile", x: tile.x, y: tile.y, z: tile.z });
@@ -800,7 +801,7 @@ export function blastPreview(
   deps?: PreviewDeps,
   origin?: TileCoord,
 ): BlastPreview {
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const radius = blastRadiusOf(profile);
   const footprint = weaponFootprint(
     mission.map,
@@ -1070,7 +1071,7 @@ export function resolveBlastAt(
   deps: AttackDeps,
 ): AttackRoll {
   const profile = weapon.profile;
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const radius = blastRadiusOf(profile);
   const origin = mission.units.find((unit) => unit.id === attackerId)?.pos;
   const footprint = weaponFootprint(

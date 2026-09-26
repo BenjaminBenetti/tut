@@ -3,7 +3,8 @@ import { err, ok } from "../../core/model/result";
 import { allows } from "../../mapgen/model/pass-mask";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { BurrowTuning } from "../model/burrow-tuning";
 import type {
   BurrowRejection,
@@ -81,7 +82,7 @@ export function validateTunnel(
   mission: TacticalState,
   unitId: UnitId,
   to: TileCoord,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): Result<CheckedTunnel, TacticalError> {
   const checked = diggerUnder(mission, unitId, true, 0);
   if (!checked.ok) {
@@ -132,7 +133,7 @@ export function validateSurface(
   mission: TacticalState,
   unitId: UnitId,
   tuning: BurrowTuning,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): Result<CheckedBurrowAction, TacticalError> {
   const checked = diggerUnder(mission, unitId, true, tuning.surfaceApCost);
   if (!checked.ok) {
@@ -170,7 +171,7 @@ export function validateBurrow(
   mission: TacticalState,
   unitId: UnitId,
   tuning: BurrowTuning,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): Result<CheckedBurrowAction, TacticalError> {
   const checked = diggerUnder(mission, unitId, false, tuning.burrowApCost);
   if (!checked.ok) {

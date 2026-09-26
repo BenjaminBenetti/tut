@@ -2,7 +2,8 @@ import { err, ok } from "../../core/model/result";
 import type { Result } from "../../core/model/result";
 import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { CarriedSpecimen } from "../model/carried-specimen";
 import { canCarrySpecimen } from "../model/carried-specimen";
 import { SPECIMEN_PICKED_UP } from "../model/specimen-picked-up-event";
@@ -88,7 +89,7 @@ export function droppedSpecimens(
 export function perceivedSpecimens(
   mission: TacticalState,
   team: Team,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): readonly DroppedSpecimen[] {
   const explored = new Set(mission.vision[team]?.explored ?? []);
   return droppedSpecimens(mission).filter((dropped) =>

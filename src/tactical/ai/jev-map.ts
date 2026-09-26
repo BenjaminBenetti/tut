@@ -1,4 +1,5 @@
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { Tile } from "../../mapgen/model/tile";
 import type { WallKind } from "../../mapgen/model/wall";
@@ -46,7 +47,7 @@ export function jevNavigation(
   objectives: readonly JevMapMarker[],
 ): Readonly<Record<string, unknown>> {
   const { width, depth, levels } = view.map;
-  const index = new TileIndex(view.map);
+  const index = tileIndexOf(view.map);
   const visible = new Set(view.vision[actor.team].visible);
   const markers: JevMapMarker[] = [
     ...view.extraction.map((position, i) => ({

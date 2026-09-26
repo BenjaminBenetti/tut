@@ -1,7 +1,8 @@
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { AttackCommand } from "../../tactical/model/attack-command";
 import { attack } from "../../tactical/model/attack-command";
 import type { MissionView } from "../../tactical/model/mission-view";
@@ -101,7 +102,7 @@ export class LurkerBehaviour implements BugBehaviour {
     if (enemies.length === 0) {
       return this.hunt(mission, unit, ctx);
     }
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     const mark = this.pickMark(mission, unit, enemies, ctx);
 
     // Strike from where it stands only when the terrain flanks the mark.
@@ -180,7 +181,7 @@ export class LurkerBehaviour implements BugBehaviour {
     if (site === undefined) {
       return [];
     }
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     const t = this.tuning;
     const step = advanceToward(
       mission,
@@ -208,7 +209,7 @@ export class LurkerBehaviour implements BugBehaviour {
     enemies: readonly Unit[],
     ctx: BehaviourContext,
   ): Unit {
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     const chosen = bestBy(
       enemies,
       (enemy) => {
@@ -304,7 +305,7 @@ export function tileBehind(unit: Unit): TileCoord {
 
 /** True when the unit has cover from at least one direction, so a flank exists. */
 function markHasAnyCover(mission: TacticalState, unit: Unit): boolean {
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   return [
     { x: 0, z: -1 },
     { x: 1, z: 0 },

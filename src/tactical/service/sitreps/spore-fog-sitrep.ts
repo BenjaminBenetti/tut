@@ -1,6 +1,7 @@
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
 import type { Tile } from "../../../mapgen/model/tile";
-import { TileIndex } from "../../../mapgen/service/tile-index";
+import type { TileIndex } from "../../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../../mapgen/service/shared-tile-index";
 import type { SitrepRule, SitrepSetupContext } from "../../model/sitrep-rule";
 import type { SporeFogTuning } from "../../model/sitrep-tuning";
 import type { TacticalState } from "../../model/tactical-state";
@@ -71,7 +72,7 @@ export function layFog(
   ctx: SitrepSetupContext,
   tuning: SporeFogTuning,
 ): TacticalState {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const deploy = deployTilesOf(map);
   const held = heldKeys(state, index);
   const taken = new Set(

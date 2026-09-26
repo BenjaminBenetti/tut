@@ -8,7 +8,8 @@ import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { WallKind, WallSet } from "../../mapgen/model/wall";
 import { propTiles } from "../../mapgen/service/prop-footprint";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { DemolitionTuning } from "../model/demolition-tuning";
 import type { StructureCatalogue } from "../model/structure-catalogue";
 
@@ -70,7 +71,7 @@ export function demolish(
   force: number,
   structures: StructureCatalogue,
   tuning: DemolitionTuning,
-  index: TileIndex = new TileIndex(map),
+  index: TileIndex = tileIndexOf(map),
 ): Demolition {
   if (force <= 0 || footprint.length === 0) {
     return { map, props: [], walls: [] };

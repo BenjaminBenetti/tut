@@ -2,7 +2,8 @@ import type { Rng } from "../../core/model/rng";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { HookKinds } from "../../mapgen/model/hook";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import type { MoveCommand } from "../../tactical/model/move-command";
 import { move } from "../../tactical/model/move-command";
@@ -459,7 +460,7 @@ export function coverScore(
   mission: TacticalState,
   tile: TileCoord,
   attackers: readonly TileCoord[],
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): number {
   if (attackers.length === 0) {
     return 0;
@@ -487,7 +488,7 @@ export function exposureScore(
   mission: TacticalState,
   tile: TileCoord,
   enemies: readonly Unit[],
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): number {
   if (enemies.length === 0) {
     return 0;
@@ -516,7 +517,7 @@ export function overwatchScore(
   mission: TacticalState,
   tile: TileCoord,
   enemies: readonly Unit[],
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): number {
   const watchers = enemies.filter(
     (e) => e.hp > 0 && e.status.includes("overwatch"),
@@ -566,7 +567,7 @@ export function targetValue(
   from: TileCoord,
   target: Unit,
   combat: CombatTuning,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): Pick<AttackOption, "hitChance" | "meanDamage" | "value" | "canKill"> {
   const weapon = mission.templates[attacker.templateId]?.weapons[0]?.profile;
   const targetTemplate = mission.templates[target.templateId];
@@ -623,7 +624,7 @@ export function attackOptions(
   if (attacker === undefined) {
     return [];
   }
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const options: AttackOption[] = [];
   for (const target of livingEnemies(mission, attacker)) {
     if (!validateAttack(mission, unitId, target.id, combat).ok) {

@@ -2,7 +2,8 @@ import { DIRECTIONS } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { attack } from "../../tactical/model/attack-command";
 import { burrow } from "../../tactical/model/burrow-command";
 import type { BurrowTuning } from "../../tactical/model/burrow-tuning";
@@ -157,7 +158,7 @@ export class BurrowerBehaviour implements BugBehaviour {
     unit: Unit,
     ctx: BehaviourContext,
   ): readonly TacticalCommand[] {
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     const targets = huntableEnemies(mission, unit);
     if (targets.length === 0) {
       return this.digToSite(mission, unit, index, ctx);

@@ -4,7 +4,8 @@ import { stepGridPos } from "../../core/service/grid-math";
 import { allows, PassMask } from "../../mapgen/model/pass-mask";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { wallKindBlocks } from "../../mapgen/service/reachability-service";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { attack, attackTile } from "../../tactical/model/attack-command";
 import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
@@ -137,7 +138,7 @@ export class BruteBehaviour implements BugBehaviour {
     if (enemies.length === 0) {
       return this.hunt(mission, unit, ctx);
     }
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     const size = unitFootprintSize(mission, unit);
     const focus = this.pickFocus(mission, unit, enemies, ctx);
     const score = (tile: TileCoord): number =>
@@ -181,7 +182,7 @@ export class BruteBehaviour implements BugBehaviour {
     enemies: readonly Unit[],
     ctx: BehaviourContext,
   ): Unit {
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     const chosen = bestBy(
       enemies,
       (enemy) => {
@@ -434,7 +435,7 @@ export function breachTarget(
   size: number,
   toward: TileCoord,
 ): TileCoord | undefined {
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   let best: TileCoord | undefined;
   let bestDistance = Number.POSITIVE_INFINITY;
   const consider = (impact: TileCoord, beyond: TileCoord): void => {

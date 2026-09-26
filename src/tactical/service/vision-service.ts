@@ -1,8 +1,8 @@
-import { smokeBlocksSight } from "./obscuration-service";
+import { hasActiveSmoke, smokeBlocksSight } from "./obscuration-service";
 import type { GridPos } from "../../core/model/grid";
-import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type {
   SideVision,
@@ -26,7 +26,7 @@ import {
   unitFootprintSize,
   unitFootprintTiles,
 } from "./footprint-service";
-import { hasLineOfSight } from "./sight-service";
+import { eyeReaches, eyeSweep, tileOfKey } from "./eye-sweep-service";
 import { sitrepSightRange } from "./sitreps/sitrep-service";
 
 // ===========================================
@@ -114,8 +114,7 @@ function eyeSees(
   index: TileIndex,
 ): boolean {
   return (
-    manhattanDistance(eye, at) <= range &&
-    hasLineOfSight(mission.map, eye, at, index) &&
+    eyeReaches(mission.map, eye, range, at, index) &&
     !smokeBlocksSight(mission, eye, at)
   );
 }
@@ -154,34 +153,32 @@ function eyeSees(
 export function computeVision(
   mission: TacticalState,
   team: Team,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): Pick<SideVision, "visible" | "spotted"> {
   const visible = new Set<VisionTileKey>();
   const watchers = mission.units.filter((unit) => watchesFor(unit, team));
+  const smoky = hasActiveSmoke(mission);
   for (const watcher of watchers) {
     const range = sightRangeOf(mission, watcher);
     // Only the diamond within range of each eye, column by column,
     // rather than every tile on the map: this runs on every move, and a
     // sight trace is the most expensive rule in the game (ADR 0006 §3).
-    // The loop bounds are an optimisation over `unitCanSee`, not a
-    // second copy of it: `eyeSees` still decides every tile for every
-    // eye, which is what `unitCanSee` asks, so the two cannot disagree.
-    // A block's eyes (#1130) overlap almost entirely, and a tile the
-    // first eye saw is skipped for the rest.
+    // The sweep is an optimisation over `unitCanSee`, not a second copy
+    // of it: `eyeSweep` lists what `eyeReaches` allows, and smoke is
+    // asked here as `eyeSees` asks it, so the two cannot disagree. The
+    // sweep is remembered per eye (#1179): the ground alone decides it,
+    // so only an eye that moved is traced again. A block's eyes (#1130)
+    // overlap almost entirely, and a tile the first eye saw is skipped
+    // for the rest.
     for (const eye of unitFootprintTiles(mission, watcher)) {
-      for (let dx = -range; dx <= range; dx++) {
-        const span = range - Math.abs(dx);
-        for (let dz = -span; dz <= span; dz++) {
-          for (const tile of index.column(eye.x + dx, eye.z + dz)) {
-            const key = index.keyOf(tile);
-            if (visible.has(key)) {
-              continue;
-            }
-            if (eyeSees(mission, eye, range, tile, index)) {
-              visible.add(key);
-            }
-          }
+      for (const key of eyeSweep(mission.map, eye, range, index)) {
+        if (visible.has(key)) {
+          continue;
         }
+        if (smoky && smokeBlocksSight(mission, eye, tileOfKey(key, index))) {
+          continue;
+        }
+        visible.add(key);
       }
     }
   }
@@ -283,7 +280,7 @@ export function withVision(
   if (before !== undefined && sameVantage(before, mission)) {
     return applied;
   }
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const events: TacticalEvent[] = [];
   const vision: Record<Team, SideVision> = { ...mission.vision };
   for (const team of TEAMS_BY_VISION) {
@@ -436,16 +433,56 @@ function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
   );
 }
 
-/** The union of two key lists, as a fresh sorted array so a save is stable. */
+/**
+ * The union of two key lists, as a fresh sorted array so a save is stable.
+ *
+ * `a` is a side's `explored`, which every earlier union left sorted and
+ * free of repeats, and it only grows: thousands of keys on a cavern,
+ * against the few hundred in view. So when `a` is in that shape (#1179)
+ * the new keys are sorted on their own and merged in, rather than the
+ * whole of `a` being hashed and sorted again after every bug's move;
+ * the result is the same sorted list of distinct keys either way.
+ *
+ * ```
+ *   a strictly ascending? ──► sort b, merge a with b, dropping repeats
+ *                        └─► otherwise: Set(a ∪ b), sorted
+ * ```
+ */
 function union(
   a: readonly VisionTileKey[],
   b: readonly VisionTileKey[],
 ): VisionTileKey[] {
-  const all = new Set<VisionTileKey>(a);
-  for (const key of b) {
-    all.add(key);
+  if (!strictlyAscending(a)) {
+    const all = new Set<VisionTileKey>(a);
+    for (const key of b) {
+      all.add(key);
+    }
+    return [...all].sort((x, y) => x - y);
   }
-  return [...all].sort((x, y) => x - y);
+  const added = [...b].sort((x, y) => x - y);
+  const merged: VisionTileKey[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length || j < added.length) {
+    const next =
+      j >= added.length || (i < a.length && a[i]! <= added[j]!)
+        ? a[i++]!
+        : added[j++]!;
+    if (merged.length === 0 || merged[merged.length - 1] !== next) {
+      merged.push(next);
+    }
+  }
+  return merged;
+}
+
+/** Whether every key is greater than the one before it: sorted, with no repeats. */
+function strictlyAscending(keys: readonly VisionTileKey[]): boolean {
+  for (let i = 1; i < keys.length; i++) {
+    if (!(keys[i - 1]! < keys[i]!)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -480,7 +517,7 @@ export function canSee(
 export function perceivedSpawners(
   mission: TacticalState,
   team: Team,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): readonly Spawner[] {
   const explored = new Set(mission.vision[team]?.explored ?? []);
   // Any explored tile of the hive core's 3×3 reveals it.
@@ -499,7 +536,7 @@ export function perceivedSpawners(
 export function perceivedCarcasses(
   mission: TacticalState,
   team: Team,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): readonly TechCarcass[] {
   const explored = new Set(mission.vision[team]?.explored ?? []);
   return mission.carcasses.filter((carcass) =>
@@ -516,7 +553,7 @@ export function perceivedCarcasses(
 export function perceivedWrecks(
   mission: TacticalState,
   team: Team,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): readonly MechWreck[] {
   const explored = new Set(mission.vision[team]?.explored ?? []);
   return (mission.wrecks ?? []).filter((wreck) =>
@@ -536,7 +573,7 @@ export function perceivedWrecks(
 export function perceivedTunnelMouths(
   mission: TacticalState,
   team: Team,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): readonly TunnelMouth[] {
   const explored = new Set(mission.vision[team]?.explored ?? []);
   return (mission.tunnelMouths ?? []).filter((mouth) =>
@@ -561,7 +598,7 @@ export function perceivedUnits(
   let tiles: TileIndex | undefined = index;
   /** Whether `unit`'s tile is ground `team` has seen. */
   const known = (unit: Unit): boolean => {
-    tiles ??= new TileIndex(mission.map);
+    tiles ??= tileIndexOf(mission.map);
     explored ??= new Set(mission.vision[team]?.explored ?? []);
     return tiles.inBounds(unit.pos) && explored.has(tiles.keyOf(unit.pos));
   };
@@ -604,7 +641,7 @@ export function perceivedOccupantAt(
   mission: TacticalState,
   team: Team,
   tile: TileCoord,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): PerceivedOccupant | undefined {
   // Any tile of a block names the unit standing on it (#1130).
   const unit = perceivedUnits(mission, team).find(

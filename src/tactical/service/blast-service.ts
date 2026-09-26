@@ -1,7 +1,8 @@
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { AttackTarget } from "../model/attack-target";
 import type { TacticalState } from "../model/tactical-state";
 import { isBurrowed } from "../model/unit";
@@ -90,7 +91,7 @@ export function blastFootprint(
   map: TacticalMap,
   impact: TileCoord,
   radius: number,
-  index: TileIndex = new TileIndex(map),
+  index: TileIndex = tileIndexOf(map),
 ): BlastTile[] {
   const reached: BlastTile[] = [];
   const reach = Math.max(0, Math.floor(radius));

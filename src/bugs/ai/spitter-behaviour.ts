@@ -1,5 +1,6 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { attack } from "../../tactical/model/attack-command";
 import type { AttackCommand } from "../../tactical/model/attack-command";
 import type { MissionView } from "../../tactical/model/mission-view";
@@ -134,7 +135,7 @@ export class SpitterBehaviour implements BugBehaviour {
     if (weapon === undefined) {
       return [];
     }
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     const plans = this.candidates(mission, unit, enemies, graph).map(
       (candidate) =>
         this.plan(mission, unit, weapon, enemies, candidate, index, ctx),

@@ -14,9 +14,10 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
 import { missionToMapRecipe } from "../../mapgen/service/mission-map-recipe-adapter";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { MISSION_MAP_RULES } from "../../mapgen/service/missions/mission-map-rules";
 import { mapRulesForStage } from "../../mapgen/service/mission-stage-map-rules";
-import { TileIndex } from "../../mapgen/service/tile-index";
 import type { Deployment } from "../../overworld/model/deployment";
 import {
   deploymentSize,
@@ -456,7 +457,7 @@ function placeDeployment(
   zoneTiles: readonly TileCoord[],
   deps: MissionStartDeps,
 ): Result<Placed, TacticalError> {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const factoryDeps = {
     ids: deps.ids,
     tuning: deps.unitTuning,

@@ -26,7 +26,7 @@ import { isBurrowed, isDormant } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { isTrapped } from "../model/civilian";
 import { leaveOverwatch, spendOverwatchShot } from "./overwatch-status";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { AttackDeps } from "./combat-service";
 import { chargesLeft, rollAttack, validateTargeting } from "./combat-service";
 import { unitFootprintTiles } from "./footprint-service";
@@ -319,7 +319,12 @@ export function overwatchReaction(
         !isDormant(unit),
     )
     .map((unit) => unit.id);
-  const index = new TileIndex(state.map);
+  // Nobody watching, nothing to fire (#1179): the common case on every
+  // step of a bug phase, answered before any sight is looked at.
+  if (watcherIds.length === 0) {
+    return { state, events };
+  }
+  const index = tileIndexOf(state.map);
   // A mover on a block (#1130) is in view when any tile of it is.
   const moverTiles = unitFootprintTiles(state, mover);
   for (const watcherId of watcherIds) {

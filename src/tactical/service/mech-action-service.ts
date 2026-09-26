@@ -1,6 +1,6 @@
 import { err, ok } from "../../core/model/result";
 import type { Result } from "../../core/model/result";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type {
   MechActionCommand,
   MechActionPayload,
@@ -70,7 +70,7 @@ export function validateMechAction(
     if (
       !target ||
       !unitFootprintTiles(mission, target).some((tile) =>
-        unitCanSee(mission, unit, tile, new TileIndex(mission.map)),
+        unitCanSee(mission, unit, tile, tileIndexOf(mission.map)),
       )
     )
       return refuse("Designate a visible enemy unit");
@@ -86,7 +86,7 @@ export function validateMechAction(
       return refuse("Landing exceeds the jump height limit");
     if ((unit.heat ?? 0) + (systems.jumpHeat ?? 0) > systems.heatCapacity)
       return refuse("Insufficient heat capacity for a jump");
-    const index = new TileIndex(mission.map);
+    const index = tileIndexOf(mission.map);
     // Landing must be observed; jumping cannot probe unseen units or interiors.
     if (
       !mission.units.some(
@@ -183,7 +183,7 @@ export function createMechActionHandler(
           jump: true,
           jumpApex: jumpFlightApex(
             mission.map,
-            new TileIndex(mission.map),
+            tileIndexOf(mission.map),
             unit.pos,
             tile,
           ),

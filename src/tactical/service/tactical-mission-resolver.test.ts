@@ -723,6 +723,8 @@ describe("tacticalMissionResult casualties", () => {
           of("unit-5", "lurker", 10),
           // Not a species id: a fixture or a future placed unit.
           of("unit-6", "hive-core"),
+          // Ours, however its source id reads, is never a species.
+          { ...squadUnit("unit-7", "lurker", 0) },
         ],
         { objectives: OPEN, outcome: "lost" },
       ),
@@ -734,6 +736,7 @@ describe("tacticalMissionResult casualties", () => {
         { type: UNIT_DIED, payload: { unitId: "unit-3" } },
         { type: UNIT_DIED, payload: { unitId: "unit-4", killerId: "unit-1" } },
         { type: UNIT_DIED, payload: { unitId: "unit-6", killerId: "unit-1" } },
+        { type: UNIT_DIED, payload: { unitId: "unit-7", killerId: "unit-4" } },
       ],
     };
     const result = tacticalMissionResult(

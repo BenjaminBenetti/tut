@@ -1122,6 +1122,22 @@ describe("weaponWheel", () => {
     expect(page.items[2]).toMatchObject({ label: "Back", icon: "back" });
     expect(page.hub).toEqual({ value: "Swarmer", caption: "pick a weapon" });
   });
+
+  // Campaign arc §9: the hub names a named enemy as the card does.
+  it("names a named enemy on the hub by its persona", () => {
+    const base = twoWeaponMission();
+    const mission: TacticalState = {
+      ...base,
+      units: base.units.map((unit) =>
+        unit.id === "b2" ? { ...unit, persona: "sovereign" } : unit,
+      ),
+    };
+    const page = weaponWheel(
+      { kind: "unit", unitId: "b2" },
+      contextFor(mission, "m1"),
+    );
+    expect(page.hub?.value).toBe("Sovereign");
+  });
 });
 
 describe("parseWheelChoice", () => {

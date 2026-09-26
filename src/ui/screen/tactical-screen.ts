@@ -1,4 +1,5 @@
 import type { JevInspector } from "../model/jev-inspector";
+import type { JevPolicy } from "../model/jev-policy";
 import type { CommandError } from "../../core/model/command-error";
 import type { Unsubscribe } from "../../core/model/event-bus";
 import { findCity } from "../../overworld/service/earth-map-query-service";
@@ -45,6 +46,14 @@ import { actorOf, describeEvent } from "../view/event-vocabulary";
 export interface TacticalScreenDeps {
   /** App-owned asynchronous controller, shared with the dev inspector. */
   readonly jev?: JevInspector;
+  /**
+   * Decides which units Jev drives while the mission is up (ADR 0013
+   * §2.8): the app's default policy puts named enemies under Jev. Started
+   * after the controller, so it is the store's last subscriber and every
+   * earlier one sees a change before the commands the policy answers it
+   * with; absent, nothing is configured on the player's behalf.
+   */
+  readonly jevPolicy?: JevPolicy;
   readonly router: ScreenRouter;
   readonly session: GameSession;
   /** Tuning the HUD hands to `previewAttack`; the screen computes no number itself. */
@@ -379,12 +388,14 @@ export class TacticalScreen implements Screen {
       this.render(change.state, tacticalEventsOf(change.events));
     });
     this.deps.jev?.start();
+    this.deps.jevPolicy?.start();
   }
 
   /** Unsubscribes, releases the lock and the scene, and removes the layout. */
   unmount(): void {
     this.autoEnd = false;
     this.autoEndedTurn = undefined;
+    this.deps.jevPolicy?.dispose();
     this.deps.jev?.dispose();
     this.sceneUpdates.clear();
     this.unsubscribe?.();

@@ -41,6 +41,9 @@ import { OBJECTIVE_UPDATED } from "../../tactical/model/objective-updated-event"
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
+import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { PersonaId } from "../../content/model/persona-id";
+import { defaultBugAct } from "../../tactical/model/jev-command";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import { MISSION_SETUP_RULES } from "../../tactical/service/missions/mission-setup-rules";
@@ -85,6 +88,37 @@ const bumpTurn: TacticalHandler = (mission) =>
       },
     ],
   });
+
+/**
+ * A started mission, in the player's phase, with a swarmer three tiles
+ * off the first squad, marked with `persona` when one is given.
+ */
+function personaSwarmer(persona: PersonaId | undefined): {
+  state: TacticalState;
+  bugId: string;
+} {
+  const mission = startedMission("player");
+  const squad = mission.units.find((u) => u.team === "tdf");
+  if (squad === undefined) throw new Error("fixture mission has no squad");
+  const placed = withBug(
+    mission,
+    SWARMER,
+    walkableTileNear(mission, {
+      x: squad.pos.x + 3,
+      y: squad.pos.y,
+      z: squad.pos.z + 3,
+    }),
+  );
+  return {
+    bugId: placed.bug.id,
+    state: {
+      ...placed.mission,
+      units: placed.mission.units.map((u) =>
+        u.id === placed.bug.id && persona !== undefined ? { ...u, persona } : u,
+      ),
+    },
+  };
+}
 
 /** A campaign on day 4 with one offered mission at Lagos. */
 function campaignWithMission(): { state: GameState; missionId: string } {
@@ -563,6 +597,66 @@ describe("shippedBugBehaviours", () => {
       shots[0]?.type === ATTACK_RESOLVED && shots[0].payload.weaponRange,
     ).toBe(SPITTER.weapon.range);
     expect(outcome.value.state.phase).toBe("player");
+  });
+
+  it("plays a named enemy headless with no controller: no Jev, and EndTurn never stalls (ADR 0013 §2.8)", () => {
+    // Auto-resolve and the sim sweeps have no JevController, so nothing
+    // configures Jev; the persona plays its deterministic fallback inside
+    // the synchronous bug phase, turn after turn.
+    const { state: start, bugId } = personaSwarmer("sovereign");
+    const endTurnHandler = shippedTacticalHandlers()[END_TURN];
+    if (endTurnHandler === undefined) throw new Error("EndTurn is not shipped");
+    const rng = new Mulberry32Rng(11);
+    const ids = new SequentialIdGenerator();
+    let state = start;
+    let acted = false;
+    for (let turn = 0; turn < 4 && state.outcome === undefined; turn++) {
+      const before = state.units.find((u) => u.id === bugId);
+      const outcome = endTurnHandler(state, endTurn(), { rng, ids });
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      state = outcome.value.state;
+      const after = state.units.find((u) => u.id === bugId);
+      if (after?.pos.x !== before?.pos.x || after?.pos.z !== before?.pos.z) {
+        acted = true;
+      }
+      if (state.outcome === undefined) {
+        expect(state.phase).toBe("player");
+      }
+      expect(state.jev?.activation?.externalBugs ?? false).toBe(false);
+    }
+    expect(acted).toBe(true);
+    expect(state.jev?.entities[bugId]).toBeUndefined();
+  });
+
+  it("wires the persona's fallback into both bug paths: the synchronous phase and a mixed phase's DefaultBugAct", () => {
+    // The Sovereign's fallback walks at the densest group where the
+    // swarmer it rides would rush; from this spot the two end apart.
+    const handlers = shippedTacticalHandlers();
+    const endTurnHandler = handlers[END_TURN];
+    const defaultAct = handlers[DEFAULT_BUG_ACT];
+    if (endTurnHandler === undefined || defaultAct === undefined)
+      throw new Error("bug paths are not shipped");
+    const endOf = (persona: "sovereign" | undefined) => {
+      const { state, bugId } = personaSwarmer(persona);
+      const ended = endTurnHandler(state, endTurn(), {
+        rng: new Mulberry32Rng(11),
+        ids: new SequentialIdGenerator(),
+      });
+      const bugs = { ...state, phase: "bugs" as const };
+      const acted = defaultAct(bugs, defaultBugAct(bugId, bugs.commandSeq), {
+        rng: new Mulberry32Rng(11),
+        ids: new SequentialIdGenerator(),
+      });
+      if (!ended.ok || !acted.ok) throw new Error("the bug did not act");
+      return [ended.value.state, acted.value.state].map(
+        (s) => s.units.find((u) => u.id === bugId)?.pos,
+      );
+    };
+    const [plainPhase, plainAct] = endOf(undefined);
+    const [namedPhase, namedAct] = endOf("sovereign");
+    expect(namedPhase).not.toEqual(plainPhase);
+    expect(namedAct).not.toEqual(plainAct);
   });
 
   it("gives every species a behaviour unless it is known not to have landed", () => {

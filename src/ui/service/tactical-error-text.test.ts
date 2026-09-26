@@ -274,6 +274,43 @@ describe("namesFor", () => {
       describeRefusal({ kind: "no-line-of-sight", targetId: "unit-9" }, names),
     ).toBe("No line of sight to Swarmer");
   });
+
+  // Campaign arc §9: a named enemy is called by its persona wherever the
+  // player reads about it, and the squad called Alpha keeps its name.
+  it("calls a named enemy by its persona, never by a squad's name or its bare species", () => {
+    const withNamed = {
+      ...twoRifleSquads.mission,
+      units: [
+        ...(twoRifleSquads.mission?.units ?? []),
+        {
+          id: "unit-10",
+          sourceId: "swarmer",
+          templateId: "bug:swarmer",
+          persona: "broodmother",
+        },
+        {
+          id: "unit-11",
+          sourceId: "swarmer",
+          templateId: "bug:swarmer",
+          persona: "alpha",
+        },
+        {
+          id: "unit-12",
+          sourceId: "swarmer",
+          templateId: "bug:swarmer",
+          persona: "queen",
+        },
+      ],
+    } as unknown as Parameters<typeof namesFor>[0];
+    const names = namesFor(withNamed, twoRifleSquads.campaign);
+    expect(names.unit("unit-10")).toBe("Broodmother");
+    expect(names.unit("unit-11")).toBe("Alpha Swarmer");
+    expect(names.unit("unit-1")).toBe("Alpha");
+    expect(names.target("unit-10")).toBe("Broodmother");
+    // A persona this build does not know keeps the species name.
+    expect(names.unit("unit-12")).toBe("Swarmer");
+    expect(names.unit("unit-9")).toBe("Swarmer");
+  });
 });
 
 describe("namesFor on a defence (#1175)", () => {

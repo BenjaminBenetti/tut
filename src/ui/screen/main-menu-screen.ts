@@ -5,9 +5,11 @@ import type { SaveError } from "../../save/model/save-error";
 import type { GameSaveService } from "../../save/service/game-save-service";
 import type { NewGameOptions } from "../../save/service/game-state-factory";
 import type { GameSession } from "../model/game-session";
+import type { JevPreference } from "../model/jev-preference";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { resolveSeed } from "../service/seed-input";
+import { SmartEnemiesToggleView } from "../view/smart-enemies-toggle-view";
 
 // ===========================================
 // Types
@@ -31,6 +33,12 @@ export interface MainMenuScreenDeps {
    * should not know that, nor reach for `window.location` itself.
    */
   readonly openMapLab: () => void;
+  /**
+   * The "Smart enemies (Jev)" setting (campaign arc §9). The app passes
+   * it only when a Jev relay is configured; absent, the switch is not
+   * shown, since no enemy could be smart.
+   */
+  readonly smartEnemies?: JevPreference;
 }
 
 // ===========================================
@@ -51,6 +59,7 @@ export interface MainMenuScreenDeps {
  *   [Export]   ──▶ saves.loadGame(autosave) ──▶ saves.exportGame ──▶ text box
  *   [Import]   ──▶ saves.importGame(text box) ──▶ session.start ──▶ overworld
  *   [Map Lab]  ──▶ openMapLab() ──▶ mapgen-preview.html
+ *   [☑ Smart enemies (Jev)] ──▶ smartEnemies.setEnabled (only when given)
  * ```
  *
  * Map Lab leaves the app rather than routing within it: the map
@@ -68,6 +77,7 @@ export class MainMenuScreen implements Screen {
   private seedInput: HTMLInputElement | undefined;
   private saveText: HTMLTextAreaElement | undefined;
   private status: HTMLElement | undefined;
+  private smartEnemies: SmartEnemiesToggleView | undefined;
   private readonly disposers: (() => void)[] = [];
 
   // ===========================================
@@ -114,6 +124,10 @@ export class MainMenuScreen implements Screen {
     const actions = doc.createElement("div");
     actions.className = "tut-stack";
     actions.append(seedRow, newGame, cont, mapLab);
+    if (this.deps.smartEnemies !== undefined) {
+      this.smartEnemies = new SmartEnemiesToggleView(this.deps.smartEnemies);
+      this.smartEnemies.mount(actions);
+    }
 
     const io = this.createSaveIo(doc, hasSave);
 
@@ -153,6 +167,8 @@ export class MainMenuScreen implements Screen {
     for (const dispose of this.disposers.splice(0)) {
       dispose();
     }
+    this.smartEnemies?.unmount();
+    this.smartEnemies = undefined;
     this.panel?.remove();
     this.panel = undefined;
     this.seedInput = undefined;

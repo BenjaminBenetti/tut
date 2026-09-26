@@ -59,6 +59,40 @@ Changes remain drafts until Apply. **Cancel**, **Escape**, or switching modes di
 
 ![Preparing Squad orders for several checked units](jev-squad-orders.png)
 
+## Named enemies
+
+A **named enemy** is a bug whose `Unit.persona` is set: a Broodmother, an Alpha or a Sovereign ([campaign arc §9](campaign-arc.md)). Its definition in `bugs/data/personas.ts` gives it a display name, an entity prompt, a commander prompt and a fallback behaviour. The player and Jev both call it by that name: “Broodmother”, or “Alpha Swarmer” for a persona that names its species so it never reads as the squad called Alpha. Only what the TDF can see is labelled, so an unseen named enemy never announces itself.
+
+![A Broodmother aimed at: her name on the card and the attack preview, and the bug-green Jev labels over both named enemies](jev-named-enemy.png)
+
+![Shift held: the named enemies' chips read Jev over Broodmother and Alpha Swarmer](jev-named-enemy-chips.png)
+
+The app puts named enemies under Jev by default. `JevDefaultPolicy` runs while the tactical screen is mounted, as the store's last subscriber:
+
+```
+TacticalScreen.mount ──► store.subscribe(render) ──► jev.start() ──► policy.start()
+                                                                        │
+  relay configured? ─no─► nothing   (the simulation never enables Jev on its own)
+        │ yes
+  a living persona bug with no Jev entry, under the cap? ─no─► nothing
+        │ yes
+  Smart enemies on? ─no─► nothing   (the bug plays its fallback)
+        │ yes
+  configureJev(unit, { enabled: true, entityPrompt }, commander)
+```
+
+- **Cap:** at most `MAX_JEV_PERSONAS_PER_MISSION` (3) persona actors a mission, chosen in unit order. A dead one still counts.
+- **Commander prompt:** the bugs' existing prompt is kept. With none, the first persona's commander prompt becomes the faction's.
+- **Once only:** a unit with any Jev entry, including one the inspector or a save disabled, is never touched again.
+- **Timing:** it applies at mission start, before the first End Turn, and after every store change. A persona that hatches as a bug phase opens plays its fallback in that phase, because the phase fixed which bugs Jev drives when it opened. Jev takes it from the next bug phase.
+- **Fallback:** without Jev, on a request failure and in every headless sim or auto-resolve, a persona plays its `fallback` behaviour tag (`"species"` keeps its species AI). The policy's `configureJev` is an ordinary command, so it advances `commandSeq` like any other.
+
+**Smart enemies (Jev)** is a checkbox on the main menu, shown only when a relay is configured. It is on by default and stored in browser storage under `tut:pref:smart-enemies`, not in the save. Turning it off stops **new** actors only: a named enemy already under Jev in a mission in progress stays under Jev until that mission ends. Turning it back on configures the named enemies not yet configured when the mission is next on screen.
+
+![The Smart enemies (Jev) checkbox on the main menu, with its hint](smart-enemies-toggle.png)
+
+A live check needs `JevKey` in `.env`, `./run.sh` (relay on `:8080`) and a mission with a persona bug in it. Until missions place named enemies, set `persona` on a bug in the autosave (`tut:save:autosave`), reload and Continue, then watch the relay log for its requests and the inspector for its decisions. The development spawn tool does not place named enemies.
+
 ## Inspect a decision
 
 ![Jev development inspector showing a real evaluated request](jev-inspector.png)

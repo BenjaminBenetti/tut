@@ -159,6 +159,30 @@
   gap: var(--space-3);
 }
 
+/* "Smart enemies (Jev)": a checkbox and the hint that says what off does. */
+.tut-menu__option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.tut-menu__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.tut-menu__check input {
+  accent-color: var(--ui-accent);
+}
+
+.tut-menu__hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .tut-menu__io {
   display: flex;
   flex-direction: column;
@@ -2041,6 +2065,12 @@
   text-shadow:
     0 1px 3px #07131f,
     0 0 5px #07131f;
+}
+
+/* A named enemy under Jev (campaign arc §9): the same word in the bugs'
+   colour, so an enemy's label never reads as one of ours. */
+.tut-status-chip[data-team="bugs"] .tut-status-chip__jev {
+  color: var(--ui-bug);
 }
 
 .tut-status-chip[data-compact="true"] {

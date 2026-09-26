@@ -16,6 +16,7 @@ import type { PhaseStep } from "../../tactical/service/turn-service";
 import { missionOutcome } from "../../tactical/service/mission-end-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
 import { withVision } from "../../tactical/service/vision-service";
+import type { PersonaLookup } from "../model/persona";
 import type { BehaviourLookup, SpeciesLookup } from "./behaviour-registry";
 import { chooseBugCommands } from "./behaviour-registry";
 
@@ -23,7 +24,7 @@ import { chooseBugCommands } from "./behaviour-registry";
 // Types
 // ===========================================
 
-/** What the bug phase runs on; the composition root supplies all four. */
+/** What the bug phase runs on; the composition root supplies all of it. */
 export interface BugPhaseDeps {
   /** The action rules the bugs' commands go through; `EndTurn` is not among them. */
   readonly handlers: TacticalHandlers;
@@ -31,6 +32,11 @@ export interface BugPhaseDeps {
   readonly registry: BehaviourLookup;
   /** Resolves a bug's `sourceId` to its species. */
   readonly speciesOf: SpeciesLookup;
+  /**
+   * Resolves a named enemy's persona, whose fallback replaces its species
+   * behaviour (ADR 0013 §2.8). Absent, every bug plays its species.
+   */
+  readonly personaOf?: PersonaLookup;
   /** What the behaviours price targets with. */
   readonly combat: CombatTuning;
 }
@@ -43,7 +49,8 @@ export interface BugPhaseDeps {
  * The bug phase as a `PhaseStep` the turn engine runs after the phase
  * steps have opened the bugs phase (#335, GDD §6.4): every bug alive at
  * that point acts once, in `units` order, each choosing its commands
- * through its species' behaviour and having them applied through the
+ * through its behaviour (a named enemy's persona fallback, else its
+ * species') and having them applied through the
  * action handlers. The runner does not end the phase itself; the
  * `EndTurn` handler flips on to the player once it returns.
  *
@@ -93,6 +100,7 @@ export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
             return graphOnce();
           },
         },
+        deps.personaOf,
       );
       const acted = applyAll(deps.handlers, state, commands, unitRng, ctx);
       // The phase applies commands straight through the handlers rather

@@ -908,13 +908,12 @@ describe("TacticalHudView", () => {
   it("keeps Jev labels above living TDF units without Shift and removes them when control is disabled", () => {
     let x = 80;
     const { hud, mission } = setup({ headAnchorFor: () => ({ x, y: 50 }) });
+    // TDF only here; a bug under Jev is labelled too, which the named
+    // enemy test below covers.
     const configured = {
       ...mission,
       jev: {
-        entities: {
-          s1: { enabled: true, entityPrompt: "Guard" },
-          b1: { enabled: true, entityPrompt: "Defend" },
-        },
+        entities: { s1: { enabled: true, entityPrompt: "Guard" } },
         commanders: { tdf: "", bugs: "" },
       },
     };
@@ -946,6 +945,61 @@ describe("TacticalHudView", () => {
     expect(labels()).toHaveLength(1);
     hud.update(mission);
     expect(labels()).toHaveLength(0);
+    hud.unmount();
+  });
+
+  // Campaign arc §9: a named enemy the default policy put under Jev is
+  // labelled as a squad under Jev is, and called by its persona on its
+  // chip and on the card. Only a bug the squad can see: a label over an
+  // unseen one would announce it (ADR 0006).
+  it("labels a named enemy under Jev and calls it by its persona, but never one nobody can see", () => {
+    const { hud, mission } = setup({ headAnchorFor: () => ({ x: 0, y: 0 }) });
+    const named: TacticalState = {
+      ...mission,
+      units: mission.units.map((unit) =>
+        unit.id === "b1"
+          ? { ...unit, persona: "broodmother" }
+          : unit.id === "b2"
+            ? { ...unit, persona: "sovereign" }
+            : unit,
+      ),
+      // Short sight, so b2 across the field is in the dark.
+      templates: {
+        ...mission.templates,
+        rifle: { ...hudTemplate("rifle", "Rifle Squad"), sightRange: 3 },
+      },
+      jev: {
+        entities: {
+          b1: { enabled: true, entityPrompt: "Guard the clutch." },
+          b2: { enabled: true, entityPrompt: "Protect the core." },
+        },
+        commanders: { tdf: "", bugs: "Swarm." },
+      },
+    };
+    const seen = withVision({ state: named, events: [] }).state;
+    expect(seen.vision.tdf.spotted).toEqual(["b1"]);
+    hud.update(seen);
+    const chip = (id: string) =>
+      root.querySelector<HTMLElement>(`.tut-status-chip[data-unit-id="${id}"]`);
+    expect(chip("b1")?.dataset.team).toBe("bugs");
+    expect(
+      chip("b1")?.querySelector<HTMLElement>('[data-field="jev-label"]')
+        ?.hidden,
+    ).toBe(false);
+    expect(
+      chip("b1")?.querySelector('[data-field="status-name"]')?.textContent,
+    ).toBe("Broodmother");
+    expect(chip("b2")).toBeNull();
+    // Aimed at, the card reads the persona too.
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({
+      kind: "select-tile",
+      tile: seen.units.find((u) => u.id === "b1")!.pos,
+    });
+    expect(hud.getTargetUnitId()).toBe("b1");
+    expect(field("unit-name")?.textContent).toBe("Broodmother");
+    // And so does the hit preview's header.
+    expect(field("target-name")?.textContent).toBe("Broodmother");
     hud.unmount();
   });
 

@@ -5,6 +5,7 @@ import type { UnitClass } from "../../mapgen/model/pass-mask";
 import { PassMask as PASS } from "../../mapgen/model/pass-mask";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { UnitTemplateId } from "./unit-template";
+import type { PersonaId } from "../../content/model/persona-id";
 
 // ===========================================
 // Ids and unions
@@ -153,6 +154,16 @@ export interface Unit {
    * keeps watching after its first shot (`overwatch-status`).
    */
   readonly overwatchShots?: number;
+  /**
+   * The named enemy this bug is (ADR 0013 §2.8): the Broodmother, a pack
+   * alpha, the Sovereign. Set by the mission's setup rule, never by the
+   * player. It names the unit (`PERSONAS[persona].displayName`), swaps
+   * its species behaviour for the persona's fallback, and lets the app's
+   * default Jev policy put it under Jev control when a relay is
+   * configured. Absent on every ordinary bug, on every TDF unit and on
+   * every unit saved before personas, so no save needs a migration.
+   */
+  readonly persona?: PersonaId;
 }
 
 // ===========================================

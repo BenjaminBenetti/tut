@@ -1,7 +1,9 @@
 import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
-import type { UnitId } from "../../tactical/model/unit";
+import type { Unit, UnitId } from "../../tactical/model/unit";
 import type { BehaviourTag, BugSpecies } from "../model/bug-species";
+import type { PersonaLookup } from "../model/persona";
+import { SPECIES_FALLBACK } from "../model/persona";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 
 // ===========================================
@@ -85,11 +87,44 @@ export class MapBehaviourRegistry implements BehaviourRegistry {
 // ===========================================
 
 /**
- * The commands a bug should issue this turn: its species' behaviour,
- * looked up through the registry, asked to choose. A unit that is not a
- * living bug, a species the catalogue lacks, or a tag with no behaviour
- * yet all yield no commands, so an unfinished species holds still
- * rather than crashing the phase.
+ * The behaviour tag a bug plays by without Jev (ADR 0013 §2.8): its
+ * persona's fallback when it carries a persona the lookup knows, else
+ * its species' own tag. A persona whose fallback is `SPECIES_FALLBACK`,
+ * or one this build does not know, plays the species.
+ *
+ * ```
+ *   unit.persona ──personaOf──► fallback ── a tag ──────────────► that tag
+ *        │                                └─ "species" / unknown ─┐
+ *   unit.sourceId ──speciesOf──► species.behaviour ◄──────────────┘
+ * ```
+ *
+ * @param unit - The bug: its species id and, when named, its persona.
+ * @param speciesOf - Resolves `sourceId` to its species.
+ * @param personaOf - Resolves a persona; absent, every bug plays its species.
+ * @returns The tag, or undefined for a species the catalogue lacks.
+ */
+export function behaviourTagOf(
+  unit: Pick<Unit, "sourceId" | "persona">,
+  speciesOf: SpeciesLookup,
+  personaOf?: PersonaLookup,
+): BehaviourTag | undefined {
+  const fallback =
+    unit.persona === undefined
+      ? undefined
+      : personaOf?.(unit.persona)?.fallback;
+  if (fallback !== undefined && fallback !== SPECIES_FALLBACK) {
+    return fallback;
+  }
+  return speciesOf(unit.sourceId)?.behaviour;
+}
+
+/**
+ * The commands a bug should issue this turn: its behaviour, looked up
+ * through the registry by `behaviourTagOf` (a named enemy's persona
+ * fallback, else its species' tag), asked to choose. A unit that is not
+ * a living bug, a species the catalogue lacks, or a tag with no
+ * behaviour yet all yield no commands, so an unfinished species holds
+ * still rather than crashing the phase.
  */
 export function chooseBugCommands(
   view: MissionView,
@@ -97,12 +132,13 @@ export function chooseBugCommands(
   registry: BehaviourLookup,
   speciesOf: SpeciesLookup,
   ctx: BehaviourContext,
+  personaOf?: PersonaLookup,
 ): readonly TacticalCommand[] {
   const unit = view.units.find((u) => u.id === unitId);
   if (unit?.kind !== "bug" || unit.hp <= 0) {
     return [];
   }
-  const tag = speciesOf(unit.sourceId)?.behaviour;
+  const tag = behaviourTagOf(unit, speciesOf, personaOf);
   if (tag === undefined) {
     return [];
   }

@@ -1199,6 +1199,88 @@ describe("the Broodmother on the HUD (#1179, campaign arc §6.8)", () => {
   });
 });
 
+describe("the Sovereign on the HUD (#1179, campaign arc §9)", () => {
+  const names = { ...NAMES, unit: () => "Sovereign" };
+  const aura = {
+    type: "tactical:sovereign-aura",
+    payload: {
+      unitId: "unit-950",
+      empowered: ["unit-3", "unit-4", "unit-5"],
+      damageBonus: 1,
+    },
+  } as const;
+  const summoned = {
+    type: "tactical:guards-summoned",
+    payload: { unitId: "unit-950", guardIds: ["unit-960", "unit-961"] },
+  } as const;
+  const retreating = {
+    type: "tactical:sovereign-retreating",
+    payload: { unitId: "unit-950", hp: 48, maxHp: 120 },
+  } as const;
+
+  it("logs her aura, her guards and her retreat by her name", () => {
+    expect(describeEvent(aura, names)).toMatchObject({
+      text: "Sovereign drives 3 bugs harder (+1 damage)",
+      tone: "bug",
+    });
+    expect(
+      describeEvent(
+        { ...aura, payload: { ...aura.payload, empowered: ["unit-3"] } },
+        names,
+      ),
+    ).toMatchObject({ text: "Sovereign drives 1 bug harder (+1 damage)" });
+    expect(describeEvent(summoned, names)).toMatchObject({
+      text: "Sovereign summoned 2 guards",
+      tone: "bug",
+    });
+    expect(describeEvent(retreating, names)).toMatchObject({
+      text: "Sovereign is falling back to the core",
+      tone: "danger",
+    });
+  });
+
+  it("floats all three over her", () => {
+    expect(actorOf(aura)).toBe("unit-950");
+    expect(actorOf(summoned)).toBe("unit-950");
+    expect(actorOf(retreating)).toBe("unit-950");
+  });
+
+  it("names her on her card, calls her a 4×4, and says when she falls back", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    const template = {
+      ...hudTemplate("bug:sovereign", "Sovereign", 4),
+      footprint: 4,
+    };
+    const her = hudUnit("unit-950", "bugs", "bug:sovereign", 4, 4, {
+      hp: 120,
+      maxHp: 120,
+    });
+    view.update(her, template, undefined, "Sovereign");
+    expect(field("unit-name")?.textContent).toBe("Sovereign");
+    expect(field("unit-side")?.textContent).toBe("bugs · bug · 4×4");
+    expect(field("status")?.textContent).not.toContain("retreating");
+    view.update(
+      { ...her, hp: 48, retreating: true },
+      template,
+      undefined,
+      "Sovereign",
+    );
+    expect(field("status")?.textContent).toContain("retreating");
+  });
+
+  it("shows her aura on the card of a bug it drives, and nothing once it lapses", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    const template = hudTemplate("bug:swarmer", "Swarmer", 4);
+    const swarmer = hudUnit("unit-3", "bugs", "bug:swarmer", 2, 2);
+    view.update({ ...swarmer, auraDamage: 1 }, template);
+    expect(field("status")?.textContent).toContain("aura +1 damage");
+    view.update(swarmer, template);
+    expect(field("status")?.textContent).not.toContain("aura");
+  });
+});
+
 describe("capturing a specimen (#1179)", () => {
   const LURKER = {
     unitId: "unit-9",

@@ -35,7 +35,20 @@ export function weaponSystemRefusal(
   return undefined;
 }
 
-/** Applies conditional aiming bonuses without changing the frozen weapon template. */
+/**
+ * Applies conditional bonuses without changing the frozen weapon
+ * template: aiming (a brace, standing still, a designation) and, since
+ * #1179, the damage the Sovereign's aura lends a bug for the phase
+ * (`Unit.auraDamage`). Both the preview and the roll read the weapon
+ * this returns, so they agree. The weapon itself comes back when no
+ * bonus applies.
+ *
+ * @param mission - The mission the attack is in.
+ * @param unit - The attacker.
+ * @param weapon - The weapon it attacks with, as its template froze it.
+ * @param target - The unit it aims at, for a designation; absent for a shot at a tile.
+ * @returns The weapon with this unit's bonuses applied.
+ */
 export function aimedWeapon(
   mission: TacticalState,
   unit: Unit,
@@ -55,13 +68,15 @@ export function aimedWeapon(
     (unit.braced ? (systems?.braceAccuracy ?? 0) : 0) +
     (!unit.movedThisTurn ? (systems?.stationaryAccuracy ?? 0) : 0) +
     designation;
-  return accuracy === 0
+  const damage = unit.auraDamage ?? 0;
+  return accuracy === 0 && damage === 0
     ? weapon
     : {
         ...weapon,
         profile: {
           ...weapon.profile,
           accuracy: weapon.profile.accuracy + accuracy,
+          damage: weapon.profile.damage + damage,
         },
       };
 }

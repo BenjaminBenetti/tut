@@ -17,7 +17,9 @@ import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
  * at the best target in reach and sight, or holds, and `broodmother`
  * (#1179) keeps out of the squad's weapon reach while her clutches do
  * the fighting, and runs for the map edge once she is down to half her
- * hit points.
+ * hit points, and `sovereign` (#1179) holds the ground in front of the
+ * core she guards, cuts down whatever reaches her, and falls back onto
+ * the core once she is badly hurt.
  */
 export type BehaviourTag =
   | "rush"
@@ -26,7 +28,8 @@ export type BehaviourTag =
   | "snipe"
   | "burrow"
   | "guard"
-  | "broodmother";
+  | "broodmother"
+  | "sovereign";
 
 /** Every behaviour tag, in a fixed order. */
 export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
@@ -37,6 +40,7 @@ export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
   "burrow",
   "guard",
   "broodmother",
+  "sovereign",
 ];
 
 // ===========================================

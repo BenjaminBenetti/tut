@@ -6,6 +6,7 @@ import {
   motherMission,
 } from "../../bugs/service/broodmother.test-helper";
 import { createPersonaLookup } from "../../bugs/service/persona-lookup";
+import { sovereignMission } from "../../bugs/service/sovereign.test-helper";
 import type { PersonaId } from "../../content/model/persona-id";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
@@ -328,6 +329,41 @@ describe("the Broodmother as her mission places her (#1179, campaign arc §6.8)"
 
   it("is left to her own behaviour when the Jev switch is off", () => {
     const { state } = withMother();
+    const { store, dispatched } = storeWith(state);
+    policyOver(store, { enabled: () => false }).start();
+    expect(dispatched).toEqual([]);
+    expect(store.getState().activeMission?.jev).toBeUndefined();
+  });
+});
+
+describe("the Sovereign as her mission places her (#1179, campaign arc §9)", () => {
+  /** A player-phase mission with a squad and her, placed through the real seam. */
+  function withSovereign(): { state: TacticalState; herId: string } {
+    const { mission, sovereign } = sovereignMission(
+      fieldMap(16, 16).build(),
+      [squad("tdf", 0)],
+      { x: 8, y: 0, z: 8 },
+      { phase: "player" },
+    );
+    return { state: mission, herId: sovereign.id };
+  }
+
+  it("is Jev-driven by default: configured with her own orders, and hers lead the swarm", () => {
+    const { state, herId } = withSovereign();
+    const { store, dispatched } = storeWith(state);
+    policyOver(store).start();
+    expect(dispatched.map((c) => c.payload.unitId)).toEqual([herId]);
+    expect(dispatched[0]?.payload.commanderPrompt).toBe(
+      PERSONAS.sovereign.commanderPrompt,
+    );
+    expect(store.getState().activeMission?.jev?.entities[herId]).toEqual({
+      enabled: true,
+      entityPrompt: PERSONAS.sovereign.entityPrompt,
+    });
+  });
+
+  it("is left to her fallback behaviour when the Jev switch is off", () => {
+    const { state } = withSovereign();
     const { store, dispatched } = storeWith(state);
     policyOver(store, { enabled: () => false }).start();
     expect(dispatched).toEqual([]);

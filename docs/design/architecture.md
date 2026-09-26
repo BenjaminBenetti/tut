@@ -232,6 +232,13 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
                                      on the edge? units ──► escaped   spawner behind her, ClutchLaid
   ```
 
+- **The Sovereign follows the same split** (campaign arc §9, #1179). She is a placed 4×4 species. The Spore Platform's core stage stands her with `placeSovereign(state, position, { ids, species, core, difficulty })` (`bugs/service/sovereign-placement.ts`). It scales her hit points with `sovereignHp(difficulty)`, marks her with the `sovereign` persona, and records the tile she guards as `Unit.core`. `SovereignBehaviour` is her fallback and reads only the bugs' view. She ranges `leashRadius` tiles from her core and closes on the visible enemy nearest it. Once hurt she falls back within `holdRadius` of it and holds. With nobody in reach she cuts the wall toward her focus, as a brute does. Her rules are three END_TURN steps, registered after the clutch step:
+  - `createSovereignRetreatStep` marks `Unit.retreating` once at `retreatAtHpFraction` of her hit points and emits `SovereignRetreating`.
+  - `createSovereignAuraStep` clears every `Unit.auraDamage` at every phase open. As the bugs' phase opens it lends `damageBonus` to each awake bug within `radius` ground tiles of her block (`SovereignAura`). `aimedWeapon` adds it, so the preview and the roll agree.
+  - `createGuardSummonStep` places `count` escorts through `placeBugAtFirst` on free tiles within `radius` infantry steps of her block. It runs as the bugs' phase of every `interval`-th turn opens, and each guard arrives with no action points (`GuardsSummoned`).
+
+  None of the steps draws randomness, and ids are drawn only for guards actually placed, so a mission without her replays unchanged. Her tuning is `SOVEREIGN_TUNING` (`bugs/data/sovereign-tuning.ts`).
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

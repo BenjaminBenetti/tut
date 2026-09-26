@@ -36,6 +36,7 @@ const MODELS = [
   "bug.swarmer-armoured",
   "bug.lurker-armoured",
   "bug.brute-armoured",
+  "bug.sovereign",
 ] as const;
 
 /**
@@ -136,11 +137,13 @@ describe("unit motion on the shipped models", () => {
         // on six stub legs and two spade blades. An armoured variant has
         // its base's limbs. Joining the sculpt into one mesh must fail.
         // The Broodmother (#1179) carries her sac on six, stepping as a
-        // tripod, and folds two sickles in front of her.
+        // tripod, and folds two sickles in front of her. The Sovereign
+        // (#1179) walks on six under her mantle and swings two scythes.
         expect(legs).toHaveLength(
           id.startsWith("bug.brute") ||
             id === "bug.burrower" ||
-            id.startsWith("bug.broodmother")
+            id.startsWith("bug.broodmother") ||
+            id === "bug.sovereign"
             ? 6
             : 4,
         );
@@ -337,6 +340,8 @@ it.each([
   ["bug.hive-guard", "head"],
   // Her head leads a body three tiles long (#1179): the sac trails.
   ["bug.broodmother", "head"],
+  // The Sovereign's head leads and her mantle trails (#1179).
+  ["bug.sovereign", "head"],
 ] as const)(
   "turns %s's actual front toward its tactical facing",
   async (id, front) => {
@@ -354,6 +359,55 @@ it.each([
     }
   },
 );
+
+describe("the Sovereign's rig (#1179, campaign arc §9)", () => {
+  it("strikes with both scythes, her hands riding under them, and restores", async () => {
+    const mesh = new UnitMesh(
+      "actor",
+      await loadModel("bug.sovereign"),
+      "bug.sovereign",
+    );
+    mesh.setPose({ x: 0, y: 0, z: 0 }, "n");
+    const hands = (["l", "r"] as const).map((side) => {
+      const arm = mesh.object.getObjectByName(`motion-arm-${side}`)!;
+      const hand = arm.getObjectByName(`hand_${side}`);
+      // Each hand hangs off its own scythe, so it swings with it.
+      expect(hand).toBeDefined();
+      expect(arm.getObjectByName(`scythe_${side}`)).toBeDefined();
+      return hand!;
+    });
+    const where = () =>
+      hands.map((hand) => hand.getWorldPosition(new Vector3()));
+    const rest = where();
+    mesh.motion!.attack(0.35, true);
+    const struck = where();
+    for (const [i, at] of struck.entries()) {
+      expect(at.distanceTo(rest[i]!)).toBeGreaterThan(0.05);
+    }
+    mesh.motion!.attack(1, true);
+    for (const [i, at] of where().entries()) {
+      expect(at.distanceTo(rest[i]!)).toBeLessThan(1e-6);
+    }
+    mesh.dispose();
+  });
+
+  it("wears her crown socket on top and stands inside her 4×4 block", async () => {
+    const model = await loadModel("bug.sovereign");
+    const entry = MODEL_MANIFEST["bug.sovereign"];
+    expect(entry.footprint).toEqual({ w: 4, d: 4 });
+    const mesh = new UnitMesh("actor", model, "bug.sovereign");
+    mesh.setPose({ x: 0, y: 0, z: 0 }, "n");
+    const crown = mesh.object
+      .getObjectByName("socket_crown")!
+      .getWorldPosition(new Vector3());
+    expect(crown.y - mesh.object.position.y).toBeGreaterThan(
+      entry.height * 0.75,
+    );
+    const size = new Box3().setFromObject(model).getSize(new Vector3());
+    expect(size.x).toBeLessThanOrEqual(entry.footprint.w);
+    expect(size.z).toBeLessThanOrEqual(entry.footprint.d);
+  });
+});
 
 it.each(["tdf.mech.assembled-a", "tdf.mech.assembled-b"] as const)(
   "%s alternates its feet over two tiles at the slower cadence",

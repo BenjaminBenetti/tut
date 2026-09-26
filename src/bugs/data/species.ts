@@ -48,7 +48,8 @@ import { ARMOURED_VARIANT_TUNING } from "./armoured-variant-tuning";
 //     burrower is three: it has to be caught above ground first. A
 //     Hive Guard is four: it cannot chase anyone, but it has to be
 //     walked up to under its fire. The Broodmother is ten: a boss, and
-//     one the squad has to catch before she reaches the edge.
+//     one the squad has to catch before she reaches the edge. The
+//     Sovereign is fifteen: the last fight of the war (#1179).
 //   • burrows: the burrower (#1179) arrives under the ground and fights
 //     from beneath it; see `isBurrowed` in `tactical/model/unit`.
 
@@ -354,6 +355,53 @@ export const BROODMOTHER_SCARRED_MODEL_ID: ModelAssetId =
   "bug.broodmother-scarred";
 
 /**
+ * The platform's apex (#1179, campaign arc §8 and §9; GDD M4): the
+ * finale's boss, who waits in the core chamber. She lends the bugs
+ * around her a harder bite, calls guards every few turns, and at 40 %
+ * of her hit points falls back onto the core she guards and holds it
+ * to the end — she never leaves the map (`SOVEREIGN_TUNING`).
+ *
+ * `hp` is her difficulty-1 value; the mission that places her scales
+ * it with difficulty (`sovereignHp`). She stands on a 4×4 block (the
+ * modeller's kit), the widest in the bestiary: she fits through no
+ * door and fights in the open ground of the core chamber.
+ *
+ * Her scythes are the strongest blow a bug lands. They are melee
+ * (range 1): a reach of 2 would make them a ranged weapon under the
+ * combat rules — cover, line of sight, a tracer — so her reach is her
+ * width instead: sixteen tiles of her block's rim touch her. The blow
+ * sweeps the tiles beside its mark, as a brute's does, and opens walls.
+ */
+export const SOVEREIGN: BugSpecies = {
+  id: "sovereign",
+  name: "Sovereign",
+  description:
+    "A towering crowned queen on six legs, her scythes folded like a mantis's. She drives the swarm around her harder, calls guards to her side, and falls back to the core when she is hurt.",
+  hp: 120,
+  armor: 2,
+  move: 4,
+  ap: 2,
+  // 16 at pen 3 lands 13 through a mech's 6 plate (±25 %): five or six
+  // hits end a 70-hp mech, and whoever stands beside the mark takes
+  // half. Force 3 opens solid walls, as the brute's cleavers do: a
+  // 4×4 queen cornered behind a wall cuts her way out.
+  weapon: {
+    range: 1,
+    accuracy: 80,
+    damage: 16,
+    armorPen: 3,
+    aoe: { radius: 1, falloff: 0.5 },
+    demoForce: 3,
+  },
+  sightRange: SIGHT,
+  behaviour: "sovereign",
+  modelId: "bug.sovereign",
+  hatchWeight: 0,
+  xpValue: 150,
+  footprint: 4,
+};
+
+/**
  * Every bug species keyed by id. Typed as a record over the closed
  * `BugSpeciesId` union so a new id without a definition fails at compile
  * time rather than at runtime.
@@ -369,4 +417,5 @@ export const BUG_SPECIES: Readonly<Record<BugSpeciesId, BugSpecies>> = {
   "lurker-armoured": LURKER_ARMOURED,
   "brute-armoured": BRUTE_ARMOURED,
   broodmother: BROODMOTHER,
+  sovereign: SOVEREIGN,
 };

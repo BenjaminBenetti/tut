@@ -71,4 +71,18 @@ describe("persona data", () => {
       expect([plan, prompt.includes(plan)]).toEqual([plan, true]);
     }
   });
+
+  it("plays the Sovereign on her own behaviour without Jev, and asks Jev for the same plan (#1179, arc §9)", () => {
+    // Headless, or with Jev switched off, she holds the core's ground
+    // and falls back onto it at two fifths of her health; Jev's orders
+    // say the same, and spend the swarm to protect the core.
+    expect(SOVEREIGN.fallback).toBe("sovereign");
+    const prompt = SOVEREIGN.entityPrompt.toLowerCase();
+    for (const plan of ["core", "expendable", "two fifths", "visible"]) {
+      expect([plan, prompt.includes(plan)]).toEqual([plan, true]);
+    }
+    expect(SOVEREIGN.commanderPrompt.toLowerCase()).toContain(
+      "sacrifice the swarm to protect the core",
+    );
+  });
 });

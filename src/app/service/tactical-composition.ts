@@ -22,6 +22,7 @@ import { BruteBehaviour } from "../../bugs/ai/brute-behaviour";
 import { HiveGuardBehaviour } from "../../bugs/ai/hive-guard-behaviour";
 import { LurkerBehaviour } from "../../bugs/ai/lurker-behaviour";
 import { BurrowerBehaviour } from "../../bugs/ai/burrower-behaviour";
+import { SovereignBehaviour } from "../../bugs/ai/sovereign-behaviour";
 import { SpitterBehaviour } from "../../bugs/ai/spitter-behaviour";
 import { SwarmerBehaviour } from "../../bugs/ai/swarmer-behaviour";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
@@ -29,6 +30,9 @@ import { BUG_SPECIES } from "../../bugs/data/species";
 import { createPersonaLookup } from "../../bugs/service/persona-lookup";
 import { createBroodmotherFlightStep } from "../../bugs/service/broodmother-flight-step";
 import { createClutchStep } from "../../bugs/service/clutch-step";
+import { createGuardSummonStep } from "../../bugs/service/guard-summon-step";
+import { createSovereignAuraStep } from "../../bugs/service/sovereign-aura-step";
+import { createSovereignRetreatStep } from "../../bugs/service/sovereign-retreat-step";
 import { PERSONAS } from "../../bugs/data/personas";
 import type { IdGenerator } from "../../core/model/id-generator";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
@@ -318,7 +322,8 @@ const DEBUG_MECHS: readonly DebugMechSource[] = [
  * ```
  *   EndTurn ──► phase steps: refreshSides, objective deadlines, drain radars, run turrets,
  *                            detonate charges, burn, hatch, edge waves, the Broodmother's
- *                            flight and clutch, objective kinds' steps
+ *                            flight and clutch, the Sovereign's retreat, aura and guards,
+ *                            objective kinds' steps
  *                    └──► bug phase runner ──► every living bug acts
  *                              └──► player turn + 1 (or MissionEnded)
  * ```
@@ -467,6 +472,14 @@ export function shippedTacticalHandlers(
         // objectives, so Alpha Hunt's judges the escape it just saw.
         createBroodmotherFlightStep(),
         createClutchStep({ spawn: SPAWN_TUNING }),
+        // The Sovereign's rules (#1179, arc §9), beside the Broodmother's
+        // and for the same reason: a wound is marked first, then her aura
+        // takes back the last phase's buff and lends this one's to the
+        // bugs already on the field, then her guards arrive — with no
+        // action points, so they wait for next turn's aura.
+        createSovereignRetreatStep(),
+        createSovereignAuraStep(),
+        createGuardSummonStep({ speciesOf }),
         // Each objective kind's own step, after the wave lands, so the
         // count it just made is the one a defence is judged on (#1175).
         ...objectivePhaseSteps(),
@@ -496,7 +509,8 @@ export function attackDepsOver(registries: MapGenRegistries): AttackDeps {
  * `punish-clumps` (#334), the spitter's `snipe` (#1179), the
  * burrower's `burrow` (#1179), which reads the burrow rules' own costs
  * so it plans with the numbers the handlers charge, the Hive Guard's
- * `guard` (#1179) and the Broodmother's `broodmother` (#1179). Every
+ * `guard` (#1179), the Broodmother's `broodmother` (#1179) and the
+ * Sovereign's `sovereign` (#1179). Every
  * species the catalogue defines has one, so nothing on the map holds
  * still for want of a behaviour.
  *
@@ -513,6 +527,7 @@ export function shippedBugBehaviours(): readonly BugBehaviour[] {
     new BurrowerBehaviour(BURROW_TUNING),
     new HiveGuardBehaviour(),
     new BroodmotherBehaviour(),
+    new SovereignBehaviour(),
   ];
 }
 

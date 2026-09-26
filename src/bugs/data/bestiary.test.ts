@@ -9,7 +9,7 @@ import { BESTIARY } from "./bestiary";
 import { ARMOURED_VARIANT_BASES } from "./species";
 
 describe("BESTIARY", () => {
-  it("carries the campaign arc §8 shares and debuts for the shipped species, and places the Hive Guard and the Broodmother", () => {
+  it("carries the campaign arc §8 shares and debuts for the shipped species, and places the Hive Guard, the Broodmother and the Sovereign", () => {
     expect(BESTIARY).toEqual({
       swarmer: {
         kind: "rolled",
@@ -53,6 +53,7 @@ describe("BESTIARY", () => {
         debut: { act: "act-3", missionsInAct: 0 },
       },
       broodmother: { kind: "placed" },
+      sovereign: { kind: "placed" },
     });
   });
 
@@ -64,11 +65,13 @@ describe("BESTIARY", () => {
     expect(missing).toEqual([]);
   });
 
-  it("sums each act's rolled column as the arc §8 table does: 100 a column, the finale 85 until the Sovereign lands", () => {
+  it("sums each act's rolled column as the arc §8 table does: 100 a column, the finale 85 with the Sovereign placed", () => {
     // The burrower's row (#1179) and the armoured variants' (#1179) land
     // in the same act-3 and finale columns: together they fill act-3 to
     // the arc's 100 (20 + 12 + 8 + 13 + 12 + 35). The finale's missing
-    // 15 is the Sovereign's escort share (arc §8, footnote).
+    // 15 is the Sovereign's escort share (arc §8, footnote): she is
+    // placed, so her row adds nothing, and the escort share is the
+    // finale waves' to draw.
     const totals = Object.fromEntries(
       ACT_IDS.map((act) => [
         act,

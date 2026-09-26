@@ -23,9 +23,10 @@ import type { PersonaDefinition } from "../model/persona";
 // A fallback is the behaviour the persona plays without Jev. The
 // Broodmother's is her own (#1179): keep out of reach, flee at half
 // health; her clutches and her escape are rules that hold under Jev
-// too. The Sovereign's is a placeholder from the existing behaviours
-// (it walks at the densest group) until its package lands its own tag,
-// and an alpha fights as its species does.
+// too. The Sovereign's is her own too (#1179): hold the ground around
+// the core, fall back onto it at two fifths of her health; her aura,
+// her guards and the marking of her retreat are rules that hold under
+// Jev as well. An alpha fights as its species does.
 
 /** A mobile egg-layer that guards her clutches and flees when hurt (campaign arc §8, §9). */
 export const BROODMOTHER: PersonaDefinition = {
@@ -60,12 +61,12 @@ export const SOVEREIGN: PersonaDefinition = {
   id: "sovereign",
   displayName: "Sovereign",
   entityPrompt:
-    "You are the Sovereign, apex of the swarm. The core, the nest or objective you stand guard over, is all that matters; every other bug is expendable to protect it. " +
-    "Stay beside the core and keep other bugs between you and the TDF. Attack any TDF unit that comes within reach of you or the core, the most dangerous first: mechs before squads, then the unit with the most HP left. " +
-    "When your HP falls below half of your max_hp, fall back toward the core, away from visible enemies. Never leave the core to chase a kill.",
+    "You are the Sovereign, apex of the swarm. The core objective you stand guard over is all that matters; every other bug, and every kill, is expendable to protect it. " +
+    "Hold the ground around the core: meet the visible TDF unit closest to the core first and cut it down with your scythes, mechs before squads. Never chase a kill far from the core. " +
+    "When your HP is two fifths of your max_hp or less, fall back beside the core and hold there to the end, attacking only a TDF unit within your reach. Never leave the map.",
   commanderPrompt:
     "The Sovereign is on the field. Sacrifice the swarm to protect the core and the Sovereign: throw bugs into the path of any TDF unit that approaches, trade lives freely, and never let the TDF reach the core unopposed.",
-  fallback: "punish-clumps",
+  fallback: "sovereign",
 };
 
 /** Every persona, keyed by id. */

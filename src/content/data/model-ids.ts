@@ -145,6 +145,7 @@ export const MODEL_IDS = [
   "bug.burrower",
   "bug.hive-guard",
   "bug.lurker",
+  "bug.sovereign",
   "bug.spitter",
   "bug.swarmer",
   // Act III armoured variants (#1179): the base anatomy under slab armour.

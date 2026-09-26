@@ -151,6 +151,9 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   // People to fetch: a warm white, apart from the generators' amber and
   // the carcass's bone, so a sheltering group reads as not ours to fight.
   [HookKinds.CIVILIAN]: 0xfff1d6,
+  // Something of ours that was lost: scorched gunmetal orange, the burnt
+  // edge of TDF amber, apart from the generator's clean amber (arc §6.6).
+  [HookKinds.WRECK]: 0xc2643a,
 };
 
 /** Warning yellow for hook kinds the palette does not know. */

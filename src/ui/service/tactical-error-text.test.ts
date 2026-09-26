@@ -77,6 +77,8 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "objective-not-yours", unitId: ID },
   { kind: "objective-target-missing", objectiveId: ID, targetId: ID },
   { kind: "objective-out-of-reach", objectiveId: ID, distance: 9, range: 4 },
+  { kind: "objective-worked-this-turn", objectiveId: ID },
+  { kind: "wreck-stripped", objectiveId: ID },
   { kind: "not-in-extraction-zone", unitId: ID },
   { kind: "not-extractable", unitId: ID },
   { kind: "mission-not-over", missionId: ID },
@@ -367,6 +369,7 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
       "destroy-pod": OBJECTIVE_PRESENTATION["destroy-pod"],
       "capture-specimen": OBJECTIVE_PRESENTATION["capture-specimen"],
       "rescue-civilians": OBJECTIVE_PRESENTATION["rescue-civilians"],
+      "strip-wreck": OBJECTIVE_PRESENTATION["strip-wreck"],
     };
     const names = namesFor(
       {

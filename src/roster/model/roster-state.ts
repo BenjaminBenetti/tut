@@ -1,5 +1,6 @@
 import type { Mech } from "./mech";
 import type { MechLoadout } from "./mech-loadout";
+import type { PartStock } from "./part-stock";
 import type { Squad } from "./squad";
 
 // ===========================================
@@ -46,7 +47,8 @@ export interface GraveyardEntry {
  *   ├── squads[]         owned infantry, removed when wiped
  *   ├── mechs[]          owned mechs, removed when destroyed
  *   ├── savedLoadouts[]  named templates mechs are built from
- *   └── graveyard[]      squads and mechs lost, oldest first
+ *   ├── graveyard[]      squads and mechs lost, oldest first
+ *   └── partStock?       loose parts recovered from wrecks, drawn on by a build
  * ```
  */
 export interface RosterState {
@@ -58,4 +60,11 @@ export interface RosterState {
   readonly savedLoadouts: readonly MechLoadout[];
   /** Every squad wiped and mech destroyed, in the order they were lost. */
   readonly graveyard: readonly GraveyardEntry[];
+  /**
+   * Loose parts by count (arc §6.6): what won Wreck Recoveries brought
+   * home, fitted free by the next builds that use them. Absent until the
+   * first recovery, which is also how every save written before the
+   * field existed reads.
+   */
+  readonly partStock?: PartStock;
 }

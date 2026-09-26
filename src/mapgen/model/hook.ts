@@ -47,6 +47,12 @@ export const HookKinds = {
    * building, each with an infantry route from deploy to its door.
    */
   CIVILIAN: "civilian",
+  /**
+   * A lost mech's wreck (arc §6.6): one square zone the size of the lost
+   * chassis on open, level ground an infantry squad can walk to, where
+   * the squad strips the parts. Meta `{ footprint }`, the square's side.
+   */
+  WRECK: "wreck",
 } as const;
 
 /** Scalar metadata a hook or requirement may carry, e.g. `hatchRadius`. */

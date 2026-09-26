@@ -27,6 +27,7 @@ import { createAttackHandler } from "../combat-service";
 import {
   createExtractHandler,
   createInteractHandler,
+  reachableObjectives,
 } from "../objective-service";
 import {
   droppedSpecimens,
@@ -252,6 +253,40 @@ describe("a carrier that falls (#1179)", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.kind).toBe("already-carrying");
+  });
+
+  // `reachable` answers for the unit asking (ADR 0013 §2.3): the target
+  // its own pick-up would take, or nothing when the pick-up refuses it,
+  // so the Interact key and the wheel never offer a refused pick-up.
+  it("offers the pick-up only to a squad with free hands, at the specimen nearest it", () => {
+    const mission = field([
+      { ...carrier("fell-west", at(3, 3)), hp: 0 },
+      { ...carrier("fell-east", at(7, 3)), hp: 0 },
+      unitAt("second", "infantry", at(7, 4)),
+      carrier("full", at(3, 2)),
+      unitAt("mech", "mech", at(1, 6)),
+    ]);
+    const unit = (id: string): Unit =>
+      mission.units.find((candidate) => candidate.id === id)!;
+    const objective = capture(mission);
+
+    expect(RULES.reachable?.(objective, mission)).toEqual({
+      id: "fell-west",
+      pos: at(3, 3),
+    });
+    expect(RULES.reachable?.(objective, mission, unit("second"))).toEqual({
+      id: "fell-east",
+      pos: at(7, 3),
+    });
+    expect(RULES.reachable?.(objective, mission, unit("full"))).toBeUndefined();
+    expect(RULES.reachable?.(objective, mission, unit("mech"))).toBeUndefined();
+
+    expect(
+      reachableObjectives(mission, "second", OBJECTIVE_TUNING).map(
+        (entry) => entry.target.id,
+      ),
+    ).toEqual(["fell-east"]);
+    expect(reachableObjectives(mission, "full", OBJECTIVE_TUNING)).toEqual([]);
   });
 });
 

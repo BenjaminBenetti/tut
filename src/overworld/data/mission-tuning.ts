@@ -35,6 +35,10 @@ import type { MissionTuning } from "../model/mission-tuning";
  *   (under 20) as a city already deep in it, and from Act II twice as
  *   likely in a region with a working sensor array. It pays its tech
  *   points half again.
+ * - A wreck recovery (arc §6.6) is a quick in-and-out to a known spot, so
+ *   its map stays small longer: medium from 5, large from 9. Difficulty
+ *   weighs the city as the clearance does. A wreck whose city is taken
+ *   waits up to 3 days for its offer, as long as the offer itself lasts.
  */
 export const MISSION_TUNING: MissionTuning = {
   difficulty: {
@@ -55,6 +59,12 @@ export const MISSION_TUNING: MissionTuning = {
       threatWeight: 0.3,
       mediumFromDifficulty: 4,
       largeFromDifficulty: 10,
+    },
+    "wreck-recovery": {
+      infestationWeight: 0.7,
+      threatWeight: 0.3,
+      mediumFromDifficulty: 5,
+      largeFromDifficulty: 9,
     },
   },
   techCarcass: {
@@ -89,5 +99,9 @@ export const MISSION_TUNING: MissionTuning = {
     sensorArrayType: "sensor-array",
     sensorArrayWeight: 2,
     techPointMultiplier: 1.5,
+  },
+  wreck: {
+    offerWindowDays: 3,
+    stripTurns: 2,
   },
 };

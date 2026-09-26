@@ -14,6 +14,8 @@ import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
 import type { Spawner } from "../model/tactical-state";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
+import type { MechWreck } from "../model/mech-wreck";
 import {
   canSee,
   computeVision,
@@ -22,6 +24,7 @@ import {
   perceivedOccupantAt,
   perceivedSpawners,
   perceivedUnits,
+  perceivedWrecks,
   withVision,
 } from "./vision-service";
 import {
@@ -506,6 +509,64 @@ describe("perceivedSpawners", () => {
     ).toEqual([]);
   });
 });
+describe("perceivedWrecks", () => {
+  /** A wreck over the 3 × 3 square with its corner at (x, z). */
+  function wreckAt(id: string, x: number, z: number): MechWreck {
+    const tiles = [z, z + 1, z + 2].flatMap((tz) =>
+      [x, x + 1, x + 2].map((tx) => ({ x: tx, y: 0, z: tz })),
+    );
+    return {
+      id,
+      pos: { x: x + 1, y: 0, z: z + 1 },
+      tiles,
+      mechName: "Anvil",
+      loadout: STARTER_LOADOUT,
+    };
+  }
+
+  /** The mission with only `tiles` explored by the TDF. */
+  function exploring(
+    wrecks: readonly MechWreck[] | undefined,
+    tiles: readonly TileCoord[],
+  ): TacticalState {
+    const base = missionWith(openField().build(), [
+      unitAt("u1", "infantry", { x: 0, y: 0, z: 0 }),
+    ]);
+    const index = new TileIndex(base.map);
+    return {
+      ...base,
+      ...(wrecks === undefined ? {} : { wrecks }),
+      vision: {
+        ...base.vision,
+        tdf: {
+          visible: [],
+          explored: tiles.map((tile) => index.keyOf(tile)),
+          spotted: [],
+          lastSeen: {},
+        },
+      },
+    };
+  }
+
+  it("shows a wreck once any of its tiles is explored, not only its middle", () => {
+    // (1, 1) is the near wreck's corner; its middle (2, 2) is still dark.
+    const mission = exploring(
+      [wreckAt("near", 1, 1), wreckAt("far", 5, 5)],
+      [{ x: 1, y: 0, z: 1 }],
+    );
+    expect(perceivedWrecks(mission, "tdf").map((w) => w.id)).toEqual(["near"]);
+  });
+
+  it("shows none before anything is explored, and none on a mission without wrecks", () => {
+    expect(perceivedWrecks(exploring([wreckAt("w", 1, 1)], []), "tdf")).toEqual(
+      [],
+    );
+    expect(
+      perceivedWrecks(exploring(undefined, [{ x: 1, y: 0, z: 1 }]), "tdf"),
+    ).toEqual([]);
+  });
+});
+
 // ===========================================
 // Replay and save (#531)
 // ===========================================

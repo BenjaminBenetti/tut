@@ -45,6 +45,9 @@ import { RadarView } from "../view/radar-view";
 import type { SpecimenPlacement } from "../view/specimen-view";
 import { SpecimenView } from "../view/specimen-view";
 import { TurretView } from "../view/turret-view";
+import { WreckView } from "../view/wreck-view";
+import type { MechWreck, MechWreckId } from "../../tactical/model/mech-wreck";
+import { MechAssembler } from "./mech-assembler";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
@@ -148,6 +151,10 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *     ├─ picked up or gone ──► removed
  *     └─ new               ──► SpecimenView: the species' model, netted, not pickable
  *
+ *   updateWrecks(wrecks)                                         (arc §6.6)
+ *     ├─ gone              ──► removed
+ *     └─ new               ──► WreckView: the loadout's mech, laid down and darkened, not pickable
+ *
  *   pickUnit(ndc)    ──► raycast the unit meshes    ──► nearest hit's unit
  *   pickSpawner(ndc) ──► raycast the spawner meshes ──► nearest hit's spawner
  * ```
@@ -197,6 +204,8 @@ export class TacticalSceneBuilder
   private readonly turretView: TurretView;
   /** Netted specimens lying where their carriers fell (#1179). */
   private readonly specimenView: SpecimenView;
+  /** Lost mechs lying on a wreck recovery's map (arc §6.6); still, so never ticked. */
+  private readonly wreckView: WreckView;
   /** What was last asked for, kept so a change of storey can redraw it through the cut (#1134). */
   private lastCharges: readonly PlacedCharge[] = [];
   private lastRadars: readonly Radar[] = [];
@@ -262,6 +271,10 @@ export class TacticalSceneBuilder
       options.unitModels ??
       new LoadoutUnitModelSource({ models: options.models });
     this.spawnerModels = options.spawnerModels ?? SPAWNER_MODELS;
+    // A wreck is the mech its loadout names, built as the field builds one.
+    this.wreckView = new WreckView(
+      new MechAssembler({ models: options.models }),
+    );
     this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
     // The map view's own hook slabs stay off in a mission: the objective
     // is marked through the fog by `ObjectiveMarkerView` instead (#1173),
@@ -285,6 +298,7 @@ export class TacticalSceneBuilder
       this.spawnersGroup,
       this.carcassesGroup,
       this.specimenView.root,
+      this.wreckView.root,
       this.effects.root,
       this.charges.root,
       this.unitsGroup,
@@ -483,6 +497,11 @@ export class TacticalSceneBuilder
     return [...this.wantedCarcasses];
   }
 
+  /** Ids of the mech wrecks currently drawn or loading, in insertion order (arc §6.6). */
+  wreckIds(): readonly MechWreckId[] {
+    return this.wreckView.wreckIds();
+  }
+
   /** A carcass's base in world space, or undefined while it is loading or gone. */
   carcassWorldPosition(carcassId: TechCarcassId): Vec3 | undefined {
     return this.carcassMeshes.get(carcassId)?.worldPosition();
@@ -648,6 +667,18 @@ export class TacticalSceneBuilder
     await this.specimenView.updateSpecimens(placements);
   }
 
+  /**
+   * Brings the drawn mech wrecks in step with `wrecks` (arc §6.6): each
+   * is laid down once and never moves; one gone from the list is
+   * removed. Resolves when every new wreck has been assembled. Wrecks
+   * are not pickable: the squad's wheel finds the strip, not the model.
+   *
+   * @param wrecks - The wrecks the player may see.
+   */
+  async updateWrecks(wrecks: readonly MechWreck[]): Promise<void> {
+    await this.wreckView.updateWrecks(wrecks);
+  }
+
   /** Shows friendly scanners and location-only radar contacts through the fog. */
   async updateRadar(
     radars: readonly Radar[],
@@ -713,6 +744,7 @@ export class TacticalSceneBuilder
     }
     this.wantedCarcasses.clear();
     this.specimenView.dispose();
+    this.wreckView.dispose();
     this.effects.dispose();
     this.charges.dispose();
     this.mapView.dispose();

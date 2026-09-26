@@ -2,6 +2,7 @@ import type { MissionConsequenceRules } from "../../model/mission-consequence-ru
 import { CRASH_SITE_CONSEQUENCE } from "./crash-site-consequence";
 import { DEFEND_INSTALLATION_CONSEQUENCE } from "./defend-installation-consequence";
 import { INFESTATION_CLEARANCE_CONSEQUENCE } from "./infestation-clearance-consequence";
+import { WRECK_RECOVERY_CONSEQUENCE } from "./wreck-recovery-consequence";
 
 // ===========================================
 // The table
@@ -19,6 +20,7 @@ import { INFESTATION_CLEARANCE_CONSEQUENCE } from "./infestation-clearance-conse
  *   crash-site             ──► crash-site-consequence.ts              landing on offer; erased by a
  *                                                                     wrecked pod, spore sample on the
  *                                                                     first win; +15 otherwise and lapsed
+ *   wreck-recovery         ──► wreck-recovery-consequence.ts          the one attempt spent, either way
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -30,4 +32,5 @@ export const MISSION_CONSEQUENCE_RULES: MissionConsequenceRules = {
   "infestation-clearance": INFESTATION_CLEARANCE_CONSEQUENCE,
   "defend-installation": DEFEND_INSTALLATION_CONSEQUENCE,
   "crash-site": CRASH_SITE_CONSEQUENCE,
+  "wreck-recovery": WRECK_RECOVERY_CONSEQUENCE,
 };

@@ -1460,3 +1460,34 @@ describe("civilian groups in the HUD (campaign arc §6.4)", () => {
     ).toBeUndefined();
   });
 });
+
+describe("event vocabulary for wreck recovery (arc §6.6)", () => {
+  /** A WreckWorked event after `turnsWorked` of two turns. */
+  function worked(turnsWorked: number) {
+    return {
+      type: "tactical:wreck-worked" as const,
+      payload: {
+        unitId: "unit-2",
+        wreckId: "wreck-1",
+        objectiveId: "objective-1",
+        turnsWorked,
+        turnsNeeded: 2,
+      },
+    };
+  }
+
+  it("counts each turn's work, names the carrying once stripped, and shows it over the squad", () => {
+    const names = { ...NAMES, unit: () => "Rifle Squad" };
+    expect(describeEvent(worked(1), names)).toEqual({
+      text: "Rifle Squad worked the wreck: 1 / 2 turns",
+      icon: "interact",
+      tone: "accent",
+    });
+    expect(describeEvent(worked(2), names)).toEqual({
+      text: "Rifle Squad stripped the wreck; carry the parts to the drop ship",
+      icon: "extract",
+      tone: "ok",
+    });
+    expect(actorOf(worked(1))).toBe("unit-2");
+  });
+});

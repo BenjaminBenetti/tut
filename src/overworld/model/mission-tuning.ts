@@ -80,6 +80,33 @@ export interface MissionTuning {
   readonly defence: InstallationDefenceTuning;
   /** Where a crash site lands, how big the landing is and what it pays (arc §6.3). */
   readonly crashSite: CrashSiteTuning;
+  /** How long a lost mech's wreck waits for its recovery offer (arc §6.6). */
+  readonly wreck: WreckRecoveryTuning;
+}
+
+// ===========================================
+// Wreck recovery
+// ===========================================
+
+/**
+ * How long a wreck waits to be offered (arc §6.6). The offer is made on
+ * the first tick after the loss whose city is free; a wreck whose city
+ * stays taken for `offerWindowDays` days is gone, and the launch handler
+ * drops its record.
+ *
+ * ```
+ *   lost on day L ──► offered on the first free day d with d < L + offerWindowDays
+ * ```
+ */
+export interface WreckRecoveryTuning {
+  /** Days after the loss during which the wreck may still be offered; at least 1. */
+  readonly offerWindowDays: number;
+  /**
+   * Player turns a squad works the wreck before its parts come loose,
+   * one interaction per turn; written on the record at the loss so the
+   * tactical setup copies it onto the strip-wreck objective. At least 1.
+   */
+  readonly stripTurns: number;
 }
 
 // ===========================================

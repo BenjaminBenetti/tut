@@ -21,6 +21,7 @@ import type { MissionRewardTuning } from "../../overworld/service/mission-reward
 import {
   creditsFor,
   infestationDeltaFor,
+  partsFor,
   techPointsFor,
 } from "../../overworld/service/mission-reward-service";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
@@ -112,6 +113,7 @@ export interface TacticalResolveDeps {
  *   log UnitDied { killerId } ──► kills credited to the killer's squad or mech,
  *                                 each worth its template's xpValue (#1130)
  *   outcome ──► creditsFor / infestationDeltaFor, the auto-resolver's scale
+ *   outcome ──► partsFor: the offer's parts on a win, as the auto-resolver pays them
  *   log CarcassHarvested { techPoints } ──► summed into techPointsFor as
  *                                 harvested; techPointsHarvested says so (#1171)
  *   log UnitDied of a bug ──► its species, once each, into speciesKilled
@@ -186,6 +188,7 @@ export function tacticalMissionResult(
   }
 
   const harvested = techPointsHarvested(tactical);
+  const parts = partsFor(outcome, mission);
   return {
     missionId: mission.id,
     cityId: mission.cityId,
@@ -199,6 +202,7 @@ export function tacticalMissionResult(
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
     ...leftBehindField(tactical, roster),
     ...(harvested > 0 ? { techPointsHarvested: harvested } : {}),
+    ...(parts.length > 0 ? { partsAwarded: parts } : {}),
     ...objectivesField(tactical),
     ...objectiveResultFields(tactical),
     ...speciesKilledField(tactical, roster),

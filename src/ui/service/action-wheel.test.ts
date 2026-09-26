@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -1456,5 +1457,65 @@ describe("actionWheel with civilian groups (campaign arc §6.4)", () => {
       ["overwatch", true, "trapped"],
       ["reload", true, "trapped"],
     ]);
+  });
+
+  // #1179: a squad beside a trapped group and a wreck at once. Both are
+  // one tile off, so the tie goes to the objective listed first — the
+  // one the Interact key works — and the other follows it on the ring.
+  it("lists one Interact per objective in reach, in the mission's order, each named, and Interact on the group's own ring", () => {
+    const strip = {
+      id: "strip",
+      kind: "strip-wreck" as const,
+      targetId: "wreck-1",
+      turnsNeeded: 2,
+      turnsWorked: 0,
+      workedBy: [],
+      complete: false,
+    };
+    const beside = (wreckFirst: boolean): TacticalState => {
+      const mission = town();
+      const [rescue] = mission.objectives;
+      return {
+        ...mission,
+        objectives: wreckFirst ? [strip, rescue!] : [rescue!, strip],
+        // One tile west of s1 at (1, 1); c1 is one tile east.
+        wrecks: [
+          {
+            id: "wreck-1",
+            pos: { x: 0, y: 0, z: 1 },
+            tiles: [{ x: 0, y: 0, z: 1 }],
+            mechName: "Hammerhead",
+            loadout: STARTER_LOADOUT,
+          },
+        ],
+      };
+    };
+    const interacts = (mission: TacticalState) => {
+      const page = actionWheel(
+        { kind: "unit", unitId: "s1" },
+        contextFor(mission, "s1"),
+      );
+      return entries({
+        items: page.items.filter((item) => item.id.startsWith("interact:")),
+      });
+    };
+
+    expect(interacts(beside(true))).toEqual([
+      ["interact:strip", false, "the wreck"],
+      ["interact:rescue", false, "the civilians"],
+    ]);
+    expect(interacts(beside(false))).toEqual([
+      ["interact:rescue", false, "the civilians"],
+      ["interact:strip", false, "the wreck"],
+    ]);
+    // Clicking the group itself offers its rescue, even with the wreck first.
+    expect(
+      ids(
+        actionWheel(
+          { kind: "unit", unitId: "c1" },
+          contextFor(beside(true), "s1"),
+        ),
+      ),
+    ).toContain("interact:rescue");
   });
 });

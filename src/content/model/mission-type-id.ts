@@ -11,9 +11,14 @@
  * waves of bugs against the generators of an installation the player
  * built. `crash-site` (campaign arc §6.3) is a spore pod come down near
  * a city, to be destroyed before it matures at the end of turn 8.
+ * `wreck-recovery` is the event offer a mech lost on a lost or abandoned
+ * mission leaves behind (arc §6.6): strip its parts.
  */
 export type MissionTypeId =
-  "infestation-clearance" | "defend-installation" | "crash-site";
+  | "infestation-clearance"
+  | "defend-installation"
+  | "crash-site"
+  | "wreck-recovery";
 
 /**
  * Every mission type id, in a fixed order. The order is the order the
@@ -24,4 +29,5 @@ export const MISSION_TYPE_IDS: readonly MissionTypeId[] = [
   "infestation-clearance",
   "defend-installation",
   "crash-site",
+  "wreck-recovery",
 ];

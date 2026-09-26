@@ -8,6 +8,7 @@ import { GeneratorPlacer } from "./generator-placer";
 import { SporePodPlacer } from "./spore-pod-placer";
 import { HiveCorePlacer } from "./hive-core-placer";
 import { TechCarcassPlacer } from "./tech-carcass-placer";
+import { WreckPlacer } from "./wreck-placer";
 
 // ===========================================
 // Default hook placers
@@ -28,4 +29,5 @@ export const DEFAULT_HOOK_PLACERS: readonly HookPlacer[] = [
   new SporePodPlacer(),
   new HiveCorePlacer(),
   new CivilianPlacer(),
+  new WreckPlacer(),
 ];

@@ -14,6 +14,7 @@ import type {
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
+import type { MechWreck } from "../../tactical/model/mech-wreck";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import { perceivedEffects } from "../../tactical/service/tile-effect-service";
@@ -26,6 +27,7 @@ import {
   perceivedCarcasses,
   perceivedSpawners,
   perceivedUnits,
+  perceivedWrecks,
 } from "../../tactical/service/vision-service";
 import { LAYER_HEIGHT } from "../../graphics/data/mapgen-preview-palette";
 import type { MapExtent } from "../../graphics/service/camera-math";
@@ -67,6 +69,8 @@ export interface PerceivedStage {
     specimens: readonly DroppedSpecimen[],
     templates: UnitTemplateLookup,
   ): Promise<void>;
+  /** Lays the mech wrecks that should be on the board (arc §6.6). */
+  updateWrecks(wrecks: readonly MechWreck[]): Promise<void>;
   /** Draws the fires on ground this side knows (#1121). */
   updateEffects(effects: readonly TileEffect[]): void;
   /** Draws the breaching charges set and waiting (#1132). */
@@ -128,6 +132,7 @@ export interface PhasedQueue {
  *       urgentDeadlineTargets)             a pod in its last turns ripe (#1179)
  *     updateCarcasses(perceivedCarcasses)  explored carcasses only (#1171)
  *     updateSpecimens(perceivedSpecimens)  dropped specimens, explored (#1179)
+ *     updateWrecks(perceivedWrecks)        wrecks with an explored tile (arc §6.6)
  *     updateEffects(perceivedEffects)      fires on explored ground
  *     updateCharges(charges)               set breaching charges (#1132)
  *     updateObjectiveMarkers(objectiveMarkers)  white diamonds on fogged nests (#1173)
@@ -172,6 +177,7 @@ export async function drawPerceived(
       perceivedSpecimens(mission, "tdf"),
       mission.templates,
     ),
+    stage.updateWrecks(perceivedWrecks(mission, "tdf")),
     stage.updateRadar(
       mission.radars.filter((radar) => radar.team === "tdf"),
       radarContacts(mission, "tdf"),

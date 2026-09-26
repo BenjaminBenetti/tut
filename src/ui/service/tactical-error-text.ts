@@ -356,7 +356,11 @@ export function describeRefusal(
       // the menu that sent it already knows what it asked for (#1136).
       return `No ${error.unitKind} of that type can be placed`;
     case "not-a-squad":
-      return `${names.unit(error.unitId)} cannot harvest; only an infantry squad can`;
+      return `${names.unit(error.unitId)} cannot do that; only an infantry squad can strip salvage`;
+    case "objective-worked-this-turn":
+      return `${capitalise(names.objective(error.objectiveId))} has already been worked this turn`;
+    case "wreck-stripped":
+      return `${capitalise(names.objective(error.objectiveId))} is stripped; carry the parts to the drop ship`;
     case "unknown-carcass":
       return "There is no tech carcass there";
     case "carcass-already-harvested":

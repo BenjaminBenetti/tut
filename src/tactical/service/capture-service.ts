@@ -7,7 +7,7 @@ import { chebyshevDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { CarriedSpecimen } from "../model/carried-specimen";
-import { canBeNetted, canCarrySpecimen } from "../model/carried-specimen";
+import { canBeNetted } from "../model/carried-specimen";
 import type { EquipmentDefinition, NetProfile } from "../model/equipment";
 import { SPECIMEN_CAPTURED } from "../model/specimen-captured-event";
 import type { TacticalError } from "../model/tactical-error";
@@ -20,6 +20,7 @@ import {
   unitFootprintSize,
 } from "./footprint-service";
 import { hasLineOfSight } from "./sight-service";
+import { carryRefusal } from "./specimen-service";
 import { canSee } from "./vision-service";
 
 // ===========================================
@@ -146,11 +147,9 @@ export function validateCapture(
       equipmentId: definition.id,
     });
   }
-  if (!canCarrySpecimen(unit)) {
-    return err({ kind: "cannot-carry", unitId: unit.id });
-  }
-  if (unit.carrying !== undefined) {
-    return err({ kind: "already-carrying", unitId: unit.id });
+  const refused = carryRefusal(unit);
+  if (refused !== undefined) {
+    return err(refused);
   }
   // Only a bug is netted (`canBeNetted`): a civilian group on the tile
   // is no specimen, so the net finds nothing there to take.

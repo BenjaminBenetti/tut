@@ -717,6 +717,33 @@ describe("MechBayScreen", () => {
     expect(button("build-mech").title).toBe("Not enough credits");
   });
 
+  it("Build fits recovered parts from the stock: the button quotes the lower price and the build bills it (arc §6.6)", () => {
+    const state = newGame();
+    const { store } = mountWith(
+      {
+        ...state,
+        roster: {
+          ...state.roster,
+          partStock: { "legs-strider": 1, "utility-radiator": 1 },
+        },
+      },
+      root,
+      true,
+    );
+    // The starter loadout fits both: strider legs (350) and a radiator (250).
+    expect(button("build-mech").textContent).toBe("Build ¢2,250");
+    expect(button("build-mech").dataset.salvaged).toBe("2");
+    expect(button("build-mech").title).toBe(
+      "2 parts fitted from recovered stock",
+    );
+    button("build-mech").click();
+    const after = store!.getState();
+    expect(after.economy.credits).toBe(5000 - 2250);
+    expect(after.roster.partStock ?? {}).toEqual({});
+    // The stock is spent: the next quote is the full price.
+    expect(button("build-mech").textContent).toBe("Build ¢2,850");
+  });
+
   it("Build falls back to a default mech name when the field is blank", () => {
     const { store } = mountWith(newGame(), root, true);
     button("build-mech").click();

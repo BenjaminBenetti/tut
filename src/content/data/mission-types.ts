@@ -114,6 +114,44 @@ export const CRASH_SITE: MissionType = {
 };
 
 /**
+ * The event offer a destroyed mech leaves behind (arc §6.6, D6): a
+ * mech went down on a lost or abandoned mission, and its wreck still
+ * lies where it fell. An infantry squad strips it over two turns and
+ * carries the parts home; the offer is triggered, never drawn, and
+ * gives one attempt.
+ *
+ * It pays parts only — the lost mech's fitted parts, back in the
+ * inventory — so the credit and tech rewards are zero and the chassis
+ * and the pilot's rank stay lost. It expires in three days, and leaving
+ * it costs nothing but the parts: the city is no worse for a wreck
+ * nobody went back for.
+ *
+ * The hook list is the settlement's usual threat at a modest count (one
+ * egg spawner, a second from difficulty 7; two edge spawn zones) around
+ * a deploy zone and the extraction. The wreck's own hook comes from the
+ * type's map rule, which sizes it to the lost chassis.
+ */
+export const WRECK_RECOVERY: MissionType = {
+  id: "wreck-recovery",
+  name: "Wreck Recovery",
+  description:
+    "A mech went down and its wreck still lies where it fell. Reach it, have an infantry squad strip its parts over two turns, and bring them home.",
+  difficultyBand: { min: 1, max: 10 },
+  rewardPerDifficulty: 0,
+  techRewardBase: 0,
+  techRewardPerDifficulty: 0,
+  expiryDays: 3,
+  ignorePenalty: 0,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "egg-spawner", count: 1, countPerDifficulty: 0.15 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "medium",
+};
+
+/**
  * Every mission type keyed by id. Typed as a record over the closed
  * `MissionTypeId` union so a new id without a definition (or a definition
  * whose key and `id` disagree, see the data test) fails at compile time
@@ -123,4 +161,5 @@ export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   "infestation-clearance": INFESTATION_CLEARANCE,
   "defend-installation": DEFEND_INSTALLATION,
   "crash-site": CRASH_SITE,
+  "wreck-recovery": WRECK_RECOVERY,
 };

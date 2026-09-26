@@ -41,6 +41,7 @@ const NOTHING_PLACED: Readonly<Record<PlacedList, readonly []>> = {
   charges: [],
   extraction: [],
   blazeSites: [],
+  wrecks: [],
   // A dormant brood's wake zone is a place on the map, and its members
   // were among the units the staging replaces (#1179).
   broods: [],

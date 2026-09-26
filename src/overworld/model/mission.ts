@@ -8,8 +8,10 @@ import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { SitrepId } from "../../content/model/sitrep-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
+import type { PartId } from "../../roster/model/mech-part";
 import type { CityId } from "./city";
 import type { CrashSiteSpec } from "./crash-site-spec";
+import type { WreckRecoverySpec } from "./wreck-recovery-spec";
 
 // ===========================================
 // Ids
@@ -100,6 +102,12 @@ export interface MissionRewards {
   readonly credits: number;
   /** Whole tech points awarded for a won mission (#1171). */
   readonly techPoints: number;
+  /**
+   * Parts returned to the stock for a won mission, repeats kept (arc
+   * §6.6): a wreck recovery's recovered parts. Absent pays none, which
+   * is every other type and every older save's offers.
+   */
+  readonly parts?: readonly PartId[];
 }
 
 // ===========================================
@@ -158,6 +166,13 @@ export interface Mission {
    * other type and on offers saved before crash sites existed.
    */
   readonly crashSite?: CrashSiteSpec;
+  /**
+   * The mech whose wreck a wreck-recovery mission strips (arc §6.6).
+   * Present exactly when `typeId` is `"wreck-recovery"`; the map sizes
+   * the wreck hook from its chassis and the tactical layer draws it from
+   * its loadout.
+   */
+  readonly wreck?: WreckRecoverySpec;
   /** What success pays. */
   readonly rewards: MissionRewards;
   /** Overworld day the mission appeared. */
@@ -174,7 +189,7 @@ export interface Mission {
    * step never removes it; only its own rule does. Absent (the norm,
    * and every older save's offers) means an offer that expires on
    * `expiresDay`. An event offer that must still lapse (Defend
-   * Installation, later Wreck Recovery) is not pinned: it sits outside
+   * Installation, Wreck Recovery) is not pinned: it sits outside
    * the cap because its type's offer entry is a trigger rule (ADR 0013
    * §2.4).
    */

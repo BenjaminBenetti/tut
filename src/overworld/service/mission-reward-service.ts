@@ -1,3 +1,4 @@
+import type { PartId } from "../../roster/model/mech-part";
 import type { AutoResolveTuning } from "../model/auto-resolve-tuning";
 import type { Mission } from "../model/mission";
 import type { MissionOutcome } from "../model/mission-result";
@@ -83,6 +84,25 @@ export function techPointsFor(
     case "lost":
       return 0;
   }
+}
+
+/**
+ * Parts paid into the stock for the outcome (arc §6.6): the offer's
+ * `rewards.parts` on a win and nothing otherwise. Unlike credits and
+ * tech there is no share for an extraction: a wreck recovery is only
+ * won when the squad that stripped the wreck came home with the parts,
+ * so anything short of a win left them on the map.
+ *
+ * ```
+ *   won                ──► mission.rewards.parts (repeats kept), or []
+ *   extracted, lost    ──► []
+ * ```
+ */
+export function partsFor(
+  outcome: MissionOutcome,
+  mission: Mission,
+): readonly PartId[] {
+  return outcome === "won" ? (mission.rewards.parts ?? []) : [];
 }
 
 /**

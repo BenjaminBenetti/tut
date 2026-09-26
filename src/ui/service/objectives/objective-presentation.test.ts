@@ -4,6 +4,7 @@ import type {
   DefendGeneratorsObjective,
   DestroySpawnerObjective,
   Spawner,
+  StripWreckObjective,
   TacticalState,
 } from "../../../tactical/model/tactical-state";
 import { defenceProgress } from "../../../tactical/service/defence-service";
@@ -28,6 +29,7 @@ const KINDS: Readonly<Record<ObjectiveKind, true>> = {
   "destroy-pod": true,
   "capture-specimen": true,
   "rescue-civilians": true,
+  "strip-wreck": true,
 };
 
 const SPAWNER_OBJECTIVE: DestroySpawnerObjective = {
@@ -44,6 +46,17 @@ const DEFENCE_OBJECTIVE: DefendGeneratorsObjective = {
   targetIds: ["gen-1", "gen-2"],
   complete: false,
   failed: false,
+};
+
+const STRIP_OBJECTIVE: StripWreckObjective = {
+  id: "objective-w",
+  kind: "strip-wreck",
+  targetId: "wreck-1",
+  turnsNeeded: 2,
+  turnsWorked: 1,
+  lastWorkedTurn: 1,
+  workedBy: ["squad-1"],
+  complete: false,
 };
 
 const SPAWNER: Spawner = {
@@ -91,7 +104,11 @@ describe("OBJECTIVE_PRESENTATION", () => {
   });
 
   it("builds each tracker label on the objective's name, with a registered glyph", () => {
-    for (const objective of [SPAWNER_OBJECTIVE, DEFENCE_OBJECTIVE]) {
+    for (const objective of [
+      SPAWNER_OBJECTIVE,
+      DEFENCE_OBJECTIVE,
+      STRIP_OBJECTIVE,
+    ]) {
       const presentation = OBJECTIVE_PRESENTATION[objective.kind];
       const row = presentation.row(objective, {
         ordinal: 3,
@@ -183,5 +200,93 @@ describe("objectiveProgress", () => {
         role: "defence-progress",
       },
     });
+  });
+});
+
+// ===========================================
+// strip-wreck
+// ===========================================
+
+describe("strip-wreck presentation (arc §6.6)", () => {
+  const strip = OBJECTIVE_PRESENTATION["strip-wreck"];
+
+  /** A mission with the squad that worked the wreck standing, or aboard. */
+  function mission(
+    objective: StripWreckObjective,
+    aboard = false,
+  ): TacticalState {
+    const squad = { id: "squad-1", team: "tdf", kind: "squad", hp: 10 };
+    return {
+      objectives: [objective],
+      units: aboard ? [] : [squad],
+      extracted: aboard ? [squad] : [],
+      wrecks: [],
+      turn: 2,
+    } as unknown as TacticalState;
+  }
+
+  it("names the objective the wreck", () => {
+    expect(strip.name(STRIP_OBJECTIVE, 1)).toBe("the wreck");
+  });
+
+  it("counts the turns worked beside the label while there is work or carrying left", () => {
+    const reading = objectiveProgress(mission(STRIP_OBJECTIVE)).get(
+      STRIP_OBJECTIVE.id,
+    );
+    expect(reading).toEqual({ status: "open", turnsWorked: 1, turnsNeeded: 2 });
+    expect(
+      strip.row(STRIP_OBJECTIVE, {
+        ordinal: 1,
+        spawners: [],
+        progress: reading,
+      }),
+    ).toEqual({
+      icon: "interact",
+      label: "Strip the wreck",
+      data: { targetId: "wreck-1", status: "open" },
+      layout: "inline",
+      complete: false,
+      detail: { text: "1 / 2 turns", role: "strip-progress" },
+    });
+
+    const stripped = { ...STRIP_OBJECTIVE, turnsWorked: 2, lastWorkedTurn: 2 };
+    const carrying = objectiveProgress(mission(stripped)).get(stripped.id);
+    expect(
+      strip.row(stripped, { ordinal: 1, spawners: [], progress: carrying }),
+    ).toMatchObject({
+      icon: "extract",
+      label: "Carry the wreck's parts out",
+      detail: { text: "2 / 2 turns" },
+    });
+  });
+
+  it("reads complete from the mission once a worker is aboard, though the flag never moves", () => {
+    const stripped = { ...STRIP_OBJECTIVE, turnsWorked: 2, lastWorkedTurn: 2 };
+    const reading = objectiveProgress(mission(stripped, true)).get(stripped.id);
+    const row = strip.row(stripped, {
+      ordinal: 1,
+      spawners: [],
+      progress: reading,
+    });
+    expect(row.icon).toBe("check");
+    expect(row.label).toBe("Recovered the wreck's parts");
+    expect(row.detail).toBeUndefined();
+    expect(row.complete).toBe(true);
+  });
+
+  it("falls back to the objective's own counts without a reading", () => {
+    expect(
+      strip.row(
+        { ...STRIP_OBJECTIVE, failed: true },
+        { ordinal: 1, spawners: [], progress: undefined },
+      ),
+    ).toMatchObject({ icon: "warning", label: "Lost the wreck's parts" });
+    expect(
+      strip.row(STRIP_OBJECTIVE, {
+        ordinal: 1,
+        spawners: [],
+        progress: undefined,
+      }).detail,
+    ).toEqual({ text: "1 / 2 turns", role: "strip-progress" });
   });
 });

@@ -23,11 +23,7 @@ import { pathTo } from "../../tactical/service/movement-service";
 import type { TacticalInvokeTarget } from "../model/tactical-intent";
 import type { RadialMenuHub, RadialMenuItem } from "../view/radial-menu-view";
 import type { ActionAvailabilityDeps, UnitAction } from "./action-availability";
-import {
-  actionRefusal,
-  interactTarget,
-  isDropshipTile,
-} from "./action-availability";
+import { actionRefusal, isDropshipTile } from "./action-availability";
 import { chargeRegisterFor } from "./charge-register";
 import { RADAR_DISH, TURRET } from "../../tactical/data/equipment";
 import {
@@ -45,7 +41,10 @@ import type {
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "./charge-delay-text";
 import { specimenWanted } from "../../tactical/service/capture-service";
-import { droppedSpecimens } from "../../tactical/service/specimen-service";
+import {
+  carryRefusal,
+  droppedSpecimens,
+} from "../../tactical/service/specimen-service";
 import { reachableObjectives } from "../../tactical/service/objective-service";
 import type {
   EquipmentCarried,
@@ -175,6 +174,8 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "cannot-carry": "squads only",
     "no-capture-target": "nothing to net",
     "specimen-not-wanted": "not wanted",
+    "objective-worked-this-turn": "done this turn",
+    "wreck-stripped": "stripped",
   };
 
 /** The ring's word for throwing the capture net (#1179): a verb, like Heal and Repair. */
@@ -219,8 +220,10 @@ const COMFORTABLE_HIT_CHANCE = 50;
  *                      the tile the enemy stands on (#1143)
  *   spawner   ──► Attack (as at an enemy, at the spawner's tile) · Interact
  *                 (if this one is in reach) · Overwatch · Reload
- *   own unit  ──► Overwatch · Reload · Interact · Harvest (a carcass in
- *                 reach, #1171) · Board
+ *   other unit ─► as at an enemy, with Interact when it is an objective's
+ *                 target in reach (a trapped group its rescue frees)
+ *   own unit  ──► Overwatch · Reload · Interact (one per objective in reach)
+ *                 · Harvest (a carcass in reach, #1171) · Board
  *   a tile with a carcass on it also carries Harvest, closed with the
  *   reason when the unit cannot strip it
  * ```
@@ -917,19 +920,34 @@ function parseTile(argument: string): TileCoord | undefined {
   return { x, y, z };
 }
 
-/** What the unit can do standing where it is. */
+/**
+ * What the unit can do standing where it is. One Interact per objective
+ * in reach, in `reachableObjectives` order — nearest target first, ties
+ * in `mission.objectives` order — so the first is the one the Interact
+ * key works (`interactTarget`) and the tracker marks "in reach", and a
+ * squad beside both a trapped group and a wreck (#1179) can pick either:
+ *
+ * ```
+ *   one in reach   ──► Interact
+ *   several        ──► Interact  the wreck        (the key's: first)
+ *                      Interact  the townsfolk
+ * ```
+ *
+ * With several, each entry names its objective in the detail line, the
+ * way the tracker names it, so two entries never read the same.
+ */
 function selfPage(unit: Unit, ctx: WheelContext): WheelPage {
   const items: RadialMenuItem[] = [
     overwatchItem(unit, ctx),
     reloadItem(unit, ctx),
   ];
-  const objective = interactTarget(
+  const reachable = reachableObjectives(
     ctx.mission,
     unit.id,
     ctx.deps.objectiveTuning,
   );
-  if (objective !== undefined) {
-    items.push(interactItem(objective.objective.id, unit, ctx));
+  for (const { objective } of reachable) {
+    items.push(interactItem(objective.id, unit, ctx, reachable.length > 1));
   }
   const carcass = reachableCarcasses(
     ctx.mission,
@@ -945,17 +963,22 @@ function selfPage(unit: Unit, ctx: WheelContext): WheelPage {
   return { items };
 }
 
-/** Attack first, with the hit chance at the centre; Interact for a spawner in reach. */
+/**
+ * Attack first, with the hit chance at the centre; Interact when the
+ * clicked thing is itself the target of an objective in reach — a
+ * spawner, or a trapped group its rescue would free — whether or not
+ * that objective is the one the Interact key would work first.
+ */
 function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
   const attack = enemyAttackItem(targetId, unit, ctx);
   const items: RadialMenuItem[] = [attack.item];
   const hub = attack.hub;
-  const objective = interactTarget(
+  const objective = reachableObjectives(
     ctx.mission,
     unit.id,
     ctx.deps.objectiveTuning,
-  );
-  if (objective?.spawner.id === targetId) {
+  ).find((candidate) => candidate.target.id === targetId);
+  if (objective !== undefined) {
     items.push(interactItem(objective.objective.id, unit, ctx));
   }
   items.push(...netItems(targetId, unit, ctx));
@@ -1159,18 +1182,26 @@ function reloadItem(unit: Unit, ctx: WheelContext): RadialMenuItem {
   );
 }
 
-/** Interact with one objective, open or marked with why not. */
+/**
+ * Interact with one objective, open or marked with why not. `named`
+ * puts the objective's name in the detail line, for a ring with more
+ * than one Interact on it.
+ */
 function interactItem(
   objectiveId: string,
   unit: Unit,
   ctx: WheelContext,
+  named = false,
 ): RadialMenuItem {
   const refusal = actionRefusal(ctx.mission, unit.id, "interact", ctx.deps);
   const id = itemId("interact", objectiveId);
   const label = interactLabel(ctx.mission, objectiveId);
-  return refusal === undefined
-    ? { id, label, icon: "interact" }
-    : closed(id, label, "interact", refusal, ctx);
+  if (refusal !== undefined) {
+    return closed(id, label, "interact", refusal, ctx);
+  }
+  return named
+    ? { id, label, icon: "interact", detail: ctx.names.objective(objectiveId) }
+    : { id, label, icon: "interact" };
 }
 
 /**
@@ -1188,8 +1219,9 @@ function interactLabel(mission: TacticalState, objectiveId: string): string {
 /**
  * Pick up on the ring of a tile where a wanted specimen lies (#1179):
  * open when the unit can reach it now, closed with the rules' reason —
- * or "nothing in reach" — when it cannot. Undefined when nothing a
- * capture wants lies there.
+ * "squads only" or "hands full" (`carryRefusal`, the pick-up's own
+ * check), else why it cannot act, else "nothing in reach" — when it
+ * cannot. Undefined when nothing a capture wants lies there.
  */
 function pickUpItem(
   tile: TileCoord,
@@ -1224,10 +1256,11 @@ function pickUpItem(
     itemId("interact", objective.id),
     PICK_UP_LABEL,
     "interact",
-    actionRefusal(ctx.mission, unit.id, "interact", ctx.deps) ?? {
-      kind: "no-objective-in-reach",
-      unitId: unit.id,
-    },
+    carryRefusal(unit) ??
+      actionRefusal(ctx.mission, unit.id, "interact", ctx.deps) ?? {
+        kind: "no-objective-in-reach",
+        unitId: unit.id,
+      },
     ctx,
   );
 }

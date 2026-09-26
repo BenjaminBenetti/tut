@@ -89,6 +89,7 @@ export type ObjectiveResultFields = Partial<
     | "specimenCaptured"
     | "civiliansRescued"
     | "civiliansTotal"
+    | "wreck"
   >
 >;
 
@@ -163,9 +164,26 @@ export interface ObjectiveRules<K extends ObjectiveKind> {
    * The target a unit works this objective on, or undefined when there
    * is nothing left to work. `reachableObjectives` measures the unit's
    * distance to it; a kind with an `interaction` supplies this, or the
-   * HUD never offers what the handler would accept. `unit` is the one
-   * asking, when there is one, so a kind with several targets — a
-   * rescue's groups — can answer with the one nearest it.
+   * HUD never offers what the handler would accept.
+   *
+   * `unit` is the one asking, when there is one, and the answer is then
+   * the target *that unit's* Interact would work, so the distance the
+   * HUD measures to it is the distance the interaction measures:
+   *
+   * ```
+   *   several targets (a rescue's groups, dropped specimens)
+   *                         ──► the one nearest the unit, as the interaction picks
+   *   a target wider than a tile (a wreck)
+   *                         ──► its tile nearest the unit
+   *   the interaction refuses this unit whatever its distance
+   *     (a wreck only a squad strips, a pick-up with full hands)
+   *                         ──► undefined
+   *   no unit asking        ──► any target left, or undefined when none is
+   * ```
+   *
+   * Distance is not the rule's business: `reachableObjectives` measures
+   * it against the interact range. A kind with one target that works
+   * the same for everyone ignores `unit`.
    */
   reachable?(
     objective: ObjectiveOfKind<K>,
@@ -222,7 +240,7 @@ export interface ObjectiveRules<K extends ObjectiveKind> {
   ): TacticalApplied<TacticalState>;
   /** How far the objective got, for its `ObjectiveResult` row; absent, the row carries no count. */
   tally?(objective: ObjectiveOfKind<K>, mission: TacticalState): ObjectiveTally;
-  /** The kind's own fields on the mission result, e.g. a defence's `defence`. */
+  /** The kind's own fields on the mission result, e.g. a defence's `defence`, a wreck's `wreck`. */
   resultFields?(
     objective: ObjectiveOfKind<K>,
     mission: TacticalState,

@@ -40,6 +40,12 @@ import type { SitrepTuning } from "../model/sitrep-tuning";
  *   neither kites nor regroups: on small maps it wins in 6–15 turns, on
  *   medium ones (difficulty 3–7) in 6–17, and on a large difficulty-8
  *   map in 21. A defence also keeps 12 turns after its last wave lands.
+ * - **Alpha Present** crowns one bug (campaign arc §8, §11): half as
+ *   many hit points again (a lurker's 12 → 18, a brute's 30 → 45) and a
+ *   point more damage from every weapon (a lurker's bite 6 → 7, a
+ *   swarmer's 3 → 4). A nemesis come back adds a quarter a level, so a
+ *   level-2 lurker has 24. Big enough that the squad notices which bug
+ *   it is, small enough that it is still the species it was.
  */
 export const SITREP_TUNING: SitrepTuning = {
   nightfall: { sightPenalty: 4, sightFloor: 3 },
@@ -71,4 +77,5 @@ export const SITREP_TUNING: SitrepTuning = {
   hardenedClutches: { hpScale: 1.5, extraHatchlings: 1 },
   swarmTide: { sizeScale: 1.5, turnsSooner: 1, spillRadius: 2 },
   dustOffWindow: { baseTurns: 8, tilesPerTurn: 12, turnsAfterLastWave: 12 },
+  alphaPresent: { hpBonus: 0.5, hpPerLevel: 0.25, damageBonus: 1 },
 };

@@ -17,6 +17,7 @@ describe("SITREP_IDS", () => {
       "hardened-clutches",
       "swarm-tide",
       "dust-off-window",
+      "alpha-present",
     ]);
   });
 });

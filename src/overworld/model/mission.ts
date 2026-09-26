@@ -9,11 +9,13 @@ import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { SitrepId } from "../../content/model/sitrep-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { PartId } from "../../roster/model/mech-part";
+import type { AlphaHuntSpec } from "./alpha-hunt-spec";
 import type { CityId } from "./city";
 import type { HiveAssaultSpec } from "./hive-assault-spec";
 import type { CrashSiteSpec } from "./crash-site-spec";
 import type { EvacuationSpec } from "./evacuation-spec";
 import type { TunnelSabotageSpec } from "./tunnel-sabotage-spec";
+import type { NamedAlpha } from "./named-alpha";
 import type { WreckRecoverySpec } from "./wreck-recovery-spec";
 
 // ===========================================
@@ -206,6 +208,20 @@ export interface Mission {
    * Present exactly when `typeId` is `"tunnel-sabotage"`.
    */
   readonly tunnelSabotage?: TunnelSabotageSpec;
+  /**
+   * The Broodmother an Alpha Hunt hunts (campaign arc §6.8): her name,
+   * and when she is a nemesis come back, her scar and escapes. Present
+   * on every `"alpha-hunt"` offer, the scripted sighting included;
+   * absent on every other type and on offers saved before the hunt.
+   */
+  readonly alphaHunt?: AlphaHuntSpec;
+  /**
+   * The named alpha an Alpha Present offer carries (campaign arc §11):
+   * frozen by the alpha decorator when `sitreps` holds
+   * `"alpha-present"`, so the briefing names the bug the map will crown.
+   * Absent on every other offer.
+   */
+  readonly alpha?: NamedAlpha;
   /** What success pays. */
   readonly rewards: MissionRewards;
   /** Overworld day the mission appeared. */

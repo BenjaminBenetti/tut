@@ -367,6 +367,41 @@ describe("OverworldScreen", () => {
     expect(field("credits")?.textContent).toBe("¢5,000");
   });
 
+  it("lists the campaign's nemeses in the side panel, and nothing while there are none (#1179)", () => {
+    const readout = (): HTMLElement | null =>
+      root.querySelector<HTMLElement>('#side-panel [data-role="nemeses"]');
+    const game = newGame();
+    const empty = new OverworldScreen(depsFor(new FakeStore(game)));
+    empty.mount(root);
+    expect(readout()?.hidden).toBe(true);
+    empty.unmount();
+    const remembered: GameState = {
+      ...game,
+      overworld: {
+        ...game.overworld,
+        progress: {
+          ...game.overworld.progress,
+          nemeses: [
+            {
+              id: "nemesis-old-scald",
+              speciesId: "broodmother",
+              name: "Old Scald",
+              scar: "burned along the flank",
+              regionId: "east-asia",
+              level: 1,
+              escapes: 1,
+            },
+          ],
+        },
+      },
+    };
+    new OverworldScreen(depsFor(new FakeStore(remembered))).mount(root);
+    expect(readout()?.hidden).toBe(false);
+    expect(field("nemesis-name")?.textContent).toBe("Old Scald");
+    // The top bar is untouched: the readout lives in the side panel.
+    expect(root.querySelector('#top-bar [data-role="nemeses"]')).toBeNull();
+  });
+
   it("Advance day dispatches through the store and the bar follows the store change", () => {
     const store = new FakeStore(newGame());
     new OverworldScreen(depsFor(store)).mount(root);

@@ -46,6 +46,13 @@ describe("mission tuning", () => {
     expect(mopUpBelow).toBe(15);
   });
 
+  it("never gives an alpha hunt a small map, and holds her region 5 days once she dies (arc §6.8)", () => {
+    expect(MISSION_TUNING.difficulty["alpha-hunt"].mediumFromDifficulty).toBe(
+      2,
+    );
+    expect(MISSION_TUNING.alphaHunt.growthPauseDays).toBe(5);
+  });
+
   it("orders map size thresholds inside the difficulty range", () => {
     const { min, max } = MISSION_DIFFICULTY_RANGE;
     for (const rule of Object.values(MISSION_TUNING.difficulty)) {

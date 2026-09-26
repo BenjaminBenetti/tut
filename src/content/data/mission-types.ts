@@ -265,6 +265,49 @@ export const TUNNEL_SABOTAGE: MissionType = {
 };
 
 /**
+ * A named Broodmother is laying clutches across a region (campaign arc
+ * §6.8): kill her before she reaches the map edge, then extract. She is
+ * placed by the type's setup, lays a new egg spawner every three turns
+ * and runs for the edge at half health; one who gets away comes back
+ * stronger as a nemesis.
+ *
+ * Numbers against the clearance:
+ *   • the ordinary credit and tech scale (300 per difficulty, 8 + 3 per
+ *     difficulty). There is no separate bounty on a nemesis: her level
+ *     adds a difficulty step to the hunt, which pays 300 credits and
+ *     3 TP more per level, and the Broodmother autopsy her first kill
+ *     unlocks is the real prize (arc §6.8, §10);
+ *   • a shorter expiry (4 days): she is on the move, as a pod is;
+ *   • an ignore penalty of 15, the crash site's and the defence's: a
+ *     Broodmother nobody hunts lays unopposed in the city. Ignoring her
+ *     costs nothing else: an offer that lapses leaves no scar and no
+ *     nemesis level, since nobody met her;
+ *   • fewer egg spawners than a clearance: one, a second from
+ *     difficulty 6 (the clearance has three by then). Her clutches are
+ *     the pressure, not the map's nests. Two edge spawn zones that stay
+ *     two, as the crash site's do.
+ */
+export const ALPHA_HUNT: MissionType = {
+  id: "alpha-hunt",
+  name: "Alpha Hunt",
+  description:
+    "A Broodmother is laying clutches across the region. Kill her before she reaches the map edge, then extract.",
+  difficultyBand: { min: 1, max: 10 },
+  rewardPerDifficulty: 300,
+  techRewardBase: 8,
+  techRewardPerDifficulty: 3,
+  expiryDays: 4,
+  ignorePenalty: 15,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "egg-spawner", count: 1, countPerDifficulty: 0.2 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "medium",
+};
+
+/**
  * The finale (campaign arc §6.9): the assault on the Spore Platform,
  * played as two linked maps (ADR 0013 amendment, #1179). The squad
  * boards at the hull's docking ring and fights to the hatch; whoever
@@ -324,5 +367,6 @@ export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   evacuation: EVACUATION,
   "hive-assault": HIVE_ASSAULT,
   "tunnel-sabotage": TUNNEL_SABOTAGE,
+  "alpha-hunt": ALPHA_HUNT,
   "spore-platform": SPORE_PLATFORM,
 };

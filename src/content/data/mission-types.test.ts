@@ -79,6 +79,25 @@ describe("mission-types data", () => {
     expect(wreck.ignorePenalty).toBe(0);
   });
 
+  it("gives Alpha Hunt fewer egg spawners than a clearance at every difficulty (arc §6.8)", () => {
+    const eggs = (id: "alpha-hunt" | "infestation-clearance", d: number) => {
+      const hook = MISSION_TYPES[id].requiredHooks.find(
+        (candidate) => candidate.kind === "egg-spawner",
+      );
+      if (hook === undefined) throw new Error(`${id} has no egg spawners`);
+      return hook.count + Math.floor((hook.countPerDifficulty ?? 0) * (d - 1));
+    };
+    for (let d = 1; d <= 10; d++) {
+      expect(eggs("alpha-hunt", d), `d${String(d)}`).toBeGreaterThanOrEqual(1);
+      expect(eggs("alpha-hunt", d), `d${String(d)}`).toBeLessThan(
+        eggs("infestation-clearance", d),
+      );
+    }
+    const hunt = MISSION_TYPES["alpha-hunt"];
+    expect(hunt.rewardPerDifficulty).toBe(300);
+    expect(hunt.ignorePenalty).toBe(15);
+  });
+
   it("round-trips through JSON unchanged", () => {
     expect(JSON.parse(JSON.stringify(MISSION_TYPES))).toEqual(MISSION_TYPES);
   });

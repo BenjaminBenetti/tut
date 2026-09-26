@@ -62,6 +62,17 @@ describe("persona data", () => {
     }
   });
 
+  it("plays a crowned alpha as its species with focus fire, and asks Jev for the same (#1179)", () => {
+    // Its own tag wraps the species' behaviour, so an alpha lurker still
+    // flanks; what the fallback adds is the focus the prompt asks for.
+    expect(ALPHA.fallback).toBe("alpha");
+    expect(BEHAVIOUR_TAGS).toContain("alpha");
+    expect(ALPHA.entityPrompt.toLowerCase()).toContain("wounded target");
+    expect(ALPHA.commanderPrompt.toLowerCase()).toContain(
+      "weakest visible tdf unit",
+    );
+  });
+
   it("plays the Broodmother on her own behaviour without Jev, and asks Jev for the same plan (#1179)", () => {
     // Headless, or with Jev switched off, she keeps her distance, lays and
     // runs by the deterministic behaviour; Jev's orders say the same.

@@ -44,3 +44,37 @@ export interface Nemesis {
   /** Missions it has survived, a non-negative integer. */
   readonly escapes: number;
 }
+
+// ===========================================
+// Wounds
+// ===========================================
+
+/**
+ * What last hurt a named enemy before it got away (campaign arc §6.8:
+ * "the briefing names her scar"): read by the tactical resolver off the
+ * mission log and carried on the result, so the nemesis record can give
+ * it a scar that says what happened. Plain strings, so the overworld
+ * reads them without the tactical layer's event types.
+ *
+ * ```
+ *   gunfire   a squad's shot                    mech    a mech's weapon
+ *   turret    a deployed or garrison turret     blast   a grenade, charge or shell's burst
+ *   fire      burning ground
+ * ```
+ */
+export type NemesisWound = "gunfire" | "mech" | "turret" | "blast" | "fire";
+
+/** Every `NemesisWound`, in a fixed order, for tables keyed by it and their tests. */
+export const NEMESIS_WOUNDS: readonly NemesisWound[] = [
+  "gunfire",
+  "mech",
+  "turret",
+  "blast",
+  "fire",
+];
+
+/**
+ * How a named enemy came out of the mission, for its scar: a wound, or
+ * `"unmarked"` when it got away without one.
+ */
+export type NemesisMark = NemesisWound | "unmarked";

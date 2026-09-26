@@ -35,6 +35,49 @@ export function pausedRegions(
 }
 
 // ===========================================
+// Pauses
+// ===========================================
+
+/**
+ * Holds `regionId`'s growth and outward spread for `days` days counted
+ * from the day after `day` (campaign arc §6.8: a dead Broodmother's
+ * region "growth drops"). The hive model's own timed modifier, the one
+ * a liberation sets; a pause already running longer is kept, so a
+ * shorter one never cuts a liberation short.
+ *
+ * ```
+ *   growthPausedUntil[region] = max(current, day + days + 1)
+ *   killed on day 20, 5 days ──► 26: ticks 21 … 25 paused, 26 grows again
+ * ```
+ *
+ * @param overworld - The overworld; never mutated.
+ * @param regionId - The region to hold.
+ * @param day - The day the pause is set; the first held tick is `day + 1`.
+ * @param days - Days to hold, at least 1; `0` or less changes nothing.
+ * @returns The overworld with the pause, or `overworld` itself when it
+ *   would change nothing.
+ */
+export function pauseRegionGrowth(
+  overworld: OverworldState,
+  regionId: RegionId,
+  day: number,
+  days: number,
+): OverworldState {
+  const resumesOn = day + days + 1;
+  const current = overworld.growthPausedUntil?.[regionId];
+  if (days <= 0 || (current !== undefined && current >= resumesOn)) {
+    return overworld;
+  }
+  return {
+    ...overworld,
+    growthPausedUntil: {
+      ...overworld.growthPausedUntil,
+      [regionId]: resumesOn,
+    },
+  };
+}
+
+// ===========================================
 // Growth
 // ===========================================
 

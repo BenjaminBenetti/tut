@@ -1,5 +1,6 @@
 import { PLATFORM_ASSAULT_TUNING } from "../../data/platform-assault-tuning";
 import type { MissionSetupRules } from "../../model/mission-setup-rule";
+import { ALPHA_HUNT_SETUP } from "./alpha-hunt-setup";
 import { CRASH_SITE_SETUP } from "./crash-site-setup";
 import { DEFEND_INSTALLATION_SETUP } from "./defend-installation-setup";
 import { EVACUATION_SETUP } from "./evacuation-setup";
@@ -28,6 +29,7 @@ import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
  *   evacuation             ──► evacuation-setup.ts              nests (no objective) + civilians + rescue-civilians
  *   hive-assault           ──► hive-assault-setup.ts            core + destroy-hive-core, nests, guards, broods
  *   tunnel-sabotage        ──► tunnel-sabotage-setup.ts         tunnel mouths + seal-tunnels
+ *   alpha-hunt             ──► alpha-hunt-setup.ts              spawners (no objective) + Broodmother + kill-broodmother
  *   spore-platform         ──► spore-platform-setup.ts          hull: ring deploy, nests + board-core at the hatch;
  *                                                               core: core + destroy-platform-core, guards, boss
  * ```
@@ -45,5 +47,6 @@ export const MISSION_SETUP_RULES: MissionSetupRules = {
   evacuation: EVACUATION_SETUP,
   "hive-assault": withGreatHiveSetup(HIVE_ASSAULT_SETUP, placeCavernBroods),
   "tunnel-sabotage": TUNNEL_SABOTAGE_SETUP,
+  "alpha-hunt": ALPHA_HUNT_SETUP,
   "spore-platform": createSporePlatformSetup(PLATFORM_ASSAULT_TUNING),
 };

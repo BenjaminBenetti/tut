@@ -33,6 +33,7 @@ const KINDS: Readonly<Record<ObjectiveKind, true>> = {
   "destroy-hive-core": true,
   "seal-tunnels": true,
   "recover-pod": true,
+  "kill-broodmother": true,
   "board-core": true,
   "destroy-platform-core": true,
 };

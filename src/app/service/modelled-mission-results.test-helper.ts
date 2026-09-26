@@ -101,6 +101,8 @@ export type ModelledStoryResults = Readonly<
  *                          won all groups, extracted one short of half, lost none
  *   hive-assault           hiveCoreDestroyed = won; its placed Hive Guard killed on a win
  *   tunnel-sabotage        tunnelsSealed / tunnelsTotal: won all three, extracted one, lost none
+ *   alpha-hunt             broodmotherKilled = won, broodmotherEscaped = extracted, lost neither;
+ *                          the Broodmother killed on a win (the autopsy's seam)
  *   spore-platform         stages: won both; extracted at the hull, before the hatch;
  *                          lost at the core, after the hull was won. Its guards killed on a win
  * ```
@@ -153,6 +155,11 @@ export const MODELLED_RESULTS: ModelledResultBuilders = {
       outcome === "won" ? TUNNEL_MOUTH_COUNT : outcome === "extracted" ? 1 : 0,
     tunnelsTotal: TUNNEL_MOUTH_COUNT,
   }),
+  "alpha-hunt": (mission, outcome, ctx) => ({
+    ...baseModelledResult(mission, outcome, ctx, ALPHA_HUNT_PLACED),
+    broodmotherKilled: outcome === "won",
+    broodmotherEscaped: outcome === "extracted",
+  }),
   "spore-platform": (mission, outcome, ctx) => ({
     ...baseModelledResult(mission, outcome, ctx, SPORE_PLATFORM_PLACED),
     stages: platformStages(outcome),
@@ -167,6 +174,10 @@ export const MODELLED_RESULTS: ModelledResultBuilders = {
  * ```
  *   live-specimen   won ──► specimenCaptured: the species its setup places (a lurker)
  * ```
+ *
+ * The Broodmother sighting needs no row either: it is an Alpha Hunt, and
+ * its result carries only its type's fields, which the `alpha-hunt` row
+ * already models.
  */
 export const MODELLED_STORY_RESULTS: ModelledStoryResults = {
   "live-specimen": (_mission, outcome) =>
@@ -269,6 +280,9 @@ export function carcassPoints(
 
 /** The species a Hive Assault places rather than rolls (its guards at the core). */
 const HIVE_ASSAULT_PLACED: readonly BugSpeciesId[] = ["hive-guard"];
+
+/** The species an Alpha Hunt places rather than rolls: the Broodmother herself. */
+const ALPHA_HUNT_PLACED: readonly BugSpeciesId[] = ["broodmother"];
 
 /**
  * The species the Spore Platform places rather than rolls and a win

@@ -14,6 +14,7 @@ import { DESTROY_HIVE_CORE_OBJECTIVE } from "./destroy-hive-core-objective";
 import { DESTROY_PLATFORM_CORE_OBJECTIVE } from "./destroy-platform-core-objective";
 import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
+import { KILL_BROODMOTHER_OBJECTIVE } from "./kill-broodmother-objective";
 import { RECOVER_POD_OBJECTIVE } from "./recover-pod-objective";
 import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
 import { createSealTunnelsObjective } from "./seal-tunnels-objective";
@@ -42,6 +43,7 @@ import { STRIP_WRECK_OBJECTIVE } from "./strip-wreck-objective";
  *   seal-tunnels       ──► seal-tunnels-objective.ts (with the shipped
  *                          tunnel tuning: the fuse and its blast)
  *   recover-pod        ──► recover-pod-objective.ts
+ *   kill-broodmother   ──► kill-broodmother-objective.ts
  *   board-core         ──► board-core-objective.ts (the platform's hull)
  *   destroy-platform-core ──► destroy-platform-core-objective.ts (its core)
  * ```
@@ -61,6 +63,7 @@ export const OBJECTIVE_RULES: ObjectiveRulesTable = {
   "destroy-hive-core": DESTROY_HIVE_CORE_OBJECTIVE,
   "seal-tunnels": createSealTunnelsObjective(TUNNEL_TUNING),
   "recover-pod": RECOVER_POD_OBJECTIVE,
+  "kill-broodmother": KILL_BROODMOTHER_OBJECTIVE,
   "board-core": BOARD_CORE_OBJECTIVE,
   "destroy-platform-core": DESTROY_PLATFORM_CORE_OBJECTIVE,
 };

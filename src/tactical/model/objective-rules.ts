@@ -92,6 +92,9 @@ export type ObjectiveResultFields = Partial<
     MissionResult,
     | "defence"
     | "podDestroyed"
+    | "broodmotherKilled"
+    | "broodmotherEscaped"
+    | "broodmotherWound"
     | "specimenCaptured"
     | "civiliansRescued"
     | "civiliansTotal"

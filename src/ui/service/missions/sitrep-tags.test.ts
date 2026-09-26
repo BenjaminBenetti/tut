@@ -20,6 +20,20 @@ describe("sitrepTagsOf", () => {
     });
   });
 
+  it("gives Alpha Present the offer's own line when it froze an alpha, the generic one otherwise (#1179)", () => {
+    expect(sitrepTagsOf({ sitreps: ["alpha-present"] })[0]?.effect).toBe(
+      "One bug leads: +50% hp, +1 damage; hunts the weakest.",
+    );
+    const named = sitrepTagsOf({
+      sitreps: ["nightfall", "alpha-present"],
+      alpha: { name: "Grinder", level: 2, scar: "a leg lost" },
+    });
+    expect(named.map((tag) => tag.effect)).toEqual([
+      SITREP_PRESENTATION.nightfall.effect,
+      "Grinder, level 2, leads: +100% hp, +1 damage; hunts the weakest.",
+    ]);
+  });
+
   it("is empty for an offer without sitreps", () => {
     expect(sitrepTagsOf({})).toEqual([]);
   });

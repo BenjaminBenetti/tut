@@ -21,9 +21,7 @@
  * | `hardened-clutches` | egg spawners +50% hp, one more bug a hatch     |       |
  * | `swarm-tide`        | edge waves 50% larger, the first a turn sooner |       |
  * | `dust-off-window`   | the drop ship leaves on a set turn             |       |
- *
- * Alpha Present, the last of the arc's nine, appends one member here
- * and one entry per table when the nemesis record lands.
+ * | `alpha-present`     | one bug is a named alpha, a nemesis if it lives |       |
  */
 export type SitrepId =
   | "nightfall"
@@ -33,7 +31,8 @@ export type SitrepId =
   | "local-guides"
   | "hardened-clutches"
   | "swarm-tide"
-  | "dust-off-window";
+  | "dust-off-window"
+  | "alpha-present";
 
 /**
  * Every sitrep id, in a fixed order. Append, never insert: the offer
@@ -49,4 +48,5 @@ export const SITREP_IDS: readonly SitrepId[] = [
   "hardened-clutches",
   "swarm-tide",
   "dust-off-window",
+  "alpha-present",
 ];

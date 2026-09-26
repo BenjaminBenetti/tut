@@ -82,6 +82,13 @@ const SABOTAGE: Mission = {
   tunnelSabotage: { cityId: "cairo", spreadDueDay: 6 },
 };
 
+const HUNT: Mission = {
+  ...CLEARANCE,
+  id: "mission-9",
+  typeId: "alpha-hunt",
+  alphaHunt: { name: "Mother Grist", scars: 0 },
+};
+
 const PLATFORM: Mission = {
   ...CLEARANCE,
   id: "mission-8",
@@ -104,6 +111,7 @@ const OFFERS: Readonly<Record<MissionTypeId, Mission>> = {
   evacuation: EVACUATION,
   "hive-assault": ASSAULT,
   "tunnel-sabotage": SABOTAGE,
+  "alpha-hunt": HUNT,
   "spore-platform": PLATFORM,
 };
 
@@ -320,6 +328,7 @@ describe("briefingFieldsOf", () => {
       evacuation: stub("evacuation"),
       "hive-assault": stub("hive-assault"),
       "tunnel-sabotage": stub("tunnel-sabotage"),
+      "alpha-hunt": stub("alpha-hunt"),
       "spore-platform": stub("spore-platform"),
     };
     expect(briefingFieldsOf(catalogue).map((f) => f.field)).toEqual([
@@ -329,7 +338,7 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three, the sabotage's five and the platform's two", () => {
+  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three, the sabotage's five, the hunt's four and the platform's two", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
@@ -351,6 +360,10 @@ describe("briefingFieldsOf", () => {
       { field: "spread", label: "Spread due" },
       { field: "if-won", label: "Win" },
       { field: "if-ignored", label: "Ignored" },
+      { field: "quarry", label: "Quarry" },
+      { field: "nemesis", label: "Nemesis" },
+      { field: "broodmother", label: "Broodmother" },
+      { field: "escaped", label: "Escaped" },
       { field: "platform-stages", label: "Stages" },
       { field: "platform-objective", label: "Target" },
     ]);
@@ -451,6 +464,7 @@ describe("debriefTaglineFor", () => {
       evacuation: stub("evacuation"),
       "hive-assault": stub("hive-assault"),
       "tunnel-sabotage": stub("tunnel-sabotage"),
+      "alpha-hunt": stub("alpha-hunt"),
       "spore-platform": stub("spore-platform"),
     };
     expect(debriefTaglineFor(RESULT, CTX, catalogue)).toBe("second");
@@ -472,6 +486,7 @@ describe("debriefTaglineFor", () => {
         evacuation: stub("evacuation"),
         "hive-assault": stub("hive-assault"),
         "tunnel-sabotage": stub("tunnel-sabotage"),
+        "alpha-hunt": stub("alpha-hunt"),
         "spore-platform": stub("spore-platform"),
       }),
     ).toBe("first");

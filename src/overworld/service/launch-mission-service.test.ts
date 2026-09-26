@@ -31,6 +31,7 @@ import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
 import { HIVE_TUNING } from "../data/hive-tuning";
 import { MISSION_TUNING } from "../data/mission-tuning";
+import { NEMESIS_LORE } from "../data/nemesis-lore";
 import { STORY_SPINE } from "../data/story-spine";
 import { CAMPAIGN_FLAG_SET } from "../model/campaign-flag-set-event";
 import type { StoryMissionRules } from "../model/story-mission-rule";
@@ -44,6 +45,8 @@ import type {
   MissionConsequenceRules,
 } from "../model/mission-consequence-rule";
 import type { OverworldState } from "../model/overworld-state";
+import type { Nemesis } from "../model/nemesis";
+import { chronicleOf } from "./campaign-chronicle-service";
 import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import type { LaunchMissionDeps } from "./launch-mission-service";
@@ -241,6 +244,7 @@ function deps(
     missionTuning: MISSION_TUNING,
     hiveTuning: HIVE_TUNING,
     story: { rules, spine: STORY_SPINE },
+    nemesisLore: NEMESIS_LORE,
   };
 }
 
@@ -552,6 +556,87 @@ describe("createLaunchMissionHandler", () => {
       played({ ...WIN, outcome: "extracted", creditsAwarded: 0 }, midAct),
     ).toMatchObject({ missionsPlayed: 16, missionsWon: 10 });
     expect(midAct.overworld.progress.missionsPlayed).toBe(15);
+  });
+
+  it("records a named alpha that lived through a lost mission as a nemesis of the city's region (arc §11)", () => {
+    const withAlpha: Mission = {
+      ...MISSION,
+      sitreps: ["alpha-present"],
+      alpha: { name: "Grinder", level: 0 },
+    };
+    const played = (result: MissionResult) => {
+      const launched = createLaunchMissionHandler<CampaignState>(
+        deps(new StubResolver(result)),
+      )(
+        campaign({ missions: [withAlpha] }),
+        launchMission("mission-1", DEPLOYMENT),
+        context(),
+      );
+      if (!launched.ok) throw new Error(launched.error.message);
+      return launched.value.state.overworld.progress.nemeses;
+    };
+    expect(
+      played({ ...LOSS, alpha: { speciesId: "brute", survived: true } }),
+    ).toMatchObject([
+      {
+        id: "nemesis:mission-1:alpha",
+        speciesId: "brute",
+        name: "Grinder",
+        regionId: "west",
+        level: 1,
+        escapes: 1,
+      },
+    ]);
+    expect(
+      played({ ...WIN, alpha: { speciesId: "brute", survived: true } }),
+    ).toEqual([]);
+    expect(
+      played({ ...LOSS, alpha: { speciesId: "brute", survived: false } }),
+    ).toEqual([]);
+  });
+
+  it("chronicles a returning nemesis killed in an ordinary Alpha Present mission, with its name and the day (arc §11)", () => {
+    const grinder: Nemesis = {
+      id: "nemesis:mission-0:alpha",
+      speciesId: "brute",
+      name: "Grinder",
+      scar: "a leg lost to the squad's guns",
+      regionId: "west",
+      level: 1,
+      escapes: 1,
+    };
+    const withNemesis: Mission = {
+      ...MISSION,
+      sitreps: ["alpha-present"],
+      alpha: {
+        name: grinder.name,
+        level: grinder.level,
+        nemesisId: grinder.id,
+        speciesId: grinder.speciesId,
+        scar: grinder.scar,
+      },
+    };
+    const launched = createLaunchMissionHandler<CampaignState>(
+      deps(
+        new StubResolver({
+          ...WIN,
+          alpha: { speciesId: "brute", survived: false },
+        }),
+      ),
+    )(
+      campaign({
+        missions: [withNemesis],
+        progress: { ...createInitialCampaignProgress(), nemeses: [grinder] },
+      }),
+      launchMission("mission-1", DEPLOYMENT),
+      context(),
+    );
+    if (!launched.ok) throw new Error(launched.error.message);
+    const progress = launched.value.state.overworld.progress;
+    expect(progress.nemeses).toEqual([]);
+    expect(chronicleOf(progress).nemesesKilled).toEqual([
+      { id: grinder.id, name: "Grinder", speciesId: "brute", day: DAY },
+    ]);
   });
 
   it("merges the result's first kills into the campaign's record", () => {

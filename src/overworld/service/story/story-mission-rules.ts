@@ -1,4 +1,6 @@
+import { NEMESIS_LORE } from "../../data/nemesis-lore";
 import type { StoryMissionRules } from "../../model/story-mission-rule";
+import { createBroodmotherSighting } from "./broodmother-sighting";
 import { FIRST_SKYFALL } from "./first-skyfall";
 import { INTACT_POD } from "./intact-pod";
 import { LAUNCH_WINDOW } from "./launch-window";
@@ -25,6 +27,8 @@ import { UPLINK } from "./uplink";
  *                                          until the recovery drop
  *   uplink          ──► uplink.ts          Act III's opener: hold the tracking array, d6
  *   launch-window   ──► launch-window.ts   Act III's ending: hold the launch site, d8
+ *   broodmother-    ──► broodmother-       Act II's side beat: the first Alpha Hunt, d5,
+ *     sighting            sighting.ts        pinned ten missions in, in a hive region
  *   spore-platform  ──► spore-platform.ts  the finale: the hull, then the core, d10;
  *                                          won is victory, lost twice is defeat (D7)
  * ```
@@ -49,5 +53,6 @@ export const STORY_MISSION_RULES: StoryMissionRules = {
   uplink: UPLINK,
   "launch-window": LAUNCH_WINDOW,
   "intact-pod": INTACT_POD,
+  "broodmother-sighting": createBroodmotherSighting(NEMESIS_LORE),
   "spore-platform": SPORE_PLATFORM,
 };

@@ -1,5 +1,7 @@
 import { INFESTATION_TUNING } from "../../data/infestation-tuning";
+import { NEMESIS_LORE } from "../../data/nemesis-lore";
 import type { MissionOfferRules } from "../../model/mission-offer-rule";
+import { createAlphaHuntOffer } from "./alpha-hunt-offer";
 import { CRASH_SITE_OFFER } from "./crash-site-offer";
 import { DEFEND_INSTALLATION_TRIGGER } from "./defend-installation-trigger";
 import { EVACUATION_OFFER } from "./evacuation-offer";
@@ -32,6 +34,9 @@ import { WRECK_RECOVERY_TRIGGER } from "./wreck-recovery-trigger";
  *   tunnel-sabotage        ──► tunnel-sabotage-offer.ts          offer: detected city ≥ 60 whose spread
  *                                                                is due within 2 days, from Act II
  *                                                                mission 5
+ *   alpha-hunt             ──► alpha-hunt-offer.ts               offer: detected city in a hive region, from
+ *                                                                Act II mission 11, after the sighting;
+ *                                                                a living nemesis's region first
  *   spore-platform         ──► spore-platform-trigger.ts         trigger: never; the story pins it
  * ```
  *
@@ -50,5 +55,6 @@ export const MISSION_OFFER_RULES: MissionOfferRules = {
   evacuation: EVACUATION_OFFER,
   "hive-assault": withGreatHiveRefresh(HIVE_ASSAULT_TRIGGER),
   "tunnel-sabotage": createTunnelSabotageOffer(INFESTATION_TUNING),
+  "alpha-hunt": createAlphaHuntOffer(NEMESIS_LORE),
   "spore-platform": SPORE_PLATFORM_TRIGGER,
 };

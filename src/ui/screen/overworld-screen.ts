@@ -33,6 +33,7 @@ import { EventDialogView } from "../view/event-dialog-view";
 import { GreatHiveRevealView } from "../view/great-hive-reveal-view";
 import { MissionDetailsView } from "../view/mission-details-view";
 import { MissionListView } from "../view/mission-list-view";
+import { NemesesView } from "../view/nemeses-view";
 import type {
   RadialMenuHub,
   RadialMenuItem,
@@ -154,6 +155,7 @@ export class OverworldScreen implements Screen {
   private readonly missionList: MissionListView;
   private readonly missionDetails: MissionDetailsView;
   private readonly deployables: DeployablesView;
+  private readonly nemeses = new NemesesView();
   private readonly eventDialog: EventDialogView;
   private readonly greatHiveReveal = new GreatHiveRevealView();
   private readonly wheel: RadialMenuView;
@@ -275,6 +277,8 @@ export class OverworldScreen implements Screen {
     this.regionPanel.mount(sections);
     this.missionList.mount(sections);
     this.missionDetails.mount(sections);
+    // The named enemies at large (#1179), under the offers that hunt them.
+    this.nemeses.mount(sections);
     this.deployables.mount(sections);
     // The wheel is positioned in client pixels, so it lives on the
     // layout, which fills the window, rather than in the map cell.
@@ -333,6 +337,7 @@ export class OverworldScreen implements Screen {
     this.greatHiveReveal.unmount();
     this.topBar.unmount();
     this.deployables.unmount();
+    this.nemeses.unmount();
     this.missionDetails.unmount();
     this.missionList.unmount();
     this.regionPanel.unmount();
@@ -580,6 +585,7 @@ export class OverworldScreen implements Screen {
     this.deployables.update(state, selection.regionId);
     this.missionList.update(state, selection);
     this.missionDetails.update(state, mission);
+    this.nemeses.update(state);
     this.eventDialog.update(state);
     this.refreshWheel();
   }

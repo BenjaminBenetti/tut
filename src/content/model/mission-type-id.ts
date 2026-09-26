@@ -18,7 +18,9 @@
  * is one pinned offer per hive, fought in a hive cavern.
  * `tunnel-sabotage` (arc §6.7) is a city about to spread: seal the
  * three tunnel mouths it is digging toward its neighbour, and its
- * spread holds for 10 days.
+ * spread holds for 10 days. `alpha-hunt` is a named Broodmother laying
+ * clutches across a region, to be killed before she reaches the map
+ * edge (arc §6.8).
  * `spore-platform` (arc §6.9) is the finale: two linked maps, the
  * platform's hull and then its core, only ever pinned by the story.
  */
@@ -30,6 +32,7 @@ export type MissionTypeId =
   | "evacuation"
   | "hive-assault"
   | "tunnel-sabotage"
+  | "alpha-hunt"
   | "spore-platform";
 
 /**
@@ -45,5 +48,6 @@ export const MISSION_TYPE_IDS: readonly MissionTypeId[] = [
   "evacuation",
   "hive-assault",
   "tunnel-sabotage",
+  "alpha-hunt",
   "spore-platform",
 ];

@@ -206,6 +206,7 @@ describe("sitrepFits / eligibleSitreps", () => {
       "local-guides",
       "swarm-tide",
       "dust-off-window",
+      "alpha-present",
     ]);
     expect(
       eligibleSitreps(late, SITREPS, MISSION_TYPES["infestation-clearance"]),
@@ -330,6 +331,7 @@ describe("withSitreps", () => {
       },
       "swarm-tide": { ...SITREPS["swarm-tide"], debutMission: 99 },
       "dust-off-window": { ...SITREPS["dust-off-window"], debutMission: 99 },
+      "alpha-present": { ...SITREPS["alpha-present"], debutMission: 99 },
     };
     const rolled = rollMany(50, certain(ACTS["act-3"]), 36, OFFER, one);
     expect(rolled.every((s) => s?.join() === "salvage-rich")).toBe(true);

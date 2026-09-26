@@ -21,6 +21,7 @@ import { EVENT_TYPES } from "../../data/event-types";
 import { HIVE_TUNING } from "../../data/hive-tuning";
 import { INFESTATION_TUNING } from "../../data/infestation-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
+import { NEMESIS_LORE } from "../../data/nemesis-lore";
 import { NEW_GAME_TUNING } from "../../data/new-game-tuning";
 import { STORY_SPINE } from "../../data/story-spine";
 import { THREAT_TUNING } from "../../data/threat-tuning";
@@ -163,6 +164,7 @@ class Campaign {
         consequences: MISSION_CONSEQUENCE_RULES,
         missionTuning: MISSION_TUNING,
         hiveTuning: HIVE_TUNING,
+        nemesisLore: NEMESIS_LORE,
         story: { rules: STORY_MISSION_RULES, spine: STORY_SPINE },
       }),
     );

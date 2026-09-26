@@ -26,7 +26,8 @@ import type { PersonaDefinition } from "../model/persona";
 // too. The Sovereign's is her own too (#1179): hold the ground around
 // the core, fall back onto it at two fifths of her health; her aura,
 // her guards and the marking of her retreat are rules that hold under
-// Jev as well. An alpha fights as its species does.
+// Jev as well. An alpha plays `alpha` (#1179): its species' own
+// behaviour, with every attack turned on the weakest TDF unit in reach.
 
 /** A mobile egg-layer that guards her clutches and flees when hurt (campaign arc §8, §9). */
 export const BROODMOTHER: PersonaDefinition = {
@@ -42,7 +43,12 @@ export const BROODMOTHER: PersonaDefinition = {
   fallback: "broodmother",
 };
 
-/** A bigger, tougher bug of its species that leads the hunt (campaign arc §8, §9). */
+/**
+ * A bigger, tougher bug of its species that leads the hunt (campaign arc
+ * §8, §9). Without Jev it plays `alpha` (#1179): its species' own
+ * behaviour, with every attack turned on the weakest TDF unit it can
+ * reach, which is the focus fire its prompt asks Jev for.
+ */
 export const ALPHA: PersonaDefinition = {
   id: "alpha",
   displayName: "Alpha",
@@ -53,7 +59,7 @@ export const ALPHA: PersonaDefinition = {
     "Finish a wounded target before starting on a fresh one. Do not retreat while visible TDF units remain.",
   commanderPrompt:
     "An alpha leads this attack. Converge on the weakest visible TDF unit and finish wounded targets before engaging fresh ones.",
-  fallback: "species",
+  fallback: "alpha",
 };
 
 /** The platform's apex, which spends the swarm to keep its core alive (campaign arc §8, §9). */

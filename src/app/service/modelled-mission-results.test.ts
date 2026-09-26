@@ -8,6 +8,7 @@ import { advanceDay } from "../../overworld/model/advance-day-command";
 import type { Hive } from "../../overworld/model/hive";
 import { launchMission } from "../../overworld/model/launch-mission-command";
 import type { Mission } from "../../overworld/model/mission";
+import type { Nemesis } from "../../overworld/model/nemesis";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import { MISSION_OUTCOMES } from "../../overworld/model/mission-result";
 import { PLATFORM_FAILURE_INFESTATION } from "../../overworld/model/story-mission-rule";
@@ -17,6 +18,12 @@ import {
   EVACUATION_LOST_SOURCE,
   EVACUATION_SAVED_SOURCE,
 } from "../../overworld/service/missions/evacuation-consequence";
+import { chronicleOf } from "../../overworld/service/campaign-chronicle-service";
+import { BROODMOTHER_SIGHTED_FLAG } from "../../overworld/service/missions/alpha-hunt-quarry";
+import {
+  findNemesis,
+  nemesisIdFor,
+} from "../../overworld/service/nemesis-service";
 import { evaluateOutcome } from "../../overworld/service/outcome-service";
 import { fixtureStoryRule } from "../../overworld/service/story/story-fixtures.test-helper";
 import { stockCount, stockOf } from "../../roster/service/part-stock-service";
@@ -24,6 +31,8 @@ import { loadoutPartIds } from "../../roster/model/mech-loadout";
 import type { GameState } from "../../save/model/game-state";
 import { LAST_HOPE_COST } from "../../tech/data/endgame-intel-nodes";
 import { LIVE_SPECIMEN_SPECIES } from "../../tactical/service/story/live-specimen-setup";
+import { TECH_NODES } from "../../tech/data/tech-tree";
+import { revealedTechNodes } from "../../tech/service/tech-reveal-service";
 import {
   composeSweepGame,
   storyWith,
@@ -122,6 +131,55 @@ function infestationOf(state: GameState, cityId: string): number {
   const city = state.overworld.map.cities.find((each) => each.id === cityId);
   if (city === undefined) throw new Error(`no city ${cityId}`);
   return city.infestation;
+}
+
+/** A city's region in `state`. */
+function regionOf(state: GameState, cityId: string): string {
+  const city = state.overworld.map.cities.find((each) => each.id === cityId);
+  if (city === undefined) throw new Error(`no city ${cityId}`);
+  return city.regionId;
+}
+
+/**
+ * `staged`'s clearance offer made an Alpha Hunt and put back on the board
+ * in its place: for a fresh Broodmother, "Mother Grist", or for
+ * `nemesis`, which is then the only one on the record.
+ */
+function huntOffer(
+  staged: { readonly state: GameState; readonly offer: Mission },
+  nemesis?: Nemesis,
+): { readonly state: GameState; readonly offer: Mission } {
+  const offer: Mission = {
+    ...staged.offer,
+    typeId: "alpha-hunt",
+    alphaHunt:
+      nemesis === undefined
+        ? { name: "Mother Grist", scars: 0 }
+        : {
+            nemesisId: nemesis.id,
+            name: nemesis.name,
+            scar: nemesis.scar,
+            scars: nemesis.escapes,
+            level: nemesis.level,
+          },
+  };
+  const { overworld } = staged.state;
+  return {
+    offer,
+    state: {
+      ...staged.state,
+      overworld: {
+        ...overworld,
+        missions: overworld.missions.map((each) =>
+          each.id === offer.id ? offer : each,
+        ),
+        progress: {
+          ...overworld.progress,
+          nemeses: nemesis === undefined ? [] : [nemesis],
+        },
+      },
+    },
+  };
 }
 
 /** Whether `flag` is set in `state`. */
@@ -367,6 +425,79 @@ describe("each modelled result drives its type's real consequence rule", () => {
       expect(after.overworld.spreadCooldowns[offer.cityId], outcome).toBe(
         outcome === "won" ? MISSION_TUNING.tunnelSabotage.holdDays : undefined,
       );
+    }
+  });
+
+  it("alpha hunt: a win kills her, chronicles and strikes her nemesis record, holds her region's growth and reveals her autopsy", () => {
+    const game = composeSweepGame(always("won"));
+    const staged = withOffer(game, "infestation-clearance");
+    const regionId = regionOf(staged.state, staged.offer.cityId);
+    const nemesis: Nemesis = {
+      id: "nemesis:mission-old:broodmother",
+      speciesId: "broodmother",
+      name: "Old Scald",
+      scar: "a mech's shell took her left egg-sac",
+      regionId,
+      level: 1,
+      escapes: 1,
+    };
+    const { state, offer } = huntOffer(staged, nemesis);
+    const before = game.techConditionsOf(state);
+    const after = launch(game, state, offer);
+    const result = after.overworld.lastMissionResult;
+    expect(result?.broodmotherKilled).toBe(true);
+    expect(result?.broodmotherEscaped).toBe(false);
+    expect(result?.speciesKilled).toContain("broodmother");
+    expect(after.overworld.progress.nemeses).toEqual([]);
+    expect(chronicleOf(after.overworld.progress).nemesesKilled).toEqual([
+      {
+        id: nemesis.id,
+        name: "Old Scald",
+        speciesId: "broodmother",
+        day: state.overworld.day,
+      },
+    ]);
+    expect(after.overworld.growthPausedUntil?.[regionId]).toBe(
+      state.overworld.day + MISSION_TUNING.alphaHunt.growthPauseDays + 1,
+    );
+    expect(flagged(after, BROODMOTHER_SIGHTED_FLAG)).toBe(true);
+    expect(after.overworld.progress.speciesKilled).toContain("broodmother");
+    expect(
+      revealedTechNodes(TECH_NODES, before, game.techConditionsOf(after)).map(
+        (node) => node.id,
+      ),
+    ).toContain("tech.broodmother-autopsy");
+  });
+
+  it("alpha hunt: an escape records her as a living nemesis; a loss leaves her alive on the record too", () => {
+    for (const outcome of ["extracted", "lost"] as const) {
+      const game = composeSweepGame(always(outcome));
+      const { state, offer } = huntOffer(
+        withOffer(game, "infestation-clearance"),
+      );
+      const regionId = regionOf(state, offer.cityId);
+      const after = launch(game, state, offer);
+      const result = after.overworld.lastMissionResult;
+      expect(result?.broodmotherKilled, outcome).toBe(false);
+      expect(result?.broodmotherEscaped, outcome).toBe(outcome === "extracted");
+      expect(result?.speciesKilled ?? [], outcome).not.toContain("broodmother");
+      expect(
+        findNemesis(
+          after.overworld.progress,
+          nemesisIdFor(offer.id, "broodmother"),
+        ),
+        outcome,
+      ).toMatchObject({
+        speciesId: "broodmother",
+        name: "Mother Grist",
+        regionId,
+        level: 1,
+        escapes: 1,
+      });
+      expect(after.overworld.growthPausedUntil?.[regionId], outcome).toBe(
+        state.overworld.growthPausedUntil?.[regionId],
+      );
+      expect(flagged(after, BROODMOTHER_SIGHTED_FLAG), outcome).toBe(true);
     }
   });
 

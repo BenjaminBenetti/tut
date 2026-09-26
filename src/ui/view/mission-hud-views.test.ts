@@ -1281,6 +1281,30 @@ describe("the Sovereign on the HUD (#1179, campaign arc §9)", () => {
   });
 });
 
+describe("event vocabulary for Alpha Present (#1179, campaign arc §8, §11)", () => {
+  const crowned = (level: number) =>
+    ({
+      type: "tactical:alpha-crowned",
+      payload: { unitId: "unit-901", name: "Grinder", level },
+    }) as const;
+
+  it("names the alpha by the name it was given, never by its species", () => {
+    const names = { ...NAMES, unit: () => "Grinder the Alpha Brute" };
+    expect(describeEvent(crowned(0), names)).toEqual({
+      text: "Grinder leads the swarm",
+      icon: "nemesis",
+      tone: "danger",
+    });
+    expect(describeEvent(crowned(2), names)?.text).toBe(
+      "Grinder is back, level 2, leading the swarm",
+    );
+  });
+
+  it("floats over nobody: the bug may be one the squad has not seen", () => {
+    expect(actorOf(crowned(0))).toBeUndefined();
+  });
+});
+
 describe("capturing a specimen (#1179)", () => {
   const LURKER = {
     unitId: "unit-9",

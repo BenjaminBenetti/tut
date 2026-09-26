@@ -259,6 +259,43 @@
   white-space: nowrap;
 }
 
+/*
+ * The Nemeses readout (campaign arc §8, #1179): one block per named
+ * enemy, the crown and name in the bug tint on the first line with the
+ * level at its right, where it hunts and its scar dim under it. As
+ * specific as `.tut-list > li`, whose flex row would set the three
+ * lines side by side.
+ */
+.tut-nemeses[hidden] {
+  display: none;
+}
+
+.tut-list > li.tut-nemesis {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.tut-nemesis__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ui-bug);
+}
+
+.tut-nemesis__name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tut-nemesis__scar {
+  font-style: italic;
+}
+
 .tut-region__city .tut-data {
   color: var(--ui-text-dim);
 }

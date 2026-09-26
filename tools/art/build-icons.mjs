@@ -105,6 +105,10 @@ const ICONS = {
   // An evacuation (campaign arc §6.4): a civilian walking out, an arrow to the drop ship.
   evacuate:
     '<circle cx="7" cy="4" r="2"/><path d="M7 7 V14 M7 14 L4 21 M7 14 L10 21 M3 10 L7 9 L11 11"/><path d="M14 13 H22 M19 10 L22 13 L19 16"/>',
+  // A named enemy (campaign arc §6.8, §8): an Alpha Hunt's quarry and the
+  // nemeses the campaign remembers. A crown over the ground she rules.
+  nemesis:
+    '<path d="M3 17 V7 L8 11 L12 4 L16 11 L21 7 V17 Z"/><path d="M3 21 H21"/>',
   // The development tools' toggle (#1136): a beetle, seen from above.
   bug: '<circle cx="12" cy="14" r="6"/><circle cx="12" cy="6" r="2.5"/><path d="M12 8 V20"/><path d="M6 12 L2 9 M6 16 H2 M6 19 L3 22 M18 12 L22 9 M18 16 H22 M18 19 L21 22"/><path d="M10 4 L9 2 M14 4 L15 2"/>',
 };

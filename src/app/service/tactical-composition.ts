@@ -11,6 +11,7 @@ import {
   createDefaultBugActHandler,
 } from "../../tactical/service/jev-control-service";
 import { chooseBugCommands } from "../../bugs/ai/behaviour-registry";
+import { AlphaBehaviour } from "../../bugs/ai/alpha-behaviour";
 import { viewFor } from "../../tactical/service/mission-view-service";
 import { MECH_ACTION } from "../../tactical/model/mech-action-command";
 import { createMechActionHandler } from "../../tactical/service/mech-action-service";
@@ -413,6 +414,9 @@ export function shippedTacticalHandlers(
   );
   const registry = new MapBehaviourRegistry(shippedBugBehaviours());
   const speciesOf = createSpeciesLookup(BUG_SPECIES);
+  // A crowned alpha plays its species' own behaviour from this registry,
+  // with focus fire on top (#1179), so it is registered beside them.
+  registry.register(new AlphaBehaviour(registry, speciesOf));
   // A named enemy plays its persona's fallback without Jev, in the
   // synchronous bug phase and in a mixed Jev phase alike (ADR 0013 §2.8).
   const personaOf = createPersonaLookup(PERSONAS);

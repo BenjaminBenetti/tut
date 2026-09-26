@@ -1,4 +1,5 @@
 import type { MissionMapRules } from "../../model/mission-map-rule";
+import { ALPHA_HUNT_MAP_RULE } from "./alpha-hunt-map";
 import { CRASH_SITE_MAP_RULE } from "./crash-site-map";
 import { DEFEND_INSTALLATION_MAP_RULE } from "./defend-installation-map";
 import { EVACUATION_MAP_RULE } from "./evacuation-map";
@@ -28,6 +29,7 @@ import { WRECK_RECOVERY_MAP_RULE } from "./wreck-recovery-map";
  *   hive-assault          ─► hive-assault-map.ts            hive cavern, own board and hooks, nests by level
  *                           great-hive-map.ts (hive.great)  Great Hive cavern, bigger board, more nests
  *   tunnel-sabotage       ─► tunnel-sabotage-map.ts         settlement + three tunnel mouths
+ *   alpha-hunt            ─► alpha-hunt-map.ts              settlement, never small; she is placed by setup
  *   spore-platform        ─► spore-platform-map.ts          the hull, then the core chamber (by stage)
  * ```
  */
@@ -39,5 +41,6 @@ export const MISSION_MAP_RULES: MissionMapRules = {
   evacuation: EVACUATION_MAP_RULE,
   "hive-assault": withGreatHiveMap(HIVE_ASSAULT_MAP_RULE),
   "tunnel-sabotage": TUNNEL_SABOTAGE_MAP_RULE,
+  "alpha-hunt": ALPHA_HUNT_MAP_RULE,
   "spore-platform": SPORE_PLATFORM_MAP_RULE,
 };

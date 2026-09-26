@@ -49,6 +49,7 @@ import {
   tacticalMissionResult,
 } from "./tactical-mission-resolver";
 import { createAbandonMissionHandler } from "./abandon-mission-handler";
+import { ATTACK_RESOLVED } from "../model/attack-resolved-event";
 import {
   ctxWith,
   FIXTURE_TEMPLATES,
@@ -1338,5 +1339,147 @@ describe("tacticalMissionResult on a rescue (campaign arc §6.4)", () => {
     );
     expect(result).not.toHaveProperty("civiliansRescued");
     expect(result).not.toHaveProperty("civiliansTotal");
+  });
+});
+
+// ===========================================
+// Alpha Hunt and Alpha Present
+// ===========================================
+
+describe("tacticalMissionResult with a Broodmother or a named alpha (#1179)", () => {
+  /** A hit from `attackerId` on `targetId` that drew blood. */
+  function hit(attackerId: string, targetId: string) {
+    return {
+      type: ATTACK_RESOLVED,
+      payload: {
+        attackerId,
+        targetId,
+        hit: true,
+        damage: 4,
+        targetHp: 6,
+        weaponRange: 5,
+      },
+    } as const;
+  }
+
+  /** The crowned alpha, a lurker, on `hp`. */
+  function alphaUnit(hp: number): Unit {
+    return {
+      ...unitAt("alpha-1", "infantry", at(6, 6), { team: "bugs", hp }),
+      sourceId: "lurker",
+      persona: "alpha",
+      name: "Grinder",
+    };
+  }
+
+  /** `tactical` resolved against a one-squad, one-mech deployment. */
+  function resolve(tactical: TacticalState) {
+    return tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(3),
+        deployment: deployment(["squad-1"], ["mech-1"]),
+        state: resolutionState([squad("squad-1")], [mech("mech-1")]),
+      },
+      DEPS,
+    );
+  }
+
+  const SQUAD = (): Unit => squadUnit("unit-1", "squad-1", SQUAD_HP);
+  const MECH = (): Unit => mechUnit("unit-2", "mech-1", MECH_HP);
+  const CROWNED = { name: "Grinder", level: 0, unitId: "alpha-1" };
+
+  it("reports a living alpha's species and what last hurt it", () => {
+    const result = resolve({
+      ...missionWith(MAP, [SQUAD(), MECH(), alphaUnit(3)], {
+        log: [hit("unit-1", "alpha-1"), hit("unit-2", "alpha-1")],
+        outcome: "extracted",
+      }),
+      alpha: CROWNED,
+    });
+    expect(result.alpha).toEqual({
+      speciesId: "lurker",
+      survived: true,
+      wound: "mech",
+    });
+  });
+
+  it("reports a dead alpha as fallen, with no wound", () => {
+    const result = resolve({
+      ...missionWith(MAP, [SQUAD(), alphaUnit(0)], {
+        log: [hit("unit-1", "alpha-1")],
+        outcome: "won",
+      }),
+      alpha: CROWNED,
+    });
+    expect(result.alpha).toEqual({ speciesId: "lurker", survived: false });
+  });
+
+  it("carries no alpha field when none was crowned", () => {
+    const tactical = missionWith(MAP, [SQUAD(), alphaUnit(3)], {
+      outcome: "won",
+    });
+    expect(resolve(tactical)).not.toHaveProperty("alpha");
+    expect(
+      resolve({ ...tactical, alpha: { name: "Grinder", level: 0 } }),
+    ).not.toHaveProperty("alpha");
+  });
+
+  it("reports the Broodmother's escape and her last wound for the scar", () => {
+    const mother: Unit = {
+      ...unitAt("mother", "infantry", at(7, 7), { team: "bugs", hp: 20 }),
+      sourceId: "broodmother",
+      persona: "broodmother",
+    };
+    const result = resolve(
+      missionWith(MAP, [SQUAD()], {
+        objectives: [
+          {
+            id: "objective-1",
+            kind: "kill-broodmother",
+            targetId: "mother",
+            complete: false,
+            failed: true,
+          },
+        ],
+        log: [hit("unit-1", "mother")],
+        outcome: "extracted",
+      }),
+    );
+    expect(result).toMatchObject({
+      broodmotherKilled: false,
+      broodmotherEscaped: false,
+      broodmotherWound: "gunfire",
+    });
+    const fled = resolve({
+      ...missionWith(MAP, [SQUAD()], {
+        objectives: [
+          {
+            id: "objective-1",
+            kind: "kill-broodmother",
+            targetId: "mother",
+            complete: false,
+            failed: true,
+          },
+        ],
+        log: [hit("unit-1", "mother")],
+        outcome: "extracted",
+      }),
+      escaped: [mother],
+    });
+    expect(fled).toMatchObject({
+      broodmotherKilled: false,
+      broodmotherEscaped: true,
+      broodmotherWound: "gunfire",
+    });
+    expect(fled.objectives).toEqual([
+      {
+        kind: "kill-broodmother",
+        complete: false,
+        failed: true,
+        done: 0,
+        total: 1,
+      },
+    ]);
   });
 });

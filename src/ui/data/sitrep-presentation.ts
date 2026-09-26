@@ -1,4 +1,6 @@
+import { SITREP_TUNING } from "../../tactical/data/sitrep-tuning";
 import type { SitrepPresentationCatalogue } from "../model/sitrep-presentation";
+import { alphaPresentEffect } from "../service/missions/alpha-present-effect";
 
 // ===========================================
 // Table
@@ -8,7 +10,8 @@ import type { SitrepPresentationCatalogue } from "../model/sitrep-presentation";
  * How the briefing and the mission list show each sitrep (campaign arc
  * §11). Each effect is one line in the player's terms. The numbers are
  * the shipped tuning's (`tactical/data/sitrep-tuning.ts`), and a change
- * there wants a change here.
+ * there wants a change here; Alpha Present's line is built from it, and
+ * names the alpha the offer froze.
  */
 export const SITREP_PRESENTATION: SitrepPresentationCatalogue = {
   nightfall: {
@@ -54,5 +57,14 @@ export const SITREP_PRESENTATION: SitrepPresentationCatalogue = {
       phrase: "Drop ship leaves",
       turn: (mission) => mission.dustOffTurn,
     },
+  },
+  "alpha-present": {
+    name: "Alpha Present",
+    effect: alphaPresentEffect(undefined, SITREP_TUNING.alphaPresent),
+    helpsPlayer: false,
+    effectFor: (mission) =>
+      mission.alpha === undefined
+        ? undefined
+        : alphaPresentEffect(mission.alpha, SITREP_TUNING.alphaPresent),
   },
 };

@@ -7,6 +7,7 @@ import type {
   MissionPresentationCatalogue,
   MissionPresentationContext,
 } from "../../model/mission-presentation";
+import { ALPHA_HUNT_PRESENTATION } from "./alpha-hunt-presentation";
 import { CRASH_SITE_PRESENTATION } from "./crash-site-presentation";
 import { DEFEND_INSTALLATION_PRESENTATION } from "./defend-installation-presentation";
 import { EVACUATION_PRESENTATION } from "./evacuation-presentation";
@@ -35,6 +36,7 @@ import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
  *   hive-assault           ──► hive-assault-presentation.ts
  *                              + great-hive-offer-presentation.ts (a Great Hive)
  *   tunnel-sabotage        ──► tunnel-sabotage-presentation.ts
+ *   alpha-hunt             ──► alpha-hunt-presentation.ts
  *   spore-platform         ──► spore-platform-presentation.ts
  * ```
  *
@@ -51,6 +53,7 @@ export const MISSION_PRESENTATION: MissionPresentationCatalogue = {
   evacuation: EVACUATION_PRESENTATION,
   "hive-assault": withGreatHiveOffer(HIVE_ASSAULT_PRESENTATION),
   "tunnel-sabotage": TUNNEL_SABOTAGE_PRESENTATION,
+  "alpha-hunt": ALPHA_HUNT_PRESENTATION,
   "spore-platform": SPORE_PLATFORM_PRESENTATION,
 };
 

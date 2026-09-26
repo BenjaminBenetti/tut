@@ -5,7 +5,7 @@ import { err, ok } from "../../core/model/result";
 import type { Result } from "../../core/model/result";
 import { chebyshevDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { CarriedSpecimen } from "../model/carried-specimen";
 import { canBeNetted } from "../model/carried-specimen";
 import type { EquipmentDefinition, NetProfile } from "../model/equipment";
@@ -176,7 +176,7 @@ export function validateCapture(
   if (distance > definition.range) {
     return err({ kind: "out-of-range", distance, range: definition.range });
   }
-  if (!hasLineOfSight(mission.map, from, to, new TileIndex(mission.map))) {
+  if (!hasLineOfSight(mission.map, from, to, tileIndexOf(mission.map))) {
     return err({ kind: "no-line-of-sight", targetId: bug.id });
   }
   const threshold = captureThreshold(bug, net);

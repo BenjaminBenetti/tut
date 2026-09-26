@@ -6,7 +6,8 @@ import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { mechCanOccupyRoof } from "./mech-rooftop-service";
 import { ReachabilityService } from "../../mapgen/service/reachability-service";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { carryMovePenaltyOf } from "../model/carried-specimen";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
@@ -61,7 +62,7 @@ export const STEP_COST = 1;
 
 /** Indexes a map and its connectors for movement queries. */
 export function buildMoveGraph(map: TacticalMap): MoveGraph {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   return {
     index,
     reachability: new ReachabilityService(

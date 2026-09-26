@@ -1,5 +1,6 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { EquipmentCatalogue, EquipmentId } from "../model/equipment";
 import { isDeployable } from "../model/equipment";
 import type { TacticalState } from "../model/tactical-state";
@@ -53,7 +54,7 @@ export function equipmentRangeTiles(
   unitId: UnitId,
   equipmentId: EquipmentId,
   catalogue: EquipmentCatalogue,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
   graph?: MoveGraph,
   includeActorTiles = false,
 ): TileCoord[] {

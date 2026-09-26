@@ -1,4 +1,4 @@
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { ObjectiveRulesTable } from "../model/objective-rules";
 import type { RadarContact } from "../model/radar";
@@ -42,7 +42,7 @@ export function jevDestinations(
   actor: Unit,
 ): JevDestinationSources {
   const vision = mission.vision[actor.team];
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const visible = new Set(vision.visible);
   return {
     entities: view.units,

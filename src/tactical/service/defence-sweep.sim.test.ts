@@ -1,3 +1,6 @@
+/// <reference types="node" />
+import { writeFileSync } from "node:fs";
+
 import { manhattanDistance } from "../../core/service/grid-math";
 import { describe, expect, it } from "vitest";
 
@@ -474,6 +477,11 @@ describe("seeded defence sweep (#1175)", () => {
         `${r.seed} d${String(r.difficulty)} ${r.installation} ${String(r.waves)}w: ${r.outcome}/${r.status} t${String(r.turns)} waves=${String(r.wavesLanded)} hit=${String(r.generatorsHit)} lost=${String(r.generatorsLost)} sent=${String(r.bugsSent)} tdfLost=${String(r.tdfLost)} tdf=${String(r.tdfAlive)} bugs=${String(r.bugsAlive)}`,
     )
     .join("\n");
+  // Vitest keeps a sweep's console to itself; a path in SIM_DEFENCE_OUT
+  // gets the table instead, so two trees' runs can be compared.
+  if (process.env.SIM_DEFENCE_OUT !== undefined) {
+    writeFileSync(process.env.SIM_DEFENCE_OUT, `${summary}\n`);
+  }
 
   it("breaks no invariant on any turn of any seed", () => {
     expect(

@@ -3,7 +3,7 @@ import type { Direction } from "../../core/model/direction";
 import { ok } from "../../core/model/result";
 import { stepGridPos } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { BurrowTuning } from "../model/burrow-tuning";
 import type { StepReaction } from "../model/step-reaction";
 import { NO_REACTION } from "../model/step-reaction";
@@ -53,7 +53,7 @@ export function createSurfaceHandler(
       mission,
       unitId,
       tuning,
-      new TileIndex(mission.map),
+      tileIndexOf(mission.map),
     );
     if (!checked.ok) {
       return checked;

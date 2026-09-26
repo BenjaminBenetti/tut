@@ -3,7 +3,8 @@ import type { Rng } from "../../core/model/rng";
 import { NO_REACTION, type StepReaction } from "../model/step-reaction";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { PassMask } from "../../mapgen/model/pass-mask";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { CombatTuning } from "../model/combat-tuning";
 import { EFFECT_DAMAGED } from "../model/effect-damaged-event";
 import { EFFECT_ENDED } from "../model/effect-ended-event";
@@ -76,7 +77,7 @@ export function ignite(
   ctx: TacticalContext,
   tuning: HazardTuning,
 ): TacticalApplied<TacticalState> {
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const duration = tuning.effects[effect.kind].duration;
   const effects = [...mission.effects];
   const events: TacticalEvent[] = [];
@@ -368,7 +369,7 @@ function burnUnit(
 export function perceivedEffects(
   mission: TacticalState,
   team: Team,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): readonly TileEffect[] {
   const known = new Set([
     ...(mission.vision[team]?.explored ?? []),

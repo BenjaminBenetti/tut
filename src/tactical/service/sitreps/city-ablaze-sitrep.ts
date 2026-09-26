@@ -4,7 +4,8 @@ import { PassMask } from "../../../mapgen/model/pass-mask";
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
 import type { Tile } from "../../../mapgen/model/tile";
 import type { TileCoord } from "../../../mapgen/model/tile-coord";
-import { TileIndex } from "../../../mapgen/service/tile-index";
+import type { TileIndex } from "../../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../../mapgen/service/shared-tile-index";
 import type { HazardTuning } from "../../model/hazard-tuning";
 import type { SitrepRule, SitrepSetupContext } from "../../model/sitrep-rule";
 import type { CityAblazeTuning } from "../../model/sitrep-tuning";
@@ -96,7 +97,7 @@ export function setAblaze(
   tuning: CityAblazeTuning,
   hazards: HazardTuning,
 ): TacticalState {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const deploy = deployTilesOf(map);
   const points = missionPoints(state);
   const held = heldKeys(state, index);
@@ -167,7 +168,7 @@ export function rekindle(
   if (sites.length === 0 || !isRekindleTurn(mission, tuning)) {
     return { state: mission, events: [] };
   }
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const duration = hazards.effects.fire.duration;
   const effects = [...mission.effects];
   for (const site of sites) {

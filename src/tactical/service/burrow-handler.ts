@@ -1,6 +1,6 @@
 import { ok } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { BurrowCommand } from "../model/burrow-command";
 import type { BurrowTuning } from "../model/burrow-tuning";
 import type { TacticalHandler } from "../model/tactical-handler";
@@ -35,7 +35,7 @@ export function createBurrowHandler(
       mission,
       unitId,
       tuning,
-      new TileIndex(mission.map),
+      tileIndexOf(mission.map),
     );
     if (!checked.ok) {
       return checked;

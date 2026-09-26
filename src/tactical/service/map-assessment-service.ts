@@ -6,7 +6,8 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ReachabilityService } from "../../mapgen/service/reachability-service";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import type { WeaponReachTuning } from "../model/weapon-reach-tuning";
@@ -81,7 +82,7 @@ export function assessMap(
   map: TacticalMap,
   options: AssessmentOptions = DEFAULT_ASSESSMENT_OPTIONS,
 ): MapAssessment {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const reach = new ReachabilityService(index, map.connectors);
   const deploy = map.hooks.deployZones.flatMap((zone) => zone.tiles);
   const steps = walkFrom(index, reach, deploy, PassMask.INFANTRY);
@@ -137,7 +138,7 @@ export function assessMap(
 export function objectiveApproach(
   map: TacticalMap,
 ): readonly ObjectiveApproach[] {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const reach = new ReachabilityService(index, map.connectors);
   const deploy = map.hooks.deployZones.flatMap((zone) => zone.tiles);
   const infantry = walkFrom(index, reach, deploy, PassMask.INFANTRY);
@@ -295,7 +296,7 @@ export function nearestSightPosition(
   range: number,
   reach: WeaponReachTuning = COMBAT_TUNING,
 ): TileCoord | undefined {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const walkable = new ReachabilityService(index, map.connectors);
   const steps = walkFrom(index, walkable, [from], unitClass);
   let best: { tile: Tile; steps: number } | undefined;
@@ -329,7 +330,7 @@ export function pathBetween(
   to: TileCoord,
   unitClass: UnitClass,
 ): TileCoord[] | undefined {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const reach = new ReachabilityService(index, map.connectors);
   const start = index.getAt(from);
   const goal = index.getAt(to);

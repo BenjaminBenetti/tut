@@ -4,7 +4,8 @@ import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { BugUnitSource } from "../model/bug-unit-source";
 import type { TacticalError } from "../model/tactical-error";
 import type { TacticalState } from "../model/tactical-state";
@@ -92,7 +93,7 @@ export function spawnBurrowerAt(
       reason: "not-a-burrower",
     });
   }
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const ground = freeGroundNear(
     mission,
     index,

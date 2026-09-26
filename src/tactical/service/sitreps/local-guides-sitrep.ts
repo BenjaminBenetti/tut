@@ -1,5 +1,5 @@
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
-import { TileIndex } from "../../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../../mapgen/service/shared-tile-index";
 import type { SitrepRule } from "../../model/sitrep-rule";
 import type { TacticalState } from "../../model/tactical-state";
 
@@ -47,7 +47,7 @@ export function guideTheSquad(
   state: TacticalState,
   map: TacticalMap,
 ): TacticalState {
-  const index = new TileIndex(map);
+  const index = tileIndexOf(map);
   const tdf = state.vision.tdf;
   const explored = map.tiles
     .map((tile) => index.keyOf(tile))

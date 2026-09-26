@@ -1,5 +1,6 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { TacticalState } from "../model/tactical-state";
 import type { UnitId } from "../model/unit";
 import type { WeaponId } from "../model/unit-weapon";
@@ -46,7 +47,7 @@ export function weaponRangeTiles(
   unitId: UnitId,
   weaponId: WeaponId | undefined,
   tuning: WeaponReachTuning,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): TileCoord[] {
   const unit = mission.units.find((u) => u.id === unitId);
   if (unit === undefined || unit.hp <= 0) {

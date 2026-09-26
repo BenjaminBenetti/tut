@@ -1,7 +1,7 @@
 import { err, ok } from "../../core/model/result";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { AttackPreview } from "../model/attack-preview";
 import { CHARGE_DETONATED } from "../model/charge-detonated-event";
 import { CHARGE_PLACED } from "../model/charge-placed-event";
@@ -224,7 +224,7 @@ export function validateEquipmentUse(
         })
       : capture;
   }
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const impact = index.getAt(tile);
   if (impact === undefined) {
     return err({ kind: "no-such-tile", x: tile.x, y: tile.y, z: tile.z });

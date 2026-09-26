@@ -7,7 +7,8 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { WallKind } from "../../mapgen/model/wall";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 
 // ===========================================
 // Constants
@@ -107,7 +108,7 @@ export function hasLineOfSight(
   map: TacticalMap,
   from: TileCoord,
   to: TileCoord,
-  index: TileIndex = new TileIndex(map),
+  index: TileIndex = tileIndexOf(map),
 ): boolean {
   const line = traceLine(from, to);
   const heightAt = heightFunction(from, to);
@@ -393,7 +394,7 @@ export function coverAgainst(
   map: TacticalMap,
   target: TileCoord,
   attacker: TileCoord,
-  index: TileIndex = new TileIndex(map),
+  index: TileIndex = tileIndexOf(map),
 ): CoverLevel {
   const dx = attacker.x - target.x;
   const dz = attacker.z - target.z;

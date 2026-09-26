@@ -1,5 +1,5 @@
 import JEV_PROTOCOL from "../data/jev-protocol.json";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { TacticalState } from "../model/tactical-state";
 import { NO_VISION } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
@@ -25,7 +25,7 @@ export function jevPerception(
   const vision = mission.vision[actor.team];
   const spotted = new Set(vision.spotted);
   const visible = new Set(vision.visible);
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const units = mission.units
     .filter((unit) => unit.team === actor.team || spotted.has(unit.id))
     .map((unit): Unit =>

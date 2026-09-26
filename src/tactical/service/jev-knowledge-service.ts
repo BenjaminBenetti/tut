@@ -1,4 +1,4 @@
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import { PassMask } from "../../mapgen/model/pass-mask";
 import type { TacticalState } from "../model/tactical-state";
 import { TEAMS } from "../model/unit";
@@ -7,7 +7,7 @@ import { mechCanOccupyRoof } from "./mech-rooftop-service";
 /** Remember observed terrain; unseen mutations never refresh an old observation. */
 export function rememberJevTerrain(mission: TacticalState): TacticalState {
   if (!mission.jev) return mission;
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const knowledge = { ...mission.jev.knowledge };
   for (const team of TEAMS) {
     const visible = new Set(mission.vision[team].visible);

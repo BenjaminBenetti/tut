@@ -3,7 +3,8 @@ import { stepGridPos } from "../../core/service/grid-math";
 import { IMPASSABLE_GROUND_SURFACES } from "../../mapgen/data/surfaces";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { TileIndex } from "../../mapgen/service/tile-index";
+import type { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { isBurrowed } from "../model/unit";
@@ -99,7 +100,7 @@ export function isDiggable(tile: Tile): boolean {
 export function searchTunnel(
   mission: TacticalState,
   unit: Unit,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): MoveSearch {
   const costs = new Map<TileKey, number>();
   const tiles = new Map<TileKey, Tile>();
@@ -210,7 +211,7 @@ export function buriedKeys(
 export function tunnelDestinations(
   mission: TacticalState,
   unit: Unit,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): TunnelDestination[] {
   const search = searchTunnel(mission, unit, index);
   const held = tunnelHeldKeys(mission, index, unit.id);
@@ -240,7 +241,7 @@ export function tunnelCost(
   mission: TacticalState,
   unit: Unit,
   to: TileCoord,
-  index: TileIndex = new TileIndex(mission.map),
+  index: TileIndex = tileIndexOf(mission.map),
 ): number | undefined {
   const tile = index.inBounds(to) ? index.getAt(to) : undefined;
   if (tile === undefined) {

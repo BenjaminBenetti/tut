@@ -1,4 +1,4 @@
-import { TileIndex } from "../../mapgen/service/tile-index";
+import { tileIndexOf } from "../../mapgen/service/shared-tile-index";
 import type { ObjectiveMarker } from "../model/objective-marker";
 import type { ObjectiveRulesTable } from "../model/objective-rules";
 import type { TacticalState } from "../model/tactical-state";
@@ -51,7 +51,7 @@ export function objectiveMarkers(
       (!objective.complete && objective.failed !== true),
   );
   if (open.length === 0) return [];
-  const index = new TileIndex(mission.map);
+  const index = tileIndexOf(mission.map);
   const visible = new Set(mission.vision[team]?.visible ?? []);
   const markers: ObjectiveMarker[] = [];
   for (const objective of open) {

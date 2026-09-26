@@ -80,6 +80,7 @@ import type { AttackDeps } from "../../tactical/service/combat-service";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { GREAT_HIVE_SETUP_TUNING } from "../../tactical/data/great-hive-setup-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
@@ -269,6 +270,7 @@ export function composeTactical(
     civilian: CIVILIAN_TUNING,
     hiveGuard: BUG_SPECIES["hive-guard"],
     hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
+    greatHive: GREAT_HIVE_SETUP_TUNING,
     setupRules: MISSION_SETUP_RULES,
     // A story mission's own setup on top of its type's, and the bugs a
     // setup may place: Live Specimen's lurkers (#1179).

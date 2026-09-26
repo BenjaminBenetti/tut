@@ -1,4 +1,5 @@
 import type { MissionTuning } from "../model/mission-tuning";
+import { GREAT_HIVE_TUNING } from "./great-hive-tuning";
 
 // ===========================================
 // Defaults
@@ -121,6 +122,7 @@ export const MISSION_TUNING: MissionTuning = {
   hiveAssault: {
     techRewardMultiplier: 2,
   },
+  greatHive: GREAT_HIVE_TUNING,
   crashSite: {
     landingInfestation: 10,
     lowInfestationBelow: 20,

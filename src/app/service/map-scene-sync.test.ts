@@ -173,5 +173,23 @@ describe("mapSceneState", () => {
     expect(scene.map).toBe(overworld.map);
     expect(scene.missionCueCityIds).toEqual(new Set(["new-york"]));
     expect(scene.deployables).toBe(overworld.deployables);
+    expect(scene).not.toHaveProperty("greatHives");
+  });
+
+  it("hands the revealed Great Hives to the scene for their beacons (#1179)", () => {
+    const state = newGame();
+    const greatHives = [
+      {
+        id: "greathive-1",
+        continentId: "europe" as const,
+        name: "Europe",
+        regionId: "eastern-europe",
+        regionIds: ["eastern-europe"],
+        revealedDay: 200,
+        level: 0,
+      },
+    ];
+    const scene = mapSceneState({ ...state.overworld, greatHives });
+    expect(scene.greatHives).toBe(greatHives);
   });
 });

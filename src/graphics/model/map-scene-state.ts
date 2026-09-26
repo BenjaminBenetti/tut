@@ -1,6 +1,7 @@
 import type { CityId } from "../../overworld/model/city";
 import type { Deployable } from "../../overworld/model/deployable";
 import type { EarthMap } from "../../overworld/model/earth-map";
+import type { GreatHive } from "../../overworld/model/great-hive";
 
 /**
  * What the strategic map scene draws from the campaign (#1155): the
@@ -14,6 +15,7 @@ import type { EarthMap } from "../../overworld/model/earth-map";
  *     map                map                 markers retinted
  *     missions[]         missionCueCityIds   egg overlays added / removed
  *     deployables[]      deployables         installations placed / dimmed
+ *     greatHives[]       greatHives          beacons raised / greyed (#1179)
  * ```
  */
 export interface MapSceneState {
@@ -23,4 +25,9 @@ export interface MapSceneState {
   readonly missionCueCityIds: ReadonlySet<CityId>;
   /** Every built installation, online or not; each is drawn in its region. */
   readonly deployables: readonly Deployable[];
+  /**
+   * The Great Hives revealed so far, standing or fallen; each wears a
+   * beacon over its seat region. Absent before the reveal.
+   */
+  readonly greatHives?: readonly GreatHive[];
 }

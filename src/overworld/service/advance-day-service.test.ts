@@ -277,6 +277,7 @@ describe("default tick pipeline", () => {
       TICK_STEP_NAMES.growth,
       TICK_STEP_NAMES.spread,
       TICK_STEP_NAMES.hiveFormation,
+      TICK_STEP_NAMES.greatHiveReveal,
       TICK_STEP_NAMES.detection,
       TICK_STEP_NAMES.missionExpiry,
       TICK_STEP_NAMES.missionGeneration,

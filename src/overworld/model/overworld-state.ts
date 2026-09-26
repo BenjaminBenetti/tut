@@ -4,6 +4,7 @@ import type { EarthMap } from "./earth-map";
 import type { PendingEvent } from "./pending-event";
 import type { StipendModifier } from "./stipend-modifier";
 import type { GameOutcome } from "./game-outcome";
+import type { GreatHive } from "./great-hive";
 import type { Hive } from "./hive";
 import type { Mission } from "./mission";
 import type { MissionResult } from "./mission-result";
@@ -42,6 +43,7 @@ export const FIRST_DAY = 1;
  *   ├── hives[]             bug hives, at most one per region (arc §6.5)
  *   ├── hiveWatch?          days each hive-less region has held the formation threshold
  *   ├── growthPausedUntil?  liberated regions: the day each one grows again
+ *   ├── greatHives?         the platform's three beacons, revealed by Uplink (arc §6.9)
  *   ├── progress            act, missions played, story flags, first kills, nemeses
  *   ├── outcome?            set once the campaign is won or lost
  *   └── lastMissionResult?  what the results screen shows
@@ -117,6 +119,15 @@ export interface OverworldState {
    * region list. Absent until the first liberation.
    */
   readonly growthPausedUntil?: Readonly<Record<RegionId, number>>;
+  /**
+   * The three Great Hives (campaign arc §3 Act III, §6.9), in reveal
+   * order, destroyed ones included. Absent until the day tick after
+   * Uplink is won, which is also how every earlier save reads; the
+   * `great-hive-reveal` step writes it once and the Great Hive
+   * consequence marks each one destroyed. A sibling of `hives` so the
+   * ordinary hive rules never see a beacon.
+   */
+  readonly greatHives?: readonly GreatHive[];
   /**
    * How far the campaign has come (ADR 0013 §2.1): the act, the missions
    * played and won, story flags, first kills and nemeses. The launch

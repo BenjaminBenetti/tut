@@ -1,6 +1,7 @@
 import { HookKinds } from "../model/hook";
 import type { HookRequirement, MapArchetype } from "../model/map-recipe";
 import { PassMask } from "../model/pass-mask";
+import { GREAT_HIVE_CAVERN_HOOKS } from "./great-hive-cavern-recipe";
 import { HIVE_CAVERN_HOOKS } from "./hive-cavern-recipe";
 import {
   SPORE_PLATFORM_CORE_HOOKS,
@@ -90,4 +91,5 @@ export const ARCHETYPE_MISSION_HOOKS: Readonly<
   "hive-cavern": HIVE_CAVERN_HOOKS,
   "spore-platform-hull": SPORE_PLATFORM_HULL_HOOKS,
   "spore-platform-core": SPORE_PLATFORM_CORE_HOOKS,
+  "great-hive-cavern": GREAT_HIVE_CAVERN_HOOKS,
 };

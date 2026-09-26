@@ -47,6 +47,8 @@ import type {
   InstallationLookReport,
 } from "../view/installation-marker";
 import { INSTALLATION_STAND_IN_HEIGHT } from "../view/installation-marker";
+import type { GreatHiveBeaconLook } from "../view/great-hive-beacons";
+import { GreatHiveBeacons } from "../view/great-hive-beacons";
 import { RegionInstallations } from "../view/region-installations";
 import { RegionTerritories } from "../view/region-territories";
 import { partitionClaimableLand } from "./claimable-land";
@@ -146,8 +148,8 @@ const SKY_FILL_INTENSITY = 0.7;
  * settlements and installations are stand-in blocks.
  *
  * ```
- *   build(map)     ─▶  slab + wireframe + territories + markers + installations under `root`
- *   update(state)  ─▶  markers retinted and egg-cued, installations synced, territories retinted
+ *   build(map)     ─▶  slab + wireframe + territories + markers + installations + Great Hive beacons under `root`
+ *   update(state)  ─▶  markers retinted and egg-cued, installations synced, territories retinted, beacons synced
  *   animator       ─▶  tick every frame: installations idle
  *   pickCity()     ─▶  raycast against marker pick solids
  *   pickInstallation() ─▶  raycast against the installations' pick solids
@@ -184,6 +186,8 @@ export class OverworldSceneBuilder
   private wireframe: EarthWireframe | undefined;
   private territories: RegionTerritories | undefined;
   private installations: RegionInstallations | undefined;
+  /** The Great Hives' beacons (#1179); none are drawn before the reveal. */
+  private beacons: GreatHiveBeacons | undefined;
   /** The Voronoi partition the territories were built from; a region pick looks its cell up here. */
   private cells: readonly TerritoryCell[] = [];
   private hovered: CityId | undefined;
@@ -316,6 +320,9 @@ export class OverworldSceneBuilder
     );
     this.installations.setMap(map);
     this.root.add(this.installations.root);
+    this.beacons = new GreatHiveBeacons(this.config);
+    this.beacons.setMap(map);
+    this.root.add(this.beacons.root);
     this.applyHighlights();
   }
 
@@ -335,6 +342,7 @@ export class OverworldSceneBuilder
         ?.setMission(state.missionCueCityIds.has(city.id));
     }
     this.installations?.sync(state.deployables);
+    this.beacons?.sync(state.greatHives ?? []);
     this.applyRegionInfestation(state.map);
   }
 
@@ -356,6 +364,11 @@ export class OverworldSceneBuilder
   /** Ids of the installations currently drawn. */
   installationIds(): readonly DeployableId[] {
     return this.installations?.ids() ?? [];
+  }
+
+  /** What the beacon of a Great Hive shows, or `undefined` when none is drawn (#1179). */
+  greatHiveBeaconLook(id: string): GreatHiveBeaconLook | undefined {
+    return this.beacons?.look(id);
   }
 
   /** The region territories as built, or `undefined` before `build`. */
@@ -666,6 +679,7 @@ export class OverworldSceneBuilder
     }
     this.territories?.dispose();
     this.installations?.dispose();
+    this.beacons?.dispose();
     if (this.slab) {
       this.slab.geometry.dispose();
       for (const material of new Set(materialsOf(this.slab))) {
@@ -681,6 +695,7 @@ export class OverworldSceneBuilder
     this.wireframe = undefined;
     this.territories = undefined;
     this.installations = undefined;
+    this.beacons = undefined;
     this.root.clear();
   }
 }

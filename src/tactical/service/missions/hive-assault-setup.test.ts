@@ -130,8 +130,18 @@ function guardsOf(state: TacticalState): TileCoord[] {
 // ===========================================
 
 describe("HIVE_ASSAULT_SETUP", () => {
-  it("is the table's rule for the type", () => {
-    expect(MISSION_SETUP_RULES["hive-assault"]).toBe(HIVE_ASSAULT_SETUP);
+  it("is what the table sets an ordinary hive up with (Great Hives: great-hive-setup)", () => {
+    const map = cavernFloor();
+    const { mission } = hiveCavernOffer("temperate", "hive-1");
+    expect(
+      MISSION_SETUP_RULES["hive-assault"].setup(
+        landed(map),
+        map,
+        mission,
+        deps(),
+      ),
+    ).toEqual(HIVE_ASSAULT_SETUP.setup(landed(map), map, mission, deps()));
+    expect(MISSION_SETUP_RULES["hive-assault"].typeId).toBe("hive-assault");
     expect(HIVE_ASSAULT_SETUP.typeId).toBe("hive-assault");
   });
 
@@ -343,6 +353,17 @@ function hiveCavern(
   biome: Mission["mapParams"]["biome"],
   seed: string,
 ): { mission: Mission; map: TacticalMap } {
+  const { mission } = hiveCavernOffer(biome, seed);
+  const recipe = missionToMapRecipe(mission, HIVE_ASSAULT);
+  if (!recipe.ok) throw new Error(seed);
+  return { mission, map: generateTacticalMap(recipe.value) };
+}
+
+/** The level-3 Hive Assault offer `hiveCavern` generates its cavern for. */
+function hiveCavernOffer(
+  biome: Mission["mapParams"]["biome"],
+  seed: string,
+): { mission: Mission } {
   const mission: Mission = {
     id: "mission-1",
     typeId: "hive-assault",
@@ -356,9 +377,7 @@ function hiveCavern(
     ignorePenalty: 0,
     pinned: true,
   };
-  const recipe = missionToMapRecipe(mission, HIVE_ASSAULT);
-  if (!recipe.ok) throw new Error(seed);
-  return { mission, map: generateTacticalMap(recipe.value) };
+  return { mission };
 }
 
 describe("setUpHiveAssault on generated hive caverns", () => {

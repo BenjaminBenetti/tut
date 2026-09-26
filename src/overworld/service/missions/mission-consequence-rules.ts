@@ -2,6 +2,7 @@ import type { MissionConsequenceRules } from "../../model/mission-consequence-ru
 import { CRASH_SITE_CONSEQUENCE } from "./crash-site-consequence";
 import { DEFEND_INSTALLATION_CONSEQUENCE } from "./defend-installation-consequence";
 import { EVACUATION_CONSEQUENCE } from "./evacuation-consequence";
+import { withGreatHiveConsequences } from "./great-hive-consequence";
 import { HIVE_ASSAULT_CONSEQUENCE } from "./hive-assault-consequence";
 import { INFESTATION_CLEARANCE_CONSEQUENCE } from "./infestation-clearance-consequence";
 import { WRECK_RECOVERY_CONSEQUENCE } from "./wreck-recovery-consequence";
@@ -27,6 +28,8 @@ import { WRECK_RECOVERY_CONSEQUENCE } from "./wreck-recovery-consequence";
  *                                                                     ×1.5 for 10 days if saved, ×0.9
  *                                                                     for 10 otherwise and lapsed
  *   hive-assault           ──► hive-assault-consequence.ts            delta; won: liberate, core sample; never lapses
+ *                              great-hive-consequence.ts              Great Hive: won, continent liberated;
+ *                                                                     lost, +1 level and a retry delay
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -40,5 +43,5 @@ export const MISSION_CONSEQUENCE_RULES: MissionConsequenceRules = {
   "crash-site": CRASH_SITE_CONSEQUENCE,
   "wreck-recovery": WRECK_RECOVERY_CONSEQUENCE,
   evacuation: EVACUATION_CONSEQUENCE,
-  "hive-assault": HIVE_ASSAULT_CONSEQUENCE,
+  "hive-assault": withGreatHiveConsequences(HIVE_ASSAULT_CONSEQUENCE),
 };

@@ -205,6 +205,19 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
   bug phase ──► actingBugIds = living − restingBugIds (dormant, or woke in this bug phase)
   ```
 
+- **A boss's rules are phase steps; only its choices are a behaviour** (campaign arc §6.8, #1179). The Broodmother is a placed 3×3 species (`hatchWeight` 0, a `placed` bestiary row). A mission's setup stands her with `placeBroodmother` (`bugs/service/broodmother-placement.ts`), which scales her hit points with `broodmotherHp(difficulty, scars)` and marks her with the `broodmother` persona, so the default Jev policy takes her over when a relay is configured. What she *chooses* each turn is `BroodmotherBehaviour`, her persona's fallback. It reads only the bugs' `MissionView`: it keeps out of every visible gun's reach, shadows where the swarm last saw the squad, and at half health runs for the nearest map edge. What *happens to her* is two END_TURN steps, so it applies the same under Jev:
+  - `createBroodmotherFlightStep` marks her `Unit.fleeing` once and emits `BroodmotherFleeing`. Once her block touches the map edge, it moves her from `units` into `TacticalState.escaped` and emits `BroodmotherEscaped`. `broodmotherEscaped(state)` reads the result, and her escape does not end the mission.
+  - `createClutchStep` lays an ordinary egg spawner on a free tile behind her as the bug phase of every `clutchInterval`-th turn opens (`ClutchLaid`).
+
+  Both steps take no random draws, and they draw ids only while she is on the map, so a mission without her replays unchanged.
+
+  ```
+  setup ──► placeBroodmother ──► persona "broodmother" ──► Jev (relay on) │ BroodmotherBehaviour (fallback)
+  END_TURN ──► … hatch, edge wave ──► flight step ──► clutch step ──► objectivePhaseSteps() …
+                                     fleeing? mark once               bugs phase, turn % 3 = 0:
+                                     on the edge? units ──► escaped   spawner behind her, ClutchLaid
+  ```
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

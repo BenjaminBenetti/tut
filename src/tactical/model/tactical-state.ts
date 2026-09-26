@@ -407,6 +407,7 @@ export const NO_VISION: SideVision = {
  *   ├── edgeSpawn             when the next edge wave arrives
  *   ├── extraction[]          tiles a unit must reach to leave
  *   ├── extracted[]           units that left through them, as they left; not in units[]
+ *   ├── escaped[]?            bugs that fled off the map edge (#1179); not in units[]
  *   ├── vision                what each side has seen (ADR 0006)
  *   ├── outcome?              how it ended, once a turn boundary found it over
  *   └── log[]                 domain events so far, for the debrief and replays
@@ -507,6 +508,16 @@ export interface TacticalState {
    * (#330) reads their hit points to bring their crews home.
    */
   readonly extracted: readonly Unit[];
+  /**
+   * Bugs that fled off the map edge (#1179), in the order they left,
+   * frozen as they were: a Broodmother that reached the edge at half
+   * health (campaign arc §6.8). Like `extracted`, they are no longer in
+   * `units`, so no rule can see or shoot them; Alpha Hunt's objective
+   * and the nemesis record read them (`broodmotherEscaped`). Absent
+   * until the first bug escapes, and on every mission saved before
+   * any could, so no save needs a migration.
+   */
+  readonly escaped?: readonly Unit[];
   /**
    * Set when a terminal condition held at a turn boundary (#328). Once
    * set, no further tactical command applies; the resolver (#330) turns

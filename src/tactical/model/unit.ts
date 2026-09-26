@@ -183,6 +183,14 @@ export interface Unit {
    */
   readonly surfacedOnTurn?: number;
   /**
+   * True once a bug has turned to flee the map (#1179): the Broodmother
+   * at half health (campaign arc §6.8). Sticky: healed or not, a unit
+   * that has fled keeps running, and the rule that marks it announces
+   * it once. Absent on every other unit and on every unit saved before
+   * the Broodmother, so no save needs a migration.
+   */
+  readonly fleeing?: boolean;
+  /**
    * The bug this squad took alive with a capture net and is carrying
    * home (#1179). It costs the carrier `movePenalty` movement points per
    * action. Kept on the unit's record when it falls, which is what a

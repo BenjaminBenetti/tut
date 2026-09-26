@@ -13,6 +13,7 @@ import {
   withBug,
 } from "../../bugs/ai/bug-mission.test-helper";
 import {
+  BROODMOTHER,
   BRUTE,
   BUG_SPECIES,
   BURROWER,
@@ -20,6 +21,17 @@ import {
   SPITTER,
   SWARMER,
 } from "../../bugs/data/species";
+import { placeBroodmother } from "../../bugs/service/broodmother-placement";
+import {
+  broodmotherEscaped,
+  broodmotherHp,
+  isBroodmother,
+} from "../../bugs/service/broodmother-service";
+import {
+  fieldMap,
+  motherMission,
+  walledFieldAt,
+} from "../../bugs/service/broodmother.test-helper";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { ok } from "../../core/model/result";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -41,7 +53,10 @@ import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
 import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
 import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
+import { BROODMOTHER_ESCAPED } from "../../tactical/model/broodmother-escaped-event";
+import { BROODMOTHER_FLEEING } from "../../tactical/model/broodmother-fleeing-event";
 import { CIVILIAN_SOURCE_ID } from "../../tactical/model/civilian";
+import { CLUTCH_LAID } from "../../tactical/model/clutch-laid-event";
 import { MOVE, move } from "../../tactical/model/move-command";
 import { isBurrowed, isDormant, passMaskFor } from "../../tactical/model/unit";
 import type { Unit } from "../../tactical/model/unit";
@@ -69,6 +84,7 @@ import { INTERACT } from "../../tactical/model/interact-command";
 import { OBJECTIVE_UPDATED } from "../../tactical/model/objective-updated-event";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
+import type { EndTurnCommand } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { PersonaId } from "../../content/model/persona-id";
@@ -77,6 +93,8 @@ import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import { MISSION_SETUP_RULES } from "../../tactical/service/missions/mission-setup-rules";
 import { hasLineOfSight } from "../../tactical/service/sight-service";
+import { touchesMapEdge } from "../../tactical/service/map-edge-service";
+import { unitAt } from "../../tactical/service/tactical-fixtures.test-helper";
 import { attackDistance } from "../../tactical/service/weapon-reach-service";
 import { NO_ACTIVE_MISSION } from "../../tactical/service/tactical-command-handlers";
 import { placeHiveGuards } from "../../tactical/service/placed-bug-service";
@@ -850,6 +868,8 @@ describe("shippedBugBehaviours", () => {
     // #1179: the spitter's snipe and the burrower's burrow.
     expect(tags).toContain("snipe");
     expect(tags).toContain("burrow");
+    // #1179: the Broodmother keeps her distance and runs.
+    expect(tags).toContain("broodmother");
     expect(new Set(tags).size).toBe(tags.length);
     expect(
       () => new MapBehaviourRegistry(shippedBugBehaviours()),
@@ -1164,6 +1184,152 @@ describe("shippedBugBehaviours", () => {
         `${species.id} (${species.behaviour}) registered`,
       ).toBe(expected);
     }
+  });
+});
+
+describe("the Broodmother in a live mission (#1179, campaign arc §6.8)", () => {
+  /** The shipped EndTurn rule. */
+  function shippedEndTurn(): TacticalHandler<EndTurnCommand> {
+    const handler = shippedTacticalHandlers()[END_TURN];
+    if (handler === undefined) throw new Error("EndTurn is not shipped");
+    return handler;
+  }
+
+  /**
+   * A started mission in the player's phase with her placed through the
+   * mission seam about `near` and the first look computed, on `hp` when
+   * one is given.
+   */
+  function withMother(
+    near: (mission: TacticalState) => { x: number; y: number; z: number },
+    hp?: number,
+  ): { state: TacticalState; motherId: string } {
+    const mission = startedMission("player");
+    const placed = placeBroodmother(
+      mission,
+      walkableTileNear(mission, near(mission), BROODMOTHER.footprint),
+      {
+        ids: new SequentialIdGenerator({ counters: { unit: 900 } }),
+        species: BROODMOTHER,
+        scars: 0,
+      },
+    );
+    const her = placed.units.find(isBroodmother);
+    if (her === undefined) throw new Error("the Broodmother was not placed");
+    const adjusted: TacticalState = {
+      ...placed,
+      units: placed.units.map((u) =>
+        u.id === her.id && hp !== undefined ? { ...u, hp } : u,
+      ),
+    };
+    return {
+      state: withVision({ state: adjusted, events: [] }).state,
+      motherId: her.id,
+    };
+  }
+
+  it("lays exactly one clutch on every third turn across nine live EndTurns", () => {
+    const { state: start, motherId } = withMother((mission) => {
+      const squad = mission.units.find((u) => u.team === "tdf")!;
+      return { x: squad.pos.x + 12, y: squad.pos.y, z: squad.pos.z + 12 };
+    });
+    const endTurnHandler = shippedEndTurn();
+    const rng = new Mulberry32Rng(3);
+    const ids = new SequentialIdGenerator({ counters: { unit: 500 } });
+    // Her clutches are the only nests: the mission's own and its edge
+    // waves would only fill the board with bugs to plan for.
+    let state: TacticalState = {
+      ...start,
+      spawners: [],
+      edgeSpawn: { ...start.edgeSpawn, nextTurn: 99 },
+    };
+    const clutchesByTurn: number[] = [];
+    const clutchIds: string[] = [];
+    for (let turn = 1; turn <= 9; turn++) {
+      expect(state.turn).toBe(turn);
+      const outcome = endTurnHandler(state, endTurn(), { rng, ids });
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      state = outcome.value.state;
+      expect(state.outcome).toBeUndefined();
+      expect(state.units.some((u) => u.id === motherId)).toBe(true);
+      const laid = outcome.value.events.filter(
+        (e) => e.type === CLUTCH_LAID && e.payload.unitId === motherId,
+      );
+      clutchesByTurn.push(laid.length);
+      for (const event of laid) {
+        if (event.type === CLUTCH_LAID) clutchIds.push(event.payload.spawnerId);
+      }
+    }
+    expect(clutchesByTurn).toEqual([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+    // Each clutch is a nest on the board, and none replaced another.
+    expect(new Set(clutchIds).size).toBe(3);
+    for (const id of clutchIds) {
+      expect(state.spawners.some((s) => s.id === id)).toBe(true);
+    }
+    expect(state.spawners).toHaveLength(3);
+  });
+
+  it("marks her fleeing at half health, walks her off the nearest edge, and records the escape", () => {
+    const { state: start, motherId } = withMother(
+      (mission) => {
+        const squad = mission.units.find((u) => u.team === "tdf")!;
+        return { x: 3, y: squad.pos.y, z: squad.pos.z };
+      },
+      broodmotherHp(5, 0) / 2,
+    );
+    const her = start.units.find((u) => u.id === motherId)!;
+    // The fixture exhibits the case: at half health, off the edge.
+    expect(her.hp * 2).toBe(her.maxHp);
+    expect(touchesMapEdge(start.map, her.pos, 3)).toBe(false);
+    const endTurnHandler = shippedEndTurn();
+    const rng = new Mulberry32Rng(3);
+    const ids = new SequentialIdGenerator({ counters: { unit: 500 } });
+    let state = start;
+    const flight: string[] = [];
+    for (let turn = 0; turn < 3 && !broodmotherEscaped(state); turn++) {
+      const outcome = endTurnHandler(state, endTurn(), { rng, ids });
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      state = outcome.value.state;
+      for (const event of outcome.value.events) {
+        if (
+          event.type === BROODMOTHER_FLEEING ||
+          event.type === BROODMOTHER_ESCAPED
+        ) {
+          flight.push(event.type);
+        }
+      }
+    }
+    expect(flight).toEqual([BROODMOTHER_FLEEING, BROODMOTHER_ESCAPED]);
+    expect(broodmotherEscaped(state)).toBe(true);
+    expect(state.units.some((u) => u.id === motherId)).toBe(false);
+    expect(state.escaped?.map((u) => u.id)).toEqual([motherId]);
+    // Her escape does not end the mission: the squad still stands.
+    expect(state.outcome).toBeUndefined();
+    expect(state.phase).toBe("player");
+  });
+
+  it("reacts only to what her side sees: a squad in reach behind a wall leaves her where she stands", () => {
+    // The runner hands every bug the bugs' view (viewFor); handed the
+    // whole state instead, she would walk away from a squad she cannot see.
+    const squad = unitAt("squad", "infantry", { x: 6, y: 0, z: 6 });
+    const anchor = { x: 8, y: 0, z: 5 };
+    const endTurnHandler = shippedEndTurn();
+    const endOf = (map: Parameters<typeof motherMission>[0]) => {
+      const { mission, mother } = motherMission(map, [squad], anchor, {
+        phase: "player",
+      });
+      const outcome = endTurnHandler(mission, endTurn(), {
+        rng: new Mulberry32Rng(5),
+        ids: new SequentialIdGenerator(),
+      });
+      if (!outcome.ok) throw new Error("EndTurn failed");
+      expect(outcome.value.state.phase).toBe("player");
+      return outcome.value.state.units.find((u) => u.id === mother.id)?.pos;
+    };
+    expect(endOf(walledFieldAt(20, 20, 7))).toEqual(anchor);
+    expect(endOf(fieldMap(20, 20).build())).not.toEqual(anchor);
   });
 });
 

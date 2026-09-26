@@ -20,24 +20,25 @@ import type { PersonaDefinition } from "../model/persona";
 //     mission (at most three), and the first persona configured sets it;
 //     each reads sensibly beside the others' entity prompts.
 //
-// Fallbacks are placeholders from the existing behaviours until each
-// boss package lands its own tag: a Broodmother flanks rather than
-// charging, the Sovereign walks at the densest group, and an alpha
-// fights as its species does.
+// A fallback is the behaviour the persona plays without Jev. The
+// Broodmother's is her own (#1179): keep out of reach, flee at half
+// health; her clutches and her escape are rules that hold under Jev
+// too. The Sovereign's is a placeholder from the existing behaviours
+// (it walks at the densest group) until its package lands its own tag,
+// and an alpha fights as its species does.
 
 /** A mobile egg-layer that guards her clutches and flees when hurt (campaign arc §8, §9). */
 export const BROODMOTHER: PersonaDefinition = {
   id: "broodmother",
   displayName: "Broodmother",
   entityPrompt:
-    "You are the Broodmother, mother of this hive. The bug nests in the objectives are your clutches: keeping them alive matters more than any kill. " +
-    "Stay within a few tiles of a nest and keep other bugs between you and the TDF; never advance into the open to chase a target. " +
-    "Attack a TDF unit that comes within reach of you or a nest, the most wounded first. " +
-    "When your HP is half of your max_hp or less, retreat: move away from enemies, or toward the nest farthest from visible TDF units, and attack only a target already beside you. " +
-    "You resent the soldiers who scarred you: once you are wounded, when you attack, choose the visible TDF unit standing closest to your clutches.",
+    "You are the Broodmother, mother of this hive. You are not a fighter: every few turns you lay a clutch of eggs beside you, and your clutches and the nests in the objectives matter more than any kill. " +
+    "Keep out of the TDF's weapon range: stay behind other bugs and cover, near your clutches, and never advance into the open to chase a target. Attack only a TDF unit already beside you. " +
+    "When your HP is half of your max_hp or less, retreat for good: move toward the nearest map edge by the route farthest from visible TDF units; reaching any edge tile carries you off the map alive. " +
+    "You resent the soldiers who scarred you: when you attack, choose the TDF unit beside you that stands closest to your clutches, the most wounded first.",
   commanderPrompt:
-    "The Broodmother is on the field. Protect her and the nests: attack any TDF unit that approaches her or a nest, and do not leave the nests to chase distant targets.",
-  fallback: "flank",
+    "The Broodmother is on the field. Protect her and her clutches: put bugs between her and the TDF, attack any TDF unit that approaches her or a nest, and do not leave them to chase distant targets.",
+  fallback: "broodmother",
 };
 
 /** A bigger, tougher bug of its species that leads the hunt (campaign arc §8, §9). */

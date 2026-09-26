@@ -1824,6 +1824,28 @@ export const MODEL_MANIFEST = {
   // ===========================================
   // Bugs
   // ===========================================
+  "bug.broodmother": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-broodmother.glb",
+    // The boss egg-layer (#1179): a ribbed egg sac caged in bone behind
+    // a small armoured front, authored at her 3×3 tactical footprint.
+    // `socket_clutch` marks the ovipositor tip, where a clutch is laid.
+    footprint: { w: 3, d: 3 },
+    height: 1.75,
+    sockets: ["socket_clutch"],
+    quality: "final",
+  },
+  "bug.broodmother-scarred": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-broodmother-scarred.glb",
+    // The nemesis (#1179, arc §6.8): the same build with a pale scar
+    // across the crest, two cage spines gone and dark regrowth on her
+    // left flank. Stood in when she carries a scar.
+    footprint: { w: 3, d: 3 },
+    height: 1.75,
+    sockets: ["socket_clutch"],
+    quality: "final",
+  },
   "bug.brute": {
     category: "bugs",
     path: "assets/models/bugs/bug-brute.glb",

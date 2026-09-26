@@ -23,7 +23,8 @@ export type BugSpeciesId =
   | "hive-guard"
   | "swarmer-armoured"
   | "lurker-armoured"
-  | "brute-armoured";
+  | "brute-armoured"
+  | "broodmother";
 
 /**
  * Every bug species id, in a fixed order. New species append, so every
@@ -42,4 +43,5 @@ export const BUG_SPECIES_IDS: readonly BugSpeciesId[] = [
   "swarmer-armoured",
   "lurker-armoured",
   "brute-armoured",
+  "broodmother",
 ];

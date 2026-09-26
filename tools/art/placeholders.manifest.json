@@ -5452,5 +5452,37 @@
     "quality": "final",
     "triangles": 1196,
     "bytes": 78576
+  },
+  {
+    "id": "bug.broodmother",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-broodmother.glb",
+    "footprint": {
+      "w": 3,
+      "d": 3
+    },
+    "height": 1.75,
+    "sockets": [
+      "socket_clutch"
+    ],
+    "quality": "final",
+    "triangles": 16032,
+    "bytes": 461192
+  },
+  {
+    "id": "bug.broodmother-scarred",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-broodmother-scarred.glb",
+    "footprint": {
+      "w": 3,
+      "d": 3
+    },
+    "height": 1.75,
+    "sockets": [
+      "socket_clutch"
+    ],
+    "quality": "final",
+    "triangles": 16312,
+    "bytes": 469820
   }
 ]

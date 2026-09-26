@@ -396,6 +396,9 @@ export class UnitCardView {
       [
         ...(isTrapped(unit) ? ["trapped"] : []),
         ...unit.status,
+        // A Broodmother running for the edge (#1179): the one thing the
+        // player needs to know about her before anything else.
+        ...(unit.fleeing === true ? ["fleeing"] : []),
         ...(unit.braced ? ["braced"] : []),
         ...(template.systems?.jumpRange
           ? [`jump ${String(template.systems.jumpRange)}`]

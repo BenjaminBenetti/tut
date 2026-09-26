@@ -17,6 +17,7 @@ import { createMechActionHandler } from "../../tactical/service/mech-action-serv
 import type { BugBehaviour } from "../../bugs/ai/bug-behaviour";
 import { MapBehaviourRegistry } from "../../bugs/ai/behaviour-registry";
 import { createBugPhaseRunner } from "../../bugs/ai/bug-phase-runner";
+import { BroodmotherBehaviour } from "../../bugs/ai/broodmother-behaviour";
 import { BruteBehaviour } from "../../bugs/ai/brute-behaviour";
 import { HiveGuardBehaviour } from "../../bugs/ai/hive-guard-behaviour";
 import { LurkerBehaviour } from "../../bugs/ai/lurker-behaviour";
@@ -26,6 +27,8 @@ import { SwarmerBehaviour } from "../../bugs/ai/swarmer-behaviour";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
 import { BUG_SPECIES } from "../../bugs/data/species";
 import { createPersonaLookup } from "../../bugs/service/persona-lookup";
+import { createBroodmotherFlightStep } from "../../bugs/service/broodmother-flight-step";
+import { createClutchStep } from "../../bugs/service/clutch-step";
 import { PERSONAS } from "../../bugs/data/personas";
 import type { IdGenerator } from "../../core/model/id-generator";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
@@ -311,7 +314,8 @@ const DEBUG_MECHS: readonly DebugMechSource[] = [
  *
  * ```
  *   EndTurn ──► phase steps: refreshSides, objective deadlines, drain radars, run turrets,
- *                            detonate charges, burn, hatch, edge waves, objective kinds' steps
+ *                            detonate charges, burn, hatch, edge waves, the Broodmother's
+ *                            flight and clutch, objective kinds' steps
  *                    └──► bug phase runner ──► every living bug acts
  *                              └──► player turn + 1 (or MissionEnded)
  * ```
@@ -454,6 +458,12 @@ export function shippedTacticalHandlers(
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),
+        // The Broodmother's rules (#1179, arc §6.8), after the hatch so a
+        // clutch starts on a full clock: a fleeing one on the edge leaves
+        // first, then each one left lays on her turn. Before the
+        // objectives, so Alpha Hunt's judges the escape it just saw.
+        createBroodmotherFlightStep(),
+        createClutchStep({ spawn: SPAWN_TUNING }),
         // Each objective kind's own step, after the wave lands, so the
         // count it just made is the one a defence is judged on (#1175).
         ...objectivePhaseSteps(),
@@ -482,9 +492,10 @@ export function attackDepsOver(registries: MapGenRegistries): AttackDeps {
  * lurker's `flank` (#333), the swarmer's `rush` (#332), the brute's
  * `punish-clumps` (#334), the spitter's `snipe` (#1179), the
  * burrower's `burrow` (#1179), which reads the burrow rules' own costs
- * so it plans with the numbers the handlers charge, and the Hive
- * Guard's `guard` (#1179). Every species the catalogue defines has one,
- * so nothing on the map holds still for want of a behaviour.
+ * so it plans with the numbers the handlers charge, the Hive Guard's
+ * `guard` (#1179) and the Broodmother's `broodmother` (#1179). Every
+ * species the catalogue defines has one, so nothing on the map holds
+ * still for want of a behaviour.
  *
  * Registering a behaviour is what makes the species act, so a merge that
  * lands a behaviour class without adding it here is a bug that no test
@@ -498,6 +509,7 @@ export function shippedBugBehaviours(): readonly BugBehaviour[] {
     new SpitterBehaviour(),
     new BurrowerBehaviour(BURROW_TUNING),
     new HiveGuardBehaviour(),
+    new BroodmotherBehaviour(),
   ];
 }
 

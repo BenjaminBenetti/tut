@@ -6,8 +6,11 @@ import { initialVision } from "../src/tactical/service/vision-service";
 // What a staged board clears
 // ===========================================
 
-/** The lists on a mission whose entries are not places on its map. */
-type UnplacedList = "units" | "extracted" | "log" | "sitreps";
+/**
+ * The lists on a mission whose entries are not places on its map. The
+ * escaped are units that left it by an edge (#1179), like the extracted.
+ */
+type UnplacedList = "units" | "extracted" | "escaped" | "log" | "sitreps";
 
 /**
  * Every list on a mission, found by type rather than by hand. A list

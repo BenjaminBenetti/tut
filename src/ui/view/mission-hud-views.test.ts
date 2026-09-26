@@ -1133,6 +1133,72 @@ describe("event vocabulary for the spore pod (campaign arc §6.3)", () => {
   });
 });
 
+describe("the Broodmother on the HUD (#1179, campaign arc §6.8)", () => {
+  const names = { ...NAMES, unit: () => "Broodmother" };
+  const clutch = {
+    type: "tactical:clutch-laid",
+    payload: {
+      unitId: "unit-900",
+      spawnerId: "spawner-7",
+      pos: { x: 4, y: 0, z: 7 },
+    },
+  } as const;
+  const fleeing = {
+    type: "tactical:broodmother-fleeing",
+    payload: { unitId: "unit-900", hp: 30, maxHp: 60 },
+  } as const;
+  const escaped = {
+    type: "tactical:broodmother-escaped",
+    payload: { unitId: "unit-900", pos: { x: 0, y: 0, z: 4 }, hp: 22 },
+  } as const;
+
+  it("logs the clutch, the turn and the escape by her name", () => {
+    expect(describeEvent(clutch, names)).toMatchObject({
+      text: "Broodmother laid a clutch of eggs",
+      icon: "egg",
+      tone: "bug",
+    });
+    expect(describeEvent(fleeing, names)).toMatchObject({
+      text: "Broodmother is fleeing for the map edge",
+      tone: "danger",
+    });
+    expect(describeEvent(escaped, names)).toMatchObject({
+      text: "Broodmother escaped off the map edge",
+      tone: "danger",
+    });
+  });
+
+  it("floats the clutch and the turn over her, and the escape over nobody: she has gone", () => {
+    expect(actorOf(clutch)).toBe("unit-900");
+    expect(actorOf(fleeing)).toBe("unit-900");
+    expect(actorOf(escaped)).toBeUndefined();
+  });
+
+  it("names her on her card, calls her a 3×3, and says when she is running", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    const template = {
+      ...hudTemplate("bug:broodmother", "Broodmother", 4),
+      footprint: 3,
+    };
+    const her = hudUnit("unit-900", "bugs", "bug:broodmother", 4, 4, {
+      hp: 60,
+      maxHp: 60,
+    });
+    view.update(her, template, undefined, "Broodmother");
+    expect(field("unit-name")?.textContent).toBe("Broodmother");
+    expect(field("unit-side")?.textContent).toBe("bugs · bug · 3×3");
+    expect(field("status")?.textContent).not.toContain("fleeing");
+    view.update(
+      { ...her, hp: 30, fleeing: true },
+      template,
+      undefined,
+      "Broodmother",
+    );
+    expect(field("status")?.textContent).toContain("fleeing");
+  });
+});
+
 describe("capturing a specimen (#1179)", () => {
   const LURKER = {
     unitId: "unit-9",

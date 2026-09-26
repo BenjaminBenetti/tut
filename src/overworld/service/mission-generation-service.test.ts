@@ -23,7 +23,13 @@ import type {
   MissionConsequenceRule,
   MissionConsequenceRules,
 } from "../model/mission-consequence-rule";
+import { MISSION_EXPIRED } from "../model/mission-expired-event";
 import { MISSION_OFFERED } from "../model/mission-offered-event";
+import type {
+  MissionPinContext,
+  MissionPinTrigger,
+} from "../model/mission-pin-trigger";
+import { MISSION_WITHDRAWN } from "../model/mission-withdrawn-event";
 import type { MissionTuning } from "../model/mission-tuning";
 import type { OverworldState } from "../model/overworld-state";
 import { getCity } from "./earth-map-query-service";
@@ -604,6 +610,83 @@ describe("generateMissions — story pins (ADR 0013 §2.4, §2.5)", () => {
     expect(board([createStoryPinTrigger(STORY_MISSION_RULES)])).toEqual(
       board([]),
     );
+  });
+});
+
+// ===========================================
+// A pin on an occupied city
+// ===========================================
+
+describe("generateMissions — a pin on an occupied city (#1179)", () => {
+  /** A pin trigger pinning one offer on `cityId`, recording its context. */
+  const pinningAt = (
+    cityId: string,
+    seen: MissionPinContext[] = [],
+  ): MissionPinTrigger => ({
+    id: "fixture",
+    pin: (_state, ctx) => {
+      seen.push(ctx);
+      return [{ ...missionAt(cityId, 30), id: "pin-1", pinned: true }];
+    },
+  });
+
+  it("withdraws the ordinary offer there for nothing, then offers the pin, and refills the board", () => {
+    const ordinary = missionAt("c0", 30);
+    const { state, events } = generateMissions(
+      wideBoard(8, 50, { missions: [ordinary] }),
+      deps(1, { pinTriggers: [pinningAt("c0")] }),
+    );
+    expect(state.missions.map((m) => m.id)).not.toContain(ordinary.id);
+    expect(state.missions[0]).toMatchObject({ id: "pin-1", cityId: "c0" });
+    expect(events.slice(0, 2)).toEqual([
+      {
+        type: MISSION_WITHDRAWN,
+        payload: {
+          missionId: ordinary.id,
+          typeId: "infestation-clearance",
+          cityId: "c0",
+          replacedBy: "pin-1",
+        },
+      },
+      { type: MISSION_OFFERED, payload: { mission: state.missions[0] } },
+    ]);
+    expect(events.map((event) => event.type)).not.toContain(MISSION_EXPIRED);
+    // The slot it freed is the board's again.
+    expect(
+      state.missions.filter((m) => countsAgainstCap(m, MISSION_OFFER_RULES)),
+    ).toHaveLength(ACTS["act-1"].boardCap);
+    expect(new Set(offeredCities(state)).size).toBe(state.missions.length);
+  });
+
+  it("tells the trigger which offers it may take: ordinary ones, never a pinned or a triggered one", () => {
+    const seen: MissionPinContext[] = [];
+    generateMissions(
+      wideBoard(8),
+      deps(1, { pinTriggers: [pinningAt("c1", seen)] }),
+    );
+    const ctx = seen[0];
+    expect(ctx?.displaceable(missionAt("c0", 30))).toBe(true);
+    expect(ctx?.displaceable(missionAt("c0", 30, 10, "crash-site"))).toBe(true);
+    expect(ctx?.displaceable({ ...missionAt("c0", 30), pinned: true })).toBe(
+      false,
+    );
+    expect(
+      ctx?.displaceable(missionAt("c0", 30, 10, "defend-installation")),
+    ).toBe(false);
+  });
+
+  it("refuses a pin on a city whose offer is pinned or triggered", () => {
+    for (const held of [
+      { ...missionAt("c0", 30), pinned: true },
+      missionAt("c0", 30, 10, "defend-installation"),
+    ]) {
+      expect(() =>
+        generateMissions(
+          wideBoard(8, 50, { missions: [held] }),
+          deps(1, { pinTriggers: [pinningAt("c0")] }),
+        ),
+      ).toThrow(/cannot be withdrawn/);
+    }
   });
 });
 

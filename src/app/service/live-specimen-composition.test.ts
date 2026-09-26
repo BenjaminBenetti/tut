@@ -5,7 +5,12 @@ import { CAPTURE_NET } from "../../tactical/data/equipment";
 import { advanceDay } from "../../overworld/model/advance-day-command";
 import { CAMPAIGN_FLAG_SET } from "../../overworld/model/campaign-flag-set-event";
 import type { Mission } from "../../overworld/model/mission";
+import { MISSION_EXPIRED } from "../../overworld/model/mission-expired-event";
+import { MISSION_WITHDRAWN } from "../../overworld/model/mission-withdrawn-event";
+import { unlockTech } from "../../overworld/model/unlock-tech-command";
+import { missionAt } from "../../overworld/service/missions/mission-fixtures.test-helper";
 import type { GameState } from "../../save/model/game-state";
+import { PHEROMONE_ANALYSIS_COST } from "../../tech/data/tech-tree";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
 import { extract } from "../../tactical/model/extract-command";
 import { finishMission } from "../../tactical/model/finish-mission-command";
@@ -365,5 +370,69 @@ describe("Live Specimen through the composition root (#1179)", () => {
     }
     expect(pinnedOn[0]).toBe(day + 5);
     expect(live(game).overworld.outcome).toBeUndefined();
+  });
+});
+
+describe("Live Specimen on a crowded board, through the composition root (arc D2, #1179)", () => {
+  it("is pinned the day after the net is bought, taking an ordinary offer's city, which lapses for nothing", () => {
+    const game = build();
+    const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
+    const day = fresh.overworld.day;
+    // An ordinary clearance on every city, so no city the hunt could use
+    // is free, whatever the day's spread and detection bring.
+    const ordinary = fresh.overworld.map.cities.map((city) =>
+      missionAt(city.id, day + 10),
+    );
+    game.session.start({
+      ...fresh,
+      economy: { ...fresh.economy, techPoints: PHEROMONE_ANALYSIS_COST },
+      overworld: {
+        ...fresh.overworld,
+        missions: ordinary,
+        progress: {
+          ...fresh.overworld.progress,
+          missionsPlayed: 4,
+          flags: ["spore-sample"],
+          storyWon: ["first-skyfall"],
+        },
+      },
+    });
+
+    const bought = game.session.store?.dispatch(
+      unlockTech("tech.pheromone-analysis"),
+    );
+    expect(bought?.ok).toBe(true);
+    expect(live(game).overworld.progress.flags).toContain("capture-net");
+    const events = nextDay(game);
+
+    const offer = specimen(live(game));
+    expect(offer).toBeDefined();
+    const displaced = ordinary.find((m) => m.cityId === offer?.cityId);
+    const withdrawn = events.filter((e) => e.type === MISSION_WITHDRAWN);
+    expect(withdrawn.map((e) => e.payload)).toEqual([
+      {
+        missionId: displaced?.id,
+        typeId: "infestation-clearance",
+        cityId: offer?.cityId,
+        replacedBy: offer?.id,
+      },
+    ]);
+    // Gone from the board, and never expired: no ignore penalty.
+    const board = live(game).overworld.missions;
+    expect(board.map((m) => m.id)).not.toContain(displaced?.id);
+    expect(events.map((e) => e.type)).not.toContain(MISSION_EXPIRED);
+    // Every other ordinary offer is still there.
+    expect(board).toHaveLength(ordinary.length);
+    // The worst detected infested city on the day it was pinned.
+    const city = live(game).overworld.map.cities.find(
+      (c) => c.id === offer?.cityId,
+    );
+    const worst = Math.max(
+      ...live(game)
+        .overworld.map.cities.filter((c) => c.detected && c.infestation > 0)
+        .map((c) => c.infestation),
+    );
+    expect(city?.detected).toBe(true);
+    expect(city?.infestation).toBe(worst);
   });
 });

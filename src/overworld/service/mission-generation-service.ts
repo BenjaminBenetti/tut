@@ -9,7 +9,10 @@ import type { IntelBonus } from "../model/intel-bonus";
 import type { Mission } from "../model/mission";
 import type { MissionConsequenceRules } from "../model/mission-consequence-rule";
 import type { MissionOfferDecorator } from "../model/mission-offer-decorator";
-import type { MissionPinTrigger } from "../model/mission-pin-trigger";
+import type {
+  MissionPinContext,
+  MissionPinTrigger,
+} from "../model/mission-pin-trigger";
 import type {
   MissionDebut,
   MissionOfferContext,
@@ -20,6 +23,7 @@ import type {
 import { MISSION_OFFERED } from "../model/mission-offered-event";
 import type { MissionTuning } from "../model/mission-tuning";
 import type { MissionTypeCatalogue } from "../model/mission-type-catalogue";
+import { MISSION_WITHDRAWN } from "../model/mission-withdrawn-event";
 import type {
   OverworldApplied,
   OverworldDomainEvent,
@@ -119,6 +123,7 @@ export function countsAgainstCap(
  *   act = acts[progress.act]
  *   1. pins      for trigger in pinTriggers (the story spine):
  *                  trigger.pin(state, rng.fork(`pin:${id}`)) ──► pinned offers (outside the cap)
+ *                  an ordinary offer on a pinned offer's city ──► withdrawn, MissionWithdrawn
  *   2. triggers  for type in MISSION_TYPE_IDS with a trigger rule:
  *                  rule.trigger(state, rng.fork(`trigger:${type}`)) ──► offers (outside the cap)
  *   3. count     offers with pinned ≠ true whose type has an offer rule
@@ -137,10 +142,14 @@ export function countsAgainstCap(
  *              ──► consequences[type].onOffered?  (the crash-site landing) ──► its events
  * ```
  *
- * A city holds at most one offer: pin triggers and trigger rules skip
- * occupied cities, and the fill drops sites whose city already holds
- * one. Pins run first, so a story mission claims its city before any
- * other offer. Every offer sees the state with the offers made before
+ * A city holds at most one offer: trigger rules skip occupied cities,
+ * and the fill drops sites whose city already holds one. Pins run
+ * first, so a story mission claims its city before any other offer;
+ * when every city it would take holds one, it may take an ordinary
+ * offer's (`countsAgainstCap`: unpinned and drawn by the board), which
+ * is withdrawn (#1179). A withdrawal is not an expiry: no ignore
+ * penalty, no consequence rule, only `MissionWithdrawn`. The board then
+ * fills the slot it freed like any other. Every offer sees the state with the offers made before
  * it. Pin triggers, trigger rules and decorators draw from labelled
  * forks, so adding one never changes what the board draws, and a pin
  * trigger that pins nothing changes nothing at all. The draw order is
@@ -149,8 +158,10 @@ export function countsAgainstCap(
  * nothing was offered.
  *
  * @throws {RangeError} if `intelBonus` names a region that is not on the
- *   map or holds a value that is not a non-negative integer. Those are
- *   programmer errors in the calling tick, not game states.
+ *   map or holds a value that is not a non-negative integer, or if a pin
+ *   trigger pins on a city whose offer is pinned or triggered. Those are
+ *   programmer errors in the calling tick or the trigger, not game
+ *   states.
  */
 export function generateMissions(
   state: OverworldState,
@@ -184,9 +195,17 @@ export function generateMissions(
     }
   };
 
+  const displaceable = (mission: Mission): boolean =>
+    countsAgainstCap(mission, deps.offerRules);
   for (const trigger of deps.pinTriggers) {
-    const ctx = contextOn(deps.rng.fork(`pin:${trigger.id}`));
+    const ctx: MissionPinContext = {
+      ...contextOn(deps.rng.fork(`pin:${trigger.id}`)),
+      displaceable,
+    };
     for (const mission of trigger.pin(current, ctx)) {
+      const cleared = clearCityFor(current, mission, displaceable);
+      current = cleared.state;
+      events.push(...cleared.events);
       offer(mission, ctx);
     }
   }
@@ -226,6 +245,53 @@ export function generateMissions(
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * `state` with `pin`'s city cleared for it (#1179): untouched when the
+ * city holds no offer, and without the ordinary offer it holds
+ * otherwise, announced as `MissionWithdrawn`. Nothing else: the offer
+ * was neither played nor ignored, so no consequence rule is asked.
+ *
+ * ```
+ *   no offer on pin.cityId     ──► state
+ *   displaceable(offer)        ──► state − offer, MissionWithdrawn { replacedBy: pin.id }
+ *   otherwise                  ──► RangeError (the trigger broke its contract)
+ * ```
+ *
+ * @throws {RangeError} if the offer there is pinned or triggered.
+ */
+function clearCityFor(
+  state: OverworldState,
+  pin: Mission,
+  displaceable: (mission: Mission) => boolean,
+): OverworldApplied<OverworldState> {
+  const held = state.missions.find((mission) => mission.cityId === pin.cityId);
+  if (held === undefined) {
+    return { state, events: [] };
+  }
+  if (!displaceable(held)) {
+    throw new RangeError(
+      `Pinned offer "${pin.id}" landed on city "${pin.cityId}", whose offer "${held.id}" cannot be withdrawn`,
+    );
+  }
+  return {
+    state: {
+      ...state,
+      missions: state.missions.filter((mission) => mission !== held),
+    },
+    events: [
+      {
+        type: MISSION_WITHDRAWN,
+        payload: {
+          missionId: held.id,
+          typeId: held.typeId,
+          cityId: held.cityId,
+          replacedBy: pin.id,
+        },
+      },
+    ],
+  };
+}
 
 /**
  * The types the board can draw today, in `MISSION_TYPE_IDS` order: offer

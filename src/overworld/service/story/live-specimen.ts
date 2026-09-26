@@ -1,10 +1,10 @@
 import type { City } from "../../model/city";
 import type { Mission } from "../../model/mission";
-import type { MissionOfferContext } from "../../model/mission-offer-rule";
+import type { MissionPinContext } from "../../model/mission-pin-trigger";
 import type { OverworldState } from "../../model/overworld-state";
 import type { StoryMissionRule } from "../../model/story-mission-rule";
 import { STORY_RETRY_DAYS } from "../../model/story-mission-rule";
-import { citiesWithOffers } from "../missions/mission-offer-builder";
+import { pickStoryCity } from "./story-city";
 import { buildStoryOffer } from "./story-offer-builder";
 
 // ===========================================
@@ -36,9 +36,12 @@ export const LIVE_SPECIMEN_DIFFICULTY = 3;
  * ```
  *   pinned   act-1, once `capture-net` is set (Intel I, Pheromone Analysis,
  *            sets it), so it pins the day after the research; never expires
- *   city     the worst detected city with any infestation and no offer, ties
- *            in map order: lurkers must be plausible there, and it is where
- *            the swarm is thickest (none today: asked again tomorrow)
+ *   city     the worst detected city with any infestation, ties in map
+ *            order: lurkers must be plausible there, and it is where the
+ *            swarm is thickest. A free one first; if every such city holds
+ *            an offer, the worst whose offer is ordinary, which is withdrawn
+ *            (pickStoryCity), so the net pins it the day after the research
+ *            (arc D2). None today: asked again tomorrow
  *   offer    an infestation clearance at d3, pinned, stamped act-1
  *   map      the clearance's settlement map
  *   setup    the clearance's nests, made optional; the capture decides; two
@@ -59,9 +62,9 @@ export const LIVE_SPECIMEN: StoryMissionRule = {
   act: "act-1",
   pinWhen: ["capture-net"],
 
-  /** The pinned d3 clearance at the worst detected infested city without an offer. */
-  create(state: OverworldState, ctx: MissionOfferContext): Mission | undefined {
-    const city = specimenCity(state);
+  /** The pinned d3 clearance at the worst detected infested city (`pickStoryCity`). */
+  create(state: OverworldState, ctx: MissionPinContext): Mission | undefined {
+    const city = pickStoryCity(state, ctx, huntingGrounds(state), worst);
     if (city === undefined) {
       return undefined;
     }
@@ -87,20 +90,25 @@ export const LIVE_SPECIMEN: StoryMissionRule = {
 // ===========================================
 
 /**
- * Where the hunt is: the detected city with the most infestation that
- * holds no offer, the first in map order on a tie, or none when no
- * detected city is infested and free.
+ * Where the hunt may be: every detected city with any infestation, in
+ * map order, offer or not.
  */
-function specimenCity(state: OverworldState): City | undefined {
-  const occupied = citiesWithOffers(state);
-  let worst: City | undefined;
-  for (const city of state.map.cities) {
-    if (!city.detected || city.infestation <= 0 || occupied.has(city.id)) {
-      continue;
-    }
-    if (worst === undefined || city.infestation > worst.infestation) {
-      worst = city;
+function huntingGrounds(state: OverworldState): readonly City[] {
+  return state.map.cities.filter(
+    (city) => city.detected && city.infestation > 0,
+  );
+}
+
+/**
+ * The city with the most infestation among `cities`, the first in their
+ * order on a tie.
+ */
+function worst(cities: readonly City[]): City | undefined {
+  let found: City | undefined;
+  for (const city of cities) {
+    if (found === undefined || city.infestation > found.infestation) {
+      found = city;
     }
   }
-  return worst;
+  return found;
 }

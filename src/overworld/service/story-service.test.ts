@@ -27,13 +27,13 @@ import { getCity } from "./earth-map-query-service";
 import {
   fixtureState,
   missionAt,
-  offerContext,
   progressIn,
   resultFor,
 } from "./missions/mission-fixtures.test-helper";
 import { evaluateOutcome } from "./outcome-service";
 import {
   fixtureStoryRule,
+  pinContext,
   storyRulesOf,
 } from "./story/story-fixtures.test-helper";
 import type { StoryResolutionContext } from "./story-service";
@@ -71,7 +71,7 @@ function flagged(
 
 /** The pinned offer `rule` makes on `state`. */
 function offerOf(rule: StoryMissionRule, state: OverworldState): Mission {
-  const mission = rule.create(state, offerContext(3));
+  const mission = rule.create(state, pinContext(3));
   if (mission === undefined) {
     throw new Error("fixture rule found no site");
   }

@@ -18,7 +18,6 @@ import { generateMissions } from "../mission-generation-service";
 import { MISSION_CONSEQUENCE_RULES } from "../missions/mission-consequence-rules";
 import {
   fixtureState,
-  offerContext,
   progressIn,
   resultFor,
 } from "../missions/mission-fixtures.test-helper";
@@ -29,6 +28,7 @@ import {
   FIRST_SKYFALL_AFTER_MISSIONS,
   FIRST_SKYFALL_DIFFICULTY,
 } from "./first-skyfall";
+import { pinContext } from "./story-fixtures.test-helper";
 import { STORY_MISSION_RULES } from "./story-mission-rules";
 import { createStoryPinTrigger } from "./story-pin-trigger";
 
@@ -84,12 +84,12 @@ describe("FIRST_SKYFALL", () => {
   });
 
   it("offers nothing until the first mission is played", () => {
-    expect(FIRST_SKYFALL.create(campaign(0), offerContext(1))).toBeUndefined();
+    expect(FIRST_SKYFALL.create(campaign(0), pinContext(1))).toBeUndefined();
   });
 
   it("offers a pinned d1 crash site that carries its landing, once one mission is played", () => {
     const state = campaign(1);
-    const offer = FIRST_SKYFALL.create(state, offerContext(1));
+    const offer = FIRST_SKYFALL.create(state, pinContext(1));
     if (offer === undefined) {
       throw new Error("First Skyfall must be offered after mission 1");
     }
@@ -120,7 +120,7 @@ describe("FIRST_SKYFALL", () => {
         cities: state.map.cities.map((city) => ({ ...city, detected: false })),
       },
     };
-    const offer = FIRST_SKYFALL.create(blind, offerContext(1));
+    const offer = FIRST_SKYFALL.create(blind, pinContext(1));
     expect(offer?.storyId).toBe("first-skyfall");
   });
 });

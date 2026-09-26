@@ -20,9 +20,11 @@ import { deploymentSize, MAX_DEPLOYED_UNITS } from "../model/deployment";
 import type { LaunchMissionCommand } from "../model/launch-mission-command";
 import { LAUNCH_MISSION } from "../model/launch-mission-command";
 import type { Mission, MissionId } from "../model/mission";
+import { isMissionExpired } from "../model/mission";
 import type { MissionResolver } from "../model/mission-resolver";
 import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
+import { recordMission } from "./campaign-progress-service";
 import { findCity } from "./earth-map-query-service";
 
 // ===========================================
@@ -58,7 +60,7 @@ export interface ValidatedLaunch {
 export const DEPLOYMENT_MISMATCH = "deployment-mismatch";
 /** No mission with that id is on offer. */
 export const MISSION_NOT_FOUND = "mission-not-found";
-/** The mission's expiry day has arrived. */
+/** The mission's expiry day has arrived and it is not pinned. */
 export const MISSION_EXPIRED = "mission-expired";
 /** The deployment names no units at all. */
 export const EMPTY_DEPLOYMENT = "empty-deployment";
@@ -77,9 +79,10 @@ export const MISSION_CITY_MISSING = "mission-city-missing";
 
 /**
  * Checks a launch before anything is rolled: the deployment targets the
- * named mission, the mission is on offer and not expired, at least one
- * unit goes, no unit goes twice, every unit is in the roster, and the
- * host city exists. Returns the first problem as a typed error.
+ * named mission, the mission is on offer and not expired (a pinned
+ * offer never is), at least one unit goes, no unit goes twice, every
+ * unit is in the roster, and the host city exists. Returns the first
+ * problem as a typed error.
  */
 export function validateLaunch(
   state: CampaignState,
@@ -100,7 +103,7 @@ export function validateLaunch(
       commandError(MISSION_NOT_FOUND, `No mission "${missionId}" is on offer`),
     );
   }
-  if (state.overworld.day >= mission.expiresDay) {
+  if (isMissionExpired(mission, state.overworld.day)) {
     return err(
       commandError(
         MISSION_EXPIRED,
@@ -179,7 +182,12 @@ export function validateLaunch(
  *   4. map     ── city.infestation += infestationDelta, clamped; a city     (CityInfestationChanged)
  *                 cleared to zero is forgotten again (GDD §5.3)
  *   5. mission removed from the offers; lastMissionResult := result
+ *   6. progress ── recordMission(outcome, speciesKilled): missionsPlayed,
+ *                 missionsWon on a win, first kills (ADR 0013 §2.1)
  * ```
+ *
+ * This is the single place the campaign counts missions: every resolved
+ * mission, won, extracted or lost, passes through here exactly once.
  *
  * Resolver-agnostic: M2 swaps the auto-resolver for the tactical layer
  * without touching this service.
@@ -258,6 +266,11 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
           map: { regions: state.overworld.map.regions, cities },
           missions: state.overworld.missions.filter((m) => m.id !== mission.id),
           lastMissionResult: result,
+          progress: recordMission(
+            state.overworld.progress,
+            result.outcome,
+            result.speciesKilled ?? [],
+          ),
         },
         roster: casualties.roster,
         economy,

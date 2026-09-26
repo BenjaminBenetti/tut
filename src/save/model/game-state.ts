@@ -59,8 +59,13 @@ import type { TechState } from "../../tech/model/tech-state";
  *   All optional; older saves hold none.
  * - `28`: optional mission Jev controls, faction knowledge and resumable
  *   activation progress. Older saves leave Jev disabled.
+ * - `29`: campaign progress (ADR 0013 §2.1): `overworld.progress` with
+ *   the act, mission counts, story flags, first kills and nemeses, and
+ *   optional `missions[].pinned`, `.storyId` and `.act` and
+ *   `lastMissionResult.speciesKilled`. Older campaigns are in Act I with
+ *   `missionsPlayed` read off the ledger's rewards.
  */
-export const GAME_STATE_SCHEMA_VERSION = 28;
+export const GAME_STATE_SCHEMA_VERSION = 29;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.
@@ -82,7 +87,7 @@ export interface GameMeta {
  * ```
  *   GameState
  *   ├── meta            seed, rng, ids, createdAt
- *   ├── overworld       day, earth map, threat, missions, events, deployables
+ *   ├── overworld       day, earth map, threat, missions, events, deployables, progress
  *   ├── roster          squads, mechs, saved loadouts, graveyard
  *   ├── economy         credits, ledger, tech points
  *   ├── tech            unlocked tech nodes

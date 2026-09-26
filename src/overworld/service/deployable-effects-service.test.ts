@@ -17,6 +17,7 @@ import {
   DEPLOYABLE_ONLINE,
 } from "../model/overworld-domain-event";
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import type { UpkeepDeps } from "./deployable-effects-service";
 import {
@@ -97,6 +98,7 @@ function campaign(
       pendingEvents: [],
       deployables,
       hives: [],
+      progress: createInitialCampaignProgress(),
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
     economy: { credits, ledger: [], techPoints: 0 },

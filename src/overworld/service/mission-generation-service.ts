@@ -21,6 +21,7 @@ import type {
   MissionId,
   MissionMapParams,
 } from "../model/mission";
+import { isMissionExpired } from "../model/mission";
 import type {
   InstallationDefenceTuning,
   MissionTuning,
@@ -161,7 +162,9 @@ export function wavesFor(
  * and adds each one's frozen `ignorePenalty` to its host city, clamped.
  * Emits a `MissionExpired` per lapsed mission, in mission order, then a
  * `CityInfestationChanged` per city whose infestation actually moved, in
- * map order. Returns the input state untouched when nothing expired.
+ * map order. Returns the input state untouched when nothing expired. A
+ * `pinned` mission never expires here (ADR 0013 §2.2); only its own rule
+ * removes it.
  *
  * ```
  *   missions ──► [expired | kept]
@@ -173,14 +176,14 @@ export function wavesFor(
 export function expireMissions(
   state: OverworldState,
 ): OverworldApplied<OverworldState> {
-  const expired = state.missions.filter(
-    (mission) => state.day >= mission.expiresDay,
+  const expired = state.missions.filter((mission) =>
+    isMissionExpired(mission, state.day),
   );
   if (expired.length === 0) {
     return { state, events: [] };
   }
   const kept = state.missions.filter(
-    (mission) => state.day < mission.expiresDay,
+    (mission) => !isMissionExpired(mission, state.day),
   );
 
   const events: OverworldDomainEvent[] = [];
@@ -353,7 +356,10 @@ export function generateMissions(
 // Helpers
 // ===========================================
 
-/** Assembles one mission for `city` on `state.day`, drawing its id and map seed. */
+/**
+ * Assembles one mission for `city` on `state.day`, drawing its id and map
+ * seed, and freezes the campaign's current act on it (ADR 0013 §2.2).
+ */
 function createMission(
   state: OverworldState,
   city: City,
@@ -387,6 +393,7 @@ function createMission(
     createdDay: state.day,
     expiresDay: state.day + type.expiryDays + intelDays,
     ignorePenalty: type.ignorePenalty,
+    act: state.progress.act,
   };
 }
 

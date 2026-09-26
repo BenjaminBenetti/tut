@@ -9,6 +9,7 @@ import type { Migration } from "../model/migration";
 import { isRecord } from "../../core/model/record-guard";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { RADAR_DISH } from "../../tactical/data/equipment";
+import { ADD_CAMPAIGN_PROGRESS } from "../service/campaign-progress-migration";
 import { ADD_CITY_POPULATION } from "../service/city-population-migration";
 import { ADD_DEPLOYABLE_LEVELS } from "../service/deployable-levels-migration";
 import { HALF_HEIGHT_LAYERS } from "../service/half-height-layer-migration";
@@ -705,4 +706,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_TECH_POINTS,
   ADD_DEFEND_INSTALLATION,
   ADD_JEV_CONTROL,
+  ADD_CAMPAIGN_PROGRESS,
 ];

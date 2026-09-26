@@ -14,6 +14,7 @@ import { DEPLOYABLE_TYPE_IDS } from "../model/deployable-type";
 import { DEPLOYABLE_UPGRADED } from "../model/deployable-upgraded-event";
 import { upgradeDeployable } from "../model/upgrade-deployable-command";
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { DeployableHandlerDeps } from "./deployable-command-handlers";
 import { registerDeployableCommands } from "./deployable-command-handlers";
@@ -62,6 +63,7 @@ const BASE: CampaignState = {
       },
     ],
     hives: [],
+    progress: createInitialCampaignProgress(),
   },
   roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
   economy: { credits: 10_000, ledger: [], techPoints: 0 },

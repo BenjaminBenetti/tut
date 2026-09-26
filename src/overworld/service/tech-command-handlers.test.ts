@@ -10,6 +10,7 @@ import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue
 import type { CampaignState } from "../model/campaign-state";
 import { grantTechPoints } from "../model/grant-tech-points-command";
 import { UNLOCK_TECH, unlockTech } from "../model/unlock-tech-command";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import {
   DEV_TOOLS_DISABLED,
@@ -32,6 +33,7 @@ const BASE: CampaignState = {
     pendingEvents: [],
     deployables: [],
     hives: [],
+    progress: createInitialCampaignProgress(),
   },
   roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
   economy: { credits: 1, ledger: [], techPoints: 30 },

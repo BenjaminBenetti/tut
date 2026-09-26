@@ -13,6 +13,7 @@ import type { MetaServiceRestorer } from "../model/meta-service-restorer";
 import type { AdvanceDayCommand } from "../model/overworld-command";
 import { ADVANCE_DAY, advanceDay } from "../model/overworld-command";
 import { DAY_ADVANCED } from "../model/overworld-domain-event";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import {
   OverworldCommandDispatcher,
   createOverworldCommandDispatcher,
@@ -38,6 +39,7 @@ const BASE: CampaignState = {
     pendingEvents: [],
     deployables: [],
     hives: [],
+    progress: createInitialCampaignProgress(),
   },
   roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
   economy: { credits: 5000, ledger: [], techPoints: 0 },

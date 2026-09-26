@@ -1,3 +1,4 @@
+import type { CampaignProgress } from "./campaign-progress";
 import type { Deployable } from "./deployable";
 import type { EarthMap } from "./earth-map";
 import type { PendingEvent } from "./pending-event";
@@ -51,6 +52,7 @@ export interface Hive {
  *   ├── stipendModifiers?   event-driven scales on upcoming stipends
  *   ├── deployables[]       regional installations
  *   ├── hives[]             (M3) persistent bug hives
+ *   ├── progress            act, missions played, story flags, first kills, nemeses
  *   ├── outcome?            set once the campaign is won or lost
  *   └── lastMissionResult?  what the results screen shows
  * ```
@@ -93,6 +95,12 @@ export interface OverworldState {
   readonly deployables: readonly Deployable[];
   /** Bug hives (M3). Always empty in M1. */
   readonly hives: readonly Hive[];
+  /**
+   * How far the campaign has come (ADR 0013 §2.1): the act, the missions
+   * played and won, story flags, first kills and nemeses. The launch
+   * handler counts missions; story services move the act and set flags.
+   */
+  readonly progress: CampaignProgress;
   /**
    * Present once the campaign has ended. Written once by the outcome
    * service and never overwritten; the day tick refuses to run while it

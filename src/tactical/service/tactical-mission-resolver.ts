@@ -1,3 +1,5 @@
+import type { BugSpeciesId } from "../../content/model/bug-species-id";
+import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { Result } from "../../core/model/result";
 import type { Rng } from "../../core/model/rng";
@@ -112,6 +114,7 @@ export interface TacticalResolveDeps {
  *   outcome ──► creditsFor / infestationDeltaFor, the auto-resolver's scale
  *   log CarcassHarvested { techPoints } ──► summed into techPointsFor as
  *                                 harvested; techPointsHarvested says so (#1171)
+ *   log UnitDied of a bug ──► its species, once each, into speciesKilled
  * ```
  *
  * A unit that extracted is read exactly as it walked off the map, so a
@@ -195,6 +198,7 @@ export function tacticalMissionResult(
     ...leftBehindField(tactical, roster),
     ...(harvested > 0 ? { techPointsHarvested: harvested } : {}),
     ...defenceField(tactical),
+    ...speciesKilledField(tactical, roster),
   };
 }
 
@@ -236,6 +240,38 @@ function techPointsHarvested(tactical: TacticalState): number {
     }
   }
   return harvested;
+}
+
+/**
+ * Every bug species that lost a unit this mission (ADR 0013 §2.1), for
+ * the campaign's first-kill record: each `UnitDied` in the log whose
+ * casualty was a bug, read as its `sourceId` (a bug's species id), each
+ * species once in first-death order. A death with or without a killer
+ * counts; a `sourceId` outside `BUG_SPECIES_IDS` is not a species and is
+ * skipped. Absent when no bug died, so such a result is exactly what it
+ * was before the field existed.
+ */
+function speciesKilledField(
+  tactical: TacticalState,
+  roster: readonly Unit[],
+): { speciesKilled?: readonly BugSpeciesId[] } {
+  const killed: BugSpeciesId[] = [];
+  for (const event of tactical.log) {
+    if (event.type !== UNIT_DIED) {
+      continue;
+    }
+    const dead = roster.find((unit) => unit.id === event.payload.unitId);
+    const species = dead?.sourceId as BugSpeciesId | undefined;
+    if (
+      dead?.team === "bugs" &&
+      species !== undefined &&
+      BUG_SPECIES_IDS.includes(species) &&
+      !killed.includes(species)
+    ) {
+      killed.push(species);
+    }
+  }
+  return killed.length === 0 ? {} : { speciesKilled: killed };
 }
 
 /**

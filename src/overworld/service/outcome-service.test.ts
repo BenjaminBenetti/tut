@@ -7,6 +7,7 @@ import type { CampaignState } from "../model/campaign-state";
 import type { GameOutcome } from "../model/game-outcome";
 import { GAME_ENDED } from "../model/overworld-domain-event";
 import { MAX_THREAT } from "../model/threat";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import {
   applyOutcome,
@@ -79,6 +80,7 @@ function campaign(
       pendingEvents: [],
       deployables: [],
       hives: options.hives ? [{ id: "hive-1", regionId: "r" }] : [],
+      progress: createInitialCampaignProgress(),
       ...(options.outcome === undefined ? {} : { outcome: options.outcome }),
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },

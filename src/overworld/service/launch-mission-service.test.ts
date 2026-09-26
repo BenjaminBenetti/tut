@@ -28,6 +28,7 @@ import type { MissionResolutionState } from "../model/mission-resolution-state";
 import type { MissionResolver } from "../model/mission-resolver";
 import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import type { LaunchMissionDeps } from "./launch-mission-service";
 import { MAX_DEPLOYED_UNITS } from "../model/deployment";
@@ -133,6 +134,7 @@ function campaign(
       pendingEvents: [],
       deployables: [],
       hives: [],
+      progress: createInitialCampaignProgress(),
       ...overrides,
     },
     roster: {
@@ -297,6 +299,16 @@ describe("validateLaunch", () => {
     if (result.ok) return;
     expect(result.error.code).toBe(MISSION_CITY_MISSING);
     expect(result.error.message).toContain("atlantis");
+  });
+
+  it("accepts a pinned mission past its expiry day (ADR 0013 §2.2)", () => {
+    const pinned: Mission = { ...MISSION, pinned: true };
+    const result = validateLaunch(
+      campaign({ day: MISSION.expiresDay + 3, missions: [pinned] }),
+      "mission-1",
+      DEPLOYMENT,
+    );
+    expect(result.ok).toBe(true);
   });
 
   it("accepts a launch the day before expiry with the host city resolved", () => {
@@ -473,6 +485,70 @@ describe("createLaunchMissionHandler", () => {
     expect(types).toContain(MECH_DESTROYED);
     expect(types).not.toContain(CREDITS_CHANGED);
     expect(types.at(-1)).toBe(CITY_INFESTATION_CHANGED);
+  });
+
+  it("counts every resolved mission in the campaign progress, and the wins (ADR 0013 §2.1)", () => {
+    const played = (result: MissionResult, before = campaign()) => {
+      const launched = createLaunchMissionHandler<CampaignState>(
+        deps(new StubResolver(result)),
+      )(before, launchMission("mission-1", DEPLOYMENT), context());
+      if (!launched.ok) throw new Error(launched.error.message);
+      return launched.value.state.overworld.progress;
+    };
+    const midAct = campaign({
+      progress: {
+        ...createInitialCampaignProgress(),
+        act: "act-2",
+        actStartedAt: 12,
+        missionsPlayed: 15,
+        missionsWon: 10,
+      },
+    });
+    expect(played(WIN, midAct)).toMatchObject({
+      act: "act-2",
+      actStartedAt: 12,
+      missionsPlayed: 16,
+      missionsWon: 11,
+    });
+    expect(played(LOSS, midAct)).toMatchObject({
+      missionsPlayed: 16,
+      missionsWon: 10,
+    });
+    expect(
+      played({ ...WIN, outcome: "extracted", creditsAwarded: 0 }, midAct),
+    ).toMatchObject({ missionsPlayed: 16, missionsWon: 10 });
+    expect(midAct.overworld.progress.missionsPlayed).toBe(15);
+  });
+
+  it("merges the result's first kills into the campaign's record", () => {
+    const before = campaign({
+      progress: {
+        ...createInitialCampaignProgress(),
+        speciesKilled: ["swarmer"],
+      },
+    });
+    const handler = createLaunchMissionHandler<CampaignState>(
+      deps(new StubResolver({ ...LOSS, speciesKilled: ["brute", "swarmer"] })),
+    );
+    const result = handler(
+      before,
+      launchMission("mission-1", DEPLOYMENT),
+      context(),
+    );
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.value.state.overworld.progress.speciesKilled).toEqual([
+      "swarmer",
+      "brute",
+    ]);
+
+    // A resolver that cannot say (the auto-resolver) records no kills.
+    const silent = createLaunchMissionHandler<CampaignState>(
+      deps(new StubResolver(WIN)),
+    )(before, launchMission("mission-1", DEPLOYMENT), context());
+    if (!silent.ok) throw new Error(silent.error.message);
+    expect(silent.value.state.overworld.progress.speciesKilled).toEqual([
+      "swarmer",
+    ]);
   });
 
   it("clamps the infestation delta and emits no change event when it lands on the same value", () => {

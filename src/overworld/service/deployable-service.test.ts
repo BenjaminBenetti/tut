@@ -14,6 +14,7 @@ import { DEPLOYABLE_UPGRADED } from "../model/deployable-upgraded-event";
 import type { DeployableType } from "../model/deployable-type";
 import { DEPLOYABLE_TYPE_IDS } from "../model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import type { DeployableServiceDeps } from "./deployable-service";
 import {
   buildDeployable,
@@ -80,6 +81,7 @@ function campaign(
       pendingEvents: [],
       deployables,
       hives: [],
+      progress: createInitialCampaignProgress(),
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
     economy: { credits, ledger: [], techPoints: 0 },

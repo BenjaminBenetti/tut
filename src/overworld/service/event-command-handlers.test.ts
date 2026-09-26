@@ -10,6 +10,7 @@ import { EVENT_RESOLVED } from "../model/event-resolved-event";
 import { EVENT_TYPE_IDS } from "../model/event-type";
 import { resolveEvent } from "../model/resolve-event-command";
 import { DataEventTypeCatalogue } from "../repository/event-type-catalogue";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import { buildEarthMap } from "./earth-map-builder";
 import type { EventHandlerDeps } from "./event-command-handlers";
@@ -52,6 +53,7 @@ const BASE: CampaignState = {
     ],
     deployables: [],
     hives: [],
+    progress: createInitialCampaignProgress(),
   },
   roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
   economy: { credits: 1000, ledger: [], techPoints: 0 },

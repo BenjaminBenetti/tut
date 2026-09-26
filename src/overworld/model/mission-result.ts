@@ -182,6 +182,14 @@ export interface MissionResult {
   /** For a rescue: how many civilian groups the mission had, beside `civiliansRescued`. */
   readonly civiliansTotal?: number;
   /**
+   * For a tunnel sabotage (arc §6.7): tunnel mouths whose charge went
+   * off and sealed them, beside `tunnelsTotal`. Absent when the mission
+   * had no tunnel mouths.
+   */
+  readonly tunnelsSealed?: number;
+  /** For a tunnel sabotage: how many tunnel mouths the map had, beside `tunnelsSealed`. */
+  readonly tunnelsTotal?: number;
+  /**
    * Every bug species killed in the mission, each once, in the order
    * their first death was logged (ADR 0013 §2.1). The launch handler
    * merges them into the campaign's first-kill record. Absent when the

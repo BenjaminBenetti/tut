@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
+import { TUNNEL_MOUTH_COUNT } from "../../mapgen/service/missions/tunnel-sabotage-map";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
 import { advanceDay } from "../../overworld/model/advance-day-command";
 import type { Hive } from "../../overworld/model/hive";
@@ -322,6 +323,44 @@ describe("each modelled result drives its type's real consequence rule", () => {
     expect(out.overworld.lastMissionResult?.wreck?.stripped).toBe(false);
     expect(stockOf(out.roster)).toEqual(stockOf(again.state.roster));
     expect(out.overworld.wrecks ?? []).toEqual([]);
+  });
+
+  it("tunnel sabotage: a win seals every mouth and holds the city's spread; an extraction or a loss holds nothing", () => {
+    for (const outcome of MISSION_OUTCOMES) {
+      const game = composeSweepGame(always(outcome));
+      const staged = withOffer(game, "infestation-clearance");
+      const offer: Mission = {
+        ...staged.offer,
+        typeId: "tunnel-sabotage",
+        tunnelSabotage: {
+          cityId: staged.offer.cityId,
+          spreadDueDay: staged.state.overworld.day + 2,
+        },
+      };
+      const state: GameState = {
+        ...staged.state,
+        overworld: {
+          ...staged.state.overworld,
+          missions: staged.state.overworld.missions.map((each) =>
+            each.id === offer.id ? offer : each,
+          ),
+          spreadCooldowns: {},
+        },
+      };
+      const after = launch(game, state, offer);
+      const result = after.overworld.lastMissionResult;
+      expect(result?.tunnelsTotal, outcome).toBe(TUNNEL_MOUTH_COUNT);
+      expect(result?.tunnelsSealed, outcome).toBe(
+        outcome === "won"
+          ? TUNNEL_MOUTH_COUNT
+          : outcome === "extracted"
+            ? 1
+            : 0,
+      );
+      expect(after.overworld.spreadCooldowns[offer.cityId], outcome).toBe(
+        outcome === "won" ? MISSION_TUNING.tunnelSabotage.holdDays : undefined,
+      );
+    }
   });
 
   it("defend installation: the result says whether it held and moves the city by its delta", () => {

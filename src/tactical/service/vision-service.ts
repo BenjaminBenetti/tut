@@ -14,6 +14,7 @@ import { NO_VISION, TEAMS_BY_VISION } from "../model/tactical-state";
 import type { TechCarcass } from "../model/tech-carcass";
 import { isTrapped } from "../model/civilian";
 import type { MechWreck } from "../model/mech-wreck";
+import type { TunnelMouth } from "../model/tunnel-mouth";
 import type { Team, Unit, UnitId } from "../model/unit";
 import { isBurrowed, isDormant } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
@@ -520,6 +521,26 @@ export function perceivedWrecks(
   const explored = new Set(mission.vision[team]?.explored ?? []);
   return (mission.wrecks ?? []).filter((wreck) =>
     wreck.tiles.some((tile) => explored.has(index.keyOf(tile))),
+  );
+}
+
+/**
+ * The tunnel mouths `team` has explored any tile of (campaign arc
+ * §6.7), as `perceivedWrecks` answers for a wreck: a mouth is a hole in
+ * the ground, so once seen it stays known, and a squad that has seen one
+ * corner of it has seen the mouth. Until then its fog blip says where
+ * it is. Its state — open, charged, sealed — is drawn as it is now: the
+ * charge is the force's own, and a mouth caving in is heard across the
+ * map.
+ */
+export function perceivedTunnelMouths(
+  mission: TacticalState,
+  team: Team,
+  index: TileIndex = new TileIndex(mission.map),
+): readonly TunnelMouth[] {
+  const explored = new Set(mission.vision[team]?.explored ?? []);
+  return (mission.tunnelMouths ?? []).filter((mouth) =>
+    mouth.tiles.some((tile) => explored.has(index.keyOf(tile))),
   );
 }
 

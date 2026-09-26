@@ -5,6 +5,7 @@ import { EVACUATION_MAP_RULE } from "./evacuation-map";
 import { withGreatHiveMap } from "./great-hive-map";
 import { HIVE_ASSAULT_MAP_RULE } from "./hive-assault-map";
 import { INFESTATION_CLEARANCE_MAP_RULE } from "./infestation-clearance-map";
+import { TUNNEL_SABOTAGE_MAP_RULE } from "./tunnel-sabotage-map";
 import { WRECK_RECOVERY_MAP_RULE } from "./wreck-recovery-map";
 
 // ===========================================
@@ -25,6 +26,7 @@ import { WRECK_RECOVERY_MAP_RULE } from "./wreck-recovery-map";
  *   evacuation            ─► evacuation-map.ts              settlement + one civilian hook per group
  *   hive-assault          ─► hive-assault-map.ts            hive cavern, own board and hooks, nests by level
  *                           great-hive-map.ts (hive.great)  Great Hive cavern, bigger board, more nests
+ *   tunnel-sabotage       ─► tunnel-sabotage-map.ts         settlement + three tunnel mouths
  * ```
  */
 export const MISSION_MAP_RULES: MissionMapRules = {
@@ -34,4 +36,5 @@ export const MISSION_MAP_RULES: MissionMapRules = {
   "wreck-recovery": WRECK_RECOVERY_MAP_RULE,
   evacuation: EVACUATION_MAP_RULE,
   "hive-assault": withGreatHiveMap(HIVE_ASSAULT_MAP_RULE),
+  "tunnel-sabotage": TUNNEL_SABOTAGE_MAP_RULE,
 };

@@ -72,6 +72,18 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
       // A mech chassis; the map rule sizes it from the lost chassis.
       meta: { footprint: 3 },
     },
+    [HookKinds.TUNNEL_MOUTH]: {
+      // Infantry and mechs (arc §6.7): either may set the charge, so a
+      // mouth only one class can reach halves the force that can work it.
+      requiredPass: Pass.ALL,
+      // Off the landing pad: a burrower surfacing at a mouth should come
+      // up a move away from the drop ship, not inside it. Near enough
+      // that the first mouth is a turn's walk in, so the squad works
+      // three while the fuses burn and still makes the drop ship.
+      minDistanceFromDeploy: 10,
+      maxNearestDistanceFromDeploy: 30,
+      meta: { footprint: 2 },
+    },
     [HookKinds.HIVE_CORE]: {
       requiredPass: Pass.ALL,
       // The far end of the cavern: the adapter fits this to the board,

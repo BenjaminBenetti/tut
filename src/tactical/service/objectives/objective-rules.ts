@@ -1,3 +1,4 @@
+import { TUNNEL_TUNING } from "../../data/tunnel-tuning";
 import type {
   ObjectiveKind,
   ObjectiveRules,
@@ -12,6 +13,7 @@ import { DESTROY_HIVE_CORE_OBJECTIVE } from "./destroy-hive-core-objective";
 import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
 import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
+import { createSealTunnelsObjective } from "./seal-tunnels-objective";
 import { STRIP_WRECK_OBJECTIVE } from "./strip-wreck-objective";
 
 // ===========================================
@@ -34,6 +36,8 @@ import { STRIP_WRECK_OBJECTIVE } from "./strip-wreck-objective";
  *   rescue-civilians   ──► rescue-civilians-objective.ts
  *   strip-wreck        ──► strip-wreck-objective.ts
  *   destroy-hive-core  ──► destroy-hive-core-objective.ts
+ *   seal-tunnels       ──► seal-tunnels-objective.ts (with the shipped
+ *                          tunnel tuning: the fuse and its blast)
  * ```
  *
  * Typed by `ObjectiveRulesTable`, so a kind added to `Objective` without
@@ -49,6 +53,7 @@ export const OBJECTIVE_RULES: ObjectiveRulesTable = {
   "rescue-civilians": RESCUE_CIVILIANS_OBJECTIVE,
   "strip-wreck": STRIP_WRECK_OBJECTIVE,
   "destroy-hive-core": DESTROY_HIVE_CORE_OBJECTIVE,
+  "seal-tunnels": createSealTunnelsObjective(TUNNEL_TUNING),
 };
 
 // ===========================================

@@ -169,6 +169,9 @@ export type TacticalError =
       readonly objectiveId: string;
     }
   | { readonly kind: "wreck-stripped"; readonly objectiveId: string }
+  // Sealing the tunnels (arc §6.7): one charge a mouth, and none to set
+  // while every open mouth already has one burning.
+  | { readonly kind: "tunnels-charged"; readonly objectiveId: string }
   // Stripping a tech carcass (#1171): only an infantry squad can, only
   // once, and only from beside it.
   | { readonly kind: "not-a-squad"; readonly unitId: string }
@@ -336,6 +339,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `Objective "${error.objectiveId}" has already been worked this turn`;
     case "wreck-stripped":
       return `Objective "${error.objectiveId}" is stripped; its parts only need carrying out`;
+    case "tunnels-charged":
+      return `Objective "${error.objectiveId}" has a charge burning on every open tunnel mouth`;
     case "not-a-squad":
       return `Unit "${error.unitId}" is not an infantry squad; only a squad can harvest`;
     case "unknown-carcass":
@@ -445,6 +450,7 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "no-objective-in-reach": true,
   "objective-worked-this-turn": true,
   "wreck-stripped": true,
+  "tunnels-charged": true,
   "not-a-squad": true,
   "unknown-carcass": true,
   "carcass-already-harvested": true,

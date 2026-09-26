@@ -14,6 +14,7 @@ import type {
 import type { Unit } from "../../model/unit";
 import { isInfantrySquad } from "../../model/unit";
 import { WRECK_WORKED } from "../../model/wreck-worked-event";
+import { nearestFootprintTile } from "./footprint-tile";
 
 // ===========================================
 // Progress
@@ -319,14 +320,5 @@ function targetFor(wreck: MechWreck, unit: Unit | undefined): ObjectiveTarget {
 
 /** The wreck tile nearest `from` by manhattan distance; the first of a tie, in tile order. */
 function nearestTile(wreck: MechWreck, from: TileCoord): TileCoord {
-  let best = wreck.pos;
-  let bestDistance = manhattanDistance(from, best);
-  for (const tile of wreck.tiles) {
-    const distance = manhattanDistance(from, tile);
-    if (distance < bestDistance) {
-      best = tile;
-      bestDistance = distance;
-    }
-  }
-  return best;
+  return nearestFootprintTile(wreck, from);
 }

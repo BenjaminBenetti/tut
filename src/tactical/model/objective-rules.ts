@@ -97,6 +97,8 @@ export type ObjectiveResultFields = Partial<
     | "civiliansTotal"
     | "wreck"
     | "hiveCoreDestroyed"
+    | "tunnelsSealed"
+    | "tunnelsTotal"
   >
 >;
 

@@ -45,6 +45,8 @@ const NOTHING_PLACED: Readonly<Record<PlacedList, readonly []>> = {
   extraction: [],
   blazeSites: [],
   wrecks: [],
+  // A tunnel mouth stands on its hook's tiles (campaign arc §6.7).
+  tunnelMouths: [],
   // A dormant brood's wake zone is a place on the map, and its members
   // were among the units the staging replaces (#1179).
   broods: [],

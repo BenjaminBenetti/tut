@@ -54,6 +54,7 @@ import { DomMechPreviewHost } from "./mech-preview-host";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import { TechTreeScreen } from "../../ui/screen/tech-tree-screen";
+import { TECH_EFFECT_LABELS } from "../../ui/data/tech-effect-labels";
 import { DomTechGraphHost } from "./tech-graph-host";
 import { NoticeBarView } from "../../ui/view/notice-bar-view";
 import type { TutTestHooks } from "../model/test-hooks";
@@ -257,6 +258,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             session: game.session,
             tech: game.content.tech,
             parts: game.content.parts,
+            conditionsOf: game.techConditionsOf,
+            squadTypes: game.content.squadTypes,
+            effectLabels: TECH_EFFECT_LABELS,
             graph: new DomTechGraphHost({
               baseUrl: import.meta.env.BASE_URL,
               onHooks: (hooks) => {

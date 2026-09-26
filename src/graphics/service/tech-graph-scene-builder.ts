@@ -98,7 +98,11 @@ const GRID_COLOUR = 0x161b26;
 /** The ground under the grid: a shade over the clear colour, so shadows have something to land on. */
 const GROUND_COLOUR = 0x0f1219;
 
-/** Ring tint and glow per status. */
+/**
+ * Ring tint and glow per status. A hidden node is never laid out, so it
+ * never gets a pedestal; its entry only keeps the table total, and
+ * matches locked in case a stale status map still names one.
+ */
 const STATUS_LOOK: Readonly<
   Record<TechNodeStatus, { readonly colour: number; readonly glow: number }>
 > = {
@@ -106,6 +110,7 @@ const STATUS_LOOK: Readonly<
   available: { colour: ACCENT_COLOUR, glow: 0.9 },
   unaffordable: { colour: WARN_COLOUR, glow: 0.35 },
   locked: { colour: LINE_COLOUR, glow: 0.15 },
+  hidden: { colour: LINE_COLOUR, glow: 0.15 },
 };
 
 /** How much brighter a hovered ring glows. */

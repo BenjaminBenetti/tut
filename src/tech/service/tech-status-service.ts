@@ -1,4 +1,5 @@
 import type { EconomyState } from "../../economy/model/economy-state";
+import type { TechConditions } from "../model/tech-conditions";
 import type { TechNode, TechNodeId } from "../model/tech-node";
 import type { TechState } from "../model/tech-state";
 
@@ -7,17 +8,43 @@ import type { TechState } from "../model/tech-state";
 // ===========================================
 
 /**
- * What a tree card can be, in the order a player works through them:
+ * What a tree card can be, in the order the checks run (ADR 0013 §2.7):
  *
  * | status         | meaning                                              |
  * |----------------|------------------------------------------------------|
- * | `unlocked`     | bought; its parts are in the bay                     |
- * | `available`    | prerequisites bought and the pool covers the cost    |
- * | `unaffordable` | prerequisites bought, pool too small                 |
+ * | `hidden`       | a required flag is missing; not drawn at all         |
+ * | `unlocked`     | bought; its effects apply                            |
  * | `locked`       | at least one prerequisite not bought                 |
+ * | `unaffordable` | prerequisites bought, pool too small                 |
+ * | `available`    | prerequisites bought and the pool covers the cost    |
  */
 export type TechNodeStatus =
-  "unlocked" | "available" | "unaffordable" | "locked";
+  "hidden" | "unlocked" | "available" | "unaffordable" | "locked";
+
+// ===========================================
+// Visibility
+// ===========================================
+
+/** The flags `node` requires that `conditions` does not have, in the node's order. */
+export function missingFlags(
+  node: TechNode,
+  conditions: TechConditions,
+): readonly string[] {
+  return (node.requiresFlags ?? []).filter(
+    (flag) => !conditions.flags.has(flag),
+  );
+}
+
+/**
+ * Whether `node` is hidden: any flag it requires is missing. A hidden
+ * node is not drawn, not listed and cannot be bought (ADR 0013 §2.7).
+ */
+export function isTechNodeHidden(
+  node: TechNode,
+  conditions: TechConditions,
+): boolean {
+  return missingFlags(node, conditions).length > 0;
+}
 
 // ===========================================
 // Status
@@ -32,15 +59,29 @@ export function missingPrerequisites(
 }
 
 /**
- * Classifies one node against the tree and the pool, the same order of
- * checks `unlockTech` refuses in, so a card the screen shows as
- * available is one the command will accept.
+ * Classifies one node against the conditions, the tree and the pool,
+ * with the same checks in the same order `unlockTech` refuses in, so a
+ * card the screen shows as available is one the command will accept and
+ * a hidden one is one it refuses as hidden:
+ *
+ * ```
+ *   hidden? ──► unlocked? ──► prerequisites missing? ──► pool covers cost?
+ *     │            │                  │                     │        │
+ *   hidden      unlocked            locked               available unaffordable
+ * ```
+ *
+ * `unlockTech` has one more check, for an unknown id, which a status
+ * never needs because it is handed a node.
  */
 export function techNodeStatus(
   node: TechNode,
   tech: TechState,
   economy: Pick<EconomyState, "techPoints">,
+  conditions: TechConditions,
 ): TechNodeStatus {
+  if (isTechNodeHidden(node, conditions)) {
+    return "hidden";
+  }
   if (tech.unlocked.includes(node.id)) {
     return "unlocked";
   }

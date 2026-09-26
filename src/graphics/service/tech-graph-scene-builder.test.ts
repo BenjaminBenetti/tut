@@ -10,13 +10,22 @@ import type { Object3D } from "three";
 import { describe, expect, it } from "vitest";
 
 import type { ModelAssetId } from "../../content/data/model-ids";
+import {
+  conditionalTechCatalogue,
+  FX_FIELD_NOTES,
+  FX_JUMP_JETS,
+  FX_PHEROMONE_ANALYSIS,
+  FX_POD_TELEMETRY,
+} from "../../tech/data/conditional-tech-tree.test-helper";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
+import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import type { TechNodeId } from "../../tech/model/tech-node";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
 import { layoutTechGraph } from "../../ui/service/tech-graph-layout";
 import type { ModelLoader } from "../model/model-loader";
+import { MODULE_MODEL_NAME } from "./tech-node-model-source";
 import {
   DEFAULT_CORE_MODEL,
   TechGraphSceneBuilder,
@@ -25,6 +34,7 @@ import {
 
 const LAYOUT = layoutTechGraph(
   new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES)),
+  NO_TECH_CONDITIONS,
 );
 
 class FakeModelLoader implements ModelLoader {
@@ -103,6 +113,31 @@ describe("TechGraphSceneBuilder", () => {
       child.name.startsWith("beam:"),
     );
     expect(beams).toHaveLength(LAYOUT.edges.length);
+    builder.dispose();
+  });
+
+  it("draws nothing of a hidden node and stands a generic module on a node with no part (ADR 0013 §2.7)", async () => {
+    const layout = layoutTechGraph(
+      conditionalTechCatalogue(),
+      NO_TECH_CONDITIONS,
+    );
+    const builder = new TechGraphSceneBuilder({
+      layout,
+      models: new FakeModelLoader(),
+    });
+    for (const hidden of [FX_PHEROMONE_ANALYSIS, FX_POD_TELEMETRY]) {
+      expect(builder.root.getObjectByName(`node:${hidden}`)).toBeUndefined();
+      expect(builder.root.getObjectByName(`beam:${hidden}`)).toBeUndefined();
+      expect(builder.worldPosition(hidden)).toBeUndefined();
+    }
+    // The energy family holds only hidden nodes, so it has no plinth.
+    expect(builder.root.getObjectByName("family:energy")).toBeUndefined();
+    expect(builder.root.getObjectByName(`node:${FX_JUMP_JETS}`)).toBeDefined();
+    await builder.loadModels();
+    const notes = builder.root
+      .getObjectByName(`node:${FX_FIELD_NOTES}`)
+      ?.getObjectByName("turntable");
+    expect(notes?.getObjectByName(MODULE_MODEL_NAME)).toBeDefined();
     builder.dispose();
   });
 

@@ -64,7 +64,8 @@ export const MODULE_MODEL_NAME = "tech-module";
  * when it is a single model and as its left and right side by side when
  * it is a pair of arms. A utility — or any part with no model — stands
  * as a generic lit module instead, since utilities have no shape on the
- * field to borrow.
+ * field to borrow; so does a node with no part at all (an intel,
+ * infantry or story node of ADR 0013 §2.7, whose `partIds` are empty).
  *
  * ```
  *   partIds ──► partModels ──► single ──► load ──► normalise

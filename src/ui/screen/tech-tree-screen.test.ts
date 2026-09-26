@@ -21,8 +21,23 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
+import {
+  CAPTURE_NET,
+  conditionalTechCatalogue,
+  FX_FIELD_NOTES,
+  FX_HEAVY_WEAPONS,
+  FX_JUMP_JETS,
+  FX_PHEROMONE_ANALYSIS,
+  FX_POD_TELEMETRY,
+  FX_SQUAD_ARMOUR,
+  SPORE_SAMPLE,
+  withFlags,
+} from "../../tech/data/conditional-tech-tree.test-helper";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
+import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import type { TechConditions } from "../../tech/model/tech-conditions";
+import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import type { TechNodeId } from "../../tech/model/tech-node";
 import { TECH_FAMILY_IDS } from "../../tech/model/tech-node";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
@@ -35,6 +50,7 @@ import type {
   TechGraphHost,
   TechGraphListener,
 } from "../model/tech-graph-host";
+import type { TechEffectLabels } from "../model/tech-effect-labels";
 import type { TechGraphLayout } from "../model/tech-graph-layout";
 import { TechTreeScreen } from "./tech-tree-screen";
 
@@ -75,6 +91,15 @@ const fixture = (): GameState => {
   };
 };
 
+/** What a test may swap in a store: the tree and where its conditions come from. */
+interface TreeOptions {
+  readonly tech?: TechCatalogue;
+  readonly conditionsOf?: (state: GameState) => TechConditions;
+}
+
+/** No flags, whatever the state. */
+const noConditions = (): TechConditions => NO_TECH_CONDITIONS;
+
 /** A campaign store over the real dispatcher with the tech commands registered. */
 class RealStore implements CampaignStore {
   private state: GameState;
@@ -82,11 +107,12 @@ class RealStore implements CampaignStore {
   private readonly listeners = new Set<
     StoreListener<GameState, OverworldCommand, CampaignEvent>
   >();
-  constructor(state: GameState) {
+  constructor(state: GameState, tree: TreeOptions = {}) {
     this.state = state;
     registerTechCommands(this.dispatcher, {
-      catalogue: TECH,
+      catalogue: tree.tech ?? TECH,
       techPoints: new TechPointTreasury(),
+      conditionsOf: tree.conditionsOf ?? noConditions,
       devTools: true,
     });
   }
@@ -161,12 +187,14 @@ class FakeGraphHost implements TechGraphHost {
   readonly selections: (TechNodeId | undefined)[] = [];
   readonly focused: TechNodeId[] = [];
   released = 0;
+  attaches = 0;
 
   attach(
     container: HTMLElement,
     layout: TechGraphLayout,
     listener: TechGraphListener,
   ): void {
+    this.attaches += 1;
     this.container = container;
     this.layout = layout;
     this.listener = listener;
@@ -193,7 +221,13 @@ class FakeGraphHost implements TechGraphHost {
 function mountWith(
   store: CampaignStore | undefined,
   root: HTMLElement,
-  extras: { graph?: TechGraphHost; devTools?: { grantPoints: number } } = {},
+  extras: {
+    graph?: TechGraphHost;
+    devTools?: { grantPoints: number };
+    tech?: TechCatalogue;
+    conditionsOf?: (state: GameState) => TechConditions;
+    effectLabels?: TechEffectLabels;
+  } = {},
 ): { navigate: NavigateMock; screen: TechTreeScreen } {
   const navigate: NavigateMock = vi.fn();
   const router: ScreenRouter = {
@@ -206,6 +240,7 @@ function mountWith(
     session: sessionWith(store),
     tech: TECH,
     parts: PARTS,
+    conditionsOf: noConditions,
     ...extras,
   });
   screen.mount(root);
@@ -446,5 +481,209 @@ describe("TechTreeScreen", () => {
     screen.unmount();
     expect(root.children).toHaveLength(0);
     expect(store.listenerCount).toBe(0);
+  });
+});
+
+// ===========================================
+// Hidden and conditional nodes (ADR 0013 §2.7)
+// ===========================================
+
+describe("TechTreeScreen with hidden and conditional nodes", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const CONDITIONAL = conditionalTechCatalogue();
+
+  /** A fresh campaign with a pool large enough for any fixture node. */
+  const funded = (): GameState => {
+    const base = newGame();
+    return {
+      ...base,
+      economy: { ...base.economy, techPoints: 200 },
+      tech: { unlocked: [] },
+    };
+  };
+
+  /**
+   * Stands in for the story spine: buying Field Notes is what sets the
+   * spore sample flag, so the conditions follow the unlocked set.
+   */
+  const notesRevealSpores = (state: GameState): TechConditions =>
+    state.tech.unlocked.includes(FX_FIELD_NOTES)
+      ? withFlags(SPORE_SAMPLE)
+      : NO_TECH_CONDITIONS;
+
+  const q = <T extends HTMLElement>(selector: string): T => {
+    const el = root.querySelector<T>(selector);
+    if (!el) throw new Error(`missing ${selector}`);
+    return el;
+  };
+  const labelIds = (): string[] =>
+    [...root.querySelectorAll<HTMLElement>("[data-node]")].map(
+      (el) => el.dataset.node ?? "",
+    );
+  const familyIds = (): string[] =>
+    [...root.querySelectorAll<HTMLElement>("[data-family]")].map(
+      (el) => el.dataset.family ?? "",
+    );
+  const effectItems = (): HTMLElement[] => [
+    ...root.querySelectorAll<HTMLElement>(
+      '#tech-tree-detail [data-field="unlocks"] li',
+    ),
+  ];
+
+  it("draws no label, pedestal or spoke for a hidden node or a family with nothing to show", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(funded(), { tech: CONDITIONAL }), root, {
+      graph,
+      tech: CONDITIONAL,
+    });
+    expect(labelIds()).not.toContain(FX_PHEROMONE_ANALYSIS);
+    expect(labelIds()).not.toContain(FX_POD_TELEMETRY);
+    expect(labelIds()).toContain(FX_FIELD_NOTES);
+    expect(familyIds()).toEqual(["mobility", "protection", "support"]);
+    expect(graph.layout?.nodes.map((n) => n.id)).not.toContain(
+      FX_PHEROMONE_ANALYSIS,
+    );
+    expect(graph.statuses.has(FX_PHEROMONE_ANALYSIS)).toBe(false);
+    expect(graph.statuses.get(FX_FIELD_NOTES)).toBe("available");
+  });
+
+  it("draws a hidden node once the conditions carry its flag", () => {
+    const graph = new FakeGraphHost();
+    const conditionsOf = () => withFlags(SPORE_SAMPLE);
+    mountWith(
+      new RealStore(funded(), { tech: CONDITIONAL, conditionsOf }),
+      root,
+      { graph, tech: CONDITIONAL, conditionsOf },
+    );
+    expect(labelIds()).toContain(FX_PHEROMONE_ANALYSIS);
+    expect(labelIds()).not.toContain(FX_POD_TELEMETRY);
+    expect(familyIds()).toContain("energy");
+    // 200 TP covers its 180.
+    expect(q(`[data-node="${FX_PHEROMONE_ANALYSIS}"]`).dataset.status).toBe(
+      "available",
+    );
+  });
+
+  it("refuses to select a node it does not draw", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(funded(), { tech: CONDITIONAL }), root, {
+      graph,
+      tech: CONDITIONAL,
+    });
+    graph.listener?.picked(FX_PHEROMONE_ANALYSIS);
+    expect(q("#tech-tree-detail").dataset.selectedNode).toBeUndefined();
+    expect(graph.selections).toEqual([undefined]);
+  });
+
+  it("lists a node's effects in words: labelled flags, unlabelled upgrades, squad types and parts", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(funded(), { tech: CONDITIONAL }), root, {
+      graph,
+      tech: CONDITIONAL,
+      conditionsOf: () => withFlags(SPORE_SAMPLE),
+      effectLabels: {
+        flags: { [CAPTURE_NET]: "The capture net" },
+        infantryUpgrades: {},
+      },
+    });
+    graph.listener?.picked(FX_PHEROMONE_ANALYSIS);
+    expect(
+      effectItems().map((li) => [li.dataset.effectKind, li.dataset.flag]),
+    ).toEqual([["flag", CAPTURE_NET]]);
+    expect(effectItems().map((li) => li.textContent)).toEqual([
+      "The capture net",
+    ]);
+
+    graph.listener?.picked(FX_FIELD_NOTES);
+    expect(effectItems().map((li) => li.textContent)).toEqual(["Field notes"]);
+
+    graph.listener?.picked(FX_SQUAD_ARMOUR);
+    expect(effectItems().map((li) => li.dataset.upgradeId)).toEqual([
+      "squad-armour-1",
+    ]);
+    expect(effectItems().map((li) => li.textContent)).toEqual([
+      "Squad armour 1",
+    ]);
+
+    graph.listener?.picked(FX_HEAVY_WEAPONS);
+    expect(effectItems().map((li) => li.dataset.squadTypeId)).toEqual([
+      "heavy-weapons",
+    ]);
+    expect(effectItems().map((li) => li.textContent)).toEqual([
+      "Heavy weapons",
+    ]);
+
+    graph.listener?.picked(FX_JUMP_JETS);
+    expect(effectItems().map((li) => li.dataset.partId)).toEqual([
+      "legs-jumper",
+    ]);
+    expect(effectItems().map((li) => li.textContent)).toEqual([
+      PARTS.getPart("legs-jumper")?.name,
+    ]);
+  });
+
+  it("re-lays the graph out when an unlock reveals a node, keeping the selection", () => {
+    const store = new RealStore(funded(), {
+      tech: CONDITIONAL,
+      conditionsOf: notesRevealSpores,
+    });
+    const graph = new FakeGraphHost();
+    mountWith(store, root, {
+      graph,
+      tech: CONDITIONAL,
+      conditionsOf: notesRevealSpores,
+    });
+    expect(graph.attaches).toBe(1);
+    expect(labelIds()).not.toContain(FX_PHEROMONE_ANALYSIS);
+
+    q(`[data-node="${FX_FIELD_NOTES}"]`).click();
+    q('#tech-tree-detail [data-action="unlock"]').click();
+
+    expect(store.getState().tech.unlocked).toEqual([FX_FIELD_NOTES]);
+    expect(graph.attaches).toBe(2);
+    expect(graph.layout?.nodes.map((n) => n.id)).toContain(
+      FX_PHEROMONE_ANALYSIS,
+    );
+    expect(labelIds()).toContain(FX_PHEROMONE_ANALYSIS);
+    expect(familyIds()).toContain("energy");
+    // The new label works: its status is live (175 TP left of its 180)
+    // and a click selects it.
+    const pheromone = q(`[data-node="${FX_PHEROMONE_ANALYSIS}"]`);
+    expect(pheromone.dataset.status).toBe("unaffordable");
+    expect(graph.statuses.get(FX_PHEROMONE_ANALYSIS)).toBe("unaffordable");
+    // The selection survived the rebuild, on the label and in the graph.
+    expect(q("#tech-tree-detail").dataset.selectedNode).toBe(FX_FIELD_NOTES);
+    expect(q(`[data-node="${FX_FIELD_NOTES}"]`).dataset.selected).toBe("true");
+    expect(graph.selections.at(-1)).toBe(FX_FIELD_NOTES);
+    pheromone.click();
+    expect(q("#tech-tree-detail").dataset.selectedNode).toBe(
+      FX_PHEROMONE_ANALYSIS,
+    );
+  });
+
+  it("does not re-lay the graph out for a change that reveals nothing", () => {
+    const store = new RealStore(funded(), {
+      tech: CONDITIONAL,
+      conditionsOf: notesRevealSpores,
+    });
+    const graph = new FakeGraphHost();
+    mountWith(store, root, {
+      graph,
+      tech: CONDITIONAL,
+      conditionsOf: notesRevealSpores,
+      devTools: { grantPoints: 10 },
+    });
+    q('[data-action="free-tech-points"]').click();
+    q(`[data-node="${FX_JUMP_JETS}"]`).click();
+    q('#tech-tree-detail [data-action="unlock"]').click();
+    expect(store.getState().tech.unlocked).toEqual([FX_JUMP_JETS]);
+    expect(graph.attaches).toBe(1);
   });
 });

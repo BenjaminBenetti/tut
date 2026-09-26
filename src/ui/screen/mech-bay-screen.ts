@@ -22,6 +22,7 @@ import type { LoadoutDescription } from "../../roster/service/loadout-validation
 import { describeLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import { partIdsOf } from "../../tech/model/tech-effect";
 import { createPartAvailability } from "../../tech/service/part-availability-service";
 import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import type { GameSession } from "../model/game-session";
@@ -465,7 +466,7 @@ export class MechBayScreen implements Screen {
   private lockedParts(): ReadonlyMap<string, string> {
     const locked = new Map<string, string>();
     for (const node of this.deps.tech.listNodes()) {
-      for (const partId of node.unlocks) {
+      for (const partId of partIdsOf(node)) {
         if (!this.availability.isAvailable(partId)) {
           locked.set(partId, node.name);
         }

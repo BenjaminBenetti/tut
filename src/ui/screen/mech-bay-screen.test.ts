@@ -32,6 +32,8 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
+import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
+import { partIdsOf } from "../../tech/model/tech-effect";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
@@ -152,6 +154,7 @@ class RealStore implements CampaignStore {
     registerTechCommands(this.dispatcher, {
       catalogue: TECH,
       techPoints: new TechPointTreasury(),
+      conditionsOf: () => NO_TECH_CONDITIONS,
     });
   }
   getState(): GameState {
@@ -844,7 +847,7 @@ describe("MechBayScreen", () => {
           '#part-palette [data-locked="true"]',
         ),
       ].map((el) => el.dataset.partId);
-      const named = TECH_NODES.flatMap((node) => [...node.unlocks]);
+      const named = TECH_NODES.flatMap((node) => [...partIdsOf(node)]);
       expect(locked.sort()).toEqual([...named].sort());
     });
 

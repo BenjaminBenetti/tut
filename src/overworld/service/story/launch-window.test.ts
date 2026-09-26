@@ -242,11 +242,13 @@ describe("Launch Window on the board", () => {
 // ===========================================
 
 describe("a Launch Window win", () => {
-  it("is the campaign's victory today, with the Spore Platform unbuilt", () => {
-    for (const rules of [
-      STORY_MISSION_RULES,
-      { ...STORY_MISSION_RULES, ...EARLIER_ACTS },
-    ]) {
+  it("is the campaign's victory with Intact Pod unbuilt, or without the Spore Platform", () => {
+    const { "spore-platform": _unbuilt, ...noPlatform } = {
+      ...STORY_MISSION_RULES,
+      ...EARLIER_ACTS,
+    };
+    const { "intact-pod": _unbuiltPod, ...noPod } = STORY_MISSION_RULES;
+    for (const rules of [noPod, noPlatform]) {
       const won = play(campaign(GATE), "won", rules).state;
       expect(won.progress.act).toBe("act-3");
       expect(won.progress.flags).toEqual([...GATE, "campaign-won"]);
@@ -257,23 +259,22 @@ describe("a Launch Window win", () => {
     }
   });
 
-  it("enters the finale once the Spore Platform is built", () => {
+  it("enters the finale once every earlier act exists: the Spore Platform is built", () => {
     const rules: StoryMissionRules = {
       ...STORY_MISSION_RULES,
       ...EARLIER_ACTS,
-      "spore-platform": fixtureStoryRule("spore-platform", {
-        act: "finale",
-        onWon: [{ kind: "victory" }],
-      }),
     };
-    const won = play(campaign(GATE), "won", rules);
-    expect(won.state.progress).toMatchObject({
-      act: "finale",
-      flags: GATE,
-      storyWon: ["launch-window"],
-    });
-    expect(won.events.map((event) => event.type)).toEqual([ACT_ADVANCED]);
-    expect(won.events[0]?.payload).toEqual({ from: "act-3", to: "finale" });
-    expect(evaluateOutcome(campaignOf(won.state))).toBeUndefined();
+    // The shipped table, and one whose earlier endings are fixtures.
+    for (const table of [STORY_MISSION_RULES, rules]) {
+      const won = play(campaign(GATE), "won", table);
+      expect(won.state.progress).toMatchObject({
+        act: "finale",
+        flags: GATE,
+        storyWon: ["launch-window"],
+      });
+      expect(won.events.map((event) => event.type)).toEqual([ACT_ADVANCED]);
+      expect(won.events[0]?.payload).toEqual({ from: "act-3", to: "finale" });
+      expect(evaluateOutcome(campaignOf(won.state))).toBeUndefined();
+    }
   });
 });

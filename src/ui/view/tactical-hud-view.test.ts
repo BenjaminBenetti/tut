@@ -20,6 +20,8 @@ import { withVision } from "../../tactical/service/vision-service";
 import { withCivilian } from "../../tactical/service/tactical-fixtures.test-helper";
 import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
+import type { MissionEndedEvent } from "../../tactical/model/mission-ended-event";
+import { MISSION_ENDED } from "../../tactical/model/mission-ended-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import {
   configureJev,
@@ -2793,6 +2795,42 @@ describe("the event log on arrival (#573)", () => {
       }),
     );
     expect(logLines()).toEqual(["Turn 1 — TDF phase", "Turn 1 — bug phase"]);
+  });
+
+  it("reads on into a linked mission's next stage: the stage won by its number, then the new stage's opening (#1179)", () => {
+    const hud = bareHud();
+    const ended: MissionEndedEvent = {
+      type: MISSION_ENDED,
+      payload: { outcome: "won", turn: 4 },
+    };
+    const hull = { index: 0, count: 2, earlier: [] };
+    hud.update(
+      hudMission({ turn: 1, log: [turnStarted(1, "player")], stage: hull }),
+    );
+    hud.update(
+      hudMission({
+        turn: 4,
+        outcome: "won",
+        log: [turnStarted(1, "player"), ended],
+        stage: hull,
+      }),
+      [ended],
+    );
+    // The next stage: the same mission, a new log, and no events.
+    const core = hudMission({
+      turn: 1,
+      log: [turnStarted(1, "player")],
+      stage: { index: 1, count: 2, earlier: [] },
+    });
+    hud.update(core);
+    hud.update(core);
+    hud.update({ ...core, outcome: "won" }, [ended]);
+    expect(logLines()).toEqual([
+      "Turn 1 — TDF phase",
+      "Stage 1 of 2 won",
+      "Turn 1 — TDF phase",
+      "Mission won",
+    ]);
   });
 });
 

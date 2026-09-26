@@ -7,6 +7,7 @@ import { withGreatHiveRefresh } from "./great-hive-offer-refresh";
 import { HIVE_ASSAULT_TRIGGER } from "./hive-assault-trigger";
 import { INFESTATION_CLEARANCE_OFFER } from "./infestation-clearance-offer";
 import { createTunnelSabotageOffer } from "./tunnel-sabotage-offer";
+import { SPORE_PLATFORM_TRIGGER } from "./spore-platform-trigger";
 import { WRECK_RECOVERY_TRIGGER } from "./wreck-recovery-trigger";
 
 // ===========================================
@@ -31,6 +32,7 @@ import { WRECK_RECOVERY_TRIGGER } from "./wreck-recovery-trigger";
  *   tunnel-sabotage        ──► tunnel-sabotage-offer.ts          offer: detected city ≥ 60 whose spread
  *                                                                is due within 2 days, from Act II
  *                                                                mission 5
+ *   spore-platform         ──► spore-platform-trigger.ts         trigger: never; the story pins it
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -48,4 +50,5 @@ export const MISSION_OFFER_RULES: MissionOfferRules = {
   evacuation: EVACUATION_OFFER,
   "hive-assault": withGreatHiveRefresh(HIVE_ASSAULT_TRIGGER),
   "tunnel-sabotage": createTunnelSabotageOffer(INFESTATION_TUNING),
+  "spore-platform": SPORE_PLATFORM_TRIGGER,
 };

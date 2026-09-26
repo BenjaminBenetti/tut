@@ -90,6 +90,14 @@ export interface MissionPresentation {
     result: MissionResult,
     ctx: MissionPresentationContext,
   ): string | undefined;
+  /**
+   * The headline between a linked mission's stages (ADR 0013
+   * amendment, #1179), once stage `from` is won: what was cleared and
+   * where the squad goes next ("Hull cleared. The squad boards the
+   * core."). Undefined, or left out, for the generic line built from
+   * the stages' names. Only a type with `stages` is ever asked.
+   */
+  stageTransition?(from: number): string | undefined;
 }
 
 /**

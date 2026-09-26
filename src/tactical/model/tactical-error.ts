@@ -205,6 +205,11 @@ export type TacticalError =
   | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
   | { readonly kind: "not-extractable"; readonly unitId: string }
   | { readonly kind: "mission-not-over"; readonly missionId: string }
+  // Linked missions (ADR 0013 amendment, #1179): a won stage with
+  // another after it is not the end of the mission, and only such a
+  // stage can be advanced from.
+  | { readonly kind: "stage-pending"; readonly missionId: string }
+  | { readonly kind: "no-stage-to-advance"; readonly missionId: string }
   | { readonly kind: "not-player-phase" }
   | {
       readonly kind: "mission-mismatch";
@@ -365,6 +370,10 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" cannot leave through the extraction zone`;
     case "mission-not-over":
       return `Mission "${error.missionId}" is still being fought`;
+    case "stage-pending":
+      return `Mission "${error.missionId}" has another stage to fight`;
+    case "no-stage-to-advance":
+      return `Mission "${error.missionId}" has no won stage to move on from`;
     case "not-player-phase":
       return "The mission cannot be left during the bug phase";
     case "mission-mismatch":
@@ -463,6 +472,8 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "not-in-extraction-zone": true,
   "not-extractable": true,
   "mission-not-over": true,
+  "stage-pending": true,
+  "no-stage-to-advance": true,
   "not-player-phase": true,
   "mission-mismatch": true,
   "unhandled-command": true,

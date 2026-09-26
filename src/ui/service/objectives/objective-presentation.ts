@@ -7,9 +7,11 @@ import type {
   ObjectivePresentationCatalogue,
   ObjectiveProgressReadings,
 } from "../../model/objective-presentation";
+import { BOARD_CORE_PRESENTATION } from "./board-core-presentation";
 import { CAPTURE_SPECIMEN_PRESENTATION } from "./capture-specimen-presentation";
 import { DEFEND_GENERATORS_PRESENTATION } from "./defend-generators-presentation";
 import { DESTROY_HIVE_CORE_PRESENTATION } from "./destroy-hive-core-presentation";
+import { DESTROY_PLATFORM_CORE_PRESENTATION } from "./destroy-platform-core-presentation";
 import { DESTROY_POD_PRESENTATION } from "./destroy-pod-presentation";
 import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
 import { RECOVER_POD_PRESENTATION } from "./recover-pod-presentation";
@@ -37,6 +39,8 @@ import { STRIP_WRECK_PRESENTATION } from "./strip-wreck-presentation";
  *   destroy-hive-core  ──► destroy-hive-core-presentation.ts
  *   seal-tunnels       ──► seal-tunnels-presentation.ts
  *   recover-pod        ──► recover-pod-presentation.ts
+ *   board-core         ──► board-core-presentation.ts
+ *   destroy-platform-core ──► destroy-platform-core-presentation.ts
  * ```
  */
 export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
@@ -49,6 +53,8 @@ export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
   "destroy-hive-core": DESTROY_HIVE_CORE_PRESENTATION,
   "seal-tunnels": SEAL_TUNNELS_PRESENTATION,
   "recover-pod": RECOVER_POD_PRESENTATION,
+  "board-core": BOARD_CORE_PRESENTATION,
+  "destroy-platform-core": DESTROY_PLATFORM_CORE_PRESENTATION,
 } satisfies { readonly [K in ObjectiveKind]: { readonly kind: K } };
 
 // ===========================================

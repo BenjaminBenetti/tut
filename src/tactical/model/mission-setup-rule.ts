@@ -2,10 +2,12 @@ import type { IdGenerator } from "../../core/model/id-generator";
 import type { Result } from "../../core/model/result";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Mission } from "../../overworld/model/mission";
 import type { BroodSetupDeps } from "./brood-tuning";
 import type { BugUnitSource } from "./bug-unit-source";
 import type { CivilianTuning } from "./civilian";
+import type { CoreBoss } from "./core-boss";
 import type { GeneratorTuning } from "./generator";
 import type { GreatHiveSetupTuning } from "./great-hive-setup-tuning";
 import type { HiveAssaultSetupTuning } from "./hive-assault-setup-tuning";
@@ -63,6 +65,13 @@ export interface MissionSetupDeps {
    * Hive is set up as an ordinary Hive Assault.
    */
   readonly greatHive?: GreatHiveSetupTuning;
+  /**
+   * The boss the Spore Platform's core stage stands on its dais, and her
+   * escort (campaign arc §6.9, §9; #1179): the Sovereign, passed in by
+   * the composition root. Optional so every start built before her still
+   * compiles; absent, the core stage stands no boss.
+   */
+  readonly coreBoss?: CoreBoss;
 }
 
 // ===========================================
@@ -108,6 +117,29 @@ export interface MissionSetupRule {
     mission: Mission,
     deps: MissionSetupDeps,
   ): Result<TacticalState, TacticalError>;
+  /**
+   * The tiles the force stands on at the start of `stage`, in the order
+   * to fill them, when the type deploys somewhere other than the map's
+   * deploy zones (#1179): the Spore Platform's squad comes aboard at the
+   * docking ring. Absent, or answering undefined, the force stands on
+   * the deploy zones, as every other type's does. A linked mission's
+   * `state.stage` says which stage `setup` is building; this is asked
+   * before the base state exists, so it is told.
+   *
+   * @param map - The stage's generated map.
+   * @param stage - The zero-based stage; 0 on a one-map mission.
+   */
+  deployTiles?(
+    map: TacticalMap,
+    stage: number,
+  ): readonly TileCoord[] | undefined;
+  /**
+   * False for a type fought where the region's defensive batteries
+   * cannot reach (#1179): the Spore Platform, in orbit, stands no
+   * garrison turrets whatever its city's region holds. Absent reads as
+   * true, as every type before it is garrisoned.
+   */
+  readonly garrisoned?: boolean;
 }
 
 /**

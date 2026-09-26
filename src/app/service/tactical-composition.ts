@@ -97,6 +97,7 @@ import {
 import { drainRadarBatteries } from "../../tactical/service/radar-service";
 import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
+import { PLATFORM_CORE_BOSS } from "./platform-core-boss";
 import { createMoveHandler } from "../../tactical/service/move-handler";
 import {
   createExtractHandler,
@@ -278,6 +279,10 @@ export function composeTactical(
     // setup may place: Live Specimen's lurkers (#1179).
     storySetupRules: STORY_SETUP_RULES,
     species: Object.values(BUG_SPECIES),
+    // Who guards the Spore Platform's core (#1179), when she is built.
+    ...(PLATFORM_CORE_BOSS === undefined
+      ? {}
+      : { coreBoss: PLATFORM_CORE_BOSS }),
     // Every squad deployed carries what the tree has researched for the
     // infantry (campaign arc §10.3), the capture net among it (#1179),
     // read off the campaign at the start.

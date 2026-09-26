@@ -265,6 +265,52 @@ export const TUNNEL_SABOTAGE: MissionType = {
 };
 
 /**
+ * The finale (campaign arc §6.9): the assault on the Spore Platform,
+ * played as two linked maps (ADR 0013 amendment, #1179). The squad
+ * boards at the hull's docking ring and fights to the hatch; whoever
+ * gets through goes straight on into the core chamber, with no repairs,
+ * no re-arm and no swaps, and destroys the platform core the Sovereign
+ * guards. Only ever pinned by the story, never drawn.
+ *
+ * Numbers: the finale band's top, d10, for the one fight it is (arc §3:
+ * story missions use fixed difficulties, the finale's band is d8–10).
+ * No credits and no tech: a win ends the campaign in victory, and a
+ * loss pays nothing, so a reward could never be spent. The expiry and
+ * the ignore penalty are never read, because a pinned offer never
+ * lapses; they are the clearance's so the type stays ordinary data.
+ *
+ * `requiredHooks` names the hull's hooks in content vocabulary for the
+ * readers that list them. The map rule replaces them with each stage's
+ * own board and hook list (`spore-platform-hull`, then
+ * `spore-platform-core`), so the adapter never scales these.
+ */
+export const SPORE_PLATFORM: MissionType = {
+  id: "spore-platform",
+  name: "Spore Platform",
+  description:
+    "The platform hangs over the Earth. Board its hull, fight through to the hatch, then destroy the core the Sovereign guards. No repairs between the two.",
+  difficultyBand: { min: 10, max: 10 },
+  rewardPerDifficulty: 0,
+  techRewardBase: 0,
+  techRewardPerDifficulty: 0,
+  expiryDays: 5,
+  ignorePenalty: 0,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "docking-ring", count: 1 },
+    { kind: "platform-exit", count: 1 },
+    { kind: "egg-spawner", count: 3 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "large",
+  stages: [
+    { id: "hull", name: "The hull" },
+    { id: "core", name: "The core" },
+  ],
+};
+
+/**
  * Every mission type keyed by id. Typed as a record over the closed
  * `MissionTypeId` union so a new id without a definition (or a definition
  * whose key and `id` disagree, see the data test) fails at compile time
@@ -278,4 +324,5 @@ export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   evacuation: EVACUATION,
   "hive-assault": HIVE_ASSAULT,
   "tunnel-sabotage": TUNNEL_SABOTAGE,
+  "spore-platform": SPORE_PLATFORM,
 };

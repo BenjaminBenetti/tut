@@ -14,6 +14,7 @@ import { withGreatHiveOffer } from "./great-hive-offer-presentation";
 import { HIVE_ASSAULT_PRESENTATION } from "./hive-assault-presentation";
 import { INFESTATION_CLEARANCE_PRESENTATION } from "./infestation-clearance-presentation";
 import { TUNNEL_SABOTAGE_PRESENTATION } from "./tunnel-sabotage-presentation";
+import { SPORE_PLATFORM_PRESENTATION } from "./spore-platform-presentation";
 import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
 
 // ===========================================
@@ -34,6 +35,7 @@ import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
  *   hive-assault           ──► hive-assault-presentation.ts
  *                              + great-hive-offer-presentation.ts (a Great Hive)
  *   tunnel-sabotage        ──► tunnel-sabotage-presentation.ts
+ *   spore-platform         ──► spore-platform-presentation.ts
  * ```
  *
  * The wreck's rows name parts, so its entry is built over the shipped
@@ -49,6 +51,7 @@ export const MISSION_PRESENTATION: MissionPresentationCatalogue = {
   evacuation: EVACUATION_PRESENTATION,
   "hive-assault": withGreatHiveOffer(HIVE_ASSAULT_PRESENTATION),
   "tunnel-sabotage": TUNNEL_SABOTAGE_PRESENTATION,
+  "spore-platform": SPORE_PLATFORM_PRESENTATION,
 };
 
 // ===========================================

@@ -229,6 +229,27 @@ export interface MissionResult {
    * to `outcome` when it is undefined.
    */
   readonly objectives?: readonly ObjectiveResult[];
+  /**
+   * How each stage of a linked mission went (ADR 0013 amendment,
+   * #1179), in play order, for the debrief: every stage won but the
+   * last, which ended as `outcome` says. The mission's other fields are
+   * already the whole mission's; this only says where it was decided.
+   * Absent on a one-map mission, so such a result is exactly what it
+   * was before.
+   */
+  readonly stages?: readonly MissionStageResult[];
+}
+
+/**
+ * How one stage of a linked mission ended (ADR 0013 amendment): which
+ * stage, how, and on what turn.
+ */
+export interface MissionStageResult {
+  /** Zero-based stage index. */
+  readonly index: number;
+  readonly outcome: MissionOutcome;
+  /** The turn the stage ended on. */
+  readonly turns: number;
 }
 
 /**

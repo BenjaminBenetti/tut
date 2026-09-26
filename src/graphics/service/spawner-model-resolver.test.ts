@@ -47,7 +47,22 @@ describe("spawnerModelId (#1179)", () => {
     ).toBe("bug.spore-pod");
   });
 
-  it("names only registered models, the hive core's 3×3", () => {
+  it("draws the platform core as its caged seed, with no ripe or damaged look (#1179)", () => {
+    for (const ripe of [false, true]) {
+      expect(
+        spawnerModelId({ variant: "platform-core" }, ripe, SPAWNER_MODELS),
+      ).toBe("prop.platform-core");
+    }
+    expect(
+      spawnerModelId(
+        { variant: "platform-core", hp: 1, maxHp: 60 },
+        false,
+        SPAWNER_MODELS,
+      ),
+    ).toBe("prop.platform-core");
+  });
+
+  it("names only registered models, the hive core's and the platform core's 3×3", () => {
     for (const models of Object.values(SPAWNER_MODELS)) {
       expect(MODEL_MANIFEST[models.standing]).toBeDefined();
       for (const other of [models.ripe, models.damaged]) {
@@ -58,6 +73,10 @@ describe("spawnerModelId (#1179)", () => {
     }
     expect(MODEL_MANIFEST["bug.hive-core"].footprint).toEqual({ w: 3, d: 3 });
     expect(MODEL_MANIFEST["bug.hive-core-damaged"].footprint).toEqual({
+      w: 3,
+      d: 3,
+    });
+    expect(MODEL_MANIFEST["prop.platform-core"].footprint).toEqual({
       w: 3,
       d: 3,
     });

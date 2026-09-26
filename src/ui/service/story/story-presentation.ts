@@ -11,6 +11,7 @@ import { GREAT_HIVE_PRESENTATION } from "./great-hive-presentation";
 import { INTACT_POD_PRESENTATION } from "./intact-pod-presentation";
 import { LAUNCH_WINDOW_PRESENTATION } from "./launch-window-presentation";
 import { LIVE_SPECIMEN_PRESENTATION } from "./live-specimen-presentation";
+import { SPORE_PLATFORM_STORY_PRESENTATION } from "./spore-platform-presentation";
 import { UPLINK_PRESENTATION } from "./uplink-presentation";
 
 // ===========================================
@@ -30,6 +31,8 @@ import { UPLINK_PRESENTATION } from "./uplink-presentation";
  *   launch-window  ──► launch-window-presentation.ts   } story-defence-presentation.ts
  *   intact-pod     ──► intact-pod-presentation.ts      (replaces the crash site's
  *                                                       pod and landing rows)
+ *   spore-platform ──► spore-platform-presentation.ts  (the finale's stakes; the
+ *                      type's own rows are missions/spore-platform-presentation.ts)
  * ```
  */
 export const STORY_PRESENTATION: StoryPresentationCatalogue = {
@@ -38,6 +41,7 @@ export const STORY_PRESENTATION: StoryPresentationCatalogue = {
   "great-hive": GREAT_HIVE_PRESENTATION,
   "launch-window": LAUNCH_WINDOW_PRESENTATION,
   "intact-pod": INTACT_POD_PRESENTATION,
+  "spore-platform": SPORE_PLATFORM_STORY_PRESENTATION,
 };
 
 // ===========================================

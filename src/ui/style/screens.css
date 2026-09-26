@@ -1373,6 +1373,19 @@
   margin-top: var(--space-4);
 }
 
+/* Between a linked mission's stages (#1179): who goes on, and in what shape. */
+.tut-modal__panel.tut-stage-transition {
+  width: min(600px, calc(100vw - 2 * var(--space-4)));
+}
+
+.tut-stage-transition__survivors {
+  margin-top: var(--space-3);
+}
+
+.tut-stage-transition [data-wounded="true"] {
+  color: var(--ui-warn);
+}
+
 /* ===========================================
    Notice bar (#217)
    =========================================== */
@@ -1735,6 +1748,21 @@
 .tut-hud__objectives .tut-list > li > .tut-mono {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+/*
+ * A linked mission's stages (#1179), above the objectives: the one
+ * being fought in full, the others dimmed, a rule under them.
+ */
+.tut-hud__objectives .tut-hud__stages {
+  margin: var(--space-1) 0 var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: var(--line) solid var(--ui-line);
+}
+
+.tut-hud__stages > li[data-stage-state="cleared"],
+.tut-hud__stages > li[data-stage-state="ahead"] {
+  color: var(--ui-text-dim);
 }
 
 /*

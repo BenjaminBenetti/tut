@@ -15,6 +15,7 @@ import type {
 import { decidingObjectives } from "../../tactical/service/objectives/objective-status";
 import type { SitrepCountdown } from "../model/sitrep-presentation";
 import { formatWhole } from "../service/format";
+import type { StageTrack, StageTrackState } from "../service/stage-track";
 import { OBJECTIVE_PRESENTATION } from "../service/objectives/objective-presentation";
 import { iconGlyph } from "./icon-glyph";
 
@@ -31,6 +32,16 @@ const STACK_CLASS = "tut-hud__defence";
 
 /** Class of a deadline countdown line; `data-urgent="true"` makes it pulse. */
 const DEADLINE_CLASS = "tut-deadline";
+
+/** What the summary names once every deciding objective is done. */
+const DEFAULT_CLOSING_STEP = "board the drop ship";
+
+/** Each stage state's glyph: done, being fought, still ahead. */
+const STAGE_ICONS = {
+  cleared: "check",
+  current: "advance",
+  ahead: "lock",
+} as const satisfies Record<StageTrackState, string>;
 
 // ===========================================
 // ObjectiveTrackerView
@@ -69,7 +80,17 @@ const DEADLINE_CLASS = "tut-deadline";
  *   OBJECTIVES  0 / 1
  *   └ ◇ Tunnels sealed · 1 / 3
  *       Tunnel 2 blows in 2 turns          (a row's own countdown: data-role="fuse")
+ *
+ *   OBJECTIVES  1 / 1 — on to the core     (a linked mission, #1179)
+ *   │ ▸ The hull                           current   } the stages, above
+ *   │ ▫ The core                           ahead     } the objectives
+ *   └ ✓ Board the core
  * ```
+ *
+ * A linked mission (ADR 0013 amendment, #1179) lists its stages above
+ * the objectives, cleared, current and ahead (`setStages`), and a stage
+ * with another after it names the next one where the summary would say
+ * to board the drop ship.
  *
  * An optional objective (#1179, a story mission's host nests) gets its
  * row, marked `data-optional` and tagged, but the summary counts only
@@ -96,7 +117,9 @@ export class ObjectiveTrackerView {
   private readonly presentations: ObjectivePresentationCatalogue;
   private root: HTMLElement | undefined;
   private summary: HTMLElement | undefined;
+  private stageList: HTMLElement | undefined;
   private list: HTMLElement | undefined;
+  private stages: StageTrack | undefined;
 
   // ===========================================
   // Constructor
@@ -125,14 +148,32 @@ export class ObjectiveTrackerView {
     const summary = doc.createElement("div");
     summary.className = "tut-mono";
     summary.dataset.field = "objective-summary";
+    const stageList = doc.createElement("ol");
+    stageList.className = "tut-list tut-hud__stages";
+    stageList.dataset.role = "stage-list";
+    stageList.hidden = true;
     const list = doc.createElement("ul");
     list.className = "tut-list";
     list.dataset.role = "objective-list";
-    section.append(title, summary, list);
+    section.append(title, summary, stageList, list);
     parent.appendChild(section);
     this.root = section;
     this.summary = summary;
+    this.stageList = stageList;
     this.list = list;
+    this.drawStages();
+  }
+
+  /**
+   * Sets a linked mission's stages (#1179), or clears them with
+   * undefined for a one-map mission: one row per stage above the
+   * objectives, and the summary's closing step for the next `update`.
+   *
+   * @param stages - The stages, from `stageTrackOf`.
+   */
+  setStages(stages: StageTrack | undefined): void {
+    this.stages = stages;
+    this.drawStages();
   }
 
   /**
@@ -191,7 +232,7 @@ export class ObjectiveTrackerView {
     const allDone = deciding.length > 0 && done === deciding.length;
     this.summary.dataset.complete = allDone ? "true" : "false";
     this.summary.textContent = allDone
-      ? `${formatWhole(done)} / ${formatWhole(deciding.length)} — board the drop ship`
+      ? `${formatWhole(done)} / ${formatWhole(deciding.length)} — ${this.stages?.closingStep ?? DEFAULT_CLOSING_STEP}`
       : `${formatWhole(done)} / ${formatWhole(deciding.length)}`;
     const doc = this.list.ownerDocument;
     this.list.replaceChildren();
@@ -217,7 +258,37 @@ export class ObjectiveTrackerView {
     this.root?.remove();
     this.root = undefined;
     this.summary = undefined;
+    this.stageList = undefined;
     this.list = undefined;
+  }
+
+  // ===========================================
+  // Private Methods
+  // ===========================================
+
+  /**
+   * Rebuilds the stage rows from `stages`: `data-stage-index` and
+   * `data-stage-state` on each, the state's glyph and the stage's name.
+   * Hidden when there are none.
+   */
+  private drawStages(): void {
+    if (!this.stageList) {
+      return;
+    }
+    const doc = this.stageList.ownerDocument;
+    const rows = this.stages?.rows ?? [];
+    this.stageList.hidden = rows.length === 0;
+    this.stageList.replaceChildren(
+      ...rows.map((row) => {
+        const item = doc.createElement("li");
+        item.dataset.stageIndex = String(row.index);
+        item.dataset.stageState = row.state;
+        const label = doc.createElement("span");
+        label.textContent = row.name;
+        item.append(iconGlyph(doc, STAGE_ICONS[row.state]), label);
+        return item;
+      }),
+    );
   }
 }
 

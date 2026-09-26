@@ -402,8 +402,8 @@ describe("the story from Live Specimen to Act III, through the composition root 
 
     // Act III: Uplink pins the next day and can be won, and Platform
     // Approach bought, but Launch Window waits on great-hives-destroyed,
-    // which nothing in the shipped game sets yet: the story stops here,
-    // and nothing reaches the finale (no Spore Platform rule exists).
+    // which no Great Hive destroyed here sets: the story stops here, and
+    // nothing reaches the finale, though the Spore Platform is built.
     const uplink = daysUntil(game, 1, (state) => storyOffer(state, "uplink"));
     if (uplink === undefined) throw new Error("Uplink must pin in Act III");
     overwhelm(game, starter);
@@ -413,10 +413,11 @@ describe("the story from Live Specimen to Act III, through the composition root 
     expect(
       game.session.store?.dispatch(unlockTech(PLATFORM_APPROACH))?.ok,
     ).toBe(true);
-    expect(STORY_MISSION_RULES["spore-platform"]).toBeUndefined();
+    expect(STORY_MISSION_RULES["spore-platform"]).toBeDefined();
     for (let day = 0; day < 10; day++) {
       nextDay(game);
       expect(storyOffer(live(game), "launch-window")).toBeUndefined();
+      expect(storyOffer(live(game), "spore-platform")).toBeUndefined();
       expect(live(game).overworld.progress.act).toBe("act-3");
       expect(live(game).overworld.progress.flags).not.toContain(
         "great-hives-destroyed",

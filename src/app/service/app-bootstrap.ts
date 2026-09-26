@@ -344,6 +344,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
               : undefined,
             router,
             session: game.session,
+            missionTypes: game.content.missionTypes,
             combatTuning: COMBAT_TUNING,
             objectiveTuning: OBJECTIVE_TUNING,
             rankTuning: game.content.rosterTuning.ranks,

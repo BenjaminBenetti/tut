@@ -40,6 +40,8 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "no-active-mission" },
   { kind: "mission-active", missionId: ID },
   { kind: "mission-not-found", missionId: ID },
+  { kind: "stage-pending", missionId: ID },
+  { kind: "no-stage-to-advance", missionId: ID },
   { kind: "empty-deployment" },
   { kind: "oversized-deployment", size: 9, max: 6 },
   { kind: "unit-not-found", unitId: ID },
@@ -340,6 +342,20 @@ describe("namesFor", () => {
       "Broodmother",
     );
   });
+
+  it("still names a squad that has extracted by its roster name, for a linked mission's transition (#1179)", () => {
+    const units = twoRifleSquads.mission?.units ?? [];
+    const alpha = units.find((unit) => unit.id === "unit-1");
+    if (alpha === undefined) throw new Error("the fixture fields unit-1");
+    const after = {
+      ...twoRifleSquads.mission,
+      units: units.filter((unit) => unit.id !== alpha.id),
+      extracted: [alpha],
+    } as unknown as Parameters<typeof namesFor>[0];
+    expect(namesFor(after, twoRifleSquads.campaign).unit("unit-1")).toBe(
+      "Alpha",
+    );
+  });
 });
 
 describe("namesFor on a defence (#1175)", () => {
@@ -393,6 +409,8 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
       "destroy-hive-core": OBJECTIVE_PRESENTATION["destroy-hive-core"],
       "seal-tunnels": OBJECTIVE_PRESENTATION["seal-tunnels"],
       "recover-pod": OBJECTIVE_PRESENTATION["recover-pod"],
+      "board-core": OBJECTIVE_PRESENTATION["board-core"],
+      "destroy-platform-core": OBJECTIVE_PRESENTATION["destroy-platform-core"],
     };
     const names = namesFor(
       {

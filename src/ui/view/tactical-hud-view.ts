@@ -69,6 +69,7 @@ import type {
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
 import type { GameState } from "../../save/model/game-state";
+import type { StageTrack } from "../service/stage-track";
 import {
   attackTargetName,
   describeRefusal,
@@ -620,6 +621,14 @@ export class TacticalHudView {
     // it never used to.
     const arrived =
       mission !== undefined && this.mission?.missionId !== mission.missionId;
+    // The next stage of a linked mission (#1179) keeps the log, which
+    // reads on from the stage won, and adds the new stage's opening
+    // lines from its own log: `AdvanceStage` carries no events.
+    const nextStage =
+      !arrived &&
+      mission?.stage !== undefined &&
+      this.mission !== undefined &&
+      this.mission.stage?.index !== mission.stage.index;
     if (arrived) {
       this.log.clear();
       // A placement armed for one mission is not armed for the next.
@@ -629,7 +638,7 @@ export class TacticalHudView {
     this.view = mission === undefined ? undefined : viewFor(mission, "tdf");
     this.phases.announce(phaseChangesIn(events));
     this.log.append(
-      arrived && mission ? mission.log : events,
+      (arrived || nextStage) && mission ? mission.log : events,
       mission,
       this.campaign,
     );
@@ -768,6 +777,19 @@ export class TacticalHudView {
    */
   setCampaign(campaign: GameState | undefined): void {
     this.campaign = campaign;
+    this.refresh();
+  }
+
+  /**
+   * A linked mission's stages for the objective tracker (#1179), or
+   * undefined for a one-map mission. Handed in, as the mission name is:
+   * the stages' names are the mission type's, which only the screen can
+   * reach through the offer.
+   *
+   * @param stages - The stages, from `stageTrackOf`.
+   */
+  setStages(stages: StageTrack | undefined): void {
+    this.objectives.setStages(stages);
     this.refresh();
   }
 

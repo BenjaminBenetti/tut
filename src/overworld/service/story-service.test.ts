@@ -394,13 +394,15 @@ describe("the spine", () => {
     });
   });
 
-  it("with the shipped table, Acts I to III exist and the finale does not (#1179)", () => {
-    // Intact Pod closes the gap at Act II; the Spore Platform is unbuilt.
+  it("with the shipped table, every act exists, the finale too (#1179)", () => {
+    // Intact Pod closes the gap at Act II, and the Spore Platform ends
+    // the finale.
     const deps = { rules: STORY_MISSION_RULES, spine: STORY_SPINE };
     expect(ACT_IDS.filter((act) => actExists(act, deps))).toEqual([
       "act-1",
       "act-2",
       "act-3",
+      "finale",
     ]);
     const livePlayed = play(
       flagged([]),
@@ -424,8 +426,8 @@ describe("the spine", () => {
       "won",
       STORY_MISSION_RULES,
     );
-    expect(launched.state.progress.act).toBe("act-3");
-    expect(launched.state.progress.flags).toEqual(["campaign-won"]);
+    expect(launched.state.progress.act).toBe("finale");
+    expect(launched.state.progress.flags).toEqual([]);
   });
 
   it("never enters an act through a gap: Act III needs Act I's ending too", () => {

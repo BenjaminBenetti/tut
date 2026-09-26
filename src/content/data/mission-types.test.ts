@@ -35,8 +35,9 @@ describe("mission-types data", () => {
   it("uses positive rewards and expiry, and non-negative penalties", () => {
     for (const type of Object.values(MISSION_TYPES)) {
       expect(Number.isInteger(type.rewardPerDifficulty)).toBe(true);
-      // Wreck Recovery pays parts only (arc D6); every other type pays credits.
-      if (type.id === "wreck-recovery") {
+      // Wreck Recovery pays parts only (arc D6), and the Spore Platform
+      // nothing (its win ends the campaign); every other type pays credits.
+      if (type.id === "wreck-recovery" || type.id === "spore-platform") {
         expect(type.rewardPerDifficulty).toBe(0);
       } else {
         expect(type.rewardPerDifficulty).toBeGreaterThan(0);
@@ -80,5 +81,23 @@ describe("mission-types data", () => {
 
   it("round-trips through JSON unchanged", () => {
     expect(JSON.parse(JSON.stringify(MISSION_TYPES))).toEqual(MISSION_TYPES);
+  });
+
+  it("makes the Spore Platform a fixed d10 of two linked stages that pays nothing (arc §6.9)", () => {
+    const platform = MISSION_TYPES["spore-platform"];
+    expect(platform.difficultyBand).toEqual({ min: 10, max: 10 });
+    expect(platform.stages?.map((stage) => stage.id)).toEqual(["hull", "core"]);
+    expect(platform.rewardPerDifficulty).toBe(0);
+    expect(platform.techRewardBase).toBe(0);
+    expect(platform.techRewardPerDifficulty).toBe(0);
+    expect(platform.ignorePenalty).toBe(0);
+  });
+
+  it("gives no other type stages: every earlier type is one map", () => {
+    for (const type of Object.values(MISSION_TYPES)) {
+      if (type.id !== "spore-platform") {
+        expect(type.stages, type.id).toBeUndefined();
+      }
+    }
   });
 });

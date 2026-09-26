@@ -7,6 +7,7 @@ import type { Mission } from "../../overworld/model/mission";
 import type {
   MissionOutcome,
   MissionResult,
+  MissionStageResult,
 } from "../../overworld/model/mission-result";
 import { RESCUE_OBJECTIVE_KIND } from "../../overworld/service/missions/evacuation-consequence";
 import type { MissionRewardTuning } from "../../overworld/service/mission-reward-service";
@@ -100,6 +101,8 @@ export type ModelledStoryResults = Readonly<
  *                          won all groups, extracted one short of half, lost none
  *   hive-assault           hiveCoreDestroyed = won; its placed Hive Guard killed on a win
  *   tunnel-sabotage        tunnelsSealed / tunnelsTotal: won all three, extracted one, lost none
+ *   spore-platform         stages: won both; extracted at the hull, before the hatch;
+ *                          lost at the core, after the hull was won. Its guards killed on a win
  * ```
  *
  * "Extracted" is modelled as pulling out before the objective was done,
@@ -149,6 +152,10 @@ export const MODELLED_RESULTS: ModelledResultBuilders = {
     tunnelsSealed:
       outcome === "won" ? TUNNEL_MOUTH_COUNT : outcome === "extracted" ? 1 : 0,
     tunnelsTotal: TUNNEL_MOUTH_COUNT,
+  }),
+  "spore-platform": (mission, outcome, ctx) => ({
+    ...baseModelledResult(mission, outcome, ctx, SPORE_PLATFORM_PLACED),
+    stages: platformStages(outcome),
   }),
 };
 
@@ -263,6 +270,22 @@ export function carcassPoints(
 /** The species a Hive Assault places rather than rolls (its guards at the core). */
 const HIVE_ASSAULT_PLACED: readonly BugSpeciesId[] = ["hive-guard"];
 
+/**
+ * The species the Spore Platform places rather than rolls and a win
+ * kills: the Hive Guards on the core chamber's guard posts. Not the
+ * Sovereign: the win is the core, and she need not fall for it.
+ */
+const SPORE_PLATFORM_PLACED: readonly BugSpeciesId[] = ["hive-guard"];
+
+/**
+ * The turns each Spore Platform stage is modelled to take: the medians
+ * the platform sim measured with a finale force (`spore-platform.sim.test.ts`,
+ * seeds 1-12, four Siege Batteries at upgrade 2), the hull's long march
+ * and the core's fight with the Sovereign on her dais. The core's median
+ * was 12.5 turns (10-30), rounded to 13; before she stood there it was 9.
+ */
+export const SPORE_PLATFORM_MODELLED_TURNS = { hull: 27, core: 13 } as const;
+
 // ===========================================
 // Helpers
 // ===========================================
@@ -279,6 +302,30 @@ function speciesFought(
     (species) =>
       (mission.bugMix?.[species] ?? 0) > 0 || placed.includes(species),
   );
+}
+
+/**
+ * How a modelled Spore Platform assault went, stage by stage, as the
+ * tactical resolver's `stagesField` reports a played one: every stage
+ * won but the last, which ended as `outcome` says.
+ *
+ * ```
+ *   won        hull won ──► core won
+ *   extracted  hull extracted          pulled out before the hatch, so the core is never boarded
+ *   lost       hull won ──► core lost  the squad fell where the Sovereign waits
+ * ```
+ */
+function platformStages(
+  outcome: MissionOutcome,
+): readonly MissionStageResult[] {
+  const { hull, core } = SPORE_PLATFORM_MODELLED_TURNS;
+  if (outcome === "extracted") {
+    return [{ index: 0, outcome, turns: hull }];
+  }
+  return [
+    { index: 0, outcome: "won", turns: hull },
+    { index: 1, outcome, turns: core },
+  ];
 }
 
 /**

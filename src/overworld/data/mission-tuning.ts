@@ -61,6 +61,11 @@ import { GREAT_HIVE_TUNING } from "./great-hive-tuning";
  *   spread, so with the 5-day spread cooldown it is on the board for the
  *   last two days of each cycle, and never for a spread already under
  *   way. A win holds the city's spread for 10 days, two whole cycles.
+ * - The Spore Platform (arc §6.9) is only ever pinned, at its own fixed
+ *   difficulty, so the weights are never read; the row is the
+ *   clearance's, so it is ordinary data and names a large map at d10.
+ *   Its boards are its own (the hull, then the core chamber), so the
+ *   named size is never read either.
  */
 export const MISSION_TUNING: MissionTuning = {
   difficulty: {
@@ -101,6 +106,12 @@ export const MISSION_TUNING: MissionTuning = {
       largeFromDifficulty: 8,
     },
     "tunnel-sabotage": {
+      infestationWeight: 0.7,
+      threatWeight: 0.3,
+      mediumFromDifficulty: 4,
+      largeFromDifficulty: 8,
+    },
+    "spore-platform": {
       infestationWeight: 0.7,
       threatWeight: 0.3,
       mediumFromDifficulty: 4,

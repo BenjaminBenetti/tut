@@ -5,6 +5,7 @@ import type {
 } from "../../model/objective-rules";
 import type {
   DestroyHiveCoreObjective,
+  DestroyPlatformCoreObjective,
   DestroyPodObjective,
   DestroySpawnerObjective,
   Objective,
@@ -21,19 +22,24 @@ import { spawnerFootprintSize } from "../footprint-service";
 /**
  * An objective whose job is to wreck one spawner-like target: an egg
  * spawner's `destroy-spawner`, a spore pod's `destroy-pod`, the hive
- * core's `destroy-hive-core`. They share how the target is found, worked
+ * core's `destroy-hive-core`, the platform core's
+ * `destroy-platform-core`. They share how the target is found, worked
  * with charges, blipped in the fog and credited when it falls; what
- * differs (a deadline, a burst, the extraction a core also needs) is in
- * each kind's own module.
+ * differs (a deadline, a burst, the extraction a hive core also needs,
+ * the win on the spot) is in each kind's own module.
  *
  * ```
- *   destroy-spawner   ──┐
- *   destroy-pod       ──┼── targetId ──► mission.spawners
- *   destroy-hive-core ──┘
+ *   destroy-spawner       ──┐
+ *   destroy-pod           ──┤
+ *   destroy-hive-core     ──┼── targetId ──► mission.spawners
+ *   destroy-platform-core ──┘
  * ```
  */
 export type WreckObjective =
-  DestroySpawnerObjective | DestroyPodObjective | DestroyHiveCoreObjective;
+  | DestroySpawnerObjective
+  | DestroyPodObjective
+  | DestroyHiveCoreObjective
+  | DestroyPlatformCoreObjective;
 
 /**
  * The kinds that are wreck objectives. Kept beside the type so the two
@@ -43,6 +49,7 @@ const WRECK_KINDS: Readonly<Record<WreckObjective["kind"], true>> = {
   "destroy-spawner": true,
   "destroy-pod": true,
   "destroy-hive-core": true,
+  "destroy-platform-core": true,
 };
 
 /**

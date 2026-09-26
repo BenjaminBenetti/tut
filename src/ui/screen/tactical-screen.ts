@@ -2,10 +2,12 @@ import type { JevInspector } from "../model/jev-inspector";
 import type { JevPolicy } from "../model/jev-policy";
 import type { CommandError } from "../../core/model/command-error";
 import type { Unsubscribe } from "../../core/model/event-bus";
+import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { abandonMission } from "../../tactical/model/abandon-mission-command";
+import { advanceStage } from "../../tactical/model/advance-stage-command";
 import { finishMission } from "../../tactical/model/finish-mission-command";
 import { endTurn } from "../../tactical/model/end-turn-command";
 import {
@@ -33,8 +35,11 @@ import type {
   TacticalUpdateHooks,
 } from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
+import { stageTrackOf } from "../service/stage-track";
+import { stageTransitionOf } from "../service/stage-transition";
 import { namesFor, refusalText } from "../service/tactical-error-text";
 import { ConfirmDialogView } from "../view/confirm-dialog-view";
+import { StageTransitionView } from "../view/stage-transition-view";
 import { TacticalHudView } from "../view/tactical-hud-view";
 import { actorOf, describeEvent } from "../view/event-vocabulary";
 
@@ -76,6 +81,12 @@ export interface TacticalScreenDeps {
   readonly devTools?: {
     readonly placeable: readonly PlaceableUnit[];
   };
+  /**
+   * The mission types, for the names of a linked mission's stages on
+   * the transition between them (#1179); absent, the stages are
+   * numbered.
+   */
+  readonly missionTypes?: MissionTypeCatalogue;
   /** Builds and owns the three.js scene for the mission; absent in unit tests that only check the DOM. */
   readonly sceneHost?: TacticalSceneHost;
   /**
@@ -177,6 +188,9 @@ function missionCityName(state: GameState): string | undefined {
  *                     onSettled ──▶ setPlaying(false)           controls released
  *                               ──▶ the debrief, if the mission is over
  *                └─▶ mission.outcome set ──▶ FinishMission ──▶ "mission-results"
+ *                     a linked mission's stage won, another waiting (#1179):
+ *                       ──▶ the stage transition ──▶ Continue ──▶ AdvanceStage
+ *                       ──▶ the next map, attached as a new scene
  * ```
  */
 export class TacticalScreen implements Screen {
@@ -193,7 +207,8 @@ export class TacticalScreen implements Screen {
   private viewport: HTMLElement | undefined;
   private note: HTMLElement | undefined;
   private unsubscribe: Unsubscribe | undefined;
-  private attachedMissionId: string | undefined;
+  /** The scene attached: the mission and, on a linked mission, its stage (`sceneKeyOf`). */
+  private attachedScene: string | undefined;
   /** Last overlay state pushed to the scene, so an unchanged refresh costs nothing. */
   private overlayState:
     | {
@@ -202,8 +217,14 @@ export class TacticalScreen implements Screen {
         readonly target: UnitId | undefined;
       }
     | undefined;
-  /** The mission `FinishMission` has already been dispatched for, so it is asked once. */
-  private finishedMissionId: string | undefined;
+  /**
+   * The mission, or stage of a linked mission, whose end has already
+   * been handled (`sceneKeyOf`): `FinishMission` dispatched, or the
+   * transition to the next stage shown. Asked once per stage.
+   */
+  private finishedScene: string | undefined;
+  /** Between a linked mission's stages (#1179): who goes on, and Continue. */
+  private readonly transition: StageTransitionView;
   private readonly disposers: (() => void)[] = [];
   /**
    * Paced batches still playing a phase change (#1130). The controls
@@ -346,6 +367,11 @@ export class TacticalScreen implements Screen {
         onCancel: () => undefined,
       },
     );
+    this.transition = new StageTransitionView({
+      onContinue: () => {
+        this.continueToNextStage();
+      },
+    });
   }
 
   // ===========================================
@@ -373,6 +399,7 @@ export class TacticalScreen implements Screen {
     note.hidden = true;
     layout.appendChild(note);
     this.dialog.mount(layout);
+    this.transition.mount(layout);
 
     root.appendChild(layout);
     this.root = layout;
@@ -408,11 +435,12 @@ export class TacticalScreen implements Screen {
       dispose();
     }
     this.deps.sceneHost?.release();
-    this.attachedMissionId = undefined;
+    this.attachedScene = undefined;
     // The next scene starts with no overlays, so the next push must run.
     this.overlayState = undefined;
-    this.finishedMissionId = undefined;
+    this.finishedScene = undefined;
     this.dialog.unmount();
+    this.transition.unmount();
     this.hud.unmount();
     this.root?.remove();
     this.root = undefined;
@@ -477,11 +505,12 @@ export class TacticalScreen implements Screen {
       state === undefined ? undefined : missionCityName(state),
     );
     this.hud.setCampaign(state);
+    this.hud.setStages(stageTrackOf(mission, state, this.deps.missionTypes));
     const paced =
       mission !== undefined &&
       this.deps.sceneHost !== undefined &&
       this.viewport !== undefined &&
-      this.attachedMissionId === mission.missionId;
+      this.attachedScene === sceneKeyOf(mission);
     if (!paced) {
       this.sceneUpdates.clear();
       // Another mission, or none: whatever the last scene was playing
@@ -497,7 +526,7 @@ export class TacticalScreen implements Screen {
       }
       void this.syncScene(mission, events);
       if (mission.outcome !== undefined) {
-        this.finish(mission.missionId);
+        this.finish(mission, state);
       }
       return;
     }
@@ -514,7 +543,7 @@ export class TacticalScreen implements Screen {
       onSettled: () => {
         hold?.settled();
         if (mission.outcome !== undefined) {
-          this.finish(mission.missionId);
+          this.finish(mission, state);
         }
       },
       // A scene that fails mid-batch never settles; the promise still
@@ -725,27 +754,69 @@ export class TacticalScreen implements Screen {
 
   /**
    * Resolves a mission that has reported an outcome and opens the
-   * debrief. Asked once per mission: `render` runs on every store change,
-   * and the state carries the outcome from the moment the rules set it,
-   * whether that was this session or a save reloaded after one. A refusal
-   * stays on the mission with its reason in the banner, so a broken
-   * debrief never strands the player on a dead screen.
+   * debrief. Asked once per mission, or per stage of a linked one:
+   * `render` runs on every store change, and the state carries the
+   * outcome from the moment the rules set it, whether that was this
+   * session or a save reloaded after one. A refusal stays on the mission
+   * with its reason in the banner, so a broken debrief never strands the
+   * player on a dead screen.
+   *
+   * A linked mission's won stage with another after it (#1179) is not
+   * the end: the rules would refuse `FinishMission` (`stage-pending`),
+   * so the screen opens the transition instead, and its Continue
+   * dispatches `AdvanceStage`.
+   *
+   * ```
+   *   outcome set ─┬─ a stage waiting (stageTransitionOf) ──► the transition
+   *                └─ otherwise ──► FinishMission ──► "mission-results"
+   * ```
    */
-  private finish(missionId: string): void {
-    if (this.finishedMissionId === missionId) {
+  private finish(mission: TacticalState, state: GameState | undefined): void {
+    const key = sceneKeyOf(mission);
+    if (this.finishedScene === key) {
       return;
     }
-    this.finishedMissionId = missionId;
+    this.finishedScene = key;
     const store = this.deps.session.store;
     if (!store) {
       return;
     }
-    const result = store.dispatch(finishMission(missionId));
+    const transition = stageTransitionOf(mission, state, {
+      ...(this.deps.missionTypes === undefined
+        ? {}
+        : { missionTypes: this.deps.missionTypes }),
+    });
+    if (transition !== undefined) {
+      this.transition.show(transition);
+      return;
+    }
+    const result = store.dispatch(finishMission(mission.missionId));
     if (!result.ok) {
       this.hud.showStatus(this.statusFor(result.error));
       return;
     }
     this.deps.router.navigate("mission-results");
+  }
+
+  /**
+   * The transition's Continue (#1179): on to the next stage. The store's
+   * change brings the next map, which `render` attaches as a new scene
+   * because its key differs. A refusal keeps the transition up with the
+   * reason, since there is no other way on from it.
+   */
+  private continueToNextStage(): void {
+    const store = this.deps.session.store;
+    const mission = store?.getState()?.activeMission;
+    if (!store || mission === undefined) {
+      this.transition.hide();
+      return;
+    }
+    const result = store.dispatch(advanceStage(mission.missionId));
+    if (!result.ok) {
+      this.transition.showStatus(this.statusFor(result.error));
+      return;
+    }
+    this.transition.hide();
   }
 
   /**
@@ -762,7 +833,7 @@ export class TacticalScreen implements Screen {
     // Before the scene is attached there is nothing to draw on, and the
     // HUD refreshes during mount; pushing then would seed the dedupe
     // with a selection the scene never received.
-    if (!host || this.attachedMissionId === undefined) {
+    if (!host || this.attachedScene === undefined) {
       return;
     }
     const selected = this.hud.getSelectedUnitId();
@@ -831,11 +902,14 @@ export class TacticalScreen implements Screen {
     const batch = Symbol();
     this.sceneUpdates.add(batch);
     this.syncAutomationPlayback();
-    const pending =
-      this.attachedMissionId === mission.missionId
-        ? host.update(mission, events, hooks)
-        : host.attach(this.viewport, mission, intents);
-    if (this.attachedMissionId !== mission.missionId) {
+    // A linked mission's next stage is a new map (#1179): a new key, so
+    // a fresh scene, as a new mission gets. `attach` releases the last.
+    const key = sceneKeyOf(mission);
+    const attached = this.attachedScene === key;
+    const pending = attached
+      ? host.update(mission, events, hooks)
+      : host.attach(this.viewport, mission, intents);
+    if (!attached) {
       // What a freshly built scene already shows: no selection, no
       // envelope. Recording it rather than pushing it keeps the attach
       // free of a redundant round trip, and the call below then pushes
@@ -846,7 +920,7 @@ export class TacticalScreen implements Screen {
         target: undefined,
       };
     }
-    this.attachedMissionId = mission.missionId;
+    this.attachedScene = key;
     this.syncOverlays();
     // A fresh scene opens on the top storey; show it before the player
     // touches a key, so the readout is never blank while the control is
@@ -979,6 +1053,22 @@ export class TacticalScreen implements Screen {
  */
 function crossesPhase(events: readonly TacticalEvent[]): boolean {
   return events.some((event) => event.type === TURN_STARTED);
+}
+
+/**
+ * What identifies one map of a mission for the screen's once-only
+ * guards: the mission id, and on a linked mission the stage (#1179),
+ * whose next map needs its own scene and its own end.
+ *
+ * ```
+ *   one-map mission   "mission-3"
+ *   linked, stage 1   "mission-3#1"
+ * ```
+ */
+export function sceneKeyOf(mission: TacticalState): string {
+  return mission.stage === undefined
+    ? mission.missionId
+    : `${mission.missionId}#${String(mission.stage.index)}`;
 }
 
 /** "Alpha", "Alpha and Bravo", "Alpha, Bravo and Hammerhead". */

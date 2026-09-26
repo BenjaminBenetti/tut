@@ -49,6 +49,26 @@ export interface MissionHookRequirement {
 }
 
 // ===========================================
+// Stages
+// ===========================================
+
+/**
+ * One map of a mission played as several linked maps (ADR 0013
+ * amendment, #1179): the Spore Platform's hull, then its core. A type
+ * with stages plays them in order as one mission; winning a stage that
+ * is not the last carries the survivors straight into the next, and
+ * losing any stage loses the whole mission. What a stage's map and
+ * setup are is the type's map and setup rules' business, keyed by the
+ * stage's index.
+ */
+export interface MissionStageSpec {
+  /** Short key, unique within the type, e.g. `"hull"`. */
+  readonly id: string;
+  /** Display name for the tracker and the transition, e.g. `"The hull"`. */
+  readonly name: string;
+}
+
+// ===========================================
 // Mission type
 // ===========================================
 
@@ -99,4 +119,10 @@ export interface MissionType {
   readonly requiredHooks: readonly MissionHookRequirement[];
   /** Map size the mission generator uses unless the site says otherwise. */
   readonly mapSize: MapSizeId;
+  /**
+   * The linked maps the mission is played on, in order (ADR 0013
+   * amendment, #1179). Absent, or a single entry, is one map, as every
+   * type before the Spore Platform is.
+   */
+  readonly stages?: readonly MissionStageSpec[];
 }

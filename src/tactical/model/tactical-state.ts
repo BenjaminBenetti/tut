@@ -18,6 +18,7 @@ import type { Radar } from "./radar";
 import type { TechCarcass } from "./tech-carcass";
 import type { TunnelMouth, TunnelMouthId } from "./tunnel-mouth";
 import type { SpawnerVariant } from "./spawner-variant";
+import type { MissionStageState } from "./mission-stage";
 
 // ===========================================
 // Ids and unions
@@ -351,11 +352,53 @@ export interface RecoverPodObjective extends ObjectiveBase {
 }
 
 /**
+ * Get through to the hatch and board the core (campaign arc §6.9): the
+ * Spore Platform hull's one deciding objective. The stage's extraction
+ * is the hatch rather than the drop ship, so a unit that extracts there
+ * has boarded; the stage is won once the force has left the hull with
+ * at least one unit aboard, and whoever boarded fights on in the core.
+ * Judged live off the units, as a capture is; `complete` and `failed`
+ * mirror that as of the last phase step.
+ *
+ * ```
+ *   a squad or mech of ours has extracted       ──► complete
+ *   none has, and none is left on the map       ──► failed
+ *   otherwise                                   ──► open
+ * ```
+ */
+export interface BoardCoreObjective extends ObjectiveBase {
+  readonly kind: "board-core";
+}
+
+/**
+ * Destroy the platform core (campaign arc §6.9): the Spore Platform
+ * core stage's one objective, and the finale's win. The core is a
+ * `platform-core` spawner, so charges, gunfire, blasts and fire all wear
+ * it down through `damageSpawner`, which sets `complete` the moment it
+ * falls; the stage is set to end on its objectives
+ * (`TacticalState.endsOnObjectives`), so that is the win, with no
+ * extraction.
+ *
+ * ```
+ *   core destroyed ──► complete ──► mission won on the spot
+ *   mission lost   ──► the core stands; nothing else fails it
+ * ```
+ */
+export interface DestroyPlatformCoreObjective extends ObjectiveBase {
+  readonly kind: "destroy-platform-core";
+  /** The core (a `platform-core` spawner) this objective tracks. */
+  readonly targetId: SpawnerId;
+  /** Hit points the core started with, so the tracker can show how far it is down. */
+  readonly coreHp: number;
+}
+
+/**
  * What the player must achieve: wreck a spawner, hold the generators
  * (#1175), wreck a spore pod before it matures, bring a specimen home,
  * get the civilians out, strip a lost mech's wreck, bring down a hive
- * core and extract, seal the tunnel mouths, or keep a pod alive until
- * it is recovered (#1179, campaign arc §6.3, §6.4, §6.5, §6.6, §6.7,
+ * core and extract, seal the tunnel mouths, keep a pod alive until
+ * it is recovered, or fight through the Spore Platform's hull and
+ * destroy its core (#1179, campaign arc §6.3, §6.4, §6.5, §6.6, §6.7,
  * §6.9). Closed: a new kind adds its interface here and its rules to
  * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
  */
@@ -368,7 +411,9 @@ export type Objective =
   | StripWreckObjective
   | DestroyHiveCoreObjective
   | SealTunnelsObjective
-  | RecoverPodObjective;
+  | RecoverPodObjective
+  | BoardCoreObjective
+  | DestroyPlatformCoreObjective;
 
 /**
  * Swarm Tide's hold on the edge waves (campaign arc §11): each wave is
@@ -495,6 +540,8 @@ export const NO_VISION: SideVision = {
  *   ├── extraction[]          tiles a unit must reach to leave
  *   ├── extracted[]           units that left through them, as they left; not in units[]
  *   ├── escaped[]?            bugs that fled off the map edge (#1179); not in units[]
+ *   ├── stage?                which map of a linked mission, and what earlier ones left
+ *   ├── endsOnObjectives?     the objectives done ends it on the spot (the platform core)
  *   ├── vision                what each side has seen (ADR 0006)
  *   ├── outcome?              how it ended, once a turn boundary found it over
  *   └── log[]                 domain events so far, for the debrief and replays
@@ -611,6 +658,20 @@ export interface TacticalState {
    * any could, so no save needs a migration.
    */
   readonly escaped?: readonly Unit[];
+  /**
+   * Which map of a linked mission this is (ADR 0013 amendment, #1179):
+   * the Spore Platform's hull, then its core. Absent on a one-map
+   * mission. While a stage that is not the last ends `won`, the mission
+   * is not over: `AdvanceStage` carries the survivors to the next map.
+   */
+  readonly stage?: MissionStageState;
+  /**
+   * True when completing every deciding objective ends the mission on
+   * the spot, won, with the force still on the map (#1179): the
+   * platform core destroyed, nobody left to extract to. Absent (every
+   * other mission) the force still has to get home.
+   */
+  readonly endsOnObjectives?: boolean;
   /**
    * Set when a terminal condition held at a turn boundary (#328). Once
    * set, no further tactical command applies; the resolver (#330) turns

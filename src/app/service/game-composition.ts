@@ -30,6 +30,7 @@ import { createDeploymentAssessor } from "../../overworld/service/deployment-ass
 import { createLaunchMissionHandler } from "../../overworld/service/launch-mission-service";
 import { LAUNCH_MISSION } from "../../overworld/model/launch-mission-command";
 import type { MissionResolver } from "../../overworld/model/mission-resolver";
+import { registerAdvanceStage } from "../../tactical/service/advance-stage-handler";
 import { registerFinishMission } from "../../tactical/service/finish-mission-handler";
 import { createGarrisonStartOptions } from "../../tactical/service/garrison-start-options";
 import { registerStartMission } from "../../tactical/service/start-mission-handler";
@@ -388,6 +389,8 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     startOptionsFor: createGarrisonStartOptions(tickDeps.catalogue),
   });
   registerFinishMission(dispatcher, { launch });
+  // A linked mission's Continue between stages (ADR 0013 amendment).
+  registerAdvanceStage(dispatcher, { advancer: tacticalResolver });
 
   return {
     saves,

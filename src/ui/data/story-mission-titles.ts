@@ -19,4 +19,5 @@ export const STORY_MISSION_TITLES: Readonly<Record<StoryMissionId, string>> = {
   "great-hive": "Great Hive",
   "launch-window": "Launch Window",
   "spore-platform": "Spore Platform",
+  "broodmother-sighting": "Broodmother Sighting",
 };

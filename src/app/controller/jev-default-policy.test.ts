@@ -17,7 +17,9 @@ import type { ConfigureJevCommand } from "../../tactical/model/jev-command";
 import type { JevControl } from "../../tactical/model/jev-control";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
+import { SITREP_TUNING } from "../../tactical/data/sitrep-tuning";
 import { configureJevHandler } from "../../tactical/service/jev-control-service";
+import { crownAlpha } from "../../tactical/service/sitreps/alpha-present-sitrep";
 import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
 import {
   missionWith,
@@ -368,5 +370,68 @@ describe("the Sovereign as her mission places her (#1179, campaign arc §9)", ()
     policyOver(store, { enabled: () => false }).start();
     expect(dispatched).toEqual([]);
     expect(store.getState().activeMission?.jev).toBeUndefined();
+  });
+});
+
+describe("a crowned alpha beside the Broodmother (#1179, campaign arc §9, §11)", () => {
+  /**
+   * A player-phase mission with a squad, the Broodmother placed through
+   * the real seam, and two swarmers, one of them crowned by Alpha
+   * Present's own step.
+   */
+  function withAlpha(): { state: TacticalState; motherId: string } {
+    const { mission: placed, mother } = motherMission(
+      fieldMap(16, 16).build(),
+      [squad("tdf", 0), bug("swarmer-1", 2), bug("swarmer-2", 4)],
+      { x: 8, y: 0, z: 8 },
+      { phase: "player" },
+    );
+    const crowned = crownAlpha(
+      { ...placed, alpha: { name: "Grinder", level: 0 } },
+      SITREP_TUNING.alphaPresent,
+    ).state;
+    return { state: crowned, motherId: mother.id };
+  }
+
+  it("configures both named enemies, each with its own orders, and nobody else", () => {
+    const { state, motherId } = withAlpha();
+    const alphaId = state.alpha?.unitId;
+    expect(alphaId).toBe("swarmer-1");
+    const commands = personaJevConfigurations(state, personaOf);
+    expect(commands.map((c) => c.payload.unitId)).toEqual([
+      "swarmer-1",
+      motherId,
+    ]);
+    expect(commands.length).toBeLessThanOrEqual(MAX_JEV_PERSONAS_PER_MISSION);
+    expect(commands[0]?.payload.control).toEqual({
+      enabled: true,
+      entityPrompt: PERSONAS.alpha.entityPrompt,
+    });
+    // The first persona's commander prompt leads the swarm.
+    expect(commands.map((c) => c.payload.commanderPrompt)).toEqual([
+      PERSONAS.alpha.commanderPrompt,
+      PERSONAS.alpha.commanderPrompt,
+    ]);
+  });
+
+  it("leaves the alpha to its fallback once the mission has three persona actors", () => {
+    const { state } = withAlpha();
+    const crowded: TacticalState = {
+      ...state,
+      units: [
+        // Three persona bugs ahead of the alpha in unit order fill the cap.
+        bug("mother-2", 10, "broodmother"),
+        bug("mother-3", 12, "broodmother"),
+        bug("mother-4", 14, "broodmother"),
+        ...state.units,
+      ],
+    };
+    const commands = personaJevConfigurations(crowded, personaOf);
+    expect(commands.map((c) => c.payload.unitId)).toEqual([
+      "mother-2",
+      "mother-3",
+      "mother-4",
+    ]);
+    expect(commands).toHaveLength(MAX_JEV_PERSONAS_PER_MISSION);
   });
 });

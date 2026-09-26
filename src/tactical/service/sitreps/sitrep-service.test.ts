@@ -137,8 +137,8 @@ describe("sitrepSightRange", () => {
 });
 
 describe("sitrepPhaseSteps", () => {
-  it("ships two steps, City Ablaze's and Dust-off Window's", () => {
-    expect(sitrepPhaseSteps()).toHaveLength(2);
+  it("ships three steps, City Ablaze's, Dust-off Window's and Alpha Present's", () => {
+    expect(sitrepPhaseSteps()).toHaveLength(3);
     expect(sitrepPhaseSteps(recordingRules([]))).toHaveLength(
       SITREP_IDS.length,
     );

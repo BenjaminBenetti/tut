@@ -11,6 +11,7 @@ import type {
   MechDamageReport,
   MissionOutcome,
   MissionResult,
+  MissionResultAlpha,
   MissionStageResult,
   ObjectiveResult,
   SquadCasualties,
@@ -40,6 +41,7 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId, UnitKind } from "../model/unit";
 import type { UnitTuning } from "../model/unit-tuning";
 import type { MissionStartOptions } from "../model/mission-start-options";
+import { lastWoundOf } from "./wound-service";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission } from "./mission-start-service";
 import { missionOutcome } from "./mission-end-service";
@@ -124,6 +126,8 @@ export interface TacticalResolveDeps {
  *   destroyed spawners' bounty ──► summed into techPointsFor beside the
  *                                 harvest; techPointsBounty says so (#1179)
  *   log UnitDied of a bug ──► its species, once each, into speciesKilled
+ *   alpha.unitId ──► alpha { speciesId, survived, wound? }: the crowned
+ *                    alpha's end, and while it lives its last wound
  *   objectives ──► one ObjectiveResult row each, and each kind's own
  *                  fields (a defence's `defence`), via OBJECTIVE_RULES
  *   stage? ──► a linked mission's earlier stages read with this one
@@ -225,6 +229,7 @@ export function tacticalMissionResult(
     ...objectivesField(tactical),
     ...objectiveResultFields(tactical),
     ...speciesKilledField(record),
+    ...alphaField(tactical),
     ...stagesField(tactical, outcome),
   };
 }
@@ -358,6 +363,46 @@ function leftBehindField(record: MissionRecord): {
     }
   }
   return leftBehind.length === 0 ? {} : { leftBehind };
+}
+
+/**
+ * How the named alpha of an Alpha Present mission ended (campaign arc
+ * §11), for the nemesis record: its species, whether it lived, and
+ * while it lives what last hurt it (`lastWoundOf`). A bug cannot
+ * extract, so it is read off the map, or off the escaped. Absent when
+ * the mission had no alpha, or none was ever crowned.
+ *
+ * ```
+ *   alpha.unitId unset             ──► {}
+ *   its unit, hp > 0 or escaped    ──► { speciesId, survived: true, wound? }
+ *   its unit, hp ≤ 0               ──► { speciesId, survived: false }
+ * ```
+ */
+function alphaField(tactical: TacticalState): {
+  alpha?: MissionResultAlpha;
+} {
+  const unitId = tactical.alpha?.unitId;
+  const unit =
+    unitId === undefined
+      ? undefined
+      : [...tactical.units, ...(tactical.escaped ?? [])].find(
+          (candidate) => candidate.id === unitId,
+        );
+  if (unit === undefined) {
+    return {};
+  }
+  const speciesId = unit.sourceId as BugSpeciesId;
+  if (unit.hp <= 0) {
+    return { alpha: { speciesId, survived: false } };
+  }
+  const wound = lastWoundOf(tactical, unit.id);
+  return {
+    alpha: {
+      speciesId,
+      survived: true,
+      ...(wound === undefined ? {} : { wound }),
+    },
+  };
 }
 
 // ===========================================

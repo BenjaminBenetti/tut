@@ -22,6 +22,10 @@ import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
  * the core once she is badly hurt.
  */
 export type BehaviourTag =
+  // A persona's fallback rather than a species' (#1179, campaign arc
+  // §9): a crowned alpha plays its own species' behaviour, and spends
+  // every attack on the weakest TDF unit it can reach.
+  | "alpha"
   | "rush"
   | "flank"
   | "punish-clumps"
@@ -33,6 +37,7 @@ export type BehaviourTag =
 
 /** Every behaviour tag, in a fixed order. */
 export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
+  "alpha",
   "rush",
   "flank",
   "punish-clumps",

@@ -11,6 +11,7 @@ import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { HIVE_TUNING } from "../../overworld/data/hive-tuning";
 import { INFESTATION_TUNING } from "../../overworld/data/infestation-tuning";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
+import { NEMESIS_LORE } from "../../overworld/data/nemesis-lore";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
@@ -382,6 +383,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     missionTuning: MISSION_TUNING,
     hiveTuning: tickDeps.hiveTuning,
     story,
+    nemesisLore: NEMESIS_LORE,
   });
   dispatcher.register(LAUNCH_MISSION, launch);
   registerStartMission(dispatcher, {

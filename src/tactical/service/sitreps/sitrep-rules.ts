@@ -2,6 +2,7 @@ import { HAZARD_TUNING } from "../../data/hazard-tuning";
 import { SITREP_TUNING } from "../../data/sitrep-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import type { SitrepRules } from "../../model/sitrep-rule";
+import { alphaPresentSitrep } from "./alpha-present-sitrep";
 import { cityAblazeSitrep } from "./city-ablaze-sitrep";
 import { dustOffWindowSitrep } from "./dust-off-window-sitrep";
 import { hardenedClutchesSitrep } from "./hardened-clutches-sitrep";
@@ -31,6 +32,7 @@ import { swarmTideSitrep } from "./swarm-tide-sitrep";
  *   hardened-clutches  setup            egg spawners hp × 1.5, one more bug a hatch
  *   swarm-tide         setup            edge waves × 1.5, the first a turn sooner
  *   dust-off-window    setup + phase    the drop ship leaves after a set turn
+ *   alpha-present      phase            one bug crowned the named alpha
  * ```
  */
 export const SITREP_RULES: SitrepRules = {
@@ -45,4 +47,5 @@ export const SITREP_RULES: SitrepRules = {
     SITREP_TUNING.dustOffWindow,
     SPAWN_TUNING,
   ),
+  "alpha-present": alphaPresentSitrep(SITREP_TUNING.alphaPresent),
 };

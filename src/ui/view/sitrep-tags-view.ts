@@ -73,12 +73,14 @@ export class SitrepTagsView {
   }
 
   /** Shows `mission`'s sitreps, or hides the block when it has none. */
-  update(mission: Pick<Mission, "sitreps"> | undefined): void {
+  update(mission: Pick<Mission, "sitreps" | "alpha"> | undefined): void {
     if (!this.root || !this.list) {
       return;
     }
     const tags = mission ? sitrepTagsOf(mission, this.presentation) : [];
-    const key = tags.map((tag) => tag.id).join(",");
+    // The effect is in the key: two offers with the same sitreps may
+    // name different alphas.
+    const key = tags.map((tag) => `${tag.id}:${tag.effect}`).join("\n");
     this.root.hidden = tags.length === 0;
     if (key === this.shownKey) {
       return;

@@ -26,6 +26,7 @@
  * | `platform-approach`     | Intel III, Platform Approach, is researched     |
  * | `great-hives-destroyed` | the last Great Hive falls (Great Hives package) |
  * | `pod-telemetry`         | Intel II, Pod Telemetry, is researched          |
+ * | `broodmother-sighted`   | the first Alpha Hunt (the sighting) is played   |
  *
  * `campaign-won` and `campaign-lost` are the story's verdicts: the
  * outcome step ends the campaign on the next day tick once either is
@@ -49,7 +50,14 @@ export type CampaignFlagId =
    */
   | "great-hives-destroyed"
   /** Set by Intel II, Pod Telemetry (`tech.pod-telemetry`); pins Intact Pod, the Act II ending. */
-  | "pod-telemetry";
+  | "pod-telemetry"
+  /**
+   * Set when the first Alpha Hunt, the scripted Broodmother sighting, is
+   * played, whatever its outcome (campaign arc §6.8): from then on any
+   * region that holds a hive can offer a hunt, and the sighting is
+   * never pinned again.
+   */
+  | "broodmother-sighted";
 
 /** Every campaign flag id, in a fixed order. Append, never insert. */
 export const CAMPAIGN_FLAG_IDS: readonly CampaignFlagId[] = [
@@ -64,6 +72,7 @@ export const CAMPAIGN_FLAG_IDS: readonly CampaignFlagId[] = [
   "platform-approach",
   "great-hives-destroyed",
   "pod-telemetry",
+  "broodmother-sighted",
 ];
 
 /**

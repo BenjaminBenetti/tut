@@ -1,4 +1,5 @@
 import type { SitrepId } from "../../content/model/sitrep-id";
+import type { Mission } from "../../overworld/model/mission";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { ObjectiveCountdown } from "./objective-presentation";
 
@@ -74,6 +75,15 @@ export interface SitrepPresentation {
    * Dust-off Window.
    */
   readonly deadline?: SitrepDeadline;
+  /**
+   * The effect line for one offer, when the offer froze something the
+   * line should name (Alpha Present's alpha: "Grinder leads: ..."), or
+   * undefined to keep `effect`. Absent on every sitrep but Alpha
+   * Present, whose line is the same for every offer otherwise.
+   *
+   * @param mission - The offer the briefing or the list is showing.
+   */
+  effectFor?(mission: Pick<Mission, "alpha">): string | undefined;
 }
 
 /**

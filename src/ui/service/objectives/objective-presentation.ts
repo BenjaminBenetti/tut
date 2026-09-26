@@ -14,6 +14,7 @@ import { DESTROY_HIVE_CORE_PRESENTATION } from "./destroy-hive-core-presentation
 import { DESTROY_PLATFORM_CORE_PRESENTATION } from "./destroy-platform-core-presentation";
 import { DESTROY_POD_PRESENTATION } from "./destroy-pod-presentation";
 import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
+import { KILL_BROODMOTHER_PRESENTATION } from "./kill-broodmother-presentation";
 import { RECOVER_POD_PRESENTATION } from "./recover-pod-presentation";
 import { RESCUE_CIVILIANS_PRESENTATION } from "./rescue-civilians-presentation";
 import { SEAL_TUNNELS_PRESENTATION } from "./seal-tunnels-presentation";
@@ -39,6 +40,7 @@ import { STRIP_WRECK_PRESENTATION } from "./strip-wreck-presentation";
  *   destroy-hive-core  ──► destroy-hive-core-presentation.ts
  *   seal-tunnels       ──► seal-tunnels-presentation.ts
  *   recover-pod        ──► recover-pod-presentation.ts
+ *   kill-broodmother   ──► kill-broodmother-presentation.ts
  *   board-core         ──► board-core-presentation.ts
  *   destroy-platform-core ──► destroy-platform-core-presentation.ts
  * ```
@@ -53,6 +55,7 @@ export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
   "destroy-hive-core": DESTROY_HIVE_CORE_PRESENTATION,
   "seal-tunnels": SEAL_TUNNELS_PRESENTATION,
   "recover-pod": RECOVER_POD_PRESENTATION,
+  "kill-broodmother": KILL_BROODMOTHER_PRESENTATION,
   "board-core": BOARD_CORE_PRESENTATION,
   "destroy-platform-core": DESTROY_PLATFORM_CORE_PRESENTATION,
 } satisfies { readonly [K in ObjectiveKind]: { readonly kind: K } };

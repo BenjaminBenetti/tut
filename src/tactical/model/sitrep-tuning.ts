@@ -100,6 +100,19 @@ export interface DustOffWindowTuning {
   readonly turnsAfterLastWave: number;
 }
 
+/**
+ * Alpha Present: one bug on the map is crowned the named alpha
+ * (campaign arc §8, §11).
+ */
+export interface AlphaPresentTuning {
+  /** Share of its max hit points the alpha gains on a first meeting (+50 %). */
+  readonly hpBonus: number;
+  /** Share more for each nemesis level it has come back with (+25 % a level). */
+  readonly hpPerLevel: number;
+  /** Damage added to every weapon it carries. */
+  readonly damageBonus: number;
+}
+
 // ===========================================
 // Sitrep tuning
 // ===========================================
@@ -118,6 +131,7 @@ export interface DustOffWindowTuning {
  *   swarm-tide         waves × 1.5 rounded up, spilling 2 past the zone; first one turn sooner
  *   dust-off-window    ship leaves after turn 8 + ⌈(w + d) / 12⌉ (16 / 20 / 24),
  *                      and never before 12 turns after a defence's last wave
+ *   alpha-present      one bug crowned: hp × (1.5 + 0.25 × level), damage + 1
  * ```
  */
 export interface SitrepTuning {
@@ -128,4 +142,5 @@ export interface SitrepTuning {
   readonly hardenedClutches: HardenedClutchesTuning;
   readonly swarmTide: SwarmTideTuning;
   readonly dustOffWindow: DustOffWindowTuning;
+  readonly alphaPresent: AlphaPresentTuning;
 }

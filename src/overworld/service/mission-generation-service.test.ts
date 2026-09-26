@@ -163,6 +163,7 @@ function bothDrawn(
     evacuation: fakeOffer("evacuation"),
     "hive-assault": MISSION_OFFER_RULES["hive-assault"],
     "tunnel-sabotage": fakeOffer("tunnel-sabotage"),
+    "alpha-hunt": fakeOffer("alpha-hunt"),
     "spore-platform": MISSION_OFFER_RULES["spore-platform"],
   };
 }
@@ -181,6 +182,7 @@ function firstDraws(
     evacuation: 0,
     "hive-assault": 0,
     "tunnel-sabotage": 0,
+    "alpha-hunt": 0,
     "spore-platform": 0,
   };
   const acts = actsWith({ boardCap: 1, typeWeights });
@@ -427,6 +429,7 @@ describe("generateMissions — type draw", () => {
       evacuation: 0,
       "hive-assault": 0,
       "tunnel-sabotage": 0,
+      "alpha-hunt": 0,
       "spore-platform": 0,
     });
   });
@@ -450,6 +453,7 @@ describe("generateMissions — type draw", () => {
       evacuation: 0,
       "hive-assault": 0,
       "tunnel-sabotage": 0,
+      "alpha-hunt": 0,
       "spore-platform": 0,
     });
   });
@@ -465,6 +469,7 @@ describe("generateMissions — type draw", () => {
       evacuation: 0,
       "hive-assault": 0,
       "tunnel-sabotage": 0,
+      "alpha-hunt": 0,
       "spore-platform": 0,
     });
   });
@@ -842,6 +847,7 @@ describe("generateMissions — onOffered (arc §6.3)", () => {
       evacuation: spy(MISSION_CONSEQUENCE_RULES.evacuation),
       "hive-assault": spy(MISSION_CONSEQUENCE_RULES["hive-assault"]),
       "tunnel-sabotage": spy(MISSION_CONSEQUENCE_RULES["tunnel-sabotage"]),
+      "alpha-hunt": spy(MISSION_CONSEQUENCE_RULES["alpha-hunt"]),
       "spore-platform": spy(MISSION_CONSEQUENCE_RULES["spore-platform"]),
     };
   }
@@ -985,6 +991,7 @@ describe("generateMissions — decorators", () => {
     expect(MISSION_OFFER_DECORATORS.map((d) => d.id)).toEqual([
       "bestiary",
       "sitreps",
+      "alpha",
     ]);
     const progress = {
       ...state.progress,
@@ -1040,10 +1047,11 @@ describe("generateMissions — decorators", () => {
           .filter((m) => m.typeId === "defend-installation")
           .flatMap((m) => m.sitreps ?? []),
       );
-      // Strip the sitreps and the board is the one without the decorator.
-      expect(offers.map(({ sitreps: _sitreps, ...rest }) => rest)).toEqual(
-        bestiaryOnly(seed),
-      );
+      // Strip the sitreps (and the named alpha Alpha Present brings)
+      // and the board is the one without the decorators.
+      expect(
+        offers.map(({ sitreps: _sitreps, alpha: _alpha, ...rest }) => rest),
+      ).toEqual(bestiaryOnly(seed));
       for (const mission of offers) {
         expect(new Set(mission.sitreps).size).toBe(
           mission.sitreps?.length ?? 0,

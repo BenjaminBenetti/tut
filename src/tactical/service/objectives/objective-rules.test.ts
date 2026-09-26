@@ -4,6 +4,7 @@ import type { ObjectiveRulesTable } from "../../model/objective-rules";
 import type { Objective } from "../../model/tactical-state";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
+import { KILL_BROODMOTHER_STEP } from "./kill-broodmother-objective";
 import { RECOVER_POD_OBJECTIVE } from "./recover-pod-objective";
 import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
 import { sealBlownMouths } from "./seal-tunnels-objective";
@@ -68,6 +69,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
       sealBlownMouths,
       RECOVER_POD_OBJECTIVE.phaseStep,
+      KILL_BROODMOTHER_STEP,
     ]);
     const extra = (): never => {
       throw new Error("not run");
@@ -84,6 +86,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
       sealBlownMouths,
       RECOVER_POD_OBJECTIVE.phaseStep,
+      KILL_BROODMOTHER_STEP,
     ]);
   });
 });

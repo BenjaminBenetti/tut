@@ -5,6 +5,7 @@ import type { PartId } from "../../roster/model/mech-part";
 import type { SquadId } from "../../roster/model/squad";
 import type { CityId } from "./city";
 import type { MissionId } from "./mission";
+import type { NemesisWound } from "./nemesis";
 
 // ===========================================
 // Outcome
@@ -204,6 +205,28 @@ export interface MissionResult {
   /** For a tunnel sabotage: how many tunnel mouths the map had, beside `tunnelsSealed`. */
   readonly tunnelsTotal?: number;
   /**
+   * For an Alpha Hunt (campaign arc §6.8): true when the Broodmother
+   * died on the map. Absent when the mission had no hunt, or nobody
+   * played it (auto-resolve), which the consequence rule reads as the
+   * outcome instead.
+   */
+  readonly broodmotherKilled?: boolean;
+  /** For an Alpha Hunt: true when she fled off the map edge. */
+  readonly broodmotherEscaped?: boolean;
+  /**
+   * For an Alpha Hunt the squad did not finish: what last hurt her,
+   * which the nemesis record turns into her scar. Absent when she was
+   * never wounded, or she died.
+   */
+  readonly broodmotherWound?: NemesisWound;
+  /**
+   * The named alpha of an Alpha Present mission (campaign arc §11), once
+   * one was crowned: its species, whether it lived, and what last hurt
+   * it. The launch handler records a survivor of a mission the squad did
+   * not win as a nemesis. Absent when no bug was crowned.
+   */
+  readonly alpha?: MissionResultAlpha;
+  /**
    * Every bug species killed in the mission, each once, in the order
    * their first death was logged (ADR 0013 §2.1). The launch handler
    * merges them into the campaign's first-kill record. Absent when the
@@ -292,4 +315,22 @@ export interface MissionResultWreck {
   readonly stripped: boolean;
   readonly turnsWorked: number;
   readonly turnsNeeded: number;
+}
+
+// ===========================================
+// Named alpha
+// ===========================================
+
+/**
+ * How the named alpha of an Alpha Present mission ended (campaign arc
+ * §11). Its name, level and nemesis id are on the offer's
+ * `Mission.alpha`; the result carries only what the map decided.
+ */
+export interface MissionResultAlpha {
+  /** The species of the bug that was crowned. */
+  readonly speciesId: BugSpeciesId;
+  /** True unless it died on the map. */
+  readonly survived: boolean;
+  /** What last hurt it, when anything did and it lived. */
+  readonly wound?: NemesisWound;
 }

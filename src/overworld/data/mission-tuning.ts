@@ -61,6 +61,14 @@ import { GREAT_HIVE_TUNING } from "./great-hive-tuning";
  *   spread, so with the 5-day spread cooldown it is on the board for the
  *   last two days of each cycle, and never for a spread already under
  *   way. A win holds the city's spread for 10 days, two whole cycles.
+ * - An alpha hunt (arc §6.8) takes its difficulty like a clearance, but
+ *   its map is never small (medium from d2, below every band it is
+ *   drawn in; large from 8): the hunt is a chase, and a Broodmother
+ *   placed 12 tiles from every edge needs the room. Killing her holds
+ *   her region's growth for 5 days, half a liberation's 10: she was
+ *   laying for the hive, which still stands, and 5 days is about one
+ *   offer's life, long enough to show on the map without making a hunt
+ *   worth more than the assault it feeds.
  * - The Spore Platform (arc §6.9) is only ever pinned, at its own fixed
  *   difficulty, so the weights are never read; the row is the
  *   clearance's, so it is ordinary data and names a large map at d10.
@@ -109,6 +117,12 @@ export const MISSION_TUNING: MissionTuning = {
       infestationWeight: 0.7,
       threatWeight: 0.3,
       mediumFromDifficulty: 4,
+      largeFromDifficulty: 8,
+    },
+    "alpha-hunt": {
+      infestationWeight: 0.7,
+      threatWeight: 0.3,
+      mediumFromDifficulty: 2,
       largeFromDifficulty: 8,
     },
     "spore-platform": {
@@ -172,5 +186,8 @@ export const MISSION_TUNING: MissionTuning = {
   tunnelSabotage: {
     spreadWindowDays: 2,
     holdDays: 10,
+  },
+  alphaHunt: {
+    growthPauseDays: 5,
   },
 };

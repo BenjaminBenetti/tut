@@ -59,6 +59,29 @@ describe("SitrepTagsView", () => {
     );
   });
 
+  it("names the offer's alpha on Alpha Present's line, and redraws for another alpha (#1179)", () => {
+    const view = new SitrepTagsView();
+    view.mount(root);
+    view.update({
+      sitreps: ["alpha-present"],
+      alpha: { name: "Grinder", level: 0 },
+    });
+    const effect = (): string => text(rows()[0]!, "sitrep-effect");
+    expect(text(rows()[0]!, "sitrep-name")).toBe("Alpha Present");
+    expect(text(rows()[0]!, "sitrep-marker")).toBe("Hazard");
+    expect(effect()).toBe(
+      "Grinder leads: +50% hp, +1 damage; hunts the weakest.",
+    );
+    // The same sitreps on another offer, with another alpha.
+    view.update({
+      sitreps: ["alpha-present"],
+      alpha: { name: "Hook", level: 1 },
+    });
+    expect(effect()).toBe(
+      "Hook, level 1, leads: +75% hp, +1 damage; hunts the weakest.",
+    );
+  });
+
   it("rebuilds only when the sitreps change, and hides when the offer goes", () => {
     const view = new SitrepTagsView();
     view.mount(root);

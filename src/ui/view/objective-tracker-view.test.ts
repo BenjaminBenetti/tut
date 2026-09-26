@@ -105,6 +105,7 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
       "destroy-hive-core": OBJECTIVE_PRESENTATION["destroy-hive-core"],
       "seal-tunnels": OBJECTIVE_PRESENTATION["seal-tunnels"],
       "recover-pod": OBJECTIVE_PRESENTATION["recover-pod"],
+      "kill-broodmother": OBJECTIVE_PRESENTATION["kill-broodmother"],
       "board-core": OBJECTIVE_PRESENTATION["board-core"],
       "destroy-platform-core": OBJECTIVE_PRESENTATION["destroy-platform-core"],
     };

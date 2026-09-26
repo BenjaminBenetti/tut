@@ -1,4 +1,5 @@
 import type { JevControl } from "./jev-control";
+import type { CrownedAlpha } from "./crowned-alpha";
 import type { Brood } from "./brood";
 import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
@@ -352,6 +353,29 @@ export interface RecoverPodObjective extends ObjectiveBase {
 }
 
 /**
+ * Kill the Broodmother before she reaches the map edge, then get out
+ * (#1179, campaign arc §6.8): Alpha Hunt's one objective. Judged live
+ * off the units by its kind's rule, and mirrored onto the flags at each
+ * phase start for the log, the tracker and Jev.
+ *
+ * ```
+ *   her unit on the map at 0 hp                     ──► complete
+ *   she is among the escaped, or the mission ended
+ *     with her alive (the force lost or gone home)  ──► failed
+ *   otherwise                                        ──► open
+ * ```
+ *
+ * Complete is not won: like every objective the squad must still board
+ * the drop ship (`missionOutcome`), and a squad wiped out after the kill
+ * loses the mission with her dead all the same.
+ */
+export interface KillBroodmotherObjective extends ObjectiveBase {
+  readonly kind: "kill-broodmother";
+  /** The Broodmother's unit. */
+  readonly targetId: UnitId;
+}
+
+/**
  * Get through to the hatch and board the core (campaign arc §6.9): the
  * Spore Platform hull's one deciding objective. The stage's extraction
  * is the hatch rather than the drop ship, so a unit that extracts there
@@ -394,11 +418,12 @@ export interface DestroyPlatformCoreObjective extends ObjectiveBase {
 
 /**
  * What the player must achieve: wreck a spawner, hold the generators
- * (#1175), wreck a spore pod before it matures, bring a specimen home,
- * get the civilians out, strip a lost mech's wreck, bring down a hive
- * core and extract, seal the tunnel mouths, keep a pod alive until
- * it is recovered, or fight through the Spore Platform's hull and
- * destroy its core (#1179, campaign arc §6.3, §6.4, §6.5, §6.6, §6.7,
+ * (#1175), wreck a spore pod before it matures, kill a Broodmother
+ * before she reaches the map edge, bring a specimen home, get the
+ * civilians out, strip a lost mech's wreck, bring down a hive core and
+ * extract, seal the tunnel mouths, keep a pod alive until it is
+ * recovered, or fight through the Spore Platform's hull and destroy its
+ * core (#1179, campaign arc §6.3, §6.4, §6.5, §6.6, §6.7, §6.8,
  * §6.9). Closed: a new kind adds its interface here and its rules to
  * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
  */
@@ -406,6 +431,7 @@ export type Objective =
   | DestroySpawnerObjective
   | DefendGeneratorsObjective
   | DestroyPodObjective
+  | KillBroodmotherObjective
   | CaptureSpecimenObjective
   | RescueCiviliansObjective
   | StripWreckObjective
@@ -526,6 +552,7 @@ export const NO_VISION: SideVision = {
  *   ├── sitreps?              the offer's situation reports (arc §11)
  *   ├── blazeSites?           tiles City Ablaze relights every three turns
  *   ├── dustOffTurn?          the last turn Dust-off Window's drop ship waits through
+ *   ├── alpha?                the named alpha Alpha Present crowns, and its unit
  *   ├── map                   the generated TacticalMap (ADR 0004); recipe inside
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
@@ -591,6 +618,13 @@ export interface TacticalState {
    * carries the sitrep.
    */
   readonly dustOffTurn?: number;
+  /**
+   * The named alpha Alpha Present crowns (campaign arc §8, §11): its
+   * name and level from the offer, and once a bug stands on the map to
+   * carry them, that bug. Absent unless the mission carries the sitrep,
+   * and on every mission saved before named alphas.
+   */
+  readonly alpha?: CrownedAlpha;
   readonly map: TacticalMap;
   /** Every unit on the map, TDF and bugs, alive or not. */
   readonly units: readonly Unit[];

@@ -1,7 +1,9 @@
 import type { MissionOfferDecorator } from "../../model/mission-offer-decorator";
 import type { SitrepCatalogue } from "../../model/sitrep-definition";
+import { NEMESIS_LORE } from "../../data/nemesis-lore";
 import { SITREPS } from "../../data/sitreps";
 import { withBugMix } from "./bestiary-offer";
+import { createNamedAlphaDecorator } from "./named-alpha-offer";
 import { withSitreps } from "./sitrep-offer";
 
 // ===========================================
@@ -45,7 +47,8 @@ export function createSitrepDecorator(
  * labelled fork, but the order decides which sees the other's result.
  *
  * ```
- *   rule.create ──► bestiary (bugMix, §2.6) ──► sitreps (arc §11) ──► board
+ *   rule.create ──► bestiary (bugMix, §2.6) ──► sitreps (arc §11)
+ *               ──► alpha (the named alpha of Alpha Present, §11) ──► board
  * ```
  */
 export const MISSION_OFFER_DECORATORS: readonly MissionOfferDecorator[] = [
@@ -54,4 +57,5 @@ export const MISSION_OFFER_DECORATORS: readonly MissionOfferDecorator[] = [
     decorate: (mission, state) => withBugMix(mission, state.progress),
   },
   createSitrepDecorator(SITREPS),
+  createNamedAlphaDecorator(NEMESIS_LORE),
 ];

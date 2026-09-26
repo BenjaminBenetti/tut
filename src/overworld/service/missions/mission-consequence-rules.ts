@@ -1,4 +1,6 @@
+import { NEMESIS_LORE } from "../../data/nemesis-lore";
 import type { MissionConsequenceRules } from "../../model/mission-consequence-rule";
+import { createAlphaHuntConsequence } from "./alpha-hunt-consequence";
 import { CRASH_SITE_CONSEQUENCE } from "./crash-site-consequence";
 import { DEFEND_INSTALLATION_CONSEQUENCE } from "./defend-installation-consequence";
 import { EVACUATION_CONSEQUENCE } from "./evacuation-consequence";
@@ -34,6 +36,9 @@ import { WRECK_RECOVERY_CONSEQUENCE } from "./wreck-recovery-consequence";
  *                                                                     lost, +1 level and a retry delay
  *   tunnel-sabotage        ──► tunnel-sabotage-consequence.ts         a win holds the city's spread
  *                                                                     10 days; nothing otherwise
+ *   alpha-hunt             ──► alpha-hunt-consequence.ts              delta, sighting flag; her death holds the
+ *                                                                     region 5 days and ends a nemesis, her
+ *                                                                     escape records or raises one; +15 lapsed
  *   spore-platform         ──► spore-platform-consequence.ts          nothing; the story rule decides
  * ```
  *
@@ -50,5 +55,6 @@ export const MISSION_CONSEQUENCE_RULES: MissionConsequenceRules = {
   evacuation: EVACUATION_CONSEQUENCE,
   "hive-assault": withGreatHiveConsequences(HIVE_ASSAULT_CONSEQUENCE),
   "tunnel-sabotage": TUNNEL_SABOTAGE_CONSEQUENCE,
+  "alpha-hunt": createAlphaHuntConsequence(NEMESIS_LORE),
   "spore-platform": SPORE_PLATFORM_CONSEQUENCE,
 };

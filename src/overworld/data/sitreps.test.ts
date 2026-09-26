@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SITREP_IDS } from "../../content/model/sitrep-id";
 import {
+  ALPHA_SITREP_MISSION,
   DUST_OFF_SITREP_MISSION,
   FIRST_SITREP_MISSION,
   SITREPS,
@@ -15,10 +16,11 @@ describe("SITREPS", () => {
     }
   });
 
-  it("debuts the five Act I sitreps at M10, the spawn pair at M16 and Dust-off at M20 (arc §3, §11)", () => {
+  it("debuts the five Act I sitreps at M10, the spawn pair at M16, Dust-off at M20 and Alpha Present at M24 (arc §3, §11)", () => {
     expect(FIRST_SITREP_MISSION).toBe(10);
     expect(SPAWN_SITREP_MISSION).toBe(16);
     expect(DUST_OFF_SITREP_MISSION).toBe(20);
+    expect(ALPHA_SITREP_MISSION).toBe(24);
     expect(
       Object.fromEntries(
         SITREP_IDS.map((id) => [id, SITREPS[id].debutMission]),
@@ -32,6 +34,7 @@ describe("SITREPS", () => {
       "hardened-clutches": 16,
       "swarm-tide": 16,
       "dust-off-window": 20,
+      "alpha-present": 24,
     });
   });
 
@@ -49,6 +52,7 @@ describe("SITREPS", () => {
       "hardened-clutches": ["egg-spawner"],
       "swarm-tide": ["edge-spawn"],
       "dust-off-window": ["extraction"],
+      "alpha-present": [],
     });
   });
 

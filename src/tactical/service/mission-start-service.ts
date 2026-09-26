@@ -145,6 +145,8 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *   options.garrisonTurrets            ──► garrison turrets on random clear tiles (#1155)
  *   mission.sitreps?                   ──► each sitrep's setup, in SITREP_IDS order
  *                                          (smoke, fire, carcasses, a known map)
+ *   mission.alpha?                     ──► alpha: the name Alpha Present's phase
+ *                                          step crowns a bug with
  *   initialVision                      ──► both sides' first look
  *                                                               │
  *                                                               ▼
@@ -302,6 +304,19 @@ export function buildMissionStage<TState extends MissionCampaignState>(
     // after the type's rule and the garrison, and read by sight and the
     // phase steps for the rest of the mission.
     ...(mission.sitreps === undefined ? {} : { sitreps: mission.sitreps }),
+    // The named alpha frozen on an Alpha Present offer (campaign arc
+    // §11); the sitrep's phase step crowns a bug with it.
+    ...(mission.alpha === undefined
+      ? {}
+      : {
+          alpha: {
+            name: mission.alpha.name,
+            level: mission.alpha.level,
+            ...(mission.alpha.speciesId === undefined
+              ? {}
+              : { speciesId: mission.alpha.speciesId }),
+          },
+        }),
     map,
     units: placed.value.units,
     templates: placed.value.templates,

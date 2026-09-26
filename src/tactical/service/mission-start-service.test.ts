@@ -1003,3 +1003,58 @@ describe("startTacticalMission with a species mix (ADR 0013 §2.6, #1179)", () =
     expect(rest).toEqual(plain);
   });
 });
+
+describe("startTacticalMission with a named alpha (campaign arc §11, #1179)", () => {
+  /** The clearance fixture carrying Alpha Present and `alpha`. */
+  function promised(alpha: NonNullable<Mission["alpha"]>) {
+    const base = campaign();
+    const mission: Mission = {
+      ...base.mission,
+      sitreps: ["alpha-present"],
+      alpha,
+    };
+    const state: GameState = {
+      ...base.state,
+      overworld: { ...base.state.overworld, missions: [mission] },
+    };
+    return unwrap(
+      startTacticalMission(state, mission.id, base.deployment, deps()),
+    ).activeMission;
+  }
+
+  it("carries the alpha's name, level and species onto the mission, uncrowned", () => {
+    const tactical = promised({
+      name: "Grinder",
+      level: 2,
+      nemesisId: "nemesis-1",
+      speciesId: "lurker",
+      scar: "burned by fire",
+    });
+    expect(tactical?.alpha).toEqual({
+      name: "Grinder",
+      level: 2,
+      speciesId: "lurker",
+    });
+    // Crowned by the sitrep's phase step, not at the start.
+    expect(tactical?.units.some((unit) => unit.persona === "alpha")).toBe(
+      false,
+    );
+  });
+
+  it("leaves the species out for a first alpha, and the field off a mission without one", () => {
+    expect(promised({ name: "Grinder", level: 0 })?.alpha).toEqual({
+      name: "Grinder",
+      level: 0,
+    });
+    const plain = campaign();
+    const tactical = unwrap(
+      startTacticalMission(
+        plain.state,
+        plain.mission.id,
+        plain.deployment,
+        deps(),
+      ),
+    ).activeMission;
+    expect(tactical).not.toHaveProperty("alpha");
+  });
+});

@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { EarthMap } from "../model/earth-map";
 import { buildEarthMap } from "./earth-map-builder";
-import { pausedRegions, withPausedGrowth } from "./growth-pause-service";
+import {
+  pausedRegions,
+  pauseRegionGrowth,
+  withPausedGrowth,
+} from "./growth-pause-service";
+import { fixtureState } from "./missions/mission-fixtures.test-helper";
 
 /** Two regions of two cities each. */
 function fixture(): EarthMap {
@@ -63,5 +68,25 @@ describe("withPausedGrowth", () => {
       e1: 0.25,
     });
     expect(factors).toEqual({ w1: 0.5, e1: 0.25 });
+  });
+});
+
+describe("pauseRegionGrowth", () => {
+  it("holds a region for `days` ticks from the day after", () => {
+    const paused = pauseRegionGrowth(fixtureState(), "east", 20, 5);
+    expect(paused.growthPausedUntil).toEqual({ east: 26 });
+    expect([...pausedRegions(paused, 21)]).toEqual(["east"]);
+    expect([...pausedRegions(paused, 25)]).toEqual(["east"]);
+    expect([...pausedRegions(paused, 26)]).toEqual([]);
+  });
+
+  it("keeps a longer pause and other regions' pauses, and extends a shorter one", () => {
+    const state = fixtureState({ growthPausedUntil: { east: 40, west: 22 } });
+    expect(pauseRegionGrowth(state, "east", 20, 5)).toBe(state);
+    expect(pauseRegionGrowth(state, "west", 20, 5).growthPausedUntil).toEqual({
+      east: 40,
+      west: 26,
+    });
+    expect(pauseRegionGrowth(state, "west", 20, 0)).toBe(state);
   });
 });

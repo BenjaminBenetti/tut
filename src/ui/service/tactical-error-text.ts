@@ -180,12 +180,18 @@ export function namesFor(
       return named;
     }
     // Then a named enemy's persona (campaign arc §9), which the event
-    // log, the unit card and Jev's observation all call it by.
+    // log, the unit card and Jev's observation all call it by, after its
+    // own name when it has one (#1179): "Old Scald the Broodmother",
+    // "Grinder the Alpha Brute".
     const species = mission?.templates[unit.templateId]?.name;
     const persona =
       unit.persona === undefined ? undefined : personaOf(unit.persona);
     if (persona !== undefined) {
-      return personaName(persona, species);
+      const title = personaName(persona, species);
+      return unit.name === undefined ? title : `${unit.name} the ${title}`;
+    }
+    if (unit.name !== undefined) {
+      return unit.name;
     }
     // Then the template, which is the species for a bug and the only
     // name it has.

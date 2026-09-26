@@ -91,6 +91,8 @@ export interface MissionTuning {
   readonly greatHive: GreatHiveTuning;
   /** When a city about to spread is offered a tunnel sabotage, and what a win holds (arc §6.7). */
   readonly tunnelSabotage: TunnelSabotageTuning;
+  /** What killing a Broodmother does to her region (arc §6.8). */
+  readonly alphaHunt: AlphaHuntTuning;
 }
 
 // ===========================================
@@ -117,6 +119,25 @@ export interface TunnelSabotageTuning {
   readonly spreadWindowDays: number;
   /** Spread cooldown a win leaves on the city, in days; at least 1. */
   readonly holdDays: number;
+}
+
+// ===========================================
+// Alpha hunt
+// ===========================================
+
+/**
+ * What a won Alpha Hunt does to the region she laid in (campaign arc
+ * §6.8: "the region's growth drops"). The drop is the hive model's own
+ * timed modifier, a growth pause, shorter than a liberation's because
+ * the hive still stands:
+ *
+ * ```
+ *   killed on day D ──► growthPausedUntil[region] = max(current, D + growthPauseDays + 1)
+ * ```
+ */
+export interface AlphaHuntTuning {
+  /** Days the region's growth and outward spread hold after she dies; at least 1. */
+  readonly growthPauseDays: number;
 }
 
 // ===========================================

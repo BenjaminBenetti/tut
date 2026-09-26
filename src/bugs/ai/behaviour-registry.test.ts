@@ -17,6 +17,7 @@ import {
 } from "./behaviour-registry";
 import { PERSONAS } from "../data/personas";
 import type { PersonaDefinition } from "../model/persona";
+import { SPECIES_FALLBACK } from "../model/persona";
 import { createPersonaLookup } from "../service/persona-lookup";
 import {
   attackOptions,
@@ -207,15 +208,28 @@ describe("behaviourTagOf (ADR 0013 §2.8)", () => {
     ).toBe(PERSONAS.broodmother.fallback);
   });
 
-  it("plays the species when the persona's fallback says so (an alpha fights as its species)", () => {
-    expect(PERSONAS.alpha.fallback).toBe("species");
+  it("plays the species when the persona's fallback says so", () => {
+    const speciesFallback = createPersonaLookup({
+      ...PERSONAS,
+      alpha: { ...PERSONAS.alpha, fallback: SPECIES_FALLBACK },
+    });
+    expect(
+      behaviourTagOf(
+        { sourceId: "lurker", persona: "alpha" },
+        species,
+        speciesFallback,
+      ),
+    ).toBe("flank");
+  });
+
+  it("plays a crowned alpha by the alpha tag, which wraps its species (#1179)", () => {
     expect(
       behaviourTagOf(
         { sourceId: "lurker", persona: "alpha" },
         species,
         personaOf,
       ),
-    ).toBe("flank");
+    ).toBe("alpha");
   });
 
   it("plays the species for a persona this build does not know, or with no persona lookup", () => {

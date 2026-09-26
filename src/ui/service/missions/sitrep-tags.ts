@@ -31,17 +31,26 @@ export interface SitrepTag extends SitrepPresentation {
 /**
  * The sitreps an offer carries, as tags in the order the offer rolled
  * them. None for an offer without sitreps (every offer before mission
- * 10, and every save from before sitreps).
+ * 10, and every save from before sitreps). A sitrep whose line names
+ * something the offer froze (Alpha Present's alpha) takes this offer's
+ * line.
  *
  * @param mission - The offer.
  * @param presentation - Names and lines; the shipped table by default.
  * @returns One tag per sitrep, in the offer's order.
  */
 export function sitrepTagsOf(
-  mission: Pick<Mission, "sitreps">,
+  mission: Pick<Mission, "sitreps" | "alpha">,
   presentation: SitrepPresentationCatalogue = SITREP_PRESENTATION,
 ): readonly SitrepTag[] {
-  return (mission.sitreps ?? []).map((id) => ({ id, ...presentation[id] }));
+  return (mission.sitreps ?? []).map((id) => {
+    const shown = presentation[id];
+    return {
+      id,
+      ...shown,
+      effect: shown.effectFor?.(mission) ?? shown.effect,
+    };
+  });
 }
 
 /**

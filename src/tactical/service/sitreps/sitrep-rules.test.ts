@@ -36,6 +36,7 @@ describe("SITREP_RULES", () => {
       "hardened-clutches": "setup",
       "swarm-tide": "setup",
       "dust-off-window": "setup+phase",
+      "alpha-present": "phase",
     });
   });
 });

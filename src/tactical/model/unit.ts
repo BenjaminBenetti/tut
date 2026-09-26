@@ -176,6 +176,16 @@ export interface Unit {
    */
   readonly persona?: PersonaId;
   /**
+   * The proper name of a named enemy (#1179, campaign arc §6.8, §11):
+   * the Broodmother an Alpha Hunt is after ("Mother Grist"), or the bug
+   * Alpha Present crowned ("Grinder"). The unit card and the log put it
+   * before the persona's name ("Grinder the Alpha Lurker"). Set by the
+   * rule that names the unit, never by the player; absent on every other
+   * unit and on every unit saved before named enemies, so no save needs
+   * a migration.
+   */
+  readonly name?: string;
+  /**
    * The turn a burrower last came up (#1179), so digging back down can
    * wait out its cooldown (`BurrowTuning.reburrowCooldownTurns`). Absent
    * on a unit that has never surfaced, which may dig at once, and on

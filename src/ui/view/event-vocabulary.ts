@@ -451,6 +451,17 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:alpha-crowned":
+      // Alpha Present (#1179): the name alone, not the unit's, which
+      // would give away the species of a bug nobody has seen yet.
+      return {
+        text:
+          event.payload.level > 0
+            ? `${event.payload.name} is back, level ${formatWhole(event.payload.level)}, leading the swarm`
+            : `${event.payload.name} leads the swarm`,
+        icon: "nemesis",
+        tone: "danger",
+      };
     case "tactical:brood-woke":
       // The whole brood in one line (#1179): its members get the stir
       // on the map, not a status sentence each.
@@ -685,10 +696,12 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:civilians-extracted":
     case "tactical:broodmother-escaped":
     case "tactical:pod-recovered":
+    case "tactical:alpha-crowned":
       // A brood is many bugs, and the scene stirs each of them; civilians
       // aboard and gone leave nobody on the map to mark, and neither does
       // a Broodmother that escaped off its edge or a pod the drop ship
-      // lifted (#1179).
+      // lifted (#1179). A crowning marks nobody either: its bug may be
+      // one the squad has not seen.
       return undefined;
     default:
       return undefined;

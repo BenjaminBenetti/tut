@@ -26,9 +26,11 @@ import type { MissionResolver } from "../model/mission-resolver";
 import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
 import type { MissionTuning } from "../model/mission-tuning";
+import type { NemesisLore } from "../model/nemesis-lore";
 import type { OverworldState } from "../model/overworld-state";
 import { recordMission } from "./campaign-progress-service";
 import { findCity } from "./earth-map-query-service";
+import { recordAlphaOutcome } from "./nemesis-service";
 import type { StoryDeps } from "./story-service";
 import { onStoryMissionResolved } from "./story-service";
 import { recordWrecks } from "./wreck-service";
@@ -62,6 +64,11 @@ export interface LaunchMissionDeps {
    * rule (ADR 0013 §2.5).
    */
   readonly story: StoryDeps;
+  /**
+   * The scars a named alpha that got away is recorded with (campaign
+   * arc §11); `NEMESIS_LORE` at the composition root.
+   */
+  readonly nemesisLore: Pick<NemesisLore, "scars">;
 }
 
 /** What a valid launch resolved to: the mission and its host city. */
@@ -202,6 +209,9 @@ export function validateLaunch(
  *   4. mission removed from the offers; lastMissionResult := result
  *   5. progress ── recordMission(outcome, speciesKilled): missionsPlayed,
  *                 missionsWon on a win, first kills (ADR 0013 §2.1)
+ *              ── recordAlphaOutcome: Alpha Present's named alpha, alive
+ *                 after a mission not won, joins the nemesis record; dead,
+ *                 it leaves it, its kill chronicled (arc §11)
  *      wrecks  ── recordWrecks: a lost mission's destroyed mechs, read from
  *                 the roster as it stood at launch, await Wreck Recovery;
  *                 records past their offer window are dropped (arc §6.6)
@@ -289,16 +299,25 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
     }
 
     // The wrecks are read from `state.roster`, which still holds the
-    // mechs `applyCasualties` just removed.
+    // mechs `applyCasualties` just removed. A named alpha that lived
+    // through a mission the squad did not win joins the nemesis record
+    // (arc §11); one that died leaves it.
     const settled: OverworldState = recordWrecks(
       {
         ...state.overworld,
         missions: state.overworld.missions.filter((m) => m.id !== mission.id),
         lastMissionResult: result,
-        progress: recordMission(
-          state.overworld.progress,
-          result.outcome,
-          result.speciesKilled ?? [],
+        progress: recordAlphaOutcome(
+          recordMission(
+            state.overworld.progress,
+            result.outcome,
+            result.speciesKilled ?? [],
+          ),
+          mission,
+          result,
+          city.regionId,
+          day,
+          deps.nemesisLore,
         ),
       },
       mission,

@@ -39,6 +39,7 @@ export const ICON_MANIFEST = {
   egg: { path: "assets/ui/icons/egg.svg", label: "Egg spawner" },
   pod: { path: "assets/ui/icons/pod.svg", label: "Spore pod" },
   evacuate: { path: "assets/ui/icons/evacuate.svg", label: "Evacuation" },
+  nemesis: { path: "assets/ui/icons/nemesis.svg", label: "Nemesis" },
   defend: { path: "assets/ui/icons/defend.svg", label: "Defend" },
   extract: { path: "assets/ui/icons/extract.svg", label: "Extract" },
   tunnel: { path: "assets/ui/icons/tunnel.svg", label: "Tunnel sabotage" },

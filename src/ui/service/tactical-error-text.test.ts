@@ -343,6 +343,56 @@ describe("namesFor", () => {
     );
   });
 
+  // A named enemy (#1179, campaign arc §6.8, §8).
+  it("calls her by her name and her title, on the map and after she has escaped", () => {
+    const oldScald = {
+      id: "unit-20",
+      sourceId: "broodmother",
+      templateId: "bug:broodmother",
+      persona: "broodmother",
+      name: "Old Scald",
+    };
+    const grinder = {
+      id: "unit-21",
+      sourceId: "brute",
+      templateId: "bug:brute",
+      persona: "alpha",
+      name: "Grinder",
+    };
+    const mission = {
+      ...twoRifleSquads.mission,
+      units: [...(twoRifleSquads.mission?.units ?? []), grinder],
+      templates: {
+        ...twoRifleSquads.mission?.templates,
+        "bug:brute": { name: "Brute" },
+      },
+      escaped: [oldScald],
+    } as unknown as Parameters<typeof namesFor>[0];
+    const names = namesFor(mission, twoRifleSquads.campaign);
+    expect(names.unit("unit-21")).toBe("Grinder the Alpha Brute");
+    expect(names.target("unit-21")).toBe("Grinder the Alpha Brute");
+    expect(names.unit("unit-20")).toBe("Old Scald the Broodmother");
+  });
+
+  it("calls a named unit with no persona this build knows by its name alone", () => {
+    const mission = {
+      ...twoRifleSquads.mission,
+      units: [
+        ...(twoRifleSquads.mission?.units ?? []),
+        {
+          id: "unit-22",
+          sourceId: "swarmer",
+          templateId: "bug:swarmer",
+          persona: "queen",
+          name: "Hook",
+        },
+      ],
+    } as unknown as Parameters<typeof namesFor>[0];
+    expect(namesFor(mission, twoRifleSquads.campaign).unit("unit-22")).toBe(
+      "Hook",
+    );
+  });
+
   it("still names a squad that has extracted by its roster name, for a linked mission's transition (#1179)", () => {
     const units = twoRifleSquads.mission?.units ?? [];
     const alpha = units.find((unit) => unit.id === "unit-1");
@@ -409,6 +459,7 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
       "destroy-hive-core": OBJECTIVE_PRESENTATION["destroy-hive-core"],
       "seal-tunnels": OBJECTIVE_PRESENTATION["seal-tunnels"],
       "recover-pod": OBJECTIVE_PRESENTATION["recover-pod"],
+      "kill-broodmother": OBJECTIVE_PRESENTATION["kill-broodmother"],
       "board-core": OBJECTIVE_PRESENTATION["board-core"],
       "destroy-platform-core": OBJECTIVE_PRESENTATION["destroy-platform-core"],
     };

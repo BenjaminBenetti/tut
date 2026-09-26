@@ -14,6 +14,9 @@ export const SPAWN_SITREP_MISSION = 16;
 /** The mission Dust-off Window appears from (arc §11). */
 export const DUST_OFF_SITREP_MISSION = 20;
 
+/** The mission Alpha Present appears from (arc §11: "M24"). */
+export const ALPHA_SITREP_MISSION = 24;
+
 // ===========================================
 // Sitreps
 // ===========================================
@@ -33,13 +36,15 @@ export const DUST_OFF_SITREP_MISSION = 20;
  *   hardened-clutches  M16    egg-spawner   -      1
  *   swarm-tide         M16    edge-spawn    -      1
  *   dust-off-window    M20    extraction    -      1
+ *   alpha-present      M24                  -      1
  * ```
  *
  * Equal weights: with five debuted, a filled slot is one of the two
  * helping sitreps two times in five. The later ones are all hazards, so
  * the share falls to two in seven from M16 and two in eight from M20 on
  * a clearance (two in six on a defence, which has no egg spawners for
- * Hardened Clutches), and toward two in nine once Alpha Present lands.
+ * Hardened Clutches), and two in nine from M24, when Alpha Present
+ * joins. Alpha Present needs no hook: any map has bugs to crown.
  */
 export const SITREPS: Readonly<Record<SitrepId, SitrepDefinition>> = {
   nightfall: {
@@ -90,6 +95,12 @@ export const SITREPS: Readonly<Record<SitrepId, SitrepDefinition>> = {
     id: "dust-off-window",
     debutMission: DUST_OFF_SITREP_MISSION,
     requiredHooks: ["extraction"],
+    helpsPlayer: false,
+    weight: 1,
+  },
+  "alpha-present": {
+    id: "alpha-present",
+    debutMission: ALPHA_SITREP_MISSION,
     helpsPlayer: false,
     weight: 1,
   },

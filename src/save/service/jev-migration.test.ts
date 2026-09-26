@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JevControl } from "../../tactical/model/jev-control";
 import { GAME_STATE_MIGRATIONS } from "../data/migrations";
-import { GAME_STATE_SCHEMA_VERSION } from "../model/game-state";
 import { MigrationRunner } from "./migration-runner";
 
 describe("Jev save migration after installation defence", () => {
@@ -33,10 +32,8 @@ describe("Jev save migration after installation defence", () => {
         ...(jev === undefined ? {} : { jev }),
       },
     };
-    const runner = new MigrationRunner(
-      GAME_STATE_MIGRATIONS,
-      GAME_STATE_SCHEMA_VERSION,
-    );
+    // Pinned at v28, the step under test: later steps reshape other slices.
+    const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 28);
     const result = runner.migrate({
       schemaVersion: 27,
       savedAt: "saved",

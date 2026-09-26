@@ -12,11 +12,13 @@ import { isRecord } from "../../core/model/record-guard";
  * is a valid envelope of something else; it does not validate domain
  * invariants, which belong to the domains and their migrations. The one
  * per-entry check is the map's cities: each has a numeric `population`,
- * which every save at v24 carries (#1154) and the city wheel reads.
+ * which every save at v24 carries (#1154) and the city wheel reads. The
+ * overworld carries the campaign `progress` with its `act`, which every
+ * save at v29 has (ADR 0013 §2.1) and the mission tick reads.
  *
  * ```
  *   { meta: { seed, rng, ids, createdAt },
- *     overworld: { day, map: { cities: [{ population }] }, ... },
+ *     overworld: { day, map: { cities: [{ population }] }, progress: { act }, ... },
  *     roster: { squads[], mechs[], savedLoadouts[], graveyard[] },
  *     economy: { credits, ledger[], techPoints },
  *     tech: { unlocked[] } }
@@ -38,6 +40,8 @@ export function isGameStateShape(value: unknown): value is GameState {
     isRecord(overworld.map) &&
     Array.isArray(overworld.map.cities) &&
     overworld.map.cities.every(hasPopulation) &&
+    isRecord(overworld.progress) &&
+    typeof overworld.progress.act === "string" &&
     isRecord(roster) &&
     Array.isArray(roster.squads) &&
     Array.isArray(roster.mechs) &&

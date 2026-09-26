@@ -57,6 +57,19 @@ describe("isGameStateShape", () => {
     expect(isGameStateShape(copy)).toBe(false);
   });
 
+  it("rejects an overworld without the v29 campaign progress (ADR 0013)", () => {
+    const missing = jsonCopy();
+    delete (missing.overworld as Record<string, unknown>).progress;
+    const noAct = jsonCopy();
+    const overworld = noAct.overworld as Record<string, unknown>;
+    overworld.progress = { ...(overworld.progress as object), act: 1 };
+    const notRecord = jsonCopy();
+    (notRecord.overworld as Record<string, unknown>).progress = [];
+    for (const bad of [missing, noAct, notRecord]) {
+      expect(isGameStateShape(bad)).toBe(false);
+    }
+  });
+
   it("rejects slices with the wrong field types", () => {
     const wrongSeed = jsonCopy();
     (wrongSeed.meta as Record<string, unknown>).seed = "42";

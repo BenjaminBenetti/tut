@@ -31,4 +31,16 @@ describe("weaponProfileText (#1132)", () => {
       }),
     ).toBe("range 10 · acc 75 · dmg 18 · pen 2");
   });
+
+  it("ends with the weapon's damage tags, the kinds of hit a plate may resist (campaign arc §10.2)", () => {
+    expect(
+      weaponProfileText({
+        range: 6,
+        accuracy: 60,
+        damage: 4,
+        armorPen: 1,
+        tags: ["acid"],
+      }),
+    ).toBe("range 6 · acc 60 · dmg 4 · pen 1 · acid");
+  });
 });

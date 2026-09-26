@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { MODEL_IDS } from "../../content/data/model-ids";
 import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
+import { DAMAGE_TAGS } from "../../content/model/damage-tag";
 import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
 import { DEMOLITION_TUNING } from "../../tactical/data/demolition-tuning";
 import { isMelee } from "../../tactical/model/weapon-profile";
@@ -208,5 +209,25 @@ describe("the Hive Guard's spines (#1179)", () => {
     expect(HIVE_GUARD.hp).toBeLessThan(BRUTE.hp);
     expect(HIVE_GUARD.armor).toBeGreaterThanOrEqual(1);
     expect(HIVE_GUARD.armor).toBeLessThanOrEqual(2);
+  });
+});
+
+describe("damage tags (campaign arc §10.2)", () => {
+  it("tags the spitter's spit acid and the Hive Guard's spines spine, and nothing else", () => {
+    // A tag is what an autopsy's counter resists, so a species carries
+    // one only when its autopsy plates against it.
+    expect(SPITTER.weapon.tags).toEqual(["acid"]);
+    expect(HIVE_GUARD.weapon.tags).toEqual(["spine"]);
+    for (const species of [SWARMER, LURKER, BRUTE]) {
+      expect([species.id, species.weapon.tags]).toEqual([
+        species.id,
+        undefined,
+      ]);
+    }
+    for (const id of BUG_SPECIES_IDS) {
+      for (const tag of BUG_SPECIES[id].weapon.tags ?? []) {
+        expect(DAMAGE_TAGS, `${id} carries ${tag}`).toContain(tag);
+      }
+    }
   });
 });

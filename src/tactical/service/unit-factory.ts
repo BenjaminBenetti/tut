@@ -162,6 +162,7 @@ export function mechUnit(
     weapons: profile.weapons,
     sightRange: profile.sightRange,
     armor: profile.armor,
+    ...(profile.resist === undefined ? {} : { resist: profile.resist }),
     passClass: "mech",
     modelId: deps.tuning.mech.modelId,
     // Graphics assembles the fitted parts from this, so the mech on the

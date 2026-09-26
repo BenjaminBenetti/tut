@@ -1,3 +1,4 @@
+import type { DamageTag } from "../../content/model/damage-tag";
 import type { WeaponMechanics } from "./mech-systems";
 // ===========================================
 // Area of effect
@@ -102,6 +103,13 @@ export interface WeaponProfile extends WeaponMechanics {
    * integer; read through `overwatchShotsOf`.
    */
   readonly overwatchShots?: number;
+  /**
+   * What the hit is made of (campaign arc §10.2): the spitter's spit is
+   * `["acid"]`. Absent or empty means plain damage, which nothing
+   * resists. A target resisting any of the tags takes its best
+   * resistance among them off every hit (`damageRange`).
+   */
+  readonly tags?: readonly DamageTag[];
 }
 
 /** Reaction shots one overwatch with this weapon fires; `1` when it declares none (#1138). */

@@ -10,9 +10,13 @@ export type TechNodeId = string;
 
 /**
  * The research families: the six of the mech roster guide
- * (`docs/design/mech-roster.md`, "Future research families") and the
- * infantry branch of the campaign arc (§10.3, D8). Closed so a node
+ * (`docs/design/mech-roster.md`, "Future research families"), the
+ * infantry branch of the campaign arc (§10.3, D8), and xenobiology, the
+ * study of the swarm, where the autopsies sit (§10.2). Closed so a node
  * naming a family the tree does not draw fails to compile.
+ *
+ * Xenobiology holds only hidden nodes, and a family with nothing to show
+ * gets no spoke, so it appears on the web with the first autopsy.
  */
 export type TechFamilyId =
   | "mobility"
@@ -21,9 +25,10 @@ export type TechFamilyId =
   | "energy"
   | "fire-support"
   | "support"
-  | "infantry";
+  | "infantry"
+  | "xenobiology";
 
-/** Every family, in the order the tree draws its columns. */
+/** Every family, in the order the tree draws its columns. Append, never insert. */
 export const TECH_FAMILY_IDS: readonly TechFamilyId[] = [
   "mobility",
   "protection",
@@ -32,6 +37,7 @@ export const TECH_FAMILY_IDS: readonly TechFamilyId[] = [
   "fire-support",
   "support",
   "infantry",
+  "xenobiology",
 ];
 
 /**

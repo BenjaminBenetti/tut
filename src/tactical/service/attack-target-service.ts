@@ -25,7 +25,12 @@ export const SPAWNER_ARMOR = SPAWNER_VARIANT_TRAITS["egg-spawner"].armor;
 // Adapters
 // ===========================================
 
-/** The unit as an attack target, taking its armor and name from its template. */
+/**
+ * The unit as an attack target, taking its armor, resistances and name
+ * from its template. A template that resists nothing gives a target
+ * that says nothing about resistance, exactly the projection it always
+ * was.
+ */
 export function unitAttackTarget(
   unit: Unit,
   template: UnitTemplate,
@@ -37,6 +42,7 @@ export function unitAttackTarget(
     pos: unit.pos,
     hp: unit.hp,
     armor: template.armor,
+    ...(template.resist === undefined ? {} : { resist: template.resist }),
     team: unit.team,
     // A block says how big it is (#1130); a single tile says nothing,
     // so the projection of one is exactly what it was.

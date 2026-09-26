@@ -22,7 +22,7 @@ import { TURRET_TUNING } from "../data/turret-tuning";
 import { TURRET_DESTROYED } from "../model/turret-destroyed-event";
 import { UNIT_DIED } from "../model/unit-died-event";
 import { armTurret } from "./turret-service";
-import { turretUnit } from "./unit-factory";
+import { bugUnit, mechUnit, turretUnit } from "./unit-factory";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
@@ -43,6 +43,17 @@ import { PassMask } from "../../mapgen/model/pass-mask";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { previewTileAttack, tileWeaponOptions } from "./combat-service";
 import { emptyVision } from "./vision-service";
+import { SPITTER } from "../../bugs/data/species";
+import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
+import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { STARTER_PARTS } from "../../roster/data/parts";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
+import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
+import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
+import { validateLoadout } from "../../roster/service/loadout-validation-service";
+import { createMech } from "../../roster/service/mech-factory";
+import { UNIT_TUNING } from "../data/unit-tuning";
+import type { UnitBuild } from "./unit-factory";
 import {
   attackEndsTurn,
   attackTerrain,
@@ -1745,5 +1756,108 @@ describe("shots to and from a unit on a 2×2 block (#1130)", () => {
     expect(refused.ok).toBe(false);
     if (refused.ok) return;
     expect(refused.error).toMatchObject({ kind: "out-of-range", distance: 6 });
+  });
+});
+
+// ===========================================
+// Damage tags and resistance (campaign arc §10.2)
+// ===========================================
+
+describe("a tagged hit on a mech that resists the tag (campaign arc §10.2)", () => {
+  const PARTS = new StaticPartCatalogue(STARTER_PARTS);
+  const AT = { pos: { x: 4, y: 0, z: 3 }, facing: "n" } as const;
+  const FROM = { pos: { x: 1, y: 0, z: 3 }, facing: "s" } as const;
+
+  /** A mech built through the unit factory from a validated loadout. */
+  function builtMech(utilityIds: readonly string[]): UnitBuild {
+    const loadout = { ...STARTER_LOADOUT, utilityIds: [...utilityIds] };
+    const sheet = validateLoadout(
+      loadout,
+      PARTS,
+      MECH_RATING_TUNING,
+      UPGRADE_TUNING,
+    );
+    if (!sheet.ok) throw new Error(JSON.stringify(sheet.error));
+    return mechUnit(
+      createMech(loadout, "mech-1", "Hammerhead"),
+      sheet.value,
+      AT,
+      {
+        ids: new SequentialIdGenerator(),
+        tuning: UNIT_TUNING,
+      },
+    );
+  }
+
+  /** The Vanguard of the starter roster, its radiator swapped for the acid plating. */
+  const plated = (): UnitBuild => builtMech([ACID_RESISTANT_PLATING]);
+  /** The starter mech as shipped: no resistance. */
+  const bare = (): UnitBuild => builtMech(["utility-radiator"]);
+
+  /** A spitter from the unit factory, its spit swapped for `weapon` when given. */
+  function spitter(weapon?: WeaponProfile): UnitBuild {
+    const species = weapon === undefined ? SPITTER : { ...SPITTER, weapon };
+    return bugUnit(species, FROM, { ids: new SequentialIdGenerator() });
+  }
+
+  /** The damage a certain, high-rolled shot of `bug` does to `mech`, through `resolveAttack`. */
+  function hit(bug: UnitBuild, mech: UnitBuild): number {
+    const field = missionWith(openField().build(), [
+      bug.unit,
+      { ...mech.unit, id: "target" },
+    ]);
+    const m: TacticalState = {
+      ...field,
+      phase: "bugs",
+      templates: {
+        ...field.templates,
+        [bug.template.id]: bug.template,
+        [mech.template.id]: mech.template,
+      },
+    };
+    const result = resolveAttack(
+      m,
+      attack(bug.unit.id, "target"),
+      ctxWith(riggedRng(true, "high")),
+      T,
+      DEPS,
+    );
+    if (!result.ok) throw new Error(JSON.stringify(result.error));
+    const resolved = result.value.events.find(
+      (event) => event.type === ATTACK_RESOLVED,
+    );
+    if (resolved?.type !== ATTACK_RESOLVED) throw new Error("no attack");
+    expect(resolved.payload.hit).toBe(true);
+    return resolved.payload.damage;
+  }
+
+  /** A spit hard enough to get through plate, so the resistance shows. */
+  const HEAVY_ACID: WeaponProfile = { ...SPITTER.weapon, damage: 20 };
+  /** The same shot with no tag at all. */
+  const HEAVY_PLAIN: WeaponProfile = {
+    range: HEAVY_ACID.range,
+    accuracy: HEAVY_ACID.accuracy,
+    damage: HEAVY_ACID.damage,
+    armorPen: HEAVY_ACID.armorPen,
+  };
+
+  it("carries the plating's resistance from the part to the mech's template", () => {
+    expect(plated().template.resist).toEqual({ acid: 3 });
+    expect(bare().template).not.toHaveProperty("resist");
+  });
+
+  it("takes the plating's three points off every acid hit, and nothing off the same hit untagged", () => {
+    const acid = hit(spitter(HEAVY_ACID), plated());
+    const plain = hit(spitter(HEAVY_PLAIN), plated());
+    expect(plain - acid).toBe(3);
+    // Without the plating the tag makes no difference at all.
+    expect(hit(spitter(HEAVY_ACID), bare())).toBe(
+      hit(spitter(HEAVY_PLAIN), bare()),
+    );
+  });
+
+  it("turns the spitter's own spit, a one-point scratch on bare plate, to nothing", () => {
+    expect(hit(spitter(), bare())).toBe(1);
+    expect(hit(spitter(), plated())).toBe(0);
   });
 });

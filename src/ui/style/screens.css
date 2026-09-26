@@ -2411,6 +2411,13 @@
 .tut-tech-tree__detail .tut-badge {
   align-self: flex-start;
 }
+/* What sort of research a node is: "Autopsy: Spitter" (campaign arc §10.2). */
+.tut-tech-tree__kind {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ui-bug);
+}
 .tut-tech-tree__unlocks {
   margin: 0;
   padding: 0;

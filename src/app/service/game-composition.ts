@@ -94,6 +94,8 @@ import type { AutosaveFailureListener } from "./autosave-service";
 import { AutosaveService } from "./autosave-service";
 import type { StoreObserver } from "./game-session";
 import { StoreGameSession } from "./game-session";
+import type { ResearchRevealListener } from "./research-reveal-watcher";
+import { createResearchRevealWatcher } from "./research-reveal-watcher";
 import { GameStore } from "./game-store";
 
 // ===========================================
@@ -112,6 +114,12 @@ export interface GameCompositionDeps {
   readonly onAutosaveFailure: AutosaveFailureListener;
   /** Extra observer attached to every campaign store beside autosave; the map scene sync, for instance. */
   readonly onStore?: StoreObserver;
+  /**
+   * Told when a command brings tech nodes out of hiding (ADR 0013
+   * §2.7): the autopsy a first kill reveals, for instance (campaign arc
+   * §8). The bootstrap turns it into a notice; absent, nobody is told.
+   */
+  readonly onResearchRevealed?: ResearchRevealListener;
   /**
    * Test and tuning switches for this session (#78), applied to the
    * shipped tuning here and never written into a save, so they cannot
@@ -302,13 +310,23 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     AUTOSAVE_SLOT_ID,
     deps.onAutosaveFailure,
   );
+  const watchReveals =
+    deps.onResearchRevealed === undefined
+      ? undefined
+      : createResearchRevealWatcher({
+          catalogue: content.tech,
+          conditionsOf: techConditionsOf,
+          onRevealed: deps.onResearchRevealed,
+        });
   const session = new StoreGameSession(
     (state) => new GameStore(state, dispatcher),
     (store) => {
       const detachAutosave = autosave.attach(store);
+      const detachReveals = watchReveals?.(store);
       const detachExtra = deps.onStore?.(store);
       return () => {
         detachAutosave();
+        detachReveals?.();
         detachExtra?.();
       };
     },

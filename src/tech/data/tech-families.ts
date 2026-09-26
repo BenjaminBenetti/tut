@@ -1,9 +1,10 @@
 import type { TechFamily, TechFamilyId } from "../model/tech-node";
 
 /**
- * The columns of the tree: the roster guide's six research families
- * and the infantry branch (campaign arc §10.3). Keyed by the closed id
- * so a missing family fails typecheck.
+ * The columns of the tree: the roster guide's six research families,
+ * the infantry branch (campaign arc §10.3) and xenobiology, where the
+ * autopsies sit (§10.2). Keyed by the closed id so a missing family
+ * fails typecheck.
  */
 export const TECH_FAMILIES: Readonly<Record<TechFamilyId, TechFamily>> = {
   mobility: {
@@ -43,5 +44,11 @@ export const TECH_FAMILIES: Readonly<Record<TechFamilyId, TechFamily>> = {
     name: "Infantry",
     description:
       "Armour, grenades, field medicine and heavy weapons for every squad.",
+  },
+  xenobiology: {
+    id: "xenobiology",
+    name: "Xenobiology",
+    description:
+      "Autopsies of the species we have killed, and the counters they teach.",
   },
 };

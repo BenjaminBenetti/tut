@@ -1,4 +1,5 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { DamageResistances } from "./damage-resistance";
 import type { Team } from "./unit";
 
 // ===========================================
@@ -38,6 +39,12 @@ export interface AttackTarget {
   readonly hp: number;
   /** Armor subtracted from each hit after the weapon's penetration. Non-negative. */
   readonly armor: number;
+  /**
+   * Points each tagged hit loses after armor and the damage floor
+   * (campaign arc §10.2); absent for anything that resists nothing,
+   * which is every spawner and every unit without a resisting part.
+   */
+  readonly resist?: DamageResistances;
   /** The side it belongs to, so a shot at one's own is refused. */
   readonly team: Team;
   /**

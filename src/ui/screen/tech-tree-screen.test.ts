@@ -14,6 +14,10 @@ import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerTechCommands } from "../../overworld/service/tech-command-handlers";
+import { BUG_SPECIES } from "../../bugs/data/species";
+import { createSpeciesLookup } from "../../bugs/service/species-lookup";
+import { campaignTechConditions } from "../../overworld/service/campaign-tech-conditions";
+import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
@@ -43,7 +47,6 @@ import type { TechNodeId } from "../../tech/model/tech-node";
 import { TECH_FAMILY_IDS } from "../../tech/model/tech-node";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
-import { isTechNodeHidden } from "../../tech/service/tech-status-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
@@ -65,14 +68,10 @@ type NavigateMock = Mock<(id: ScreenId) => void>;
 
 const PARTS = new StaticPartCatalogue(STARTER_PARTS);
 const TECH = new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES));
-/**
- * How many shipped nodes a campaign with no flags is shown: all but the
- * hidden Intel projects (#1179). The screen's conditions are
- * `NO_TECH_CONDITIONS` unless a test sets flags.
- */
-const VISIBLE_NODE_COUNT = TECH_NODES.filter(
-  (node) => !isTechNodeHidden(node, NO_TECH_CONDITIONS),
-).length;
+/** The shipped nodes a fresh campaign sees: every one no flag hides. */
+const SHOWN_AT_START = TECH_NODES.filter(
+  (node) => (node.requiresFlags ?? []).length === 0,
+);
 
 const newGame = (): GameState =>
   createNewGame(
@@ -239,6 +238,7 @@ function mountWith(
     conditionsOf?: (state: GameState) => TechConditions;
     effectLabels?: TechEffectLabels;
     squadTypes?: SquadTypeCatalogue;
+    speciesOf?: (speciesId: string) => { readonly name: string } | undefined;
   } = {},
 ): { navigate: NavigateMock; screen: TechTreeScreen } {
   const navigate: NavigateMock = vi.fn();
@@ -294,12 +294,18 @@ describe("TechTreeScreen", () => {
     const families = [
       ...stage.querySelectorAll<HTMLElement>("[data-family]"),
     ].map((column) => column.dataset.family);
-    expect(families).toEqual([...TECH_FAMILY_IDS]);
+    // Every family but xenobiology, whose autopsies wait on a kill.
+    expect(families).toEqual(
+      TECH_FAMILY_IDS.filter((id) =>
+        SHOWN_AT_START.some((node) => node.family === id),
+      ),
+    );
+    expect(families).not.toContain("xenobiology");
     expect(q('[data-family="mobility"]').textContent).toBe(
       TECH_FAMILIES.mobility.name,
     );
     expect(stage.querySelectorAll("[data-node]")).toHaveLength(
-      VISIBLE_NODE_COUNT,
+      SHOWN_AT_START.length,
     );
     const jump = label("tech.jump-jets");
     expect(jump.querySelector('[data-field="name"]')?.textContent).toBe(
@@ -317,7 +323,7 @@ describe("TechTreeScreen", () => {
     const graph = new FakeGraphHost();
     const { screen } = mountWith(new RealStore(fixture()), root, { graph });
     expect(graph.container?.dataset.role).toBe("tech-graph");
-    expect(graph.layout?.nodes).toHaveLength(VISIBLE_NODE_COUNT);
+    expect(graph.layout?.nodes).toHaveLength(SHOWN_AT_START.length);
     expect(graph.statuses.get("tech.all-terrain")).toBe("unlocked");
     expect(graph.statuses.get("tech.jump-jets")).toBe("available");
     expect(graph.statuses.get("tech.sprint-frame")).toBe("unaffordable");
@@ -675,6 +681,63 @@ describe("TechTreeScreen with hidden and conditional nodes", () => {
       "Field medic training (the medic squad's medkit mends 15, not 10)",
     ]);
     expect(said("tech.heavy-weapons")).toEqual(["Heavy Weapons Squad"]);
+  });
+
+  it("draws the spitter autopsy once a spitter is killed, and says whose autopsy it is and what it unlocks (campaign arc §10.2)", () => {
+    const killed = (): GameState => {
+      const base = funded();
+      return {
+        ...base,
+        overworld: {
+          ...base.overworld,
+          progress: {
+            ...base.overworld.progress,
+            speciesKilled: ["spitter"],
+          },
+        },
+      };
+    };
+    const conditionsOf = (state: GameState): TechConditions =>
+      campaignTechConditions(state.overworld.progress);
+
+    // Before the kill: no label, no xenobiology spoke.
+    const before = new FakeGraphHost();
+    mountWith(new RealStore(funded(), { conditionsOf }), root, {
+      graph: before,
+      conditionsOf,
+    });
+    expect(labelIds()).not.toContain("tech.spitter-autopsy");
+    expect(familyIds()).not.toContain("xenobiology");
+
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(killed(), { conditionsOf }), root, {
+      graph,
+      conditionsOf,
+      speciesOf: createSpeciesLookup(BUG_SPECIES),
+    });
+    expect(labelIds()).toContain("tech.spitter-autopsy");
+    // Only the species killed: the Hive Guard's autopsy stays hidden.
+    expect(labelIds()).not.toContain("tech.hive-guard-autopsy");
+    expect(familyIds()).toContain("xenobiology");
+    expect(q('[data-family="xenobiology"]').textContent).toBe("Xenobiology");
+
+    graph.listener?.picked("tech.spitter-autopsy");
+    const kind = q('#tech-tree-detail [data-field="kind"]');
+    expect(kind.hidden).toBe(false);
+    expect(kind.textContent).toBe("Autopsy: Spitter");
+    expect(
+      effectItems().map((li) => [li.dataset.partId, li.textContent]),
+    ).toEqual([
+      [ACID_RESISTANT_PLATING, "Acid-Resistant Plating (acid resist 3)"],
+    ]);
+    expect(q("#tech-tree-detail").dataset.status).toBe("available");
+
+    // A part node has no kind line.
+    graph.listener?.picked("tech.jump-jets");
+    expect(q('#tech-tree-detail [data-field="kind"]').hidden).toBe(true);
   });
 
   it("re-lays the graph out when an unlock reveals a node, keeping the selection", () => {

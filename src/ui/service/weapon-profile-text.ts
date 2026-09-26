@@ -9,10 +9,13 @@ import { formatWhole } from "./format";
  * One line for a weapon's field numbers, shared by the tactical unit
  * card and the mech bay's Combat block (#1132) so the two print a weapon
  * the same way: the four numbers every weapon has, then the blast, the
- * fire and the force only when the weapon has them (#1121).
+ * fire and the force only when the weapon has them (#1121), and last
+ * the damage tags (campaign arc §10.2), which say what a resistance
+ * answers.
  *
  * ```
  *   range 14 · acc 70 · dmg 22 · pen 1 · blast 1 · demo 1
+ *   range 6 · acc 60 · dmg 4 · pen 1 · acid
  * ```
  *
  * @param profile - The weapon's field profile.
@@ -38,6 +41,7 @@ export function weaponProfileText(profile: WeaponProfile): string {
     ...((profile.demoForce ?? 0) > 0
       ? [`demo ${formatWhole(profile.demoForce ?? 0)}`]
       : []),
+    ...(profile.tags ?? []),
   ];
   return [
     `range ${formatWhole(profile.range)} · acc ${formatWhole(profile.accuracy)} · dmg ${formatWhole(profile.damage)} · pen ${formatWhole(profile.armorPen)}`,

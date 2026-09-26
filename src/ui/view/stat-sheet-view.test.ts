@@ -3,6 +3,13 @@ import { describe, expect, it } from "vitest";
 
 import { err, ok } from "../../core/model/result";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
+import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { STARTER_PARTS } from "../../roster/data/parts";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
+import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
+import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
+import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { mechCombatProfile } from "../../tactical/service/mech-combat-profile";
 import { StatSheetView } from "./stat-sheet-view";
@@ -108,5 +115,31 @@ describe("StatSheetView", () => {
 
     view.unmount();
     expect(root.childElementCount).toBe(0);
+  });
+});
+
+describe("StatSheetView resistances (campaign arc §10.2)", () => {
+  /** The Systems line for the starter mech with `utilityIds` fitted. */
+  const systemsWith = (utilityIds: readonly string[]): string => {
+    const root = document.createElement("div");
+    const view = new StatSheetView(UNIT_TUNING.mech);
+    view.mount(root);
+    view.update(
+      validateLoadout(
+        { ...STARTER_LOADOUT, utilityIds: [...utilityIds] },
+        new StaticPartCatalogue(STARTER_PARTS),
+        MECH_RATING_TUNING,
+        UPGRADE_TUNING,
+      ),
+    );
+    return (
+      root.querySelector<HTMLElement>('[data-field="systems"]')?.textContent ??
+      ""
+    );
+  };
+
+  it("lists the acid plating's resistance on the Systems line of the mech that fits it", () => {
+    expect(systemsWith([ACID_RESISTANT_PLATING])).toContain("acid resist 3");
+    expect(systemsWith(["utility-radiator"])).not.toContain("resist");
   });
 });

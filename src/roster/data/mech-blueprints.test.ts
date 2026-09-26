@@ -5,6 +5,7 @@ import { PART_SLOTS } from "../model/mech-part";
 import { StaticPartCatalogue } from "../repository/static-part-catalogue";
 import { fitPart } from "../service/loadout-fit-service";
 import { validateLoadout } from "../service/loadout-validation-service";
+import { AUTOPSY_PARTS } from "./autopsy-parts";
 import { MECH_BLUEPRINTS } from "./mech-blueprints";
 import { MECH_RATING_TUNING } from "./mech-rating-tuning";
 import { STARTER_PARTS } from "./parts";
@@ -14,10 +15,26 @@ import { UPGRADE_TUNING } from "./upgrade-tuning";
 const PARTS = new StaticPartCatalogue(STARTER_PARTS);
 
 describe("complete mech roster", () => {
-  it("offers all 48 approved parts in the six existing slots and all three tiers", () => {
-    expect(STARTER_PARTS).toHaveLength(48);
+  it("offers all 48 approved parts in the six existing slots and all three tiers, then the autopsy counters", () => {
+    // The autopsy counters (campaign arc §10.2) come on top of the
+    // approved roster, one per species with an autopsy.
+    const approved = STARTER_PARTS.filter(
+      (part) => !AUTOPSY_PARTS.includes(part),
+    );
+    expect(approved).toHaveLength(48);
+    expect(
+      PART_SLOTS.map(
+        (slot) => approved.filter((part) => part.slot === slot).length,
+      ),
+    ).toEqual([6, 6, 6, 10, 8, 12]);
+    expect(STARTER_PARTS).toHaveLength(48 + AUTOPSY_PARTS.length);
     expect(PART_SLOTS.map((slot) => PARTS.partsForSlot(slot).length)).toEqual([
-      6, 6, 6, 10, 8, 12,
+      6,
+      6,
+      6,
+      10,
+      8,
+      12 + AUTOPSY_PARTS.length,
     ]);
     expect(new Set(STARTER_PARTS.map((part) => part.tier))).toEqual(
       new Set([1, 2, 3]),

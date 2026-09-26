@@ -26,6 +26,8 @@ import type { TechGraphLayout } from "../model/tech-graph-layout";
 import { formatTechPoints, formatWhole } from "../service/format";
 import { describeTechEffect } from "../service/tech-effect-describer";
 import { layoutTechGraph } from "../service/tech-graph-layout";
+import type { TechNodeKindSources } from "../service/tech-node-kind-text";
+import { techNodeKindText } from "../service/tech-node-kind-text";
 
 // ===========================================
 // Types
@@ -51,6 +53,11 @@ export interface TechTreeScreenDeps {
   /** Names flag and infantry upgrade effects; absent, their ids' words are shown. */
   readonly effectLabels?: TechEffectLabels;
   /**
+   * Names the species an autopsy studies, for the "Autopsy: Spitter"
+   * line (campaign arc §10.2); absent, the species id's words are shown.
+   */
+  readonly speciesOf?: TechNodeKindSources["speciesOf"];
+  /**
    * Draws the graph in three (#1171); absent in unit tests that only
    * check the DOM, and then the labels are built but never placed.
    */
@@ -75,6 +82,7 @@ interface DetailPanel {
   readonly empty: HTMLElement;
   readonly body: HTMLElement;
   readonly family: HTMLElement;
+  readonly kind: HTMLElement;
   readonly name: HTMLElement;
   readonly cost: HTMLElement;
   readonly badge: HTMLElement;
@@ -346,6 +354,12 @@ export class TechTreeScreen implements Screen {
     detail.family.textContent =
       this.deps.tech.listFamilies().find((f) => f.id === node.family)?.name ??
       node.family;
+    const kind = techNodeKindText(
+      node,
+      this.deps.speciesOf ? { speciesOf: this.deps.speciesOf } : {},
+    );
+    detail.kind.textContent = kind ?? "";
+    detail.kind.hidden = kind === undefined;
     detail.name.textContent = node.name;
     detail.cost.textContent = formatTechPoints(node.cost);
     detail.description.textContent = node.description;
@@ -666,6 +680,10 @@ export class TechTreeScreen implements Screen {
     const family = doc.createElement("div");
     family.className = "tut-label";
     family.dataset.field = "family";
+    const kind = doc.createElement("p");
+    kind.className = "tut-tech-tree__kind";
+    kind.dataset.field = "kind";
+    kind.hidden = true;
     const head = doc.createElement("div");
     head.className = "tut-tech-tree__detail-head";
     const name = doc.createElement("span");
@@ -704,6 +722,7 @@ export class TechTreeScreen implements Screen {
     });
     body.append(
       family,
+      kind,
       head,
       badge,
       description,
@@ -718,6 +737,7 @@ export class TechTreeScreen implements Screen {
       empty,
       body,
       family,
+      kind,
       name,
       cost,
       badge,

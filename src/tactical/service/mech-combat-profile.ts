@@ -12,6 +12,7 @@ import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
  * The field numbers a validated stat sheet comes out as (#49, #1132):
  * `maxHp = chassis hullHp + armor × hpPerArmor` (legacy sheets use baseHp); move is `baseMove + mobility`
  * clamped to the tuning's bounds; per-hit armor is `armor × armorFactor`;
+ * the resistances are the fitted parts' own (campaign arc §10.2);
  * each fitted weapon fires for its own firepower scaled by the tuning's
  * damage, at the base accuracy plus the sheet's modifier less the other
  * weapons' contributions, clamped to a percentage.
@@ -43,6 +44,11 @@ export function mechCombatProfile(
       tuning.maxMove,
     ),
     armor: Math.max(0, Math.round(sheet.armor * tuning.armorFactor)),
+    // What the fitted parts resist (campaign arc §10.2) is the parts'
+    // own, like a blast: whole points off a tagged hit, not a tuning knob.
+    ...(sheet.systems?.resist === undefined
+      ? {}
+      : { resist: sheet.systems.resist }),
     sightRange: tuning.sightRange + (sheet.systems?.sightBonus ?? 0),
     weapons: mechWeapons(sheet, tuning),
   };

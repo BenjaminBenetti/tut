@@ -1,4 +1,5 @@
 import { ADVANCED_PARTS } from "./advanced-parts";
+import { AUTOPSY_PARTS } from "./autopsy-parts";
 import type { MechPart } from "../model/mech-part";
 
 /**
@@ -474,4 +475,6 @@ export const STARTER_PARTS: readonly MechPart[] = [
       "A second, smaller reactor. Buys headroom for one more hungry weapon.",
   },
   ...ADVANCED_PARTS,
+  // The counters the autopsies unlock (campaign arc §10.2).
+  ...AUTOPSY_PARTS,
 ];

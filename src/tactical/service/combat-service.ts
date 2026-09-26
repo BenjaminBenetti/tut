@@ -28,6 +28,7 @@ import type { BlastVictim as BlastVictimHit } from "../model/blast-resolved-even
 import type { BlastDelivery } from "../model/blast-resolved-event";
 import { BLAST_RESOLVED } from "../model/blast-resolved-event";
 import type { CombatTuning } from "../model/combat-tuning";
+import type { DamageResistances } from "../model/damage-resistance";
 import type { DemolitionTuning } from "../model/demolition-tuning";
 import type { HazardTuning } from "../model/hazard-tuning";
 import { STRUCTURE_DESTROYED } from "../model/structure-destroyed-event";
@@ -67,7 +68,7 @@ import { damageSpawner } from "./spawner-damage-service";
 import { ignite } from "./tile-effect-service";
 
 export type { AttackTerrain } from "./attack-formulae";
-export { damageRange, hitChance } from "./attack-formulae";
+export { damageRange, hitChance, resistanceTo } from "./attack-formulae";
 
 // ===========================================
 // Types
@@ -696,9 +697,15 @@ export function previewAttack(
     : undefined;
   return ok({
     hitChance: hitChance(weapon.profile, terrain, tuning),
-    damage: damageRange(weapon.profile, target.armor, tuning).map((damage) =>
-      protectedDamage(mission, target.id, damage),
-    ) as [number, number],
+    damage: damageRange(
+      weapon.profile,
+      target.armor,
+      tuning,
+      target.resist,
+    ).map((damage) => protectedDamage(mission, target.id, damage)) as [
+      number,
+      number,
+    ],
     distance: terrain.distance,
     cover: terrain.cover,
     flanked: terrain.flanked,
@@ -782,9 +789,16 @@ export function blastPreview(
       name: target.name,
       team: target.team,
       distance,
-      damage: blastDamageRange(profile, distance, target.armor, tuning).map(
-        (damage) => protectedDamage(mission, target.id, damage),
-      ) as [number, number],
+      damage: blastDamageRange(
+        profile,
+        distance,
+        target.armor,
+        tuning,
+        target.resist,
+      ).map((damage) => protectedDamage(mission, target.id, damage)) as [
+        number,
+        number,
+      ],
     }),
   );
   const force = demoForceOf(profile);
@@ -812,22 +826,30 @@ export function blastPreview(
 
 /**
  * The band something `distance` tiles from the impact takes (#1121):
- * the weapon's damage less its falloff share, then the ordinary band
- * and armor. Falloff comes off before armor because less arrives, and
- * the armor is the same plate whatever arrives.
+ * the weapon's damage less its falloff share, then the ordinary band,
+ * armor and resistance. Falloff comes off before armor because less
+ * arrives, and the armor is the same plate whatever arrives.
+ *
+ * @param profile - The weapon whose blast it is.
+ * @param distance - Tiles from the impact.
+ * @param armor - The victim's per-hit armor.
+ * @param tuning - Spread and floor.
+ * @param resist - The victim's resistances (campaign arc §10.2); absent resists nothing.
+ * @returns The inclusive `[low, high]` damage band.
  */
 export function blastDamageRange(
   profile: WeaponProfile,
   distance: number,
   armor: number,
   tuning: CombatTuning,
+  resist?: DamageResistances,
 ): readonly [number, number] {
   const share = falloffShare(profile.aoe?.falloff ?? 0, distance);
   const scaled = Math.round(profile.damage * share);
   if (scaled <= 0) {
     return [0, 0];
   }
-  return damageRange({ ...profile, damage: scaled }, armor, tuning);
+  return damageRange({ ...profile, damage: scaled }, armor, tuning, resist);
 }
 
 // ===========================================
@@ -873,7 +895,7 @@ export function rollAttack(
 ): AttackRoll {
   const { attacker, weapon, target, terrain } = checked;
   const chance = hitChance(weapon.profile, terrain, tuning);
-  const band = damageRange(weapon.profile, target.armor, tuning);
+  const band = damageRange(weapon.profile, target.armor, tuning, target.resist);
   const hit = ctx.rng.chance(chance / 100);
   const rawDamage = hit ? ctx.rng.nextInt(band[0], band[1]) : 0;
   const damage = protectedDamage(mission, target.id, rawDamage);
@@ -1041,7 +1063,13 @@ export function resolveBlastAt(
       footprint,
       spared,
     )) {
-      const band = blastDamageRange(profile, distance, target.armor, tuning);
+      const band = blastDamageRange(
+        profile,
+        distance,
+        target.armor,
+        tuning,
+        target.resist,
+      );
       const rawDamage = band[1] <= 0 ? 0 : ctx.rng.nextInt(band[0], band[1]);
       const damage = protectedDamage(state, target.id, rawDamage);
       const hp = Math.max(0, target.hp - damage);

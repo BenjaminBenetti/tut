@@ -44,6 +44,18 @@ const ENV_TOKENS: Readonly<Record<string, number>> = {
 };
 
 /**
+ * The spore platform's surfaces (#1179): the bugs' own chitin (style
+ * guide §4.2) for plates and rims, and the scene's clear colour, `ui-bg`,
+ * for the void that is never drawn.
+ */
+const PLATFORM_TOKENS: Readonly<Record<string, number>> = {
+  "hull-plate": 0x8b5d36,
+  "hull-plate-dark": 0x5c3b25,
+  "hull-rim": 0xb88b58,
+  void: 0x0b0d12,
+};
+
+/**
  * The four overlay colours from style guide §12.2. A world surface painted
  * one of these steals the meaning of "your unit" or "where it can go".
  */
@@ -73,6 +85,10 @@ describe("mapgen preview palette", () => {
     for (const [key, colour] of worldColours) {
       if (key === "infested") {
         expect(colour).toBe(0x73452e);
+        continue;
+      }
+      if (key in PLATFORM_TOKENS) {
+        expect(colour, key).toBe(PLATFORM_TOKENS[key]);
         continue;
       }
       expect(env.has(colour), `${key} = #${colour.toString(16)}`).toBe(true);

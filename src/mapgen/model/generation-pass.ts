@@ -23,6 +23,7 @@ export type DraftCapability =
   | "lots"
   | "elevation"
   | "cavern"
+  | "platform"
   | "buildings"
   | "interiors"
   | "waterfronts"

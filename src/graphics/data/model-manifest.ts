@@ -1130,6 +1130,39 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "tile.platform.hull-plate": {
+    category: "tiles",
+    path: "assets/models/tiles/tile-platform-hull-plate.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.06,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.platform.hull-plate-dark": {
+    category: "tiles",
+    path: "assets/models/tiles/tile-platform-hull-plate-dark.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.06,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.platform.hull-rim": {
+    category: "tiles",
+    path: "assets/models/tiles/tile-platform-hull-rim.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.06,
+    sockets: [],
+    quality: "final",
+  },
   "tile.ground.infested": {
     category: "tiles",
     path: "assets/models/tiles/tile-ground-infested.glb",

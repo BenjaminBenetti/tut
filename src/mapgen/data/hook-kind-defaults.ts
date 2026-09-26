@@ -86,4 +86,28 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
       // is a walk there and back.
       minDistanceFromDeploy: 6,
     },
+    // The spore platform's hooks (#1179). The finale passes its own
+    // board and hooks (`spore-platform-recipe`); these defaults only fill
+    // what a mission type names without them.
+    [HookKinds.DOCKING_RING]: {
+      requiredPass: Pass.ALL,
+      // Mid-deck, off a flank: a push, not the far end.
+      minDistanceFromDeploy: 30,
+    },
+    [HookKinds.PLATFORM_EXIT]: {
+      requiredPass: Pass.ALL,
+      // The far end of the hull, past the ring.
+      minDistanceFromDeploy: 50,
+    },
+    [HookKinds.PLATFORM_CORE]: {
+      requiredPass: Pass.ALL,
+      // Behind the dais, across the whole chamber.
+      minDistanceFromDeploy: 24,
+    },
+    [HookKinds.SOVEREIGN_DAIS]: {
+      requiredPass: Pass.ALL,
+      minDistanceFromDeploy: 20,
+    },
+    // Guards are posted, not reached: infantry only, anywhere.
+    [HookKinds.GUARD_POST]: { requiredPass: Pass.INFANTRY },
   };

@@ -14,6 +14,18 @@ import type { WallKind } from "../../mapgen/model/wall";
 // ===========================================
 
 /**
+ * Surfaces that are never drawn (#1179): the void past a spore
+ * platform's edge is open space, so the scene's clear colour (and any
+ * backdrop behind it) shows through instead of a pillar or a slab.
+ */
+export const UNDRAWN_SURFACES: ReadonlySet<SurfaceId> = new Set<SurfaceId>([
+  SurfaceIds.VOID,
+]);
+
+/** Every well-known surface that is drawn: all but `UNDRAWN_SURFACES`. */
+export type DrawnSurfaceId = Exclude<KnownSurfaceId, typeof SurfaceIds.VOID>;
+
+/**
  * Style guide §7, `surface id → model id`. Road and sidewalk name their
  * straight piece here; `map-model-resolver` swaps in the corner, T and
  * cross variants once it can see a tile's neighbours.
@@ -22,8 +34,9 @@ import type { WallKind } from "../../mapgen/model/wall";
  * `mapgen/data/surfaces` without art fails typecheck rather than
  * rendering nothing. A biome that adds its own id in data resolves
  * through `surfaceModelFor`, which falls back rather than throwing.
+ * The only exceptions are `UNDRAWN_SURFACES`, which have no art on purpose.
  */
-export const SURFACE_MODELS: Readonly<Record<KnownSurfaceId, ModelAssetId>> = {
+export const SURFACE_MODELS: Readonly<Record<DrawnSurfaceId, ModelAssetId>> = {
   [SurfaceIds.PAVING]: "tile.city.sidewalk",
   [SurfaceIds.HARDSTAND]: "tile.city.road-lane",
   [SurfaceIds.INFESTED]: "tile.ground.infested",
@@ -40,6 +53,11 @@ export const SURFACE_MODELS: Readonly<Record<KnownSurfaceId, ModelAssetId>> = {
   [SurfaceIds.STAIRS]: "building.stairs",
   // The rock a hive cavern is cut into reads as rock; only its pass differs.
   [SurfaceIds.BEDROCK]: "tile.ground.rock",
+  // The spore platform's hull (#1179): chitin plates with a seam and
+  // rivets, walnut, chestnut, and tan on the rims.
+  [SurfaceIds.HULL_PLATE]: "tile.platform.hull-plate",
+  [SurfaceIds.HULL_PLATE_DARK]: "tile.platform.hull-plate-dark",
+  [SurfaceIds.HULL_RIM]: "tile.platform.hull-rim",
 };
 
 /**
@@ -343,7 +361,7 @@ export const HALF_WALL_MODEL: ModelAssetId = HALF_WALL_MODELS.brick;
 /** The model for a surface id, or undefined for one with no art registered. */
 export function surfaceModel(surface: SurfaceId): ModelAssetId | undefined {
   return Object.hasOwn(SURFACE_MODELS, surface)
-    ? SURFACE_MODELS[surface as KnownSurfaceId]
+    ? SURFACE_MODELS[surface as DrawnSurfaceId]
     : undefined;
 }
 

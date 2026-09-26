@@ -12,6 +12,7 @@ import {
   SIDEWALK_VARIANTS,
   SURFACE_MODELS,
   surfaceModel,
+  UNDRAWN_SURFACES,
   wallModel,
   WALL_FAMILIES,
   wallFamilyFor,
@@ -43,11 +44,17 @@ describe("map model table", () => {
 
   it("covers every well-known surface and prop kind mapgen can emit", () => {
     for (const surface of Object.values(SurfaceIds)) {
+      if (UNDRAWN_SURFACES.has(surface)) continue;
       expect(surfaceModel(surface), surface).toBeDefined();
     }
     for (const kind of Object.values(PropKindIds)) {
       expect(propModel(kind), kind).toBeDefined();
     }
+  });
+
+  it("draws nothing for the void past a spore platform's edge, and only that", () => {
+    expect([...UNDRAWN_SURFACES]).toEqual([SurfaceIds.VOID]);
+    expect(surfaceModel(SurfaceIds.VOID)).toBeUndefined();
   });
 
   it("gives every wall kind a model in every family", () => {

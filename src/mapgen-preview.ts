@@ -38,6 +38,7 @@ import { TacticalInputController } from "./ui/controller/tactical-input-controll
 import type { TacticalIntent } from "./ui/model/tactical-intent";
 import { MapgenPreviewScreen } from "./ui/screen/mapgen-preview-screen";
 import { LAYER_HEIGHT } from "./graphics/data/mapgen-preview-palette";
+import { backdropFor } from "./graphics/service/map-backdrop";
 
 // ===========================================
 // Query string
@@ -267,6 +268,8 @@ async function main(): Promise<void> {
       });
       view = builder;
       content.add(builder.root);
+      // A spore platform hangs in orbit, over Earth's limb (#1179).
+      scene.setBackdrop(backdropFor(map));
       rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });
       // Map Lab exists to judge whole maps, so the far end of the zoom
       // range is sized to this one (#828). Without it the harness opens

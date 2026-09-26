@@ -1,4 +1,4 @@
-import type { DirectionalLight } from "three";
+import type { DirectionalLight, Texture } from "three";
 import type { Object3D } from "three";
 import { AmbientLight, Color, Scene, PCFShadowMap, WebGLRenderer } from "three";
 
@@ -64,6 +64,8 @@ export class SceneService {
   /** The size the camera was last built for, to compare against the container. */
   private appliedViewport: Viewport = { width: 0, height: 0 };
   private readonly settledListeners = new Set<() => void>();
+  /** The sky the scene is drawn against, owned here (#1179). */
+  private backdrop: Texture | undefined;
 
   // ===========================================
   // Constructor
@@ -167,10 +169,26 @@ export class SceneService {
   }
 
   /**
+   * Draws the scene against `backdrop`, a texture stretched over the
+   * viewport, or against the `ui-bg` clear colour when there is none
+   * (#1179). The service takes ownership: the backdrop it replaces, and
+   * the last one on `dispose`, are disposed here.
+   *
+   * @param backdrop - The sky to show, or undefined for the clear colour.
+   */
+  setBackdrop(backdrop: Texture | undefined): void {
+    this.backdrop?.dispose();
+    this.backdrop = backdrop;
+    this.scene.background = backdrop ?? new Color(CLEAR_COLOUR);
+  }
+
+  /**
    * Stops the loop, stops watching the container and removes the canvas.
-   * Scene content is left to its owner to dispose.
+   * Scene content is left to its owner to dispose; the backdrop, which
+   * the service owns, is disposed here.
    */
   dispose(): void {
+    this.setBackdrop(undefined);
     this.renderer.setAnimationLoop(null);
     this.resizeObserver.disconnect();
     this.settledListeners.clear();

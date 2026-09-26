@@ -25,6 +25,10 @@ import type { GenerationPass } from "../model/generation-pass";
 import type { MapArchetype } from "../model/map-recipe";
 import type { MapGenRegistries } from "../model/registries";
 import { createHiveCavernPasses } from "./hive-cavern-pipeline";
+import {
+  createSporePlatformCorePasses,
+  createSporePlatformHullPasses,
+} from "./spore-platform-pipeline";
 import type { PipelineOptions } from "./pipeline-map-generator";
 import { PipelineMapGenerator } from "./pipeline-map-generator";
 
@@ -102,7 +106,7 @@ export function createCrashSitePasses(): GenerationPass[] {
 }
 
 /**
- * Pass list per archetype. Hives and the space platform (M3/M4) add
+ * Pass list per archetype. Hives and the spore platform's two stages add
  * entries here and reuse the tail of the settlement list.
  */
 const PASSES_BY_ARCHETYPE: Readonly<
@@ -111,6 +115,8 @@ const PASSES_BY_ARCHETYPE: Readonly<
   settlement: createSettlementPasses,
   "crash-site": createCrashSitePasses,
   "hive-cavern": createHiveCavernPasses,
+  "spore-platform-hull": createSporePlatformHullPasses,
+  "spore-platform-core": createSporePlatformCorePasses,
 };
 
 // ===========================================

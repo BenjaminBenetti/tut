@@ -2,6 +2,7 @@ import type { CraterSite } from "./crater-site";
 import type { MissionSitePlacement } from "./mission-site";
 import type { InfestationPlan } from "./infestation-plan";
 import type { CavernLayout } from "./cavern-layout";
+import type { PlatformLayout } from "./platform-layout";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { IdGenerator } from "../../core/model/id-generator";
@@ -106,6 +107,8 @@ export class MapDraft {
   crater?: CraterSite;
   /** Chambers and tunnels of a hive cavern (#1179). Absent on other archetypes. */
   cavern?: CavernLayout;
+  /** Deck, routes and pads of a spore platform stage (#1179). Absent on other archetypes. */
+  platform?: PlatformLayout;
   /** The production site pass ran; missing sites must not silently become legacy blobs. */
   requiresDropships = false;
   readonly hooks: DraftHooks = {

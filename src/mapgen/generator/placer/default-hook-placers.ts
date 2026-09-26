@@ -1,3 +1,4 @@
+import { HookKinds } from "../../model/hook";
 import type { HookPlacer } from "../../model/hook-placer";
 import { CivilianPlacer } from "./civilian-placer";
 import { DeployPlacer } from "./deploy-placer";
@@ -7,6 +8,7 @@ import { ExtractionPlacer } from "./extraction-placer";
 import { GeneratorPlacer } from "./generator-placer";
 import { SporePodPlacer } from "./spore-pod-placer";
 import { HiveCorePlacer } from "./hive-core-placer";
+import { PlatformPadPlacer } from "./platform-pad-placer";
 import { TechCarcassPlacer } from "./tech-carcass-placer";
 import { WreckPlacer } from "./wreck-placer";
 
@@ -30,4 +32,9 @@ export const DEFAULT_HOOK_PLACERS: readonly HookPlacer[] = [
   new HiveCorePlacer(),
   new CivilianPlacer(),
   new WreckPlacer(),
+  new PlatformPadPlacer(HookKinds.DOCKING_RING, 5),
+  new PlatformPadPlacer(HookKinds.PLATFORM_EXIT, 4),
+  new PlatformPadPlacer(HookKinds.PLATFORM_CORE, 6),
+  new PlatformPadPlacer(HookKinds.SOVEREIGN_DAIS, 4),
+  new PlatformPadPlacer(HookKinds.GUARD_POST, 2),
 ];

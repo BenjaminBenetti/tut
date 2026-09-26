@@ -113,3 +113,65 @@ The pipeline test (`service/hive-cavern-pipeline.test.ts`) sweeps every biome ×
 ![Hive cavern, desert](hive-cavern-desert.png)
 ![Hive cavern, snowy](hive-cavern-snowy.png)
 ![Hive core close-up](hive-cavern-core.png)
+
+## Spore platform archetypes (#1179)
+
+The finale is fought on the spore platform in orbit ([campaign arc](campaign-arc.md)), over two linked boards. `archetype: "spore-platform-hull"` is stage 1: a deck of terraced chitin plates hanging in space, the drop ship docked at the prow, the docking ring's iris on one flank and a hatch down to the core at the far end. `archetype: "spore-platform-core"` is stage 2: a round chamber reached along one narrow causeway, the core seed behind the Sovereign's dais. `createSporePlatformHullPasses(tuning)` and `createSporePlatformCorePasses(tuning)` in `service/spore-platform-pipeline.ts` build them. Tuning is `SPORE_PLATFORM_TUNING`. The boards are `SPORE_PLATFORM_HULL_SIZE` (72 × 104) and `SPORE_PLATFORM_CORE_SIZE` (64 × 80), and the hook sets are `SPORE_PLATFORM_HULL_HOOKS` and `SPORE_PLATFORM_CORE_HOOKS`, all in `data/spore-platform-recipe.ts`. `ARCHETYPE_RECIPE_DEFAULTS` gives the Map Lab preview those sizes and hooks. No mission type uses either archetype yet: the finale package adds one and links the two boards.
+
+```
+ hull:  hull-deck ─► dropship-sites (north edge only) ─► platform-dressing ─► ramps
+          ─► hooks (pods on pod beds) ─► connectivity
+ core:  core-chamber ─► platform-dressing ─► ramps
+          ─► hooks (deploy on the start pad, pods in wall niches) ─► connectivity
+
+ stage 1, hull                        stage 2, core
+ ······▓▓▓······  prow dock plate     ··········[D]··········  D start pad (deploy)
+ ····▓▓▓║▓▓▓····  · void (space)      ···········║···········  ║ causeway, 3 wide
+ ·▓▓▓▓▓▓║▓▓▓▓▓▓·  ║ spine, 5 wide     ······▒▒▒▒▒║▒▒▒▒▒······  ▒ rim walkway, niches
+ ·▓▓▓▓▓▓╠═══(R)·  R docking ring      ····▒▒░░░░░║░░░░░▒▒····  ░ berm +1 +2 +1
+ ·▓▓P▓▓▓║▓▓○▓▓▓·  P pod beds          ···▒▒░░ g ·S· g ░░▒▒···  S dais, g guard posts
+ ·▓▓▓▓▓[X]▓▓▓▓▓·  X hatch, ○ breach   ═══════════ C ═════════  C core seed, ═ ducts
+ ·▓▓▓▓▓▓║▓▓▓▓▓▓·  runs off far edge   ····▒▒░░░░░░░░░░░▒▒····
+```
+
+| Pass | What it does | Key decisions |
+|---|---|---|
+| hull-deck | `shapeHull` grows Voronoi plates (walnut or chestnut, 40% raised one layer), outlines a deck that narrows to the prow and runs on past the far edge, then carves the level routes: the spine from the dock plate to the far edge, and a branch to the ring's plaza off one flank at 45–56% of the depth. It also places the ring (5×5) and hatch (4×4) pads, 4–6 pod beds and 1–3 breaches into space. It records `MapDraft.platform` (`PlatformLayout`, capability `"platform"`) | no terrain pass: the hull is its own relief, and plates rise at most one layer, so every step is a free walk (ADR 0008 §2.3) |
+| core-chamber | `shapeCore` lays the start pad at the near edge and a causeway (12–15 long, 3 wide) into a chamber of radius 26. Inside it are a rim walkway at deck level with 5–8 wall niches, a berm of terraces 1, 2 and 1 layers up, and an arena at deck level. A 4-wide lane cuts through the berm from the gate to the dais. Two 4-wide ducts run from the side edges through the berm's back flanks into the arena. Pads: the 4×4 start pad, 4×4 dais, 6×6 core seed and four 2×2 guard posts | causeway, lane, walkway, ducts, arena, dais and seed share the deck's level: a 2×2 brute never changes level (`footprintCanStep`, #1130), and the Sovereign must be able to leave its dais |
+| dropship-sites | `DropshipSitePass("elevation", ["n"])` | docks on the flat plate at the prow |
+| platform-dressing | the stage's kit from the infestation and carapace props. **Hull:** spine buttresses in rows beside the spine, a carapace collar and a cradle of pods round the ring, gate buttresses at the hatch, pods heaped on the pod beds, low rib walls on raised plates' lips, clutter. **Core:** a carapace wall round the rim, buttresses either side of each niche, a rib cage round the seed's back and sides, rib walls on terrace lips, flesh arteries. A flood fill then lifts any prop that sealed a pocket off the routes | routes, pads and their aprons (`keepClear`) are never dressed |
+| ramps | as in settlements | adds 3 spacing ramps in the core chamber, and none on the hull |
+| hooks | `HookPass([new EggSpawnerPlacer(isPodBed)])` puts the pods on pod beds (hull) or in wall niches (core). The core also overrides deploy with a `PlatformPadPlacer` on the start pad | `PlatformPadPlacer` stands every planned pad on the ground it was levelled to. Off a platform it falls back to the flat square farthest from deploy that a mech can reach, so the kinds work on any archetype |
+| connectivity | as in settlements | 0 repairs and 0 relocations over 60 seeds per stage |
+
+Hooks:
+
+| Stage | Kind | Count | Where | `meta` |
+|---|---|---|---|---|
+| both | `deploy`, `extraction` | 1 each | hull: the drop ship at the prow; core: the 4×4 start pad before the causeway | — |
+| hull | `docking-ring` (`HookKinds.DOCKING_RING`) | 1 | a level 5×5 on its plaza off one flank, ≥ `DOCKING_RING_MIN_DISTANCE` (36) from deploy | `{ footprint: 5, side }` (`east` or `west`) |
+| hull | `platform-exit` | 1 | a level 4×4 on the spine, 12 rows short of the far edge, ≥ `PLATFORM_EXIT_MIN_DISTANCE` (60) | `{ footprint: 4 }` |
+| hull | `egg-spawner` | 3 | pod beds, the nearest within 30 of deploy | `{ hatchRadius: 3 }` |
+| hull | `edge-spawn` | 2 | the far edge, where the deck runs on | — |
+| core | `platform-core` | 1 | the 6×6 seed pad in the arena, ≥ `PLATFORM_CORE_MIN_DISTANCE` (30) | `{ footprint: 6 }` |
+| core | `sovereign-dais` | 1 | the 4×4 at the lane's end, flush with the arena and nearer deploy than the seed, ≥ `SOVEREIGN_DAIS_MIN_DISTANCE` (24) | `{ footprint: 4 }` |
+| core | `guard-post` | 4 | 2×2 posts either side of the dais, within 4 of it | `{ footprint: 2, side }` (`east`, `east`, `west`, `west`) |
+| core | `egg-spawner` | 4 | the rim's wall niches | `{ hatchRadius: 3 }` |
+| core | `edge-spawn` | 2 | the ducts' ends on the west and east edges | — |
+
+**The void.** A column off the deck is `SurfaceIds.VOID`: pass mask `NONE`, not interior, so it joins `IMPASSABLE_GROUND_SURFACES` beside water and bedrock, and nothing stands, spawns or lands on it. `UNDRAWN_SURFACES` in `graphics/data/map-model-table.ts` holds it, and `TacticalMapView` draws no tile for it, so the backdrop shows through the platform's edge and its breaches. The deck uses three new surfaces and one 48-triangle tile model each, built by `tools/art/models/spore-platform-kit.py`: `hull-plate` (`bug-chitin-mid`), `hull-plate-dark` (`bug-chitin-dark`) and `hull-rim` (a dark slab with a `bug-chitin-tan` scute, only on columns beside void or a lower terrace). Pads and pod beds are `infested` flesh. Magenta is the preview's hook colour for the ring, exit and seed. The iris and seed models belong to the finale package.
+
+**Space backdrop.** `MAP_BACKDROPS` (`graphics/data/map-backdrops.ts`) sets a backdrop for each archetype, and only the two platform stages use `"space"`. `backdropFor(map)` returns `createSpaceBackdrop()`, a 1024 × 512 `DataTexture` of black space with stars from a fixed seed and Earth's night side curving across the bottom. The limb is lit in `ui-info` blue and the face ruled with the `ui-line` graticule. `SceneService.setBackdrop` owns and disposes it; the Map Lab and `DomTacticalSceneHost` set it when a map is shown. The texture stretches with the viewport, so a wide window flattens Earth's curve a little.
+
+**One biome.** No platform pass reads the biome: the deck, surfaces and props are the same on every biome. The pipeline test therefore pins `temperate`, and one test checks that a `snowy` map equals it.
+
+The pipeline test (`service/spore-platform-pipeline.test.ts`) runs 12 seeds per stage through `validateTacticalMap`. It checks the hook counts and pads above, that every column off the deck is void and rim sits only at an edge, and that every route is at least 2 wide with a 2×2 brute level block along its whole path. On the core it checks that every row between the start pad and the chamber is exactly the causeway, and that with the causeway cut neither infantry nor mechs reach the chamber from deploy. `generator/placer/platform-pad-placer.test.ts` covers the placer's plan, level, fallback and deploy group.
+
+Measured over 60 seeds per stage, at a load average around 50: generation takes 200–530 ms (hull) and 210–420 ms (core). The hull has 4,640–4,960 deck columns (62–66% of the board) and 150–181 props; the core has 2,304–2,317 deck columns (45%), 218–237 props and 5–8 wall niches. Validator errors: none. Under SwiftShader, again at a load average of 50–70, the Map Lab ran the hull at 1.5 fps at its opening zoom and 4.0 zoomed out to the whole board, and the core at 2.3–2.9. For comparison, the hive cavern measured 2.6–2.9 and the large city 0.4.
+
+Open either stage in Map Lab with `/mapgen-preview.html?archetype=spore-platform-hull&models=1` (or `spore-platform-core`), or pick **Spore platform: hull** or **Spore platform: core** in the Archetype control.
+
+![Spore platform hull, whole board](spore-platform-hull.png)
+![Spore platform hull: drop ship, docking ring and hatch](spore-platform-hull-close.png)
+![Spore platform core chamber](spore-platform-core.png)
+![Core seed, dais and guard posts](spore-platform-core-close.png)

@@ -27,6 +27,18 @@ export const SurfaceIds = {
    * stands on, spawns on or lands on, drawn as rock.
    */
   BEDROCK: "bedrock",
+  /**
+   * Open space beyond a spore platform's hull (#1179): ground nothing
+   * stands on, spawns on or lands on, and nothing is drawn for, so the
+   * scene's backdrop shows through.
+   */
+  VOID: "void",
+  /** A spore platform's chestnut hull plate (`bug-chitin-mid`, #1179). */
+  HULL_PLATE: "hull-plate",
+  /** A spore platform's walnut hull plate (`bug-chitin-dark`, #1179). */
+  HULL_PLATE_DARK: "hull-plate-dark",
+  /** The toasted-tan rim round a spore platform's deck (`bug-chitin-tan`, #1179). */
+  HULL_RIM: "hull-rim",
 } as const;
 
 /** One of the well-known surface ids. */
@@ -38,7 +50,7 @@ export type KnownSurfaceId = (typeof SurfaceIds)[keyof typeof SurfaceIds];
 
 /**
  * Surface definitions. Ground surfaces admit every class; interiors and
- * roofs are infantry-only; water and bedrock admit nobody.
+ * roofs are infantry-only; water, bedrock and void admit nobody.
  */
 export const SURFACE_DEFINITIONS: readonly SurfaceDefinition[] = [
   { id: SurfaceIds.PAVING, defaultPass: PassMask.ALL, isInterior: false },
@@ -71,11 +83,19 @@ export const SURFACE_DEFINITIONS: readonly SurfaceDefinition[] = [
   { id: SurfaceIds.ROOF, defaultPass: PassMask.INFANTRY, isInterior: false },
   { id: SurfaceIds.STAIRS, defaultPass: PassMask.INFANTRY, isInterior: true },
   { id: SurfaceIds.BEDROCK, defaultPass: PassMask.NONE, isInterior: false },
+  { id: SurfaceIds.VOID, defaultPass: PassMask.NONE, isInterior: false },
+  { id: SurfaceIds.HULL_PLATE, defaultPass: PassMask.ALL, isInterior: false },
+  {
+    id: SurfaceIds.HULL_PLATE_DARK,
+    defaultPass: PassMask.ALL,
+    isInterior: false,
+  },
+  { id: SurfaceIds.HULL_RIM, defaultPass: PassMask.ALL, isInterior: false },
 ];
 
 /**
- * Exterior surfaces that admit nobody: water, and the bedrock a hive
- * cavern is cut into. Derived from the definitions so a new impassable
+ * Exterior surfaces that admit nobody: water, the bedrock a hive cavern
+ * is cut into and the void round a spore platform. Derived from the definitions so a new impassable
  * ground surface is excluded from "passable ground" without a query edit.
  */
 export const IMPASSABLE_GROUND_SURFACES: ReadonlySet<SurfaceId> = new Set(

@@ -15,6 +15,7 @@ import { chargeDelayText } from "../service/charge-delay-text";
 import { equipmentOf } from "../../tactical/service/equipment-service";
 import { footprintSizeOf } from "../../tactical/service/footprint-service";
 import { formatWhole } from "../service/format";
+import { speciesNoun } from "../service/species-noun";
 import { attachRankTooltip } from "./rank-tooltip-view";
 import { weaponProfileText } from "../service/weapon-profile-text";
 import { iconGlyph } from "./icon-glyph";
@@ -329,7 +330,7 @@ export class UnitCardView {
       "carrying",
       unit.carrying === undefined
         ? EMPTY_FIELD
-        : `live ${unit.carrying.species}`,
+        : `live ${speciesNoun(unit.carrying.species)}`,
     );
     this.set("unit-rank", template.rank?.name ?? "");
     const rankBadge = this.fields.get("unit-rank");

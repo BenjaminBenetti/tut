@@ -7,14 +7,38 @@ import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
 import { DEMOLITION_TUNING } from "../../tactical/data/demolition-tuning";
 import { isMelee } from "../../tactical/model/weapon-profile";
 import { BEHAVIOUR_TAGS } from "../model/bug-species";
+import type { BugSpecies } from "../model/bug-species";
+import type {
+  ArmouredBaseId,
+  ArmouredVariantId,
+} from "../model/armoured-variant";
+import { ARMOURED_VARIANT_TUNING } from "./armoured-variant-tuning";
 import {
+  ARMOURED_VARIANT_BASES,
   BRUTE,
+  BRUTE_ARMOURED,
   BUG_SPECIES,
   HIVE_GUARD,
   LURKER,
+  LURKER_ARMOURED,
   SPITTER,
   SWARMER,
+  SWARMER_ARMOURED,
 } from "./species";
+
+/** The armoured variants beside the species each is derived from (#1179). */
+const VARIANTS = [
+  [SWARMER_ARMOURED, SWARMER],
+  [LURKER_ARMOURED, LURKER],
+  [BRUTE_ARMOURED, BRUTE],
+] as const;
+
+/** The same pairs by id, for the tables keyed by variant or by base. */
+const VARIANT_IDS: readonly (readonly [ArmouredVariantId, ArmouredBaseId])[] = [
+  ["swarmer-armoured", "swarmer"],
+  ["lurker-armoured", "lurker"],
+  ["brute-armoured", "brute"],
+];
 
 describe("bug species data", () => {
   it("defines every id exactly once, keyed by its own id", () => {
@@ -25,7 +49,16 @@ describe("bug species data", () => {
       expect(BUG_SPECIES[id].id).toBe(id);
     }
     expect(
-      [SWARMER, LURKER, BRUTE, SPITTER, HIVE_GUARD].map((s) => s.id),
+      [
+        SWARMER,
+        LURKER,
+        BRUTE,
+        SPITTER,
+        HIVE_GUARD,
+        SWARMER_ARMOURED,
+        LURKER_ARMOURED,
+        BRUTE_ARMOURED,
+      ].map((s) => s.id),
     ).toEqual(BUG_SPECIES_IDS);
   });
 
@@ -59,11 +92,22 @@ describe("bug species data", () => {
     }
   });
 
-  it("gives each species a distinct, known behaviour tag", () => {
-    const tags = Object.values(BUG_SPECIES).map((s) => s.behaviour);
+  it("gives each species a distinct, known behaviour tag; a variant shares its base's", () => {
+    // An armoured variant is the same bug under more plate (arc §8):
+    // the same AI, so its base's tag. Every other species has its own.
+    const variants = new Set<string>(Object.keys(ARMOURED_VARIANT_BASES));
+    const tags = Object.values(BUG_SPECIES)
+      .filter((s) => !variants.has(s.id))
+      .map((s) => s.behaviour);
     expect(new Set(tags).size).toBe(tags.length);
-    for (const tag of tags) {
-      expect(BEHAVIOUR_TAGS).toContain(tag);
+    for (const species of Object.values(BUG_SPECIES)) {
+      expect(BEHAVIOUR_TAGS).toContain(species.behaviour);
+    }
+    for (const [variant, base] of VARIANTS) {
+      expect([variant.id, variant.behaviour]).toEqual([
+        variant.id,
+        base.behaviour,
+      ]);
     }
   });
 
@@ -82,6 +126,11 @@ describe("bug species data", () => {
     expect(SPITTER.hatchWeight).toBe(0);
     // The Hive Guard is never rolled at all: missions place it (#1179).
     expect(HIVE_GUARD.hatchWeight).toBe(0);
+    // The armoured variants, like the spitter, arrive only through the
+    // bestiary's Act III and finale mixes (#1179).
+    for (const [variant] of VARIANTS) {
+      expect([variant.id, variant.hatchWeight]).toEqual([variant.id, 0]);
+    }
     // The default mix itself is unchanged: six to three to one.
     expect([SWARMER, LURKER, BRUTE].map((s) => s.hatchWeight)).toEqual([
       6, 3, 1,
@@ -150,6 +199,10 @@ describe("the brute's block and cleavers (#1130)", () => {
     expect(LURKER.footprint).toBeUndefined();
     expect(SPITTER.footprint).toBeUndefined();
     expect(HIVE_GUARD.footprint).toBeUndefined();
+    // The armoured brute is the same block under more plate (#1179).
+    expect(BRUTE_ARMOURED.footprint).toBe(2);
+    expect(SWARMER_ARMOURED.footprint).toBeUndefined();
+    expect(LURKER_ARMOURED.footprint).toBeUndefined();
   });
 
   it("brings enough force to open a solid wall, since it fits through no door", () => {
@@ -229,5 +282,72 @@ describe("damage tags (campaign arc §10.2)", () => {
         expect(DAMAGE_TAGS, `${id} carries ${tag}`).toContain(tag);
       }
     }
+  });
+});
+
+describe("the Act III armoured variants (#1179)", () => {
+  /** The fields a variant takes from its own identity, not its base. */
+  const OWN = [
+    "id",
+    "name",
+    "description",
+    "modelId",
+    "armor",
+    "hp",
+    "hatchWeight",
+  ] as const;
+
+  /** A species' block without the fields a variant sets for itself. */
+  function inherited(species: BugSpecies): Partial<BugSpecies> {
+    const rest: Partial<BugSpecies> = { ...species };
+    for (const key of OWN) delete rest[key];
+    return rest;
+  }
+
+  it("names every variant's base, and every base once", () => {
+    expect(ARMOURED_VARIANT_BASES).toEqual(Object.fromEntries(VARIANT_IDS));
+    expect(Object.keys(ARMOURED_VARIANT_TUNING).sort()).toEqual(
+      VARIANT_IDS.map(([, base]) => base).sort(),
+    );
+  });
+
+  it.each(VARIANT_IDS)(
+    "derives %s from %s: the base's armour and hit points plus the tuning's",
+    (variantId, baseId) => {
+      const variant = BUG_SPECIES[variantId];
+      const base = BUG_SPECIES[baseId];
+      const delta = ARMOURED_VARIANT_TUNING[baseId];
+      expect(variant.armor).toBe(base.armor + delta.armor);
+      expect(variant.hp).toBe(base.hp + delta.hp);
+      // Everything else is the base's: move, action points, weapon,
+      // sight, behaviour, footprint and kill value.
+      expect(inherited(variant)).toEqual(inherited(base));
+      expect(variant.id).toBe(`${base.id}-armoured`);
+      expect(variant.modelId).toBe(`bug.${variant.id}`);
+      expect(variant.name).toMatch(/^Armoured /);
+    },
+  );
+
+  it.each(VARIANT_IDS)(
+    "gives %s one or two points of plate and a little more body",
+    (_, baseId) => {
+      const delta = ARMOURED_VARIANT_TUNING[baseId];
+      expect([1, 2]).toContain(delta.armor);
+      expect(Number.isInteger(delta.hp) && delta.hp > 0).toBe(true);
+      // "A little": at most a fifth of the base's hit points.
+      expect(delta.hp).toBeLessThanOrEqual(BUG_SPECIES[baseId].hp / 5);
+    },
+  );
+
+  it("pins today's variants, so a retune of a base shows up here as a change to its variant", () => {
+    // Not a second copy of the numbers: the variants are derived, and
+    // this table moves when the base species above it moves.
+    expect(
+      VARIANTS.map(([variant]) => [variant.id, variant.armor, variant.hp]),
+    ).toEqual([
+      ["swarmer-armoured", 1, 7],
+      ["lurker-armoured", 2, 14],
+      ["brute-armoured", 5, 36],
+    ]);
   });
 });

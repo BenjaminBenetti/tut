@@ -33,6 +33,10 @@ export class UnitMotionRig implements UnitMotion {
   private readonly infantry: boolean;
   private readonly mech: boolean;
   private readonly bug: boolean;
+  /**
+   * The swarmer family's longer running stride: `bug.swarmer` and every
+   * variant of it (`bug.swarmer-armoured`, #1179), which shares its legs.
+   */
   private readonly swarmer: boolean;
 
   /** Builds pivots once, before the clone is placed on the battlefield. */
@@ -47,7 +51,7 @@ export class UnitMotionRig implements UnitMotion {
       modelId.startsWith("tdf.infantry.") || modelId.startsWith("civ.");
     this.mech = modelId.startsWith("tdf.mech.");
     this.bug = modelId.startsWith("bug.");
-    this.swarmer = modelId === "bug.swarmer";
+    this.swarmer = modelId.startsWith("bug.swarmer");
     this.height = new Box3().setFromObject(model).getSize(new Vector3()).y;
     const parts = model.children.filter((part) => part.name !== "base");
     this.body = pivot(model, parts, "motion-body", new Vector3());

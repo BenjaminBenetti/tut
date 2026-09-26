@@ -11,6 +11,7 @@ import {
   specimenCarriers,
 } from "../../../tactical/service/specimen-service";
 import type { IconId } from "../../data/icon-manifest";
+import { speciesNoun } from "../species-noun";
 import type {
   ObjectivePresentation,
   ObjectiveRow,
@@ -91,9 +92,9 @@ export const CAPTURE_SPECIMEN_PRESENTATION: ObjectivePresentation<
 // Helpers
 // ===========================================
 
-/** "a live lurker": what the objective wants. */
+/** "a live lurker": what the objective wants, by the species' name in a sentence. */
 function specimenName(objective: CaptureSpecimenObjective): string {
-  return `a live ${objective.species}`;
+  return `a live ${speciesNoun(objective.species)}`;
 }
 
 /**

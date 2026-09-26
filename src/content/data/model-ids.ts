@@ -144,6 +144,10 @@ export const MODEL_IDS = [
   "bug.lurker",
   "bug.spitter",
   "bug.swarmer",
+  // Act III armoured variants (#1179): the base anatomy under slab armour.
+  "bug.swarmer-armoured",
+  "bug.lurker-armoured",
+  "bug.brute-armoured",
   // Props
   "tdf.dropship",
   "bug.egg-spawner",

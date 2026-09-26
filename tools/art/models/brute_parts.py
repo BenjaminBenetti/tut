@@ -431,8 +431,27 @@ def _brute_limb(name, points, radius):
 # ===========================================
 
 
+#: The brute's physical bounds: height, then the widest and deepest it may be.
+BRUTE_BOUNDS = (0.9, 1.6, 1.8)
+
+
 def build_brute() -> None:
     """Build a grounded beetle with a wider stance and a low, forward head."""
+    brute_anatomy()
+    # These are physical bounds, with no subsequent footprint enlargement.
+    finish(*BRUTE_BOUNDS)
+
+
+def brute_anatomy() -> dict:
+    """Every brute node at its authored size, before `finish` scales it.
+
+    The armoured variant (bug-brute-armoured.py) builds this, adds its
+    plates to these nodes, and finishes at its own height. Returns each
+    limb node's authored path (legs: hip, outlet, knee, ankle, foot;
+    cleavers: shoulder, elbow, wrist, then the blade), so the plates
+    follow the limbs they cover.
+    """
+    limbs = {}
     body_start = set(mesh_objects())
     _thorax_core()
 
@@ -544,11 +563,20 @@ def build_brute() -> None:
 
         for index, radius, *anchors in leg_specs:
             points = [(side * x, y, z) for x, y, z in anchors]
+            limbs[f"leg_{label}{index}"] = points
             _brute_limb(f"leg_{label}{index}", points, radius)
 
         # Short, broad cutting paddles frame the smaller head mandibles.
         # Their tips turn inward and slightly upward, clear of the ground.
         wrist = (side * 0.425, -0.597, 0.231)
+        limbs[f"cleaver_{label}"] = [
+            (side * 0.290, -0.342, 0.312),
+            (side * 0.425, -0.480, 0.287),
+            wrist,
+            (side * 0.401, -0.729, 0.215),
+            (side * 0.316, -0.829, 0.232),
+            (side * 0.237, -0.860, 0.273),
+        ]
         forearm(
             f"cleaver_{label}",
             (side * 0.290, -0.342, 0.312),
@@ -564,5 +592,4 @@ def build_brute() -> None:
             0.092,
         )
 
-    # These are physical bounds, with no subsequent footprint enlargement.
-    finish(0.9, 1.6, 1.8)
+    return limbs

@@ -81,6 +81,15 @@ describe("CAPTURE_SPECIMEN_PRESENTATION (#1179)", () => {
     );
   });
 
+  it("names an armoured species as a player says it, not by its id", () => {
+    expect(
+      CAPTURE_SPECIMEN_PRESENTATION.name(
+        { ...CAPTURE, species: "brute-armoured" },
+        1,
+      ),
+    ).toBe("a live armoured brute");
+  });
+
   it("says what to do next while the capture is open: net one, carry it out, or fetch the dropped one", () => {
     expect(rowIn(mission([squad]))).toEqual({
       icon: "bug",

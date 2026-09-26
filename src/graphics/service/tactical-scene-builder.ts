@@ -21,6 +21,7 @@ import type {
 import type { Tether } from "../view/elevation-tether";
 import { ElevationTether } from "../view/elevation-tether";
 import type { Disposable } from "../model/disposable";
+import type { ModelAssetId } from "../../content/data/model-ids";
 import type { ModelLoader } from "../model/model-loader";
 import type { UnitModelSource } from "../model/unit-model-source";
 import { LoadoutUnitModelSource } from "./loadout-unit-model-source";
@@ -49,6 +50,9 @@ import {
   footprintSizeOf,
 } from "../../tactical/service/footprint-service";
 import { authoredFootprint } from "./model-footprint";
+import { SPAWNER_MODELS } from "../data/spawner-models";
+import type { SpawnerModelCatalogue } from "../model/spawner-models";
+import { spawnerModelId } from "./spawner-model-resolver";
 import { unitFeetAt } from "./unit-placement";
 
 // ===========================================
@@ -69,6 +73,11 @@ export interface TacticalSceneBuilderOptions {
    */
   readonly unitModels?: UnitModelSource;
   /**
+   * The models each spawner variant is drawn with, standing and ripe
+   * (#1179). Defaults to `SPAWNER_MODELS`.
+   */
+  readonly spawnerModels?: SpawnerModelCatalogue;
+  /**
    * Draws the map's objective hooks as coloured slabs (`HOOK_COLOURS`):
    * the mapgen preview's diagnostic view, where the objectives are what
    * is being judged. Off by default, because a mission marks objectives
@@ -79,10 +88,14 @@ export interface TacticalSceneBuilderOptions {
 
 /**
  * Model every egg spawner is drawn with. Spawners carry no per-instance
- * model the way units carry `template.modelId`, so the scene holds the
- * one id (#484).
+ * model the way units carry `template.modelId`, so the scene reads the
+ * variant's entry in `SPAWNER_MODELS` (#484, #1179); this is the egg
+ * spawner's.
  */
-export const SPAWNER_MODEL_ID = "bug.egg-spawner";
+export const SPAWNER_MODEL_ID = SPAWNER_MODELS["egg-spawner"].standing;
+
+/** No spawner is ripe: what `updateSpawners` assumes when told nothing. */
+const NO_RIPE_SPAWNERS: ReadonlySet<SpawnerId> = new Set();
 
 /**
  * Model every tech carcass is drawn with (#1171). One id for the same
@@ -118,9 +131,10 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *
  *   arrive(unit, template, at)   ──► as "new", hidden, at `at` instead of the unit's tile (#1116)
  *
- *   updateSpawners(spawners)
+ *   updateSpawners(spawners, ripe)
  *     ├─ destroyed or gone ──► mesh.dispose()
- *     └─ new               ──► models.load(SPAWNER_MODEL_ID) ──► UnitMesh
+ *     ├─ new               ──► models.load(spawnerModelId(...)) ──► UnitMesh
+ *     └─ ripened           ──► the ripe model loaded, then swapped in (#1179)
  *
  *   updateCarcasses(carcasses)                                   (#1171)
  *     ├─ harvested or gone ──► mesh.dispose()
@@ -202,8 +216,15 @@ export class TacticalSceneBuilder
   /** Measured once when placed, for anchoring the egg burst (#697). */
   private readonly spawnerHeights = new Map<SpawnerId, number>();
   private readonly targetToSpawner = new Map<Object3D, SpawnerId>();
-  /** Spawners the latest `updateSpawners` asked for, for the same reason as `wanted`. */
-  private readonly wantedSpawners = new Set<SpawnerId>();
+  /**
+   * Spawners the latest `updateSpawners` asked for, with the model each
+   * should wear, for the same reason as `wanted`: a load that finishes
+   * for a spawner gone, or for a model it no longer wears, is discarded.
+   */
+  private readonly wantedSpawners = new Map<SpawnerId, ModelAssetId>();
+  /** The model each drawn spawner's mesh was built from. */
+  private readonly spawnerMeshModels = new Map<SpawnerId, ModelAssetId>();
+  private readonly spawnerModels: SpawnerModelCatalogue;
   private readonly carcassesGroup: Group;
   private readonly carcassMeshes = new Map<TechCarcassId, UnitMesh>();
   /** Carcasses the latest `updateCarcasses` asked for, for the same reason as `wanted` (#1171). */
@@ -229,6 +250,7 @@ export class TacticalSceneBuilder
     this.unitModels =
       options.unitModels ??
       new LoadoutUnitModelSource({ models: options.models });
+    this.spawnerModels = options.spawnerModels ?? SPAWNER_MODELS;
     this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
     // The map view's own hook slabs stay off in a mission: the objective
     // is marked through the fog by `ObjectiveMarkerView` instead (#1173),
@@ -440,7 +462,7 @@ export class TacticalSceneBuilder
 
   /** Ids of the spawners currently drawn or loading, in insertion order. */
   spawnerIds(): readonly SpawnerId[] {
-    return [...this.wantedSpawners];
+    return [...this.wantedSpawners.keys()];
   }
 
   /** Ids of the tech carcasses currently drawn or loading, in insertion order (#1171). */
@@ -507,32 +529,48 @@ export class TacticalSceneBuilder
   }
 
   /**
-   * Brings the drawn egg spawners in step with `spawners` (#484). A
-   * spawner that is destroyed — or gone from the list — is removed, the
-   * way a dead unit is; the rest are placed once and never move, so
-   * there is no re-pose step. Resolves when every new model has loaded.
+   * Brings the drawn spawners in step with `spawners` (#484). A spawner
+   * that is destroyed — or gone from the list — is removed, the way a
+   * dead unit is; the rest are placed once and never move, so there is
+   * no re-pose step. Resolves when every new model has loaded.
+   *
+   * Each is drawn with its variant's model (#1179); one in `ripe` wears
+   * the variant's ripe model, if it has one, and a spawner that ripens
+   * keeps its old mesh until the new one has loaded, so it never
+   * blinks out.
    *
    * Kept apart from `update` because spawners are not units: they have
    * no template, no facing that changes, and they live in their own
    * collection on the mission state.
+   *
+   * @param spawners - The spawners the player may see.
+   * @param ripe - Those in their last turns before a deadline.
    */
-  async updateSpawners(spawners: readonly Spawner[]): Promise<void> {
+  async updateSpawners(
+    spawners: readonly Spawner[],
+    ripe: ReadonlySet<SpawnerId> = NO_RIPE_SPAWNERS,
+  ): Promise<void> {
     const standing = spawners.filter(
       (spawner) => !spawner.destroyed && spawner.hp > 0,
     );
     const keep = new Set(standing.map((spawner) => spawner.id));
-    for (const id of [...this.wantedSpawners]) {
+    for (const id of [...this.wantedSpawners.keys()]) {
       if (!keep.has(id)) {
         this.removeSpawner(id);
       }
     }
     const loads: Promise<void>[] = [];
     for (const spawner of standing) {
-      if (this.wantedSpawners.has(spawner.id)) {
+      const modelId = spawnerModelId(
+        spawner,
+        ripe.has(spawner.id),
+        this.spawnerModels,
+      );
+      if (this.wantedSpawners.get(spawner.id) === modelId) {
         continue;
       }
-      this.wantedSpawners.add(spawner.id);
-      loads.push(this.placeSpawner(spawner));
+      this.wantedSpawners.set(spawner.id, modelId);
+      loads.push(this.placeSpawner(spawner, modelId));
     }
     await Promise.all(loads);
   }
@@ -859,16 +897,32 @@ export class TacticalSceneBuilder
     this.applyHighlights();
   }
 
-  /** Loads the spawner model and places it, unless it was removed while loading. */
-  private async placeSpawner(spawner: Spawner): Promise<void> {
-    const model = await this.models.load(SPAWNER_MODEL_ID);
-    if (!this.wantedSpawners.has(spawner.id)) {
+  /**
+   * Loads the spawner's model and places it, swapping out an earlier
+   * model's mesh, unless the spawner was removed or asked for another
+   * model while it loaded.
+   *
+   * @param spawner - The spawner to draw.
+   * @param modelId - The model it should wear now.
+   */
+  private async placeSpawner(
+    spawner: Spawner,
+    modelId: ModelAssetId,
+  ): Promise<void> {
+    const model = await this.models.load(modelId);
+    if (
+      this.wantedSpawners.get(spawner.id) !== modelId ||
+      this.spawnerMeshModels.get(spawner.id) === modelId
+    ) {
       return;
     }
+    // A ripened spawner's earlier mesh goes only now its new one is here.
+    this.dropSpawnerMesh(spawner.id);
     const mesh = new UnitMesh(spawner.id, model);
     // A spawner does not turn; north is as good a rest pose as any.
     mesh.setPose(spawner.pos, "n");
     this.spawnerMeshes.set(spawner.id, mesh);
+    this.spawnerMeshModels.set(spawner.id, modelId);
     this.spawnerHeights.set(spawner.id, measureHeight(mesh.object));
     for (const target of mesh.pickTargets()) {
       this.targetToSpawner.set(target, spawner.id);
@@ -903,21 +957,28 @@ export class TacticalSceneBuilder
   /** Forgets a spawner: its mesh, pick targets and any pending load. */
   private removeSpawner(spawnerId: SpawnerId): void {
     this.wantedSpawners.delete(spawnerId);
-    const mesh = this.spawnerMeshes.get(spawnerId);
-    if (mesh) {
-      for (const target of mesh.pickTargets()) {
-        this.targetToSpawner.delete(target);
-      }
-      mesh.dispose();
-      this.spawnerMeshes.delete(spawnerId);
-      this.spawnerHeights.delete(spawnerId);
-    }
+    this.dropSpawnerMesh(spawnerId);
     if (this.hoveredSpawner === spawnerId) {
       this.hoveredSpawner = undefined;
     }
     if (this.selectedSpawner === spawnerId) {
       this.selectedSpawner = undefined;
     }
+  }
+
+  /** Takes a spawner's mesh and pick targets off the board, if it has one. */
+  private dropSpawnerMesh(spawnerId: SpawnerId): void {
+    const mesh = this.spawnerMeshes.get(spawnerId);
+    if (!mesh) {
+      return;
+    }
+    for (const target of mesh.pickTargets()) {
+      this.targetToSpawner.delete(target);
+    }
+    mesh.dispose();
+    this.spawnerMeshes.delete(spawnerId);
+    this.spawnerMeshModels.delete(spawnerId);
+    this.spawnerHeights.delete(spawnerId);
   }
 
   /** Pushes hovered and targeted state onto every spawner mesh. */

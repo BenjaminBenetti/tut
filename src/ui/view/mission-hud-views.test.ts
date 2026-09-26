@@ -623,6 +623,41 @@ describe("TurnBannerView", () => {
     expect(field("floor")?.textContent).toBe("—");
     expect(down?.disabled).toBe(true);
   });
+
+  it("shows the soonest deadline beside the phase, pulsing when urgent, and hides it otherwise", () => {
+    const view = new TurnBannerView({ onLeave: vi.fn(), onLayerStep: vi.fn() });
+    view.mount(root);
+    const model = {
+      missionName: "Seoul",
+      turn: 6,
+      phase: "player",
+      tdfUnits: 2,
+      bugUnits: 0,
+      layer: undefined,
+    } as const;
+    view.update(model);
+    const badge = field("deadline");
+    expect(badge?.hidden).toBe(true);
+    view.update({
+      ...model,
+      deadline: { text: "Pod matures in 3 turns", turnsLeft: 3, urgent: false },
+    });
+    expect(badge?.hidden).toBe(false);
+    expect(badge?.textContent).toBe("Pod matures in 3 turns");
+    expect(badge?.dataset.urgent).toBe("false");
+    expect(badge?.classList.contains("tut-badge--warn")).toBe(true);
+    view.update({
+      ...model,
+      deadline: { text: "Pod matures in 2 turns", turnsLeft: 2, urgent: true },
+    });
+    expect(badge?.dataset.urgent).toBe("true");
+    expect(badge?.classList.contains("tut-badge--danger")).toBe(true);
+    expect(badge?.classList.contains("tut-badge--warn")).toBe(false);
+    view.update(model);
+    expect(badge?.hidden).toBe(true);
+    view.update(undefined);
+    expect(badge?.hidden).toBe(true);
+  });
 });
 
 /** A resolver whose answers are obviously names, so a leaked id shows. */
@@ -961,5 +996,77 @@ describe("event vocabulary for defences (#1175)", () => {
       names,
     );
     expect(held?.text).toBe("Objective complete: the sensor array");
+  });
+});
+
+describe("event vocabulary for the spore pod (campaign arc §6.3)", () => {
+  const names = { ...NAMES, objective: () => "the spore pod" };
+
+  it("says the pod was destroyed, and stays quiet about a nest's wreck", () => {
+    const wreck = (variant?: "spore-pod") =>
+      describeEvent(
+        {
+          type: "tactical:spawner-damaged",
+          payload: {
+            spawnerId: "spawner-1",
+            unitId: "u1",
+            damage: 10,
+            hp: 0,
+            destroyed: true,
+            ...(variant === undefined ? {} : { variant }),
+          },
+        } as never,
+        names,
+      );
+    expect(wreck("spore-pod")).toMatchObject({
+      text: "Spore pod destroyed",
+      icon: "check",
+      tone: "ok",
+    });
+    expect(wreck()).toBeUndefined();
+    const scratch = describeEvent(
+      {
+        type: "tactical:spawner-damaged",
+        payload: {
+          spawnerId: "spawner-1",
+          unitId: "u1",
+          damage: 10,
+          hp: 30,
+          destroyed: false,
+          variant: "spore-pod",
+        },
+      } as never,
+      names,
+    );
+    expect(scratch).toBeUndefined();
+  });
+
+  it("says the pod matured and what burst out of it", () => {
+    expect(
+      describeEvent(
+        {
+          type: "tactical:spore-pod-matured",
+          payload: { spawnerId: "spawner-1", objectiveId: "objective-1" },
+        } as never,
+        names,
+      ),
+    ).toMatchObject({
+      text: "Spore pod matured",
+      icon: "warning",
+      tone: "danger",
+    });
+    expect(
+      describeEvent(
+        {
+          type: "tactical:bugs-spawned",
+          payload: {
+            unitIds: ["b1", "b2", "b3", "b4", "b5"],
+            source: "pod",
+            sourceId: "spawner-1",
+          },
+        } as never,
+        names,
+      ),
+    ).toMatchObject({ text: "5 bugs burst from the spore pod", tone: "bug" });
   });
 });

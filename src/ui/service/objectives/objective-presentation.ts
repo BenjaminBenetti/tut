@@ -8,6 +8,7 @@ import type {
   ObjectiveProgressReadings,
 } from "../../model/objective-presentation";
 import { DEFEND_GENERATORS_PRESENTATION } from "./defend-generators-presentation";
+import { DESTROY_POD_PRESENTATION } from "./destroy-pod-presentation";
 import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
 
 // ===========================================
@@ -23,11 +24,13 @@ import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
  * ```
  *   destroy-spawner    ──► destroy-spawner-presentation.ts
  *   defend-generators  ──► defend-generators-presentation.ts
+ *   destroy-pod        ──► destroy-pod-presentation.ts
  * ```
  */
 export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
   "destroy-spawner": DESTROY_SPAWNER_PRESENTATION,
   "defend-generators": DEFEND_GENERATORS_PRESENTATION,
+  "destroy-pod": DESTROY_POD_PRESENTATION,
 } satisfies { readonly [K in ObjectiveKind]: { readonly kind: K } };
 
 // ===========================================

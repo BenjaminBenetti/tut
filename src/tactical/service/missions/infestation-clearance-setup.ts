@@ -1,6 +1,5 @@
 import { ok } from "../../../core/model/result";
 import type { IdGenerator } from "../../../core/model/id-generator";
-import type { Hook } from "../../../mapgen/model/hook";
 import { HookKinds } from "../../../mapgen/model/hook";
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
 import type { Mission } from "../../../overworld/model/mission";
@@ -15,12 +14,11 @@ import type {
   TacticalState,
 } from "../../model/tactical-state";
 import {
-  DEFAULT_HATCH_RADIUS,
   OBJECTIVE_ID_PREFIX,
   SPAWNER_ID_PREFIX,
 } from "../../model/tactical-state";
 import { hatchInterval } from "../spawn-service";
-import { coordOf, firstTile } from "./map-placement";
+import { coordOf, firstTile, hatchRadiusOf } from "./map-placement";
 
 // ===========================================
 // Egg spawners
@@ -105,12 +103,4 @@ function spawnersFrom(
       timer: hatchInterval(difficulty, tuning),
       destroyed: false,
     }));
-}
-
-/** The hook's hatch radius, or the default when the meta is missing or not a number. */
-function hatchRadiusOf(hook: Hook): number {
-  const radius = hook.meta?.hatchRadius;
-  return typeof radius === "number" && radius > 0
-    ? radius
-    : DEFAULT_HATCH_RADIUS;
 }

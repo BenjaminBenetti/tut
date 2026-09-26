@@ -1,4 +1,8 @@
 import type { AttackTarget } from "../model/attack-target";
+import {
+  SPAWNER_VARIANT_TRAITS,
+  spawnerTraitsOf,
+} from "../model/spawner-variant";
 import type { Spawner, TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
@@ -8,14 +12,14 @@ import type { UnitTemplate } from "../model/unit-template";
 // ===========================================
 
 /** What the HUD calls an egg spawner; spawners carry no per-instance name. */
-export const SPAWNER_NAME = "Egg spawner";
+export const SPAWNER_NAME = SPAWNER_VARIANT_TRAITS["egg-spawner"].name;
 
 /**
  * Armor an egg spawner has. A sac of eggs has no plating: `spawnerHp`
  * is the whole of its durability, so a weapon's penetration has nothing
  * to bite on and every hit lands in full.
  */
-export const SPAWNER_ARMOR = 0;
+export const SPAWNER_ARMOR = SPAWNER_VARIANT_TRAITS["egg-spawner"].armor;
 
 // ===========================================
 // Adapters
@@ -42,15 +46,20 @@ export function unitAttackTarget(
   };
 }
 
-/** The spawner as an attack target. Spawners are the bugs' (GDD §5.4), so TDF fire may hit them. */
+/**
+ * The spawner as an attack target. Spawners are the bugs' (GDD §5.4), so
+ * TDF fire may hit them; an egg spawner and a spore pod alike, each by
+ * its variant's name and armour.
+ */
 export function spawnerAttackTarget(spawner: Spawner): AttackTarget {
+  const traits = spawnerTraitsOf(spawner);
   return {
     kind: "spawner",
     id: spawner.id,
-    name: SPAWNER_NAME,
+    name: traits.name,
     pos: spawner.pos,
     hp: spawner.hp,
-    armor: SPAWNER_ARMOR,
+    armor: traits.armor,
     team: "bugs",
   };
 }

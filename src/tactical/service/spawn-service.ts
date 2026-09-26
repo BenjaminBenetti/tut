@@ -9,6 +9,7 @@ import type { ReachabilitySnapshot } from "../../mapgen/service/hatch-space";
 import { hatchTiles, snapshotMap } from "../../mapgen/service/hatch-space";
 import { BUGS_SPAWNED } from "../model/bugs-spawned-event";
 import type { SpawnSource } from "../model/spawn-source";
+import { spawnerTraitsOf } from "../model/spawner-variant";
 import type { SpawnTuning } from "../model/spawn-tuning";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalContext } from "../model/tactical-handler";
@@ -65,6 +66,15 @@ export function createEdgeWaveStep(deps: SpawnDeps): PhaseStep {
   return (mission, ctx) => edgeWave(mission, ctx, deps);
 }
 
+/**
+ * `podBurst` as a phase step for `createEndTurnHandler`, closed over the
+ * deps. Registered right after the deadline step, so a pod that matures
+ * as a phase opens bursts in that same phase start.
+ */
+export function createPodBurstStep(deps: SpawnDeps): PhaseStep {
+  return (mission, ctx) => podBurst(mission, ctx, deps);
+}
+
 // ===========================================
 // Egg spawners
 // ===========================================
@@ -89,7 +99,8 @@ export function createEdgeWaveStep(deps: SpawnDeps): PhaseStep {
  * ```
  *
  * Draws from `ctx.rng.fork("spawn:hatch")`, spawners in `spawners`
- * order, so the edge wave's rolls never perturb these.
+ * order, so the edge wave's rolls never perturb these. A variant that
+ * does not hatch (a spore pod) is left as it is, timer and all.
  */
 export function hatch(
   mission: TacticalState,
@@ -105,7 +116,8 @@ export function hatch(
   const events: TacticalEvent[] = [];
   const spawners: Spawner[] = [];
   for (const spawner of mission.spawners) {
-    if (spawner.destroyed) {
+    // A spore pod never hatches: it matures instead (podBurst).
+    if (spawner.destroyed || !spawnerTraitsOf(spawner).hatches) {
       spawners.push(spawner);
       continue;
     }
@@ -235,6 +247,117 @@ export function edgeWave(
       : [];
   return { state: { ...placed.state, edgeSpawn }, events };
 }
+
+// ===========================================
+// Spore pods
+// ===========================================
+
+/**
+ * Releases the wave of every spore pod that has matured since the last
+ * phase start (campaign arc §6.3): `podBurstSize` bugs, room permitting,
+ * on free tiles of the pod's hatch space — what infantry can reach
+ * within `hatchRadius` of where it stood, its own tile included now it
+ * is gone — facing out from it. The burst is released once: the pod's
+ * `burstPending` is cleared whether or not there was room. Runs in any
+ * phase, since a deadline passes as a player phase opens; the bugs
+ * arrive spent (`ap` 0) and act from the next bug phase.
+ *
+ * ```
+ *   no pod with burstPending ──► unchanged, nothing drawn
+ *   for each such pod, in spawners order:
+ *     podBurstSize(next wave, difficulty, threat) bugs on its free hatch tiles
+ *     BugsSpawned { source: "pod", sourceId: pod.id }, burstPending ← false
+ * ```
+ *
+ * Draws from `ctx.rng.fork("spawn:pod-burst")`, and only when a burst is
+ * pending, so a mission without a pod draws exactly what it always did.
+ */
+export function podBurst(
+  mission: TacticalState,
+  ctx: TacticalContext,
+  deps: SpawnDeps,
+): TacticalApplied<TacticalState> {
+  if (!mission.spawners.some((spawner) => spawner.burstPending === true)) {
+    return { state: mission, events: [] };
+  }
+  const rng = ctx.rng.fork("spawn:pod-burst");
+  const snapshot = snapshotMap(mission.map);
+  const size = podBurstSize(
+    mission.edgeSpawn.wave,
+    mission.difficulty,
+    mission.threat,
+    deps.tuning,
+  );
+  let state = mission;
+  const events: TacticalEvent[] = [];
+  for (const pod of mission.spawners) {
+    if (pod.burstPending !== true) {
+      continue;
+    }
+    const room = hatchTiles(
+      snapshot,
+      pod.pos,
+      pod.hatchRadius,
+      PassMask.INFANTRY,
+    );
+    const placed = placeBugs(
+      state,
+      snapshot,
+      room,
+      size,
+      rng,
+      ctx.ids,
+      deps.species,
+      (tile) => facingFrom(pod.pos, tile),
+    );
+    state = placed.state;
+    if (placed.unitIds.length > 0) {
+      events.push({
+        type: BUGS_SPAWNED,
+        payload: { unitIds: placed.unitIds, source: "pod", sourceId: pod.id },
+      });
+    }
+  }
+  const spawners = mission.spawners.map((spawner): Spawner =>
+    spawner.burstPending === true
+      ? { ...spawner, burstPending: false }
+      : spawner,
+  );
+  return { state: { ...state, spawners }, events };
+}
+
+/**
+ * Hit points a spore pod starts with at this difficulty: the base plus
+ * a share per difficulty step above one, floored.
+ */
+export function podHp(difficulty: number, tuning: SpawnTuning): number {
+  return Math.floor(
+    tuning.podHp + steps(difficulty) * tuning.podHpPerDifficulty,
+  );
+}
+
+/**
+ * Bugs a maturing pod releases: the size the next edge wave would have
+ * (so difficulty, waves so far and threat all count) plus the pod's
+ * bonus, never above `maxWaveSize`.
+ *
+ * @param wave - Edge waves landed so far; the burst is sized as the next one.
+ */
+export function podBurstSize(
+  wave: number,
+  difficulty: number,
+  threat: number,
+  tuning: SpawnTuning,
+): number {
+  return Math.min(
+    tuning.maxWaveSize,
+    waveSize(wave, difficulty, threat, tuning) + tuning.podBurstBonus,
+  );
+}
+
+// ===========================================
+// Escalation
+// ===========================================
 
 /**
  * Bug phases between one spawner's hatches at this difficulty: the base

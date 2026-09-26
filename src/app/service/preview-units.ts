@@ -33,6 +33,7 @@ import {
   mechUnit,
   squadUnit,
 } from "../../tactical/service/unit-factory";
+import { placeSporePod } from "../../tactical/service/missions/spore-pod-setup";
 import { emptyVision } from "../../tactical/service/vision-service";
 
 // ===========================================
@@ -141,8 +142,10 @@ export function previewUnits(map: TacticalMap): PreviewUnits {
 /**
  * A synthetic mission around `previewUnits` for the preview page's HUD
  * (#339): player phase, turn one, one destroy-spawner objective per
- * egg-spawner hook. Not game code: `startTacticalMission` builds real
- * missions.
+ * egg-spawner hook, and a spore pod with its destroy-pod objective per
+ * spore-pod hook (a crash site), stood up by the same `placeSporePod`
+ * a Crash Site mission uses. Not game code: `startTacticalMission`
+ * builds real missions.
  */
 export function previewMission(map: TacticalMap): TacticalState {
   const { units, templates } = previewUnits(map);
@@ -163,7 +166,7 @@ export function previewMission(map: TacticalMap): TacticalState {
     targetId: spawner.id,
     complete: false,
   }));
-  return {
+  const base: TacticalState = {
     missionId: "preview",
     seed: 1,
     difficulty: 1,
@@ -186,4 +189,17 @@ export function previewMission(map: TacticalMap): TacticalState {
     carcasses: [],
     commandSeq: 0,
   };
+  // Ids carry on from the nests numbered above.
+  const ids = new SequentialIdGenerator({
+    counters: {
+      spawner: spawners.length + 1,
+      objective: objectives.length + 1,
+    },
+  });
+  return placeSporePod(
+    base,
+    map,
+    { difficulty: base.difficulty },
+    { ids, spawnTuning: SPAWN_TUNING, generator: GENERATOR_TUNING },
+  );
 }

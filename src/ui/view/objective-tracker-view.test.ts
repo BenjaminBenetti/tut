@@ -3,9 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   DefendGeneratorsObjective,
+  DestroyPodObjective,
   DestroySpawnerObjective,
   Spawner,
+  TacticalState,
 } from "../../tactical/model/tactical-state";
+import { objectiveCountdowns } from "../service/objectives/deadline-countdown";
 import type {
   ObjectivePresentationCatalogue,
   ObjectiveRow,
@@ -90,6 +93,7 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
         ...OBJECTIVE_PRESENTATION["defend-generators"],
         row: holdRow,
       },
+      "destroy-pod": OBJECTIVE_PRESENTATION["destroy-pod"],
     };
     const view = new ObjectiveTrackerView(presentations);
     view.mount(root);
@@ -165,5 +169,93 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
     view.update([NEST, HOLD], SPAWNERS);
     expect(rowOf(NEST.id)?.textContent).toBe("Destroy spawner 120 hp");
     expect(rowOf(HOLD.id)?.textContent).toBe("Held the bank");
+  });
+});
+
+// ===========================================
+// Deadlines
+// ===========================================
+
+describe("ObjectiveTrackerView counts a deadline down (ADR 0013 §2.3)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const POD: DestroyPodObjective = {
+    id: "objective-p",
+    kind: "destroy-pod",
+    targetId: "spawner-p",
+    complete: false,
+    deadlineTurn: 8,
+  };
+  const POD_SPAWNER: Spawner = {
+    id: "spawner-p",
+    variant: "spore-pod",
+    pos: { x: 5, y: 0, z: 5 },
+    hatchRadius: 3,
+    hp: 40,
+    timer: 0,
+    destroyed: false,
+  };
+
+  /** The tracker drawn for the pod and a nest on `turn`, as the HUD draws it. */
+  function drawnOn(turn: number, pod: DestroyPodObjective = POD): HTMLElement {
+    const objectives = [NEST, pod];
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update(
+      objectives,
+      [...SPAWNERS, POD_SPAWNER],
+      undefined,
+      undefined,
+      objectiveCountdowns({ turn, objectives } as unknown as TacticalState),
+    );
+    return root;
+  }
+
+  const deadlineOf = (id: string): HTMLElement | null =>
+    root.querySelector<HTMLElement>(
+      `[data-objective-id="${id}"] [data-role="deadline"]`,
+    );
+
+  it("puts the countdown under the pod's label, and none on a nest without a clock", () => {
+    drawnOn(6);
+    const line = deadlineOf(POD.id);
+    expect(line?.textContent).toBe("Pod matures in 3 turns");
+    expect(line?.dataset.urgent).toBe("false");
+    // Under the label, in the stacked column; the hit points stay beside it.
+    expect(line?.parentElement?.className).toBe("tut-hud__defence");
+    expect(line?.previousElementSibling?.textContent).toBe(
+      "Destroy the spore pod",
+    );
+    expect(
+      root.querySelector(`[data-objective-id="${POD.id}"]`)?.textContent,
+    ).toBe("Destroy the spore podPod matures in 3 turns40 hp");
+    expect(deadlineOf(NEST.id)).toBeNull();
+  });
+
+  it("marks the last two turns urgent", () => {
+    drawnOn(7);
+    expect(deadlineOf(POD.id)?.dataset.urgent).toBe("true");
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    drawnOn(8);
+    expect(deadlineOf(POD.id)?.textContent).toBe(
+      "Pod matures at the end of this turn",
+    );
+    expect(deadlineOf(POD.id)?.dataset.urgent).toBe("true");
+  });
+
+  it("drops the countdown once the pod is wrecked or has matured", () => {
+    drawnOn(6, { ...POD, complete: true });
+    expect(deadlineOf(POD.id)).toBeNull();
+    root.replaceChildren();
+    drawnOn(9, { ...POD, failed: true });
+    expect(deadlineOf(POD.id)).toBeNull();
   });
 });

@@ -95,6 +95,7 @@ import type { SpawnDeps } from "../../tactical/service/spawn-service";
 import {
   createEdgeWaveStep,
   createHatchStep,
+  createPodBurstStep,
 } from "../../tactical/service/spawn-service";
 import { registryStructureCatalogue } from "../../tactical/service/structure-catalogue";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
@@ -366,6 +367,9 @@ export function shippedTacticalHandlers(
         // First, so a deadline judges the mission as its last turn left
         // it: nothing the new turn opens with can beat the clock.
         createObjectiveDeadlineStep(),
+        // A pod the deadline just matured bursts in the same phase start,
+        // before anything else moves (campaign arc §6.3).
+        createPodBurstStep(spawn),
         drainRadarBatteries,
         createTurretStep(TURRET_TUNING),
         createDetonateStep(equipment),

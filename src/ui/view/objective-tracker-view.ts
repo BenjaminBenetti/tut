@@ -4,6 +4,8 @@ import type {
   Spawner,
 } from "../../tactical/model/tactical-state";
 import type {
+  ObjectiveCountdown,
+  ObjectiveCountdowns,
   ObjectivePresentation,
   ObjectivePresentationCatalogue,
   ObjectiveProgressReadings,
@@ -25,6 +27,9 @@ import { iconGlyph } from "./icon-glyph";
  */
 const STACK_CLASS = "tut-hud__defence";
 
+/** Class of a deadline countdown line; `data-urgent="true"` makes it pulse. */
+const DEADLINE_CLASS = "tut-deadline";
+
 // ===========================================
 // ObjectiveTrackerView
 // ===========================================
@@ -44,13 +49,18 @@ const STACK_CLASS = "tut-hud__defence";
  *   OBJECTIVES  0 / 1
  *   └ ⛨ Defend the sensor array
  *       2 / 3 generators · wave 3 / 5 · 4 bugs left
+ *
+ *   OBJECTIVES  0 / 1
+ *   └ ○ Destroy the spore pod · 40 hp
+ *       Pod matures in 2 turns            (urgent: pulses)
  * ```
  *
  * The row marked `in reach` is the one Interact would work, so a player
  * with two spawners in range can see which gets the charges (#427). A
  * kind with live numbers (a defence, #1175) reads them from the readings
  * the HUD takes, since the objective record only mirrors them at phase
- * ends.
+ * ends. An objective with a deadline gets its countdown under its label,
+ * whatever its kind, from the countdowns the HUD takes.
  */
 export class ObjectiveTrackerView {
   // ===========================================
@@ -105,12 +115,15 @@ export class ObjectiveTrackerView {
    * any; its row is marked so the Interact button is never ambiguous.
    * `progress` holds the live readings the HUD took, keyed by objective
    * id; a kind that takes one falls back to its stored flags without it.
+   * `countdowns` holds each open objective's deadline countdown, keyed
+   * the same way; a row without one shows none.
    */
   update(
     objectives: readonly Objective[],
     spawners: readonly Spawner[],
     inReachId?: ObjectiveId,
     progress?: ObjectiveProgressReadings,
+    countdowns?: ObjectiveCountdowns,
   ): void {
     if (!this.list || !this.summary) {
       return;
@@ -139,7 +152,13 @@ export class ObjectiveTrackerView {
         progress: progress?.get(objective.id),
       });
       this.list.appendChild(
-        rowElement(doc, objective, row, objective.id === inReachId),
+        rowElement(
+          doc,
+          objective,
+          row,
+          objective.id === inReachId,
+          countdowns?.get(objective.id),
+        ),
       );
     }
   }
@@ -160,13 +179,16 @@ export class ObjectiveTrackerView {
 /**
  * Draws one row: the objective's id and completion, the kind's `data-*`,
  * then the glyph and the label with the detail beside it (`inline`) or
- * under it (`stacked`), and the `in reach` mark last.
+ * under it (`stacked`), and the `in reach` mark last. A countdown goes
+ * under the label (and under a stacked detail), which stacks an inline
+ * row's label for it.
  */
 function rowElement(
   doc: Document,
   objective: Objective,
   row: ObjectiveRow,
   inReach: boolean,
+  countdown: ObjectiveCountdown | undefined,
 ): HTMLLIElement {
   const item = doc.createElement("li");
   item.dataset.objectiveId = objective.id;
@@ -181,6 +203,7 @@ function rowElement(
   const label = doc.createElement("span");
   label.textContent = row.label;
   const detail = row.detail && detailElement(doc, row.detail);
+  const deadline = countdown && countdownElement(doc, countdown);
   if (row.layout === "stacked") {
     // The label over its detail, not beside it: "2 / 3 generators ·
     // wave 3 / 5" is wider than the rail leaves, and beside the label it
@@ -191,9 +214,21 @@ function rowElement(
     if (detail) {
       stack.appendChild(detail);
     }
+    if (deadline) {
+      stack.appendChild(deadline);
+    }
     item.append(glyph, stack);
   } else {
-    item.append(glyph, label);
+    if (deadline) {
+      // "Pod matures in 3 turns" is as wide as the rail, so it goes
+      // under the label rather than beside it, and the detail stays put.
+      const stack = doc.createElement("span");
+      stack.className = STACK_CLASS;
+      stack.append(label, deadline);
+      item.append(glyph, stack);
+    } else {
+      item.append(glyph, label);
+    }
     if (detail) {
       item.appendChild(detail);
     }
@@ -206,6 +241,22 @@ function rowElement(
     item.appendChild(reach);
   }
   return item;
+}
+
+/**
+ * A deadline countdown as a monospace line, `data-role="deadline"`,
+ * with `data-urgent` saying whether it pulses.
+ */
+function countdownElement(
+  doc: Document,
+  countdown: ObjectiveCountdown,
+): HTMLElement {
+  const span = doc.createElement("span");
+  span.className = `tut-mono ${DEADLINE_CLASS}`;
+  span.dataset.role = "deadline";
+  span.dataset.urgent = countdown.urgent ? "true" : "false";
+  span.textContent = countdown.text;
+  return span;
 }
 
 /** A row's numbers as a dim monospace span, with its role when it has one. */

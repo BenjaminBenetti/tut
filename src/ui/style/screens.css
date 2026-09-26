@@ -1380,6 +1380,39 @@
 }
 
 /*
+ * A deadline counting down (ADR 0013 §2.3): "Pod matures in 3 turns"
+ * under the objective's label, and the soonest one as a badge in the
+ * turn banner. Warning colour while there is time, danger and a slow
+ * pulse in the last two turns. The pulse dims and brightens rather than
+ * starting from nothing, so a stalled animation still shows the text.
+ */
+.tut-hud__objectives .tut-deadline {
+  color: var(--ui-warn);
+}
+
+.tut-deadline[data-urgent="true"] {
+  color: var(--ui-danger);
+  animation: tut-deadline-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes tut-deadline-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tut-deadline[data-urgent="true"] {
+    animation: none;
+  }
+}
+
+/*
  * The squad strip (#1041): the player's own force, at a glance.
  *
  * Scoped to this panel rather than styling `.tut-list > li`, which every

@@ -2,8 +2,10 @@ import {
   DEFAULT_CHARGE_DELAY_TURNS,
   isDeployable,
 } from "../../tactical/model/equipment";
+import { SPAWNER_VARIANT_TRAITS } from "../../tactical/model/spawner-variant";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "../service/charge-delay-text";
+import type { BugsSpawnedEvent } from "../../tactical/model/bugs-spawned-event";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { IconId } from "../data/icon-manifest";
@@ -308,10 +310,26 @@ export function describeEvent(
     case "tactical:bugs-spawned":
       return {
         text: `${waveLabel(event.payload.wave, event.payload.totalWaves)}${formatWhole(event.payload.unitIds.length)} bugs ${
-          event.payload.source === "spawner" ? "hatched" : "arrived at the edge"
+          SPAWN_VERBS[event.payload.source]
         }`,
         icon: "egg",
         tone: "bug",
+      };
+    case "tactical:spawner-damaged":
+      // An egg spawner's wreck is told by its objective's line; a pod
+      // (campaign arc §6.3) says so itself, since the race was the point.
+      return event.payload.destroyed && event.payload.variant !== undefined
+        ? {
+            text: `${SPAWNER_VARIANT_TRAITS[event.payload.variant].name} destroyed`,
+            icon: "check",
+            tone: "ok",
+          }
+        : undefined;
+    case "tactical:spore-pod-matured":
+      return {
+        text: `${SPAWNER_VARIANT_TRAITS["spore-pod"].name} matured`,
+        icon: "warning",
+        tone: "danger",
       };
     case "tactical:generator-destroyed":
       return {
@@ -355,6 +373,15 @@ export function describeEvent(
       return undefined;
   }
 }
+
+/** What bugs did to arrive, by where they came from. */
+const SPAWN_VERBS: Readonly<
+  Record<BugsSpawnedEvent["payload"]["source"], string>
+> = {
+  spawner: "hatched",
+  edge: "arrived at the edge",
+  pod: "burst from the spore pod",
+};
 
 /** The glyph for a status change, defaulting to the overwatch eye. */
 function statusIcon(status: string | undefined): IconId {
@@ -431,6 +458,7 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:objective-updated":
     case "tactical:mission-ended":
     case "tactical:unit-abandoned":
+    case "tactical:spore-pod-matured":
       return undefined;
     default:
       return undefined;

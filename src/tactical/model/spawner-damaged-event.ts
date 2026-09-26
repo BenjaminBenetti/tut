@@ -1,4 +1,5 @@
 import type { DomainEvent } from "../../core/model/domain-event";
+import type { SpawnerVariant } from "./spawner-variant";
 import type { SpawnerId } from "./tactical-state";
 import type { UnitId } from "./unit";
 
@@ -20,6 +21,11 @@ export interface SpawnerDamagedPayload {
   readonly hp: number;
   /** True when this was the blow that destroyed it. */
   readonly destroyed: boolean;
+  /**
+   * What was hit, when it is not an egg spawner: a spore pod. Absent for
+   * an egg spawner, so its events read exactly as they did before pods.
+   */
+  readonly variant?: SpawnerVariant;
 }
 
 /** Charges were planted on an egg spawner (GDD §6.3). */

@@ -74,6 +74,10 @@ import {
   describeRefusal,
   namesFor,
 } from "../service/tactical-error-text";
+import {
+  objectiveCountdowns,
+  soonestCountdown,
+} from "../service/objectives/deadline-countdown";
 import { objectiveProgress } from "../service/objectives/objective-presentation";
 import type { UnitAction } from "../service/action-availability";
 import { actionRefusal, interactTarget } from "../service/action-availability";
@@ -2330,6 +2334,8 @@ export class TacticalHudView {
       this.handlers.onMarkWeaponRange?.([]);
       return;
     }
+    // One reading of every deadline, for the rail and the banner both.
+    const countdowns = objectiveCountdowns(mission);
     this.banner.update({
       // The name the screen resolved, never the id (#753). An em dash
       // when it has not been set: a visible absence is honest, where a
@@ -2348,6 +2354,7 @@ export class TacticalHudView {
       // storey is the roof going back on rather than a floor (#1136).
       layer:
         this.layerFocus === undefined ? undefined : floorOf(this.layerFocus),
+      deadline: soonestCountdown(countdowns),
     });
     // The card shows the enemy being aimed at while one is (#1134): the
     // player who clicked a bug wants to read it, and the shot's own
@@ -2397,6 +2404,7 @@ export class TacticalHudView {
       mission.spawners,
       inReach?.objective.id,
       objectiveProgress(mission),
+      countdowns,
     );
     // The rail names units through the same resolver as the card, the
     // banner and the log (#1040).

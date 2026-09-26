@@ -1842,6 +1842,22 @@ export const MODEL_MANIFEST = {
     sockets: ["socket_hatch"],
     quality: "final",
   },
+  "bug.spore-pod": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-spore-pod.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.25,
+    sockets: ["socket_hatch"],
+    quality: "final",
+  },
+  "bug.spore-pod-mature": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-spore-pod-mature.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.25,
+    sockets: ["socket_hatch"],
+    quality: "final",
+  },
   "bug.tech-carcass": {
     category: "bugs",
     path: "assets/models/bugs/bug-tech-carcass.glb",

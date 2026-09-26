@@ -30,6 +30,7 @@ import {
   searchMoves,
 } from "./movement-service";
 import { hasLineOfSight } from "./sight-service";
+import { isWreckObjective } from "./objectives/wreck-objectives";
 
 // ===========================================
 // Types
@@ -280,9 +281,10 @@ function chargeAction(
   if (target.kind !== "spawner") {
     return undefined;
   }
+  // Any wreck objective on it: a nest's, or a spore pod's (#1179).
   const objective = mission.objectives.find(
     (candidate) =>
-      candidate.kind === "destroy-spawner" &&
+      isWreckObjective(candidate) &&
       candidate.targetId === target.id &&
       !candidate.complete,
   );

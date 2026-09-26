@@ -12,12 +12,13 @@ import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 import type { PlacedCharge } from "./equipment";
 import type { Radar } from "./radar";
 import type { TechCarcass } from "./tech-carcass";
+import type { SpawnerVariant } from "./spawner-variant";
 
 // ===========================================
 // Ids and unions
 // ===========================================
 
-/** Id of an egg spawner on the map, issued with the `"spawner"` prefix. */
+/** Id of an egg spawner or spore pod on the map, issued with the `"spawner"` prefix. */
 export type SpawnerId = string;
 
 /** Id of a mission objective, issued with the `"objective"` prefix. */
@@ -61,19 +62,38 @@ export const DEFAULT_HATCH_RADIUS = 3;
 // Objectives and spawners
 // ===========================================
 
-/** An egg spawner sitting on an objective hook (GDD §5.4: clearance missions destroy them). */
+/**
+ * A destructible bug object on an objective hook: an egg spawner (GDD
+ * §5.4: clearance missions destroy them) or a crash site's spore pod
+ * (campaign arc §6.3). The variant says which; see `SpawnerVariant`.
+ *
+ * A spore pod's life, which an egg spawner never has:
+ *
+ * ```
+ *   ripening ──► wrecked            hp reaches 0: destroyed
+ *      └──────► matured             its objective's deadline passed:
+ *               burstPending          destroyed, hp 0, matured, burstPending
+ *                   └──► burst       the pod burst step released its wave
+ * ```
+ */
 export interface Spawner {
   readonly id: SpawnerId;
   /** The tile it occupies. */
   readonly pos: TileCoord;
-  /** Manhattan radius hatchlings appear within. */
+  /** Manhattan radius hatchlings, or a pod's burst, appear within. */
   readonly hatchRadius: number;
-  /** Hit points left in `[0, spawnerHp]` (spawn tuning). */
+  /** Hit points left in `[0, spawnerHp]` (spawn tuning), or a pod's `podHp`. */
   readonly hp: number;
-  /** Bug phases until it next hatches; counts down each bug phase and resets to the tuning's interval (#329). */
+  /** Bug phases until it next hatches; counts down each bug phase and resets to the tuning's interval (#329). A variant that never hatches keeps it untouched. */
   readonly timer: number;
-  /** True once destroyed; the record stays so the debrief can count it. */
+  /** True once destroyed; the record stays so the debrief can count it. A matured pod is destroyed too: it is gone. */
   readonly destroyed: boolean;
+  /** What it is; absent is an egg spawner, as every spawner saved before pods was. */
+  readonly variant?: SpawnerVariant;
+  /** True once a spore pod matured rather than being wrecked. Absent reads as false. */
+  readonly matured?: boolean;
+  /** True from a pod's maturing until its burst has been released. Absent reads as false. */
+  readonly burstPending?: boolean;
 }
 
 /**
@@ -109,6 +129,24 @@ export interface DestroySpawnerObjective extends ObjectiveBase {
 }
 
 /**
+ * Wreck the crash site's spore pod before it matures (campaign arc
+ * §6.3): complete when the pod is destroyed, failed when it matures.
+ * The pod matures once `deadlineTurn` has ended, bursting into a wave.
+ *
+ * ```
+ *   pod wrecked on or before deadlineTurn  ──► complete
+ *   deadlineTurn ends with the pod intact  ──► failed, the pod matures
+ * ```
+ */
+export interface DestroyPodObjective extends ObjectiveBase {
+  readonly kind: "destroy-pod";
+  /** The spore pod (a `spore-pod` spawner) this objective tracks. */
+  readonly targetId: SpawnerId;
+  /** Always set: a pod ripens on a clock. */
+  readonly deadlineTurn: number;
+}
+
+/**
  * Hold the installation's generators through every timed wave (#1175,
  * GDD §5.4). `complete` and `failed` mirror `defendStatus` as of the
  * last phase step, for the log and the tracker; the live answer is
@@ -131,11 +169,13 @@ export interface DefendGeneratorsObjective extends ObjectiveBase {
 }
 
 /**
- * What the player must achieve: wreck a spawner, or hold the generators
- * (#1175). Closed: a new kind adds its interface here and its rules to
- * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
+ * What the player must achieve: wreck a spawner, hold the generators
+ * (#1175), or wreck a spore pod before it matures. Closed: a new kind
+ * adds its interface here and its rules to `OBJECTIVE_RULES`, which the
+ * compiler then insists on (ADR 0013 §2.3).
  */
-export type Objective = DestroySpawnerObjective | DefendGeneratorsObjective;
+export type Objective =
+  DestroySpawnerObjective | DefendGeneratorsObjective | DestroyPodObjective;
 
 /** When the next wave walks in from the map edge, and how many have so far. */
 export interface EdgeSpawnSchedule {

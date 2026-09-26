@@ -25,6 +25,7 @@ import {
 const KINDS: Readonly<Record<ObjectiveKind, true>> = {
   "destroy-spawner": true,
   "defend-generators": true,
+  "destroy-pod": true,
 };
 
 const SPAWNER_OBJECTIVE: DestroySpawnerObjective = {

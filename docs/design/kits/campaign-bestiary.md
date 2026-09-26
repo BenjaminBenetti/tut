@@ -184,6 +184,7 @@ The Crash Site objective (§6.3): destroy it before it matures at the end of tur
 - **States:** `bug.spore-pod`, and `bug.spore-pod-mature` with its petals split open and a brighter core, swapped in over the last turns before the deadline. Smoke is VFX.
 - **Socket (proposed):** `socket_hatch` at the crown, where the maturing wave bursts out, as on the egg spawner.
 - **Follow:** [spore-pod.png](../concepts/campaign/spore-pod.png).
+- **As built (#1179):** both states are registered at a 1×1 footprint, 1.25 u tall, because the crash site's `spore-pod` hook is a single tile and the pod is a spawner that stands on one. The husk and its skirt spread about 1.34 u, so the pod overhangs its tile a little rather than filling 2×2. Sources are `tools/art/models/bug-spore-pod.py`, `bug-spore-pod-mature.py` and the shared `spore_pod_parts.py`; renders are `docs/design/renders/bug.spore-pod*_*.png`.
 
 ### Civilian group
 

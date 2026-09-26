@@ -81,7 +81,9 @@ export interface ObjectiveTally {
  * generic `ObjectiveResult` row. A kind with a result payload of its
  * own adds its optional field to `MissionResult` and names it here.
  */
-export type ObjectiveResultFields = Partial<Pick<MissionResult, "defence">>;
+export type ObjectiveResultFields = Partial<
+  Pick<MissionResult, "defence" | "podDestroyed">
+>;
 
 // ===========================================
 // Rules

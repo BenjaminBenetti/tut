@@ -34,7 +34,7 @@ export interface ObjectiveRowContext<P = unknown> {
    * because a finished objective stays in the array.
    */
   readonly ordinal: number;
-  /** The mission's egg spawners, for a row that reports one's hit points. */
+  /** The mission's egg spawners and pods, for a row that reports one's hit points. */
   readonly spawners: readonly Spawner[];
   /** The reading this kind's `progress` took, when the HUD took one. */
   readonly progress: P | undefined;
@@ -45,6 +45,29 @@ export interface ObjectiveRowDetail {
   readonly text: string;
   /** `data-role` of the fact's span, so a spec can find it. */
   readonly role?: string;
+}
+
+/**
+ * A deadline counting down on an open objective (ADR 0013 §2.3):
+ * "Pod matures in 3 turns". Built by `deadlineCountdown` for any kind
+ * whose objective carries a `deadlineTurn`, in the words of the kind's
+ * `deadlinePhrase`; the tracker shows it under the row and the banner
+ * shows the soonest.
+ *
+ * ```
+ *   deadlineTurn 8   turn 6 ──► 3 turns left            plain
+ *                    turn 7 ──► 2 turns left            urgent (pulses)
+ *                    turn 8 ──► at the end of this turn urgent
+ *                    turn 9 ──► none: the deadline step failed it
+ * ```
+ */
+export interface ObjectiveCountdown {
+  /** The sentence: "Pod matures in 3 turns". */
+  readonly text: string;
+  /** Turns the player still has, this one included; at least one. */
+  readonly turnsLeft: number;
+  /** True in the last `DEADLINE_URGENT_TURNS` turns, when the countdown pulses. */
+  readonly urgent: boolean;
 }
 
 /**
@@ -123,6 +146,13 @@ export interface ObjectivePresentation<
    * that id instead of the objective's (a spawner in `target-destroyed`).
    */
   trackedId?(objective: ObjectiveOfKind<K>): string;
+  /**
+   * What happens when the objective's deadline passes, as the subject
+   * and verb of its countdown: "Pod matures" reads "Pod matures in 3
+   * turns". Only read for an objective with a `deadlineTurn`; a kind
+   * without one says `DEFAULT_DEADLINE_PHRASE`.
+   */
+  deadlinePhrase?(objective: ObjectiveOfKind<K>): string;
 }
 
 /**
@@ -139,3 +169,6 @@ export type ObjectivePresentationCatalogue = Readonly<
  * `row` reads.
  */
 export type ObjectiveProgressReadings = ReadonlyMap<ObjectiveId, unknown>;
+
+/** Every open objective's deadline countdown, keyed by its id; objectives without one are absent. */
+export type ObjectiveCountdowns = ReadonlyMap<ObjectiveId, ObjectiveCountdown>;

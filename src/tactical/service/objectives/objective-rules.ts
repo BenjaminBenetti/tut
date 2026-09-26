@@ -6,6 +6,7 @@ import type {
 import type { PhaseStep } from "../../model/phase-step";
 import type { Objective } from "../../model/tactical-state";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
+import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
 
 // ===========================================
@@ -22,6 +23,7 @@ import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
  * ```
  *   destroy-spawner    ──► destroy-spawner-objective.ts
  *   defend-generators  ──► defend-generators-objective.ts
+ *   destroy-pod        ──► destroy-pod-objective.ts
  * ```
  *
  * Typed by `ObjectiveRulesTable`, so a kind added to `Objective` without
@@ -32,6 +34,7 @@ import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
 export const OBJECTIVE_RULES: ObjectiveRulesTable = {
   "destroy-spawner": DESTROY_SPAWNER_OBJECTIVE,
   "defend-generators": DEFEND_GENERATORS_OBJECTIVE,
+  "destroy-pod": DESTROY_POD_OBJECTIVE,
 };
 
 // ===========================================

@@ -1,10 +1,14 @@
 import type { GameOutcome } from "../../overworld/model/game-outcome";
-import { MAX_THREAT } from "../../overworld/model/threat";
+import type { RankLadder } from "../../roster/model/rank";
 import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
-import { formatWhole } from "../service/format";
+import { outcomeCopy } from "../service/outcome-copy";
+import { ChronicleTimelineView } from "../view/chronicle-timeline-view";
+import { NemesisFatesView } from "../view/nemesis-fates-view";
+import { OutcomeNumbersView } from "../view/outcome-numbers-view";
+import { SquadRollView } from "../view/squad-roll-view";
 
 // ===========================================
 // Types
@@ -14,58 +18,16 @@ import { formatWhole } from "../service/format";
 export interface GameOverScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
+  /** Public base the key art is served under (`import.meta.env.BASE_URL`); `/` by default. */
+  readonly baseUrl?: string;
+  /** The rank ladder, to name each roll entry's rank; the roll omits ranks without it. */
+  readonly ranks?: RankLadder;
 }
 
-/** Banner copy per outcome kind. */
-interface OutcomeCopy {
-  readonly title: string;
-  readonly tagline: string;
-  readonly tone: "danger" | "ok";
-}
-
-// ===========================================
-// Constants
-// ===========================================
-
-/**
- * Headline and explanation for each way a campaign ends (GDD §5.3, arc
- * D1). Victory is plain text until the victory screen lands; the
- * retired `victory-stub` keeps a line so an old save that ended that
- * way still reads sensibly.
- */
-const OUTCOME_COPY: Readonly<Record<GameOutcome["kind"], OutcomeCopy>> = {
-  defeat: {
-    title: "Threat limit reached",
-    tagline: `Global threat reached ${formatWhole(MAX_THREAT)}, ending the campaign.`,
-    tone: "danger",
-  },
-  victory: {
-    title: "Victory",
-    tagline: "The last story mission is won. Earth holds.",
-    tone: "ok",
-  },
-  "victory-stub": {
-    title: "Earth secured",
-    tagline:
-      "Every city was clean and no hive remained. This campaign ended under the old victory rule.",
-    tone: "ok",
-  },
-};
-
-/** A defeat the story decided: the spore platform failed twice (arc D7). */
-const STORY_DEFEAT_COPY: OutcomeCopy = {
-  title: "Assault failed",
-  tagline:
-    "The spore platform assault failed a second time, ending the campaign.",
-  tone: "danger",
-};
-
-/** The copy for `outcome`: by kind, with a story defeat worded as such. */
-function copyFor(outcome: GameOutcome): OutcomeCopy {
-  if (outcome.kind === "defeat" && outcome.cause === "story") {
-    return STORY_DEFEAT_COPY;
-  }
-  return OUTCOME_COPY[outcome.kind];
+/** A mounted part of the panel, removed on unmount. */
+interface Unmountable {
+  /** Removes what the view mounted. */
+  unmount(): void;
 }
 
 // ===========================================
@@ -73,18 +35,30 @@ function copyFor(outcome: GameOutcome): OutcomeCopy {
 // ===========================================
 
 /**
- * The end of a campaign (GDD §5.3): the outcome banner, the day it ended
- * and the summary frozen by the outcome service, with a way back to the
- * main menu. Reads the session's state once on mount; the campaign is
- * over, so nothing here changes.
+ * The end of a campaign (GDD §5.3, campaign arc §13): the verdict, the
+ * final numbers, the chronicle of acts, the squad roll and the nemeses,
+ * all read from the summary the outcome service froze, with the one way
+ * out to the main menu. Reads the session's state once on mount; the
+ * campaign is over, so nothing here changes.
+ *
+ * A platform victory stands over its key art with the panel in the
+ * art's quiet right third; every other ending sits centred over the
+ * world, drained by the scrim on a defeat. An outcome saved before the
+ * chronicle has only the numbers, and renders with those alone.
  *
  * ```
- *   ┌ CAMPAIGN OVER ──────────────────────┐
- *   │ THREAT LIMIT REACHED                 │
- *   │ Global threat reached 100 …          │
- *   │ Day reached 41 · Cities lost 3/12 …  │
- *   │ [Return to main menu]                │
- *   └──────────────────────────────────────┘
+ *   ┌ key art ───────────────────────┬ CAMPAIGN OVER ─────────────┐
+ *   │  platform breaking up          │ VICTORY                     │
+ *   │                                │ The platform burns in orbit │
+ *   │                                │ Day · Missions · Threat     │
+ *   │                                │ Saved · Lost · Infested     │
+ *   │                                │ ┌ Chronicle (scrolls) ────┐ │
+ *   │  mechs on the rubble           │ │ Act I … Finale          │ │
+ *   │                                │ └─────────────────────────┘ │
+ *   │                                │ Nemeses: Old Scald … killed │
+ *   │                                │ Squad roll (scrolls)        │
+ *   │                                │ [Return to main menu]       │
+ *   └────────────────────────────────┴─────────────────────────────┘
  * ```
  */
 export class GameOverScreen implements Screen {
@@ -101,7 +75,7 @@ export class GameOverScreen implements Screen {
   // Constructor
   // ===========================================
 
-  /** @param deps - Router and the session whose ended campaign is shown. */
+  /** @param deps - Router, the session whose ended campaign is shown, and the art's base. */
   constructor(deps: GameOverScreenDeps) {
     this.deps = deps;
   }
@@ -110,36 +84,153 @@ export class GameOverScreen implements Screen {
   // Screen
   // ===========================================
 
-  /** Builds the panel from the session's outcome and wires the menu button. */
+  /** Builds the backdrop and panel from the session's outcome and wires the menu button. */
   mount(root: HTMLElement): void {
     const doc = root.ownerDocument;
     const state: GameState | undefined = this.deps.session.state;
     const outcome = state?.overworld.outcome;
+    const copy = outcome
+      ? outcomeCopy(outcome, state?.overworld.progress.act)
+      : undefined;
+
+    if (copy?.art !== undefined) {
+      this.addBackdrop(root, copy.art);
+    }
 
     // A scrim between the world and the verdict, toned by the outcome.
-    // The panel borrows `.tut-menu`, which is the *title screen's*
-    // treatment, so defeat was announced over a pristine blue-green
-    // Earth dotted with healthy city markers -- "Earth overrun" said
-    // over a picture of an Earth plainly not overrun. Victory keeps the
-    // world bright, because there the picture and the words agree.
+    // Draining the colour is the honest backdrop for a lost world: a
+    // bright Earth dotted with healthy cities flatly denied the words.
+    // Victory keeps the world (or the key art) as it is.
     const scrim = doc.createElement("div");
     scrim.className = "tut-game-over__scrim";
-    scrim.dataset.tone = outcome ? copyFor(outcome).tone : "ok";
+    scrim.dataset.tone = copy?.tone ?? "ok";
     root.appendChild(scrim);
     this.disposers.push(() => {
       scrim.remove();
     });
 
     const panel = doc.createElement("section");
-    panel.className = "tut-panel tut-menu tut-game-over";
+    panel.className = "tut-panel tut-game-over";
     panel.dataset.screen = this.id;
+    panel.dataset.art = copy?.art === undefined ? "none" : "key-art";
+    if (copy !== undefined) {
+      panel.dataset.variant = copy.variant;
+    }
 
     const kicker = doc.createElement("div");
     kicker.className = "tut-panel__title";
     kicker.textContent = "Campaign over";
+    panel.appendChild(kicker);
 
-    panel.append(kicker, ...this.createBody(doc, outcome));
+    if (outcome === undefined || copy === undefined) {
+      const note = doc.createElement("p");
+      note.className = "tut-dim";
+      note.dataset.role = "no-outcome";
+      note.textContent = "No campaign has ended.";
+      panel.appendChild(note);
+    } else {
+      this.addHeadline(panel, outcome, copy.title, copy.tagline, copy.tone);
+      this.addRecord(panel, outcome);
+    }
 
+    panel.appendChild(this.createMenuButton(doc));
+    root.appendChild(panel);
+    this.panel = panel;
+  }
+
+  /** Removes the backdrop, the panel, its views and its listener. */
+  unmount(): void {
+    for (const dispose of this.disposers.splice(0)) {
+      dispose();
+    }
+    this.panel?.remove();
+    this.panel = undefined;
+  }
+
+  // ===========================================
+  // Rendering
+  // ===========================================
+
+  /** The key art, full-bleed behind everything; decorative, so no alt text. */
+  private addBackdrop(root: HTMLElement, path: string): void {
+    const art = root.ownerDocument.createElement("img");
+    art.className = "tut-game-over__art";
+    art.dataset.role = "outcome-art";
+    art.alt = "";
+    art.decoding = "async";
+    art.src = `${this.deps.baseUrl ?? "/"}${path}`;
+    root.appendChild(art);
+    this.disposers.push(() => {
+      art.remove();
+    });
+  }
+
+  /** The verdict and its tagline. */
+  private addHeadline(
+    panel: HTMLElement,
+    outcome: GameOutcome,
+    titleText: string,
+    taglineText: string,
+    tone: "danger" | "ok",
+  ): void {
+    const doc = panel.ownerDocument;
+    const title = doc.createElement("h1");
+    title.className = `tut-game-over__title tut-game-over__title--${tone}`;
+    title.dataset.field = "outcome-kind";
+    title.dataset.kind = outcome.kind;
+    title.textContent = titleText;
+
+    const tagline = doc.createElement("p");
+    tagline.className = "tut-game-over__tagline";
+    tagline.dataset.field = "outcome-tagline";
+    tagline.textContent = taglineText;
+    panel.append(title, tagline);
+  }
+
+  /**
+   * The numbers, then whatever of the chronicle the summary kept: the
+   * timeline of acts, the nemeses and the squad roll.
+   */
+  private addRecord(panel: HTMLElement, outcome: GameOutcome): void {
+    const { summary } = outcome;
+    this.track(new OutcomeNumbersView(), (view) => {
+      view.mount(panel, outcome);
+    });
+    if (summary.acts !== undefined && summary.acts.length > 0) {
+      const acts = summary.acts;
+      this.track(new ChronicleTimelineView(), (view) => {
+        view.mount(panel, {
+          acts,
+          ...(summary.storyWins === undefined
+            ? {}
+            : { storyWins: summary.storyWins }),
+        });
+      });
+    }
+    if (summary.squad === undefined && summary.nemeses === undefined) {
+      return;
+    }
+    const record = panel.ownerDocument.createElement("div");
+    record.className = "tut-game-over__record";
+    // The nemeses first: a line or two that never scrolls, above the
+    // roll that may.
+    const nemeses = summary.nemeses;
+    if (nemeses !== undefined) {
+      this.track(new NemesisFatesView(), (view) => {
+        view.mount(record, nemeses);
+      });
+    }
+    const squad = summary.squad;
+    if (squad !== undefined) {
+      this.track(new SquadRollView(this.deps.ranks), (view) => {
+        view.mount(record, squad);
+      });
+    }
+    panel.appendChild(record);
+  }
+
+  /** The one way out: back to the main menu. */
+  private createMenuButton(doc: Document): HTMLElement {
     const menu = doc.createElement("button");
     menu.type = "button";
     menu.className = "tut-btn tut-btn--primary";
@@ -153,101 +244,19 @@ export class GameOverScreen implements Screen {
       menu.removeEventListener("click", onMenu);
     });
     const actions = doc.createElement("div");
-    actions.className = "tut-stack";
+    actions.className = "tut-stack tut-game-over__actions";
     actions.appendChild(menu);
-    panel.appendChild(actions);
-
-    root.appendChild(panel);
-    this.panel = panel;
+    return actions;
   }
 
-  /** Removes the panel and its listener. */
-  unmount(): void {
-    for (const dispose of this.disposers.splice(0)) {
-      dispose();
-    }
-    this.panel?.remove();
-    this.panel = undefined;
-  }
-
-  // ===========================================
-  // Rendering
-  // ===========================================
-
-  /** The banner and summary for `outcome`, or a note when no campaign has ended. */
-  private createBody(
-    doc: Document,
-    outcome: GameOutcome | undefined,
-  ): HTMLElement[] {
-    if (!outcome) {
-      const note = doc.createElement("p");
-      note.className = "tut-dim";
-      note.dataset.role = "no-outcome";
-      note.textContent = "No campaign has ended.";
-      return [note];
-    }
-    const copy = copyFor(outcome);
-    const title = doc.createElement("h1");
-    title.className = `tut-game-over__title tut-game-over__title--${copy.tone}`;
-    title.dataset.field = "outcome-kind";
-    title.dataset.kind = outcome.kind;
-    title.textContent = copy.title;
-
-    const tagline = doc.createElement("p");
-    tagline.className = "tut-dim";
-    tagline.dataset.field = "outcome-tagline";
-    tagline.textContent = copy.tagline;
-
-    const { summary } = outcome;
-    const grid = doc.createElement("dl");
-    grid.className = "tut-kv";
-    this.addField(doc, grid, "Day reached", "day", formatWhole(outcome.day));
-    this.addField(
-      doc,
-      grid,
-      "Cities lost",
-      "cities-lost",
-      `${formatWhole(summary.citiesLost)} / ${formatWhole(summary.citiesTotal)}`,
-    );
-    this.addField(
-      doc,
-      grid,
-      "Cities infested",
-      "cities-infested",
-      `${formatWhole(summary.citiesInfested)} / ${formatWhole(summary.citiesTotal)}`,
-    );
-    this.addField(
-      doc,
-      grid,
-      "Missions run",
-      "missions-run",
-      formatWhole(summary.missionsRun),
-    );
-    this.addField(
-      doc,
-      grid,
-      "Final threat",
-      "final-threat",
-      formatWhole(summary.finalThreat),
-    );
-    return [title, tagline, grid];
-  }
-
-  /** Appends a label/value pair to `grid`; the value carries `data-field` for tests. */
-  private addField(
-    doc: Document,
-    grid: HTMLElement,
-    label: string,
-    field: string,
-    value: string,
+  /** Mounts `view` through `mount` and unmounts it with the screen. */
+  private track<V extends Unmountable>(
+    view: V,
+    mount: (view: V) => void,
   ): void {
-    const term = doc.createElement("dt");
-    term.className = "tut-label";
-    term.textContent = label;
-    const cell = doc.createElement("dd");
-    cell.className = "tut-mono";
-    cell.dataset.field = field;
-    cell.textContent = value;
-    grid.append(term, cell);
+    mount(view);
+    this.disposers.push(() => {
+      view.unmount();
+    });
   }
 }

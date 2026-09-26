@@ -454,6 +454,60 @@ describe("the spine", () => {
 });
 
 // ===========================================
+// The chronicle
+// ===========================================
+
+describe("the chronicle, written as the spine moves (#1179)", () => {
+  it("records each act's start day and missions as the act begins", () => {
+    const rules = storyRulesOf(LIVE_SPECIMEN, INTACT_POD, LAUNCH_WINDOW);
+    // Live Specimen is won on day 5 after 4 missions: Act II begins.
+    const second = play(flagged([]), LIVE_SPECIMEN, "won", rules).state;
+    expect(second.progress.chronicle?.acts).toEqual([
+      { act: "act-2", day: 5, missionsPlayed: 4 },
+    ]);
+    // Intact Pod on day 30 after 20 missions: Act III begins.
+    const later: OverworldState = {
+      ...second,
+      day: 30,
+      progress: { ...second.progress, missionsPlayed: 20 },
+    };
+    const third = play(later, INTACT_POD, "won", rules).state;
+    expect(third.progress.chronicle?.acts).toEqual([
+      { act: "act-2", day: 5, missionsPlayed: 4 },
+      { act: "act-3", day: 30, missionsPlayed: 20 },
+    ]);
+    expect(third.progress.actStartedAt).toBe(20);
+  });
+
+  it("records each story win in the act it was won in, before the act it opens", () => {
+    const rules = storyRulesOf(LIVE_SPECIMEN, INTACT_POD);
+    const won = play(flagged([]), LIVE_SPECIMEN, "won", rules).state;
+    expect(won.progress.chronicle?.storyWins).toEqual([
+      { storyId: "live-specimen", act: "act-1", day: 5 },
+    ]);
+    expect(won.progress.act).toBe("act-2");
+  });
+
+  it("records the winning mission and no act when the spine ends in victory", () => {
+    const won = play(flagged([], {}, "finale"), SPORE_PLATFORM, "won").state;
+    expect(won.progress.flags).toEqual(["campaign-won"]);
+    expect(won.progress.chronicle).toEqual({
+      acts: [],
+      storyWins: [{ storyId: "spore-platform", act: "finale", day: 5 }],
+      nemesesKilled: [],
+    });
+  });
+
+  it("writes nothing for a loss", () => {
+    for (const rule of [LIVE_SPECIMEN, SPORE_PLATFORM]) {
+      const state = flagged(["last-hope"], {}, rule.act);
+      const lost = play(state, rule, "lost").state;
+      expect(lost.progress.chronicle).toBeUndefined();
+    }
+  });
+});
+
+// ===========================================
 // D7: the platform
 // ===========================================
 

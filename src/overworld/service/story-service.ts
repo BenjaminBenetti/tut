@@ -22,6 +22,10 @@ import type {
   StoryMissionRules,
 } from "../model/story-mission-rule";
 import type { StorySpine } from "../model/story-spine";
+import {
+  chronicleActStart,
+  chronicleStoryWin,
+} from "./campaign-chronicle-service";
 import { advanceAct, hasFlag, withFlag } from "./campaign-progress-service";
 import { addCityInfestation } from "./city-infestation-service";
 import { formFirstHive } from "./hive-service";
@@ -115,7 +119,7 @@ export function onTechUnlocked<TState extends CampaignState>(
  * changes nothing.
  *
  * ```
- *   won ──► storyWon + id, retry delay dropped ──► rule.onWon effects, in order
+ *   won ──► storyWon + id, retry delay dropped, chronicled ──► rule.onWon effects, in order
  *   lost or extracted ──► rule.onLost:
  *     retry     storyRetryDay[id] = day + delayDays
  *     platform  first:  every city + cityInfestation, platform-failed
@@ -146,7 +150,11 @@ export function onStoryMissionResolved(
   if (result.outcome === "won") {
     const recorded: OverworldState = {
       ...state,
-      progress: recordStoryWin(state.progress, rule.id),
+      progress: chronicleStoryWin(
+        recordStoryWin(state.progress, rule.id),
+        rule.id,
+        state.day,
+      ),
     };
     return applyStoryEffects(recorded, rule.onWon, ctx);
   }
@@ -291,9 +299,10 @@ function applyStoryEffect(
 }
 
 /**
- * Ends the current act: into the next act if it exists, scripting the
- * first hive when the spine says entering it does, and otherwise the
- * campaign is won.
+ * Ends the current act: into the next act if it exists, chronicling
+ * the day and mission count it began at and scripting the first hive
+ * when the spine says entering it does, and otherwise the campaign is
+ * won.
  */
 function advanceStoryAct(
   state: OverworldState,
@@ -306,7 +315,7 @@ function advanceStoryAct(
   }
   const advanced: OverworldState = {
     ...state,
-    progress: advanceAct(state.progress, to),
+    progress: chronicleActStart(advanceAct(state.progress, to), state.day),
   };
   const events: CampaignEvent[] = [
     { type: ACT_ADVANCED, payload: { from, to } },

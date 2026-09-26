@@ -1,3 +1,10 @@
+import type {
+  ChronicleAct,
+  ChronicleStoryWin,
+  NemesisFate,
+  SquadRollEntry,
+} from "./outcome-chronicle";
+
 // ===========================================
 // Outcome kinds
 // ===========================================
@@ -44,6 +51,21 @@ export type GameOutcomeCause = "threat" | "story";
  * Campaign statistics frozen at the moment it ended, for the end screen.
  * Every value is derived from state when the outcome is set, so the
  * summary never drifts from the save it sits in.
+ *
+ * The chronicle fields (from `missionsPlayed` down) are optional: an
+ * outcome saved before they existed has none and still renders, and an
+ * act record that is not complete is left out rather than guessed.
+ *
+ * ```
+ *   GameOutcomeSummary
+ *   ├── citiesLost … finalThreat   the numbers, always present
+ *   ├── missionsPlayed?, missionsWon?   from campaign progress
+ *   ├── acts?              the timeline: each act's days, missions, ending
+ *   ├── storyWins?         each story mission won, with act and day
+ *   ├── nemeses?           killed on a day, or still out there
+ *   ├── squad?             the mechs and squads that finished it
+ *   └── platformAttempts?  1, or 2 when Last Hope was needed (arc D7)
+ * ```
  */
 export interface GameOutcomeSummary {
   /** Cities at maximum infestation when the campaign ended. */
@@ -58,6 +80,27 @@ export interface GameOutcomeSummary {
   readonly daysSurvived: number;
   /** Global threat when the campaign ended, in the threat range. */
   readonly finalThreat: number;
+  /** Every resolved mission, won, extracted or lost (`CampaignProgress.missionsPlayed`). */
+  readonly missionsPlayed?: number;
+  /** The won ones (`CampaignProgress.missionsWon`). */
+  readonly missionsWon?: number;
+  /**
+   * Every act the campaign reached, in order. Absent when the campaign
+   * did not record each act's start (a save from before the chronicle).
+   */
+  readonly acts?: readonly ChronicleAct[];
+  /** Story missions won, in order; absent without a chronicle. */
+  readonly storyWins?: readonly ChronicleStoryWin[];
+  /** Nemeses killed (in kill order), then those still out there. */
+  readonly nemeses?: readonly NemesisFate[];
+  /** The roster's mechs, then its squads, as they finished the campaign. */
+  readonly squad?: readonly SquadRollEntry[];
+  /**
+   * Spore Platform assaults made: 1, or 2 when the first failed and Last
+   * Hope brought it back (arc D7). Absent when the platform was never
+   * assaulted.
+   */
+  readonly platformAttempts?: number;
 }
 
 // ===========================================

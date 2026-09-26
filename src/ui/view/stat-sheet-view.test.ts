@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { err, ok } from "../../core/model/result";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
-import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
+import {
+  ACID_RESISTANT_PLATING,
+  ARMOUR_PIERCING_ROUNDS,
+  SEISMIC_SENSOR,
+} from "../../roster/data/autopsy-parts";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
@@ -141,5 +145,56 @@ describe("StatSheetView resistances (campaign arc §10.2)", () => {
   it("lists the acid plating's resistance on the Systems line of the mech that fits it", () => {
     expect(systemsWith([ACID_RESISTANT_PLATING])).toContain("acid resist 3");
     expect(systemsWith(["utility-radiator"])).not.toContain("resist");
+  });
+});
+
+describe("StatSheetView autopsy counters (campaign arc §10.2)", () => {
+  /** The starter mech with `utilityIds` fitted, mounted; its root. */
+  const sheetWith = (utilityIds: readonly string[]): HTMLElement => {
+    const root = document.createElement("div");
+    const view = new StatSheetView(UNIT_TUNING.mech);
+    view.mount(root);
+    const sheet = validateLoadout(
+      { ...STARTER_LOADOUT, utilityIds: [...utilityIds] },
+      new StaticPartCatalogue(STARTER_PARTS),
+      MECH_RATING_TUNING,
+      UPGRADE_TUNING,
+    );
+    expect(sheet.ok, JSON.stringify(sheet)).toBe(true);
+    view.update(sheet);
+    return root;
+  };
+  /** The Systems line's text. */
+  const systemsOf = (root: HTMLElement): string =>
+    root.querySelector<HTMLElement>('[data-field="systems"]')?.textContent ??
+    "";
+  /** Each weapon's field line, by weapon name. */
+  const weaponLines = (root: HTMLElement): Record<string, string> =>
+    Object.fromEntries(
+      [
+        ...root.querySelectorAll<HTMLElement>('[data-role="combat-weapon"]'),
+      ].map((block) => [
+        block.firstElementChild?.textContent ?? "",
+        block.lastElementChild?.textContent ?? "",
+      ]),
+    );
+
+  it("shows the rounds' pierce on the Systems line and on the autocannon, not the missile pod", () => {
+    const root = sheetWith([ARMOUR_PIERCING_ROUNDS]);
+    expect(systemsOf(root)).toContain("pierces 2 armour");
+    const lines = weaponLines(root);
+    expect(lines.Autocannon).toContain("pen 2 · AP +2");
+    expect(lines["Missile Pod"]).toBeDefined();
+    expect(lines["Missile Pod"]).not.toContain("AP");
+  });
+
+  it("shows the sensor's reach on the Systems line of the mech that carries it", () => {
+    expect(systemsOf(sheetWith([SEISMIC_SENSOR]))).toContain(
+      "reveals burrowed bugs within 10",
+    );
+    const bare = sheetWith(["utility-radiator"]);
+    expect(systemsOf(bare)).not.toContain("burrowed");
+    expect(systemsOf(bare)).not.toContain("pierces");
+    expect(Object.values(weaponLines(bare)).join()).not.toContain("AP");
   });
 });

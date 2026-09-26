@@ -16,6 +16,7 @@ import { createOverworldCommandDispatcher } from "../../overworld/service/comman
 import { registerTechCommands } from "../../overworld/service/tech-command-handlers";
 import { BUG_SPECIES } from "../../bugs/data/species";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
+import { KILL_GROUPS } from "../../bugs/data/kill-groups";
 import { campaignTechConditions } from "../../overworld/service/campaign-tech-conditions";
 import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
 import { STARTER_PARTS } from "../../roster/data/parts";
@@ -698,7 +699,10 @@ describe("TechTreeScreen with hidden and conditional nodes", () => {
       };
     };
     const conditionsOf = (state: GameState): TechConditions =>
-      campaignTechConditions(state.overworld.progress);
+      campaignTechConditions(
+        state.overworld.progress,
+        Object.values(KILL_GROUPS),
+      );
 
     // Before the kill: no label, no xenobiology spoke.
     const before = new FakeGraphHost();

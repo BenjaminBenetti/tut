@@ -25,6 +25,17 @@ describe("techNodeKindText (ADR 0013 §2.7)", () => {
     );
   });
 
+  it("names the burrower, the Broodmother and the armoured carapace (campaign arc §10.2)", () => {
+    const kindOf = (id: string): string | undefined => {
+      const node = AUTOPSY_NODES.find((each) => each.id === id);
+      return node && techNodeKindText(node, SPECIES);
+    };
+    expect(kindOf("tech.burrower-autopsy")).toBe("Autopsy: Burrower");
+    expect(kindOf("tech.broodmother-autopsy")).toBe("Autopsy: Broodmother");
+    // A kill group is no species, so its id's words name it.
+    expect(kindOf("tech.armoured-autopsy")).toBe("Autopsy: Armoured carapace");
+  });
+
   it("falls back to the species id's words, or to the kind alone without a kill flag", () => {
     const autopsy = {
       kind: "autopsy",

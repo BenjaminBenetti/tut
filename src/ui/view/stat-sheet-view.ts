@@ -7,7 +7,7 @@ import type {
 import type { MechCombatProfile } from "../../tactical/model/mech-combat-profile";
 import type { MechUnitTuning } from "../../tactical/model/unit-tuning";
 import { mechCombatProfile } from "../../tactical/service/mech-combat-profile";
-import { damageResistanceText } from "../service/damage-resistance-text";
+import { counterTraitText } from "../service/counter-trait-text";
 import { formatCredits, formatWhole } from "../service/format";
 import type { SheetPreview } from "../service/sheet-preview";
 import { formatDelta } from "../service/sheet-preview";
@@ -247,7 +247,7 @@ export class StatSheetView {
                     `ablative ${String(systems.ablativeHits)} hits × ${String(systems.ablativeAbsorption)}`,
                   ]
                 : []),
-              ...damageResistanceText(systems.resist),
+              ...counterTraitText(systems),
               ...(systems.equipment ?? []).map(
                 (id) =>
                   ({

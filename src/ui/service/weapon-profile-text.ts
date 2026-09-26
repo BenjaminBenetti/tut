@@ -11,11 +11,14 @@ import { formatWhole } from "./format";
  * the same way: the four numbers every weapon has, then the blast, the
  * fire and the force only when the weapon has them (#1121), and last
  * the damage tags (campaign arc §10.2), which say what a resistance
- * answers.
+ * answers. A gun loaded with armour-piercing rounds (`pierce`, arc
+ * §10.2) says so right after its own penetration, apart from it, so
+ * the player can see what the rounds add.
  *
  * ```
  *   range 14 · acc 70 · dmg 22 · pen 1 · blast 1 · demo 1
  *   range 6 · acc 60 · dmg 4 · pen 1 · acid
+ *   range 10 · acc 70 · dmg 18 · pen 2 · AP +2
  * ```
  *
  * @param profile - The weapon's field profile.
@@ -23,6 +26,9 @@ import { formatWhole } from "./format";
  */
 export function weaponProfileText(profile: WeaponProfile): string {
   const extras = [
+    ...((profile.pierce ?? 0) > 0
+      ? [`AP +${formatWhole(profile.pierce ?? 0)}`]
+      : []),
     ...(profile.heat === undefined
       ? []
       : [`heat +${formatWhole(profile.heat)}`]),

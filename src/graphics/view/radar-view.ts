@@ -7,7 +7,12 @@ import type { FrameUpdatable } from "../model/frame-updatable";
 import type { ModelLoader } from "../model/model-loader";
 import { RADAR_SMOKE } from "../data/smoke-plumes";
 import { createFalloffTexture } from "../service/falloff-texture";
-import { IntelBlipPainter, RADAR_BLIP_COLOUR } from "./intel-blip-painter";
+import type { BlipShape } from "./intel-blip-painter";
+import {
+  IntelBlipPainter,
+  RADAR_BLIP_COLOUR,
+  SEISMIC_BLIP_COLOUR,
+} from "./intel-blip-painter";
 import { SmokePlume } from "./smoke-plume";
 import { tileTopCentre } from "./tactical-map-view";
 
@@ -73,6 +78,8 @@ export class RadarView implements FrameUpdatable, Disposable {
   private wanted = new Set<string>();
   /** Paints every contact red; the objective marker view paints the same mark white (#1173). */
   private readonly blips = new IntelBlipPainter(RADAR_BLIP_COLOUR);
+  /** Paints a seismic sensor's burrowed contacts amber, as ripples (campaign arc §10.2). */
+  private readonly seismicBlips = new IntelBlipPainter(SEISMIC_BLIP_COLOUR);
   /** Soft disc every smoke puff is cut from; owned here, shared by every plume. */
   private readonly smokeFalloff = createFalloffTexture();
 
@@ -103,7 +110,15 @@ export class RadarView implements FrameUpdatable, Disposable {
    * Draws only supplied intel; hidden enemy models never enter this
    * layer. Every scanner's battery is read off `radars` on every call,
    * so a burnout shows on the next update from state and a resumed save
-   * comes back smoking.
+   * comes back smoking. A `"burrowed"` contact — a seismic sensor's
+   * (campaign arc §10.2) — is drawn as an amber ripple, so "under the
+   * ground, here" never reads as a red enemy standing there.
+   *
+   * ```
+   *   unit        red   round     ◉
+   *   structure   red   diamond   ◈
+   *   burrowed    amber ripple   (◉)
+   * ```
    */
   async updateRadar(
     radars: readonly Radar[],
@@ -117,12 +132,9 @@ export class RadarView implements FrameUpdatable, Disposable {
     }
     this.contacts.clear();
     for (const contact of contacts) {
+      const [painter, shape] = this.markOf(contact);
       this.contacts.add(
-        this.blips.paint(
-          contact.pos,
-          contact.kind === "structure" ? "diamond" : "round",
-          `radar-contact-${contact.kind}`,
-        ),
+        painter.paint(contact.pos, shape, `radar-contact-${contact.kind}`),
       );
     }
     await Promise.all(radars.map((radar) => this.place(radar)));
@@ -151,12 +163,33 @@ export class RadarView implements FrameUpdatable, Disposable {
     this.root.clear();
     this.root.removeFromParent();
     this.blips.dispose();
+    this.seismicBlips.dispose();
     this.smokeFalloff.dispose();
   }
 
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * The painter and shape one contact is drawn with.
+   *
+   * @param contact - A radar or seismic contact.
+   * @returns Red round for a unit, red diamond for a structure, amber
+   *   ripple for a bug under the ground.
+   */
+  private markOf(
+    contact: RadarContact,
+  ): readonly [IntelBlipPainter, BlipShape] {
+    switch (contact.kind) {
+      case "burrowed":
+        return [this.seismicBlips, "ripple"];
+      case "structure":
+        return [this.blips, "diamond"];
+      case "unit":
+        return [this.blips, "round"];
+    }
+  }
 
   /**
    * Places one scanner, discarding a load when the view no longer wants

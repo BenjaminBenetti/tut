@@ -20,6 +20,13 @@ export const RADAR_BLIP_COLOUR = 0xe0453c;
 /** Colour of an objective's location blip (#1173): white, so it never reads as an enemy. */
 export const OBJECTIVE_BLIP_COLOUR = 0xffffff;
 
+/**
+ * Colour of a seismic sensor's mark on a burrowed bug's column (campaign
+ * arc §10.2): amber, the colour of disturbed earth, so "under the ground,
+ * here" never reads as the red of an enemy standing there.
+ */
+export const SEISMIC_BLIP_COLOUR = 0xf0a030;
+
 /** Draw order of every blip: above fog, roofs and the marks painted on the map. */
 export const BLIP_RENDER_ORDER = 20;
 
@@ -32,9 +39,11 @@ const BLIP_LIFT = 0.12;
 
 /**
  * The halo a blip wears around its dot. A round halo means a unit; a
- * four-segment ring, drawn as a diamond on screen, means a fixed structure.
+ * four-segment ring, drawn as a diamond on screen, means a fixed
+ * structure; a round halo inside a second, wider ring — a ripple
+ * spreading out from the column — means something under the ground.
  */
-export type BlipShape = "round" | "diamond";
+export type BlipShape = "round" | "diamond" | "ripple";
 
 // ===========================================
 // Intel blip painter
@@ -50,6 +59,7 @@ export type BlipShape = "round" | "diamond";
  * ```
  *   round     ◉    a unit somewhere on that tile
  *   diamond   ◈    a structure standing on it
+ *   ripple   (◉)   something under the ground at that column
  * ```
  *
  * Owns the geometry and the material it hands out; the meshes it makes
@@ -68,6 +78,8 @@ export class IntelBlipPainter implements Disposable {
    * ring with its corners on the axes came out as a flat screen box.
    */
   private readonly diamondHalo = new RingGeometry(0.3, 0.41, 4, 1, Math.PI / 4);
+  /** The ripple's outer ring: thin and wide, the tremor spreading from the column. */
+  private readonly rippleRing = new RingGeometry(0.4, 0.45, 32);
   private readonly material: MeshBasicMaterial;
 
   // ===========================================
@@ -99,19 +111,18 @@ export class IntelBlipPainter implements Disposable {
    * One blip, positioned over `pos` and ready to be added to a layer.
    *
    * @param pos - The tile the intel points at.
-   * @param shape - Round for a unit, diamond for a structure.
+   * @param shape - Round for a unit, diamond for a structure, ripple for
+   *   something under the ground.
    * @param name - Scene-graph name, for tests and inspection.
-   * @returns The blip's group: a dot and a halo lying flat on the tile.
+   * @returns The blip's group: a dot and its halo (two rings for a
+   *   ripple) lying flat on the tile.
    */
   paint(pos: TileCoord, shape: BlipShape, name: string): Group {
     const blip = new Group();
     blip.name = name;
     const at = tileTopCentre(pos);
     blip.position.set(at.x, at.y + BLIP_LIFT, at.z);
-    for (const geometry of [
-      this.dot,
-      shape === "diamond" ? this.diamondHalo : this.roundHalo,
-    ]) {
+    for (const geometry of this.geometriesOf(shape)) {
       const mark = new Mesh(geometry, this.material);
       mark.rotation.x = -Math.PI / 2;
       mark.renderOrder = BLIP_RENDER_ORDER;
@@ -125,6 +136,30 @@ export class IntelBlipPainter implements Disposable {
     this.dot.dispose();
     this.roundHalo.dispose();
     this.diamondHalo.dispose();
+    this.rippleRing.dispose();
     this.material.dispose();
+  }
+
+  // ===========================================
+  // Private Methods
+  // ===========================================
+
+  /**
+   * The flat pieces one shape of blip is made of, dot first.
+   *
+   * @param shape - The blip's shape.
+   * @returns The shared geometries to lay on the tile.
+   */
+  private geometriesOf(
+    shape: BlipShape,
+  ): readonly (CircleGeometry | RingGeometry)[] {
+    switch (shape) {
+      case "diamond":
+        return [this.dot, this.diamondHalo];
+      case "ripple":
+        return [this.dot, this.roundHalo, this.rippleRing];
+      case "round":
+        return [this.dot, this.roundHalo];
+    }
   }
 }

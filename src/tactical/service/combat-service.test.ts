@@ -46,8 +46,11 @@ import { PassMask } from "../../mapgen/model/pass-mask";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { previewTileAttack, tileWeaponOptions } from "./combat-service";
 import { emptyVision } from "./vision-service";
-import { SPITTER } from "../../bugs/data/species";
-import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
+import { BRUTE_ARMOURED, SPITTER } from "../../bugs/data/species";
+import {
+  ACID_RESISTANT_PLATING,
+  ARMOUR_PIERCING_ROUNDS,
+} from "../../roster/data/autopsy-parts";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
@@ -1898,6 +1901,105 @@ describe("a tagged hit on a mech that resists the tag (campaign arc §10.2)", ()
   it("turns the spitter's own spit, a one-point scratch on bare plate, to nothing", () => {
     expect(hit(spitter(), bare())).toBe(1);
     expect(hit(spitter(), plated())).toBe(0);
+  });
+});
+
+// ===========================================
+// Armour-piercing rounds (campaign arc §10.2)
+// ===========================================
+
+describe("a mech's armour-piercing rounds against an armoured brute (campaign arc §10.2)", () => {
+  const PARTS = new StaticPartCatalogue(STARTER_PARTS);
+  const AT = { pos: { x: 4, y: 0, z: 3 }, facing: "s" } as const;
+  const FROM = { pos: { x: 1, y: 0, z: 3 }, facing: "n" } as const;
+  /** The starter's arm weapon, the autocannon, named by its slot. */
+  const AUTOCANNON = "arm-weapon";
+
+  /** The starter mech with `utilityIds` fitted, through the unit factory. */
+  function builtMech(utilityIds: readonly string[]): UnitBuild {
+    const loadout = { ...STARTER_LOADOUT, utilityIds: [...utilityIds] };
+    const sheet = validateLoadout(
+      loadout,
+      PARTS,
+      MECH_RATING_TUNING,
+      UPGRADE_TUNING,
+    );
+    if (!sheet.ok) throw new Error(JSON.stringify(sheet.error));
+    return mechUnit(
+      createMech(loadout, "mech-1", "Hammerhead"),
+      sheet.value,
+      AT,
+      {
+        ids: new SequentialIdGenerator(),
+        tuning: UNIT_TUNING,
+      },
+    );
+  }
+
+  /** The mech facing a shipped armoured brute, in the player phase. */
+  function facingBrute(mech: UnitBuild): TacticalState {
+    const brute = bugUnit(BRUTE_ARMOURED, FROM, {
+      ids: new SequentialIdGenerator(),
+    });
+    const field = missionWith(openField().build(), [
+      { ...mech.unit, id: "mech" },
+      { ...brute.unit, id: "brute" },
+    ]);
+    return {
+      ...field,
+      templates: {
+        ...field.templates,
+        [mech.template.id]: mech.template,
+        [brute.template.id]: brute.template,
+      },
+    };
+  }
+
+  /** The damage one certain autocannon hit does, rolled at `end` of its band. */
+  function rolled(m: TacticalState, end: "low" | "high"): number {
+    const result = resolveAttack(
+      m,
+      attack("mech", "brute", AUTOCANNON),
+      ctxWith(riggedRng(true, end)),
+      T,
+      DEPS,
+    );
+    if (!result.ok) throw new Error(JSON.stringify(result.error));
+    const resolved = result.value.events.find(
+      (event) => event.type === ATTACK_RESOLVED,
+    );
+    if (resolved?.type !== ATTACK_RESOLVED) throw new Error("no attack");
+    expect(resolved.payload.hit).toBe(true);
+    return resolved.payload.damage;
+  }
+
+  /** The autocannon's previewed damage band. */
+  function previewed(m: TacticalState): readonly number[] {
+    const preview = previewAttack(m, "mech", "brute", T, AUTOCANNON);
+    if (!preview.ok) throw new Error(JSON.stringify(preview.error));
+    return preview.value.damage;
+  }
+
+  it("hits the armoured brute as a plain brute: 13–22 with the rounds, 11–20 without", () => {
+    // 18 ± 25% is 14–23; the brute's 5 plate less the gun's 2 pen is
+    // 3 (11–20); less the rounds' 2 more it is 1 (13–22), the plain
+    // brute's 3 plate less 2 pen.
+    expect(BRUTE_ARMOURED.armor).toBe(5);
+    expect(previewed(facingBrute(builtMech(["utility-radiator"])))).toEqual([
+      11, 20,
+    ]);
+    expect(previewed(facingBrute(builtMech([ARMOUR_PIERCING_ROUNDS])))).toEqual(
+      [13, 22],
+    );
+  });
+
+  it("rolls exactly what the preview promised, at both ends of the band", () => {
+    for (const utility of ["utility-radiator", ARMOUR_PIERCING_ROUNDS]) {
+      const m = facingBrute(builtMech([utility]));
+      expect([rolled(m, "low"), rolled(m, "high")], utility).toEqual(
+        previewed(m),
+      );
+    }
   });
 });
 

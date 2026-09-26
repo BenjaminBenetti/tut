@@ -110,6 +110,16 @@ export interface WeaponProfile extends WeaponMechanics {
    * resistance among them off every hit (`damageRange`).
    */
   readonly tags?: readonly DamageTag[];
+  /**
+   * Armour points the firer's armour-piercing rounds strip off each hit,
+   * on top of `armorPen` (campaign arc §10.2): a mech carrying the
+   * armoured autopsy's rounds loads them into every ballistic weapon it
+   * fits (`isBallistic`). Absent means none. Kept apart from `armorPen`
+   * so the weapon line can say where the extra comes from and so the
+   * rules that read the gun's own penetration — how loud it is
+   * (`noiseOf`) — hear the gun, not its ammunition.
+   */
+  readonly pierce?: number;
 }
 
 /** Reaction shots one overwatch with this weapon fires; `1` when it declares none (#1138). */
@@ -153,6 +163,54 @@ export function isMelee(weapon: WeaponProfile): boolean {
  */
 export function isMeleeRange(range: number): boolean {
   return range <= MELEE_RANGE;
+}
+
+// ===========================================
+// Ballistic
+// ===========================================
+
+/** What `isBallistic` reads off a weapon: a part's, a stat sheet's or a profile's. */
+export type BallisticSignature = Pick<
+  WeaponProfile,
+  "range" | "energy" | "beam" | "guided" | "aoe" | "aoeEffect"
+>;
+
+/**
+ * True for a weapon that fires solid rounds straight at one thing:
+ * what armour-piercing rounds can be loaded into (campaign arc §10.2).
+ * Everything else is answered by what the weapon already declares:
+ *
+ * ```
+ *   melee (range 1)          pile driver          a ram, not a round
+ *   energy or a beam         laser, lance, beam   no round at all
+ *   guided                   guided missile rack  a missile
+ *   a blast or an effect     missile pod, mortar, scatter cannon,
+ *                            flamer, howitzer…    shells that burst
+ *   anything else            autocannon, heavy autocannon, rotary
+ *                            cannon, railgun, siege railgun ──► true
+ * ```
+ *
+ * Derived rather than declared so no weapon part has to be edited to
+ * say so, and a new gun is sorted by the same facts the rules already
+ * read.
+ *
+ * @param weapon - The weapon's reach and behaviours.
+ * @returns True when it takes armour-piercing rounds.
+ */
+export function isBallistic(weapon: BallisticSignature): boolean {
+  return (
+    !isMeleeRange(weapon.range) &&
+    weapon.energy !== true &&
+    weapon.beam !== true &&
+    weapon.guided !== true &&
+    weapon.aoe === undefined &&
+    weapon.aoeEffect === undefined
+  );
+}
+
+/** Armour points the weapon's rounds pierce beyond its own penetration; `0` when it loads none. */
+export function pierceOf(weapon: Pick<WeaponProfile, "pierce">): number {
+  return Math.max(0, weapon.pierce ?? 0);
 }
 
 // ===========================================

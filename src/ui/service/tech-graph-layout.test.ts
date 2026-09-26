@@ -251,18 +251,40 @@ describe("layoutTechGraph", () => {
    * ```
    */
   it("adds xenobiology as the eighth family once an autopsy shows, growing the rings to fit", () => {
-    const eight = layoutTechGraph(CATALOGUE, EVERY_AUTOPSY);
+    const eight = layoutTechGraph(CATALOGUE, {
+      flags: new Set(["killed:spitter"]),
+    });
     expect(eight.families.map((f) => f.id)).toEqual([
       ...layout.families.map((f) => f.id),
       "xenobiology",
     ]);
-    expect(eight.nodes).toHaveLength(
-      layout.nodes.length + AUTOPSY_NODES.length,
-    );
+    expect(eight.nodes).toHaveLength(layout.nodes.length + 1);
     expect(eight.rings.family).toBeCloseTo(7.639, 3);
     expect(eight.rings.tier2).toBeCloseTo(30.558, 3);
     expect(eight.rings.tier3).toBeCloseTo(36.558, 3);
     expect(brokenInvariants(CATALOGUE, eight)).toEqual([]);
+  });
+
+  /**
+   * With all five autopsies showing (campaign arc §10.2) xenobiology
+   * holds five tier 2 nodes, one more than any other family, so it is
+   * the widest on the inner ring and sets it.
+   *
+   * ```
+   *   tier 2 = 5 · 6 · 8 / 2π  ≈ 38.20
+   *   tier 3 = tier 2 + 6      ≈ 44.20
+   * ```
+   */
+  it("widens the inner ring for five autopsies side by side", () => {
+    const every = layoutTechGraph(CATALOGUE, EVERY_AUTOPSY);
+    expect(AUTOPSY_NODES).toHaveLength(5);
+    expect(every.nodes).toHaveLength(
+      layout.nodes.length + AUTOPSY_NODES.length,
+    );
+    expect(every.rings.family).toBeCloseTo(7.639, 3);
+    expect(every.rings.tier2).toBeCloseTo(38.197, 3);
+    expect(every.rings.tier3).toBeCloseTo(44.197, 3);
+    expect(brokenInvariants(CATALOGUE, every)).toEqual([]);
   });
 
   it("puts tier 2 on the inner ring and tier 3 on the outer, each inside its family's sector, linked from its family or prerequisite and clear of the others", () => {

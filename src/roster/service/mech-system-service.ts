@@ -10,11 +10,20 @@ import type { MechPart } from "../model/mech-part";
  * Aggregates passive fittings independently of weapon damage and upgrade
  * multipliers. A mech that resists anything carries `resist`; one that
  * resists nothing carries no such field, so its systems are what they
- * were before resistances existed.
+ * were before resistances existed. The autopsy counters of campaign arc
+ * §10.2 follow the same rule: `pierce` and `seismicRange` appear only
+ * on a mech that fits armour-piercing rounds or a seismic sensor, each
+ * at the best any fitted part gives, since a second belt of the same
+ * rounds or a second sensor adds nothing the first did not.
  */
 export function mechSystemsOf(parts: readonly MechPart[]): MechSystems {
   const traits = parts.map((part) => part.traits ?? {});
   const resist = bestResistances(traits);
+  const pierce = Math.max(0, ...traits.map((trait) => trait.pierce ?? 0));
+  const seismicRange = Math.max(
+    0,
+    ...traits.map((trait) => trait.seismicRange ?? 0),
+  );
   const sum = (
     key: "sightBonus" | "braceAccuracy" | "stationaryAccuracy" | "ablativeHits",
   ): number => traits.reduce((total, trait) => total + (trait[key] ?? 0), 0);
@@ -64,6 +73,8 @@ export function mechSystemsOf(parts: readonly MechPart[]): MechSystems {
     ),
     equipment: [...new Set(traits.flatMap((trait) => trait.equipment ?? []))],
     ...(resist === undefined ? {} : { resist }),
+    ...(pierce > 0 ? { pierce } : {}),
+    ...(seismicRange > 0 ? { seismicRange } : {}),
   };
 }
 

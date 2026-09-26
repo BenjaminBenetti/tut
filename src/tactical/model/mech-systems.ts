@@ -26,6 +26,22 @@ export interface MechTraits {
    * nothing.
    */
   readonly resist?: DamageResistances;
+  /**
+   * Armour points each hit of the mech's ballistic weapons strips off
+   * the target, on top of the weapon's own `armorPen` (campaign arc
+   * §10.2): the armoured autopsy's armour-piercing rounds give `2`.
+   * Which weapons are ballistic is `isBallistic`. Absent on every part
+   * and mech that loads no such rounds.
+   */
+  readonly pierce?: number;
+  /**
+   * Tiles, by the ground-plane Manhattan measure, within which the mech
+   * feels burrowed bugs through the ground (campaign arc §10.2): the
+   * Burrower autopsy's seismic sensor gives `10`. Read by
+   * `seismicContacts`. Absent on every part and mech that carries no
+   * sensor.
+   */
+  readonly seismicRange?: number;
 }
 
 /** Frozen thermal and fitting capabilities of a newly assembled mech. */

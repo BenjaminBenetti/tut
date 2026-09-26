@@ -3,6 +3,7 @@ import type { MechCombatProfile } from "../model/mech-combat-profile";
 import type { MechUnitTuning } from "../model/unit-tuning";
 import type { UnitWeapon } from "../model/unit-weapon";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
+import { isBallistic } from "../model/weapon-profile";
 
 // ===========================================
 // Profile
@@ -63,7 +64,9 @@ export function mechCombatProfile(
  * gets its own range and penetration from the part, its own damage from
  * that part's firepower, and the mech's base accuracy adjusted by that
  * part's own modifier — so an accurate laser and a wild mortar differ,
- * where before every weapon fired at the sheet's average.
+ * where before every weapon fired at the sheet's average. A mech whose
+ * systems carry `pierce` (armour-piercing rounds, campaign arc §10.2)
+ * loads it into each ballistic weapon's profile (`isBallistic`).
  *
  * A mech with no weapon fitted falls back to the tuning's profile, so a
  * bare chassis is still a unit rather than a crash. That is a loadout
@@ -91,6 +94,7 @@ function mechWeapons(
     (sum, weapon) => sum + weapon.accuracy,
     0,
   );
+  const pierce = sheet.systems?.pierce ?? 0;
   return sheet.weapons.map((weapon) => ({
     id: weapon.id,
     name: weapon.name,
@@ -131,6 +135,10 @@ function mechWeapons(
       ...(weapon.demoForce === undefined
         ? {}
         : { demoForce: weapon.demoForce }),
+      // Armour-piercing rounds (campaign arc §10.2) are loaded into the
+      // guns that fire rounds, and only those: a laser or a mortar
+      // carries none.
+      ...(pierce > 0 && isBallistic(weapon) ? { pierce } : {}),
     },
     ...(sheet.systems === undefined ? { charges: tuning.charges } : {}),
   }));

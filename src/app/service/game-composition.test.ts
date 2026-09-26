@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { isCampaignFlagId } from "../../content/model/campaign-flag-id";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
+import { walkableTileNear } from "../../bugs/ai/bug-mission.test-helper";
+import { BROODMOTHER } from "../../bugs/data/species";
+import { placeBroodmother } from "../../bugs/service/broodmother-placement";
 import { UNKNOWN_COMMAND } from "../../overworld/model/command-dispatcher";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/overworld-command";
@@ -24,6 +27,7 @@ import { ACID_RESISTANT_PLATING } from "../../roster/data/autopsy-parts";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import { buildMech } from "../../overworld/model/build-mech-command";
 import { saveLoadout } from "../../overworld/model/save-loadout-command";
+import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import { UNIT_DIED } from "../../tactical/model/unit-died-event";
 import { isTechNodeHidden } from "../../tech/service/tech-status-service";
@@ -567,6 +571,149 @@ describe("composeGame", () => {
       game.session.state?.roster.mechs.some((mech) => mech.name === "Sealed"),
     ).toBe(true);
     expect(revealed).toEqual([[AUTOPSY]]);
+  });
+
+  describe("the W6 autopsies, revealed by a finished mission's kill (campaign arc §10.2)", () => {
+    /**
+     * Starts the campaign's mission, lets `kill` put a dead bug on the
+     * field, and finishes the mission won through the real resolver and
+     * launch handler. Returns the nodes the watcher announced.
+     */
+    function finishWithKill(
+      kill: (active: TacticalState) => {
+        state: TacticalState;
+        deadId: string;
+      },
+    ): { game: GameComposition; revealed: string[][] } {
+      const { game, revealed } = build();
+      const { mission, deployment } = campaignWithMission(game);
+      const store = game.session.store;
+      if (!store) throw new Error("no campaign");
+      store.dispatch(startMission(mission.id, deployment));
+      const started = game.session.state;
+      const active = started?.activeMission;
+      const first = active?.units[0];
+      if (!started || !active || !first) {
+        throw new Error("mission did not start");
+      }
+      const { state, deadId } = kill(active);
+      game.session.replace({
+        ...started,
+        activeMission: {
+          ...state,
+          objectives: state.objectives.map((o) => ({ ...o, complete: true })),
+          outcome: "won",
+          log: [
+            ...state.log,
+            {
+              type: UNIT_DIED,
+              payload: { unitId: deadId, killerId: first.id },
+            },
+          ],
+        },
+      });
+      expect(revealed).toEqual([]);
+      expect(game.session.store?.dispatch(finishMission(mission.id)).ok).toBe(
+        true,
+      );
+      return { game, revealed };
+    }
+
+    /** A dead bug of `species` cloned off the first unit on the field. */
+    const deadClone =
+      (species: string) =>
+      (active: TacticalState): { state: TacticalState; deadId: string } => {
+        const first = active.units[0];
+        if (!first) throw new Error("an empty field");
+        const dead: Unit = {
+          ...first,
+          id: `unit-dead-${species}`,
+          kind: "bug",
+          team: "bugs",
+          sourceId: species,
+          hp: 0,
+        };
+        return {
+          state: { ...active, units: [...active.units, dead] },
+          deadId: dead.id,
+        };
+      };
+
+    it("reveals the Broodmother autopsy when she is placed, killed and the mission finished", () => {
+      const { game, revealed } = finishWithKill((active) => {
+        const squad = active.units.find((unit) => unit.team === "tdf");
+        if (!squad) throw new Error("no squad");
+        const placed = placeBroodmother(
+          active,
+          walkableTileNear(
+            active,
+            { x: squad.pos.x + 8, y: squad.pos.y, z: squad.pos.z + 8 },
+            BROODMOTHER.footprint,
+          ),
+          {
+            ids: new SequentialIdGenerator({ counters: { unit: 900 } }),
+            species: BROODMOTHER,
+            scars: 0,
+          },
+        );
+        const her = placed.units.find(
+          (unit) => unit.sourceId === "broodmother",
+        );
+        if (!her) throw new Error("the Broodmother was not placed");
+        return {
+          state: {
+            ...placed,
+            units: placed.units.map((unit) =>
+              unit.id === her.id ? { ...unit, hp: 0 } : unit,
+            ),
+          },
+          deadId: her.id,
+        };
+      });
+      expect(game.session.state?.overworld.progress.speciesKilled).toEqual([
+        "broodmother",
+      ]);
+      expect(revealed).toEqual([["tech.broodmother-autopsy"]]);
+    });
+
+    it("reveals the Burrower autopsy on the first burrower killed", () => {
+      const { revealed } = finishWithKill(deadClone("burrower"));
+      expect(revealed).toEqual([["tech.burrower-autopsy"]]);
+    });
+
+    it.each(["swarmer-armoured", "lurker-armoured", "brute-armoured"])(
+      "reveals the one armoured carapace autopsy on the first %s killed",
+      (variant) => {
+        const { game, revealed } = finishWithKill(deadClone(variant));
+        expect(game.session.state?.overworld.progress.speciesKilled).toEqual([
+          variant,
+        ]);
+        expect(revealed).toEqual([["tech.armoured-autopsy"]]);
+        const state = game.session.state;
+        if (!state) throw new Error("no campaign");
+        expect(game.techConditionsOf(state).flags).toContain(
+          "killed:armoured-carapace",
+        );
+      },
+    );
+
+    it("keeps every W6 autopsy hidden after a mission that kills only a plain swarmer", () => {
+      const { game, revealed } = finishWithKill(deadClone("swarmer"));
+      expect(revealed).toEqual([]);
+      const state = game.session.state;
+      if (!state) throw new Error("no campaign");
+      for (const id of [
+        "tech.burrower-autopsy",
+        "tech.broodmother-autopsy",
+        "tech.armoured-autopsy",
+      ]) {
+        const node = game.content.tech.getNode(id);
+        if (!node) throw new Error(`the shipped tree lost ${id}`);
+        expect(isTechNodeHidden(node, game.techConditionsOf(state)), id).toBe(
+          true,
+        );
+      }
+    });
   });
 
   it("ships a tree whose every flag effect is a campaign flag the story records", () => {

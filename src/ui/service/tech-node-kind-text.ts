@@ -30,6 +30,8 @@ export interface TechNodeKindSources {
  *
  * ```
  *   kind "autopsy", requiresFlags ["killed:spitter"]  ──► "Autopsy: Spitter"
+ *   kind "autopsy", ["killed:armoured-carapace"]      ──► "Autopsy: Armoured carapace"
+ *                                                        (a kill group: its id's words)
  *   kind "autopsy", no kill flag                      ──► "Autopsy"
  *   kind "part"                                        ──► undefined
  * ```

@@ -80,6 +80,7 @@ import {
 import { MISSION_SETUP_RULES } from "../../tactical/service/missions/mission-setup-rules";
 import { createObjectiveDeadlineStep } from "../../tactical/service/objectives/objective-deadline-step";
 import { objectivePhaseSteps } from "../../tactical/service/objectives/objective-rules";
+import { sitrepPhaseSteps } from "../../tactical/service/sitreps/sitrep-service";
 import { createAbandonMissionHandler } from "../../tactical/service/abandon-mission-handler";
 import { createHarvestHandler } from "../../tactical/service/harvest-service";
 import type {
@@ -391,6 +392,9 @@ export function shippedTacticalHandlers(
         // Each objective kind's own step, after the wave lands, so the
         // count it just made is the one a defence is judged on (#1175).
         ...objectivePhaseSteps(),
+        // Each sitrep's own step, last, on a mission that carries it:
+        // City Ablaze relights its blazes every three turns.
+        ...sitrepPhaseSteps(),
       ],
       bugPhase,
     ),

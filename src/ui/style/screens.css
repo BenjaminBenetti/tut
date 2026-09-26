@@ -441,6 +441,77 @@
   justify-self: start;
 }
 
+/*
+ * So do the offer's sitreps (campaign arc §11): compact tags that wrap
+ * onto further lines rather than widen the row, so the list's width is
+ * whatever it was without them.
+ */
+.tut-missions__row .tut-missions__sitreps {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/*
+ * The briefing's sitrep rows: the coloured name and its text marker on
+ * one line, the effect under them. The marker repeats the tag's colour
+ * in words, so "helps" never rests on colour alone.
+ */
+.tut-sitreps {
+  margin: 0 0 var(--space-3);
+}
+
+.tut-sitreps__heading {
+  margin: 0 0 var(--space-1);
+  font-size: 11px;
+  font-weight: normal;
+}
+
+.tut-sitreps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tut-sitrep {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 2px var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--ui-warn);
+}
+
+.tut-sitrep--helps {
+  border-left-color: var(--ui-ok);
+}
+
+.tut-sitrep .tut-badge {
+  justify-self: start;
+}
+
+.tut-sitrep__marker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-warn);
+}
+
+.tut-sitrep--helps .tut-sitrep__marker {
+  color: var(--ui-ok);
+}
+
+.tut-sitrep__effect {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--ui-text-dim);
+}
+
 .tut-mission-details [data-field="description"] {
   margin: 0 0 var(--space-3);
 }

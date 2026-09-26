@@ -128,6 +128,22 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
                pod burst step ──► BugsSpawned{source: "pod"}            pod gone from the scene
   ```
 
+- **Sitreps are rolled onto the offer and applied from a third table** (campaign arc §11, #1179). The last offer decorator, from `overworld/service/missions/sitrep-offer.ts`, fills `Mission.sitreps` from campaign mission 10 on (`missionsPlayed + 1`). It uses `ACTS[act].sitrepSlots` slots at `sitrepChance` each, and draws only sitreps that have debuted and that the offer does not already carry. Story offers carry none. The list is then frozen on the offer. Tactical copies it to `TacticalState.sitreps`. `SITREP_RULES` in `tactical/service/sitreps/` maps each `SitrepId` to a `SitrepRule` with three optional parts:
+  - `setup` runs once at mission start, on the fork `sitrep:<id>`, in `SITREP_IDS` order.
+  - `sight` adjusts sight range, read by `sightRangeOf` and so shared by fog, overwatch and bug AI.
+  - `phaseStep` is appended to the END_TURN steps after the objective steps, runs only when the mission carries the sitrep, and gets its own fork.
+
+  Setup runs after the garrison, so a sitrep sees every unit and objective it must keep clear of. The first look runs last and adds to what a sitrep already revealed. The UI reads names and effect lines from `ui/data/sitrep-presentation.ts`: one tag row per sitrep on the briefing, and compact tags on the mission list row. See [`sitreps-briefing.png`](sitreps-briefing.png).
+
+  ```
+  startTacticalMission ──► recipe ──► map ──► deployment ──► base state (bugMix, sitreps copied)
+                       ──► MISSION_SETUP_RULES[typeId].setup ──► garrison (fork garrison-turrets)
+                       ──► applySitrepSetups: SITREP_RULES[id].setup? (fork sitrep:<id>) per sitrep
+                       ──► initialVision(state, known) ──► first look, unioned with explored
+  sightRangeOf(unit) ──► SITREP_RULES[id].sight? per sitrep ──► computeVision, unitCanSee
+  END_TURN ──► DEFAULT steps … objectivePhaseSteps() ──► sitrepPhaseSteps(): SITREP_RULES[id].phaseStep?
+  ```
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

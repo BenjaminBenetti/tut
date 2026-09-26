@@ -38,6 +38,40 @@ describe("MissionListView", () => {
   const cell = (row: HTMLElement, field: string): string =>
     row.querySelector(`[data-field="${field}"]`)?.textContent ?? "";
 
+  it("tags an offer's sitreps compactly on their own line, a helping one marked in words (#1179)", () => {
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
+    );
+    view.mount(root);
+    const plain = missionAt("mission-1", "cairo", 6, 2);
+    const tagged = {
+      ...missionAt("mission-2", "lagos", 9, 5),
+      sitreps: ["nightfall", "salvage-rich"] as const,
+    };
+    view.update(campaignOnDay(4, [plain, tagged]), NONE);
+    const byId = (id: string) =>
+      rows().find((row) => row.dataset.missionId === id)!;
+    const line = (row: HTMLElement) =>
+      row.querySelector<HTMLElement>('[data-field="sitreps"]')!;
+    expect(line(byId("mission-1")).hidden).toBe(true);
+    expect(line(byId("mission-1")).children).toHaveLength(0);
+    const tags = [...line(byId("mission-2")).children] as HTMLElement[];
+    expect(line(byId("mission-2")).hidden).toBe(false);
+    expect(tags.map((tag) => tag.textContent)).toEqual([
+      "Nightfall",
+      "+ Salvage Rich",
+    ]);
+    expect(tags[0]?.classList.contains("tut-badge--warn")).toBe(true);
+    expect(tags[1]?.classList.contains("tut-badge--ok")).toBe(true);
+    expect(tags[1]?.title).toBe(
+      "Salvage Rich · Helps you: Two extra tech carcasses to harvest.",
+    );
+    // A second update with the same offers keeps the same tags.
+    view.update(campaignOnDay(4, [plain, tagged]), NONE);
+    expect(line(byId("mission-2")).children[0]).toBe(tags[0]);
+  });
+
   it("shows the tech reward, and tags a mission whose map reports a carcass (#1171)", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },

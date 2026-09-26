@@ -8,6 +8,12 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 export type TechCarcassId = string;
 
 /**
+ * The prefix every carcass id is issued with, by the mission start for
+ * a hook's carcass and by Salvage Rich for its extra ones.
+ */
+export const CARCASS_ID_PREFIX = "carcass";
+
+/**
  * A dead bug rich in tech points lying on a `tech-carcass` hook (#1171,
  * GDD §6.3). An infantry squad beside it spends the interact action to
  * strip it; the points come home with a win or an extraction. The

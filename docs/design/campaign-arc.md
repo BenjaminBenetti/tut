@@ -284,6 +284,15 @@ The #1171 pacing test changes from "the tree is finished at mission 25" to "the 
 | Dust-off Window | The drop ship leaves on a set turn | M20 | Objective timer |
 | Alpha Present | One bug on the map is a named alpha (§8) | M24 | Nemesis record, Jev |
 
+**As built for Act I (#1179).** These numbers are placeholders until the sitreps have been played. They live in `SITREP_TUNING` (`tactical/data/sitrep-tuning.ts`).
+
+- **Debut:** "M10" is the campaign mission number, `missionsPlayed + 1`, whatever the act. Story offers carry no sitreps. One offer never carries the same sitrep twice.
+- **Nightfall:** sight is reduced by 4 but never below 3, and a sight already under 3 is not raised. Infantry see 8, mechs 10, bugs 6, turrets 8 and generators 3. Weapon range is unchanged.
+- **Spore Fog:** one cloud per 576 tiles, so 4 on a small map, 9 on a medium one and 16 on a large one. Each cloud is a radius-2 diamond (up to 13 tiles) of ordinary smoke. It lasts 16 phases instead of a grenade's 4, and none of it lands within 4 tiles of the deploy zone.
+- **City Ablaze:** one blaze per 1728 tiles, clamped to 2..4. Each blaze is up to 5 fire tiles on the hazard clock. It is kept 6 tiles from the deploy zone and 3 from objectives, extraction, spawns and carcasses. It relights at the start of turns 4, 7, 10 and so on. The cap exists because every fire carries a point light.
+- **Salvage Rich:** "two tech carcasses" is read as **two extra**, on top of any the offer reports. They are placed in tactical at mission start, not by map generation, and priced like the offer's own (10 + 2 per difficulty). Each is reachable by infantry from the deploy zone, at least 8 tiles from it, and 4 from objectives.
+- **Local Guides:** the squad's side starts with every tile explored. Terrain, nests and carcasses show at once, but units stay hidden until they are seen.
+
 ## 12. Measurement
 
 **Campaign sweep:** `src/app/service/campaign-sweep.sim.test.ts`, run with `pnpm test:sim`. It composes the real game (`composeGame`) and drives `AdvanceDay` with modelled players.

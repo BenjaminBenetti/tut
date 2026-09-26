@@ -9,6 +9,7 @@ import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-ca
 import type { GameState } from "../../save/model/game-state";
 import { iconUrl } from "../data/icon-manifest";
 import type { MissionPresentationCatalogue } from "../model/mission-presentation";
+import type { SitrepPresentationCatalogue } from "../model/sitrep-presentation";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
 import {
   formatCredits,
@@ -21,6 +22,12 @@ import {
   missionCountdownTitle,
 } from "../service/mission-countdown";
 import { MISSION_PRESENTATION } from "../service/missions/mission-presentation";
+import {
+  compactSitrepLabel,
+  sitrepBadgeClass,
+  sitrepMarker,
+  sitrepTagsOf,
+} from "../service/missions/sitrep-tags";
 
 // ===========================================
 // Types
@@ -39,6 +46,8 @@ export interface MissionListViewDeps {
   readonly missionTypes: MissionTypeCatalogue;
   /** Each type's glyph (ADR 0013 §2.3); the shipped table when omitted. */
   readonly presentations?: MissionPresentationCatalogue;
+  /** Each sitrep's name (campaign arc §11); the shipped table when omitted. */
+  readonly sitreps?: SitrepPresentationCatalogue;
 }
 
 // ===========================================
@@ -269,6 +278,13 @@ export class MissionListView {
     carcass.title = "Tech carcass reported";
     carcass.hidden = true;
     row.appendChild(carcass);
+    // So are its sitreps (campaign arc §11): one compact tag each on a
+    // line of their own, a helping one marked `+ ` as well as coloured.
+    const sitreps = doc.createElement("span");
+    sitreps.className = "tut-missions__sitreps";
+    sitreps.dataset.field = "sitreps";
+    sitreps.hidden = true;
+    row.appendChild(sitreps);
     return row;
   }
 
@@ -293,6 +309,10 @@ export class MissionListView {
     const carcass = mission.mapParams.techCarcass;
     for (const cell of row.querySelectorAll<HTMLElement>("[data-field]")) {
       const field = cell.dataset.field ?? "";
+      if (field === "sitreps") {
+        this.fillSitreps(cell, mission);
+        continue;
+      }
       if (field === "carcass") {
         const text = carcass
           ? `Tech carcass reported · +${formatTechPoints(carcass.techPoints)}`
@@ -331,6 +351,33 @@ export class MissionListView {
         cell.textContent = text;
       }
     }
+  }
+
+  /**
+   * Writes the offer's sitreps into their line as compact tags, rebuilt
+   * only when the set changes, and hides the line when there are none.
+   * Each tag's title carries its marker and effect, so the list keeps
+   * the briefing's words within reach.
+   */
+  private fillSitreps(cell: HTMLElement, mission: Mission): void {
+    const tags = sitrepTagsOf(mission, this.deps.sitreps);
+    const key = tags.map((tag) => tag.id).join(",");
+    cell.hidden = tags.length === 0;
+    if (cell.dataset.sitreps === key) {
+      return;
+    }
+    cell.dataset.sitreps = key;
+    const doc = cell.ownerDocument;
+    cell.replaceChildren(
+      ...tags.map((tag) => {
+        const badge = doc.createElement("span");
+        badge.className = `tut-badge ${sitrepBadgeClass(tag)}`;
+        badge.dataset.sitrep = tag.id;
+        badge.textContent = compactSitrepLabel(tag);
+        badge.title = `${tag.name} · ${sitrepMarker(tag)}: ${tag.effect}`;
+        return badge;
+      }),
+    );
   }
 }
 

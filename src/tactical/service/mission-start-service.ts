@@ -6,7 +6,6 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { MissionType } from "../../content/model/mission-type";
-import type { Hook } from "../../mapgen/model/hook";
 import { HookKinds } from "../../mapgen/model/hook";
 import { allows, PassMask } from "../../mapgen/model/pass-mask";
 import type { MapGenRegistries } from "../../mapgen/model/registries";
@@ -25,55 +24,61 @@ import type { Mech } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { GarrisonTuning } from "../model/garrison-tuning";
-import type { GeneratorTuning } from "../model/generator";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
+import type {
+  MissionSetupDeps,
+  MissionSetupRules,
+} from "../model/mission-setup-rule";
 import type { MissionStartOptions } from "../model/mission-start-options";
 import type { TacticalError } from "../model/tactical-error";
-import type {
-  Objective,
-  Spawner,
-  TacticalState,
-} from "../model/tactical-state";
-import { DEFAULT_HATCH_RADIUS, FIRST_TURN } from "../model/tactical-state";
+import type { TacticalState } from "../model/tactical-state";
+import { FIRST_TURN } from "../model/tactical-state";
 import type { TechCarcass } from "../model/tech-carcass";
 import { TURN_STARTED } from "../model/turn-started-event";
 import { emptyVision, initialVision } from "./vision-service";
 import type { PassClass, Unit } from "../model/unit";
 import { passMaskFor } from "../model/unit";
 import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
-import type { SpawnTuning } from "../model/spawn-tuning";
 import type { UnitTuning } from "../model/unit-tuning";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
-import { generatorUnit, mechUnit, squadUnit } from "./unit-factory";
+import { mechUnit, squadUnit } from "./unit-factory";
 import { placeGarrisonTurrets } from "./garrison-service";
-import { hatchInterval } from "./spawn-service";
+import { coordOf, facingToward, firstTile } from "./missions/map-placement";
+import { MISSION_SETUP_RULES } from "./missions/mission-setup-rules";
 
 // ===========================================
 // Types
 // ===========================================
 
-/** Content, catalogues and services the mission start reads. */
-export interface MissionStartDeps {
+/**
+ * Content, catalogues and services the mission start reads. Extends the
+ * setup rules' own deps — the id generator (the caller writes its state
+ * back to `meta`), the spawn tuning (whose `firstWaveTurn` the start
+ * reads too) and the generator tuning — which it hands on to the rule
+ * for the mission's type.
+ */
+export interface MissionStartDeps extends MissionSetupDeps {
   readonly missionTypes: Readonly<Record<MissionTypeId, MissionType>>;
   readonly squadTypes: SquadTypeCatalogue;
   /** The mech's stat sheet from its loadout, or undefined when it no longer validates. */
   readonly sheetFor: (mech: Mech) => MechStatSheet | undefined;
   readonly unitTuning: UnitTuning;
-  /** Spawner hit points and timers, and the first edge wave's turn (#329). */
-  readonly spawnTuning: SpawnTuning;
-  /** Issues unit, spawner and objective ids; the caller writes its state back to `meta`. */
-  readonly ids: IdGenerator;
   /** Map generation content; the composition root passes the shipped registries. */
   readonly registries: MapGenRegistries;
   /** The turret a region's garrison stands and how the start spreads them (#1155). */
   readonly garrison: GarrisonTuning;
-  /** What a defence's generators are made of (#1175). */
-  readonly generator: GeneratorTuning;
+  /**
+   * What each mission type puts on its map (ADR 0013 §2.3). The shipped
+   * `MISSION_SETUP_RULES` when left out; tests substitute their own.
+   */
+  readonly setupRules?: MissionSetupRules;
 }
 
-/** Id prefixes the mission start issues. */
-export const SPAWNER_ID_PREFIX = "spawner";
-export const OBJECTIVE_ID_PREFIX = "objective";
+/** Id prefixes the mission start issues; the first two moved beside the ids they prefix. */
+export {
+  OBJECTIVE_ID_PREFIX,
+  SPAWNER_ID_PREFIX,
+} from "../model/tactical-state";
 export const CARCASS_ID_PREFIX = "carcass";
 
 /** Label of the mission-seed fork the garrison's sites are drawn from. */
@@ -93,9 +98,10 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *                                                               │
  *   deployment ──► squadUnit / mechUnit ──► units on deploy-zone tiles
  *                                          (mechs on mech-passable ones first)
- *   map.hooks.objectives (egg-spawner) ──► spawners + destroy-spawner objectives
  *   map.hooks.objectives (tech-carcass) ──► carcasses, worth mapParams.techCarcass (#1171)
  *   map.hooks.extraction               ──► extraction tiles
+ *   setupRules[mission.typeId]         ──► the type's objectives, entities, schedules
+ *                                          (a clearance's spawners, a defence's generators)
  *   options.garrisonTurrets            ──► garrison turrets on random clear tiles (#1155)
  *                                                               │
  *                                                               ▼
@@ -164,52 +170,22 @@ export function startTacticalMission<TState extends MissionCampaignState>(
   if (!placed.ok) {
     return placed;
   }
-  const spawners = spawnersFrom(
-    map,
-    deps.ids,
-    deps.spawnTuning,
-    mission.difficulty,
-  );
-  const objectives: Objective[] = spawners.map((spawner): Objective => ({
-    id: deps.ids.nextId(OBJECTIVE_ID_PREFIX),
-    kind: "destroy-spawner",
-    targetId: spawner.id,
-    complete: false,
-  }));
-  // A defence stands its generators up on the generator hooks and holds
-  // them as one objective (#1175); its waves are counted, not endless.
-  const generators =
-    mission.defence === undefined
-      ? []
-      : generatorsFrom(map, deps.ids, deps.generator);
-  if (mission.defence !== undefined) {
-    objectives.push({
-      id: deps.ids.nextId(OBJECTIVE_ID_PREFIX),
-      kind: "defend-generators",
-      installation: mission.defence.installation,
-      targetIds: generators.map((build) => build.unit.id),
-      complete: false,
-      failed: false,
-    });
-  }
-  const templates = { ...placed.value.templates };
-  for (const build of generators) {
-    templates[build.template.id] = build.template;
-  }
 
   const seed = hashSeed(recipe.value.seed);
-  const tactical: Omit<TacticalState, "vision"> = {
+  // Everything every mission type shares; the type's own objectives,
+  // entities and schedules come from its setup rule below (ADR 0013).
+  const base: TacticalState = {
     missionId: mission.id,
     seed,
     difficulty: mission.difficulty,
     threat: state.overworld.threat,
     map,
-    units: [...placed.value.units, ...generators.map((build) => build.unit)],
-    templates,
+    units: placed.value.units,
+    templates: placed.value.templates,
     turn: FIRST_TURN,
     phase: "player",
-    objectives,
-    spawners,
+    objectives: [],
+    spawners: [],
     carcasses: carcassesFrom(
       map,
       deps.ids,
@@ -217,13 +193,7 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     ),
     // Nothing burns until something is fired (#1121).
     effects: [],
-    edgeSpawn: {
-      nextTurn: deps.spawnTuning.firstWaveTurn,
-      wave: 0,
-      ...(mission.defence === undefined
-        ? {}
-        : { totalWaves: mission.defence.waves }),
-    },
+    edgeSpawn: { nextTurn: deps.spawnTuning.firstWaveTurn, wave: 0 },
     extraction: map.hooks.extraction.tiles.map(coordOf),
     extracted: [],
     // The mission does begin on turn 1 in the player phase, so it says so
@@ -239,20 +209,29 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     // No charge is set until a squad sets one (#1132).
     charges: [],
     commandSeq: 0,
+    // Nobody has looked yet; the first look is taken once all is placed.
+    vision: emptyVision(),
   };
+  const rules = deps.setupRules ?? MISSION_SETUP_RULES;
+  const setUp = rules[mission.typeId].setup(base, map, mission, deps);
+  if (!setUp.ok) {
+    return setUp;
+  }
+  const tactical = setUp.value;
   // The region's batteries stand last, on ground the deployment and the
   // spawners have left free (#1155), from a stream that is a pure
   // function of the mission's seed, so nothing else the start draws can
   // move them. Their arrival is logged so the account opens with them.
   const garrison = placeGarrisonTurrets(
-    { ...tactical, vision: emptyVision() },
+    tactical,
     options.garrisonTurrets ?? 0,
     deps.garrison,
     new Mulberry32Rng(seed).fork(GARRISON_RNG_LABEL),
     deps.ids,
   );
+  const { vision: _unseen, ...placedAll } = tactical;
   const withGarrison: Omit<TacticalState, "vision"> = {
-    ...tactical,
+    ...placedAll,
     units: garrison.state.units,
     templates: garrison.state.templates,
     log: [...tactical.log, ...garrison.events],
@@ -364,50 +343,6 @@ function claimTile(
   return undefined;
 }
 
-/**
- * The direction from the deploy zone toward the map's centre along the
- * dominant axis, so the line starts facing the field. East when the
- * zone has no tiles at all (a map that failed I6, which the generator
- * never emits).
- */
-function facingToward(
-  from: TileCoord | undefined,
-  map: TacticalMap,
-): Direction {
-  if (from === undefined) {
-    return "e";
-  }
-  const dx = map.width / 2 - from.x;
-  const dz = map.depth / 2 - from.z;
-  if (Math.abs(dx) >= Math.abs(dz)) {
-    return dx >= 0 ? "e" : "w";
-  }
-  return dz >= 0 ? "s" : "n";
-}
-
-// ===========================================
-// Spawners
-// ===========================================
-
-/** One spawner per egg-spawner objective hook, on the hook's first tile, a full hatch interval from hatching. */
-function spawnersFrom(
-  map: TacticalMap,
-  ids: IdGenerator,
-  tuning: SpawnTuning,
-  difficulty: number,
-): Spawner[] {
-  return map.hooks.objectives
-    .filter((hook) => hook.kind === HookKinds.EGG_SPAWNER)
-    .map((hook): Spawner => ({
-      id: ids.nextId(SPAWNER_ID_PREFIX),
-      pos: coordOf(firstTile(hook)),
-      hatchRadius: hatchRadiusOf(hook),
-      hp: tuning.spawnerHp,
-      timer: hatchInterval(difficulty, tuning),
-      destroyed: false,
-    }));
-}
-
 // ===========================================
 // Tech carcasses
 // ===========================================
@@ -434,57 +369,8 @@ function carcassesFrom(
 }
 
 // ===========================================
-// Generators
-// ===========================================
-
-/**
- * One generator per generator hook, in hook order (#1175), facing the
- * board's centre like everything else that stands still. The map
- * placed the hooks on clear ground or interior floors the squad can reach, so nothing here
- * can fail to stand.
- */
-function generatorsFrom(
-  map: TacticalMap,
-  ids: IdGenerator,
-  tuning: GeneratorTuning,
-): UnitBuild[] {
-  return map.hooks.objectives
-    .filter((hook) => hook.kind === HookKinds.GENERATOR)
-    .map((hook) => {
-      const pos = coordOf(firstTile(hook));
-      return generatorUnit(
-        tuning,
-        { pos, facing: facingToward(pos, map) },
-        ids,
-      );
-    });
-}
-
-/** The hook's first tile; hooks always carry at least one. */
-function firstTile(hook: Hook): TileCoord {
-  const tile = hook.tiles[0];
-  if (tile === undefined) {
-    throw new Error(`Hook "${hook.id}" has no tiles`);
-  }
-  return tile;
-}
-
-/** The hook's hatch radius, or the default when the meta is missing or not a number. */
-function hatchRadiusOf(hook: Hook): number {
-  const radius = hook.meta?.hatchRadius;
-  return typeof radius === "number" && radius > 0
-    ? radius
-    : DEFAULT_HATCH_RADIUS;
-}
-
-// ===========================================
 // Helpers
 // ===========================================
-
-/** A plain `{ x, y, z }` copy, so a `Tile` never leaks its other fields into a unit. */
-function coordOf(coord: TileCoord): TileCoord {
-  return { x: coord.x, y: coord.y, z: coord.z };
-}
 
 /** Text for the adapter's typed error. */
 function describeRecipeError(error: {

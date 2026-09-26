@@ -7,6 +7,7 @@ import type {
   SpawnerId,
   TacticalState,
 } from "../model/tactical-state";
+import { spawnerObjectivesCleared } from "./objectives/destroy-spawner-objective";
 
 // ===========================================
 // Spawner damage
@@ -21,7 +22,8 @@ import type {
  * ```
  *   hp − damage, never below zero ──► SpawnerDamaged { damage, hp, destroyed }
  *          │
- *          └─ hp reaches 0 ──► destroyed, objectives.targetId == spawner
+ *          └─ hp reaches 0 ──► destroyed, the open destroy-spawner objectives
+ *                              tracking it (spawnerObjectivesCleared)
  *                              marked complete ──► ObjectiveUpdated
  * ```
  *
@@ -63,13 +65,10 @@ export function damageSpawner(
       },
     },
   ];
-  const cleared = destroyed
-    ? mission.objectives.filter(
-        (objective) =>
-          objective.kind === "destroy-spawner" &&
-          objective.targetId === spawner.id &&
-          !objective.complete,
-      )
+  // Which objectives a wreck completes is the destroy-spawner kind's
+  // rule (ADR 0013 §2.3), not this service's.
+  const cleared: readonly Objective[] = destroyed
+    ? spawnerObjectivesCleared(mission.objectives, spawner.id)
     : [];
   for (const objective of cleared) {
     events.push({

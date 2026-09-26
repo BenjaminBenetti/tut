@@ -15,8 +15,11 @@ import {
   twoFloorBuilding,
   unitAt,
 } from "../service/tactical-fixtures.test-helper";
+import { DEFEND_GENERATORS_OBJECTIVE } from "../service/objectives/defend-generators-objective";
+import { OBJECTIVE_RULES } from "../service/objectives/objective-rules";
 import {
   jevDestinations,
+  jevObjectives,
   type JevDestinationSources,
 } from "./jev-destinations";
 import { jevPerception } from "./jev-observation";
@@ -359,5 +362,87 @@ describe("Jev destination coverage", () => {
     }
     expect(mission.units[0]!.pos.y).toBe(2);
     expect(mission.units[0]!.pos).not.toEqual(mission.units[1]!.pos);
+  });
+});
+
+describe("jevObjectives (ADR 0013 §2.3)", () => {
+  /** A nest at (4,0,4) with its objective, and a defence of two generators. */
+  function objectives(failedNest?: boolean): TacticalState {
+    return missionWith(
+      openField().build(),
+      [unitAt("self", "infantry", { x: 0, y: 0, z: 0 })],
+      {
+        spawners: [
+          {
+            id: "nest",
+            pos: { x: 4, y: 0, z: 4 },
+            hatchRadius: 3,
+            hp: 20,
+            timer: 3,
+            destroyed: false,
+          },
+        ],
+        objectives: [
+          {
+            id: "objective-1",
+            kind: "destroy-spawner",
+            targetId: "nest",
+            complete: false,
+            ...(failedNest === undefined ? {} : { failed: failedNest }),
+          },
+          {
+            id: "objective-2",
+            kind: "defend-generators",
+            installation: "sensor-array",
+            targetIds: ["gen-1", "gen-2"],
+            complete: false,
+            failed: false,
+          },
+        ],
+      },
+    );
+  }
+
+  it("says where each objective is by its kind's rules, with failed only where recorded", () => {
+    expect(jevObjectives(objectives())).toEqual([
+      {
+        id: "objective-1",
+        kind: "destroy-spawner",
+        complete: false,
+        position: { x: 4, y: 0, z: 4 },
+      },
+      {
+        id: "objective-2",
+        kind: "defend-generators",
+        complete: false,
+        target_ids: ["gen-1", "gen-2"],
+        failed: false,
+      },
+    ]);
+    expect("failed" in (jevObjectives(objectives())[0] ?? {})).toBe(false);
+  });
+
+  it("reports a spawner objective a deadline has failed", () => {
+    expect(jevObjectives(objectives(true))[0]).toMatchObject({
+      id: "objective-1",
+      failed: true,
+    });
+  });
+
+  it("uses a substituted destination rule", () => {
+    const [, defence] = jevObjectives(objectives(), {
+      ...OBJECTIVE_RULES,
+      "defend-generators": {
+        ...DEFEND_GENERATORS_OBJECTIVE,
+        destination: () => ({ position: { x: 9, y: 0, z: 9 } }),
+      },
+    });
+    expect(defence).toEqual({
+      id: "objective-2",
+      kind: "defend-generators",
+      complete: false,
+      position: { x: 9, y: 0, z: 9 },
+      failed: false,
+    });
   });
 });

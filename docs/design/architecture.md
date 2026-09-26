@@ -83,6 +83,19 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 
 - **Installations are picked and explained the same way** (#1155): `OverworldPick` is `city | installation | region`, and `overworldPickerAdapter` asks the scene in that order (`CityPicker`, `InstallationPicker`, `RegionPicker`), so a click on a battery's model never falls through to the land under it. An installation pick selects its region alone and travels over an `InstallationPickSource` (`InstallationPickChannel`, a `PickChannel` like the city one) to the overworld screen, which opens the one `RadialMenuView` as the installation wheel (`ui/service/installation-wheel.ts`: `L{n}` at the hub over `type · online|offline` with the effect as the hub's note, Upgrade with the next level's price, Decommission and Region on the ring). In the Situation panel, resting on a Build option or an installed row opens the shared `PopoverView` (`ui/view/popover-view.ts`, one per document, `role="tooltip"`), whose lines come from the pure `ui/service/deployable-popover.ts` over the effect describer, so the panel, the wheel and the popover can never disagree about what a level does. See [`overworld-deployable-popover.png`](overworld-deployable-popover.png) and [`overworld-installation-wheel.png`](overworld-installation-wheel.png).
 
+- **Objectives and mission types are rule tables** ([ADR 0013](../adr/0013-campaign-progression.md) §2.3): outside the kind and type modules themselves, tactical services never switch on an objective kind or a mission type. `tactical/model/objective-rules.ts` defines `ObjectiveRules<K>` (`complete`, `failed`, and optional `interaction`, `phaseStep`, `reachable`, `marker`, `destination`, `onDeadline`, `tally`, `resultFields`); `OBJECTIVE_RULES` in `tactical/service/objectives/` maps each kind to its own module, and a missing or misfiled kind is a compile error. `MISSION_SETUP_RULES` in `tactical/service/missions/` does the same for what each `MissionTypeId` puts on a fresh map, and reaches `startTacticalMission` through `MissionStartDeps.setupRules`. Every objective may carry `deadlineTurn`; the generic deadline phase step fails it once that turn has ended, announces `ObjectiveUpdated` and runs the kind's `onDeadline`. The tactical resolver writes one generic `ObjectiveResult` row per objective to `MissionResult.objectives`. A new kind or type is a new module and one table entry.
+
+  ```
+  startTacticalMission ──► MISSION_SETUP_RULES[mission.typeId].setup ──► objectives, spawners, generators
+                                                                             │
+  objective ──► OBJECTIVE_RULES[objective.kind] ◄────────────────────────────┘
+                  ├── complete / failed ──► objectiveComplete / objectiveFailed (end, abandon)
+                  ├── interaction?      ──► Interact handler       reachable? ──► HUD offer
+                  ├── marker?           ──► fog blip               destination? ──► Jev
+                  ├── phaseStep?        ──► EndTurn steps          onDeadline? ──► deadline step
+                  └── tally? resultFields? ──► TacticalMissionResolver ──► MissionResult.objectives
+  ```
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

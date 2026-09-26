@@ -4,7 +4,7 @@ import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
 import { isAutonomous } from "../model/unit";
 
-import { objectiveComplete } from "./defence-service";
+import { objectiveComplete } from "./objectives/objective-status";
 
 // ===========================================
 // Outcome

@@ -278,6 +278,8 @@ describe("tacticalMissionResult", () => {
         TUNING.clearanceBase +
         TUNING.clearancePerDifficulty * 3
       ),
+      // ADR 0013 §2.3: one row per objective, filled from the final state.
+      objectives: [{ kind: "destroy-spawner", complete: true, failed: false }],
     });
   });
 
@@ -1016,6 +1018,19 @@ describe("tacticalMissionResult on a defence (#1175)", () => {
     expect(result.squadCasualties).toEqual([]);
   });
 
+  it("reports the defence's objective row with the generators still running (ADR 0013 §2.3)", () => {
+    const result = resolve([generator("gen-1", 0), generator("gen-2", 5)], 1);
+    expect(result.objectives).toEqual([
+      {
+        kind: "defend-generators",
+        complete: false,
+        failed: false,
+        done: 1,
+        total: 2,
+      },
+    ]);
+  });
+
   it("carries no defence field on a clearance", () => {
     const tactical: TacticalState = missionWith(
       MAP,
@@ -1032,5 +1047,40 @@ describe("tacticalMissionResult on a defence (#1175)", () => {
       DEPS,
     );
     expect("defence" in result).toBe(false);
+  });
+});
+
+// ===========================================
+// Objective rows
+// ===========================================
+
+describe("tacticalMissionResult objective rows (ADR 0013 §2.3)", () => {
+  /** An extraction's result on the fixture map with `objectives`. */
+  function resolveWith(objectives: readonly Objective[]) {
+    const tactical: TacticalState = missionWith(MAP, [], {
+      objectives,
+      extracted: [squadUnit("unit-1", "squad-1", SQUAD_HP)],
+      outcome: "extracted",
+    });
+    return tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(3),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+  }
+
+  it("reports an objective missed on its deadline as failed", () => {
+    const missed = OPEN.map((objective) => ({ ...objective, failed: true }));
+    expect(resolveWith(missed).objectives).toEqual([
+      { kind: "destroy-spawner", complete: false, failed: true },
+    ]);
+  });
+
+  it("carries no objectives field on a mission without objectives", () => {
+    expect("objectives" in resolveWith([])).toBe(false);
   });
 });

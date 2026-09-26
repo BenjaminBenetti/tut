@@ -1,8 +1,13 @@
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { ObjectiveRulesTable } from "../model/objective-rules";
 import type { RadarContact } from "../model/radar";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
+import {
+  OBJECTIVE_RULES,
+  objectiveRulesFor,
+} from "../service/objectives/objective-rules";
 import { radarContacts } from "../service/radar-service";
 
 /** Public mission destination, without hidden target condition. */
@@ -59,28 +64,32 @@ export function jevDestinations(
   };
 }
 
-/** Objective locations are public intel; unobserved nest health is not. */
-export function jevObjectives(mission: TacticalState): readonly JevObjective[] {
+/**
+ * Objective locations are public intel; unobserved nest health is not.
+ * Each kind's rules say where it is (ADR 0013 §2.3): a nest's tile, a
+ * defence's generator ids. `failed` is reported whenever the objective
+ * records it, so a defence always says, and a spawner objective says
+ * once a deadline has failed it.
+ */
+export function jevObjectives(
+  mission: TacticalState,
+  rules: ObjectiveRulesTable = OBJECTIVE_RULES,
+): readonly JevObjective[] {
   return mission.objectives.map((objective): JevObjective => {
-    const common = {
+    const destination =
+      objectiveRulesFor(objective, rules).destination?.(objective, mission) ??
+      {};
+    return {
       id: objective.id,
       kind: objective.kind,
       complete: objective.complete,
+      ...(destination.position === undefined
+        ? {}
+        : { position: destination.position }),
+      ...(destination.targetIds === undefined
+        ? {}
+        : { target_ids: destination.targetIds }),
+      ...(objective.failed === undefined ? {} : { failed: objective.failed }),
     };
-    switch (objective.kind) {
-      case "destroy-spawner":
-        return {
-          ...common,
-          position: mission.spawners.find(
-            (nest) => nest.id === objective.targetId,
-          )?.pos,
-        };
-      case "defend-generators":
-        return {
-          ...common,
-          target_ids: objective.targetIds,
-          failed: objective.failed,
-        };
-    }
   });
 }

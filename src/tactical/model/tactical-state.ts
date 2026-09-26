@@ -22,6 +22,12 @@ export type SpawnerId = string;
 /** Id of a mission objective, issued with the `"objective"` prefix. */
 export type ObjectiveId = string;
 
+/** The prefix every `SpawnerId` is issued with. */
+export const SPAWNER_ID_PREFIX = "spawner";
+
+/** The prefix every `ObjectiveId` is issued with. */
+export const OBJECTIVE_ID_PREFIX = "objective";
+
 /** Whose turn it is (GDD §6.2). */
 export type TacticalPhase = "player" | "bugs";
 
@@ -69,13 +75,36 @@ export interface Spawner {
   readonly destroyed: boolean;
 }
 
-/** Destroy one egg spawner (GDD §5.4): complete when it is wrecked. */
-export interface DestroySpawnerObjective {
+/**
+ * What every objective kind carries (ADR 0013 §2.3), whatever it asks
+ * of the player. The two flags are sticky and never both set: an
+ * objective that failed never completes, and one that completed never
+ * fails. What each kind means by them lives in its rules
+ * (`tactical/service/objectives/`), not here.
+ *
+ * ```
+ *   open ──► complete        its rule says done
+ *     └───► failed          its rule says lost, or turn > deadlineTurn
+ * ```
+ */
+export interface ObjectiveBase {
   readonly id: ObjectiveId;
+  readonly complete: boolean;
+  /** True once the objective can never be completed. Absent reads as false. */
+  readonly failed?: boolean;
+  /**
+   * The last turn the objective may be completed on. Once that turn has
+   * ended, the deadline phase step fails it and runs the kind's
+   * `onDeadline` consequences. Absent: no deadline.
+   */
+  readonly deadlineTurn?: number;
+}
+
+/** Destroy one egg spawner (GDD §5.4): complete when it is wrecked. */
+export interface DestroySpawnerObjective extends ObjectiveBase {
   readonly kind: "destroy-spawner";
   /** The spawner this objective tracks. */
   readonly targetId: SpawnerId;
-  readonly complete: boolean;
 }
 
 /**
@@ -90,18 +119,21 @@ export interface DestroySpawnerObjective {
  *   otherwise                        ──► open
  * ```
  */
-export interface DefendGeneratorsObjective {
-  readonly id: ObjectiveId;
+export interface DefendGeneratorsObjective extends ObjectiveBase {
   readonly kind: "defend-generators";
   /** The installation under attack, for the briefing and the tracker. */
   readonly installation: DeployableTypeId;
   /** The generator units, in hook order. */
   readonly targetIds: readonly UnitId[];
-  readonly complete: boolean;
+  /** Always written for a defence, which starts open. */
   readonly failed: boolean;
 }
 
-/** What the player must achieve: wreck a spawner, or hold the generators (#1175). */
+/**
+ * What the player must achieve: wreck a spawner, or hold the generators
+ * (#1175). Closed: a new kind adds its interface here and its rules to
+ * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
+ */
 export type Objective = DestroySpawnerObjective | DefendGeneratorsObjective;
 
 /** When the next wave walks in from the map edge, and how many have so far. */

@@ -155,6 +155,8 @@ export class AutoResolveMissionResolver implements MissionResolver {
       }
     }
 
+    // No `objectives` (ADR 0013 §2.3): nothing was played, so there is
+    // no objective to report on, and consequence rules read `outcome`.
     return {
       missionId: mission.id,
       cityId: mission.cityId,

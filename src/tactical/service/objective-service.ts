@@ -3,110 +3,65 @@ import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { ExtractCommand } from "../model/extract-command";
 import type { InteractCommand } from "../model/interact-command";
+import type {
+  ObjectiveInteraction,
+  ObjectiveRulesTable,
+  ObjectiveTarget,
+} from "../model/objective-rules";
 import type { ObjectiveTuning } from "../model/objective-tuning";
 import type { TacticalEvent } from "../model/tactical-event";
-import type {
-  TacticalHandler,
-  TacticalOutcome,
-} from "../model/tactical-handler";
-import type {
-  Objective,
-  Spawner,
-  TacticalState,
-} from "../model/tactical-state";
+import type { TacticalHandler } from "../model/tactical-handler";
+import type { Objective, TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { isAutonomous } from "../model/unit";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
 import { endIfOver } from "./mission-end-service";
-import { damageSpawner } from "./spawner-damage-service";
+import {
+  OBJECTIVE_RULES,
+  objectiveRulesFor,
+} from "./objectives/objective-rules";
 
 // ===========================================
 // Objective kinds
 // ===========================================
 
-/**
- * What one objective kind does when a unit works it. The `Interact`
- * handler has already checked the unit and found the objective open, so
- * an interaction only validates its own preconditions, applies its own
- * effect and announces it; the handler bills the action point and asks
- * whether the mission is over.
- *
- * One per `Objective.kind`, the way `PhaseStep` is one per thing a phase
- * does: M3's rescue, defend and escort objectives add their own without
- * touching the handler or each other (ADR 0003 §2.2 — pure, no mutation).
- */
-export type ObjectiveInteraction = (
-  mission: TacticalState,
-  objective: Objective,
-  unit: Unit,
-  tuning: ObjectiveTuning,
-) => TacticalOutcome;
+/** Re-exported from the objective rules contract, where it now lives (ADR 0013 §2.3). */
+export type { ObjectiveInteraction } from "../model/objective-rules";
 
 /**
- * `destroy-spawner`: the unit plants charges on the egg spawner the
- * objective tracks. The spawner loses `chargeDamage` hit points and, at
- * zero, is destroyed and its objective completed.
- *
- * ```
- *   target gone ──► objective-target-missing
- *   manhattan(unit, spawner) > interactRange ──► objective-out-of-reach
- *          │
- *          ▼
- *   spawner.hp − chargeDamage, SpawnerDamaged
- *   hp <= 0 ──► destroyed, objective complete, ObjectiveUpdated
- * ```
- */
-export const plantCharges: ObjectiveInteraction = (
-  mission,
-  objective,
-  unit,
-  tuning,
-) => {
-  if (objective.kind !== "destroy-spawner") {
-    return err({
-      kind: "objective-not-interactive",
-      objectiveId: objective.id,
-    });
-  }
-  const spawner = mission.spawners.find(
-    (candidate) => candidate.id === objective.targetId,
-  );
-  if (spawner === undefined || spawner.destroyed) {
-    return err({
-      kind: "objective-target-missing",
-      objectiveId: objective.id,
-      targetId: objective.targetId,
-    });
-  }
-  const distance = manhattanDistance(unit.pos, spawner.pos);
-  if (distance > tuning.interactRange) {
-    return err({
-      kind: "objective-out-of-reach",
-      objectiveId: objective.id,
-      distance,
-      range: tuning.interactRange,
-    });
-  }
-
-  return ok(damageSpawner(mission, spawner.id, tuning.chargeDamage, unit.id));
-};
-
-/** The interaction each objective kind ships with (GDD §6.3: M2 clears egg spawners). */
-/**
- * A defence is held, not worked (#1175): nothing a squad does to a
- * generator advances it, so the interaction refuses and the wheel
- * never offers it.
+ * The answer of every objective kind with no interaction of its own:
+ * refused as not interactive, so the wheel never offers it. Named for
+ * the defence (#1175), the first kind that is held rather than worked.
  */
 export const holdTheLine: ObjectiveInteraction = (_mission, objective) =>
   err({ kind: "objective-not-interactive", objectiveId: objective.id });
 
+/**
+ * The interaction each objective kind ships with, read off
+ * `OBJECTIVE_RULES` (ADR 0013 §2.3): a kind's own `interaction`, or
+ * `holdTheLine` when it has none. The Interact handler's default table;
+ * tests spread it and override one kind.
+ */
 export const DEFAULT_OBJECTIVE_INTERACTIONS: Readonly<
   Record<Objective["kind"], ObjectiveInteraction>
-> = {
-  "destroy-spawner": plantCharges,
-  "defend-generators": holdTheLine,
-};
+> = interactionsOf(OBJECTIVE_RULES);
+
+/**
+ * The interaction per kind in a rules table, falling back to
+ * `holdTheLine`. Built over the table's own keys, so it names no kind.
+ */
+function interactionsOf(
+  rules: ObjectiveRulesTable,
+): Readonly<Record<Objective["kind"], ObjectiveInteraction>> {
+  const interactions: Partial<Record<Objective["kind"], ObjectiveInteraction>> =
+    {};
+  for (const kind of Object.keys(rules) as Objective["kind"][]) {
+    interactions[kind] = rules[kind].interaction ?? holdTheLine;
+  }
+  // Every key of the table was filled, and the table has every kind.
+  return interactions as Record<Objective["kind"], ObjectiveInteraction>;
+}
 
 // ===========================================
 // Interact
@@ -202,9 +157,17 @@ export function createInteractHandler(
 /** An objective a unit can work from where it stands. */
 export interface ReachableObjective {
   readonly objective: Objective;
-  /** The spawner the objective tracks. */
-  readonly spawner: Spawner;
-  /** Manhattan tiles between the unit and the spawner. */
+  /** What the unit would work: the kind's `reachable` target. */
+  readonly target: ObjectiveTarget;
+  /**
+   * The same target as `target`.
+   *
+   * @deprecated Read `target`. Kept while the HUD migrates to the
+   *   objective presentation table (ADR 0013 §2.3); named for the only
+   *   kind that could be worked when it was added.
+   */
+  readonly spawner: ObjectiveTarget;
+  /** Manhattan tiles between the unit and the target. */
   readonly distance: number;
 }
 
@@ -217,10 +180,17 @@ export interface ReachableObjective {
  *
  * ```
  *   unit missing, down, not TDF, off-phase, out of actions ──► []
- *   objective complete, target gone or destroyed ──► skipped
- *   manhattan(unit, spawner) > interactRange     ──► skipped
- *   otherwise ──► { objective, spawner, distance }, nearest first
+ *   objective complete                           ──► skipped
+ *   kind has no reachable target, or it is gone  ──► skipped
+ *   manhattan(unit, target) > interactRange      ──► skipped
+ *   otherwise ──► { objective, target, distance }, nearest first
  * ```
+ *
+ * The kind's rules say what its target is (ADR 0013 §2.3): a spawner
+ * while it stands, nothing for a defence, which is held rather than
+ * worked. A failed objective whose target still stands is still
+ * offered, as the handler still accepts it: the charges still wreck
+ * the target, though the objective stays failed.
  *
  * Ties keep `objectives` order, so the same mission always suggests the
  * same objective. Pure; reads only its arguments.
@@ -229,6 +199,7 @@ export function reachableObjectives(
   mission: TacticalState,
   unitId: UnitId,
   tuning: ObjectiveTuning,
+  rules: ObjectiveRulesTable = OBJECTIVE_RULES,
 ): readonly ReachableObjective[] {
   const unit = mission.units.find((candidate) => candidate.id === unitId);
   if (
@@ -242,18 +213,19 @@ export function reachableObjectives(
   }
   const reachable: ReachableObjective[] = [];
   for (const objective of mission.objectives) {
-    if (objective.complete || objective.kind !== "destroy-spawner") {
+    if (objective.complete) {
       continue;
     }
-    const spawner = mission.spawners.find(
-      (candidate) => candidate.id === objective.targetId,
+    const target = objectiveRulesFor(objective, rules).reachable?.(
+      objective,
+      mission,
     );
-    if (spawner === undefined || spawner.destroyed) {
+    if (target === undefined) {
       continue;
     }
-    const distance = manhattanDistance(unit.pos, spawner.pos);
+    const distance = manhattanDistance(unit.pos, target.pos);
     if (distance <= tuning.interactRange) {
-      reachable.push({ objective, spawner, distance });
+      reachable.push({ objective, target, spawner: target, distance });
     }
   }
   return reachable.sort((a, b) => a.distance - b.distance);

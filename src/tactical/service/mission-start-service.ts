@@ -8,6 +8,7 @@ import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { MissionType } from "../../content/model/mission-type";
 import { HookKinds } from "../../mapgen/model/hook";
 import { allows, PassMask } from "../../mapgen/model/pass-mask";
+import type { MissionMapRules } from "../../mapgen/model/mission-map-rule";
 import type { MapGenRegistries } from "../../mapgen/model/registries";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -72,6 +73,12 @@ export interface MissionStartDeps extends MissionSetupDeps {
    * `MISSION_SETUP_RULES` when left out; tests substitute their own.
    */
   readonly setupRules?: MissionSetupRules;
+  /**
+   * What map each mission type is played on (ADR 0013 §2.3). The shipped
+   * `MISSION_MAP_RULES` when left out; a sim or a render stages a map
+   * archetype no shipped type asks for yet by substituting its own.
+   */
+  readonly mapRules?: MissionMapRules;
 }
 
 /** Id prefixes the mission start issues; the first two moved beside the ids they prefix. */
@@ -156,6 +163,8 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     mission,
     deps.missionTypes[mission.typeId],
     deps.registries,
+    // Undefined falls to the adapter's default, the shipped rules.
+    deps.mapRules,
   );
   if (!recipe.ok) {
     return err({

@@ -116,6 +116,18 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
   unlockTech ──► onTechUnlocked ──► flags ──► (next tick) story pins
   ```
 
+- **The spore pod is a spawner variant** (#1179): Crash Site's pod is a `Spawner` with `variant: "spore-pod"`, not an entity of its own, because spawners already take damage from shots, blasts, charges and fire through `damageSpawner`, are picked and drawn as scene entities, and are what the wreck objectives count. `SPAWNER_VARIANT_TRAITS` (`tactical/model/spawner-variant.ts`) holds what differs per variant; a pod never hatches. A spawner without `variant` is an egg spawner, so no save needs a bump. `placeSporePod` (`tactical/service/missions/spore-pod-setup.ts`) stands the pod up on the map's `spore-pod` hook with `podHp(difficulty)` and a `destroy-pod` objective whose `deadlineTurn` is `podMaturityTurn` (8); a mission type's setup calls it. The objective's `onDeadline` (`maturePod`) leaves the pod destroyed at zero hit points, `matured` with its burst pending, so no later wreck can credit a missed objective. `createPodBurstStep`, registered right after the deadline step, then releases `podBurstSize` bugs round it (`BugsSpawned { source: "pod" }`) at the start of turn 9.
+
+  The countdown is generic, so any kind with a `deadlineTurn` gets one by naming a `deadlinePhrase` in `OBJECTIVE_PRESENTATION`. `ui/service/objectives/deadline-countdown.ts` turns it into `ObjectiveCountdown`; the HUD computes it once, for the tracker row and the turn banner's badge, which turn danger-coloured and pulse in the last `DEADLINE_URGENT_TURNS` (2). Graphics reads the same fact through `urgentDeadlineTargets`: `drawPerceived` hands it to `updateSpawners(spawners, ripe)`, and `SPAWNER_MODELS` (`graphics/data/spawner-models.ts`) swaps a ripe pod to `bug.spore-pod-mature`. The builder keeps the old mesh until the new one has loaded and drops a load that is no longer wanted. See [`spore-pod-crater.png`](spore-pod-crater.png), [`spore-pod-countdown.png`](spore-pod-countdown.png) and [`spore-pod-burst.png`](spore-pod-burst.png).
+
+  ```
+  turn 1..6    "Pod matures in N turns"               warning colour    bug.spore-pod
+  turn 7       "Pod matures in 2 turns"               danger, pulsing   bug.spore-pod-mature
+  turn 8       "Pod matures at the end of this turn"  danger, pulsing   bug.spore-pod-mature
+  turn 9 start deadline step ──► ObjectiveUpdated{failed} ──► maturePod ──► SporePodMatured
+               pod burst step ──► BugsSpawned{source: "pod"}            pod gone from the scene
+  ```
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

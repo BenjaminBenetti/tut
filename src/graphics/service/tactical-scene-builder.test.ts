@@ -544,6 +544,113 @@ describe("TacticalSceneBuilder spawners", () => {
     builder.dispose();
     expect(builder.spawnerIds()).toEqual([]);
   });
+
+  // ===========================================
+  // Spore pods (#1179)
+  // ===========================================
+
+  /** A standing spore pod at the tile. */
+  function pod(id: string, x: number, z: number): Spawner {
+    return { ...spawner(id, x, z), variant: "spore-pod", timer: 0 };
+  }
+
+  /** The model names drawn for a spawner: `box:<model id>` per mesh. */
+  function drawn(builder: TacticalSceneBuilder): string[] {
+    const names: string[] = [];
+    builder.root.getObjectByName("spawners")?.traverse((part) => {
+      if (part.name.startsWith("box:")) {
+        names.push(part.name);
+      }
+    });
+    return names;
+  }
+
+  it("draws a spore pod with its own model, beside an egg spawner", async () => {
+    const { builder, models } = build();
+    await builder.updateSpawners([spawner("s1", 1, 1), pod("p1", 4, 4)]);
+    expect(models.loads).toEqual([SPAWNER_MODEL_ID, "bug.spore-pod"]);
+    expect(drawn(builder)).toEqual([
+      "box:bug.egg-spawner",
+      "box:bug.spore-pod",
+    ]);
+  });
+
+  it("swaps a ripe pod's mature model in, and only a pod's", async () => {
+    const { builder, models } = build();
+    await builder.updateSpawners([spawner("s1", 1, 1), pod("p1", 2, 3)]);
+    await builder.updateSpawners(
+      [spawner("s1", 1, 1), pod("p1", 2, 3)],
+      new Set(["s1", "p1"]),
+    );
+    // An egg spawner has no ripe look: nothing reloads for it.
+    expect(models.loads).toEqual([
+      SPAWNER_MODEL_ID,
+      "bug.spore-pod",
+      "bug.spore-pod-mature",
+    ]);
+    expect(drawn(builder)).toEqual([
+      "box:bug.egg-spawner",
+      "box:bug.spore-pod-mature",
+    ]);
+    expect(builder.spawnerIds()).toEqual(["s1", "p1"]);
+    // Still picked as the pod, from the new mesh.
+    expect(builder.pickSpawner(ndcOf(2.5, 3.5), topDownCamera())).toBe("p1");
+    // Asked again, it is already ripe: no reload.
+    await builder.updateSpawners([pod("p1", 2, 3)], new Set(["p1"]));
+    expect(models.loads).toHaveLength(3);
+  });
+
+  it("keeps the pod on the board while its ripe model loads", async () => {
+    const { builder, models } = build();
+    await builder.updateSpawners([pod("p1", 2, 3)]);
+    models.hold();
+    const pending = builder.updateSpawners([pod("p1", 2, 3)], new Set(["p1"]));
+    expect(drawn(builder)).toEqual(["box:bug.spore-pod"]);
+    models.open();
+    await pending;
+    expect(drawn(builder)).toEqual(["box:bug.spore-pod-mature"]);
+  });
+
+  it("never lets a late ripe load replace the model the pod wears now", async () => {
+    // The mature model is held; everything else loads at once.
+    const inner = new FakeModelLoader();
+    let release = (): void => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const models: ModelLoader = {
+      load: async (id) => {
+        if (id === "bug.spore-pod-mature") {
+          await gate;
+        }
+        return inner.load(id);
+      },
+      preload: () => inner.preload(),
+    };
+    const map = new FixtureMapBuilder(6, 6, 1).fillGround().build();
+    const builder = new TacticalSceneBuilder({ map, models });
+    await builder.updateSpawners([pod("p1", 2, 3)]);
+    const ripening = builder.updateSpawners([pod("p1", 2, 3)], new Set(["p1"]));
+    // Before the mature model arrives, the pod is closed again (a
+    // reload that set the clock back, say).
+    await builder.updateSpawners([pod("p1", 2, 3)]);
+    release();
+    await ripening;
+    expect(drawn(builder)).toEqual(["box:bug.spore-pod"]);
+  });
+
+  it("discards a ripe load the pod no longer wants", async () => {
+    const { builder, models } = build();
+    await builder.updateSpawners([pod("p1", 2, 3)]);
+    models.hold();
+    const pending = builder.updateSpawners([pod("p1", 2, 3)], new Set(["p1"]));
+    // Wrecked before its mature model arrived.
+    await builder.updateSpawners([]);
+    models.open();
+    await pending;
+    expect(drawn(builder)).toEqual([]);
+    expect(builder.spawnerIds()).toEqual([]);
+  });
 });
 
 describe("TacticalSceneBuilder.loadMapModels", () => {

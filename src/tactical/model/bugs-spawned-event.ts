@@ -11,9 +11,12 @@ export const BUGS_SPAWNED = "tactical:bugs-spawned";
 /** Payload of `BugsSpawned`. */
 export interface BugsSpawnedPayload {
   readonly unitIds: readonly UnitId[];
-  /** Whether they hatched from a spawner or walked in from the map edge. */
-  readonly source: "spawner" | "edge";
-  /** The spawner or edge-spawn hook they came from. */
+  /**
+   * Whether they hatched from a spawner, walked in from the map edge, or
+   * burst from a spore pod that matured.
+   */
+  readonly source: "spawner" | "edge" | "pod";
+  /** The spawner, edge-spawn hook or pod they came from. */
   readonly sourceId: string;
   /** One-based wave number for an edge wave (#1175). */
   readonly wave?: number;

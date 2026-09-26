@@ -328,6 +328,52 @@ describe("TacticalHudView", () => {
     ).toBe(false);
   });
 
+  it("shows a spore pod's countdown in the tracker and the banner as one reading (#1179)", () => {
+    const { hud } = setup();
+    const pod = hudMission({
+      turn: 7,
+      objectives: [
+        {
+          id: "objective-1",
+          kind: "destroy-pod",
+          targetId: "spawner-1",
+          complete: false,
+          deadlineTurn: 8,
+        },
+      ],
+      spawners: [
+        {
+          id: "spawner-1",
+          variant: "spore-pod",
+          pos: { x: 9, y: 0, z: 0 },
+          hatchRadius: 2,
+          timer: 0,
+          hp: 40,
+          destroyed: false,
+        },
+      ],
+    });
+    hud.update(pod);
+    const row = root.querySelector<HTMLElement>(
+      '[data-objective-id="objective-1"] [data-role="deadline"]',
+    );
+    expect(row?.textContent).toBe("Pod matures in 2 turns");
+    expect(row?.dataset.urgent).toBe("true");
+    expect(field("deadline")?.hidden).toBe(false);
+    expect(field("deadline")?.textContent).toBe("Pod matures in 2 turns");
+    expect(field("deadline")?.dataset.urgent).toBe("true");
+    // Wrecked: nothing counts down any more, in either place.
+    hud.update({
+      ...pod,
+      objectives: pod.objectives.map((objective) => ({
+        ...objective,
+        complete: true,
+      })),
+    });
+    expect(root.querySelector('[data-role="deadline"]')).toBeNull();
+    expect(field("deadline")?.hidden).toBe(true);
+  });
+
   it("selecting a unit fills the card; clicking it again opens its wheel (#1112)", () => {
     const { hud } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });

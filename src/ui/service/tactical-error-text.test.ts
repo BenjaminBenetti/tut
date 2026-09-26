@@ -357,6 +357,7 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
         ...OBJECTIVE_PRESENTATION["defend-generators"],
         name: (_objective, ordinal) => `holdout #${ordinal}`,
       },
+      "destroy-pod": OBJECTIVE_PRESENTATION["destroy-pod"],
     };
     const names = namesFor(
       {

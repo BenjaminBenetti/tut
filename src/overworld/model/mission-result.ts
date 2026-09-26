@@ -146,6 +146,12 @@ export interface MissionResult {
   /** For a defence (#1175): which installation, and whether a generator still ran at the end. */
   readonly defence?: MissionResultDefence;
   /**
+   * For a crash site (campaign arc §6.3): true when the squad wrecked the
+   * spore pod before it matured, false when it matured or was left
+   * standing. Absent when the mission had no pod, or nobody played it.
+   */
+  readonly podDestroyed?: boolean;
+  /**
    * Every bug species killed in the mission, each once, in the order
    * their first death was logged (ADR 0013 §2.1). The launch handler
    * merges them into the campaign's first-kill record. Absent when the

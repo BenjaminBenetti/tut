@@ -5292,5 +5292,37 @@
     "quality": "final",
     "triangles": 12784,
     "bytes": 348060
+  },
+  {
+    "id": "bug.spore-pod",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-spore-pod.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.25,
+    "sockets": [
+      "socket_hatch"
+    ],
+    "quality": "final",
+    "triangles": 2646,
+    "bytes": 214136
+  },
+  {
+    "id": "bug.spore-pod-mature",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-spore-pod-mature.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.25,
+    "sockets": [
+      "socket_hatch"
+    ],
+    "quality": "final",
+    "triangles": 3246,
+    "bytes": 232740
   }
 ]

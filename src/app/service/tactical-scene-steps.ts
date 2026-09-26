@@ -6,7 +6,11 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
-import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
+import type {
+  SideVision,
+  Spawner,
+  SpawnerId,
+} from "../../tactical/model/tactical-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
@@ -27,6 +31,7 @@ import type { Radar, RadarContact } from "../../tactical/model/radar";
 import { radarContacts } from "../../tactical/service/radar-service";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import { objectiveMarkers } from "../../tactical/service/objective-marker-service";
+import { urgentDeadlineTargets } from "../../ui/service/objectives/deadline-countdown";
 
 // ===========================================
 // Types
@@ -45,8 +50,14 @@ export interface PerceivedStage {
   setVision(vision: SideVision | undefined): void;
   /** Places the units that should be on the board, and removes the rest. */
   update(units: readonly Unit[], templates: UnitTemplateLookup): Promise<void>;
-  /** Places the egg spawners that should be on the board. */
-  updateSpawners(spawners: readonly Spawner[]): Promise<void>;
+  /**
+   * Places the spawners that should be on the board; those in `ripe`
+   * wear their variant's ripe model (#1179).
+   */
+  updateSpawners(
+    spawners: readonly Spawner[],
+    ripe?: ReadonlySet<SpawnerId>,
+  ): Promise<void>;
   /** Lays the tech carcasses that should be on the board (#1171). */
   updateCarcasses(carcasses: readonly TechCarcass[]): Promise<void>;
   /** Draws the fires on ground this side knows (#1121). */
@@ -106,7 +117,8 @@ export interface PhasedQueue {
  *   setVision(vision.tdf)                  the map, as this side knows it
  *   then, together:
  *     update(perceivedUnits)               spotted enemies only
- *     updateSpawners(perceivedSpawners)    explored spawners only
+ *     updateSpawners(perceivedSpawners,    explored spawners only,
+ *       urgentDeadlineTargets)             a pod in its last turns ripe (#1179)
  *     updateCarcasses(perceivedCarcasses)  explored carcasses only (#1171)
  *     updateEffects(perceivedEffects)      fires on explored ground
  *     updateCharges(charges)               set breaching charges (#1132)
@@ -143,7 +155,10 @@ export async function drawPerceived(
   // after it (#484).
   await Promise.all([
     stage.update(perceivedUnits(mission, "tdf"), mission.templates),
-    stage.updateSpawners(perceivedSpawners(mission, "tdf")),
+    stage.updateSpawners(
+      perceivedSpawners(mission, "tdf"),
+      urgentDeadlineTargets(mission),
+    ),
     stage.updateCarcasses(perceivedCarcasses(mission, "tdf")),
     stage.updateRadar(
       mission.radars.filter((radar) => radar.team === "tdf"),

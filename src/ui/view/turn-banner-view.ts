@@ -1,4 +1,5 @@
 import type { TacticalPhase } from "../../tactical/model/tactical-state";
+import type { ObjectiveCountdown } from "../model/objective-presentation";
 import { formatWhole } from "../service/format";
 
 // ===========================================
@@ -52,6 +53,12 @@ export interface TurnBannerModel {
    */
   readonly layer:
     { readonly floor: number | undefined; readonly floors: number } | undefined;
+  /**
+   * The soonest deadline counting down on an open objective ("Pod
+   * matures in 3 turns"), or absent when nothing is. A clock the player
+   * is racing belongs where the turn number is, not only in the rail.
+   */
+  readonly deadline?: ObjectiveCountdown;
 }
 
 /**
@@ -63,7 +70,11 @@ export interface TurnBannerModel {
  *
  * ```
  *   ┌ MISSION Lagos · TURN 3 · PLAYER PHASE ── [Command] ── TDF 3 · BUGS 1 · FLOOR [-] 2/3 [+] · [Leave] ┐
+ *   ┌ MISSION Lagos · TURN 7 · PLAYER PHASE · POD MATURES IN 2 TURNS ── …                                ┐
  * ```
+ *
+ * The deadline badge is hidden unless an objective is counting down,
+ * and pulses in its last two turns.
  */
 export class TurnBannerView {
   // ===========================================
@@ -76,6 +87,7 @@ export class TurnBannerView {
   private leave: HTMLButtonElement | undefined;
   private fields = new Map<string, HTMLElement>();
   private phase: HTMLElement | undefined;
+  private deadline: HTMLElement | undefined;
   private status: HTMLElement | undefined;
   private layerDown: HTMLButtonElement | undefined;
   private layerUp: HTMLButtonElement | undefined;
@@ -106,6 +118,10 @@ export class TurnBannerView {
     phase.className = "tut-badge tut-badge--info";
     phase.dataset.field = "phase";
     phase.textContent = "—";
+    const deadline = doc.createElement("span");
+    deadline.className = "tut-badge tut-badge--warn tut-deadline";
+    deadline.dataset.field = "deadline";
+    deadline.hidden = true;
     const status = doc.createElement("span");
     status.className = "tut-topbar__status tut-dim";
     status.dataset.role = "status";
@@ -121,7 +137,7 @@ export class TurnBannerView {
     const layer = this.createLayerControl(doc);
     const left = doc.createElement("div");
     left.className = "tut-hud__banner-left";
-    left.append(mission, turn, phase);
+    left.append(mission, turn, phase, deadline);
     const right = doc.createElement("div");
     right.className = "tut-hud__banner-right";
     right.append(tdf, bugs, layer, status, back);
@@ -146,6 +162,7 @@ export class TurnBannerView {
     };
     this.root = bar;
     this.phase = phase;
+    this.deadline = deadline;
     this.status = status;
   }
 
@@ -160,6 +177,7 @@ export class TurnBannerView {
         delete this.phase.dataset.phase;
       }
       this.setLayer(undefined);
+      this.setDeadline(undefined);
       return;
     }
     this.setField("mission-name", model.missionName);
@@ -167,6 +185,7 @@ export class TurnBannerView {
     this.setField("tdf-units", formatWhole(model.tdfUnits));
     this.setField("bug-units", formatWhole(model.bugUnits));
     this.setLayer(model.layer);
+    this.setDeadline(model.deadline);
     if (this.phase) {
       this.phase.textContent =
         model.phase === "player" ? "player phase" : "bug phase";
@@ -192,6 +211,7 @@ export class TurnBannerView {
     this.root = undefined;
     this.fields = new Map();
     this.phase = undefined;
+    this.deadline = undefined;
     this.status = undefined;
   }
 
@@ -308,6 +328,27 @@ export class TurnBannerView {
     if (this.layerUp) {
       this.layerUp.disabled = layer.floor === undefined;
     }
+  }
+
+  /**
+   * Shows the soonest countdown, urgent in the danger colour and
+   * pulsing, or hides the badge when nothing is counting down.
+   */
+  private setDeadline(deadline: ObjectiveCountdown | undefined): void {
+    if (!this.deadline) {
+      return;
+    }
+    this.deadline.hidden = deadline === undefined;
+    this.deadline.textContent = deadline?.text ?? "";
+    this.deadline.dataset.urgent = deadline?.urgent === true ? "true" : "false";
+    this.deadline.classList.toggle(
+      "tut-badge--danger",
+      deadline?.urgent === true,
+    );
+    this.deadline.classList.toggle(
+      "tut-badge--warn",
+      deadline?.urgent !== true,
+    );
   }
 
   /** Writes a field's text when it changed. */

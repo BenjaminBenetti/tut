@@ -21,6 +21,11 @@
  *                       ⌊ baseWaveSize + wave × sizePerWave
  *                                      + (difficulty − 1) × sizePerDifficulty
  *                                      + threat / 100 × sizeAtMaxThreat ⌋ )
+ *
+ *   podHp        = ⌊ podHp + (difficulty − 1) × podHpPerDifficulty ⌋
+ *   podBurstSize = min( maxWaveSize, waveSize(next wave, …) + podBurstBonus )
+ *            a spore pod left standing through podMaturityTurn matures at
+ *            the next phase start and releases podBurstSize bugs around it
  * ```
  */
 export interface SpawnTuning {
@@ -66,4 +71,20 @@ export interface SpawnTuning {
   readonly sizeAtMaxThreat: number;
   /** Most bugs one wave brings, whatever the escalation. Positive integer. */
   readonly maxWaveSize: number;
+  /** Hit points a spore pod starts with at difficulty one (campaign arc §6.3). Positive integer. */
+  readonly podHp: number;
+  /** Extra pod hit points per difficulty step above one. Non-negative. */
+  readonly podHpPerDifficulty: number;
+  /**
+   * The last turn a spore pod can be wrecked on: it matures once this
+   * turn has ended, so it is its objective's `deadlineTurn`. Positive
+   * integer.
+   */
+  readonly podMaturityTurn: number;
+  /**
+   * Bugs a maturing pod releases beyond the next edge wave's size, which
+   * already scales with difficulty, waves so far and threat; the total
+   * is still capped at `maxWaveSize`. Non-negative integer.
+   */
+  readonly podBurstBonus: number;
 }

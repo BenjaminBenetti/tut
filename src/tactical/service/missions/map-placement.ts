@@ -2,6 +2,7 @@ import type { Direction } from "../../../core/model/direction";
 import type { Hook } from "../../../mapgen/model/hook";
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../../mapgen/model/tile-coord";
+import { DEFAULT_HATCH_RADIUS } from "../../model/tactical-state";
 
 // ===========================================
 // Map placement
@@ -48,4 +49,16 @@ export function facingToward(
     return dx >= 0 ? "e" : "w";
   }
   return dz >= 0 ? "s" : "n";
+}
+
+/**
+ * The hook's hatch radius, or the default when the meta is missing or
+ * not a positive number: where a spawner's hatchlings, or a pod's
+ * burst, may land.
+ */
+export function hatchRadiusOf(hook: Hook): number {
+  const radius = hook.meta?.hatchRadius;
+  return typeof radius === "number" && radius > 0
+    ? radius
+    : DEFAULT_HATCH_RADIUS;
 }

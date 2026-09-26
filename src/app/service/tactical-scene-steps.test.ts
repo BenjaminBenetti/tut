@@ -5,7 +5,11 @@ import type { UnitTemplateLookup } from "../../graphics/service/tactical-scene-b
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
-import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
+import type {
+  SideVision,
+  Spawner,
+  SpawnerId,
+} from "../../tactical/model/tactical-state";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -39,6 +43,7 @@ class StageRecorder {
   vision: SideVision | undefined;
   units: readonly Unit[] = [];
   spawners: readonly Spawner[] = [];
+  ripe: ReadonlySet<SpawnerId> | undefined;
   carcasses: readonly TechCarcass[] = [];
   effects: readonly TileEffect[] = [];
   markers: readonly ObjectiveMarker[] = [];
@@ -87,10 +92,14 @@ class StageRecorder {
     return Promise.resolve();
   }
 
-  /** Records the spawners the scene was asked to draw. */
-  updateSpawners(spawners: readonly Spawner[]): Promise<void> {
+  /** Records the spawners the scene was asked to draw, and which are ripe. */
+  updateSpawners(
+    spawners: readonly Spawner[],
+    ripe?: ReadonlySet<SpawnerId>,
+  ): Promise<void> {
     this.calls.push("updateSpawners");
     this.spawners = spawners;
+    this.ripe = ripe;
     return Promise.resolve();
   }
 
@@ -292,6 +301,44 @@ describe("drawPerceived", () => {
       objectives: [{ ...seen.objectives[0]!, complete: true }],
     });
     expect(done.markers).toEqual([]);
+  });
+
+  it("ripens a spore pod in its last two turns, from the tracker's own countdown (#1179)", async () => {
+    const base = missionWith(
+      MAP,
+      [unitAt("s1", "infantry", { x: 0, y: 0, z: 0 })],
+      {
+        turn: 6,
+        spawners: [
+          {
+            id: "pod",
+            variant: "spore-pod",
+            pos: { x: 1, y: 0, z: 1 },
+            hp: 40,
+            destroyed: false,
+            timer: 0,
+            hatchRadius: 2,
+          },
+        ],
+        objectives: [
+          {
+            id: "o",
+            kind: "destroy-pod",
+            targetId: "pod",
+            complete: false,
+            deadlineTurn: 8,
+          },
+        ],
+      },
+    );
+    const seen = withVision({ state: base, events: [] }).state;
+    const early = new StageRecorder();
+    await drawPerceived(early, seen);
+    expect(early.spawners.map((s) => s.id)).toEqual(["pod"]);
+    expect([...(early.ripe ?? [])]).toEqual([]);
+    const late = new StageRecorder();
+    await drawPerceived(late, { ...seen, turn: 7 });
+    expect([...(late.ripe ?? [])]).toEqual(["pod"]);
   });
 });
 

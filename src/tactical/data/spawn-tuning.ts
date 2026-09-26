@@ -33,6 +33,12 @@ import type { SpawnTuning } from "../model/spawn-tuning";
  * carries 9 armour against `minDamage` 1, so a horde of swarmers takes
  * ~30 turns to finish a fight that was decided by turn 10. Widening the
  * ladder needs that fixed first; calibrating where it lands is #734.
+ *
+ * A spore pod (campaign arc §6.3) is a two-spawner job: 40 hit points
+ * at difficulty one, five more per step, so charges alone (10 a plant)
+ * take four actions and gunfire takes a squad a couple of turns. It
+ * matures when turn 8 ends; `pod-sweep.sim.test.ts` measures when a
+ * squad that goes straight for it gets it down.
  */
 export const SPAWN_TUNING: SpawnTuning = {
   spawnerHp: 20,
@@ -50,4 +56,8 @@ export const SPAWN_TUNING: SpawnTuning = {
   sizePerDifficulty: 1,
   sizeAtMaxThreat: 2,
   maxWaveSize: 8,
+  podHp: 40,
+  podHpPerDifficulty: 5,
+  podMaturityTurn: 8,
+  podBurstBonus: 2,
 };

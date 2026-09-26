@@ -7,23 +7,25 @@ import type {
   SpawnerId,
   TacticalState,
 } from "../model/tactical-state";
-import { spawnerObjectivesCleared } from "./objectives/destroy-spawner-objective";
+import { spawnerObjectivesCleared } from "./objectives/wreck-objectives";
 
 // ===========================================
 // Spawner damage
 // ===========================================
 
 /**
- * Takes `damage` off an egg spawner and, when that empties it, destroys
- * it and completes the objective tracking it (GDD §5.4). The one place
- * a spawner loses hit points, so planted charges (#330) and gunfire
- * (#426) cannot drift apart:
+ * Takes `damage` off an egg spawner or spore pod and, when that empties
+ * it, destroys it and completes the objective tracking it (GDD §5.4,
+ * campaign arc §6.3). The one place a spawner loses hit points, so
+ * planted charges (#330), gunfire (#426), blasts and fire cannot drift
+ * apart:
  *
  * ```
  *   hp − damage, never below zero ──► SpawnerDamaged { damage, hp, destroyed }
  *          │
- *          └─ hp reaches 0 ──► destroyed, the open destroy-spawner objectives
- *                              tracking it (spawnerObjectivesCleared)
+ *          └─ hp reaches 0 ──► destroyed, the open wreck objectives
+ *                              (destroy-spawner, destroy-pod) tracking it
+ *                              (spawnerObjectivesCleared)
  *                              marked complete ──► ObjectiveUpdated
  * ```
  *
@@ -62,11 +64,12 @@ export function damageSpawner(
         damage: spawner.hp - hp,
         hp,
         destroyed,
+        ...(spawner.variant === undefined ? {} : { variant: spawner.variant }),
       },
     },
   ];
-  // Which objectives a wreck completes is the destroy-spawner kind's
-  // rule (ADR 0013 §2.3), not this service's.
+  // Which objectives a wreck completes is the wreck kinds' rule (ADR
+  // 0013 §2.3), not this service's.
   const cleared: readonly Objective[] = destroyed
     ? spawnerObjectivesCleared(mission.objectives, spawner.id)
     : [];

@@ -10,7 +10,7 @@ import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import { objectivesComplete } from "./mission-end-service";
 
 import { isGenerator } from "../model/generator";
-import { objectiveComplete } from "./defence-service";
+import { objectiveComplete } from "./objectives/objective-status";
 
 // ===========================================
 // Types

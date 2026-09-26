@@ -73,7 +73,9 @@ import {
   createExtractHandler,
   createInteractHandler,
 } from "../../tactical/service/objective-service";
-import { createDefenceStep } from "../../tactical/service/defence-service";
+import { MISSION_SETUP_RULES } from "../../tactical/service/missions/mission-setup-rules";
+import { createObjectiveDeadlineStep } from "../../tactical/service/objectives/objective-deadline-step";
+import { objectivePhaseSteps } from "../../tactical/service/objectives/objective-rules";
 import { createAbandonMissionHandler } from "../../tactical/service/abandon-mission-handler";
 import { createHarvestHandler } from "../../tactical/service/harvest-service";
 import type {
@@ -224,6 +226,7 @@ export function composeTactical(
     registries,
     garrison: GARRISON_TUNING,
     generator: GENERATOR_TUNING,
+    setupRules: MISSION_SETUP_RULES,
   });
   return {
     handlers,
@@ -265,7 +268,8 @@ const DEBUG_MECHS: readonly DebugMechSource[] = [
  * their own object to isolate the lifting path.
  *
  * ```
- *   EndTurn ──► phase steps: refreshSides, drain radars, run turrets, detonate charges, burn, hatch, edge waves
+ *   EndTurn ──► phase steps: refreshSides, objective deadlines, drain radars, run turrets,
+ *                            detonate charges, burn, hatch, edge waves, objective kinds' steps
  *                    └──► bug phase runner ──► every living bug acts
  *                              └──► player turn + 1 (or MissionEnded)
  * ```
@@ -280,6 +284,11 @@ const DEBUG_MECHS: readonly DebugMechSource[] = [
  * Breaching charges go off next (#1132), before the fires: whatever the
  * blast lights burns from this turn, and a bug the blast leaves
  * standing in a fire pays for it before it can move.
+ *
+ * Objective deadlines are judged ahead of all of that (ADR 0013 §2.3),
+ * right after `refreshSides`, so nothing the new turn opens with can
+ * beat the clock; the objective kinds' own steps (`OBJECTIVE_RULES`, a
+ * defence's first) run last, after the wave they judge has landed.
  *
  * `placement` is the development tools' unit placement (#1136); left
  * out, as the headless sim leaves it, the handler is registered refusing
@@ -346,15 +355,18 @@ export function shippedTacticalHandlers(
     [END_TURN]: createEndTurnHandler(
       [
         ...DEFAULT_PHASE_STEPS,
+        // First, so a deadline judges the mission as its last turn left
+        // it: nothing the new turn opens with can beat the clock.
+        createObjectiveDeadlineStep(),
         drainRadarBatteries,
         createTurretStep(TURRET_TUNING),
         createDetonateStep(equipment),
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),
-        // After the wave lands, so the count it just made is the one
-        // the defence is judged on (#1175).
-        createDefenceStep(),
+        // Each objective kind's own step, after the wave lands, so the
+        // count it just made is the one a defence is judged on (#1175).
+        ...objectivePhaseSteps(),
       ],
       bugPhase,
     ),

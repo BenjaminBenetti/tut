@@ -10,7 +10,7 @@ import type { MissionResolver } from "../../overworld/model/mission-resolver";
 import type {
   MechDamageReport,
   MissionResult,
-  MissionResultDefence,
+  ObjectiveResult,
   SquadCasualties,
 } from "../../overworld/model/mission-result";
 import {
@@ -26,11 +26,11 @@ import {
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type { TacticalError } from "../model/tactical-error";
-import type {
-  DefendGeneratorsObjective,
-  TacticalState,
-} from "../model/tactical-state";
-import { defendStatus } from "./defence-service";
+import type { TacticalState } from "../model/tactical-state";
+import {
+  objectiveResultFields,
+  objectiveResults,
+} from "./objectives/objective-status";
 import { CARCASS_HARVESTED } from "../model/carcass-harvested-event";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import { UNIT_DIED } from "../model/unit-died-event";
@@ -115,6 +115,8 @@ export interface TacticalResolveDeps {
  *   log CarcassHarvested { techPoints } ──► summed into techPointsFor as
  *                                 harvested; techPointsHarvested says so (#1171)
  *   log UnitDied of a bug ──► its species, once each, into speciesKilled
+ *   objectives ──► one ObjectiveResult row each, and each kind's own
+ *                  fields (a defence's `defence`), via OBJECTIVE_RULES
  * ```
  *
  * A unit that extracted is read exactly as it walked off the map, so a
@@ -197,32 +199,26 @@ export function tacticalMissionResult(
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
     ...leftBehindField(tactical, roster),
     ...(harvested > 0 ? { techPointsHarvested: harvested } : {}),
-    ...defenceField(tactical),
+    ...objectivesField(tactical),
+    ...objectiveResultFields(tactical),
     ...speciesKilledField(tactical, roster),
   };
 }
 
 /**
- * How a defence ended (#1175): the installation and whether any of its
- * generators was still running when the mission closed. Absent for
- * every other mission so their results are exactly what they were.
+ * How each objective ended (ADR 0013 §2.3), one generic row per
+ * objective for the overworld's consequence rules, read off the final
+ * state through the objective rules. Absent when the mission had no
+ * objectives, so such a result is exactly what it was before. The kinds'
+ * own fields — a defence's `defence` (#1175) — come beside it from
+ * `objectiveResultFields`.
  */
-function defenceField(tactical: TacticalState): {
-  defence?: MissionResultDefence;
+function objectivesField(tactical: TacticalState): {
+  objectives?: readonly ObjectiveResult[];
 } {
-  const objective = tactical.objectives.find(
-    (candidate): candidate is DefendGeneratorsObjective =>
-      candidate.kind === "defend-generators",
-  );
-  if (objective === undefined) {
-    return {};
-  }
-  return {
-    defence: {
-      installation: objective.installation,
-      held: defendStatus(tactical, objective) !== "failed",
-    },
-  };
+  return tactical.objectives.length === 0
+    ? {}
+    : { objectives: objectiveResults(tactical) };
 }
 
 /**

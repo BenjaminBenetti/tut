@@ -31,6 +31,9 @@ import { UNIT_TUNING } from "../data/unit-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
+import { err, ok } from "../../core/model/result";
+import type { MissionSetupRule } from "../model/mission-setup-rule";
+import type { TacticalState } from "../model/tactical-state";
 import { FIRST_TURN } from "../model/tactical-state";
 import { GARRISON_TURRET_SOURCE_ID } from "../model/turret";
 import { TURRET_DEPLOYED } from "../model/turret-deployed-event";
@@ -38,6 +41,7 @@ import { TURN_STARTED } from "../model/turn-started-event";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission, tileAdmits } from "./mission-start-service";
 import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
+import { MISSION_SETUP_RULES } from "./missions/mission-setup-rules";
 
 // ===========================================
 // Fixtures
@@ -851,5 +855,81 @@ describe("startTacticalMission: refusals no fixture had reached", () => {
         expect(room).toBeGreaterThanOrEqual(MAX_DEPLOYED_UNITS);
       }
     }
+  });
+});
+
+describe("startTacticalMission with injected setup rules (ADR 0013 §2.3)", () => {
+  /** A clearance rule that records what it was handed and applies `answer`. */
+  function recordingRule(
+    answer: (state: TacticalState) => ReturnType<MissionSetupRule["setup"]>,
+  ) {
+    const seen: TacticalState[] = [];
+    const rule: MissionSetupRule = {
+      typeId: "infestation-clearance",
+      /** Records the base state and answers as told. */
+      setup(state) {
+        seen.push(state);
+        return answer(state);
+      },
+    };
+    return {
+      seen,
+      deps: {
+        ...deps(),
+        setupRules: { ...MISSION_SETUP_RULES, "infestation-clearance": rule },
+      },
+    };
+  }
+
+  it("hands the mission type's rule the shared start and keeps what it adds", () => {
+    const { state, mission, deployment } = campaign();
+    const { seen, deps: injected } = recordingRule((base) =>
+      ok({
+        ...base,
+        objectives: [
+          {
+            id: "objective-fixture",
+            kind: "destroy-spawner",
+            targetId: "spawner-fixture",
+            complete: false,
+            deadlineTurn: 4,
+          },
+        ],
+      }),
+    );
+    const tactical = unwrap(
+      startTacticalMission(state, mission.id, deployment, injected),
+    ).activeMission;
+    if (!tactical) throw new Error("no mission");
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.objectives).toEqual([]);
+    expect(seen[0]?.spawners).toEqual([]);
+    expect(seen[0]?.map).toBe(tactical.map);
+    expect(seen[0]?.units.filter((unit) => unit.team === "tdf")).toHaveLength(
+      deployment.squadIds.length + deployment.mechIds.length,
+    );
+    expect(tactical.objectives).toEqual([
+      {
+        id: "objective-fixture",
+        kind: "destroy-spawner",
+        targetId: "spawner-fixture",
+        complete: false,
+        deadlineTurn: 4,
+      },
+    ]);
+    expect(tactical.spawners).toEqual([]);
+  });
+
+  it("refuses the start with the rule's own error", () => {
+    const { state, mission, deployment } = campaign();
+    const refusal = { kind: "map-recipe", reason: "no hive" } as const;
+    const { deps: injected } = recordingRule(() => err(refusal));
+    const result = startTacticalMission(
+      state,
+      mission.id,
+      deployment,
+      injected,
+    );
+    expect(result).toEqual({ ok: false, error: refusal });
   });
 });

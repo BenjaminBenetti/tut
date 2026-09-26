@@ -10,6 +10,7 @@ import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { EndTurnCommand } from "../model/end-turn-command";
 import { MISSION_ENDED } from "../model/mission-ended-event";
+import type { PhaseStep } from "../model/phase-step";
 import type { StepReaction } from "../model/step-reaction";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type {
@@ -33,16 +34,8 @@ import { unitCanSee } from "./vision-service";
 // Types
 // ===========================================
 
-/**
- * One thing that happens when a phase begins, run in order over the
- * mission with the new phase and turn already set. The turn engine
- * ships `refreshSides`; spawning (#329) adds its waves the same way, as
- * the overworld's tick steps do for a day.
- */
-export type PhaseStep = (
-  mission: TacticalState,
-  ctx: TacticalContext,
-) => TacticalApplied<TacticalState>;
+/** Re-exported from the model, where the objective rules can name it (ADR 0013 §2.3). */
+export type { PhaseStep } from "../model/phase-step";
 
 // ===========================================
 // Phase steps

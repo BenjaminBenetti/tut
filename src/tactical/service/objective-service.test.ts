@@ -17,6 +17,9 @@ import type {
 } from "../model/tactical-state";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
+import { DEFEND_GENERATORS_OBJECTIVE } from "./objectives/defend-generators-objective";
+import { DESTROY_SPAWNER_OBJECTIVE } from "./objectives/destroy-spawner-objective";
+import { OBJECTIVE_RULES } from "./objectives/objective-rules";
 import {
   createExtractHandler,
   createInteractHandler,
@@ -388,6 +391,82 @@ describe("reachableObjectives", () => {
         offered.has(candidate.id),
       ]);
     }
+  });
+});
+
+describe("objective rules behind Interact and reach (ADR 0013 §2.3)", () => {
+  /** The squad beside a spawner objective and a defence of one generator at (3, 3). */
+  function withDefence(): TacticalState {
+    const mission = besideSpawner();
+    return {
+      ...mission,
+      units: [
+        ...mission.units,
+        { ...unitAt("gen-1", "infantry", at(3, 3)), kind: "generator" },
+      ],
+      objectives: [
+        ...mission.objectives,
+        {
+          id: "objective-2",
+          kind: "defend-generators",
+          installation: "sensor-array",
+          targetIds: ["gen-1"],
+          complete: false,
+          failed: false,
+        },
+      ],
+    };
+  }
+
+  it("takes each kind's interaction from the table, refusing a kind without one", () => {
+    expect(DEFAULT_OBJECTIVE_INTERACTIONS["destroy-spawner"]).toBe(
+      DESTROY_SPAWNER_OBJECTIVE.interaction,
+    );
+    const handler = createInteractHandler(TUNING);
+    expect(
+      refusal(handler(withDefence(), interact("u", "objective-2"), CTX)),
+    ).toBe("objective-not-interactive");
+  });
+
+  it("asks the kind's rules for the target a unit works", () => {
+    const mission = withDefence();
+    expect(
+      reachableObjectives(mission, "u", TUNING).map((e) => e.objective.id),
+    ).toEqual(["objective-1"]);
+    const found = reachableObjectives(mission, "u", TUNING, {
+      ...OBJECTIVE_RULES,
+      "defend-generators": {
+        ...DEFEND_GENERATORS_OBJECTIVE,
+        reachable: () => ({ id: "gen-1", pos: at(3, 3) }),
+      },
+    });
+    expect(found.map((e) => [e.objective.id, e.target.id, e.distance])).toEqual(
+      [
+        ["objective-1", "spawner-1", 1],
+        ["objective-2", "gen-1", 1],
+      ],
+    );
+  });
+
+  it("still offers a deadline-missed spawner objective while its spawner stands, as the handler accepts it", () => {
+    const mission: TacticalState = {
+      ...besideSpawner(),
+      objectives: [{ ...objective("objective-1", "spawner-1"), failed: true }],
+    };
+    expect(
+      reachableObjectives(mission, "u", TUNING).map((e) => e.objective.id),
+    ).toEqual(["objective-1"]);
+    const applied = createInteractHandler(TUNING)(
+      mission,
+      interact("u", "objective-1"),
+      CTX,
+    );
+    if (!applied.ok) throw new Error(`refused: ${applied.error.kind}`);
+    expect(applied.value.state.spawners[0]?.hp).toBe(20 - TUNING.chargeDamage);
+    expect(applied.value.state.objectives[0]).toMatchObject({
+      complete: false,
+      failed: true,
+    });
   });
 });
 

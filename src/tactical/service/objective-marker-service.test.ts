@@ -4,6 +4,8 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import type { Objective, Spawner } from "../model/tactical-state";
 import type { TacticalState } from "../model/tactical-state";
 import { objectiveMarkers } from "./objective-marker-service";
+import { DESTROY_SPAWNER_OBJECTIVE } from "./objectives/destroy-spawner-objective";
+import { OBJECTIVE_RULES } from "./objectives/objective-rules";
 import { missionWith, unitAt } from "./tactical-fixtures.test-helper";
 import { perceivedSpawners, withVision } from "./vision-service";
 
@@ -101,6 +103,25 @@ describe("objectiveMarkers", () => {
     expect(objectiveMarkers({ ...standing, objectives: [] }, "tdf")).toEqual(
       [],
     );
+  });
+
+  it("drops the marker once a deadline has failed the objective (ADR 0013 §2.3)", () => {
+    const missed = missionWithNests(
+      [nest("far", FAR)],
+      [{ ...objective("o", "far"), failed: true }],
+    );
+    expect(objectiveMarkers(missed, "tdf")).toEqual([]);
+  });
+
+  it("asks the kind's rules where the marker goes", () => {
+    const gone = missionWithNests([], [objective("o", "far")]);
+    expect(objectiveMarkers(gone, "tdf")).toEqual([]);
+    expect(
+      objectiveMarkers(gone, "tdf", {
+        ...OBJECTIVE_RULES,
+        "destroy-spawner": { ...DESTROY_SPAWNER_OBJECTIVE, marker: () => FAR },
+      }),
+    ).toEqual([{ objectiveId: "o", pos: FAR }]);
   });
 
   it("reads vision without changing it", () => {

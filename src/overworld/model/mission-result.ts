@@ -79,7 +79,8 @@ export interface MechDamageReport {
  *                 ├─ techPointsAwarded ──────────────► economy (#1171)
  *                 ├─ infestationDelta ───────────────► host city
  *                 ├─ outcome, speciesKilled? ────────► campaign progress
- *                 └─ intel? ─────────────────────────► reserved (#52 sensor array)
+ *                 ├─ intel? ─────────────────────────► reserved (#52 sensor array)
+ *                 └─ objectives? ────────────────────► consequence rules (ADR 0013)
  * ```
  *
  * Invariants a resolver upholds (not enforced by the type): every id in
@@ -152,6 +153,39 @@ export interface MissionResult {
    * died.
    */
   readonly speciesKilled?: readonly BugSpeciesId[];
+  /**
+   * How each of the mission's objectives ended (ADR 0013 §2.3), in the
+   * mission's objective order, for the consequence rules. The tactical
+   * resolver fills it from the finished mission, and leaves it out when
+   * the mission had none.
+   *
+   * Absent means nobody played the objectives: the auto-resolver rolls
+   * an outcome and nothing else, so a rule reading this must fall back
+   * to `outcome` when it is undefined.
+   */
+  readonly objectives?: readonly ObjectiveResult[];
+}
+
+/**
+ * How one tactical objective ended (ADR 0013 §2.3). Plain data with the
+ * kind as a string, so the overworld reads it without importing the
+ * tactical layer's types.
+ *
+ * ```
+ *   { kind: "defend-generators", complete: true, failed: false, done: 2, total: 3 }
+ * ```
+ */
+export interface ObjectiveResult {
+  /** The tactical objective kind, e.g. `"destroy-spawner"`. */
+  readonly kind: string;
+  /** Done by the kind's rule at the end of the mission. */
+  readonly complete: boolean;
+  /** Lost: it could no longer be done, by its rule or its deadline. */
+  readonly failed: boolean;
+  /** How far it got in the kind's own unit, when the kind keeps a count. */
+  readonly done?: number;
+  /** Out of how many, beside `done`. */
+  readonly total?: number;
 }
 
 /** How a defend-installation mission left its installation (#1175). */

@@ -36,11 +36,13 @@ import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
 import { EXTRACT, extract } from "../../tactical/model/extract-command";
 import { HARVEST_CARCASS } from "../../tactical/model/harvest-carcass-command";
 import { INTERACT } from "../../tactical/model/interact-command";
+import { OBJECTIVE_UPDATED } from "../../tactical/model/objective-updated-event";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
+import { MISSION_SETUP_RULES } from "../../tactical/service/missions/mission-setup-rules";
 import { NO_ACTIVE_MISSION } from "../../tactical/service/tactical-command-handlers";
 import { TacticalMissionResolver } from "../../tactical/service/tactical-mission-resolver";
 import {
@@ -322,6 +324,64 @@ describe("composeTactical", () => {
       mission?.log.filter((e) => e.type === BUGS_SPAWNED),
     ).not.toHaveLength(0);
     expect(mission?.units.some((u) => u.team === "bugs")).toBe(true);
+  });
+
+  it("fails an objective whose deadline has passed as the next turn opens (ADR 0013 §2.3)", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    const { state, missionId } = campaignWithMission();
+    const started = startTacticalMission(
+      state,
+      missionId,
+      {
+        missionId,
+        squadIds: state.roster.squads.map((s) => s.id),
+        mechIds: state.roster.mechs.map((m) => m.id),
+      },
+      tactical.missionStartDepsFor(new SequentialIdGenerator()),
+    );
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const active = started.value.activeMission;
+    const timed = active?.objectives[0];
+    expect(timed?.kind).toBe("destroy-spawner");
+    if (active === undefined || timed === undefined) return;
+    // Nothing ships with a deadline yet: give the first objective one.
+    const store = new GameStore(
+      {
+        ...started.value,
+        activeMission: {
+          ...active,
+          objectives: active.objectives.map((objective) =>
+            objective.id === timed.id
+              ? { ...objective, deadlineTurn: 1 }
+              : objective,
+          ),
+        },
+      },
+      dispatcher,
+    );
+    expect(store.dispatch(endTurn()).ok).toBe(true);
+    const mission = store.getState().activeMission;
+    expect(mission?.turn).toBe(2);
+    expect(mission?.outcome).toBeUndefined();
+    expect(mission?.objectives.find((o) => o.id === timed.id)).toMatchObject({
+      complete: false,
+      failed: true,
+    });
+    expect(
+      mission?.log
+        .filter((e) => e.type === OBJECTIVE_UPDATED)
+        .map((e) => e.payload),
+    ).toEqual([{ objectiveId: timed.id, complete: false, failed: true }]);
+  });
+
+  it("mission-start deps carry the shipped mission setup rules", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    expect(
+      tactical.missionStartDepsFor(new SequentialIdGenerator()).setupRules,
+    ).toBe(MISSION_SETUP_RULES);
   });
 
   it("mission-start deps place the whole starter roster on a generated map", () => {

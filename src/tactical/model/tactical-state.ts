@@ -1,4 +1,5 @@
 import type { JevControl } from "./jev-control";
+import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -220,6 +221,7 @@ export const NO_VISION: SideVision = {
  *   TacticalState
  *   ├── missionId, seed       which mission; the RNG seed its rules fork from
  *   ├── difficulty, threat    launch-time inputs the edge waves escalate with
+ *   ├── bugMix?               the species the spawns roll, from the offer
  *   ├── map                   the generated TacticalMap (ADR 0004); recipe inside
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
@@ -248,6 +250,14 @@ export interface TacticalState {
   readonly difficulty: number;
   /** Global threat at launch in `[0, 100]`; edge waves escalate with it. */
   readonly threat: number;
+  /**
+   * The species egg spawners and edge waves roll, copied from the
+   * offer's `Mission.bugMix` at launch (ADR 0013 §2.6). Absent for an
+   * offer made before the bestiary, and for every mission saved before
+   * it: the roll then weighs each species' `hatchWeight`, as it always
+   * has.
+   */
+  readonly bugMix?: SpeciesMix;
   readonly map: TacticalMap;
   /** Every unit on the map, TDF and bugs, alive or not. */
   readonly units: readonly Unit[];

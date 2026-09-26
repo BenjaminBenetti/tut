@@ -1,4 +1,5 @@
 import type { ActId } from "../../content/model/act-id";
+import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { BiomeId } from "../../content/model/biome-id";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { DeployableId } from "./deployable";
@@ -125,8 +126,8 @@ export interface MissionRewards {
  * Values copied from the type (`rewards`, `ignorePenalty`) are frozen
  * into the instance at generation so later tuning changes never alter a
  * mission the player can already see. The campaign context (`pinned`,
- * `storyId`, `act`, ADR 0013 §2.2) is optional, so offers saved before
- * it existed stay valid.
+ * `storyId`, `act`, `bugMix`, ADR 0013 §2.2) is optional, so offers
+ * saved before it existed stay valid.
  */
 export interface Mission {
   /** Unique id from the id generator. */
@@ -174,6 +175,14 @@ export interface Mission {
    * saved before acts existed.
    */
   readonly act?: ActId;
+  /**
+   * The species the mission's spawners and edge waves roll, frozen at
+   * offer from the bestiary for the act and the missions played in it
+   * (ADR 0013 §2.6), so a debut after the offer never changes a mission
+   * the player can already see. Absent on offers saved before the
+   * bestiary existed: those roll each species' `hatchWeight`, as before.
+   */
+  readonly bugMix?: SpeciesMix;
 }
 
 // ===========================================

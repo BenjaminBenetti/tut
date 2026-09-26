@@ -107,6 +107,8 @@ test("radio squads deploy persistent scanners that mark hidden units and nests",
             },
           ],
           extraction: [],
+          // The launched mission may leave a carcass beyond the fixture board.
+          carcasses: [],
           vision,
         },
       };

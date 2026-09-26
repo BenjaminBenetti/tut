@@ -102,8 +102,8 @@ describe("FIRST_SKYFALL", () => {
       difficulty: 1,
       act: "act-1",
       mapParams: { size: "small" },
-      // d1: 8 + 1 × 3 = 11 tech points, ×1.5.
-      rewards: { credits: 300, techPoints: 17 },
+      // d1: 5 + 1 × 2 = 7 tech points, ×1.5 and rounded.
+      rewards: { credits: 300, techPoints: 11 },
     });
     const city = getCity(state.map, offer.cityId);
     expect(offer.crashSite).toEqual({

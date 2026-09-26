@@ -321,7 +321,7 @@ describe("Great Hives through the day tick", () => {
       );
     }
     expect(events.some((e) => e.type === GREAT_HIVE_DESTROYED)).toBe(true);
-    expect(campaign.state.economy.techPoints).toBeGreaterThanOrEqual(170);
+    expect(campaign.state.economy.techPoints).toBeGreaterThanOrEqual(69);
     campaign.advance(3);
     expect(
       campaign.greatOffers().some((m) => m.hive?.hiveId === offer.hive?.hiveId),

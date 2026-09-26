@@ -8,35 +8,43 @@ import type { TechNode } from "../model/tech-node";
 // part tiers (18 and 40) and the whole-tree budget of §10. An upgrade
 // reaches every squad, hired now or later, and costs no credits once
 // researched, where a part node only makes one part purchasable, so a
-// rung costs a little more than the part tier it sits on: 25–30 on the
-// inner ring, 50–70 on the outer. The heavy weapons squad is the dearest
-// because it is a new type rather than a better one.
+// rung costs more than the part node of its tier and nearly as much as
+// the next: 35–39 on the inner ring (tier 3 parts are 40), 74–79 on the
+// outer (twice a tier 3 part is 80). The heavy weapons squad is the
+// dearest because it is a new type rather than a better one.
 //
 //   inner ring (tier 2)             outer ring (tier 3)
-//   Squad Armour I          30  ──► Squad Armour II          60
-//                               └─► Heavy Weapons Infantry   70
-//   Frag Grenades           25  ──► Incendiary Grenades      50
-//   Field Medic Training    30
-//                                                   family  265 TP
+//   Squad Armour I          39  ──► Squad Armour II          78
+//                               └─► Heavy Weapons Infantry   79
+//   Frag Grenades           35  ──► Incendiary Grenades      74
+//   Field Medic Training    39
+//                                                   family  344 TP
 //
 // Budget (§10): a 50-mission campaign earns about 1,400–1,500 TP and the
-// whole tree should cost 1.3–1.6× that, 1,820–2,400. The 728 TP of part
-// nodes, these 265, the Intel projects (about 650–700), Last Hope (about
-// 100) and five autopsies (100–200) come to about 1,850–2,000, the low
-// end of the band, with room for capstones.
+// whole tree should cost 1.3–1.6× that. The 728 TP of part nodes, these
+// 344, the Intel projects (600), Last Hope (100) and five autopsies
+// (170) come to 1,942. The campaign sweep measures an Average campaign,
+// the Spore Platform included, at about 1,460 TP, so the tree is about
+// 1.33× it; `tech-tree.test`'s fifty-mission model earns about 1,260,
+// so 1.54× by that measure. The family was 265 (30 / 25 / 30, then
+// 60 / 70 / 50) until the platform landed: a campaign whose first
+// assault fails plays on to buy Last Hope, which lifted the measured
+// income from about 1,350 and left the 1,863 tree at 1.28×. The other
+// fund pays for these and never runs dry before the finale, so the
+// price moves the tree's cost, not the campaign's pace.
 
 /** Squad Armour I: the family's first armour rung. */
-const SQUAD_ARMOUR_1_COST = 30;
+const SQUAD_ARMOUR_1_COST = 39;
 /** Squad Armour II: the second rung of plate. */
-const SQUAD_ARMOUR_2_COST = 60;
+const SQUAD_ARMOUR_2_COST = 78;
 /** Frag Grenades: the cheapest rung, a better grenade. */
-const FRAG_GRENADES_COST = 25;
+const FRAG_GRENADES_COST = 35;
 /** Incendiary Grenades: the grenade ladder's top rung. */
-const INCENDIARY_GRENADES_COST = 50;
+const INCENDIARY_GRENADES_COST = 74;
 /** Field Medic Training: a stronger medkit for the medic squad. */
-const FIELD_MEDIC_TRAINING_COST = 30;
+const FIELD_MEDIC_TRAINING_COST = 39;
 /** Heavy Weapons Infantry: a new squad type. */
-const HEAVY_WEAPONS_COST = 70;
+const HEAVY_WEAPONS_COST = 79;
 
 // ===========================================
 // Nodes

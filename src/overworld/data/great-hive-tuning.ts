@@ -14,9 +14,12 @@ import type { GreatHiveTuning } from "../model/great-hive-tuning";
  *   three unlock, is d8; a fixed value keeps all three assaults equal,
  *   so the player can take them in any order, and gives the 65% target
  *   one number to calibrate against.
- * - `techRewardMultiplier` 2.5: an ordinary d8 Hive Assault pays 68 TP,
- *   so a Great Hive pays 170. The three together pay 510, well over the
- *   280 of Intel III, the act's other gate.
+ * - `techRewardMultiplier` 1.5: an ordinary d8 Hive Assault pays 46 TP,
+ *   so a Great Hive pays 69, and the three together 207, most of the
+ *   280 of Intel III, the act's other gate. It was 2.5 (170 each on the
+ *   old mission rewards, nearly a third of an Average campaign's
+ *   income); the campaign retune cut it, because on the retuned rewards
+ *   2.5 still left the whole tree under 1.3× that income (arc §10).
  * - `maxLevel` 2: a lost assault adds one level, twice at most. A level
  *   is +20 core hit points and one more guard (the tactical setup's
  *   Great Hive tuning), so a loss costs a little and never compounds.
@@ -25,6 +28,6 @@ export const GREAT_HIVE_TUNING: GreatHiveTuning = {
   count: 3,
   difficulty: 8,
   act: "act-3",
-  techRewardMultiplier: 2.5,
+  techRewardMultiplier: 1.5,
   maxLevel: 2,
 };

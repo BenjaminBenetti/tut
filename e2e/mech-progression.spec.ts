@@ -5,7 +5,7 @@ import type { TacticalState } from "../src/tactical/model/tactical-state";
 import { TECH_NODES } from "../src/tech/data/tech-tree";
 import { NO_TECH_CONDITIONS } from "../src/tech/model/tech-conditions";
 import { isTechNodeHidden } from "../src/tech/service/tech-status-service";
-import { formatWhole } from "../src/ui/service/format";
+import { formatTechPoints } from "../src/ui/service/format";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { openTileWheel, openUnitWheel, wheelItem } from "./action-wheel.helper";
 import { tacticalModelsReady } from "./capture-frame.helper";
@@ -52,7 +52,7 @@ async function researchEverything(page: Page): Promise<void> {
   await page.locator('#top-bar [data-action="tech-tree"]').click();
   await expect(
     page.locator('#tech-tree-bar [data-field="techPoints"]'),
-  ).toHaveText(`${formatWhole(SHOWN_COST)} TP`);
+  ).toHaveText(formatTechPoints(SHOWN_COST));
   // The web is three: a node is selected through the dev hook rather
   // than by finding its pedestal on screen, and Unlock lives in the
   // detail panel (#1171).

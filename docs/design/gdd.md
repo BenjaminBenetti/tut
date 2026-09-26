@@ -87,19 +87,19 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - A second resource, **tech points** (`TP`), shown beside credits in the top bar (#1171). They are not money: nothing is priced in both, and there is no stipend.
 - Every won mission pays its offer's tech reward, shown on the mission list and briefing as `+23 TP`. Some maps report a **tech carcass** — a dead bug rich in salvage that an infantry squad can strip on the field; the offer tags it (`Tech carcass reported · +5 TP`), and the debrief says how much of the total was harvested.
 - Tech points buy nodes of the **tech tree** (the Tech screen), drawn as a **web in three** under the same camera controls as the tactical map (W A S D pan, Q E rotate, wheel zoom): the salvage core at the centre, a plinth per family (mobility, protection, ballistics, energy, fire support, support, infantry) on the ring around it, tier 2 nodes on the ring beyond and tier 3 nodes on the ring beyond that, each linked to the node it requires. Every node is a pedestal with **the part it unlocks turning on it** (a utility, which has no shape on the field, stands as a lit module, and so does a node that unlocks no part); the pedestal's rim and its link are tinted by status. A label under each pedestal names the node, its cost and whether it is unlocked, available, unaffordable or locked; clicking the pedestal or the label puts the node in the detail panel, which says what it unlocks, why it cannot be bought yet (`Need N more TP`, `Requires <node>`) and carries Unlock. Tier 3 needs its family's tier 2 rung. See [`tech-tree.png`](tech-tree.png).
-- **The infantry branch** (campaign arc §10.3, D8) is a seventh family that improves every squad rather than a mech. Its upgrades are campaign-wide: nothing is stored on a squad, and at every mission start the squads deployed are built with whatever the tree has unlocked, so a squad hired after the research has it as surely as one hired before. The family costs 265 TP in all, a little over a part node of the same tier per rung because an upgrade reaches every squad:
+- **The infantry branch** (campaign arc §10.3, D8) is a seventh family that improves every squad rather than a mech. Its upgrades are campaign-wide: nothing is stored on a squad, and at every mission start the squads deployed are built with whatever the tree has unlocked, so a squad hired after the research has it as surely as one hired before. The family costs 344 TP in all: a rung costs more than a part node of its tier and nearly as much as the next, because an upgrade reaches every squad:
 
   | node | tier | TP | needs | what every squad gets |
   |---|---|---|---|---|
-  | Squad Armour I | 2 | 30 | — | +1 armour |
-  | Frag Grenades | 2 | 25 | — | the grenade becomes a **frag grenade**: 8 damage in place of 6, falling off 30 % a tile in place of 40 % |
-  | Field Medic Training | 2 | 30 | — | the medic's medkit becomes a **field medkit**, mending 15 in place of 10 |
-  | Squad Armour II | 3 | 60 | Squad Armour I | +1 armour more, +2 in all |
-  | Heavy Weapons Infantry | 3 | 70 | Squad Armour I | opens the **Heavy Weapons Squad** for hire (§5.7) |
-  | Incendiary Grenades | 3 | 50 | Frag Grenades | the grenade becomes an **incendiary grenade**: the frag grenade's blast, and the ground it hits burns (§6.2.3) |
+  | Squad Armour I | 2 | 39 | — | +1 armour |
+  | Frag Grenades | 2 | 35 | — | the grenade becomes a **frag grenade**: 8 damage in place of 6, falling off 30 % a tile in place of 40 % |
+  | Field Medic Training | 2 | 39 | — | the medic's medkit becomes a **field medkit**, mending 15 in place of 10 |
+  | Squad Armour II | 3 | 78 | Squad Armour I | +1 armour more, +2 in all |
+  | Heavy Weapons Infantry | 3 | 79 | Squad Armour I | opens the **Heavy Weapons Squad** for hire (§5.7) |
+  | Incendiary Grenades | 3 | 74 | Frag Grenades | the grenade becomes an **incendiary grenade**: the frag grenade's blast, and the ground it hits burns (§6.2.3) |
 
   Armour comes off every hit after penetration, so +1 takes a swarmer's bite from 2–4 to 1–3, and +2 is the first plate a lurker's claws (penetration 1) notice; fire and a brute's cleavers (penetration 2) go through both. The detail panel names each upgrade and what it does (`Squad armour I (+1 armour on every squad)`). See [`tech-tree-infantry.png`](tech-tree-infantry.png).
-  One infantry upgrade comes from outside the family: **Intel I, Pheromone Analysis** (support spoke, 180 TP, hidden until the first Crash Site brings home a spore sample; campaign arc §4) gives every squad a **capture net** on top of its own kit, the one upgrade that adds an item rather than upgrading one, and sets the flag that pins Live Specimen.
+  One infantry upgrade comes from outside the family: **Intel I, Pheromone Analysis** (support spoke, 80 TP, hidden until the first Crash Site brings home a spore sample; campaign arc §4) gives every squad a **capture net** on top of its own kit, the one upgrade that adds an item rather than upgrading one, and sets the flag that pins Live Specimen.
 - **Dev builds** carry a `Free TP (+10)` button in the tree's bar that grants ten points a press, for walking the tree without playing missions; a production build has neither the button nor the command behind it (#1171).
 
 ### 5.6 Earth deployables

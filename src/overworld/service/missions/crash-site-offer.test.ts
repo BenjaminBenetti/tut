@@ -49,9 +49,9 @@ describe("CRASH_SITE_OFFER", () => {
     expect(created.cityId).toBe("clean");
     expect(created.typeId).toBe("crash-site");
     // Threat 40 and the landed 10: 0.7 × 0.1 + 0.3 × 0.4 of d1–10 is d3,
-    // whose 8 + 3 × 3 = 17 tech points pay 26.
+    // whose 5 + 2 × 3 = 11 tech points pay 16.5, rounded to 17.
     expect(created.difficulty).toBe(3);
-    expect(created.rewards.techPoints).toBe(26);
+    expect(created.rewards.techPoints).toBe(17);
     expect(created.ignorePenalty).toBe(15);
     // The offer never lands anything itself: that is the consequence
     // rule's `onOffered`, when the director puts it on the board.

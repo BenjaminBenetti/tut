@@ -14,8 +14,9 @@ import { GREAT_HIVE_TUNING } from "./great-hive-tuning";
  *   band (arc §3).
  * - Maps grow with difficulty: small up to 3, medium from 4, large from 8.
  * - About a third of offers carry a tech carcass worth 10 + 2 × difficulty
- *   tech points (#1171), roughly a quarter of the campaign's tech income
- *   when every one is harvested.
+ *   tech points (#1171): 20 at difficulty 5, on top of a clearance's 15,
+ *   so harvesting every one adds nearly half again to what the missions
+ *   pay.
  * - A clearance is offered to a detected city from 20 infestation, or
  *   from 10 in Act I (arc §6.1). A won clearance that leaves its city
  *   under 15 purges it to 0 (the mop-up, arc §5): a win removes about 14,
@@ -31,7 +32,7 @@ import { GREAT_HIVE_TUNING } from "./great-hive-tuning";
  *   (70 % / 30 %) and then adds the hive's level before the act clamps
  *   it; its map is always the large hive cavern, so it is "large" from
  *   difficulty 1. It pays twice the ordinary tech points: a difficulty-7
- *   assault pays (10 + 3 × 7) × 2 = 62, against 23 for a difficulty-5
+ *   assault pays (7 + 2 × 7) × 2 = 42, against 15 for a difficulty-5
  *   clearance.
  * - A crash site (arc §6.3) takes its difficulty like a clearance (70 %
  *   the landing city, landing included, 30 % threat, arc §3); its map

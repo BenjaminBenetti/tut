@@ -220,7 +220,11 @@ describe("applyGrowth", () => {
 
   it("works with the shipped defaults", () => {
     const { state } = applyGrowth(fixture(), 0, {}, INFESTATION_TUNING);
-    expect(levels(state).fresh).toBe(10 + INFESTATION_TUNING.baseGrowthRate);
+    // Infestation is whole, so the day's growth is rounded: the shipped
+    // 1.5 grows the city by 2.
+    expect(levels(state).fresh).toBe(
+      Math.round(10 + INFESTATION_TUNING.baseGrowthRate),
+    );
   });
 
   it("rejects threat outside 0..100", () => {

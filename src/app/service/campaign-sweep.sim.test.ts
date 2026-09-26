@@ -5,12 +5,19 @@ import { join } from "node:path";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
+import type { MissionTypeId } from "../../content/model/mission-type-id";
+import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { Mission } from "../../overworld/model/mission";
 import type { StoryMissionRule } from "../../overworld/model/story-mission-rule";
 import { STORY_MISSION_RULES } from "../../overworld/service/story/story-mission-rules";
-import type { TechNode } from "../../tech/model/tech-node";
-import type { CampaignRecord, SummaryLine } from "./campaign-sweep.test-helper";
+import type { TechNode, TechNodeKind } from "../../tech/model/tech-node";
+import type {
+  CampaignMark,
+  CampaignRecord,
+  StoryTrack,
+  SummaryLine,
+} from "./campaign-sweep.test-helper";
 import {
   campaignHeader,
   campaignRow,
@@ -83,11 +90,64 @@ const PROJECTED: readonly ModelledPlayerId[] = [
 
 /**
  * The Idle player's defeat window in days, pinned from the measurement:
- * seeds 1–60 fell between day 50 and day 79 (median 58.5), rounded out
+ * seeds 1–60 fell between day 67 and day 99 (median 77), rounded out
  * to the nearest five. A change to threat, growth or spread that moves
  * an untouched Earth's collapse outside it must move this on purpose.
+ * (Before the campaign retune halved the growth rate: day 50–79.)
  */
-const IDLE_DEFEAT_DAYS = { min: 45, max: 80 } as const;
+const IDLE_DEFEAT_DAYS = { min: 65, max: 100 } as const;
+
+/**
+ * The story mission that ends Act III (Launch Window): winning it is
+ * reaching the finale (arc §3).
+ */
+const FINALE_GATE = SHIPPED_STORY.spine["act-3"].endedBy;
+
+/** The Average campaigns' finale arrival pins (arc §12, D7). */
+const AVERAGE_FINALE = {
+  /** Median missions played on reaching the finale. */
+  missions: { min: 45, max: 55 },
+  /** Median threat on reaching the finale. */
+  threat: { min: 40, max: 55 },
+  /**
+   * Share of campaigns that reach it at all. §12 pins the median; a
+   * 70 / 10 / 20 player whose losses cluster can be overrun first, and
+   * that is a loss the player saw coming (arc §1), so it is not zero.
+   */
+  arrived: 0.9,
+  /**
+   * Share of campaigns whose first platform assault failed that bought
+   * Last Hope before threat ended them (arc §12: "in most runs").
+   */
+  lastHopeInTime: 0.5,
+} as const;
+
+/** Earliest median finale arrival for the Story-only player (arc §4, §12). */
+const STORY_ONLY_FINALE_MISSIONS = 30;
+
+/**
+ * The tech budget (arc §10, #1171): the whole tree against an Average
+ * campaign's income, and the part nodes against what it has earned by
+ * `partsByMission`.
+ */
+const TECH_BUDGET = {
+  treeToIncome: { min: 1.3, max: 1.6 },
+  partsByMission: 35,
+  incomeToParts: { min: 0.9, max: 1.1 },
+} as const;
+
+/**
+ * Mission types the director never draws and only the story pins (their
+ * offer rule is a trigger that offers nothing), with the story mission
+ * that pins each. The sweep counts ordinary offers per type and story
+ * offers per story mission, so the model meets these through the story
+ * mission's track.
+ */
+const PINNED_ONLY_TYPES: Readonly<
+  Partial<Record<MissionTypeId, StoryMissionId>>
+> = {
+  "spore-platform": "spore-platform",
+};
 
 /**
  * Days from a flag-gated story mission's gate opening to its pin (arc
@@ -163,6 +223,42 @@ describe("campaign sweep (campaign arc §12)", () => {
     expect(gateViolations(records)).toEqual([]);
   });
 
+  it("the model meets the whole campaign: the Average player is offered and plays every mission type (the Spore Platform through its story pin), hives form past the scripted first, and autopsies are bought", () => {
+    const average = SWEEP.shipped.average;
+    const total = (pick: (record: CampaignRecord) => number): number =>
+      average.reduce((sum, record) => sum + pick(record), 0);
+    for (const id of MISSION_TYPE_IDS) {
+      const story = PINNED_ONLY_TYPES[id];
+      if (story !== undefined) {
+        const played = (track: StoryTrack): number =>
+          track.losses + (track.won === undefined ? 0 : 1);
+        expect(
+          total((record) =>
+            record.stories[story].pinnedDays === undefined ? 0 : 1,
+          ),
+          id,
+        ).toBeGreaterThan(0);
+        expect(
+          total((record) => played(record.stories[story])),
+          id,
+        ).toBeGreaterThan(0);
+        continue;
+      }
+      expect(
+        total((record) => record.types[id].offered),
+        id,
+      ).toBeGreaterThan(0);
+      expect(
+        total((record) => record.types[id].played),
+        id,
+      ).toBeGreaterThan(0);
+    }
+    const formed = average.filter((record) => record.hivesFormed > 1);
+    expect(formed.length).toBeGreaterThan(average.length / 2);
+    const dissected = average.filter((record) => record.nodes.autopsy > 0);
+    expect(dissected.length).toBe(average.length);
+  });
+
   it("the D2 pin catches a story mission that also waits on missions played", () => {
     const player = TUNING.players.strong;
     const rules = storyWith({
@@ -174,10 +270,93 @@ describe("campaign sweep (campaign arc §12)", () => {
     );
     expect(gateViolations(records).length).toBeGreaterThan(0);
   });
+});
 
-  it("the Strong player reaches the last act that is built today and wins it", () => {
+// ===========================================
+// The campaign's length and tech budget (arc §3, §10, §12)
+// ===========================================
+
+describe("the campaign's pace (campaign arc §12)", () => {
+  it("the Average player reaches the finale at a median of 45–55 missions", () => {
+    const average = SWEEP.shipped.average;
+    const arrivals = sortedValues(
+      average,
+      (record) => finaleReached(record)?.missions,
+    );
+    expect(arrivals.length / average.length).toBeGreaterThanOrEqual(
+      AVERAGE_FINALE.arrived,
+    );
+    expect(quantile(arrivals, 0.5)).toBeGreaterThanOrEqual(
+      AVERAGE_FINALE.missions.min,
+    );
+    expect(quantile(arrivals, 0.5)).toBeLessThanOrEqual(
+      AVERAGE_FINALE.missions.max,
+    );
+  });
+
+  it("the Average player arrives at the finale at threat 40–55 (D7)", () => {
+    const threats = sortedValues(
+      SWEEP.shipped.average,
+      (record) => finaleReached(record)?.threat,
+    );
+    expect(quantile(threats, 0.5)).toBeGreaterThanOrEqual(
+      AVERAGE_FINALE.threat.min,
+    );
+    expect(quantile(threats, 0.5)).toBeLessThanOrEqual(
+      AVERAGE_FINALE.threat.max,
+    );
+  });
+
+  it("the Story-only player reaches the finale in every campaign, and not before about mission 30", () => {
+    const storyOnly = SWEEP.shipped["story-only"];
+    for (const record of storyOnly) {
+      expect(
+        finaleReached(record),
+        `story-only seed ${record.seed}`,
+      ).toBeDefined();
+    }
+    const arrivals = sortedValues(
+      storyOnly,
+      (record) => finaleReached(record)?.missions,
+    );
+    expect(quantile(arrivals, 0.5)).toBeGreaterThanOrEqual(
+      STORY_ONLY_FINALE_MISSIONS,
+    );
+  });
+
+  it("the whole tree costs 1.3–1.6× an Average campaign's income, and that income covers the parts by about mission 35 (#1171)", () => {
+    const average = SWEEP.shipped.average;
+    const cost = (kind?: TechNodeKind): number =>
+      SWEEP.nodes
+        .filter((node) => kind === undefined || node.kind === kind)
+        .reduce((sum, node) => sum + node.cost, 0);
+    const income = quantile(
+      sortedValues(average, (record) => record.tpEarned),
+      0.5,
+    );
+    expect(cost() / income).toBeGreaterThanOrEqual(
+      TECH_BUDGET.treeToIncome.min,
+    );
+    expect(cost() / income).toBeLessThanOrEqual(TECH_BUDGET.treeToIncome.max);
+    const byThen = quantile(
+      sortedValues(
+        average,
+        (record) => record.series[TECH_BUDGET.partsByMission - 1]?.tpEarned,
+      ),
+      0.5,
+    );
+    expect(byThen / cost("part")).toBeGreaterThanOrEqual(
+      TECH_BUDGET.incomeToParts.min,
+    );
+    expect(byThen / cost("part")).toBeLessThanOrEqual(
+      TECH_BUDGET.incomeToParts.max,
+    );
+  });
+
+  it("the Strong player reaches the finale and wins the campaign: the Spore Platform falls", () => {
     const ending = SHIPPED_STORY.spine[lastActOf(SHIPPED_STORY)].endedBy;
     for (const record of SWEEP.shipped.strong) {
+      expect(finaleReached(record), `strong seed ${record.seed}`).toBeDefined();
       expect(
         record.stories[ending].won,
         `strong seed ${record.seed}`,
@@ -185,37 +364,11 @@ describe("campaign sweep (campaign arc §12)", () => {
       expect(record.end, `strong seed ${record.seed}`).toBe("victory");
     }
   });
-});
 
-// ===========================================
-// Pins the arc wants, owned by packages still in flight
-// ===========================================
-
-describe("campaign arc §12 targets not reachable in today's build", () => {
-  // Owner: W6-spore-platform (the finale must exist), then the threat retune.
-  it.skip("the Average player reaches the finale at a median of 45–55 missions", () => {
-    const arrivals = missionsAt(
-      SWEEP.shipped.average,
-      (record) => record.acts.finale?.missions,
-    );
-    expect(arrivals.length).toBe(SWEEP.shipped.average.length);
-    expect(quantile(arrivals, 0.5)).toBeGreaterThanOrEqual(45);
-    expect(quantile(arrivals, 0.5)).toBeLessThanOrEqual(55);
-  });
-
-  // Owner: the threat retune, once W6-spore-platform builds the finale.
-  it.skip("the Average player arrives at the finale at threat 40–55", () => {
-    const threats = missionsAt(
-      SWEEP.shipped.average,
-      (record) => record.acts.finale?.threat,
-    );
-    expect(threats.length).toBe(SWEEP.shipped.average.length);
-    expect(quantile(threats, 0.5)).toBeGreaterThanOrEqual(40);
-    expect(quantile(threats, 0.5)).toBeLessThanOrEqual(55);
-  });
-
-  // Owner: W6-spore-platform (the platform, its failure and Last Hope).
-  it.skip("after a first platform failure, Last Hope is researched before threat 100 in most runs", () => {
+  it("after a first platform failure, Last Hope is researched before threat 100 in most runs (D7)", () => {
+    // A campaign ends at threat 100, so a Last Hope research mark on a
+    // record is one bought before it: the failed platform's +30 left
+    // the player time to buy the second assault.
     const failed = SWEEP.shipped.average.filter(
       (record) => record.stories["spore-platform"].losses > 0,
     );
@@ -223,41 +376,9 @@ describe("campaign arc §12 targets not reachable in today's build", () => {
     const inTime = failed.filter(
       (record) => record.research["tech.last-hope"] !== undefined,
     );
-    expect(inTime.length / failed.length).toBeGreaterThan(0.5);
-  });
-
-  // Owners: W5-intact-pod, W6-great-hives and W6-spore-platform (the acts between).
-  it.skip("the Story-only player does not reach the finale before about mission 30", () => {
-    for (const record of SWEEP.shipped["story-only"]) {
-      expect(
-        record.acts.finale,
-        `story-only seed ${record.seed}`,
-      ).toBeDefined();
-      expect(record.acts.finale?.missions ?? 0).toBeGreaterThanOrEqual(30);
-    }
-  });
-
-  // Owner: the threat retune (Phase 0), after W6-spore-platform (#1171's whole-tree pin).
-  it.skip("the whole tree costs 1.3–1.6× an Average campaign's income, and that income covers the parts by about mission 35", () => {
-    const income = quantile(
-      missionsAt(SWEEP.shipped.average, (record) => record.tpEarned),
-      0.5,
+    expect(inTime.length / failed.length).toBeGreaterThan(
+      AVERAGE_FINALE.lastHopeInTime,
     );
-    const tree = SWEEP.nodes.reduce((sum, node) => sum + node.cost, 0);
-    expect(tree / income).toBeGreaterThanOrEqual(1.3);
-    expect(tree / income).toBeLessThanOrEqual(1.6);
-    const parts = SWEEP.nodes
-      .filter((node) => node.kind === "part")
-      .reduce((sum, node) => sum + node.cost, 0);
-    const by35 = quantile(
-      missionsAt(
-        SWEEP.shipped.average,
-        (record) => record.series[34]?.tpEarned,
-      ),
-      0.5,
-    );
-    expect(by35 / parts).toBeGreaterThanOrEqual(0.9);
-    expect(by35 / parts).toBeLessThanOrEqual(1.1);
   });
 });
 
@@ -279,7 +400,7 @@ function playAll(
 }
 
 /** The sorted defined values `pick` reads off `records`. */
-function missionsAt(
+function sortedValues(
   records: readonly CampaignRecord[],
   pick: (record: CampaignRecord) => number | undefined,
 ): number[] {
@@ -287,6 +408,15 @@ function missionsAt(
     .map(pick)
     .filter((value): value is number => value !== undefined)
     .sort((a, b) => a - b);
+}
+
+/**
+ * When `record` reached the finale: the finale act's start once the
+ * finale is built, and until then the win of the mission that ends Act
+ * III, which is where the finale starts (arc §3).
+ */
+function finaleReached(record: CampaignRecord): CampaignMark | undefined {
+  return record.acts.finale ?? record.stories[FINALE_GATE].won;
 }
 
 /** How many campaigns had a flag-gated story gate open and timed. */

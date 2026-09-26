@@ -145,7 +145,7 @@ describe("HIVE_ASSAULT_TRIGGER — trigger", () => {
     const offer = firstOf(triggered(withHives([westHive(5)], 12)));
 
     expect(offer.rewards.techPoints).toBe(
-      Math.floor((10 + 3 * offer.difficulty) * 2),
+      Math.floor((7 + 2 * offer.difficulty) * 2),
     );
     expect(offer.rewards.credits).toBe(offer.difficulty * 300);
     expect(MISSION_TUNING.hiveAssault.techRewardMultiplier).toBe(2);
@@ -199,7 +199,7 @@ describe("HIVE_ASSAULT_TRIGGER — refresh", () => {
     expect(refreshed?.difficulty).toBe(offer.difficulty + 2);
     expect(refreshed?.rewards).toEqual({
       credits: (offer.difficulty + 2) * 300,
-      techPoints: Math.floor((10 + 3 * (offer.difficulty + 2)) * 2),
+      techPoints: Math.floor((7 + 2 * (offer.difficulty + 2)) * 2),
     });
     expect(refreshed).toMatchObject({
       id: offer.id,
@@ -280,7 +280,7 @@ describe("HIVE_ASSAULT_TRIGGER — refresh", () => {
 describe("hive assault formulae", () => {
   it("prices tech points as the ordinary award times the multiplier", () => {
     const ctx = offerContext(1);
-    expect(hiveAssaultTechPoints(7, ctx)).toBe(62);
+    expect(hiveAssaultTechPoints(7, ctx)).toBe(42);
     expect(
       hiveAssaultTechPoints(7, {
         ...ctx,
@@ -289,7 +289,7 @@ describe("hive assault formulae", () => {
           hiveAssault: { techRewardMultiplier: 1.5 },
         },
       }),
-    ).toBe(46);
+    ).toBe(31);
   });
 
   it("reads the hive's step length from the hive tuning", () => {

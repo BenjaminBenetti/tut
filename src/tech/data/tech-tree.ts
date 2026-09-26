@@ -8,28 +8,35 @@ import { POD_TELEMETRY_NODE } from "./pod-telemetry-node";
 // Costs
 // ===========================================
 //
-// Pacing (#1171): the part nodes should be bought out by about the 25th
-// tactical mission. (ADR 0013 retargets this once the campaign's other
-// nodes land: the whole tree at 1.3-1.6x a campaign's income, parts done
-// by about mission 35; campaign arc §10.) With infestation clearance paying a base of 8 tech
-// points plus 3 per point of difficulty, a campaign that ramps from
-// difficulty 2 to 8 banks roughly 575 over 25 missions, and the tech
-// carcasses that show up on about a third of maps add about 175 more.
-// Sixteen tier 2 nodes at 18 and eleven tier 3 nodes at 40 come to 728,
-// so a player who harvests what they find clears the tree a mission or
-// two early and one who never does finishes a few missions late. The
-// data test holds the total against that model.
+// Pacing (#1171, campaign arc §10): the whole tree costs 1.3-1.6x what
+// a campaign earns, so research is a real choice, and the part nodes
+// alone are paid for by about the 35th tactical mission. Sixteen tier 2
+// nodes at 18 and eleven tier 3 nodes at 40 come to 728. An
+// infestation clearance pays a base of 5 tech points plus 2 per point
+// of difficulty and a tech carcass shows up on about a third of maps,
+// so a campaign whose difficulty ramps through each act's band (arc §3)
+// banks about 690 by mission 35 and, with the three Great Hives, about
+// 1,260 by mission 50. The data test holds the part nodes and the
+// whole tree against that model; the campaign sweep measures the
+// modelled players against the same targets (Average: about 760 by
+// mission 35 and 1,460 over the campaign, the Spore Platform included).
 
 /** Tech points a tier 2 part node costs. */
 export const TIER_2_COST = 18;
 /** Tech points a tier 3 part node costs. */
 export const TIER_3_COST = 40;
 /**
- * Tech points Intel I, Pheromone Analysis, costs (campaign arc §4): its
- * starting price. An Intel node is priced by the story, not by a tier,
- * and it is left out of the parts pacing above.
+ * Tech points Intel I, Pheromone Analysis, costs (campaign arc §4). An
+ * Intel node is priced by the story, not by a tier, and it is left out
+ * of the parts pacing above. The arc's starting price was 180; the
+ * campaign retune (arc §12) cut it to 80 so the Average player, who puts
+ * half its tech points into Intel, wins Live Specimen at about mission
+ * 13–14, near where arc §3 ends Act I (12). At 180 Act I ran to about
+ * mission 21. 70 ends it at 12, but the faster campaign's income then
+ * covers the part nodes by about mission 33, at the edge of §10's
+ * "about mission 35".
  */
-export const PHEROMONE_ANALYSIS_COST = 180;
+export const PHEROMONE_ANALYSIS_COST = 80;
 
 // ===========================================
 // Nodes

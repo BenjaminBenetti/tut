@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { bugMixFor } from "../../bugs/service/bestiary-service";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import type { ActId } from "../../content/model/act-id";
 import { ACT_IDS } from "../../content/model/act-id";
@@ -559,8 +560,22 @@ describe("generateMissions — decorators", () => {
     expect([...first.values()]).not.toEqual([...alone.values()]);
   });
 
-  it("ships with no decorators", () => {
-    expect(MISSION_OFFER_DECORATORS).toEqual([]);
+  it("ships the bestiary decorator, which freezes the act's species mix on every new offer", () => {
+    expect(MISSION_OFFER_DECORATORS.map((d) => d.id)).toEqual(["bestiary"]);
+    const progress = {
+      ...state.progress,
+      act: "act-2" as const,
+      actStartedAt: 3,
+      missionsPlayed: 5,
+    };
+    const { state: next } = generateMissions(
+      { ...state, progress },
+      deps(2, { tuning: ALWAYS_DEFEND, decorators: MISSION_OFFER_DECORATORS }),
+    );
+    expect(next.missions.length).toBeGreaterThan(0);
+    for (const mission of next.missions) {
+      expect(mission.bugMix).toEqual(bugMixFor("act-2", 2));
+    }
   });
 });
 

@@ -39,6 +39,17 @@ export class HookPass implements GenerationPass {
   readonly provides: readonly DraftCapability[] = ["hooks"];
 
   // ===========================================
+  // Construction
+  // ===========================================
+
+  /**
+   * `overrides` stand in for the registry's placer of the same kind: an
+   * archetype's own rule for where a kind goes (the hive cavern keeps egg
+   * spawners in its chambers, #1179). None by default.
+   */
+  constructor(private readonly overrides: readonly HookPlacer[] = []) {}
+
+  // ===========================================
   // Public Methods
   // ===========================================
 
@@ -47,7 +58,9 @@ export class HookPass implements GenerationPass {
     const { params, registries, rng, diagnostics } = context;
     const jobs: Job[] = params.hooks.map((requirement, position) => ({
       requirement,
-      placer: registries.hookPlacers.get(requirement.kind),
+      placer:
+        this.overrides.find((placer) => placer.id === requirement.kind) ??
+        registries.hookPlacers.get(requirement.kind),
       position,
     }));
     jobs.sort(

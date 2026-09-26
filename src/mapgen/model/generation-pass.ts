@@ -22,6 +22,7 @@ export type DraftCapability =
   | "infestation-plan"
   | "lots"
   | "elevation"
+  | "cavern"
   | "buildings"
   | "interiors"
   | "waterfronts"

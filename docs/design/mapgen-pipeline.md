@@ -68,3 +68,48 @@ in the Archetype control. Renders: [pod close-up](crash-site-pod-hook-close.png)
 [whole crater](crash-site-pod-hook-overview.png), [desert, small](crash-site-pod-hook-desert.png).
 
 Elevation layers, half walls, the crash-site archetype and map scale are recorded in ADR 0008, ADR 0004 and ADR 0009. Tuning knobs and their measured effect are in `tactical-tuning.md`.
+
+## Hive cavern archetype (#1179)
+
+`archetype: "hive-cavern"` is the Hive Assault map ([campaign arc §7.5](campaign-arc.md)). `createHiveCavernPasses(tuning)` in `service/hive-cavern-pipeline.ts` keeps the settlement tail and replaces the town with a chain of chambers cut into bedrock. Tuning is `HIVE_CAVERN_TUNING`; the board is `HIVE_CAVERN_SIZE` (64 × 144, 9,216 columns, the same count as the 96 × 96 preset). `withArchetypeDefaults(recipe, ARCHETYPE_RECIPE_DEFAULTS)` gives the Map Lab preview that size and `HIVE_CAVERN_HOOKS`.
+
+```
+ terrain ─► cavern ─► dropship-sites (north edge only) ─► cavern-dressing
+   ─► slopes ─► ramps ─► hooks (eggs in brood chambers) ─► brood-chambers ─► connectivity
+
+ z=0   lip ─ mouth (drop ship pad, deploy = extraction)
+            │ main tunnel ≥ 3 wide, level spine
+           route chambers, zig-zagging down the board ── side tunnel ≥ 2 wide ─ side chamber
+            │
+ z=143     core (3×3 hive-core pad, hives ringed round it) ── burrow ─ map edge (edge spawns)
+```
+
+| Pass | What it does | Key decisions |
+|---|---|---|
+| terrain | the ordinary terrain pass; only lends the biome's ground surfaces | the cavern pass replaces its heightmap |
+| cavern | `planCavern` draws 5–8 chambers (4+ on the route, 1–3 side chambers) as lobed blobs and bowed tunnels; `carveCavern` floors them and raises `SurfaceIds.BEDROCK` rock everywhere else; records `MapDraft.cavern` (`CavernLayout`, capability `"cavern"`) | mouth → route → core and every burrow sit on one level spine (`spineLevel`), so 2×2 brutes and 3×3 blocks pass; side chambers step ±1 and terraces, ledges and pits stay off the spine; rock stands `wallLayers` (4) above the floor it walls; the planner replans with more side chambers when none fit |
+| dropship-sites | `DropshipSitePass("elevation", ["n"])` | lands on the flat pad behind the mouth's lip; `hasStandableSurface` keeps boarding columns off bedrock and water |
+| cavern-dressing | core hives (`coreHives`, 3–5 on a ring), carapace runs, brood clutches and clutter | bands every tunnel and the core pad clear; lifts a prop that would seal a pocket |
+| slopes, ramps | as in settlements | rock faces stay cliffs |
+| hooks | `HookPass([new EggSpawnerPlacer(isBroodFloor)])` overrides the egg placer; `HiveCorePlacer` places the core | eggs only on brood-chamber floor, never in a tunnel or the mouth |
+| brood-chambers | one `brood-chamber` hook per chamber other than the mouth | not requested by the recipe: emitted for however many chambers the seed drew |
+| connectivity | as in settlements | I7 over the recipe's hooks |
+
+Hooks (`HIVE_CAVERN_HOOKS` plus the brood pass):
+
+| Kind | Count | Where | `meta` |
+|---|---|---|---|
+| `deploy`, `extraction` | 1 each | the drop ship pad in the mouth | — |
+| `hive-core` (`HookKinds.HIVE_CORE`) | 1 | a level 3×3 in the core chamber, ≥ `HIVE_CORE_MIN_DISTANCE` (80) from deploy; the hook-kind default is 60 | `{ chamberId, footprint: 3 }` |
+| `brood-chamber` (`HookKinds.BROOD_CHAMBER`) | one per non-mouth chamber | one tile: the free floor nearest the chamber's centre (the chamber mask stays on `MapDraft.cavern` and is not frozen into `TacticalMap`) | `{ chamberId, role, radius, depth }` |
+| `egg-spawner` | 3 (2–4 allowed) | brood-chamber floor | `{ hatchRadius: 3 }` |
+| `edge-spawn` | 2 | where burrows meet the map edge, ≥ a third of the way in | — |
+
+The pipeline test (`service/hive-cavern-pipeline.test.ts`) sweeps every biome × 3 seeds through `validateTacticalMap` and checks the counts above, a 3×3 mech block and a 2×2 brute along the main route and the burrows, a 2×2 block into each side chamber, and wall height. Measured on 36 maps: 190–370 ms to generate idle (400–700 ms under load), 12–14 levels, 85–140 props. The Map Lab renders it at 2.6–2.9 fps under SwiftShader, against 0.4 fps for the large city, and `zoomToFit` fits the whole board at about 7.6 px per tile in 1280 × 720, above `ZOOM_FIT_FLOOR`.
+
+**Open-topped, not roofed.** The cavern is open-topped: chambers and tunnels are floors sunk into rock at least four layers high, with no ceiling tiles. The isometric camera sees into every chamber from its usual pitch, the renderer needs no roof cut-away, and the map uses only existing tile, wall and ramp geometry, so `validateTacticalMap` passes without changes. Rock still blocks sight: the sight service treats ground higher than the line as opaque. The costs are that four-layer walls can hide units behind them from the camera, and that the fog of war (ADR 0006) over rock tops, which no unit ever stands on, has not been looked at in a mission. A wall occlusion or height cut, and a fog check on a cavern mission, are tactical follow-ups.
+
+![Hive cavern, temperate](hive-cavern-temperate.png)
+![Hive cavern, desert](hive-cavern-desert.png)
+![Hive cavern, snowy](hive-cavern-snowy.png)
+![Hive core close-up](hive-cavern-core.png)

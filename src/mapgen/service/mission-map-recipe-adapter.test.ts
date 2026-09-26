@@ -316,11 +316,11 @@ describe("missionToMapRecipe", () => {
     });
     const hiveAssault: MissionType = {
       ...INFESTATION_CLEARANCE,
-      requiredHooks: [{ kind: "hive-core", count: 1 }],
+      requiredHooks: [{ kind: "warp-gate", count: 1 }],
     };
     expect(missionToMapRecipe(mission(), hiveAssault, registries)).toEqual({
       ok: false,
-      error: { kind: "unknown-hook-kind", id: "hive-core" },
+      error: { kind: "unknown-hook-kind", id: "warp-gate" },
     });
   });
 
@@ -424,14 +424,14 @@ describe("missionToMapRecipe with the mission map rules (ADR 0013 §2.3)", () =>
     const rules = withClearanceRule({
       recipe: () => ({
         archetype: "settlement",
-        extraHooks: [{ kind: "hive-core", count: 1 }],
+        extraHooks: [{ kind: "warp-gate", count: 1 }],
       }),
     });
     expect(
       missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries, rules),
     ).toEqual({
       ok: false,
-      error: { kind: "unknown-hook-kind", id: "hive-core" },
+      error: { kind: "unknown-hook-kind", id: "warp-gate" },
     });
   });
 

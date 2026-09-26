@@ -30,6 +30,17 @@ export const HookKinds = {
    * the squad destroys before it matures.
    */
   SPORE_POD: "spore-pod",
+  /**
+   * The heart of a hive cavern (#1179): exactly one, a 3×3 pad in the
+   * deepest chamber. Meta `{ chamberId, footprint }`.
+   */
+  HIVE_CORE: "hive-core",
+  /**
+   * One per chamber of a hive cavern other than its mouth (#1179): the
+   * chamber's floor centre, where dormant broods wait. Meta
+   * `{ chamberId, radius, depth }`.
+   */
+  BROOD_CHAMBER: "brood-chamber",
 } as const;
 
 /** Scalar metadata a hook or requirement may carry, e.g. `hatchRadius`. */

@@ -60,4 +60,10 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
       // edge band, so the floor's centre clears this with room.
       minDistanceFromDeploy: 10,
     },
+    [HookKinds.HIVE_CORE]: {
+      requiredPass: Pass.ALL,
+      // The far end of the cavern: the adapter fits this to the board,
+      // so a 64 × 144 hive asks for 50 and gets about 110 (#1179).
+      minDistanceFromDeploy: 60,
+    },
   };

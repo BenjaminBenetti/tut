@@ -24,6 +24,7 @@ import { WaterPass } from "../generator/water-pass";
 import type { GenerationPass } from "../model/generation-pass";
 import type { MapArchetype } from "../model/map-recipe";
 import type { MapGenRegistries } from "../model/registries";
+import { createHiveCavernPasses } from "./hive-cavern-pipeline";
 import type { PipelineOptions } from "./pipeline-map-generator";
 import { PipelineMapGenerator } from "./pipeline-map-generator";
 
@@ -109,6 +110,7 @@ const PASSES_BY_ARCHETYPE: Readonly<
 > = {
   settlement: createSettlementPasses,
   "crash-site": createCrashSitePasses,
+  "hive-cavern": createHiveCavernPasses,
 };
 
 // ===========================================

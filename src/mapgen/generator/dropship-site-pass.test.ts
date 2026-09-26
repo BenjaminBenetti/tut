@@ -102,6 +102,22 @@ describe("DropshipSitePass", () => {
     expect(context.draft.groundLevelAt(land.x - 1, 0)).toBe(0);
   });
 
+  it("rejects bedrock inside the only envelope (#1179)", () => {
+    const { context, land } = fixture("n");
+    context.draft.setGroundSurface(land.x + 3, 4, SurfaceIds.BEDROCK);
+    new DropshipSitePass().run(context);
+    expect(context.draft.dropships).toEqual([]);
+  });
+
+  it("searches only the edges it is given (#1179)", () => {
+    const east = fixture("e");
+    new DropshipSitePass("roads", ["n", "s", "w"]).run(east.context);
+    expect(east.context.draft.dropships).toEqual([]);
+    const allowed = fixture("e");
+    new DropshipSitePass("roads", ["e"]).run(allowed.context);
+    expect(allowed.context.draft.dropships[0]?.facing).toBe("e");
+  });
+
   it("rejects a road through the only envelope rather than clipping the aircraft", () => {
     const { context, land } = fixture("n");
     context.draft.setRoad(land.x + 3, 4);

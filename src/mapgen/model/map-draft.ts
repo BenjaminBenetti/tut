@@ -1,6 +1,7 @@
 import type { CraterSite } from "./crater-site";
 import type { MissionSitePlacement } from "./mission-site";
 import type { InfestationPlan } from "./infestation-plan";
+import type { CavernLayout } from "./cavern-layout";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { IdGenerator } from "../../core/model/id-generator";
@@ -103,6 +104,8 @@ export class MapDraft {
   infestation?: InfestationPlan;
   /** The impact bowl the crater pass sank; absent outside the crash-site pipeline. */
   crater?: CraterSite;
+  /** Chambers and tunnels of a hive cavern (#1179). Absent on other archetypes. */
+  cavern?: CavernLayout;
   /** The production site pass ran; missing sites must not silently become legacy blobs. */
   requiresDropships = false;
   readonly hooks: DraftHooks = {

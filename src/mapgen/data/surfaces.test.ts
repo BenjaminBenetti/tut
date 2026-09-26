@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { PassMask } from "../model/pass-mask";
 import { createRegistry } from "../../core/service/definition-registry";
-import { SURFACE_DEFINITIONS, SurfaceIds } from "./surfaces";
+import {
+  IMPASSABLE_GROUND_SURFACES,
+  SURFACE_DEFINITIONS,
+  SurfaceIds,
+} from "./surfaces";
 
 describe("surface definitions", () => {
   const registry = createRegistry("surface", SURFACE_DEFINITIONS);
@@ -16,6 +20,18 @@ describe("surface definitions", () => {
 
   it("admit nobody on water", () => {
     expect(registry.get(SurfaceIds.WATER).defaultPass).toBe(PassMask.NONE);
+  });
+
+  it("admit nobody on the bedrock a hive cavern is cut into (#1179)", () => {
+    const bedrock = registry.get(SurfaceIds.BEDROCK);
+    expect(bedrock.defaultPass).toBe(PassMask.NONE);
+    expect(bedrock.isInterior).toBe(false);
+  });
+
+  it("count exactly water and bedrock as impassable ground", () => {
+    expect([...IMPASSABLE_GROUND_SURFACES].sort()).toEqual(
+      [SurfaceIds.BEDROCK, SurfaceIds.WATER].sort(),
+    );
   });
 
   it("restrict interiors and roofs to infantry", () => {

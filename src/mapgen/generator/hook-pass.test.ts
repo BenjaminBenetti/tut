@@ -9,7 +9,7 @@ import { DEFAULT_MISSION_HOOKS } from "../data/hook-requirements";
 import type { GenerationContext } from "../model/generation-pass";
 import { HookKinds } from "../model/hook";
 import type { HookPlacer } from "../model/hook-placer";
-import type { MapDraft } from "../model/map-draft";
+import { MapDraft } from "../model/map-draft";
 import type {
   HookRequirement,
   MapGenParams,
@@ -18,7 +18,10 @@ import type {
 import { PassMask } from "../model/pass-mask";
 import type { MapGenRegistries } from "../model/registries";
 import type { TacticalMap } from "../model/tactical-map";
+import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
+import { SurfaceIds } from "../data/surfaces";
 import { createDefaultRegistries } from "../service/default-registries";
+import { resolveMapGenParams } from "../service/param-resolver";
 import { isBoundaryColumn } from "../service/draft-queries";
 import { createRegistry } from "../../core/service/definition-registry";
 import { freezeDraft } from "../service/draft-freezer";
@@ -303,12 +306,54 @@ describe("HookPass", () => {
     expect(draft.hooks.objectives.some((h) => h.kind === "vip")).toBe(true);
   });
 
+  it("lets an archetype's override stand in for the registry's placer (#1179)", () => {
+    const calls: number[] = [];
+    const spot = { x: 3, y: 0, z: 5 };
+    const override: HookPlacer = {
+      id: HookKinds.EGG_SPAWNER,
+      priority: 10,
+      place: (requirement, context) => {
+        calls.push(requirement.count);
+        context.draft.addHook(
+          "objectives",
+          HookKinds.EGG_SPAWNER,
+          [spot],
+          requirement.requiredPass,
+        );
+      },
+    };
+    const params: MapGenParams = {
+      archetype: "settlement",
+      biome: "temperate",
+      settlement: "rural",
+      size: { width: 16, depth: 16 },
+      hooks: [
+        { kind: HookKinds.EGG_SPAWNER, count: 2, requiredPass: PassMask.ALL },
+      ],
+    };
+    const draft = new MapDraft(
+      16,
+      16,
+      new SequentialIdGenerator(),
+      SurfaceIds.GRASS,
+    );
+    new HookPass([override]).run({
+      draft,
+      params: resolveMapGenParams(params, registries),
+      registries,
+      rng: new Mulberry32Rng(3),
+      diagnostics: { note: () => undefined },
+    });
+    expect(calls).toEqual([2]);
+    expect(draft.hooks.objectives.map((hook) => hook.tiles)).toEqual([[spot]]);
+  });
+
   it("throws on an unknown hook kind, naming it", () => {
     expect(() =>
       run("desert", "town", "unknown", [
-        { kind: "hive-core", count: 1, requiredPass: PassMask.INFANTRY },
+        { kind: "warp-gate", count: 1, requiredPass: PassMask.INFANTRY },
       ]),
-    ).toThrow('Unknown hook placer id "hive-core"');
+    ).toThrow('Unknown hook placer id "warp-gate"');
   });
 
   it("is deterministic per seed", () => {

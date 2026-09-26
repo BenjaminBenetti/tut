@@ -47,6 +47,15 @@ import {
  *   otherwise                          ──► extracted
  * ```
  *
+ * A mission marked `endsOnObjectives` (#1179) is won the moment every
+ * deciding objective is complete, with the force still on the map: the
+ * platform core destroyed is the end of it, and there is nowhere to
+ * extract to. Otherwise it ends as any other.
+ *
+ * ```
+ *   endsOnObjectives ∧ deciding objectives all complete ──► won
+ * ```
+ *
  * A pure predicate over the state, deliberately owned by neither the
  * turn engine nor the objectives: the turn boundary asks it, and so do
  * the rules that can decide a mission mid-phase — planting charges,
@@ -57,6 +66,9 @@ import {
 export function missionOutcome(
   mission: TacticalState,
 ): MissionOutcome | undefined {
+  if (mission.endsOnObjectives === true && objectivesComplete(mission)) {
+    return "won";
+  }
   if (mission.units.some(isStandingForce)) {
     return undefined;
   }

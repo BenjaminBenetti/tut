@@ -9,7 +9,9 @@ import type { MissionResolutionState } from "../../overworld/model/mission-resol
 import type { MissionResolver } from "../../overworld/model/mission-resolver";
 import type {
   MechDamageReport,
+  MissionOutcome,
   MissionResult,
+  MissionStageResult,
   ObjectiveResult,
   SquadCasualties,
 } from "../../overworld/model/mission-result";
@@ -41,6 +43,9 @@ import type { MissionStartOptions } from "../model/mission-start-options";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission } from "./mission-start-service";
 import { missionOutcome } from "./mission-end-service";
+import type { MissionRecord } from "./mission-stage-service";
+import { advanceMissionStage, missionRecord } from "./mission-stage-service";
+import type { StageAdvancer } from "../model/stage-advancer";
 
 // ===========================================
 // Types
@@ -121,6 +126,8 @@ export interface TacticalResolveDeps {
  *   log UnitDied of a bug ──► its species, once each, into speciesKilled
  *   objectives ──► one ObjectiveResult row each, and each kind's own
  *                  fields (a defence's `defence`), via OBJECTIVE_RULES
+ *   stage? ──► a linked mission's earlier stages read with this one
+ *              (missionRecord), and one `stages` row per stage
  * ```
  *
  * A unit that extracted is read exactly as it walked off the map, so a
@@ -142,8 +149,11 @@ export function tacticalMissionResult(
 ): MissionResult {
   const { tactical, mission, deployment, state } = input;
   const outcome = tactical.outcome ?? missionOutcome(tactical) ?? "lost";
-  const roster = [...tactical.units, ...tactical.extracted];
-  const credits = creditsBySource(tactical, roster);
+  // A linked mission's earlier stages count too (ADR 0013 amendment); a
+  // one-map mission's record is its units, extracted and log as they are.
+  const record = missionRecord(tactical);
+  const roster = record.roster;
+  const credits = creditsBySource(record);
 
   const squadCasualties: SquadCasualties[] = [];
   const squadsWiped: string[] = [];
@@ -189,7 +199,7 @@ export function tacticalMissionResult(
     }
   }
 
-  const harvested = techPointsHarvested(tactical);
+  const harvested = techPointsHarvested(record);
   const parts = partsFor(outcome, mission);
   const bounty = techPointsBounty(tactical);
   return {
@@ -208,13 +218,39 @@ export function tacticalMissionResult(
       harvested + bounty,
     ),
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
-    ...leftBehindField(tactical, roster),
+    ...leftBehindField(record),
     ...(harvested > 0 ? { techPointsHarvested: harvested } : {}),
     ...(parts.length > 0 ? { partsAwarded: parts } : {}),
     ...(bounty > 0 ? { techPointsBounty: bounty } : {}),
     ...objectivesField(tactical),
     ...objectiveResultFields(tactical),
-    ...speciesKilledField(tactical, roster),
+    ...speciesKilledField(record),
+    ...stagesField(tactical, outcome),
+  };
+}
+
+/**
+ * How each stage of a linked mission went (ADR 0013 amendment), for the
+ * debrief: the earlier stages, each won on the turn it ended, then the
+ * stage the mission ended on. Absent on a one-map mission.
+ */
+function stagesField(
+  tactical: TacticalState,
+  outcome: MissionOutcome,
+): { stages?: readonly MissionStageResult[] } {
+  const stage = tactical.stage;
+  if (stage === undefined) {
+    return {};
+  }
+  return {
+    stages: [
+      ...stage.earlier.map((earlier): MissionStageResult => ({
+        index: earlier.index,
+        outcome: "won",
+        turns: earlier.turns,
+      })),
+      { index: stage.index, outcome, turns: tactical.turn },
+    ],
   };
 }
 
@@ -241,9 +277,9 @@ function objectivesField(tactical: TacticalState): {
  * harvested and then lost still tallies what was stripped, and
  * `techPointsFor` alone decides whether the outcome keeps it.
  */
-function techPointsHarvested(tactical: TacticalState): number {
+function techPointsHarvested(record: MissionRecord): number {
   let harvested = 0;
-  for (const event of tactical.log) {
+  for (const event of record.log) {
     if (event.type === CARCASS_HARVESTED) {
       harvested += Math.max(0, event.payload.techPoints);
     }
@@ -281,16 +317,15 @@ function techPointsBounty(tactical: TacticalState): number {
  * skipped. Absent when no bug died, so such a result is exactly what it
  * was before the field existed.
  */
-function speciesKilledField(
-  tactical: TacticalState,
-  roster: readonly Unit[],
-): { speciesKilled?: readonly BugSpeciesId[] } {
+function speciesKilledField(record: MissionRecord): {
+  speciesKilled?: readonly BugSpeciesId[];
+} {
   const killed: BugSpeciesId[] = [];
-  for (const event of tactical.log) {
+  for (const event of record.log) {
     if (event.type !== UNIT_DIED) {
       continue;
     }
-    const dead = roster.find((unit) => unit.id === event.payload.unitId);
+    const dead = record.roster.find((unit) => unit.id === event.payload.unitId);
     const species = dead?.sourceId as BugSpeciesId | undefined;
     if (
       dead?.team === "bugs" &&
@@ -309,16 +344,15 @@ function speciesKilledField(
  * log's `UnitAbandoned` events in order; absent when there were none so
  * a mission nobody left is reported exactly as before.
  */
-function leftBehindField(
-  tactical: TacticalState,
-  roster: readonly Unit[],
-): { leftBehind?: readonly string[] } {
+function leftBehindField(record: MissionRecord): {
+  leftBehind?: readonly string[];
+} {
   const leftBehind: string[] = [];
-  for (const event of tactical.log) {
+  for (const event of record.log) {
     if (event.type !== UNIT_ABANDONED) {
       continue;
     }
-    const unit = roster.find((u) => u.id === event.payload.unitId);
+    const unit = record.roster.find((u) => u.id === event.payload.unitId);
     if (unit !== undefined && !leftBehind.includes(unit.sourceId)) {
       leftBehind.push(unit.sourceId);
     }
@@ -350,7 +384,7 @@ function leftBehindField(
  * roll, forked from the campaign seed, so a replayed mission resolves the
  * same way.
  */
-export class TacticalMissionResolver implements MissionResolver {
+export class TacticalMissionResolver implements MissionResolver, StageAdvancer {
   // ===========================================
   // Fields
   // ===========================================
@@ -390,6 +424,17 @@ export class TacticalMissionResolver implements MissionResolver {
       this.deps.missionStartDepsFor(ids),
       options,
     );
+  }
+
+  /**
+   * Moves a linked mission on from its won stage to the next (ADR 0013
+   * amendment, #1179). See `advanceMissionStage`.
+   */
+  advanceStage<TState extends MissionCampaignState>(
+    state: TState,
+    ids: IdGenerator,
+  ): Result<TState, TacticalError> {
+    return advanceMissionStage(state, this.deps.missionStartDepsFor(ids));
   }
 
   /** Turns a finished mission into its result. See `tacticalMissionResult`. */
@@ -449,10 +494,8 @@ const NO_CREDIT: KillCredit = { kills: 0, xp: 0 };
  * fire earns nobody a kill, and a template with no worth — a mission
  * saved before species carried one — earns the kill and nothing else.
  */
-function creditsBySource(
-  tactical: TacticalState,
-  roster: readonly Unit[],
-): Map<string, KillCredit> {
+function creditsBySource(record: MissionRecord): Map<string, KillCredit> {
+  const { roster, templates } = record;
   const sourceByUnit = new Map<UnitId, string>();
   for (const unit of roster) {
     if (unit.team === "tdf") {
@@ -460,7 +503,7 @@ function creditsBySource(
     }
   }
   const credits = new Map<string, KillCredit>();
-  for (const event of tactical.log) {
+  for (const event of record.log) {
     if (event.type !== UNIT_DIED) {
       continue;
     }
@@ -473,7 +516,7 @@ function creditsBySource(
     if (source === undefined || dead?.team !== "bugs") {
       continue;
     }
-    const worth = tactical.templates[dead.templateId]?.xpValue ?? 0;
+    const worth = templates[dead.templateId]?.xpValue ?? 0;
     const soFar = credits.get(source) ?? NO_CREDIT;
     credits.set(source, {
       kills: soFar.kills + 1,

@@ -341,6 +341,7 @@ export const MODEL_IDS = [
   "tile.platform.hull-plate",
   "tile.platform.hull-plate-dark",
   "tile.platform.hull-rim",
+  "prop.platform-core",
   "prop.infested-nest-large",
   "prop.infested-nest-split",
   "prop.infested-hive-spire",

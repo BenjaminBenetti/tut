@@ -7,9 +7,11 @@ import type {
 import type { PhaseStep } from "../../model/phase-step";
 import type { Objective } from "../../model/tactical-state";
 import { SHIPPED_EQUIPMENT } from "../../repository/equipment-catalogue";
+import { BOARD_CORE_OBJECTIVE } from "./board-core-objective";
 import { createCaptureSpecimenObjective } from "./capture-specimen-objective";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
 import { DESTROY_HIVE_CORE_OBJECTIVE } from "./destroy-hive-core-objective";
+import { DESTROY_PLATFORM_CORE_OBJECTIVE } from "./destroy-platform-core-objective";
 import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
 import { RECOVER_POD_OBJECTIVE } from "./recover-pod-objective";
@@ -40,6 +42,8 @@ import { STRIP_WRECK_OBJECTIVE } from "./strip-wreck-objective";
  *   seal-tunnels       ──► seal-tunnels-objective.ts (with the shipped
  *                          tunnel tuning: the fuse and its blast)
  *   recover-pod        ──► recover-pod-objective.ts
+ *   board-core         ──► board-core-objective.ts (the platform's hull)
+ *   destroy-platform-core ──► destroy-platform-core-objective.ts (its core)
  * ```
  *
  * Typed by `ObjectiveRulesTable`, so a kind added to `Objective` without
@@ -57,6 +61,8 @@ export const OBJECTIVE_RULES: ObjectiveRulesTable = {
   "destroy-hive-core": DESTROY_HIVE_CORE_OBJECTIVE,
   "seal-tunnels": createSealTunnelsObjective(TUNNEL_TUNING),
   "recover-pod": RECOVER_POD_OBJECTIVE,
+  "board-core": BOARD_CORE_OBJECTIVE,
+  "destroy-platform-core": DESTROY_PLATFORM_CORE_OBJECTIVE,
 };
 
 // ===========================================

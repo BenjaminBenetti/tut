@@ -14,6 +14,8 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
 import { missionToMapRecipe } from "../../mapgen/service/mission-map-recipe-adapter";
+import { MISSION_MAP_RULES } from "../../mapgen/service/missions/mission-map-rules";
+import { mapRulesForStage } from "../../mapgen/service/mission-stage-map-rules";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { Deployment } from "../../overworld/model/deployment";
 import {
@@ -32,6 +34,7 @@ import type {
   MissionSetupRules,
 } from "../model/mission-setup-rule";
 import type { MissionStartOptions } from "../model/mission-start-options";
+import type { MissionStageState } from "../model/mission-stage";
 import type { SitrepRules } from "../model/sitrep-rule";
 import type { StorySetupRules } from "../model/story-setup-rule";
 import type { TacticalError } from "../model/tactical-error";
@@ -192,12 +195,77 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     return err({ kind: "oversized-deployment", size, max: MAX_DEPLOYED_UNITS });
   }
 
-  const recipe = missionToMapRecipe(
+  const stages = deps.missionTypes[mission.typeId].stages?.length ?? 1;
+  return buildMissionStage(
+    state,
     mission,
+    stages > 1 ? { index: 0, count: stages, earlier: [] } : undefined,
+    (map, zoneTiles) =>
+      placeDeployment(state, deployment, map, zoneTiles, deps),
+    deps,
+    options,
+  );
+}
+
+// ===========================================
+// One stage
+// ===========================================
+
+/**
+ * Places a force on the map of one stage: the deployment at the
+ * mission's start, the survivors of the stage before on a linked
+ * mission's later map (ADR 0013 amendment). Handed the generated map
+ * and the tiles the force stands on, in the order to fill them.
+ */
+export type StagePlacement = (
+  map: TacticalMap,
+  zoneTiles: readonly TileCoord[],
+) => Result<Placed, TacticalError>;
+
+/**
+ * Builds the `TacticalState` of one stage of `mission` and stores it in
+ * `activeMission`: the map, the force placed by `place`, the type's and
+ * the story's setup, the garrison, the sitreps and the first look. The
+ * mission start builds stage 0 of every mission through here, and
+ * `advanceMissionStage` each later stage of a linked one (ADR 0013
+ * amendment, #1179), so the two cannot drift.
+ *
+ * ```
+ *   stage 0   the mission's own seed and the map rules as given
+ *   stage n   seed "<seed>/stage-n", the map rules asked for stage n
+ *   deploy    the type's setup rule's deployTiles, else the map's deploy zones
+ * ```
+ *
+ * Stage 0 of a one-map mission (`stage` undefined) is exactly the start
+ * every mission had before linked missions: the same recipe, ids and
+ * draws.
+ *
+ * @param state - The campaign; its `activeMission` is replaced.
+ * @param mission - The offer being played.
+ * @param stage - Where a linked mission stands, or undefined for one map.
+ * @param place - Stands the force on the stage's map.
+ * @param deps - Content and services the start reads.
+ * @param options - What the launch knows beyond the force.
+ * @returns The campaign with the stage in `activeMission`, or why it cannot start.
+ */
+export function buildMissionStage<TState extends MissionCampaignState>(
+  state: TState,
+  mission: Mission,
+  stage: MissionStageState | undefined,
+  place: StagePlacement,
+  deps: MissionStartDeps,
+  options: MissionStartOptions,
+): Result<TState, TacticalError> {
+  const index = stage?.index ?? 0;
+  const played = stageMission(mission, index);
+  const recipe = missionToMapRecipe(
+    played,
     deps.missionTypes[mission.typeId],
     deps.registries,
     // Undefined falls to the adapter's default, the shipped rules.
-    deps.mapRules,
+    deps.mapRules === undefined && index === 0
+      ? undefined
+      : mapRulesForStage(deps.mapRules ?? MISSION_MAP_RULES, index),
   );
   if (!recipe.ok) {
     return err({
@@ -209,7 +277,12 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     registries: deps.registries,
   });
 
-  const placed = placeDeployment(state, deployment, map, deps);
+  const rules = deps.setupRules ?? MISSION_SETUP_RULES;
+  const rule = rules[mission.typeId];
+  const zoneTiles =
+    rule.deployTiles?.(map, index) ??
+    map.hooks.deployZones.flatMap((zone) => zone.tiles);
+  const placed = place(map, zoneTiles);
   if (!placed.ok) {
     return placed;
   }
@@ -261,14 +334,15 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     commandSeq: 0,
     // Nobody has looked yet; the first look is taken once all is placed.
     vision: emptyVision(),
+    // Which map of a linked mission this is; the setup rule reads it.
+    ...(stage === undefined ? {} : { stage }),
   };
-  const rules = deps.setupRules ?? MISSION_SETUP_RULES;
-  const typed = rules[mission.typeId].setup(base, map, mission, deps);
+  const typed = rule.setup(base, map, played, deps);
   if (!typed.ok) {
     return typed;
   }
   // A story mission's own setup on top of its type's (ADR 0013 §2.5).
-  const setUp = setUpStory(typed.value, map, mission, deps);
+  const setUp = setUpStory(typed.value, map, played, deps);
   if (!setUp.ok) {
     return setUp;
   }
@@ -277,9 +351,11 @@ export function startTacticalMission<TState extends MissionCampaignState>(
   // spawners have left free (#1155), from a stream that is a pure
   // function of the mission's seed, so nothing else the start draws can
   // move them. Their arrival is logged so the account opens with them.
+  // A type fought out of the batteries' reach (`garrisoned: false`, the
+  // platform in orbit) stands none.
   const garrison = placeGarrisonTurrets(
     tactical,
-    options.garrisonTurrets ?? 0,
+    rule.garrisoned === false ? 0 : (options.garrisonTurrets ?? 0),
     deps.garrison,
     new Mulberry32Rng(seed).fork(GARRISON_RNG_LABEL),
     deps.ids,
@@ -345,7 +421,7 @@ function setUpStory(
 // ===========================================
 
 /** Units and their templates once placed, or the first placement error. */
-interface Placed {
+export interface Placed {
   readonly units: readonly Unit[];
   readonly templates: Readonly<Record<UnitTemplateId, UnitTemplate>>;
 }
@@ -362,6 +438,7 @@ function placeDeployment(
   state: MissionCampaignState,
   deployment: Deployment,
   map: TacticalMap,
+  zoneTiles: readonly TileCoord[],
   deps: MissionStartDeps,
 ): Result<Placed, TacticalError> {
   const index = new TileIndex(map);
@@ -370,7 +447,6 @@ function placeDeployment(
     tuning: deps.unitTuning,
     infantryUpgrades: deps.infantryUpgradesFor?.(state) ?? [],
   };
-  const zoneTiles = map.hooks.deployZones.flatMap((zone) => zone.tiles);
   const facing = facingToward(zoneTiles[0], map);
   const used = new Set<string>();
   const units: Unit[] = [];
@@ -419,8 +495,12 @@ function placeDeployment(
   return ok({ units, templates });
 }
 
-/** The first unused zone tile the class may stand on, marked used. */
-function claimTile(
+/**
+ * The first unused zone tile the class may stand on, marked used.
+ * Exported for the later stages of a linked mission, which stand their
+ * survivors on the next map the way the deployment stands on the first.
+ */
+export function claimTile(
   zoneTiles: readonly TileCoord[],
   index: TileIndex,
   used: Set<string>,
@@ -471,6 +551,27 @@ function carcassesFrom(
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * The offer as one stage plays it: stage 0 is the offer itself, and
+ * each later stage of a linked mission its own map seed,
+ * `"<seed>/stage-<n>"`, so the stages' maps differ and each is still a
+ * pure function of the offer. The offer's tech carcass (#1171) lies on
+ * the first map only: it is one carcass, not one per map.
+ */
+export function stageMission(mission: Mission, index: number): Mission {
+  if (index === 0) {
+    return mission;
+  }
+  const { techCarcass: _once, ...mapParams } = mission.mapParams;
+  return {
+    ...mission,
+    mapParams: {
+      ...mapParams,
+      seed: `${mission.mapParams.seed}/stage-${String(index)}`,
+    },
+  };
+}
 
 /** Text for the adapter's typed error. */
 function describeRecipeError(error: {

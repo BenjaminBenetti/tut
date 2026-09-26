@@ -3,6 +3,7 @@ import { FIRST_SKYFALL } from "./first-skyfall";
 import { INTACT_POD } from "./intact-pod";
 import { LAUNCH_WINDOW } from "./launch-window";
 import { LIVE_SPECIMEN } from "./live-specimen";
+import { SPORE_PLATFORM } from "./spore-platform";
 import { UPLINK } from "./uplink";
 
 // ===========================================
@@ -24,6 +25,8 @@ import { UPLINK } from "./uplink";
  *                                          until the recovery drop
  *   uplink          ──► uplink.ts          Act III's opener: hold the tracking array, d6
  *   launch-window   ──► launch-window.ts   Act III's ending: hold the launch site, d8
+ *   spore-platform  ──► spore-platform.ts  the finale: the hull, then the core, d10;
+ *                                          won is victory, lost twice is defeat (D7)
  * ```
  *
  * `Partial` on purpose: story missions land package by package, and an
@@ -33,8 +36,9 @@ import { UPLINK } from "./uplink";
  * the campaign. So every build ends in a campaign that can be finished
  * (arc §13). Live Specimen ends Act I and Intact Pod ends Act II, so a
  * won Live Specimen enters Act II; Launch Window ends Act III, so a won
- * Intact Pod enters Act III. The finale exists only once the Spore
- * Platform is built, so until then a won Launch Window wins the campaign.
+ * Intact Pod enters Act III; the Spore Platform ends the finale, so a
+ * won Launch Window enters the finale, and a won platform wins the
+ * campaign.
  *
  * The composition root passes it to the day tick (pinning) and the
  * launch handler (resolution); tests substitute their own.
@@ -45,4 +49,5 @@ export const STORY_MISSION_RULES: StoryMissionRules = {
   uplink: UPLINK,
   "launch-window": LAUNCH_WINDOW,
   "intact-pod": INTACT_POD,
+  "spore-platform": SPORE_PLATFORM,
 };

@@ -27,6 +27,7 @@ import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setu
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
+import { ADVANCE_STAGE } from "../../tactical/model/advance-stage-command";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
@@ -151,10 +152,20 @@ class FakeStore implements CampaignStore {
   readonly dispatched: OverworldCommand[] = [];
   /** Makes `FinishMission` refuse, standing in for a mission that is not over. */
   refuseFinish = false;
+  /** Makes `AdvanceStage` refuse (#1179), standing in for a stage not won. */
+  refuseAdvance = false;
   dispatch(command: OverworldCommand) {
     this.dispatched.push(command);
     if (command.type === ATTACK) {
       return err(commandError("no-line-of-sight", "No line of sight"));
+    }
+    if (this.refuseAdvance && command.type === ADVANCE_STAGE) {
+      return err(
+        commandError("no-stage-to-advance", "no stage to advance", {
+          kind: "no-stage-to-advance",
+          missionId: "mission-2",
+        } as never),
+      );
     }
     if (this.refuseFinish && command.type === FINISH_MISSION) {
       return err(
@@ -1113,6 +1124,174 @@ describe("TacticalScreen", () => {
       root.querySelector<HTMLElement>('#turn-banner [data-role="status"]')
         ?.textContent,
     ).toContain("still being fought");
+  });
+});
+
+// ===========================================
+// Linked missions (#1179)
+// ===========================================
+
+/**
+ * The campaign in the Spore Platform's stage `index` of 2: the offer is
+ * the platform's, and the mission carries its stage, decided `outcome`
+ * or still being fought.
+ */
+function onStage(
+  state: GameState,
+  index: number,
+  outcome?: TacticalState["outcome"],
+): GameState {
+  const mission = state.activeMission;
+  if (!mission) throw new Error("fixture needs a mission");
+  return {
+    ...state,
+    overworld: {
+      ...state.overworld,
+      missions: state.overworld.missions.map((offer) =>
+        offer.id === mission.missionId
+          ? { ...offer, typeId: "spore-platform" as const }
+          : offer,
+      ),
+    },
+    activeMission: {
+      ...mission,
+      turn: index + 1,
+      stage: { index, count: 2, earlier: [] },
+      ...(outcome === undefined ? {} : { outcome }),
+    },
+  };
+}
+
+describe("TacticalScreen between a linked mission's stages (#1179)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const transition = () =>
+    root.querySelector<HTMLElement>('[data-role="stage-transition"]');
+
+  /** Mounts the screen over `store` with the shipped mission types. */
+  function mounted(store: FakeStore, host = new FakeHost()) {
+    const { router, navigate } = fakeRouter();
+    new TacticalScreen({
+      router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      missionTypes: MISSION_TYPES,
+      sceneHost: host,
+    }).mount(root);
+    return { navigate, host };
+  }
+
+  it("opens the transition, not the debrief, when the hull is won and the core waits", () => {
+    const state = inMission();
+    const store = new FakeStore(onStage(state, 0));
+    const { navigate } = mounted(store);
+    expect(transition()?.hidden).toBe(true);
+
+    store.replace(onStage(state, 0, "won"));
+
+    expect(store.dispatched).toEqual([]);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(transition()?.hidden).toBe(false);
+    expect(
+      transition()?.querySelector('[data-field="stage-headline"]')?.textContent,
+    ).toBe("Hull cleared. The squad boards the core.");
+    expect(
+      transition()?.querySelector('[data-field="stage-next"]')?.textContent,
+    ).toBe("Next: The core, stage 2 of 2");
+    const force = state.activeMission?.units.filter(
+      (unit) =>
+        unit.team === "tdf" && (unit.kind === "squad" || unit.kind === "mech"),
+    );
+    expect(
+      [
+        ...(transition()?.querySelectorAll<HTMLElement>(
+          '[data-role="stage-survivors"] > tr',
+        ) ?? []),
+      ].map((row) => row.dataset.unitId),
+    ).toEqual(force?.map((unit) => unit.id));
+    // The same change again asks nothing twice.
+    store.replace(onStage(state, 0, "won"));
+    expect(store.dispatched).toEqual([]);
+  });
+
+  it("Continue dispatches AdvanceStage, closes the transition, and the core is a new scene that ends in the debrief", () => {
+    const state = inMission();
+    const store = new FakeStore(onStage(state, 0, "won"));
+    const { navigate, host } = mounted(store);
+    expect(transition()?.hidden).toBe(false);
+
+    root
+      .querySelector<HTMLButtonElement>('[data-action="stage-continue"]')
+      ?.click();
+    expect(store.dispatched.map((c) => c.type)).toEqual([ADVANCE_STAGE]);
+    expect(store.dispatched[0]?.payload).toEqual({ missionId: "mission-2" });
+    expect(transition()?.hidden).toBe(true);
+
+    store.replace(onStage(state, 1));
+    expect(host.calls.filter((call) => call.startsWith("attach:"))).toEqual([
+      "attach:mission-2:1",
+      "attach:mission-2:2",
+    ]);
+
+    store.replace(onStage(state, 1, "won"));
+    expect(store.dispatched.map((c) => c.type)).toEqual([
+      ADVANCE_STAGE,
+      FINISH_MISSION,
+    ]);
+    expect(navigate).toHaveBeenCalledWith("mission-results");
+    expect(transition()?.hidden).toBe(true);
+  });
+
+  it("finishes a stage lost at once: there is nothing to go on to", () => {
+    const state = inMission();
+    const store = new FakeStore(onStage(state, 0));
+    const { navigate } = mounted(store);
+    store.replace(onStage(state, 0, "lost"));
+    expect(store.dispatched.map((c) => c.type)).toEqual([FINISH_MISSION]);
+    expect(navigate).toHaveBeenCalledWith("mission-results");
+    expect(transition()?.hidden).toBe(true);
+  });
+
+  it("keeps the transition up with the reason when Continue is refused", () => {
+    const state = inMission();
+    const store = new FakeStore(onStage(state, 0, "won"));
+    store.refuseAdvance = true;
+    mounted(store);
+    root
+      .querySelector<HTMLButtonElement>('[data-action="stage-continue"]')
+      ?.click();
+    expect(transition()?.hidden).toBe(false);
+    const status = transition()?.querySelector<HTMLElement>(
+      '[data-field="stage-status"]',
+    );
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toContain("no won stage to move on from");
+  });
+
+  it("lists the stages in the tracker and names the core as the hull's last step", () => {
+    const state = inMission();
+    const store = new FakeStore(onStage(state, 0));
+    mounted(store);
+    const stages = () =>
+      [
+        ...root.querySelectorAll<HTMLElement>(
+          '#objectives [data-role="stage-list"] > li',
+        ),
+      ].map(
+        (row) => `${row.textContent ?? ""}:${row.dataset.stageState ?? ""}`,
+      );
+    expect(stages()).toEqual(["The hull:current", "The core:ahead"]);
+    store.replace(onStage(state, 1));
+    expect(stages()).toEqual(["The hull:cleared", "The core:current"]);
+    store.replace(state);
+    expect(stages()).toEqual([]);
   });
 });
 

@@ -110,7 +110,9 @@ export class EventLogView {
    * Events with nothing to say are skipped.
    *
    * @param events - The batch that just resolved.
-   * @param mission - Mission state, for unit names.
+   * @param mission - Mission state, for unit names and, on a linked
+   *   mission, the stage the batch belongs to.
+   * @param campaign - The campaign, for the roster's names.
    */
   append(
     events: readonly TacticalEvent[],
@@ -127,7 +129,7 @@ export class EventLogView {
     const names = namesFor(mission, campaign);
     const doc = list.ownerDocument;
     for (const event of events) {
-      const entry = describeEvent(event, names);
+      const entry = describeEvent(event, names, mission?.stage);
       if (!entry) {
         continue;
       }

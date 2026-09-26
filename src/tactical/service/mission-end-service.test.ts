@@ -313,3 +313,42 @@ describe("missionOutcome with civilian groups (campaign arc §6.4)", () => {
     expect(missionOutcome({ ...home, extracted: [] })).toBe("lost");
   });
 });
+
+describe("missionOutcome on a mission that ends on its objectives (#1179)", () => {
+  const map = openField().build();
+  const open = [
+    { id: "o1", kind: "destroy-spawner", targetId: "s1", complete: false },
+  ] as const;
+  const done = [
+    { id: "o1", kind: "destroy-spawner", targetId: "s1", complete: true },
+  ] as const;
+  const standing = [unitAt("u", "infantry", at(0, 0))];
+
+  it("is won the moment every deciding objective is done, with the force still on the map", () => {
+    const mission = {
+      ...missionWith(map, standing, { objectives: done }),
+      endsOnObjectives: true,
+    };
+    expect(missionOutcome(mission)).toBe("won");
+    expect(endIfOver(mission, []).state.outcome).toBe("won");
+  });
+
+  it("plays on while an objective is open, and is lost if the force falls first", () => {
+    const playing = {
+      ...missionWith(map, standing, { objectives: open }),
+      endsOnObjectives: true,
+    };
+    expect(missionOutcome(playing)).toBeUndefined();
+    const fallen = {
+      ...missionWith(map, [{ ...standing[0]!, hp: 0 }], { objectives: open }),
+      endsOnObjectives: true,
+    };
+    expect(missionOutcome(fallen)).toBe("lost");
+  });
+
+  it("still needs the force home without the flag", () => {
+    expect(
+      missionOutcome(missionWith(map, standing, { objectives: done })),
+    ).toBeUndefined();
+  });
+});

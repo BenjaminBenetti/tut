@@ -82,6 +82,16 @@ const SABOTAGE: Mission = {
   tunnelSabotage: { cityId: "cairo", spreadDueDay: 6 },
 };
 
+const PLATFORM: Mission = {
+  ...CLEARANCE,
+  id: "mission-8",
+  typeId: "spore-platform",
+  difficulty: 10,
+  ignorePenalty: 0,
+  storyId: "spore-platform",
+  act: "finale",
+};
+
 /**
  * One offer per type, carrying the type's payload. Keyed by the union,
  * so a new type cannot join the table without a fixture here.
@@ -94,6 +104,7 @@ const OFFERS: Readonly<Record<MissionTypeId, Mission>> = {
   evacuation: EVACUATION,
   "hive-assault": ASSAULT,
   "tunnel-sabotage": SABOTAGE,
+  "spore-platform": PLATFORM,
 };
 
 const CAMPAIGN = campaignOnDay(4, [CLEARANCE, DEFENCE, ASSAULT]);
@@ -215,6 +226,35 @@ describe("MISSION_PRESENTATION", () => {
   });
 });
 
+describe("SPORE_PLATFORM_PRESENTATION (arc §6.9)", () => {
+  const platform = MISSION_PRESENTATION["spore-platform"];
+
+  it("briefs the two stages and the core the Sovereign guards, and leaves the debrief to the story", () => {
+    expect(platform.icon).toBe("threat");
+    expect(platform.briefingRows(PLATFORM, CTX)).toEqual([
+      {
+        field: "platform-stages",
+        label: "Stages",
+        value: "Two stages: the hull, then the core. No repairs between them.",
+      },
+      {
+        field: "platform-objective",
+        label: "Target",
+        value: "Destroy the platform core. The Sovereign guards it.",
+      },
+    ]);
+    expect("debriefTagline" in platform).toBe(false);
+  });
+
+  it("says the hull is cleared between the stages, and nothing after the core (#1179)", () => {
+    const platform = MISSION_PRESENTATION["spore-platform"];
+    expect(platform.stageTransition?.(0)).toBe(
+      "Hull cleared. The squad boards the core.",
+    );
+    expect(platform.stageTransition?.(1)).toBeUndefined();
+  });
+});
+
 describe("EVACUATION_PRESENTATION (arc §6.4)", () => {
   const evacuation = MISSION_PRESENTATION.evacuation;
 
@@ -280,6 +320,7 @@ describe("briefingFieldsOf", () => {
       evacuation: stub("evacuation"),
       "hive-assault": stub("hive-assault"),
       "tunnel-sabotage": stub("tunnel-sabotage"),
+      "spore-platform": stub("spore-platform"),
     };
     expect(briefingFieldsOf(catalogue).map((f) => f.field)).toEqual([
       "hives",
@@ -288,7 +329,7 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three and the sabotage's five", () => {
+  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three, the sabotage's five and the platform's two", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
@@ -310,6 +351,8 @@ describe("briefingFieldsOf", () => {
       { field: "spread", label: "Spread due" },
       { field: "if-won", label: "Win" },
       { field: "if-ignored", label: "Ignored" },
+      { field: "platform-stages", label: "Stages" },
+      { field: "platform-objective", label: "Target" },
     ]);
   });
 });
@@ -408,6 +451,7 @@ describe("debriefTaglineFor", () => {
       evacuation: stub("evacuation"),
       "hive-assault": stub("hive-assault"),
       "tunnel-sabotage": stub("tunnel-sabotage"),
+      "spore-platform": stub("spore-platform"),
     };
     expect(debriefTaglineFor(RESULT, CTX, catalogue)).toBe("second");
     expect(first).toHaveBeenCalledWith(RESULT, CTX);
@@ -428,6 +472,7 @@ describe("debriefTaglineFor", () => {
         evacuation: stub("evacuation"),
         "hive-assault": stub("hive-assault"),
         "tunnel-sabotage": stub("tunnel-sabotage"),
+        "spore-platform": stub("spore-platform"),
       }),
     ).toBe("first");
     expect(skipped).not.toHaveBeenCalled();

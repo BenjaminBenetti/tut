@@ -19,6 +19,8 @@
  * `tunnel-sabotage` (arc §6.7) is a city about to spread: seal the
  * three tunnel mouths it is digging toward its neighbour, and its
  * spread holds for 10 days.
+ * `spore-platform` (arc §6.9) is the finale: two linked maps, the
+ * platform's hull and then its core, only ever pinned by the story.
  */
 export type MissionTypeId =
   | "infestation-clearance"
@@ -27,7 +29,8 @@ export type MissionTypeId =
   | "wreck-recovery"
   | "evacuation"
   | "hive-assault"
-  | "tunnel-sabotage";
+  | "tunnel-sabotage"
+  | "spore-platform";
 
 /**
  * Every mission type id, in a fixed order. The order is the order the
@@ -42,4 +45,5 @@ export const MISSION_TYPE_IDS: readonly MissionTypeId[] = [
   "evacuation",
   "hive-assault",
   "tunnel-sabotage",
+  "spore-platform",
 ];

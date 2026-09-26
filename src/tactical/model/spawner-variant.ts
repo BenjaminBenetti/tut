@@ -17,9 +17,13 @@
  *   hive-core     the Hive Assault's target (campaign arc §6.5): a 3×3
  *                 mass at the back of the cavern that never hatches and
  *                 that nothing walks through
+ *   platform-core the Spore Platform's seed (campaign arc §6.9): a 3×3
+ *                 mass on the core chamber's pad that never hatches and
+ *                 that nothing walks through; destroying it wins the finale
  * ```
  */
-export type SpawnerVariant = "egg-spawner" | "spore-pod" | "hive-core";
+export type SpawnerVariant =
+  "egg-spawner" | "spore-pod" | "hive-core" | "platform-core";
 
 /** The variant a spawner without one is: every spawner saved before pods existed. */
 export const DEFAULT_SPAWNER_VARIANT: SpawnerVariant = "egg-spawner";
@@ -59,6 +63,16 @@ export const SPAWNER_VARIANT_TRAITS: Readonly<
   "hive-core": {
     name: "Hive core",
     armor: 1,
+    hatches: false,
+    footprint: 3,
+    solid: true,
+  },
+  // The seed the platform grows around: a hardened shell, so a rifle
+  // hit loses two points to it and a mech's heavy gun barely notices.
+  // It fills its 3×3 pad, as the hive core fills its own.
+  "platform-core": {
+    name: "Platform core",
+    armor: 2,
     hatches: false,
     footprint: 3,
     solid: true,

@@ -5560,5 +5560,21 @@
     "quality": "final",
     "triangles": 1124,
     "bytes": 104248
+  },
+  {
+    "id": "prop.platform-core",
+    "category": "props",
+    "path": "assets/models/props/prop-platform-core.glb",
+    "footprint": {
+      "w": 3,
+      "d": 3
+    },
+    "height": 2.93,
+    "sockets": [
+      "socket_hatch"
+    ],
+    "quality": "final",
+    "triangles": 2740,
+    "bytes": 171036
   }
 ]

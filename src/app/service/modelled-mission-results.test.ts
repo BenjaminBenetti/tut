@@ -10,17 +10,23 @@ import { launchMission } from "../../overworld/model/launch-mission-command";
 import type { Mission } from "../../overworld/model/mission";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import { MISSION_OUTCOMES } from "../../overworld/model/mission-result";
+import { PLATFORM_FAILURE_INFESTATION } from "../../overworld/model/story-mission-rule";
+import { unlockTech } from "../../overworld/model/unlock-tech-command";
 import type { WreckRecoverySpec } from "../../overworld/model/wreck-recovery-spec";
 import {
   EVACUATION_LOST_SOURCE,
   EVACUATION_SAVED_SOURCE,
 } from "../../overworld/service/missions/evacuation-consequence";
+import { evaluateOutcome } from "../../overworld/service/outcome-service";
+import { fixtureStoryRule } from "../../overworld/service/story/story-fixtures.test-helper";
 import { stockCount, stockOf } from "../../roster/service/part-stock-service";
 import { loadoutPartIds } from "../../roster/model/mech-loadout";
 import type { GameState } from "../../save/model/game-state";
+import { LAST_HOPE_COST } from "../../tech/data/endgame-intel-nodes";
 import { LIVE_SPECIMEN_SPECIES } from "../../tactical/service/story/live-specimen-setup";
 import {
   composeSweepGame,
+  storyWith,
   SWEEP_NOW,
   SWEEP_RESULTS,
 } from "./campaign-sweep.test-helper";
@@ -29,6 +35,7 @@ import {
   carcassPoints,
   MODELLED_RESULTS,
   modelledResult,
+  SPORE_PLATFORM_MODELLED_TURNS,
 } from "./modelled-mission-results.test-helper";
 import type { ModelledPlayer } from "./modelled-player.test-helper";
 import {
@@ -443,5 +450,126 @@ describe("MODELLED_STORY_RESULTS", () => {
     expect(
       after.overworld.progress.storyRetryDay?.["live-specimen"],
     ).toBeGreaterThan(after.overworld.day);
+  });
+});
+
+describe("the Spore Platform's modelled result through the real consequence and story rules (arc D1, D7)", () => {
+  /**
+   * The shipped story with Act II's ending as a fixture (Intact Pod is
+   * unbuilt), so the finale exists and the platform is ever pinned.
+   */
+  const FINALE_STORY = storyWith({
+    "intact-pod": fixtureStoryRule("intact-pod", {
+      act: "act-2",
+      onWon: [{ kind: "advance-act" }],
+    }),
+  });
+
+  /** The campaign in the finale, the one act the platform pins in. */
+  const inFinale = (state: GameState): GameState => ({
+    ...state,
+    overworld: {
+      ...state.overworld,
+      progress: { ...state.overworld.progress, act: "finale" },
+    },
+  });
+
+  /** Every city's infestation in `state`, by id. */
+  const infestations = (state: GameState): ReadonlyMap<string, number> =>
+    new Map(
+      state.overworld.map.cities.map((city) => [city.id, city.infestation]),
+    );
+
+  const { hull, core } = SPORE_PLATFORM_MODELLED_TURNS;
+
+  it("a won assault wins both stages and ends the campaign in victory", () => {
+    const game = composeSweepGame(always("won"), { story: FINALE_STORY });
+    const staged = withOffer(game, "spore-platform", inFinale, true);
+    expect(staged.offer.storyId).toBe("spore-platform");
+    expect(evaluateOutcome(staged.state)).toBeUndefined();
+
+    const after = launch(game, staged.state, staged.offer);
+    expect(after.overworld.lastMissionResult?.stages).toEqual([
+      { index: 0, outcome: "won", turns: hull },
+      { index: 1, outcome: "won", turns: core },
+    ]);
+    expect(after.overworld.progress.storyWon).toContain("spore-platform");
+    expect(flagged(after, "campaign-won")).toBe(true);
+    expect(evaluateOutcome(after)).toMatchObject({
+      kind: "victory",
+      cause: "story",
+    });
+  });
+
+  it("a lost assault falls at the core and is D7: +30 in every city, platform-failed, Last Hope; a second loss is defeat", () => {
+    const game = composeSweepGame(always("lost"), { story: FINALE_STORY });
+    const staged = withOffer(game, "spore-platform", inFinale, true);
+    // Last Hope is hidden until the platform has failed once.
+    expect(
+      game.dispatcher.process(
+        {
+          ...staged.state,
+          economy: { ...staged.state.economy, techPoints: LAST_HOPE_COST },
+        },
+        unlockTech("tech.last-hope"),
+      ).ok,
+    ).toBe(false);
+
+    const before = infestations(staged.state);
+    const failed = launch(game, staged.state, staged.offer);
+    expect(failed.overworld.lastMissionResult?.stages).toEqual([
+      { index: 0, outcome: "won", turns: hull },
+      { index: 1, outcome: "lost", turns: core },
+    ]);
+    for (const [cityId, was] of before) {
+      expect(infestationOf(failed, cityId), cityId).toBe(
+        Math.min(100, was + PLATFORM_FAILURE_INFESTATION),
+      );
+    }
+    expect(flagged(failed, "platform-failed")).toBe(true);
+    expect(flagged(failed, "campaign-lost")).toBe(false);
+    expect(evaluateOutcome(failed)).toBeUndefined();
+
+    // Held back until Last Hope is researched.
+    const waited = dispatch(game, failed, advanceDay());
+    expect(
+      waited.overworld.missions.some(
+        (mission) => mission.storyId === "spore-platform",
+      ),
+    ).toBe(false);
+
+    // Last Hope, now shown, re-offers the assault.
+    const hoped = dispatch(
+      game,
+      {
+        ...waited,
+        economy: { ...waited.economy, techPoints: LAST_HOPE_COST },
+      },
+      unlockTech("tech.last-hope"),
+    );
+    expect(flagged(hoped, "last-hope")).toBe(true);
+    const repinned = dispatch(game, hoped, advanceDay());
+    const again = repinned.overworld.missions.find(
+      (mission) => mission.storyId === "spore-platform",
+    );
+    if (again === undefined) throw new Error("Last Hope re-pins the platform");
+
+    const lostTwice = launch(game, repinned, again);
+    expect(flagged(lostTwice, "campaign-lost")).toBe(true);
+    expect(evaluateOutcome(lostTwice)).toMatchObject({
+      kind: "defeat",
+      cause: "story",
+    });
+  });
+
+  it("an extracted assault never boards the core, and the story counts it a loss", () => {
+    const game = composeSweepGame(always("extracted"), { story: FINALE_STORY });
+    const staged = withOffer(game, "spore-platform", inFinale, true);
+    const after = launch(game, staged.state, staged.offer);
+    expect(after.overworld.lastMissionResult?.stages).toEqual([
+      { index: 0, outcome: "extracted", turns: hull },
+    ]);
+    expect(flagged(after, "platform-failed")).toBe(true);
+    expect(flagged(after, "campaign-won")).toBe(false);
   });
 });

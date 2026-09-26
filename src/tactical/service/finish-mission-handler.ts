@@ -9,6 +9,7 @@ import { FINISH_MISSION } from "../model/finish-mission-command";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
 import { tacticalRefusal } from "../model/tactical-error";
 import type { TacticalState } from "../model/tactical-state";
+import { missionRecord, stagePending } from "./mission-stage-service";
 
 // ===========================================
 // Types
@@ -43,6 +44,7 @@ export const NO_ACTIVE_MISSION = "no-active-mission";
  *   no activeMission ────────────► err no-active-mission
  *   a different mission is live ─► err mission-mismatch
  *   outcome not yet set ─────────► err mission-not-over
+ *   a won stage, another after ──► err stage-pending
  *          │
  *   launch(state, LaunchMission { missionId, deploymentOf(mission) })
  *          ├── err ──► that CommandError; the mission stays in progress
@@ -74,6 +76,11 @@ export function createFinishMissionHandler<TState extends MissionCampaignState>(
     }
     if (mission.outcome === undefined) {
       return err(tacticalRefusal({ kind: "mission-not-over", missionId }));
+    }
+    // A won stage with another after it is not the end of a linked
+    // mission (ADR 0013 amendment): `AdvanceStage` takes it on.
+    if (stagePending(mission)) {
+      return err(tacticalRefusal({ kind: "stage-pending", missionId }));
     }
     const applied = deps.launch(
       state,
@@ -107,12 +114,14 @@ export function registerFinishMission<TState extends MissionCampaignState>(
  * the map or already extracted, by the roster entry it came from, in
  * `units` order. Mission start places one token per deployed squad and
  * mech and refuses the launch if it cannot, so this is the deployment
- * the launch was made with.
+ * the launch was made with. On a linked mission the units that fell or
+ * were left on an earlier stage's map were sent too, and are read from
+ * there first (`missionRecord`).
  */
 export function deploymentOf(mission: TacticalState): Deployment {
   const squadIds: string[] = [];
   const mechIds: string[] = [];
-  for (const unit of [...mission.units, ...mission.extracted]) {
+  for (const unit of missionRecord(mission).roster) {
     if (unit.team !== "tdf") {
       continue;
     }

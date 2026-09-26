@@ -163,6 +163,7 @@ function bothDrawn(
     evacuation: fakeOffer("evacuation"),
     "hive-assault": MISSION_OFFER_RULES["hive-assault"],
     "tunnel-sabotage": fakeOffer("tunnel-sabotage"),
+    "spore-platform": MISSION_OFFER_RULES["spore-platform"],
   };
 }
 
@@ -180,6 +181,7 @@ function firstDraws(
     evacuation: 0,
     "hive-assault": 0,
     "tunnel-sabotage": 0,
+    "spore-platform": 0,
   };
   const acts = actsWith({ boardCap: 1, typeWeights });
   for (let seed = 1; seed <= runs; seed += 1) {
@@ -425,6 +427,7 @@ describe("generateMissions — type draw", () => {
       evacuation: 0,
       "hive-assault": 0,
       "tunnel-sabotage": 0,
+      "spore-platform": 0,
     });
   });
 
@@ -447,6 +450,7 @@ describe("generateMissions — type draw", () => {
       evacuation: 0,
       "hive-assault": 0,
       "tunnel-sabotage": 0,
+      "spore-platform": 0,
     });
   });
 
@@ -461,6 +465,7 @@ describe("generateMissions — type draw", () => {
       evacuation: 0,
       "hive-assault": 0,
       "tunnel-sabotage": 0,
+      "spore-platform": 0,
     });
   });
 
@@ -837,6 +842,7 @@ describe("generateMissions — onOffered (arc §6.3)", () => {
       evacuation: spy(MISSION_CONSEQUENCE_RULES.evacuation),
       "hive-assault": spy(MISSION_CONSEQUENCE_RULES["hive-assault"]),
       "tunnel-sabotage": spy(MISSION_CONSEQUENCE_RULES["tunnel-sabotage"]),
+      "spore-platform": spy(MISSION_CONSEQUENCE_RULES["spore-platform"]),
     };
   }
 

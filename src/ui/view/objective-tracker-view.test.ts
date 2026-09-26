@@ -105,6 +105,8 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
       "destroy-hive-core": OBJECTIVE_PRESENTATION["destroy-hive-core"],
       "seal-tunnels": OBJECTIVE_PRESENTATION["seal-tunnels"],
       "recover-pod": OBJECTIVE_PRESENTATION["recover-pod"],
+      "board-core": OBJECTIVE_PRESENTATION["board-core"],
+      "destroy-platform-core": OBJECTIVE_PRESENTATION["destroy-platform-core"],
     };
     const view = new ObjectiveTrackerView(presentations);
     view.mount(root);
@@ -571,5 +573,81 @@ describe("ObjectiveTrackerView counts a sitrep's deadline down (campaign arc §1
     view.mount(root);
     view.update([NEST], SPAWNERS);
     expect(root.querySelector("[data-sitrep-id]")).toBeNull();
+  });
+});
+
+// ===========================================
+// A linked mission's stages (#1179)
+// ===========================================
+
+describe("ObjectiveTrackerView lists a linked mission's stages (#1179)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const stageRows = () => [
+    ...root.querySelectorAll<HTMLElement>('[data-role="stage-list"] > li'),
+  ];
+
+  it("draws a row per stage above the objectives, with its state and glyph", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.setStages({
+      rows: [
+        { index: 0, name: "The hull", state: "cleared" },
+        { index: 1, name: "The core", state: "current" },
+        { index: 2, name: "The heart", state: "ahead" },
+      ],
+    });
+    view.update([NEST], SPAWNERS);
+    const rows = stageRows();
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "The hull",
+      "The core",
+      "The heart",
+    ]);
+    expect(rows.map((row) => row.dataset.stageState)).toEqual([
+      "cleared",
+      "current",
+      "ahead",
+    ]);
+    expect(rows.map((row) => row.dataset.stageIndex)).toEqual(["0", "1", "2"]);
+    expect(
+      rows.map((row) =>
+        row.querySelector("[data-icon]")?.getAttribute("data-icon"),
+      ),
+    ).toEqual(["check", "advance", "lock"]);
+    const list = root.querySelector<HTMLElement>('[data-role="stage-list"]');
+    expect(list?.hidden).toBe(false);
+    expect(list?.nextElementSibling?.getAttribute("data-role")).toBe(
+      "objective-list",
+    );
+  });
+
+  it("names the next stage once the objectives are done, and the drop ship again without one", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    const summary = () =>
+      root.querySelector('[data-field="objective-summary"]')?.textContent;
+    view.setStages({
+      rows: [
+        { index: 0, name: "The hull", state: "current" },
+        { index: 1, name: "The core", state: "ahead" },
+      ],
+      closingStep: "on to the core",
+    });
+    view.update([{ ...NEST, complete: true }], SPAWNERS);
+    expect(summary()).toBe("1 / 1 — on to the core");
+    view.setStages(undefined);
+    view.update([{ ...NEST, complete: true }], SPAWNERS);
+    expect(summary()).toBe("1 / 1 — board the drop ship");
+    expect(stageRows()).toEqual([]);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="stage-list"]')?.hidden,
+    ).toBe(true);
   });
 });

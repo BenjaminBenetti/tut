@@ -141,12 +141,14 @@ export function namesFor(
   presentations: ObjectivePresentationCatalogue = OBJECTIVE_PRESENTATION,
 ): TacticalNames {
   // A bug that fled off the map (#1179) keeps its name: the line that
-  // says it escaped is read after it has left `units`.
+  // says it escaped is read after it has left `units`. So does a unit
+  // that extracted: a linked mission's transition lists them by name.
   const units = new Map(
-    [...(mission?.escaped ?? []), ...(mission?.units ?? [])].map((unit) => [
-      unit.id,
-      unit,
-    ]),
+    [
+      ...(mission?.escaped ?? []),
+      ...(mission?.extracted ?? []),
+      ...(mission?.units ?? []),
+    ].map((unit) => [unit.id, unit]),
   );
   const objectives = mission?.objectives ?? [];
   const spawners = new Set((mission?.spawners ?? []).map((nest) => nest.id));
@@ -275,6 +277,11 @@ export function describeRefusal(
       return `That mission is no longer on offer`;
     case "mission-not-over":
       return `${names.mission(error.missionId)} is still being fought`;
+    case "stage-pending":
+      // A linked mission's won stage (#1179): the next map is still ahead.
+      return `${names.mission(error.missionId)} has another stage to fight`;
+    case "no-stage-to-advance":
+      return `${names.mission(error.missionId)} has no won stage to move on from`;
     case "mission-mismatch":
       return `${names.mission(error.expected)} was expected, but ${names.mission(error.active)} is in progress`;
     case "unit-not-found":

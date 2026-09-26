@@ -31,7 +31,7 @@ const pad = (held: boolean) => ({
 // ===========================================
 
 describe("Launch Window's briefing (#1179)", () => {
-  it("is in the story table, and adds the Lost slot after every other story's", () => {
+  it("is in the story table, and adds the Lost slot after the earlier stories'", () => {
     expect(STORY_PRESENTATION["launch-window"]).toBe(
       LAUNCH_WINDOW_PRESENTATION,
     );
@@ -51,6 +51,9 @@ describe("Launch Window's briefing (#1179)", () => {
       "great-hive-liberates",
       "great-hive-beacons",
       "great-hive-win",
+      // The Spore Platform, the one story after it, adds its own slots last.
+      "story-first-loss",
+      "story-last-chance",
     ]);
   });
 

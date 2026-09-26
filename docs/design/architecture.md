@@ -239,6 +239,26 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 
   None of the steps draws randomness, and ids are drawn only for guards actually placed, so a mission without her replays unchanged. Her tuning is `SOVEREIGN_TUNING` (`bugs/data/sovereign-tuning.ts`).
 
+- **A linked mission is one mission over several maps** ([ADR 0013](../adr/0013-campaign-progression.md) amendment, #1179). A type with `MissionType.stages` plays them in order. `TacticalState.stage` (`{ index, count, earlier }`) says which map is on the board. A won stage with another after it is `stagePending`, and `FinishMission` refuses it with `stage-pending`. `AdvanceStage` (`tactical:advance-stage`) builds the next map through the ordinary mission start and carries over `stageSurvivors`: the combat units that extracted alive, plus any still standing. They go on exactly as they left, with no repairs, re-arm or swaps. The mission resolves once, at the end, and `MissionResult.stages` records each stage.
+  - **The Spore Platform** (campaign arc §6.9) is the only linked type. It is story-only: no act weight, a fixed d10, and it pays nothing.
+    - **The hull.** `board-core` is complete once a squad or mech extracts through the hatch (the `platform-exit` hook).
+    - **The core.** `destroy-platform-core` is a wreck objective on a `platform-core` spawner: armour 2, `PLATFORM_ASSAULT_TUNING.coreHp` 200, never hatches. Like the hive core it is a solid 3×3 (`footprint: 3`, `solid: true`), centred on the 6×6 core pad's middle tile, so nothing walks through the model and reach and charges measure to its nearest face. It wins on the spot. Hive Guards stand on the guard posts. The boss is `MissionSetupDeps.coreBoss`, which the composition root fills from `PLATFORM_CORE_BOSS` (`app/service/platform-core-boss.ts`): the Sovereign, stood by `placeSovereign` on the `sovereign-dais` hook's anchor with `core` set to the platform core's middle tile and hit points for the mission's difficulty. Her escort (`SOVEREIGN_TUNING.summon.escort`, the armoured swarmer and lurker) takes 15% of the waves (`withEscortShare`).
+    - **The story rule.** `overworld/service/story/spore-platform.ts` pins the platform on the finale's first day, and it never expires. A win is `campaign-won`. The first loss is D7: +30 infestation in every city and `platform-failed`, with no re-pin until Last Hope sets `last-hope`. The second loss is `campaign-lost`.
+  - **The tactical screen.** It keys its scene by `sceneKeyOf` (`missionId#stage`), so a new stage attaches a fresh scene. Once a stage is won, `finish` opens `StageTransitionView` (`stageTransitionOf`: the survivors with their health and stores) instead of dispatching `FinishMission`, and Continue dispatches `AdvanceStage`.
+    - The objective tracker lists the stages (`stageTrackOf`) and closes on "on to the core" instead of the drop ship.
+    - The log reads "Stage 1 of 2 won" and goes on into the next stage's opening lines.
+    - The finale's victory and defeat copy is in `game-over-screen.ts`.
+    - The core is drawn with `prop.platform-core`, whose glow is emissive only, with no light.
+
+    See [`spore-platform-briefing.png`](spore-platform-briefing.png), [`spore-platform-hull-mission.png`](spore-platform-hull-mission.png), [`spore-platform-transition.png`](spore-platform-transition.png) and [`spore-platform-core-mission.png`](spore-platform-core-mission.png), captured by `tools/ui/capture-spore-platform.mjs`.
+
+  ```
+  hull (stage 0) ──► a squad or mech extracts at the hatch ──► board-core ──► won, stagePending
+      ──► transition: survivors, HP, stores ──► Continue ──► AdvanceStage ──► core (stage 1), survivors as they left
+  core ──► platform core destroyed ──► won ──► FinishMission ──► one MissionResult { stages } ──► campaign-won
+  any stage lost ──► first loss: D7 (+30 infestation, platform-failed) · second: campaign-lost
+  ```
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

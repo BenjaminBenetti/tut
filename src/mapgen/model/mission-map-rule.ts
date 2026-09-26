@@ -94,8 +94,13 @@ export interface MissionMapRule {
 
   /**
    * The type-specific part of the mission's map recipe.
+   *
+   * `stage` is the zero-based stage of a linked mission (ADR 0013
+   * amendment, #1179): the Spore Platform's hull is stage 0 and its
+   * core stage 1. A one-map type is only ever asked for stage 0, and
+   * may ignore it.
    */
-  recipe(mission: Mission, type: MissionType): MissionMapPlan;
+  recipe(mission: Mission, type: MissionType, stage?: number): MissionMapPlan;
 }
 
 /**

@@ -1179,6 +1179,19 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  // The Spore Platform's core (#1179): drawn at its spawner's tile, on
+  // the core stage's 3x3 pad.
+  "prop.platform-core": {
+    category: "props",
+    path: "assets/models/props/prop-platform-core.glb",
+    footprint: {
+      w: 3,
+      d: 3,
+    },
+    height: 2.93,
+    sockets: ["socket_hatch"],
+    quality: "final",
+  },
   "tile.ground.infested": {
     category: "tiles",
     path: "assets/models/tiles/tile-ground-infested.glb",

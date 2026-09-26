@@ -212,7 +212,7 @@ startTacticalMission
 - `advance-act` moves into the next act only if it exists. Otherwise it sets `campaign-won`.
 
 ```
-built:   live-specimen   (intact-pod)   launch-window   (spore-platform)
+built:   live-specimen   (intact-pod)   launch-window   spore-platform
 exists:  act-1 ✓         act-2 ✗        act-3 ✗         finale ✗      ◄── a gap ends the run
 ```
 
@@ -241,6 +241,11 @@ The arc files Launch Window under the finale. The spine plays it as Act III's la
 - **First loss:** every city gains `cityInfestation` through `addCityInfestation`, capped at 100. The story sets `platform-failed`. The platform is not pinned again until `last-hope` is set.
 - **Last Hope:** `tech.last-hope`, a `story` node at 100 TP with `requiresFlags: ["platform-failed"]` and the flag effect `last-hope`, in `tech/data/endgame-intel-nodes.ts`. No family fits a second assault, so it sits with the intel nodes on the support spoke.
 - **Second loss:** the story sets `campaign-lost`.
+
+**The finale, the Spore Platform** (`story/spore-platform.ts`, #1179, arc §6.9). The rule is `act: "finale"`, `pinWhen: []`, a d10 offer of the `spore-platform` type, `onWon: [{kind:"victory"}]` and `onLost: {kind:"platform", cityInfestation: 30}`. Entering the finale is the gate, so the director pins it on the act's first day; pinned, it never expires and sits outside the cap.
+
+- **Site.** The platform is in orbit, so the offer's city only says where the assault lifts off. Launch Window's city would be the natural choice, but a resolved offer is removed and nothing records its city. The platform takes `storyDefenceCity` instead: the least infested detected city in a region without a hive, which is where Launch Window's site went unless the map has moved since. The tactical map is the platform's own (`SPORE_PLATFORM_MAP_RULE`), so the city decides nothing on it.
+- **Reachability.** Building it changes nothing today. The finale exists only once Intact Pod is built too, so a Live Specimen win is still the campaign's victory. Tests fill the gap with fixture rules and play the whole path: Launch Window won, the finale entered, the platform pinned, then the win, or D7's loss, Last Hope, re-pin and second loss.
 
 **Other rules set flags through one door.** `setCampaignFlag(state, flag)` sets a flag and emits `CampaignFlagSet`. The Crash Site consequence rule calls it on its first win to set `spore-sample`, which reveals Intel I.
 
@@ -283,6 +288,31 @@ The arc files Launch Window under the finale. The spine plays it as Act III's la
 
 - Reshapes need a migration (ADR 0003). New optional fields do not.
 - Only **one open branch at a time may bump `GAME_STATE_SCHEMA_VERSION`**. The campaign coordinator assigns the bump.
+
+### 2.10 Linked missions (amendment, #1179)
+
+The Spore Platform is fought on two maps, the hull and then the core, with no repairs or swaps between them (arc §6.9). The engine models this as **stages of one mission**. Nothing in it names the platform: a two-stage clearance is a linked mission too, and the engine tests use one.
+
+**Shape: stages on the type.** `MissionType.stages?: readonly MissionStageSpec[]` (`{ id, name }`) in `content/model/mission-type.ts`. The brief offered this or `Mission.stages?` on the offer. The type is the smaller shape: every offer of a type has the same stages, so nothing is copied onto each offer or into the save. Absent, or one entry, is one map.
+
+**Per-stage rules.** No new table. `MissionMapRule.recipe(mission, type, stage?)` takes the stage index, and `mapRulesForStage(rules, n)` (`mapgen/service/mission-stage-map-rules.ts`) binds it for the adapter. `MissionSetupRule.setup` reads `state.stage?.index`. A setup rule may also answer `deployTiles?(map, stage)` to stand the force somewhere other than the deploy zones (the platform's squad boards at the docking ring). Stage `n > 0` plays on seed `"<seed>/stage-n"`. The offer's tech carcass lies on the first map only.
+
+**State.** `TacticalState.stage?: MissionStageState { index, count, earlier }` (`tactical/model/mission-stage.ts`). Each `EarlierStage` keeps what a won stage leaves for the one result: the units that did not go on (the dead, the left behind, turrets, bugs), the stage's templates, the log filtered to `STAGE_RESULT_EVENTS` (`UnitDied`, `CarcassHarvested`, `UnitAbandoned`), and the turn it ended on. Every field is optional, so there is no save version bump, and a campaign saved during a stage or between stages resumes into the stage it was in.
+
+```
+StartMission ──► stage 0 ─ won, another after ──► (transition) ─ AdvanceStage ──► stage 1 ─ … ─► last stage
+                   │                                                               │
+                   └─ lost / left ──► FinishMission ──► one MissionResult ◄─────────┘ won / lost / left
+```
+
+- **Win a stage that is not the last.** `missionOutcome` sets `outcome: "won"` as for any mission. `stagePending(mission)` is then true, and `FinishMission` refuses with `stage-pending`. `AdvanceStage` (`tactical:advance-stage`, a campaign-level command like `StartMission`, handled through the `StageAdvancer` port that `TacticalMissionResolver` implements) calls `advanceMissionStage`. There is no overworld turn between the stages.
+- **Carry-over.** The survivors are the squads and mechs that boarded, then any still standing (a stage won on the spot). They keep their ids. `carriedUnit` is a whitelist:
+  - **kept:** `hp`, `charges` (ammunition), `equipment` (uses left), `ablativeSpent` (armour shot away) and `carrying` (a specimen in hand);
+  - **reset:** position (the next map's deploy tiles, mechs first), `ap`, and `status` (overwatch and suppression last one turn; hidden, dormant and burrowed are bug states). Heat bleeds off, because the trip down takes longer than a turn. `braced`, `movedThisTurn`, `weaponReadyOnTurn`, designations and `overwatchShots` are counted in the last map's turns.
+  - A field added to `Unit` later is dropped unless someone decides it lasts.
+  - Dead units stay dead, on the stage they fell on. There is no garrison on a later stage.
+- **Lose or leave any stage.** The mission ends there with one `MissionResult` for the consequence rules. `missionRecord(mission)` is the result's view of the whole mission: every earlier stage's units, log and templates in front of the current stage's. Casualties, kills, carcasses, left-behind and species killed therefore count every stage. `deploymentOf` reads the whole force from it too. `MissionResult.stages?: MissionStageResult[]` (`{ index, outcome, turns }`) tells the debrief where the mission was decided.
+- **Ending on the objectives.** `TacticalState.endsOnObjectives?: true` wins a stage the moment its deciding objectives are complete, with the force still on the map. The platform's core uses it: destroying the core is the end, and there is no extraction.
 
 ## 3. Consequences
 

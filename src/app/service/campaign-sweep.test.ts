@@ -91,9 +91,9 @@ describe("the campaign sweep is deterministic per seed (campaign arc §12)", () 
 
 describe("campaign sweep harness", () => {
   it("names today's last built act and its ending", () => {
-    expect(lastActOf(SHIPPED_STORY)).toBe("act-3");
+    expect(lastActOf(SHIPPED_STORY)).toBe("finale");
     expect(SHIPPED_STORY.spine[lastActOf(SHIPPED_STORY)].endedBy).toBe(
-      "launch-window",
+      "spore-platform",
     );
   });
 

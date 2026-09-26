@@ -7,6 +7,7 @@ import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue
 import { TUNNEL_TUNING } from "../../tactical/data/tunnel-tuning";
 import { chargeDelayText } from "../service/charge-delay-text";
 import type { BugsSpawnedEvent } from "../../tactical/model/bugs-spawned-event";
+import type { MissionStageState } from "../../tactical/model/mission-stage";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { IconId } from "../data/icon-manifest";
@@ -55,13 +56,19 @@ export interface LogEntry {
  * `Objective complete: objective-1` (#1072): the cases that needed another
  * kind of name had nothing to ask.
  *
+ * A linked mission's stage (#1179) changes one line: a stage won with
+ * another after it is not the mission won, so its `MissionEnded` says
+ * which stage fell, and the log goes on into the next.
+ *
  * @param event - The tactical event.
  * @param names - Resolves every kind of id a line can mention.
+ * @param stage - The linked mission's stage the event belongs to, if any.
  * @returns The line to show, or undefined to skip it.
  */
 export function describeEvent(
   event: TacticalEvent,
   names: TacticalNames,
+  stage?: MissionStageState,
 ): LogEntry | undefined {
   const nameOf = (unitId: UnitId): string => names.unit(unitId);
   switch (event.type) {
@@ -533,6 +540,17 @@ export function describeEvent(
             tone: event.payload.complete ? "ok" : "accent",
           };
     case "tactical:mission-ended":
+      if (
+        event.payload.outcome === "won" &&
+        stage !== undefined &&
+        stage.index + 1 < stage.count
+      ) {
+        return {
+          text: `Stage ${formatWhole(stage.index + 1)} of ${formatWhole(stage.count)} won`,
+          icon: "check",
+          tone: "ok",
+        };
+      }
       return {
         text: `Mission ${event.payload.outcome}`,
         icon: event.payload.outcome === "won" ? "check" : "warning",

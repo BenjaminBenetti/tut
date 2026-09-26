@@ -6,6 +6,7 @@ import { withGreatHiveConsequences } from "./great-hive-consequence";
 import { HIVE_ASSAULT_CONSEQUENCE } from "./hive-assault-consequence";
 import { INFESTATION_CLEARANCE_CONSEQUENCE } from "./infestation-clearance-consequence";
 import { TUNNEL_SABOTAGE_CONSEQUENCE } from "./tunnel-sabotage-consequence";
+import { SPORE_PLATFORM_CONSEQUENCE } from "./spore-platform-consequence";
 import { WRECK_RECOVERY_CONSEQUENCE } from "./wreck-recovery-consequence";
 
 // ===========================================
@@ -33,6 +34,7 @@ import { WRECK_RECOVERY_CONSEQUENCE } from "./wreck-recovery-consequence";
  *                                                                     lost, +1 level and a retry delay
  *   tunnel-sabotage        ──► tunnel-sabotage-consequence.ts         a win holds the city's spread
  *                                                                     10 days; nothing otherwise
+ *   spore-platform         ──► spore-platform-consequence.ts          nothing; the story rule decides
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -48,4 +50,5 @@ export const MISSION_CONSEQUENCE_RULES: MissionConsequenceRules = {
   evacuation: EVACUATION_CONSEQUENCE,
   "hive-assault": withGreatHiveConsequences(HIVE_ASSAULT_CONSEQUENCE),
   "tunnel-sabotage": TUNNEL_SABOTAGE_CONSEQUENCE,
+  "spore-platform": SPORE_PLATFORM_CONSEQUENCE,
 };

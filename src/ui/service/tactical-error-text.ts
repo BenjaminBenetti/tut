@@ -1,6 +1,12 @@
+import { PERSONAS } from "../../bugs/data/personas";
+import {
+  createPersonaLookup,
+  personaName,
+} from "../../bugs/service/persona-lookup";
 import type { GameState } from "../../save/model/game-state";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { CommandError } from "../../core/model/command-error";
+import type { AttackTarget } from "../../tactical/model/attack-target";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import {
@@ -34,7 +40,9 @@ export interface TacticalNames {
    * them the same thing and an event about one reads as an event about
    * the other (#1040). The debrief already calls them Alpha and Bravo,
    * from the roster; in-mission text has to agree. A bug has no roster
-   * entry, so its species name from the template is its identity.
+   * entry: a named enemy is called by its persona ("Broodmother",
+   * "Alpha Swarmer"), and any other bug by its species name from the
+   * template.
    */
   unit(id: string): string;
   /**
@@ -90,6 +98,9 @@ export interface TacticalNames {
 // ===========================================
 // Constants
 // ===========================================
+
+/** The shipped personas, which name the named enemies. */
+const personaOf = createPersonaLookup(PERSONAS);
 
 /**
  * What a name resolves to when the thing is not in state any more.
@@ -156,9 +167,20 @@ export function namesFor(
     const named =
       roster?.squads.find((squad) => squad.id === unit.sourceId)?.name ??
       roster?.mechs.find((mech) => mech.id === unit.sourceId)?.name;
+    if (named !== undefined) {
+      return named;
+    }
+    // Then a named enemy's persona (campaign arc §9), which the event
+    // log, the unit card and Jev's observation all call it by.
+    const species = mission?.templates[unit.templateId]?.name;
+    const persona =
+      unit.persona === undefined ? undefined : personaOf(unit.persona);
+    if (persona !== undefined) {
+      return personaName(persona, species);
+    }
     // Then the template, which is the species for a bug and the only
     // name it has.
-    return named ?? mission?.templates[unit.templateId]?.name ?? ANONYMOUS.unit;
+    return species ?? ANONYMOUS.unit;
   };
   return {
     unit: nameUnit,
@@ -198,6 +220,23 @@ export function namesFor(
       return city?.name ?? ANONYMOUS.mission;
     },
   };
+}
+
+/**
+ * What the aim readouts (the hit preview's header, the weapon wheel's
+ * hub) call the thing being aimed at: a unit by the name the card and
+ * the log use, so a named enemy reads "Broodmother" and not its species
+ * (campaign arc §9); a spawner by the target's own name, as before.
+ *
+ * @param target - What the attack is aimed at.
+ * @param names - The resolver the card and the log use.
+ * @returns The target's name.
+ */
+export function attackTargetName(
+  target: AttackTarget,
+  names: TacticalNames,
+): string {
+  return target.kind === "unit" ? names.unit(target.id) : target.name;
 }
 
 /**

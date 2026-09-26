@@ -23,6 +23,8 @@ import { SpitterBehaviour } from "../../bugs/ai/spitter-behaviour";
 import { SwarmerBehaviour } from "../../bugs/ai/swarmer-behaviour";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
 import { BUG_SPECIES } from "../../bugs/data/species";
+import { createPersonaLookup } from "../../bugs/service/persona-lookup";
+import { PERSONAS } from "../../bugs/data/personas";
 import type { IdGenerator } from "../../core/model/id-generator";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
@@ -331,10 +333,14 @@ export function shippedTacticalHandlers(
   };
   const registry = new MapBehaviourRegistry(shippedBugBehaviours());
   const speciesOf = createSpeciesLookup(BUG_SPECIES);
+  // A named enemy plays its persona's fallback without Jev, in the
+  // synchronous bug phase and in a mixed Jev phase alike (ADR 0013 §2.8).
+  const personaOf = createPersonaLookup(PERSONAS);
   const bugPhase = createBugPhaseRunner({
     handlers: actions,
     registry,
     speciesOf,
+    personaOf,
     combat: COMBAT_TUNING,
   });
   return {
@@ -351,6 +357,7 @@ export function shippedTacticalHandlers(
           registry,
           speciesOf,
           { rng: ctx.rng, combat: COMBAT_TUNING },
+          personaOf,
         ),
     ),
     [END_TURN]: createEndTurnHandler(

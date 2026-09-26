@@ -314,6 +314,48 @@ describe("EventLogView squad identity", () => {
     view.append([shotBy("unit-1"), shotBy("unit-1")], twoSquads(), ROSTER);
     expect(lines()).toEqual(["Alpha hit Swarmer for 4 ×2"]);
   });
+
+  // Campaign arc §9: a named enemy reads by its persona, and the Alpha
+  // persona never reads as the squad called Alpha.
+  it("names a named enemy by its persona, apart from the squad of the same name", () => {
+    const named = twoSquads();
+    const withPersonas = {
+      ...named,
+      units: [
+        ...named.units,
+        {
+          id: "unit-7",
+          sourceId: "swarmer",
+          templateId: "swarmer",
+          persona: "broodmother",
+        },
+        {
+          id: "unit-8",
+          sourceId: "swarmer",
+          templateId: "swarmer",
+          persona: "alpha",
+        },
+      ],
+    } as unknown as TacticalState;
+    const bite = (attackerId: string): TacticalEvent => ({
+      type: "tactical:attack-resolved",
+      payload: {
+        attackerId,
+        targetId: "unit-1",
+        hit: true,
+        damage: 3,
+        weaponRange: 1,
+        targetHp: 7,
+      },
+    });
+    const view = new EventLogView();
+    view.mount(host);
+    view.append([bite("unit-7"), bite("unit-8")], withPersonas, ROSTER);
+    expect(lines()).toEqual([
+      "Broodmother hit Alpha for 3",
+      "Alpha Swarmer hit Alpha for 3",
+    ]);
+  });
 });
 
 // ===========================================

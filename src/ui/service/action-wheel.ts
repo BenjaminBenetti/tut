@@ -55,7 +55,7 @@ import {
 } from "../../tactical/service/equipment-service";
 import type { HealPreview } from "../../tactical/model/heal-preview";
 import type { TacticalNames } from "./tactical-error-text";
-import { describeRefusal } from "./tactical-error-text";
+import { attackTargetName, describeRefusal } from "./tactical-error-text";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import {
   reachableCarcasses,
@@ -322,7 +322,7 @@ export function weaponWheel(
   return {
     items,
     hub: {
-      value: enemy.name,
+      value: attackTargetName(enemy, ctx.names),
       caption: kit.length > 0 ? "pick an attack" : "pick a weapon",
     },
   };

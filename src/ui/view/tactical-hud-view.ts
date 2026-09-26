@@ -69,7 +69,11 @@ import type {
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
 import type { GameState } from "../../save/model/game-state";
-import { describeRefusal, namesFor } from "../service/tactical-error-text";
+import {
+  attackTargetName,
+  describeRefusal,
+  namesFor,
+} from "../service/tactical-error-text";
 import { objectiveProgress } from "../service/objectives/objective-presentation";
 import type { UnitAction } from "../service/action-availability";
 import { actionRefusal, interactTarget } from "../service/action-availability";
@@ -860,12 +864,12 @@ export class TacticalHudView {
 
   /** Keep Jev labels anchored between inspections; stop the frame loop when neither is needed. */
   private followStatus(): void {
-    const hasJev = this.view?.units.some(
-      (unit) =>
-        unit.team === "tdf" &&
-        unit.hp > 0 &&
-        this.mission?.jev?.entities[unit.id]?.enabled,
-    );
+    const mission = this.mission;
+    const hasJev =
+      mission !== undefined &&
+      this.view?.units.some(
+        (unit) => unit.hp > 0 && underJev(mission, unit.id),
+      ) === true;
     if (!this.inspecting && !hasJev) {
       this.stopInspecting?.();
       this.stopInspecting = undefined;
@@ -2157,8 +2161,7 @@ export class TacticalHudView {
     const names = namesFor(mission, this.campaign);
     const chips: UnitStatusChip[] = [];
     for (const unit of view.units) {
-      const jevControlled =
-        unit.team === "tdf" && mission.jev?.entities[unit.id]?.enabled === true;
+      const jevControlled = underJev(mission, unit.id);
       if (unit.hp <= 0 || (!this.inspecting && !jevControlled)) {
         continue;
       }
@@ -2376,12 +2379,13 @@ export class TacticalHudView {
         ? undefined
         : findAttackTarget(mission, this.target);
     const preview = this.currentPreview();
+    const previewNames = namesFor(mission, this.campaign);
     this.preview.update(
       target && preview
         ? {
-            targetName: target.name,
+            targetName: attackTargetName(target, previewNames),
             preview,
-            names: namesFor(mission, this.campaign),
+            names: previewNames,
           }
         : undefined,
     );
@@ -2426,6 +2430,15 @@ export class TacticalHudView {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * Whether Jev drives the unit: a squad the player handed over or a named
+ * enemy the default policy did (ADR 0013 §2.8). Asked only of units in
+ * the perceived view, so the label never reveals a bug nobody can see.
+ */
+function underJev(mission: TacticalState, unitId: UnitId): boolean {
+  return mission.jev?.entities[unitId]?.enabled === true;
+}
 
 /** Living units on one team. */
 function countAlive(mission: TacticalState, team: Team): number {

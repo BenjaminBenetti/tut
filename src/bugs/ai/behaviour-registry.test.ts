@@ -10,7 +10,14 @@ import { buildMoveGraph } from "../../tactical/service/movement-service";
 import { BUG_SPECIES, SWARMER } from "../data/species";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import { startedMission, withBug, bugView } from "./bug-mission.test-helper";
-import { chooseBugCommands, MapBehaviourRegistry } from "./behaviour-registry";
+import {
+  behaviourTagOf,
+  chooseBugCommands,
+  MapBehaviourRegistry,
+} from "./behaviour-registry";
+import { PERSONAS } from "../data/personas";
+import type { PersonaDefinition } from "../model/persona";
+import { createPersonaLookup } from "../service/persona-lookup";
 import {
   attackOptions,
   bestBy,
@@ -175,5 +182,85 @@ describe("chooseBugCommands", () => {
         ctx(mission),
       ),
     ).toEqual([]);
+  });
+});
+
+describe("behaviourTagOf (ADR 0013 §2.8)", () => {
+  const species = (id: string) => BUG_SPECIES[id as "swarmer" | "lurker"];
+  const personaOf = createPersonaLookup(PERSONAS);
+
+  it("plays the species' tag for an ordinary bug", () => {
+    expect(behaviourTagOf({ sourceId: "lurker" }, species, personaOf)).toBe(
+      "flank",
+    );
+  });
+
+  it("plays a named enemy's persona fallback instead of its species' tag", () => {
+    // A Broodmother carried by a swarmer does not rush; it plays her fallback.
+    expect(PERSONAS.broodmother.fallback).not.toBe(SWARMER.behaviour);
+    expect(
+      behaviourTagOf(
+        { sourceId: "swarmer", persona: "broodmother" },
+        species,
+        personaOf,
+      ),
+    ).toBe(PERSONAS.broodmother.fallback);
+  });
+
+  it("plays the species when the persona's fallback says so (an alpha fights as its species)", () => {
+    expect(PERSONAS.alpha.fallback).toBe("species");
+    expect(
+      behaviourTagOf(
+        { sourceId: "lurker", persona: "alpha" },
+        species,
+        personaOf,
+      ),
+    ).toBe("flank");
+  });
+
+  it("plays the species for a persona this build does not know, or with no persona lookup", () => {
+    expect(
+      behaviourTagOf(
+        { sourceId: "swarmer", persona: "future-boss" as "alpha" },
+        species,
+        personaOf,
+      ),
+    ).toBe("rush");
+    expect(
+      behaviourTagOf({ sourceId: "swarmer", persona: "broodmother" }, species),
+    ).toBe("rush");
+  });
+});
+
+describe("chooseBugCommands with a persona", () => {
+  it("asks the persona's fallback behaviour, not the species', to choose", () => {
+    const { mission, bug } = missionWithBug();
+    const named = {
+      ...mission,
+      units: mission.units.map((u) =>
+        u.id === bug.id ? { ...u, persona: "broodmother" as const } : u,
+      ),
+    };
+    const asked: string[] = [];
+    const spy = (tag: "rush" | "flank"): BugBehaviour => ({
+      tag,
+      choose: () => {
+        asked.push(tag);
+        return [];
+      },
+    });
+    const flanker: PersonaDefinition = {
+      ...PERSONAS.broodmother,
+      fallback: "flank",
+    };
+    chooseBugCommands(
+      bugView(named),
+      bug.id,
+      new MapBehaviourRegistry([spy("rush"), spy("flank")]),
+      (id) => BUG_SPECIES[id as "swarmer"],
+      ctx(named),
+      (id) => (id === "broodmother" ? flanker : undefined),
+    );
+    expect(asked).toEqual(["flank"]);
   });
 });

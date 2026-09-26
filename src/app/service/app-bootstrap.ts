@@ -1,5 +1,9 @@
 import "../../ui/style/jev.css";
 import { JevController } from "../controller/jev-controller";
+import { JevDefaultPolicy } from "../controller/jev-default-policy";
+import { KeyValueJevPreference } from "../repository/jev-preference-repository";
+import { PERSONAS } from "../../bugs/data/personas";
+import { createPersonaLookup } from "../../bugs/service/persona-lookup";
 import { JevClient } from "./jev-client";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { MECH_BLUEPRINTS } from "../../roster/data/mech-blueprints";
@@ -118,8 +122,19 @@ export async function bootstrapApp(doc: Document): Promise<void> {
   // navigation; the router only ever removes the screen it mounted (#217).
   const notices = new NoticeBarView();
   notices.mount(uiRoot);
+  const storage = new WebStorageKeyValueStore(window.localStorage);
+  // One relay client for the page: it holds no state, and the main menu
+  // asks it whether smart enemies can be offered at all.
+  const jevClient = new JevClient(
+    import.meta.env.VITE_JEV_RELAY_URL ??
+      (import.meta.env.DEV ? "http://localhost:8080" : ""),
+  );
+  // The player's "Smart enemies (Jev)" setting: beside the saves in
+  // browser storage, never inside one (campaign arc §9).
+  const jevPreference = new KeyValueJevPreference(storage);
+  const personaOf = createPersonaLookup(PERSONAS);
   const game = composeGame({
-    storage: new WebStorageKeyValueStore(window.localStorage),
+    storage,
     clock,
     newSeed: randomSeed,
     onAutosaveFailure: (error) => {
@@ -165,6 +180,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             createCampaign: game.createCampaign,
             newSeed: game.newSeed,
             clock: game.clock,
+            // Offered only where a relay is configured: without one no
+            // enemy is ever smart, and a switch would promise otherwise.
+            ...(jevClient.configured ? { smartEnemies: jevPreference } : {}),
             openMapLab: () => {
               // A real navigation, not a route: the harness is its own
               // page in the bundle (#786). Relative to the document so
@@ -283,21 +301,26 @@ export async function bootstrapApp(doc: Document): Promise<void> {
         () =>
           new TacticalScreen({
             jev: game.session.store
-              ? new JevController(
-                  game.session.store,
-                  new JevClient(
-                    import.meta.env.VITE_JEV_RELAY_URL ??
-                      (import.meta.env.DEV ? "http://localhost:8080" : ""),
-                  ),
-                  {
-                    handlers: game.tactical.handlers,
+              ? new JevController(game.session.store, jevClient, {
+                  handlers: game.tactical.handlers,
+                  combat: COMBAT_TUNING,
+                  equipment: {
+                    catalogue: SHIPPED_EQUIPMENT,
                     combat: COMBAT_TUNING,
-                    equipment: {
-                      catalogue: SHIPPED_EQUIPMENT,
-                      combat: COMBAT_TUNING,
-                    },
                   },
-                )
+                })
+              : undefined,
+            // Named enemies go to Jev by default (ADR 0013 §2.8). The
+            // policy reads the preference each time a persona is due,
+            // so turning it off stops new actors, not ones already
+            // under Jev.
+            jevPolicy: game.session.store
+              ? new JevDefaultPolicy({
+                  store: game.session.store,
+                  configured: jevClient.configured,
+                  preference: jevPreference,
+                  personaOf,
+                })
               : undefined,
             router,
             session: game.session,

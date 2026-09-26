@@ -20,8 +20,10 @@ import { createGameSaveService } from "../../save/service/game-save-service";
 import type { NewGameOptions } from "../../save/service/game-state-factory";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { GameSession } from "../model/game-session";
+import type { JevPreference } from "../model/jev-preference";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
+import { SMART_ENEMIES_HINT } from "../view/smart-enemies-toggle-view";
 import { MainMenuScreen } from "./main-menu-screen";
 
 const NOW = "2026-09-02T12:00:00.000Z";
@@ -39,6 +41,19 @@ class FakeSession implements GameSession {
   }
   clear(): void {
     this.state = undefined;
+  }
+}
+
+/** A preference held in memory, recording every write. */
+class FakeJevPreference implements JevPreference {
+  readonly writes: boolean[] = [];
+  constructor(private on = true) {}
+  enabled(): boolean {
+    return this.on;
+  }
+  setEnabled(enabled: boolean): void {
+    this.on = enabled;
+    this.writes.push(enabled);
   }
 }
 
@@ -75,7 +90,10 @@ describe("MainMenuScreen", () => {
     document.body.appendChild(root);
   });
 
-  const mountWith = (store: KeyValueStore = new MemoryKeyValueStore()) => {
+  const mountWith = (
+    store: KeyValueStore = new MemoryKeyValueStore(),
+    smartEnemies?: JevPreference,
+  ) => {
     const { router, navigate } = fakeRouter();
     const openMapLab = vi.fn();
     const session = new FakeSession();
@@ -88,6 +106,7 @@ describe("MainMenuScreen", () => {
       newSeed: () => 42,
       clock: { now: () => NOW },
       openMapLab,
+      ...(smartEnemies === undefined ? {} : { smartEnemies }),
     });
     screen.mount(root);
     return { navigate, session, saves, screen, openMapLab };
@@ -287,5 +306,53 @@ describe("MainMenuScreen", () => {
     expect(root.children).toHaveLength(0);
     newGame.click();
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  describe("Smart enemies (Jev)", () => {
+    const toggle = (): HTMLInputElement | null =>
+      root.querySelector<HTMLInputElement>(
+        '[data-testid="smart-enemies-toggle"]',
+      );
+
+    it("is not offered when the app passes no preference (no relay configured)", () => {
+      mountWith();
+      expect(toggle()).toBeNull();
+      expect(root.querySelector('[data-role="smart-enemies"]')).toBeNull();
+    });
+
+    it("shows the stored choice, on by default, with a hint that off stops new actors only", () => {
+      mountWith(undefined, new FakeJevPreference());
+      expect(toggle()?.checked).toBe(true);
+      expect(toggle()?.closest("label")?.textContent).toBe(
+        "Smart enemies (Jev)",
+      );
+      expect(
+        root.querySelector('[data-role="smart-enemies"] .tut-menu__hint')
+          ?.textContent,
+      ).toBe(SMART_ENEMIES_HINT);
+      expect(SMART_ENEMIES_HINT).toMatch(/already under Jev/);
+      document.body.innerHTML = "";
+      root = document.body.appendChild(document.createElement("div"));
+      mountWith(undefined, new FakeJevPreference(false));
+      expect(toggle()?.checked).toBe(false);
+    });
+
+    it("writes the choice when the player flips it, and stops listening once unmounted", () => {
+      const preference = new FakeJevPreference();
+      const { screen } = mountWith(undefined, preference);
+      const box = toggle()!;
+      box.click();
+      expect(preference.writes).toEqual([false]);
+      expect(preference.enabled()).toBe(false);
+      box.click();
+      expect(preference.writes).toEqual([false, true]);
+      screen.unmount();
+      // A detached checkbox fires no change on click, so the event is
+      // sent by hand: only a removed listener ignores it.
+      box.checked = false;
+      box.dispatchEvent(new Event("change"));
+      expect(preference.writes).toEqual([false, true]);
+      expect(root.children).toHaveLength(0);
+    });
   });
 });

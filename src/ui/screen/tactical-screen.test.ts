@@ -629,6 +629,51 @@ describe("TacticalScreen", () => {
     expect(root.childElementCount).toBe(0);
   });
 
+  // The policy dispatches from inside store notifications, so it must be
+  // the last subscriber: the screen's render and the controller see a
+  // change before the configureJev the policy answers it with.
+  it("starts the Jev policy last, after the screen's subscription and the controller, and stops it first", () => {
+    const store = new FakeStore(inMission());
+    const calls: string[] = [];
+    const jev = {
+      configured: true,
+      history: [],
+      mission: () => store.getState().activeMission,
+      capture: () => {
+        throw new Error("Not an inspector test");
+      },
+      evaluate: () => Promise.resolve(),
+      step: () => Promise.resolve(),
+      configure: vi.fn(),
+      subscribe: () => () => undefined,
+      pause: vi.fn(),
+      setPlaybackPending: vi.fn(),
+      start: () => calls.push("jev.start"),
+      dispose: () => calls.push("jev.dispose"),
+    } satisfies JevInspector;
+    const screen = new TacticalScreen({
+      jev,
+      jevPolicy: {
+        start: () => calls.push(`policy.start:${store.listenerCount}`),
+        dispose: () => calls.push("policy.dispose"),
+      },
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: new FakeHost(),
+    });
+    screen.mount(root);
+    expect(calls).toEqual(["jev.start", "policy.start:1"]);
+    screen.unmount();
+    expect(calls).toEqual([
+      "jev.start",
+      "policy.start:1",
+      "policy.dispose",
+      "jev.dispose",
+    ]);
+  });
+
   describe("Leave (#1132)", () => {
     const dialog = (): HTMLElement | null =>
       root.querySelector<HTMLElement>('[data-role="leave-dialog"]');

@@ -2,7 +2,7 @@ import type { JevControl } from "./jev-control";
 import type { Brood } from "./brood";
 import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
-import type { DeployableTypeId } from "../../content/model/deployable-type-id";
+import type { InstallationSiteId } from "../../content/model/installation-site-id";
 import type { SitrepId } from "../../content/model/sitrep-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -183,8 +183,11 @@ export interface DestroyPodObjective extends ObjectiveBase {
  */
 export interface DefendGeneratorsObjective extends ObjectiveBase {
   readonly kind: "defend-generators";
-  /** The installation under attack, for the briefing and the tracker. */
-  readonly installation: DeployableTypeId;
+  /**
+   * The facility under attack, for the briefing and the tracker: a built
+   * installation or a story facility (the tracking array, the launch site).
+   */
+  readonly installation: InstallationSiteId;
   /** The generator units, in hook order. */
   readonly targetIds: readonly UnitId[];
   /** Always written for a defence, which starts open. */

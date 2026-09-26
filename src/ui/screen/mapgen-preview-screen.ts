@@ -207,10 +207,17 @@ export class MapgenPreviewScreen {
       SETTLEMENT_SCALES,
       initial.settlement,
     );
+    // The authored compounds only: a story facility (the tracking array,
+    // the launch site) borrows one of these, so it has no layout of its own.
     this.siteSelect = select(
       doc,
       "site",
-      ["", ...Object.keys(INSTALLATION_SITES)],
+      [
+        "",
+        ...Object.values(INSTALLATION_SITES)
+          .filter((site) => site.compound === site.id)
+          .map((site) => site.id),
+      ],
       initial.site ?? "",
     );
     for (const option of this.siteSelect.options) {

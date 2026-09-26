@@ -198,8 +198,13 @@ startTacticalMission
 **The spine rule** (arc §13: "the spine ends the game after the last act that exists").
 
 - `STORY_SPINE` in `overworld/data/story-spine.ts` names the story mission that ends each act.
-- An act **exists** when that mission is defined in `STORY_MISSION_RULES`.
+- An act **exists** when that mission is defined in `STORY_MISSION_RULES` **and every earlier act exists** (`actExists`, #1179). Existence is contiguous because story missions land out of order: Launch Window, which ends Act III, is built before Intact Pod, which ends Act II. So Act III does not exist yet, a Live Specimen win is still the campaign's victory, and no build reaches an act through a gap.
 - `advance-act` moves into the next act only if it exists. Otherwise it sets `campaign-won`.
+
+```
+built:   live-specimen   (intact-pod)   launch-window   (spore-platform)
+exists:  act-1 ✓         act-2 ✗        act-3 ✗         finale ✗      ◄── a gap ends the run
+```
 
 | Act | Ended by | Entering it |
 |---|---|---|
@@ -210,10 +215,21 @@ startTacticalMission
 
 The arc files Launch Window under the finale. The spine plays it as Act III's last mission, so the finale holds only the platform.
 
+**Act III's story defences** (#1179, arc §4, §6.9). Uplink and Launch Window are built on `defend-installation`, through `buildStoryDefenceOffer` in `story/story-defence-offer.ts`. The facility belongs to the story, so `InstallationDefence.installation` widens to `InstallationSiteId = DeployableTypeId | StoryInstallationId` (`content/model/installation-site-id.ts`), and `deployableId` becomes optional. `INSTALLATION_SITES` gains `tracking-array` and `launch-site`, and every site names the authored `compound` mapgen raises for it. The story sites borrow the sensor array's (2 generators) and the repellent dispersal plant's (4). `storyDefenceCity` chooses the city without a draw, through `pickStoryCity` with every city as a candidate. Its preference is the least infested detected city in a region without a hive, then any detected city, then any city, with ties going to map order. A free city is always taken first. Only when every city holds an offer does it take the preferred ordinary offer's city, which the director withdraws. A pinned or triggered offer, Defend Installation included, is never taken.
+
+| Rule | Act | `pinWhen` | Offer | `onWon` | `onLost` |
+|---|---|---|---|---|---|
+| `uplink` | `act-3` | none: entering the act is the trigger | d6, tracking array, 5 waves | flag `uplink-won` | retry 5 |
+| `launch-window` | `act-3` | `platform-approach`, `great-hives-destroyed` | d8, launch site, 7 waves | `advance-act` | retry 5 (the launch slips) |
+
+- **Uplink's d6** is one step above the Act III floor: the act's first story fight is not easier than Act II's ending. Its 5 waves are what the director's defence sends at the trigger's floor (region mean 40).
+- **Launch Window's d8** is the finale band's floor. Its 7 waves are a region at 80, one short of the cap.
+- **Intel III, Platform Approach** (`tech.platform-approach`) is an intel node on the support spoke beside Intel I. It costs 280 TP, needs `uplink-won`, and sets `platform-approach`. `great-hives-destroyed` is in the flag vocabulary for the Great Hives package to set. Until that package lands, nothing sets it, so Launch Window never pins.
+
 **D7, the platform** (`{kind:"platform"}`):
 
 - **First loss:** every city gains `cityInfestation` through `addCityInfestation`, capped at 100. The story sets `platform-failed`. The platform is not pinned again until `last-hope` is set.
-- **Last Hope:** a hidden node with `requiresFlags: ["platform-failed"]` and the flag effect `last-hope`. It is not in the tree yet.
+- **Last Hope:** `tech.last-hope`, a `story` node at 100 TP with `requiresFlags: ["platform-failed"]` and the flag effect `last-hope`, in `tech/data/endgame-intel-nodes.ts`. No family fits a second assault, so it sits with the intel nodes on the support spoke.
 - **Second loss:** the story sets `campaign-lost`.
 
 **Other rules set flags through one door.** `setCampaignFlag(state, flag)` sets a flag and emits `CampaignFlagSet`. The Crash Site consequence rule calls it on its first win to set `spore-sample`, which reveals Intel I.

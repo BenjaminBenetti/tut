@@ -1,6 +1,8 @@
 import type { StoryMissionRules } from "../../model/story-mission-rule";
 import { FIRST_SKYFALL } from "./first-skyfall";
+import { LAUNCH_WINDOW } from "./launch-window";
 import { LIVE_SPECIMEN } from "./live-specimen";
+import { UPLINK } from "./uplink";
 
 // ===========================================
 // The table
@@ -16,6 +18,8 @@ import { LIVE_SPECIMEN } from "./live-specimen";
  *   first-skyfall   ──► first-skyfall.ts   Act I, the second mission: a d1 crash site
  *   live-specimen   ──► live-specimen.ts   Act I's ending: a d3 clearance, pinned by
  *                                          Intel I, won by bringing a lurker home
+ *   uplink          ──► uplink.ts          Act III's opener: hold the tracking array, d6
+ *   launch-window   ──► launch-window.ts   Act III's ending: hold the launch site, d8
  * ```
  *
  * `Partial` on purpose: story missions land package by package, and an
@@ -32,4 +36,6 @@ import { LIVE_SPECIMEN } from "./live-specimen";
 export const STORY_MISSION_RULES: StoryMissionRules = {
   "first-skyfall": FIRST_SKYFALL,
   "live-specimen": LIVE_SPECIMEN,
+  uplink: UPLINK,
+  "launch-window": LAUNCH_WINDOW,
 };

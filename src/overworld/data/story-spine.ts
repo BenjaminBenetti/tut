@@ -6,8 +6,8 @@ import type { StorySpine } from "../model/story-spine";
 
 /**
  * Which story mission ends each act (campaign arc §3 "Ends when", §4).
- * An act exists once its ending mission is defined in
- * `STORY_MISSION_RULES`, and `advance-act` past the last act that exists
+ * An act exists once its ending mission, and every earlier act's, is
+ * defined in `STORY_MISSION_RULES` (`actExists`), and `advance-act` past the last act that exists
  * wins the campaign (arc §13).
  *
  * | Act      | Ended by         | Gate in the arc                           | Entering it          |

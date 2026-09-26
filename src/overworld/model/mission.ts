@@ -1,7 +1,7 @@
 import type { ActId } from "../../content/model/act-id";
 import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { BiomeId } from "../../content/model/biome-id";
-import type { DeployableTypeId } from "../../content/model/deployable-type-id";
+import type { InstallationSiteId } from "../../content/model/installation-site-id";
 import type { DeployableId } from "./deployable";
 import type { MapSizeId } from "../../content/model/map-size-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
@@ -77,12 +77,22 @@ export interface TechCarcassParams {
  *   INSTALLATION_SITES[installation].generators ───► generators
  *   region mean infestation ─────────────────────► waves (mission tuning)
  * ```
+ *
+ * A story defence (campaign arc §6.9: Uplink, Launch Window) holds a
+ * story facility instead, which no deployable stands for, so it has no
+ * `deployableId`, and its story rule fixes the waves.
  */
 export interface InstallationDefence {
-  /** Which kind of installation is under attack; picks the authored facility site. */
-  readonly installation: DeployableTypeId;
-  /** The specific installation the offer was rolled for, for the map cue. */
-  readonly deployableId: DeployableId;
+  /**
+   * Which facility is under attack: a built installation's type, or a
+   * story facility. Picks the authored compound and names it.
+   */
+  readonly installation: InstallationSiteId;
+  /**
+   * The specific installation the offer was rolled for, for the map cue.
+   * Absent on a story defence, whose facility the player never built.
+   */
+  readonly deployableId?: DeployableId;
   /** Generators the map stands around the facility; every one is an objective. */
   readonly generators: number;
   /** Bug waves that will land before the mission can be completed. At least one. */

@@ -7,7 +7,9 @@ import type {
   MissionPresentationContext,
 } from "../../model/mission-presentation";
 import type { StoryPresentationCatalogue } from "../../model/story-presentation";
+import { LAUNCH_WINDOW_PRESENTATION } from "./launch-window-presentation";
 import { LIVE_SPECIMEN_PRESENTATION } from "./live-specimen-presentation";
+import { UPLINK_PRESENTATION } from "./uplink-presentation";
 
 // ===========================================
 // Table
@@ -21,10 +23,14 @@ import { LIVE_SPECIMEN_PRESENTATION } from "./live-specimen-presentation";
  * ```
  *   first-skyfall  ──► (none: the crash site's presentation says it all)
  *   live-specimen  ──► live-specimen-presentation.ts
+ *   uplink         ──► uplink-presentation.ts          } story defences, sharing
+ *   launch-window  ──► launch-window-presentation.ts   } story-defence-presentation.ts
  * ```
  */
 export const STORY_PRESENTATION: StoryPresentationCatalogue = {
   "live-specimen": LIVE_SPECIMEN_PRESENTATION,
+  uplink: UPLINK_PRESENTATION,
+  "launch-window": LAUNCH_WINDOW_PRESENTATION,
 };
 
 // ===========================================

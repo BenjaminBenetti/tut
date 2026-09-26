@@ -10,7 +10,7 @@ import type { StoryMissionId } from "../../content/model/story-mission-id";
  * ADR 0013 §2.5).
  *
  * The act **exists** once the story mission in `endedBy` is defined in
- * the story rules. A win whose effect is `advance-act` moves the
+ * the story rules and every earlier act exists (`actExists`). A win whose effect is `advance-act` moves the
  * campaign into the next act only if that act exists; otherwise the
  * spine is over and the campaign is won. So each build phase ends in a
  * campaign that can be finished: "the spine ends the game after the last

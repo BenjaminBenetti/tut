@@ -1,3 +1,4 @@
+import { INSTALLATION_SITES } from "../../../content/data/installation-sites";
 import type { Mission } from "../../../overworld/model/mission";
 import { HookKinds } from "../../model/hook";
 import type {
@@ -16,9 +17,14 @@ import type {
  * offer's `Mission.defence`; a mission without one (an older save) gets
  * a plain settlement map, as it did before the rule existed.
  *
+ * The site is the installation's authored compound: a built
+ * installation's own, and for a story facility (Uplink's tracking array,
+ * Launch Window's launch site, campaign arc §6.9) the compound it
+ * borrows (`INSTALLATION_SITES[installation].compound`).
+ *
  * ```
  *   mission.defence { installation, generators }
- *        ├─ site: installation            (MISSION_SITES reserves the compound)
+ *        ├─ site: compound of installation (MISSION_SITES reserves it)
  *        └─ extraHooks: generator × generators
  * ```
  */
@@ -34,7 +40,7 @@ export const DEFEND_INSTALLATION_MAP_RULE: MissionMapRule = {
     return {
       archetype: "settlement",
       extraHooks: [{ kind: HookKinds.GENERATOR, count: defence.generators }],
-      site: defence.installation,
+      site: INSTALLATION_SITES[defence.installation].compound,
     };
   },
 };

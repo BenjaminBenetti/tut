@@ -35,8 +35,9 @@ export interface FlagStoryEffect {
 
 /**
  * Ends the current act (ADR 0013 §2.5). The campaign moves to the next
- * act if that act exists, meaning the story mission that ends it is
- * defined; otherwise the spine is over and the campaign is won. Entering
+ * act if that act exists, meaning the story mission that ends it and
+ * every earlier act's are defined (`actExists`); otherwise the spine is
+ * over and the campaign is won. Entering
  * Act II also scripts the first hive. The story spine table says which
  * mission ends each act.
  */

@@ -27,7 +27,9 @@ import {
   withZoomRange,
   zoomBy,
   zoomRangeFor,
+  zoomToFit,
 } from "./camera-math";
+import { HIVE_CAVERN_SIZE } from "../../mapgen/data/hive-cavern-recipe";
 
 const YAWS: readonly YawIndex[] = [0, 1, 2, 3];
 const TARGET = { x: 8, y: 0, z: 8 };
@@ -507,6 +509,21 @@ describe("map-aware zoom range (#828)", () => {
     expect(VIEWPORT.height / min).toBeGreaterThanOrEqual(
       diagonal * sin + extent.height * cos,
     );
+  });
+
+  it("fits the 64x144 hive cavern whole without a clamp change (#1179)", () => {
+    // The cavern's tallest rock is 12 layers (floor 5 + walls 4 + rise
+    // 3) and the freezer adds 2; 16 leaves headroom.
+    const extent = {
+      width: HIVE_CAVERN_SIZE.width,
+      depth: HIVE_CAVERN_SIZE.depth,
+      height: relief(16),
+    };
+    const fit = zoomToFit(extent, VIEWPORT);
+    // Above the floor, so the minimum zoom shows the whole board rather
+    // than framing part of it to pan.
+    expect(fit).toBeGreaterThan(ZOOM_FIT_FLOOR);
+    expect(zoomRangeFor(extent, VIEWPORT).min).toBe(fit);
   });
 
   it("does not zoom a 32-tile map out past legibility", () => {

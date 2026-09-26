@@ -20,11 +20,13 @@ import type { PassMask } from "./pass-mask";
  *   field (#447, #662), where a spore pod came down (campaign arc §6.3).
  *   It carries the `spore-pod` hook on the crater floor; the Crash Site
  *   mission type's rule selects it.
+ * - `hive-cavern`: the Hive Assault board (#1179), an open-topped chain
+ *   of chambers sunk into impassable rock, deployed at the mouth, with
+ *   the hive core in the deepest chamber (`docs/design/mapgen-pipeline.md`).
  *
- * Hives and the space platform follow the same route when their turn
- * comes.
+ * The space platform follows the same route when its turn comes.
  */
-export type MapArchetype = "settlement" | "crash-site";
+export type MapArchetype = "settlement" | "crash-site" | "hive-cavern";
 
 /**
  * Every archetype, in a fixed order: what the parameter resolver accepts
@@ -33,6 +35,7 @@ export type MapArchetype = "settlement" | "crash-site";
 export const MAP_ARCHETYPES: readonly MapArchetype[] = [
   "settlement",
   "crash-site",
+  "hive-cavern",
 ];
 
 /**

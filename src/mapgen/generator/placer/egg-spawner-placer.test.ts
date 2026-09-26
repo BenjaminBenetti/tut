@@ -114,6 +114,54 @@ describe("EggSpawnerPlacer", () => {
   });
 });
 
+describe("EggSpawnerPlacer tile filter (#1179)", () => {
+  it("places spawners only on tiles the archetype admits", () => {
+    const draft = new MapDraft(
+      16,
+      16,
+      new SequentialIdGenerator(),
+      SurfaceIds.GRASS,
+    );
+    draft.addHook(
+      "deployZones",
+      HookKinds.DEPLOY,
+      [{ x: 0, y: 0, z: 0 }],
+      PassMask.ALL,
+    );
+    const registries = createDefaultRegistries();
+    const params = resolveMapGenParams(
+      {
+        archetype: "settlement",
+        biome: "temperate",
+        settlement: "rural",
+        size: { width: 16, depth: 16 },
+        hooks: [],
+      },
+      registries,
+    );
+    // One row off the boundary: the unfiltered placer spreads over the
+    // whole plat.
+    new EggSpawnerPlacer((_, coord) => coord.z === 13).place(
+      {
+        kind: HookKinds.EGG_SPAWNER,
+        count: 3,
+        requiredPass: PassMask.INFANTRY,
+        minDistanceFromDeploy: 2,
+      },
+      {
+        draft,
+        params,
+        registries,
+        rng: new Mulberry32Rng(5),
+        diagnostics: new DiagnosticsCollector().forPass("hooks"),
+      },
+    );
+    const tiles = draft.hooks.objectives.flatMap((hook) => hook.tiles);
+    expect(tiles).toHaveLength(3);
+    for (const tile of tiles) expect(tile.z).toBe(13);
+  });
+});
+
 describe("hasFiringLine", () => {
   it("finds a line out through a window", () => {
     const { draft, spawner } = room("window");

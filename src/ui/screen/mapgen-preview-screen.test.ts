@@ -96,6 +96,7 @@ describe("MapgenPreviewScreen", () => {
     expect([...control.options].map((o) => o.value)).toEqual([
       "settlement",
       "crash-site",
+      "hive-cavern",
     ]);
     expect(control.value).toBe("settlement");
     expect(control.closest("label")?.textContent).toContain("Crash site");

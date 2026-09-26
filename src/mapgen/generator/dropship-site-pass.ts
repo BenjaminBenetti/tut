@@ -17,6 +17,7 @@ import {
   dropshipFootprint,
   dropshipApproachRect,
 } from "../service/dropship-site-layout";
+import { hasStandableSurface } from "../service/draft-queries";
 import {
   buildGroundComponents,
   largestGroundComponent,
@@ -36,10 +37,21 @@ export class DropshipSitePass implements GenerationPass {
   readonly id = "dropship-sites";
   readonly requires: readonly DraftCapability[];
   readonly provides: readonly DraftCapability[] = ["landing-sites"];
+  /** Edges the aircraft may land against; every edge unless narrowed. */
+  private readonly facings: ReadonlySet<Direction>;
 
-  /** Settlements reserve after roads; the crash-site prototype reserves after its crater. */
-  constructor(after: "roads" | "elevation" = "roads") {
+  /**
+   * Settlements reserve after roads; the crash-site prototype reserves
+   * after its crater. `facings` narrows the edges searched — a hive
+   * cavern lands only at its mouth (#1179) — and is applied after the
+   * edge shuffle, so the default draws exactly what it always has.
+   */
+  constructor(
+    after: "roads" | "elevation" = "roads",
+    facings: readonly Direction[] = DIRECTIONS,
+  ) {
     this.requires = ["heightmap", "water", after];
+    this.facings = new Set(facings);
   }
 
   /** Chooses unchanged flat land first; any local cut retains a one-layer terrain join. */
@@ -54,7 +66,7 @@ export class DropshipSitePass implements GenerationPass {
         const edges = [
           ...rng.shuffle(DIRECTIONS.filter((d) => !used.has(d))),
           ...DIRECTIONS.filter((d) => used.has(d)),
-        ];
+        ].filter((d) => this.facings.has(d));
         const positions = rng.shuffle(
           Array.from(
             { length: Math.max(draft.width, draft.depth) },
@@ -241,7 +253,7 @@ function canReserve(
   return (
     (allowRoad || !draft.isRoad(x, z)) &&
     !draft.isCovered(x, z) &&
-    draft.groundSurfaceAt(x, z) !== SurfaceIds.WATER &&
+    hasStandableSurface(draft, x, z) &&
     !draft.isLandingReserved(x, z) &&
     draft.propAt(draft.groundCoord(x, z)) === undefined &&
     Object.keys(draft.wallsAt(draft.groundCoord(x, z))).length === 0 &&

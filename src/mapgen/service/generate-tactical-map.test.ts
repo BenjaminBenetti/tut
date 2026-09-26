@@ -108,10 +108,10 @@ describe("generateTacticalMap", () => {
     expect(() =>
       generateTacticalMap(
         recipe("bad", {
-          hooks: [{ kind: "hive-core", count: 1, requiredPass: 1 }],
+          hooks: [{ kind: "warp-gate", count: 1, requiredPass: 1 }],
         }),
       ),
-    ).toThrow('Unknown hook placer id "hive-core"');
+    ).toThrow('Unknown hook placer id "warp-gate"');
   });
 
   it("names the seed and invariants when a map breaks one", () => {

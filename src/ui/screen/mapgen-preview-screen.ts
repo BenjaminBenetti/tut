@@ -80,6 +80,7 @@ export interface MapgenPreviewScreenOptions {
 const ARCHETYPE_NAMES: Readonly<Record<MapArchetype, string>> = {
   settlement: "Settlement",
   "crash-site": "Crash site",
+  "hive-cavern": "Hive cavern",
 };
 
 // ===========================================

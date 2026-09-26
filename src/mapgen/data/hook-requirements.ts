@@ -1,6 +1,7 @@
 import { HookKinds } from "../model/hook";
 import type { HookRequirement, MapArchetype } from "../model/map-recipe";
 import { PassMask } from "../model/pass-mask";
+import { HIVE_CAVERN_HOOKS } from "./hive-cavern-recipe";
 
 // ===========================================
 // Default hook requirements
@@ -58,4 +59,5 @@ export const ARCHETYPE_MISSION_HOOKS: Readonly<
 > = {
   settlement: DEFAULT_MISSION_HOOKS,
   "crash-site": CRASH_SITE_MISSION_HOOKS,
+  "hive-cavern": HIVE_CAVERN_HOOKS,
 };

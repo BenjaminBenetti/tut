@@ -38,6 +38,8 @@ export const SURFACE_MODELS: Readonly<Record<KnownSurfaceId, ModelAssetId>> = {
   [SurfaceIds.FLOOR]: "building.floor",
   [SurfaceIds.ROOF]: "building.roof",
   [SurfaceIds.STAIRS]: "building.stairs",
+  // The rock a hive cavern is cut into reads as rock; only its pass differs.
+  [SurfaceIds.BEDROCK]: "tile.ground.rock",
 };
 
 /**

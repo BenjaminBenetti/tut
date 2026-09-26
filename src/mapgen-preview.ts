@@ -25,9 +25,11 @@ import { TacticalSceneBuilder } from "./graphics/service/tactical-scene-builder"
 import { ARCHETYPE_MISSION_HOOKS } from "./mapgen/data/hook-requirements";
 import type { MapArchetype, MapRecipe } from "./mapgen/model/map-recipe";
 import { MAP_ARCHETYPES } from "./mapgen/model/map-recipe";
+import { ARCHETYPE_RECIPE_DEFAULTS } from "./mapgen/data/archetype-recipe-defaults";
 import type { TacticalMap } from "./mapgen/model/tactical-map";
 import { renderAscii } from "./mapgen/service/ascii-map-renderer";
 import { createDefaultRegistries } from "./mapgen/service/default-registries";
+import { withArchetypeDefaults } from "./mapgen/service/archetype-recipe";
 import { generateTacticalMapWithDiagnostics } from "./mapgen/service/generate-tactical-map";
 import { computeMapMetrics } from "./mapgen/service/map-metrics";
 import { assessMap } from "./tactical/service/map-assessment-service";
@@ -208,7 +210,7 @@ async function main(): Promise<void> {
   let hud: TacticalHudView | undefined;
 
   const regenerate = (state: PreviewControlsState): void => {
-    const recipe: MapRecipe = {
+    const requested: MapRecipe = {
       seed: state.seed,
       params: {
         archetype: state.archetype,
@@ -220,7 +222,8 @@ async function main(): Promise<void> {
         size: state.size,
         ...(state.site === undefined ? {} : { site: state.site }),
         // Each archetype's own mission hooks: egg spawners in a
-        // settlement, the spore pod in a crash site's crater.
+        // settlement, the spore pod in a crash site's crater, the core
+        // and brood chambers in a hive cavern.
         hooks:
           state.site === undefined
             ? ARCHETYPE_MISSION_HOOKS[state.archetype]
@@ -242,6 +245,8 @@ async function main(): Promise<void> {
         infestation: state.infestation ?? 0,
       },
     };
+    // A hive cavern brings its own long board and hive-core hooks (#1179).
+    const recipe = withArchetypeDefaults(requested, ARCHETYPE_RECIPE_DEFAULTS);
     const started = performance.now();
     try {
       const { map, diagnostics } = generateTacticalMapWithDiagnostics(recipe, {

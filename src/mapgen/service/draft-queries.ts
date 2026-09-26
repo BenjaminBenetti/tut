@@ -1,4 +1,4 @@
-import { SurfaceIds } from "../data/surfaces";
+import { IMPASSABLE_GROUND_SURFACES, SurfaceIds } from "../data/surfaces";
 import type { MapDraft } from "../model/map-draft";
 
 // ===========================================
@@ -10,7 +10,10 @@ import type { MapDraft } from "../model/map-draft";
  * "passable ground" means the same thing to ramps, props and placers.
  */
 
-/** On the map, not under a building, not water, no prop on the ground. */
+/**
+ * On the map, not under a building, not water or bedrock, no prop on the
+ * ground.
+ */
 export function isPassableGround(
   draft: MapDraft,
   x: number,
@@ -20,9 +23,21 @@ export function isPassableGround(
     draft.inBounds(x, z) &&
     !draft.isCovered(x, z) &&
     !draft.isDropshipHull(x, z) &&
-    draft.groundSurfaceAt(x, z) !== SurfaceIds.WATER &&
+    hasStandableSurface(draft, x, z) &&
     draft.propAt(draft.groundCoord(x, z)) === undefined
   );
+}
+
+/**
+ * The column's ground surface admits somebody: not water and not the
+ * bedrock a hive cavern is cut into. Callers check bounds first.
+ */
+export function hasStandableSurface(
+  draft: MapDraft,
+  x: number,
+  z: number,
+): boolean {
+  return !IMPASSABLE_GROUND_SURFACES.has(draft.groundSurfaceAt(x, z));
 }
 
 /** Passable ground that is neither road nor sidewalk. */

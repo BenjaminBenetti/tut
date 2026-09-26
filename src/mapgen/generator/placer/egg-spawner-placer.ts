@@ -56,6 +56,12 @@ export const HATCH_SPACE_MIN = 6;
  */
 export const FIRING_LINE_RANGE = 10;
 
+/**
+ * Which tiles an archetype lets a spawner stand on; the hive cavern keeps
+ * them to its chambers (#1179). Settlements admit every tile.
+ */
+export type SpawnerTileFilter = (draft: MapDraft, coord: TileCoord) => boolean;
+
 /** A candidate tile and whether it is inside a building. */
 interface Candidate {
   readonly coord: TileCoord;
@@ -84,6 +90,16 @@ export class EggSpawnerPlacer implements HookPlacer {
   readonly priority = 10;
 
   // ===========================================
+  // Construction
+  // ===========================================
+
+  /**
+   * Considers only tiles `admits` accepts. The default accepts every
+   * tile and draws exactly what the placer always has.
+   */
+  constructor(private readonly admits: SpawnerTileFilter = () => true) {}
+
+  // ===========================================
   // Public Methods
   // ===========================================
 
@@ -101,7 +117,8 @@ export class EggSpawnerPlacer implements HookPlacer {
     const all = collectCandidates(draft).filter(
       (c) =>
         !taken.has(draft.tileKey(c.coord)) &&
-        distanceToDeploy(draft, c.coord) >= minDistance,
+        distanceToDeploy(draft, c.coord) >= minDistance &&
+        this.admits(draft, c.coord),
     );
     const preferred = all.filter((c) => reachable(c.coord));
     const pool = preferred.length >= requirement.count ? preferred : all;

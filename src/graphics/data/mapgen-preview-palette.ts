@@ -69,6 +69,9 @@ export const SURFACE_COLOURS: Readonly<Record<string, number>> = {
   floor: 0x8e8a82,
   roof: 0x55524c,
   stairs: 0xa7a297,
+  // The hive cavern's surrounding rock (#1179): `env-roof`, a shade under
+  // the floor's `env-rock` so the walls read apart from what is walked.
+  bedrock: 0x55524c,
 };
 
 /** Loud magenta so an unknown surface is impossible to miss. */
@@ -141,6 +144,10 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   // Alien and alive: spore violet, apart from every TDF and terrain hue
   // and from the spawners' green, so the crater's objective reads at once.
   [HookKinds.SPORE_POD]: 0xc15bff,
+  // The hive's heart glows `bug-bio-magenta`; each brood chamber is marked
+  // in `bug-chitin-tan`, the colour of the egg ribs waiting there (#1179).
+  [HookKinds.HIVE_CORE]: 0xe23dff,
+  [HookKinds.BROOD_CHAMBER]: 0xb88b58,
 };
 
 /** Warning yellow for hook kinds the palette does not know. */

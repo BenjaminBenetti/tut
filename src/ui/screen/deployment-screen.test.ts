@@ -21,6 +21,7 @@ import type { CampaignStore, GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
+import { NO_COUNTDOWN_TEXT } from "../service/mission-countdown";
 import { OverworldSelectionState } from "../service/overworld-selection-state";
 import { campaignOnDay, missionAt } from "../view/mission-fixtures.test-helper";
 import { DeploymentScreen } from "./deployment-screen";
@@ -201,6 +202,12 @@ describe("DeploymentScreen", () => {
     expect(button("launch").disabled).toBe(true);
     expect(field("force")).toBe("0");
     expect(field("target")).toBe("30");
+  });
+
+  it("shows no countdown in the briefing of a pinned offer (ADR 0013 §2.2)", () => {
+    const pinned: Mission = { ...MISSION, pinned: true };
+    mountWith(new FakeStore(campaignOnDay(4, [pinned])), "mission-1");
+    expect(field("days-left")).toBe(NO_COUNTDOWN_TEXT);
   });
 
   it("ticking units updates the resolver-side assessment and enables Launch", () => {

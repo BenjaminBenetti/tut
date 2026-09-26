@@ -1,10 +1,11 @@
 import type { CityId } from "../../overworld/model/city";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
-import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
+import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import type { RadialMenuHub, RadialMenuItem } from "../view/radial-menu-view";
 import { formatCredits, formatPopulation, formatWhole } from "./format";
+import { compareByExpiry } from "./mission-countdown";
 import { threatTone } from "./threat-band";
 
 /** What the hub reads for a city the player has not detected (GDD §5.3). */
@@ -118,7 +119,7 @@ export function cityWheelChoice(itemId: string): CityWheelChoice | undefined {
 // Helpers
 // ===========================================
 
-/** Soonest expiry first; ties by id so the order is stable. */
+/** Soonest expiry first, pinned offers last; ties by id so the order is stable. */
 function byExpiry(a: Mission, b: Mission): number {
-  return a.expiresDay - b.expiresDay || a.id.localeCompare(b.id);
+  return compareByExpiry(a, b) || a.id.localeCompare(b.id);
 }

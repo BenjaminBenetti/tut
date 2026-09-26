@@ -41,3 +41,10 @@ export interface ActDefinition {
   /** Chance, in `[0, 1]`, that each slot is filled when an offer is made. */
   readonly sitrepChance: number;
 }
+
+/**
+ * Every act's definition, keyed by the closed `ActId` union; the app
+ * passes `ACTS`. Services that read the act take one of these rather
+ * than importing the data.
+ */
+export type ActCatalogue = Readonly<Record<ActId, ActDefinition>>;

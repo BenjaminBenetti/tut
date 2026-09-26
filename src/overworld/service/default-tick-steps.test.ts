@@ -15,6 +15,7 @@ import { DEPLOYABLE_TYPES } from "../data/deployable-types";
 import { EARTH_MAP } from "../data/earth-map";
 import { HIVE_TUNING } from "../data/hive-tuning";
 import { INFESTATION_TUNING } from "../data/infestation-tuning";
+import { ACTS } from "../data/acts";
 import { MISSION_TUNING } from "../data/mission-tuning";
 import { NEW_GAME_TUNING } from "../data/new-game-tuning";
 import { THREAT_TUNING } from "../data/threat-tuning";
@@ -34,6 +35,9 @@ import type { RegionId } from "../model/region";
 import { createAdvanceDayHandler } from "./advance-day-service";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { TickDeps } from "./default-tick-steps";
+import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
+import { MISSION_OFFER_DECORATORS } from "./missions/mission-offer-decorators";
+import { MISSION_OFFER_RULES } from "./missions/mission-offer-rules";
 import { createDefaultTickSteps, TICK_STEP_NAMES } from "./default-tick-steps";
 import { unfestedFraction } from "./threat-service";
 
@@ -49,6 +53,10 @@ const TICK_DEPS: TickDeps = {
   infestationTuning: INFESTATION_TUNING,
   missionTuning: MISSION_TUNING,
   missionTypes: MISSION_TYPES,
+  missionOffers: MISSION_OFFER_RULES,
+  missionConsequences: MISSION_CONSEQUENCE_RULES,
+  offerDecorators: MISSION_OFFER_DECORATORS,
+  acts: ACTS,
   threatTuning: THREAT_TUNING,
   economyTuning: ECONOMY_TUNING,
   eventTypes: new DataEventTypeCatalogue(

@@ -11,8 +11,6 @@ import { applyCasualties } from "../../roster/service/roster-casualty-service";
 import type { CampaignEvent } from "../model/campaign-event";
 import type { CampaignState } from "../model/campaign-state";
 import type { City } from "../model/city";
-import { clampInfestation, withInfestation } from "../model/city";
-import { CITY_INFESTATION_CHANGED } from "../model/city-infestation-changed-event";
 import type { CommandDispatcher } from "../model/command-dispatcher";
 import type { CommandHandler } from "../model/command-handler";
 import type { Deployment } from "../model/deployment";
@@ -21,9 +19,12 @@ import type { LaunchMissionCommand } from "../model/launch-mission-command";
 import { LAUNCH_MISSION } from "../model/launch-mission-command";
 import type { Mission, MissionId } from "../model/mission";
 import { isMissionExpired } from "../model/mission";
+import type { MissionConsequenceRules } from "../model/mission-consequence-rule";
 import type { MissionResolver } from "../model/mission-resolver";
 import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
+import type { MissionTuning } from "../model/mission-tuning";
+import type { OverworldState } from "../model/overworld-state";
 import { recordMission } from "./campaign-progress-service";
 import { findCity } from "./earth-map-query-service";
 
@@ -44,6 +45,10 @@ export interface LaunchMissionDeps {
   readonly transactionsFor: (ids: IdGenerator) => TransactionService;
   /** The one door tech points move through (#1171). */
   readonly techPoints: TechPointService;
+  /** What each mission type does to the overworld once played (ADR 0013 §2.3). */
+  readonly consequences: MissionConsequenceRules;
+  /** Handed to the consequence rules; the clearance's mop-up threshold lives here. */
+  readonly missionTuning: MissionTuning;
 }
 
 /** What a valid launch resolved to: the mission and its host city. */
@@ -179,15 +184,19 @@ export function validateLaunch(
  *   1. MissionResolved { result }
  *   2. roster  ── applyCasualties ──► losses, damage, wipes, graveyard, xp   (roster events)
  *   3. economy ── earn(creditsAwarded, "reward", mission.id)                 (CreditsChanged)
- *   4. map     ── city.infestation += infestationDelta, clamped; a city     (CityInfestationChanged)
- *                 cleared to zero is forgotten again (GDD §5.3)
- *   5. mission removed from the offers; lastMissionResult := result
- *   6. progress ── recordMission(outcome, speciesKilled): missionsPlayed,
+ *   4. mission removed from the offers; lastMissionResult := result
+ *   5. progress ── recordMission(outcome, speciesKilled): missionsPlayed,
  *                 missionsWon on a win, first kills (ADR 0013 §2.1)
+ *   6. overworld ── consequences[mission.typeId].onResolved(overworld,      (the rule's events,
+ *                 mission, result): the type's own effect, e.g. the         e.g. CityInfestationChanged)
+ *                 clearance's infestation cut and mop-up (ADR 0013 §2.3)
  * ```
  *
  * This is the single place the campaign counts missions: every resolved
- * mission, won, extracted or lost, passes through here exactly once.
+ * mission, won, extracted or lost, passes through here exactly once. The
+ * consequence rule runs last, on an overworld that no longer holds the
+ * offer and has already counted the mission, so a rule may offer again
+ * (a story mission re-pinned after a loss) or move the act on.
  *
  * Resolver-agnostic: M2 swaps the auto-resolver for the tactical layer
  * without touching this service.
@@ -241,37 +250,28 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
       events.push(...earned.events);
     }
 
-    const cities = state.overworld.map.cities.map((candidate): City => {
-      if (candidate.id !== city.id) {
-        return candidate;
-      }
-      const to = clampInfestation(
-        candidate.infestation + result.infestationDelta,
-      );
-      if (to === candidate.infestation) {
-        return candidate;
-      }
-      events.push({
-        type: CITY_INFESTATION_CHANGED,
-        payload: { cityId: candidate.id, from: candidate.infestation, to },
-      });
-      return withInfestation(candidate, to);
-    });
+    const settled: OverworldState = {
+      ...state.overworld,
+      missions: state.overworld.missions.filter((m) => m.id !== mission.id),
+      lastMissionResult: result,
+      progress: recordMission(
+        state.overworld.progress,
+        result.outcome,
+        result.speciesKilled ?? [],
+      ),
+    };
+    const consequence = deps.consequences[mission.typeId].onResolved(
+      settled,
+      mission,
+      result,
+      { tuning: deps.missionTuning },
+    );
+    events.push(...consequence.events);
 
     return ok({
       state: {
         ...state,
-        overworld: {
-          ...state.overworld,
-          map: { regions: state.overworld.map.regions, cities },
-          missions: state.overworld.missions.filter((m) => m.id !== mission.id),
-          lastMissionResult: result,
-          progress: recordMission(
-            state.overworld.progress,
-            result.outcome,
-            result.speciesKilled ?? [],
-          ),
-        },
+        overworld: consequence.state,
         roster: casualties.roster,
         economy,
       },

@@ -161,10 +161,13 @@ export interface Mission {
   /** Infestation added to the host city when the mission expires unplayed. */
   readonly ignorePenalty: number;
   /**
-   * A story, hive, defend or wreck offer: it sits outside the board cap
-   * and the expiry step never removes it; only its own rule does.
-   * Absent (the norm, and every older save's offers) means an ordinary
-   * offer that expires on `expiresDay`.
+   * A story or hive offer: it sits outside the board cap and the expiry
+   * step never removes it; only its own rule does. Absent (the norm,
+   * and every older save's offers) means an offer that expires on
+   * `expiresDay`. An event offer that must still lapse (Defend
+   * Installation, later Wreck Recovery) is not pinned: it sits outside
+   * the cap because its type's offer entry is a trigger rule (ADR 0013
+   * §2.4).
    */
   readonly pinned?: boolean;
   /** The story mission this offer is; absent for every ordinary offer. */

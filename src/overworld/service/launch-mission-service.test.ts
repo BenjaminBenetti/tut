@@ -28,9 +28,16 @@ import type { MissionResolutionState } from "../model/mission-resolution-state";
 import type { MissionResolver } from "../model/mission-resolver";
 import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
+import { MISSION_TUNING } from "../data/mission-tuning";
+import type {
+  MissionConsequenceRule,
+  MissionConsequenceRules,
+} from "../model/mission-consequence-rule";
+import type { OverworldState } from "../model/overworld-state";
 import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import type { LaunchMissionDeps } from "./launch-mission-service";
+import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
 import { MAX_DEPLOYED_UNITS } from "../model/deployment";
 import {
   createLaunchMissionHandler,
@@ -201,12 +208,17 @@ class StubResolver implements MissionResolver {
   }
 }
 
-function deps(resolver: MissionResolver): LaunchMissionDeps {
+function deps(
+  resolver: MissionResolver,
+  consequences: MissionConsequenceRules = MISSION_CONSEQUENCE_RULES,
+): LaunchMissionDeps {
   return {
     resolver,
     rosterTuning: ROSTER_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
     techPoints: new TechPointTreasury(),
+    consequences,
+    missionTuning: MISSION_TUNING,
   };
 }
 
@@ -549,6 +561,85 @@ describe("createLaunchMissionHandler", () => {
     expect(silent.value.state.overworld.progress.speciesKilled).toEqual([
       "swarmer",
     ]);
+  });
+
+  it("hands the city to the mission type's consequence rule once the result is settled (ADR 0013 §2.5)", () => {
+    const seen: OverworldState[] = [];
+    const recording: MissionConsequenceRule = {
+      ...MISSION_CONSEQUENCE_RULES["infestation-clearance"],
+      onResolved: (state, mission, result, ctx) => {
+        seen.push(state);
+        expect(mission).toBe(MISSION);
+        expect(result).toBe(WIN);
+        expect(ctx.tuning).toBe(MISSION_TUNING);
+        return {
+          state: { ...state, threat: 99 },
+          events: [
+            {
+              type: CITY_INFESTATION_CHANGED,
+              payload: { cityId: "far", from: 20, to: 21 },
+            },
+          ],
+        };
+      },
+    };
+    const result = createLaunchMissionHandler<CampaignState>(
+      deps(new StubResolver(WIN), {
+        ...MISSION_CONSEQUENCE_RULES,
+        "infestation-clearance": recording,
+      }),
+    )(campaign(), launchMission("mission-1", DEPLOYMENT), context());
+    if (!result.ok) throw new Error(result.error.message);
+
+    // The rule sees the mission gone, the result stored and the mission
+    // counted, and the generic city change is its job alone.
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.missions).toEqual([]);
+    expect(seen[0]?.lastMissionResult).toBe(WIN);
+    expect(seen[0]?.progress.missionsPlayed).toBe(1);
+    expect(seen[0]?.map.cities.find((c) => c.id === "hub")?.infestation).toBe(
+      50,
+    );
+    expect(result.value.state.overworld.threat).toBe(99);
+    expect(result.value.events.at(-1)).toEqual({
+      type: CITY_INFESTATION_CHANGED,
+      payload: { cityId: "far", from: 20, to: 21 },
+    });
+    expect(
+      result.value.events.filter((e) => e.type === CITY_INFESTATION_CHANGED),
+    ).toHaveLength(1);
+  });
+
+  it("mops up a won clearance that leaves the city under 15 (arc §5)", () => {
+    const won = { ...WIN, infestationDelta: -36 };
+    const result = createLaunchMissionHandler<CampaignState>(
+      deps(new StubResolver(won)),
+    )(campaign(), launchMission("mission-1", DEPLOYMENT), context());
+    if (!result.ok) throw new Error(result.error.message);
+    const hub = result.value.state.overworld.map.cities.find(
+      (c) => c.id === "hub",
+    );
+    expect(hub?.infestation).toBe(0);
+    expect(hub?.detected).toBe(false);
+    expect(
+      result.value.events.filter((e) => e.type === CITY_INFESTATION_CHANGED),
+    ).toEqual([
+      {
+        type: CITY_INFESTATION_CHANGED,
+        payload: { cityId: "hub", from: 50, to: 0 },
+      },
+    ]);
+    // The debrief's result is the resolver's, untouched.
+    expect(result.value.state.overworld.lastMissionResult).toBe(won);
+
+    const kept = createLaunchMissionHandler<CampaignState>(
+      deps(new StubResolver({ ...WIN, infestationDelta: -35 })),
+    )(campaign(), launchMission("mission-1", DEPLOYMENT), context());
+    if (!kept.ok) throw new Error(kept.error.message);
+    expect(
+      kept.value.state.overworld.map.cities.find((c) => c.id === "hub")
+        ?.infestation,
+    ).toBe(15);
   });
 
   it("clamps the infestation delta and emits no change event when it lands on the same value", () => {

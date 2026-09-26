@@ -11,7 +11,7 @@ import type { MissionId } from "../../overworld/model/mission";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { resolveEvent } from "../../overworld/model/resolve-event-command";
 import { upgradeDeployable } from "../../overworld/model/upgrade-deployable-command";
-import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
+import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import type { CityPickSource } from "../model/city-pick-source";
 import type { CampaignStore, GameSession } from "../model/game-session";

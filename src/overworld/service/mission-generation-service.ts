@@ -1,278 +1,130 @@
-import { INSTALLATION_SITES } from "../../content/data/installation-sites";
-import { mapInfestationLevel } from "../../content/model/map-infestation";
+import { ACT_IDS } from "../../content/model/act-id";
+import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { Rng } from "../../core/model/rng";
-import type { MapSizeId } from "../../content/model/map-size-id";
-import type { MissionType } from "../../content/model/mission-type";
-import { MISSION_DIFFICULTY_RANGE } from "../../content/model/mission-type";
-import type { MissionTypeId } from "../../content/model/mission-type-id";
-import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
-import type { City, CityId } from "../model/city";
-import {
-  clampInfestation,
-  MAX_INFESTATION,
-  withInfestation,
-} from "../model/city";
+import type { ActCatalogue } from "../model/act-definition";
+import type { CampaignProgress } from "../model/campaign-progress";
 import type { EarthMap } from "../model/earth-map";
-import type { Deployable } from "../model/deployable";
+import type { IntelBonus } from "../model/intel-bonus";
+import type { Mission } from "../model/mission";
+import type { MissionOfferDecorator } from "../model/mission-offer-decorator";
 import type {
-  InstallationDefence,
-  Mission,
-  MissionId,
-  MissionMapParams,
-} from "../model/mission";
-import { isMissionExpired } from "../model/mission";
-import type {
-  InstallationDefenceTuning,
-  MissionTuning,
-  MissionTypeGenerationRule,
-} from "../model/mission-tuning";
-import type {
-  OverworldApplied,
-  OverworldDomainEvent,
-} from "../model/overworld-domain-event";
-import {
-  CITY_INFESTATION_CHANGED,
-  MISSION_EXPIRED,
-  MISSION_OFFERED,
-} from "../model/overworld-domain-event";
+  MissionDebut,
+  MissionOfferContext,
+  MissionOfferRule,
+  MissionOfferRules,
+  MissionSite,
+} from "../model/mission-offer-rule";
+import { MISSION_OFFERED } from "../model/mission-offered-event";
+import type { MissionTuning } from "../model/mission-tuning";
+import type { MissionTypeCatalogue } from "../model/mission-type-catalogue";
+import type { OverworldApplied } from "../model/overworld-domain-event";
 import type { OverworldState } from "../model/overworld-state";
-import type { Region, RegionId } from "../model/region";
-import { MAX_THREAT } from "../model/threat";
-import { findRegion, getRegion } from "./earth-map-query-service";
-import { regionInfestation } from "./threat-service";
+import { missionsInAct } from "./campaign-progress-service";
+import { findRegion } from "./earth-map-query-service";
+import { citiesWithOffers } from "./missions/mission-offer-builder";
 
 // ===========================================
 // Types
 // ===========================================
 
-/**
- * Extra days of mission availability per region, keyed by region id.
- * Produced by the deployable effects tick (#66) from sensor coverage; a
- * region with no entry gets no bonus. Values are non-negative integers.
- */
-export type IntelBonus = Readonly<Record<RegionId, number>>;
-
-/** The mission type definitions, keyed by id; the app passes `MISSION_TYPES`. */
-export type MissionTypeCatalogue = Readonly<Record<MissionTypeId, MissionType>>;
-
-/** What the generation step draws from. */
+/** What the mission director draws from. */
 export interface MissionGenerationDeps {
   readonly intelBonus: IntelBonus;
-  /** Stream for offer rolls and map seeds; the caller forks it per tick. */
+  /** The step's stream; the director forks it per trigger rule, for the board and per decorator. */
   readonly rng: Rng;
   /** Issues mission ids with the `"mission"` prefix. */
   readonly ids: IdGenerator;
   readonly tuning: MissionTuning;
   readonly missionTypes: MissionTypeCatalogue;
+  /** How each type is offered: drawn by the director or triggered (ADR 0013 §2.3). */
+  readonly offerRules: MissionOfferRules;
+  /** Board cap, difficulty band and type weights per act. */
+  readonly acts: ActCatalogue;
+  /** Applied to every new offer, in order (ADR 0013 §2.4). */
+  readonly decorators: readonly MissionOfferDecorator[];
+}
+
+/** A drawable type today: its rule, its weight in the act, and its eligible sites. */
+interface Candidate {
+  readonly rule: MissionOfferRule;
+  readonly weight: number;
+  readonly sites: readonly MissionSite[];
 }
 
 // ===========================================
 // Constants
 // ===========================================
 
-/** Prefix mission ids are issued under. */
-export const MISSION_ID_PREFIX = "mission";
-
-/** Largest value drawn for a mission's map seed. */
-const MAX_MAP_SEED = 0xffffffff;
+/** Label of the stream the board's type, site and offer draws come from. */
+const BOARD_STREAM = "board";
 
 // ===========================================
-// Formulae
+// Queries
 // ===========================================
 
 /**
- * Daily chance a city at `infestation` is offered a mission of the rule's
- * type: `0` below `minInfestation`, then linear from `chanceAtThreshold`
- * up to `chanceAtMax` at `MAX_INFESTATION`.
+ * Whether a type with `debut` is in the director's pool (arc §3): the
+ * campaign is in a later act than `debut.act`, or in that act with at
+ * least `debut.missionsInAct` missions played in it.
  */
-export function offerChance(
-  infestation: number,
-  rule: MissionTypeGenerationRule,
-): number {
-  if (infestation < rule.minInfestation) {
-    return 0;
+export function hasDebuted(
+  debut: MissionDebut,
+  progress: CampaignProgress,
+): boolean {
+  const now = ACT_IDS.indexOf(progress.act);
+  const from = ACT_IDS.indexOf(debut.act);
+  if (now !== from) {
+    return now > from;
   }
-  const span = MAX_INFESTATION - rule.minInfestation;
-  const progress = span === 0 ? 1 : (infestation - rule.minInfestation) / span;
-  return (
-    rule.chanceAtThreshold +
-    (rule.chanceAtMax - rule.chanceAtThreshold) * progress
-  );
+  return missionsInAct(progress) >= debut.missionsInAct;
 }
 
 /**
- * Integer difficulty for a mission of `type` at a city with `infestation`
- * while global threat is `threat`: the weighted pressure maps linearly
- * onto the type's band and is clamped into both the band and
- * `MISSION_DIFFICULTY_RANGE`.
+ * Whether `mission` takes a place under the board cap: it is not pinned
+ * and its type is not offered by a trigger rule. Story and hive offers
+ * are pinned; Defend Installation is triggered; both sit on top.
  */
-export function difficultyFor(
-  infestation: number,
-  threat: number,
-  type: MissionType,
-  rule: MissionTypeGenerationRule,
-): number {
-  const pressure =
-    rule.infestationWeight * (infestation / MAX_INFESTATION) +
-    rule.threatWeight * (threat / MAX_THREAT);
-  const band = type.difficultyBand;
-  const raw = band.min + (band.max - band.min) * pressure;
-  const low = Math.max(band.min, MISSION_DIFFICULTY_RANGE.min);
-  const high = Math.min(band.max, MISSION_DIFFICULTY_RANGE.max);
-  return Math.min(high, Math.max(low, Math.round(raw)));
-}
-
-/** Named map size for a difficulty: small, then medium and large from the rule's thresholds. */
-export function mapSizeFor(
-  difficulty: number,
-  rule: MissionTypeGenerationRule,
-): MapSizeId {
-  if (difficulty >= rule.largeFromDifficulty) {
-    return "large";
-  }
-  if (difficulty >= rule.mediumFromDifficulty) {
-    return "medium";
-  }
-  return "small";
-}
-
-/**
- * Waves a defend-installation mission sends (#1175) for a region whose
- * mean infestation is `infestation`: `baseWaves` plus one per
- * `1 / wavesPerInfestationPoint` points, floored, capped at `maxWaves`
- * and never below one.
- */
-export function wavesFor(
-  infestation: number,
-  tuning: InstallationDefenceTuning,
-): number {
-  const raw =
-    tuning.baseWaves +
-    Math.floor(tuning.wavesPerInfestationPoint * infestation);
-  return Math.max(1, Math.min(tuning.maxWaves, raw));
+export function countsAgainstCap(
+  mission: Mission,
+  rules: MissionOfferRules,
+): boolean {
+  return mission.pinned !== true && rules[mission.typeId].kind === "offer";
 }
 
 // ===========================================
-// Tick step: expiry
+// Tick step: the mission director
 // ===========================================
 
 /**
- * Removes every mission whose `expiresDay` has arrived (`day >= expiresDay`)
- * and adds each one's frozen `ignorePenalty` to its host city, clamped.
- * Emits a `MissionExpired` per lapsed mission, in mission order, then a
- * `CityInfestationChanged` per city whose infestation actually moved, in
- * map order. Returns the input state untouched when nothing expired. A
- * `pinned` mission never expires here (ADR 0013 §2.2); only its own rule
- * removes it.
+ * The mission director (ADR 0013 §2.4, arc §5): offers the day's
+ * missions for `state.day` and keeps the board at the act's cap.
  *
  * ```
- *   missions ──► [expired | kept]
- *                    │
- *                    ├─► MissionExpired × n
- *                    └─► city.infestation += Σ ignorePenalty ──► CityInfestationChanged
- * ```
- */
-export function expireMissions(
-  state: OverworldState,
-): OverworldApplied<OverworldState> {
-  const expired = state.missions.filter((mission) =>
-    isMissionExpired(mission, state.day),
-  );
-  if (expired.length === 0) {
-    return { state, events: [] };
-  }
-  const kept = state.missions.filter(
-    (mission) => !isMissionExpired(mission, state.day),
-  );
-
-  const events: OverworldDomainEvent[] = [];
-  const penalties = new Map<CityId, number>();
-  for (const mission of expired) {
-    events.push({
-      type: MISSION_EXPIRED,
-      payload: {
-        missionId: mission.id,
-        typeId: mission.typeId,
-        cityId: mission.cityId,
-        ignorePenalty: mission.ignorePenalty,
-      },
-    });
-    penalties.set(
-      mission.cityId,
-      (penalties.get(mission.cityId) ?? 0) + mission.ignorePenalty,
-    );
-  }
-
-  const cities = state.map.cities.map((city): City => {
-    const penalty = penalties.get(city.id);
-    if (penalty === undefined) {
-      return city;
-    }
-    const to = clampInfestation(city.infestation + penalty);
-    if (to === city.infestation) {
-      return city;
-    }
-    events.push({
-      type: CITY_INFESTATION_CHANGED,
-      payload: { cityId: city.id, from: city.infestation, to },
-    });
-    return withInfestation(city, to);
-  });
-
-  return {
-    state: {
-      ...state,
-      map: { regions: state.map.regions, cities },
-      missions: kept,
-    },
-    events,
-  };
-}
-
-// ===========================================
-// Tick step: generation
-// ===========================================
-
-/**
- * Offers new missions for `state.day`, in two passes over the types in
- * `MISSION_TYPE_IDS` order, split by their rule's `trigger` (#1175).
- *
- * **City-triggered types.** Every detected city without an active
- * mission is visited in map order (an undetected infestation is one the
- * player has not found, so it cannot be answered, GDD §5.3); for each
- * such type with a positive `offerChance`, one `chance` draw decides
- * whether it is offered, and the first success wins the city for the
- * day. An offered mission draws one more number for its map seed and
- * takes the next `"mission"` id.
- *
- * **Region-triggered types.** Then every region is visited in map
- * order; one holding a built installation whose mean infestation
- * clears the rule's threshold rolls once per such type, and a success
- * attaches the mission to the region's most infested detected city
- * that has no mission yet. A region without an installation, or with
- * no free city, draws nothing.
- *
- * ```
- *   for city in map.cities (detected, no active mission):
- *     for type in MISSION_TYPE_IDS with trigger "city-infestation":
- *       p = offerChance(city.infestation, rule[type])
- *       p > 0 and rng.chance(p) ──► mission { difficulty, rewards, expiry, mapParams }
- *                                    └─ rng.fork(`carcass:${id}`) ──► mapParams.techCarcass?
- *                                    ──► MissionOffered, next city
- *   for region in map.regions (has a deployable):
- *     for type in MISSION_TYPE_IDS with trigger "region-installation":
- *       host = most infested detected free city in the region, or skip
- *       p = offerChance(regionInfestation, rule[type])
- *       p > 0 and rng.chance(p) ──► mission { …, defence }
- *                                    └─ rng.fork(`defence:${id}`) ──► which installation
- *                                    ──► MissionOffered, next region
+ *   act = acts[progress.act]
+ *   1. triggers  for type in MISSION_TYPE_IDS with a trigger rule:
+ *                  rule.trigger(state, rng.fork(`trigger:${type}`)) ──► offers (outside the cap)
+ *   2. count     offers with pinned ≠ true whose type has an offer rule
+ *   3. fill      while count < act.boardCap:
+ *                  pool = offer rules with a weight in act.typeWeights, debuted,
+ *                         and ≥ 1 eligible site on a city without an offer
+ *                  pool empty ──► stop
+ *                  type = board.pickWeighted(pool, act weight)   (renormalised over the pool)
+ *                  site = board.pickWeighted(type's sites, site weight)
+ *                  rule.create(state, site) ──► offer; count + 1
+ *   4. band      every offer's difficulty lies in act.difficultyBand: the rules
+ *                clamp it (ctx.act) before deriving rewards, map size and carcass
+ *   each offer ──► decorators, in order, each on rng.fork(`decorate:${id}:${missionId}`)
+ *              ──► MissionOffered
  * ```
  *
- * The draw order is part of the determinism contract: the same state,
- * seed and deps always offer the same missions, and a campaign with no
- * installation draws exactly what it drew before the second pass
- * existed. Returns the input state untouched when nothing was offered.
+ * A city holds at most one offer: trigger rules skip occupied cities,
+ * and the fill drops sites whose city already holds one. Every offer
+ * sees the state with the offers made before it. Trigger rules and
+ * decorators draw from labelled forks, so adding one never changes what
+ * the board draws. The draw order is part of the determinism contract:
+ * the same state, seed and deps always offer the same missions. Returns
+ * the input state untouched when nothing was offered.
  *
  * @throws {RangeError} if `intelBonus` names a region that is not on the
  *   map or holds a value that is not a non-negative integer. Those are
@@ -283,68 +135,55 @@ export function generateMissions(
   deps: MissionGenerationDeps,
 ): OverworldApplied<OverworldState> {
   assertIntelBonus(state.map, deps.intelBonus);
+  const act = deps.acts[state.progress.act];
+  const contextOn = (rng: Rng): MissionOfferContext => ({
+    rng,
+    ids: deps.ids,
+    tuning: deps.tuning,
+    missionTypes: deps.missionTypes,
+    intelBonus: deps.intelBonus,
+    act,
+  });
 
-  const occupied = new Set(state.missions.map((mission) => mission.cityId));
+  let current = state;
   const offered: Mission[] = [];
-  const cityTypes = MISSION_TYPE_IDS.filter(
-    (typeId) => deps.tuning.rules[typeId].trigger === "city-infestation",
-  );
-  const regionTypes = MISSION_TYPE_IDS.filter(
-    (typeId) => deps.tuning.rules[typeId].trigger === "region-installation",
-  );
-  for (const city of state.map.cities) {
-    if (!city.detected || occupied.has(city.id)) {
+  const offer = (mission: Mission, ctx: MissionOfferContext): void => {
+    const decorated = decorate(mission, current, ctx, deps);
+    offered.push(decorated);
+    current = { ...current, missions: [...current.missions, decorated] };
+  };
+
+  for (const typeId of MISSION_TYPE_IDS) {
+    const rule = deps.offerRules[typeId];
+    if (rule.kind !== "trigger") {
       continue;
     }
-    for (const typeId of cityTypes) {
-      const rule = deps.tuning.rules[typeId];
-      const chance = offerChance(city.infestation, rule);
-      if (chance <= 0 || !deps.rng.chance(chance)) {
-        continue;
-      }
-      offered.push(
-        createMission(state, city, deps.missionTypes[typeId], rule, deps),
-      );
-      occupied.add(city.id);
-      break;
+    const ctx = contextOn(deps.rng.fork(`trigger:${typeId}`));
+    for (const mission of rule.trigger(current, ctx)) {
+      offer(mission, ctx);
     }
   }
-  for (const region of state.map.regions) {
-    const installations = state.deployables.filter(
-      (deployable) => deployable.regionId === region.id,
-    );
-    if (installations.length === 0) {
-      continue;
-    }
-    for (const typeId of regionTypes) {
-      const rule = deps.tuning.rules[typeId];
-      const infestation = regionInfestation(state.map, region.id);
-      const chance = offerChance(infestation, rule);
-      const host = hostCityFor(state, region, occupied);
-      if (chance <= 0 || host === undefined || !deps.rng.chance(chance)) {
-        continue;
-      }
-      const mission = createMission(
-        state,
-        host,
-        deps.missionTypes[typeId],
-        rule,
-        deps,
-      );
-      offered.push({
-        ...mission,
-        defence: defenceFor(mission.id, installations, infestation, deps),
-      });
-      occupied.add(host.id);
+
+  const board = contextOn(deps.rng.fork(BOARD_STREAM));
+  let count = current.missions.filter((mission) =>
+    countsAgainstCap(mission, deps.offerRules),
+  ).length;
+  while (count < act.boardCap) {
+    const pool = candidates(current, board, deps.offerRules);
+    if (pool.length === 0) {
       break;
     }
+    const drawn = board.rng.pickWeighted(pool, (c) => c.weight);
+    const site = board.rng.pickWeighted(drawn.sites, (s) => s.weight);
+    offer(drawn.rule.create(current, site, board), board);
+    count += 1;
   }
 
   if (offered.length === 0) {
     return { state, events: [] };
   }
   return {
-    state: { ...state, missions: [...state.missions, ...offered] },
+    state: current,
     events: offered.map((mission) => ({
       type: MISSION_OFFERED,
       payload: { mission },
@@ -357,111 +196,57 @@ export function generateMissions(
 // ===========================================
 
 /**
- * Assembles one mission for `city` on `state.day`, drawing its id and map
- * seed, and freezes the campaign's current act on it (ADR 0013 §2.2).
+ * The types the board can draw today, in `MISSION_TYPE_IDS` order: offer
+ * rules with a positive weight in the act that have debuted and have at
+ * least one eligible site on a city without an offer.
  */
-function createMission(
+function candidates(
   state: OverworldState,
-  city: City,
-  type: MissionType,
-  rule: MissionTypeGenerationRule,
-  deps: MissionGenerationDeps,
-): Mission {
-  const region = getRegion(state.map, city.regionId);
-  const difficulty = difficultyFor(city.infestation, state.threat, type, rule);
-  const id = deps.ids.nextId(MISSION_ID_PREFIX);
-  const mapSeed = deps.rng.nextInt(0, MAX_MAP_SEED);
-  const intelDays = deps.intelBonus[region.id] ?? 0;
-  return {
-    id,
-    typeId: type.id,
-    cityId: city.id,
-    difficulty,
-    mapParams: {
-      infestation: mapInfestationLevel(city.infestation),
-      biome: city.biome ?? region.biome,
-      settlement: city.scale,
-      size: mapSizeFor(difficulty, rule),
-      seed: String(mapSeed),
-      ...techCarcassFor(id, difficulty, deps),
-    },
-    rewards: {
-      credits: difficulty * type.rewardPerDifficulty,
-      techPoints:
-        type.techRewardBase + difficulty * type.techRewardPerDifficulty,
-    },
-    createdDay: state.day,
-    expiresDay: state.day + type.expiryDays + intelDays,
-    ignorePenalty: type.ignorePenalty,
-    act: state.progress.act,
-  };
-}
-
-/**
- * Rolls whether the mission carries a tech carcass (#1171) on a fork
- * keyed by the mission id, so the roll neither consumes a draw from the
- * campaign RNG (older golden sequences are untouched) nor repeats across
- * missions. Returns the field to spread, or nothing.
- */
-function techCarcassFor(
-  id: MissionId,
-  difficulty: number,
-  deps: MissionGenerationDeps,
-): Pick<MissionMapParams, "techCarcass"> {
-  const tuning = deps.tuning.techCarcass;
-  if (!deps.rng.fork(`carcass:${id}`).chance(tuning.chance)) {
-    return {};
-  }
-  return {
-    techCarcass: {
-      techPoints: tuning.basePoints + tuning.pointsPerDifficulty * difficulty,
-    },
-  };
-}
-
-/**
- * The city a region-triggered mission attaches to (#1175): the most
- * infested detected city in the region that has no mission, existing or
- * offered today; ties keep region order. Undefined when every city is
- * taken or undetected.
- */
-function hostCityFor(
-  state: OverworldState,
-  region: Region,
-  occupied: ReadonlySet<CityId>,
-): City | undefined {
-  let host: City | undefined;
-  for (const cityId of region.cityIds) {
-    const city = state.map.cities.find((candidate) => candidate.id === cityId);
-    if (city === undefined || !city.detected || occupied.has(city.id)) {
+  ctx: MissionOfferContext,
+  rules: MissionOfferRules,
+): Candidate[] {
+  const occupied = citiesWithOffers(state);
+  const pool: Candidate[] = [];
+  for (const typeId of MISSION_TYPE_IDS) {
+    const rule = rules[typeId];
+    const weight = ctx.act.typeWeights[typeId] ?? 0;
+    if (
+      rule.kind !== "offer" ||
+      weight <= 0 ||
+      !hasDebuted(rule.debut, state.progress)
+    ) {
       continue;
     }
-    if (host === undefined || city.infestation > host.infestation) {
-      host = city;
+    const sites = rule
+      .eligible(state, ctx)
+      .filter((site) => site.weight > 0 && !occupied.has(site.cityId));
+    if (sites.length > 0) {
+      pool.push({ rule, weight, sites });
     }
   }
-  return host;
+  return pool;
 }
 
 /**
- * What a defend-installation offer holds (#1175): one of the region's
- * installations, drawn on a fork keyed by the mission id so the choice
- * consumes nothing from the campaign stream, the generators its site
- * stands, and the waves the region's infestation earns.
+ * `mission` with every decorator applied in order, each handed the
+ * context with its own stream: a fork of the step's stream labelled
+ * with the decorator's id and the mission's id, so a decorator never
+ * shifts another's draws, a trigger's or the board's.
  */
-function defenceFor(
-  id: MissionId,
-  installations: readonly Deployable[],
-  infestation: number,
-  deps: MissionGenerationDeps,
-): InstallationDefence {
-  const target = deps.rng.fork(`defence:${id}`).pick(installations);
-  return {
-    installation: target.typeId,
-    deployableId: target.id,
-    generators: INSTALLATION_SITES[target.typeId].generators,
-    waves: wavesFor(infestation, deps.tuning.defence),
-  };
+function decorate(
+  mission: Mission,
+  state: OverworldState,
+  ctx: MissionOfferContext,
+  deps: Pick<MissionGenerationDeps, "rng" | "decorators">,
+): Mission {
+  let decorated = mission;
+  for (const decorator of deps.decorators) {
+    decorated = decorator.decorate(decorated, state, {
+      ...ctx,
+      rng: deps.rng.fork(`decorate:${decorator.id}:${mission.id}`),
+    });
+  }
+  return decorated;
 }
 
 /** Rejects intel entries for unknown regions or with values that are not non-negative integers. */

@@ -8,7 +8,12 @@ import type { CampaignState } from "../model/campaign-state";
 import type { DeployableTypeCatalogue } from "../model/deployable-type-catalogue";
 import type { HiveTuning } from "../model/hive-tuning";
 import type { InfestationTuning } from "../model/infestation-tuning";
+import type { ActCatalogue } from "../model/act-definition";
+import type { MissionConsequenceRules } from "../model/mission-consequence-rule";
+import type { MissionOfferDecorator } from "../model/mission-offer-decorator";
+import type { MissionOfferRules } from "../model/mission-offer-rule";
 import type { MissionTuning } from "../model/mission-tuning";
+import type { MissionTypeCatalogue } from "../model/mission-type-catalogue";
 import { THREAT_CHANGED } from "../model/overworld-domain-event";
 import type { ThreatTuning } from "../model/threat-tuning";
 import type { TickStep } from "../model/tick-step";
@@ -22,8 +27,8 @@ import { hiveRegionIds } from "./hive-service";
 import { applyDetection } from "./infestation-detection-service";
 import { applyGrowth } from "./infestation-growth-service";
 import { applySpread } from "./infestation-spread-service";
-import type { MissionTypeCatalogue } from "./mission-generation-service";
-import { expireMissions, generateMissions } from "./mission-generation-service";
+import { expireMissions } from "./mission-expiry-service";
+import { generateMissions } from "./mission-generation-service";
 import { applyOutcome } from "./outcome-service";
 import {
   stipendFactor,
@@ -47,6 +52,14 @@ export interface TickDeps {
   readonly infestationTuning: InfestationTuning;
   readonly missionTuning: MissionTuning;
   readonly missionTypes: MissionTypeCatalogue;
+  /** How each mission type is offered; the director runs it (ADR 0013 §2.4). */
+  readonly missionOffers: MissionOfferRules;
+  /** What each mission type costs when its offer lapses (ADR 0013 §2.3). */
+  readonly missionConsequences: MissionConsequenceRules;
+  /** Applied to every new offer, in order. */
+  readonly offerDecorators: readonly MissionOfferDecorator[];
+  /** Board cap, difficulty band and type weights per act. */
+  readonly acts: ActCatalogue;
   readonly threatTuning: ThreatTuning;
   readonly economyTuning: EconomyTuning;
   readonly eventTypes: EventTypeCatalogue;
@@ -89,8 +102,9 @@ export const TICK_STEP_NAMES = {
  *                          region, none from a paused one); threat seeds clean ones
  *   4. hive-formation      from Act II, a week at mean ≥ 60 roots a hive (arc §6.5)
  *   5. detection           infested cities past the (sensor-lowered) thresholds are found
- *   6. mission-expiry      lapsed missions go; host cities pay the ignore penalty
- *   7. mission-generation  detected cities may offer missions (+ intel bonus)
+ *   6. mission-expiry      lapsed missions go; each type's rule says what that costs
+ *   7. mission-generation  the director: trigger rules, then fill the board to
+ *                          the act's cap (+ intel bonus)
  *   8. events              lapsed events resolve by default; maybe a new one (#71)
  *   9. stipend             Earth pays for the day, scaled by how much is unfested,
  *                          by any event-driven stipend modifiers (#70), plus the banks
@@ -112,7 +126,7 @@ export function createDefaultTickSteps<TState extends CampaignState>(
     spreadStep(deps),
     createHiveFormationStep<TState>(deps),
     detectionStep(deps),
-    missionExpiryStep(),
+    missionExpiryStep(deps),
     missionGenerationStep(deps),
     createEventStep<TState>(deps),
     stipendStep(deps),
@@ -233,12 +247,17 @@ function detectionStep<TState extends CampaignState>(
   };
 }
 
-/** Removes lapsed missions and applies their ignore penalties. */
-function missionExpiryStep<TState extends CampaignState>(): TickStep<TState> {
+/** Removes lapsed missions and applies each type's `onExpired`. */
+function missionExpiryStep<TState extends CampaignState>(
+  deps: TickDeps,
+): TickStep<TState> {
   return {
     name: TICK_STEP_NAMES.missionExpiry,
     run: (state) => {
-      const expired = expireMissions(state.overworld);
+      const expired = expireMissions(state.overworld, {
+        consequences: deps.missionConsequences,
+        context: { tuning: deps.missionTuning },
+      });
       if (expired.state === state.overworld) {
         return { state, events: [] };
       }
@@ -250,7 +269,7 @@ function missionExpiryStep<TState extends CampaignState>(): TickStep<TState> {
   };
 }
 
-/** Offers new missions to infested cities without one. */
+/** The mission director: triggered offers, then the board filled to the act's cap. */
 function missionGenerationStep<TState extends CampaignState>(
   deps: TickDeps,
 ): TickStep<TState> {
@@ -263,6 +282,9 @@ function missionGenerationStep<TState extends CampaignState>(
         ids: ctx.ids,
         tuning: deps.missionTuning,
         missionTypes: deps.missionTypes,
+        offerRules: deps.missionOffers,
+        acts: deps.acts,
+        decorators: deps.offerDecorators,
       });
       if (generated.state === state.overworld) {
         return { state, events: [] };

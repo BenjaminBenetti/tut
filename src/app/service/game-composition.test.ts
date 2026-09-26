@@ -170,6 +170,45 @@ describe("composeGame", () => {
     expect(game.autoResolve).toBe(true);
   });
 
+  it("resolves a launch through an injected resolver, ahead of the auto-resolver (campaign arc §12)", () => {
+    const seen: string[] = [];
+    const game = composeGame({
+      storage: new MemoryKeyValueStore(),
+      clock: { now: () => NOW },
+      newSeed: () => 7,
+      onAutosaveFailure: () => undefined,
+      debug: { autoResolve: true },
+      resolver: {
+        resolve: (mission) => {
+          seen.push(mission.id);
+          return {
+            missionId: mission.id,
+            cityId: mission.cityId,
+            outcome: "extracted",
+            squadCasualties: [],
+            squadsWiped: [],
+            mechsDestroyed: [],
+            mechDamage: [],
+            creditsAwarded: 17,
+            techPointsAwarded: 3,
+            infestationDelta: 0,
+          };
+        },
+      },
+    });
+    const { mission, deployment } = campaignWithMission(game);
+    const credits = game.session.state?.economy.credits ?? 0;
+
+    const result = game.session.store?.dispatch(
+      launchMission(mission.id, deployment),
+    );
+    expect(result?.ok).toBe(true);
+    expect(seen).toEqual([mission.id]);
+    const after = game.session.state;
+    expect(after?.overworld.lastMissionResult?.outcome).toBe("extracted");
+    expect(after?.economy.credits).toBe(credits + 17);
+  });
+
   it("starts a tactical mission and autosaves it, leaving the offer standing", () => {
     const { game } = build();
     const { mission, deployment } = campaignWithMission(game);

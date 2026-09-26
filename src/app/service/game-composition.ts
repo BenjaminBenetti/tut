@@ -144,6 +144,16 @@ export interface GameCompositionDeps {
    * reach an act the shipped build cannot.
    */
   readonly story?: StoryDeps;
+  /**
+   * Resolves every launched mission in place of the shipped resolver
+   * (the tactical layer, or the auto-resolver under `debug.autoResolve`):
+   * the campaign sweep hands its modelled players in here (campaign arc
+   * §12), so their results reach the overworld through the real launch
+   * handler, its consequence rules and the story. `LaunchMission` and
+   * `FinishMission` both resolve through it. Absent means the shipped
+   * choice; the bootstrap never passes one.
+   */
+  readonly resolver?: MissionResolver;
 }
 
 /** Shipped content and tuning screens read to label and price things. */
@@ -246,6 +256,7 @@ export interface GameComposition {
  *
  *   resolver = TacticalMissionResolver          (the shipped game)
  *            | AutoResolveMissionResolver       (?autoResolve=1, for QA)
+ *            | deps.resolver                    (injected: the campaign sweep)
  * ```
  *
  * The lifecycle goes on last because the M2 resolver reads the finished
@@ -351,13 +362,15 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   const tacticalResolver = tactical.resolverFor(
     () => session.state?.activeMission,
   );
-  const resolver: MissionResolver = autoResolve
-    ? new AutoResolveMissionResolver({
-        squadTypes: content.squadTypes,
-        mechRater,
-        tuning: AUTO_RESOLVE_TUNING,
-      })
-    : tacticalResolver;
+  const resolver: MissionResolver =
+    deps.resolver ??
+    (autoResolve
+      ? new AutoResolveMissionResolver({
+          squadTypes: content.squadTypes,
+          mechRater,
+          tuning: AUTO_RESOLVE_TUNING,
+        })
+      : tacticalResolver);
   const launch = createLaunchMissionHandler<GameState>({
     resolver,
     rosterTuning: content.rosterTuning,

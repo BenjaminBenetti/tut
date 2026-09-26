@@ -116,5 +116,6 @@ Any change to §2, §3, or a new library goes in `docs/adr/NNNN-title.md` with c
 | [0009](../adr/0009-map-scale-for-tactical-room.md) | Map scale opens up for tactical room: knobs not a multiplier, interiors as structures, map-aware zoom |
 | [0010](../adr/0010-mech-rooftop-mobility.md) | Jump jets and mech roof occupancy |
 | [0011](../adr/0011-tech-points-and-the-tech-tree.md) | Tech points are a second resource; the tech tree gates parts above tier 1 |
+| [0013](../adr/0013-campaign-progression.md) | Campaign progression: acts, story spine, mission-type modules, bestiary by act ([campaign arc](campaign-arc.md)) |
 
 Optional [Jev entity control and its inspector](jev-control.md) use an app-layer asynchronous controller around pure tactical commands. See [ADR 0012](../adr/0012-jev-entity-control.md).

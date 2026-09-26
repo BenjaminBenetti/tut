@@ -7,6 +7,7 @@ import type { BroodSetupDeps } from "./brood-tuning";
 import type { BugUnitSource } from "./bug-unit-source";
 import type { CivilianTuning } from "./civilian";
 import type { GeneratorTuning } from "./generator";
+import type { GreatHiveSetupTuning } from "./great-hive-setup-tuning";
 import type { HiveAssaultSetupTuning } from "./hive-assault-setup-tuning";
 import type { SpawnTuning } from "./spawn-tuning";
 import type { TacticalError } from "./tactical-error";
@@ -55,6 +56,13 @@ export interface MissionSetupDeps {
   readonly hiveGuard: BugUnitSource;
   /** What a Hive Assault stands in the cavern, by hive level (#1179). */
   readonly hiveAssault: HiveAssaultSetupTuning;
+  /**
+   * What a Great Hive assault stands in its cavern instead (campaign arc
+   * §6.9): a tougher core, more guards, thinner broods. Optional so every
+   * start built before the Great Hives still compiles; absent, a Great
+   * Hive is set up as an ordinary Hive Assault.
+   */
+  readonly greatHive?: GreatHiveSetupTuning;
 }
 
 // ===========================================

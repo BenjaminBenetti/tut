@@ -3,6 +3,7 @@ import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { TechPointTreasury } from "../../economy/service/tech-point-service";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { MISSION_TYPES } from "../../content/data/mission-types";
+import { CONTINENTS } from "../../overworld/data/continents";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EVENT_TUNING } from "../../overworld/data/event-tuning";
 import { EVENT_TYPES } from "../../overworld/data/event-types";
@@ -460,6 +461,7 @@ function composeTickDeps(
     ),
     eventTuning: EVENT_TUNING,
     hiveTuning: HIVE_TUNING,
+    continents: CONTINENTS,
   };
 }
 

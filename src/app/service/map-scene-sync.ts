@@ -90,5 +90,8 @@ export function mapSceneState(overworld: OverworldState): MapSceneState {
     map: overworld.map,
     missionCueCityIds: missionCueCityIds(overworld),
     deployables: overworld.deployables,
+    ...(overworld.greatHives === undefined
+      ? {}
+      : { greatHives: overworld.greatHives }),
   };
 }

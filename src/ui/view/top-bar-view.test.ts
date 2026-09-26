@@ -8,6 +8,7 @@ import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
+import type { GreatHive } from "../../overworld/model/great-hive";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { TopBarView } from "./top-bar-view";
@@ -355,5 +356,70 @@ describe("TopBarView", () => {
     });
     expect(field("outcome").hidden).toBe(false);
     expect(badge.hidden).toBe(true);
+  });
+
+  it("counts the Great Hives destroyed from their reveal until the campaign ends (#1179)", () => {
+    const view = new TopBarView({ onAdvanceDay: vi.fn(), onMainMenu: vi.fn() });
+    view.mount(root);
+    const tracker = (): HTMLElement => {
+      const el = root.querySelector<HTMLElement>('[data-role="great-hives"]');
+      if (!el) throw new Error("missing the Great Hive tracker");
+      return el;
+    };
+    const base = newGame();
+    const hive: GreatHive = {
+      id: "greathive-1",
+      continentId: "europe",
+      name: "Europe",
+      regionId: "eastern-europe",
+      regionIds: ["eastern-europe"],
+      revealedDay: 200,
+      level: 0,
+    };
+
+    view.update(base);
+    expect(tracker().hidden).toBe(true);
+    expect(tracker().previousElementSibling).toBe(
+      field("threat-tone").parentElement,
+    );
+
+    const revealed: GameState = {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        greatHives: [
+          { ...hive, destroyedDay: 205 },
+          { ...hive, id: "greathive-2", name: "Asia" },
+          { ...hive, id: "greathive-3", name: "Oceania" },
+        ],
+      },
+    };
+    view.update(revealed);
+    expect(tracker().hidden).toBe(false);
+    expect(field("great-hives").textContent).toBe("1 / 3");
+    expect(tracker().textContent).toContain("Great Hives");
+    expect(tracker().title).toContain("launch window");
+
+    view.update({
+      ...revealed,
+      overworld: {
+        ...revealed.overworld,
+        outcome: {
+          kind: "defeat",
+          day: 230,
+          summary: {
+            citiesLost: 1,
+            citiesInfested: 2,
+            citiesTotal: 36,
+            missionsRun: 0,
+            daysSurvived: 230,
+            finalThreat: 100,
+          },
+        },
+      },
+    });
+    expect(tracker().hidden).toBe(true);
+    view.update(undefined);
+    expect(tracker().hidden).toBe(true);
   });
 });

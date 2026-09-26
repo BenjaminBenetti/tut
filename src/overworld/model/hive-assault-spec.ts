@@ -27,6 +27,31 @@ export interface HiveAssaultSpec {
   readonly hiveId: HiveId;
   /** The region a win liberates: the hive's own region. */
   readonly regionId: RegionId;
-  /** `hiveLevel(hive, day, tuning)` on the day the offer was last priced. */
+  /**
+   * `hiveLevel(hive, day, tuning)` on the day the offer was last priced;
+   * for a Great Hive, the levels its lost assaults have added.
+   */
   readonly level: number;
+  /**
+   * Set on a Great Hive's assault (arc §6.9): `hiveId` then names a
+   * `GreatHive` in `OverworldState.greatHives`, `regionId` its seat, and
+   * the mission is oversized — a larger cavern with more chambers, a
+   * tougher core and more guards. Absent on an ordinary Hive Assault.
+   */
+  readonly great?: true;
+}
+
+// ===========================================
+// Queries
+// ===========================================
+
+/**
+ * Whether `mission` assaults a Great Hive rather than an ordinary hive.
+ * Every table entry that treats the two differently asks this one
+ * question.
+ */
+export function isGreatHiveAssault(mission: {
+  readonly hive?: HiveAssaultSpec;
+}): boolean {
+  return mission.hive?.great === true;
 }

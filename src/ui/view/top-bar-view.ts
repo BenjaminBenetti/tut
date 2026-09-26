@@ -7,6 +7,7 @@ import {
 } from "../service/format";
 import { stipendModifierSummary } from "../service/stipend-modifier-text";
 import { threatTone } from "../service/threat-band";
+import { GreatHiveTrackerView } from "./great-hive-tracker-view";
 import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
@@ -41,10 +42,12 @@ export interface TopBarViewHandlers {
  * band of the values that can change, so a tick never rebuilds the bar.
  * While the stipend is scaled (an evacuation's +50% or −10%, an event's
  * window) a small badge beside the credits gives the net change and the
- * days to its next change; it is hidden otherwise.
+ * days to its next change; it is hidden otherwise. From the Great Hives'
+ * reveal a count of the ones destroyed follows the threat
+ * (`GreatHiveTrackerView`, #1179).
  *
  * ```
- *   ┌ DAY 4 │ ¢5,120 ▮+50% · 10 d │ TECH 42 TP │ THREAT 42 ▮warn ── status ── [Roster] [Tech] [Main menu] [ADVANCE DAY] ┐
+ *   ┌ DAY 4 │ ¢5,120 ▮+50% · 10 d │ TECH 42 TP │ THREAT 42 ▮warn │ GREAT HIVES 1 / 3 ── status ── [Roster] [Tech] [Main menu] [ADVANCE DAY] ┐
  * ```
  */
 export class TopBarView {
@@ -66,6 +69,7 @@ export class TopBarView {
   private status: HTMLElement | undefined;
   private advance: HTMLButtonElement | undefined;
   private resume: HTMLButtonElement | undefined;
+  private readonly greatHives = new GreatHiveTrackerView();
   private readonly disposers: (() => void)[] = [];
 
   // ===========================================
@@ -141,6 +145,7 @@ export class TopBarView {
       credits.stat,
       techPoints.stat,
       threat.stat,
+      this.greatHives.create(doc),
       outcome,
       spacer,
       status,
@@ -203,6 +208,7 @@ export class TopBarView {
       this.threat.textContent = "—";
       this.threatBadge.hidden = true;
       this.setStipend(undefined);
+      this.greatHives.update(undefined);
       this.setOutcome(undefined);
       this.setAdvanceEnabled(false);
       return;
@@ -222,6 +228,7 @@ export class TopBarView {
     this.threatBadge.className = `tut-badge tut-badge--${tone}`;
     this.setText(this.threatBadge, tone);
     this.threatBadge.dataset.tone = tone;
+    this.greatHives.update(overworld);
     this.setOutcome(overworld.outcome?.kind);
     const eventPending = overworld.pendingEvents.length > 0;
     this.setAdvanceEnabled(overworld.outcome === undefined && !eventPending);
@@ -265,6 +272,7 @@ export class TopBarView {
     this.stipendBadge = undefined;
     this.stipendPercent = undefined;
     this.stipendDays = undefined;
+    this.greatHives.release();
     this.outcome = undefined;
     this.status = undefined;
     this.advance = undefined;

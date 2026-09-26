@@ -30,13 +30,16 @@ import type { PassMask } from "./pass-mask";
  * - `spore-platform-core`: the finale's second stage (#1179), a round
  *   chamber of terraces reached along one narrow causeway, with the core
  *   seed behind the Sovereign's dais.
+ * - `great-hive-cavern`: a Great Hive's board (campaign arc §6.9), the
+ *   hive cavern's passes on a bigger board with more chambers.
  */
 export type MapArchetype =
   | "settlement"
   | "crash-site"
   | "hive-cavern"
   | "spore-platform-hull"
-  | "spore-platform-core";
+  | "spore-platform-core"
+  | "great-hive-cavern";
 
 /**
  * Every archetype, in a fixed order: what the parameter resolver accepts
@@ -48,6 +51,7 @@ export const MAP_ARCHETYPES: readonly MapArchetype[] = [
   "hive-cavern",
   "spore-platform-hull",
   "spore-platform-core",
+  "great-hive-cavern",
 ];
 
 /**

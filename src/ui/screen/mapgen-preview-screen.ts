@@ -83,6 +83,7 @@ const ARCHETYPE_NAMES: Readonly<Record<MapArchetype, string>> = {
   "hive-cavern": "Hive cavern",
   "spore-platform-hull": "Spore platform: hull",
   "spore-platform-core": "Spore platform: core",
+  "great-hive-cavern": "Great Hive cavern",
 };
 
 // ===========================================

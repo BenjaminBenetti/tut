@@ -5,6 +5,7 @@ import type { EventTypeCatalogue } from "../model/event-type-catalogue";
 import type { TransactionService } from "../../economy/model/transaction-service";
 import { applyStipend } from "../../economy/service/income-service";
 import type { CampaignState } from "../model/campaign-state";
+import type { ContinentCatalogue } from "../model/continent";
 import type { DeployableTypeCatalogue } from "../model/deployable-type-catalogue";
 import type { HiveTuning } from "../model/hive-tuning";
 import type { InfestationTuning } from "../model/infestation-tuning";
@@ -25,11 +26,16 @@ import {
   HIVE_FORMATION_STEP_NAME,
 } from "./hive-formation-service";
 import { hiveRegionIds } from "./hive-service";
+import {
+  createGreatHiveRevealStep,
+  GREAT_HIVE_REVEAL_STEP_NAME,
+} from "./great-hive-reveal-step";
 import { applyDetection } from "./infestation-detection-service";
 import { applyGrowth } from "./infestation-growth-service";
 import { applySpread } from "./infestation-spread-service";
 import { expireMissions } from "./mission-expiry-service";
 import { generateMissions } from "./mission-generation-service";
+import { GREAT_HIVE_PIN_TRIGGER } from "./story/great-hive-pin-trigger";
 import { createStoryPinTrigger } from "./story/story-pin-trigger";
 import { applyOutcome } from "./outcome-service";
 import {
@@ -76,6 +82,11 @@ export interface TickDeps {
   readonly eventTuning: EventTuning;
   /** When hives form, how they level and what liberation does (arc §6.5). */
   readonly hiveTuning: HiveTuning;
+  /**
+   * The continents the Great Hives are revealed on (arc §6.9). Absent in
+   * fixtures that never reach Act III: the reveal step then does nothing.
+   */
+  readonly continents?: ContinentCatalogue;
 }
 
 // ===========================================
@@ -88,6 +99,7 @@ export const TICK_STEP_NAMES = {
   growth: "growth",
   spread: "spread",
   hiveFormation: HIVE_FORMATION_STEP_NAME,
+  greatHiveReveal: GREAT_HIVE_REVEAL_STEP_NAME,
   detection: "detection",
   missionExpiry: "mission-expiry",
   missionGeneration: "mission-generation",
@@ -111,19 +123,20 @@ export const TICK_STEP_NAMES = {
  *   3. spread              infested cities spread to neighbours (more from a hive
  *                          region, none from a paused one); threat seeds clean ones
  *   4. hive-formation      from Act II, a week at mean ≥ 60 roots a hive (arc §6.5)
- *   5. detection           infested cities past the (sensor-lowered) thresholds are found
- *   6. mission-expiry      lapsed missions go; each type's rule says what that costs
- *   7. mission-generation  the director: story pins, trigger rules, then fill
- *                          the board to the act's cap (+ intel bonus)
- *   8. events              lapsed events resolve by default; maybe a new one (#71)
- *   9. stipend             Earth pays for the day, scaled by how much is unfested,
+ *   5. great-hive-reveal   the first tick after Uplink is won: the three Great Hives
+ *   6. detection           infested cities past the (sensor-lowered) thresholds are found
+ *   7. mission-expiry      lapsed missions go; each type's rule says what that costs
+ *   8. mission-generation  the director: story and Great Hive pins, trigger rules,
+ *                          then fill the board to the act's cap (+ intel bonus)
+ *   9. events              lapsed events resolve by default; maybe a new one (#71)
+ *  10. stipend             Earth pays for the day, scaled by how much is unfested,
  *                          by any event-driven stipend modifiers (#70), plus the banks
- *  10. threat              recompute and store global threat
- *  11. outcome             the story's verdict, then threat defeat, once
+ *  11. threat              recompute and store global threat
+ *  12. outcome             the story's verdict, then threat defeat, once
  * ```
  *
  * Growth and spread read the threat stored by the previous tick; the
- * recompute in step 9 is what the next day sees. Modifiers reach each
+ * recompute in step 11 is what the next day sees. Modifiers reach each
  * step through `ctx`, computed after upkeep so an installation that just
  * went offline contributes nothing today.
  */
@@ -135,6 +148,7 @@ export function createDefaultTickSteps<TState extends CampaignState>(
     growthStep(deps),
     spreadStep(deps),
     createHiveFormationStep<TState>(deps),
+    createGreatHiveRevealStep<TState>(deps),
     detectionStep(deps),
     missionExpiryStep(deps),
     missionGenerationStep(deps),
@@ -283,7 +297,10 @@ function missionExpiryStep<TState extends CampaignState>(
 function missionGenerationStep<TState extends CampaignState>(
   deps: TickDeps,
 ): TickStep<TState> {
-  const pinTriggers = [createStoryPinTrigger(deps.storyMissions)];
+  const pinTriggers = [
+    createStoryPinTrigger(deps.storyMissions),
+    GREAT_HIVE_PIN_TRIGGER,
+  ];
   return {
     name: TICK_STEP_NAMES.missionGeneration,
     run: (state, ctx) => {

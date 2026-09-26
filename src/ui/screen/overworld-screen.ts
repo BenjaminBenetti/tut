@@ -30,6 +30,7 @@ import {
 } from "../service/installation-wheel";
 import { DeployablesView } from "../view/deployables-view";
 import { EventDialogView } from "../view/event-dialog-view";
+import { GreatHiveRevealView } from "../view/great-hive-reveal-view";
 import { MissionDetailsView } from "../view/mission-details-view";
 import { MissionListView } from "../view/mission-list-view";
 import type {
@@ -119,6 +120,7 @@ interface WheelSpec {
  *   [Upgrade …]          ──► store.dispatch(upgradeDeployable(id))
  *   [Decommission]       ──► store.dispatch(decommissionDeployable(id))
  *   event choice         ──► store.dispatch(resolveEvent(eventId, choiceId))
+ *   GREAT_HIVES_REVEALED ──► greatHiveReveal: the Great Hives' story beat (#1179)
  *                            any rejection ──► topBar.showStatus
  *   [Roster] / [Main menu] ──► router.navigate
  *   [Resume mission]     ──► router.navigate("tactical")   while one is live
@@ -153,6 +155,7 @@ export class OverworldScreen implements Screen {
   private readonly missionDetails: MissionDetailsView;
   private readonly deployables: DeployablesView;
   private readonly eventDialog: EventDialogView;
+  private readonly greatHiveReveal = new GreatHiveRevealView();
   private readonly wheel: RadialMenuView;
   /** What the wheel is open at, or undefined while it is closed. */
   private wheelTarget: WheelTarget | undefined;
@@ -277,6 +280,7 @@ export class OverworldScreen implements Screen {
     // layout, which fills the window, rather than in the map cell.
     this.wheel.mount(layout);
     this.eventDialog.mount(layout);
+    this.greatHiveReveal.mount(layout);
     root.appendChild(layout);
     this.root = layout;
     this.deps.mapViewport?.attach(mapArea);
@@ -308,6 +312,7 @@ export class OverworldScreen implements Screen {
     this.render(store?.getState());
     this.unsubscribe = store?.subscribe((change) => {
       this.render(change.state);
+      this.greatHiveReveal.notice(change.events);
     });
   }
 
@@ -325,6 +330,7 @@ export class OverworldScreen implements Screen {
     this.closeWheel();
     this.wheel.unmount();
     this.eventDialog.unmount();
+    this.greatHiveReveal.unmount();
     this.topBar.unmount();
     this.deployables.unmount();
     this.missionDetails.unmount();

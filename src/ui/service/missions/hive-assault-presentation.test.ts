@@ -66,8 +66,16 @@ function result(
 
 describe("HIVE_ASSAULT_PRESENTATION", () => {
   it("is the table's entry for the type, under the hive glyph", () => {
-    expect(MISSION_PRESENTATION["hive-assault"]).toBe(
-      HIVE_ASSAULT_PRESENTATION,
+    // The table wraps it for Great Hives (#1179); an ordinary assault is
+    // shown exactly as this presentation shows it.
+    const entry = MISSION_PRESENTATION["hive-assault"];
+    const ctx = { state: campaign(20) };
+    expect(entry.icon).toBe(HIVE_ASSAULT_PRESENTATION.icon);
+    expect(entry.briefingRows(ASSAULT, ctx)).toEqual(
+      HIVE_ASSAULT_PRESENTATION.briefingRows(ASSAULT, ctx),
+    );
+    expect(entry.offerNote?.(ASSAULT, ctx)).toBe(
+      HIVE_ASSAULT_PRESENTATION.offerNote?.(ASSAULT, ctx),
     );
     expect(HIVE_ASSAULT_PRESENTATION.icon).toBe("marker-hive");
   });

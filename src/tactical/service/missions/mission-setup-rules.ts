@@ -2,6 +2,8 @@ import type { MissionSetupRules } from "../../model/mission-setup-rule";
 import { CRASH_SITE_SETUP } from "./crash-site-setup";
 import { DEFEND_INSTALLATION_SETUP } from "./defend-installation-setup";
 import { EVACUATION_SETUP } from "./evacuation-setup";
+import { placeCavernBroods } from "../brood-placement-service";
+import { withGreatHiveSetup } from "./great-hive-setup";
 import { HIVE_ASSAULT_SETUP } from "./hive-assault-setup";
 import { INFESTATION_CLEARANCE_SETUP } from "./infestation-clearance-setup";
 import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
@@ -35,5 +37,5 @@ export const MISSION_SETUP_RULES: MissionSetupRules = {
   "crash-site": CRASH_SITE_SETUP,
   "wreck-recovery": WRECK_RECOVERY_SETUP,
   evacuation: EVACUATION_SETUP,
-  "hive-assault": HIVE_ASSAULT_SETUP,
+  "hive-assault": withGreatHiveSetup(HIVE_ASSAULT_SETUP, placeCavernBroods),
 };

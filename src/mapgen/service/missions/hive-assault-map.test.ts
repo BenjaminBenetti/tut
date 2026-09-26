@@ -84,8 +84,10 @@ function asked(recipe: MapRecipe, kind: string): number {
 // ===========================================
 
 describe("HIVE_ASSAULT_MAP_RULE", () => {
-  it("is the table's rule for the type", () => {
-    expect(MISSION_MAP_RULES["hive-assault"]).toBe(HIVE_ASSAULT_MAP_RULE);
+  it("is what the table plans an ordinary hive with (Great Hives: great-hive-map)", () => {
+    expect(
+      MISSION_MAP_RULES["hive-assault"].recipe(assault(2), HIVE_ASSAULT),
+    ).toEqual(HIVE_ASSAULT_MAP_RULE.recipe(assault(2), HIVE_ASSAULT));
   });
 
   it("selects the hive cavern with its own board and hooks, passed explicitly", () => {

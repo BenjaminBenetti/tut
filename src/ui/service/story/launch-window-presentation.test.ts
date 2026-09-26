@@ -38,7 +38,17 @@ describe("Launch Window's briefing (#1179)", () => {
     expect(LAUNCH_WINDOW_PRESENTATION.storyId).toBe("launch-window");
     expect(
       storyBriefingFieldsOf(STORY_PRESENTATION).map((field) => field.field),
-    ).toEqual(["story-objective", "story-win", "story-kit", "story-lost"]);
+    ).toEqual([
+      "story-objective",
+      "story-win",
+      "story-kit",
+      "great-hive-target",
+      "great-hive-objective",
+      "great-hive-liberates",
+      "great-hive-beacons",
+      "great-hive-win",
+      "story-lost",
+    ]);
   });
 
   it("says what holding the pad takes, what it wins and what losing it costs", () => {

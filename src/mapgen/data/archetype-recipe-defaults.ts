@@ -1,4 +1,8 @@
 import type { ArchetypeRecipeDefaultsTable } from "../model/archetype-recipe-defaults";
+import {
+  GREAT_HIVE_CAVERN_HOOKS,
+  GREAT_HIVE_CAVERN_SIZE,
+} from "./great-hive-cavern-recipe";
 import { HIVE_CAVERN_HOOKS, HIVE_CAVERN_SIZE } from "./hive-cavern-recipe";
 import {
   SPORE_PLATFORM_CORE_HOOKS,
@@ -26,5 +30,9 @@ export const ARCHETYPE_RECIPE_DEFAULTS: ArchetypeRecipeDefaultsTable = {
   "spore-platform-core": {
     size: SPORE_PLATFORM_CORE_SIZE,
     hooks: SPORE_PLATFORM_CORE_HOOKS,
+  },
+  "great-hive-cavern": {
+    size: GREAT_HIVE_CAVERN_SIZE,
+    hooks: GREAT_HIVE_CAVERN_HOOKS,
   },
 };

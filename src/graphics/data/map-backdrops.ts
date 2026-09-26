@@ -20,4 +20,5 @@ export const MAP_BACKDROPS: Readonly<Record<MapArchetype, MapBackdrop>> = {
   "hive-cavern": "clear",
   "spore-platform-hull": "space",
   "spore-platform-core": "space",
+  "great-hive-cavern": "clear",
 };

@@ -34,4 +34,11 @@ export interface HiveAssaultSetupTuning {
   readonly maxGuards: number;
   /** Tech points each chamber nest pays when wrecked. Non-negative integer. */
   readonly nestBounty: number;
+  /**
+   * When set, a guard the spaced pick cannot seat in full is topped up to
+   * its whole count from the ring tiles left, shoulder to shoulder: the
+   * Great Hive's packed guard, whose core chamber is crowded with hive
+   * structures. Absent, only the two-guard floor is topped up.
+   */
+  readonly packGuards?: boolean;
 }

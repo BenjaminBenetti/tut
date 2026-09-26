@@ -1,6 +1,7 @@
 import type { ActId } from "../../content/model/act-id";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
+import type { GreatHiveTuning } from "./great-hive-tuning";
 
 // ===========================================
 // Per-type difficulty
@@ -86,6 +87,8 @@ export interface MissionTuning {
   readonly evacuation: EvacuationTuning;
   /** What a Hive Assault pays on top of its difficulty (campaign arc §6.5). */
   readonly hiveAssault: HiveAssaultTuning;
+  /** How the three Great Hives are revealed, offered and scaled (arc §6.9). */
+  readonly greatHive: GreatHiveTuning;
 }
 
 // ===========================================

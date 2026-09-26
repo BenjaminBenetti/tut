@@ -37,7 +37,7 @@ import { coordOf, firstTile, hatchRadiusOf } from "./map-placement";
 /** Fewest guard tiles `hiveGuardPositions` looks for before it gives up spacing them. */
 const MIN_GUARD_POSITIONS = 2;
 
-/** Most guard tiles `hiveGuardPositions` hands back. */
+/** Most guard tiles `hiveGuardPositions` hands back unless asked for more. */
 const MAX_GUARD_POSITIONS = 4;
 
 /**
@@ -123,8 +123,8 @@ export function hiveGuardCount(
  *   ring 2 round the 3×3 pad (then ring 3 when ring 2 is short)
  *     same level as the pad, infantry can stand there, no hook on it
  *   ranked nearest the drop ship first, then z, then x
- *   picked greedily at least GUARD_SPACING apart, up to four
- *   fewer than two picked ──► topped up from the rest, spacing dropped
+ *   picked greedily at least GUARD_SPACING apart, up to `limit` (four)
+ *   fewer than `fill` (two) picked ──► topped up from the rest, spacing dropped
  *
  *        g . g . .          the ring against the pad stays free for
  *        . . . . .          the squad planting charges
@@ -137,9 +137,17 @@ export function hiveGuardCount(
  * guards its core the same way.
  *
  * @param map - The generated hive cavern.
+ * @param limit - Most tiles to hand back: four for a Hive Assault, the
+ *   Great Hive's `maxGuards` for its bigger guard.
+ * @param fill - Fewest tiles to hand back while any candidate is left,
+ *   spacing dropped to reach it: two, or a packed guard's whole count.
  * @returns Anchor tiles for single-tile guards, best first.
  */
-export function hiveGuardPositions(map: TacticalMap): readonly TileCoord[] {
+export function hiveGuardPositions(
+  map: TacticalMap,
+  limit: number = MAX_GUARD_POSITIONS,
+  fill: number = MIN_GUARD_POSITIONS,
+): readonly TileCoord[] {
   const core = hiveCoreHook(map);
   if (core === undefined) {
     return [];
@@ -150,7 +158,7 @@ export function hiveGuardPositions(map: TacticalMap): readonly TileCoord[] {
   const candidates = guardCandidates(map, anchor, size, approach);
   const picked: TileCoord[] = [];
   for (const tile of candidates) {
-    if (picked.length === MAX_GUARD_POSITIONS) {
+    if (picked.length === limit) {
       break;
     }
     if (
@@ -160,7 +168,7 @@ export function hiveGuardPositions(map: TacticalMap): readonly TileCoord[] {
     }
   }
   for (const tile of candidates) {
-    if (picked.length >= MIN_GUARD_POSITIONS) {
+    if (picked.length >= Math.min(fill, limit)) {
       break;
     }
     if (!picked.includes(tile)) {
@@ -287,9 +295,14 @@ export function setUpHiveAssault(
     ...nested,
     objectives: [...nested.objectives, objective],
   };
+  const wanted = hiveGuardCount(level, deps.hiveAssault);
   const guarded = placeHiveGuards(
     withObjective,
-    hiveGuardPositions(map).slice(0, hiveGuardCount(level, deps.hiveAssault)),
+    hiveGuardPositions(
+      map,
+      Math.max(MAX_GUARD_POSITIONS, deps.hiveAssault.maxGuards),
+      deps.hiveAssault.packGuards === true ? wanted : MIN_GUARD_POSITIONS,
+    ).slice(0, wanted),
     { ids: deps.ids, guard: deps.hiveGuard },
   );
   return ok(placeBroods(guarded, map, deps));

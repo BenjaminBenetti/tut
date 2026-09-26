@@ -149,9 +149,36 @@ export function liberateRegion(
   if (hive === undefined) {
     return { state: overworld, events: [] };
   }
+  return liberateRegionCities(
+    { ...overworld, hives: overworld.hives.filter((h) => h.id !== hiveId) },
+    hive.regionId,
+    day,
+    tuning,
+  );
+}
+
+/**
+ * The liberation of `regionId` without a hive to remove: every city in
+ * the region drops by `liberationCut` (clamped at zero, one
+ * `CityInfestationChanged` per city that moved), and the region's
+ * growth pauses for `liberationGrowthPauseDays` days, counted from the
+ * day after `day`. `liberateRegion` is this after removing the hive; a
+ * fallen Great Hive runs it on every region of its continent.
+ *
+ * ```
+ *   each city in regionId: to = max(0, from − liberationCut)
+ *   growthPausedUntil[regionId] = day + liberationGrowthPauseDays + 1
+ * ```
+ */
+export function liberateRegionCities(
+  overworld: OverworldState,
+  regionId: RegionId,
+  day: number,
+  tuning: Pick<HiveTuning, "liberationCut" | "liberationGrowthPauseDays">,
+): OverworldApplied<OverworldState> {
   const events: CityInfestationChangedEvent[] = [];
   const cities = overworld.map.cities.map((city): City => {
-    if (city.regionId !== hive.regionId) {
+    if (city.regionId !== regionId) {
       return city;
     }
     const to = clampInfestation(city.infestation - tuning.liberationCut);
@@ -168,10 +195,9 @@ export function liberateRegion(
     state: {
       ...overworld,
       map: { ...overworld.map, cities },
-      hives: overworld.hives.filter((h) => h.id !== hiveId),
       growthPausedUntil: {
         ...overworld.growthPausedUntil,
-        [hive.regionId]: day + tuning.liberationGrowthPauseDays + 1,
+        [regionId]: day + tuning.liberationGrowthPauseDays + 1,
       },
     },
     events,

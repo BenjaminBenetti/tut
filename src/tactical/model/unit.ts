@@ -70,8 +70,10 @@ export const PASS_CLASSES = [
  * | `hidden`     | not yet revealed to the other team (lurkers)     |
  * | `suppressed` | pinned; accuracy and movement reduced this turn  |
  * | `dormant`    | a sleeping brood bug (#1179): it neither acts, looks nor watches until its brood wakes |
+ * | `burrowed`   | under the ground (#1179): never spotted, shot, blasted or watched, holds no tile; see `isBurrowed` |
  */
-export type UnitStatus = "overwatch" | "hidden" | "suppressed" | "dormant";
+export type UnitStatus =
+  "overwatch" | "hidden" | "suppressed" | "dormant" | "burrowed";
 
 /** Every `UnitStatus`, in a fixed order. */
 export const UNIT_STATUSES = [
@@ -79,6 +81,7 @@ export const UNIT_STATUSES = [
   "hidden",
   "suppressed",
   "dormant",
+  "burrowed",
 ] as const satisfies readonly UnitStatus[];
 
 // ===========================================
@@ -173,6 +176,13 @@ export interface Unit {
    */
   readonly persona?: PersonaId;
   /**
+   * The turn a burrower last came up (#1179), so digging back down can
+   * wait out its cooldown (`BurrowTuning.reburrowCooldownTurns`). Absent
+   * on a unit that has never surfaced, which may dig at once, and on
+   * every unit saved before burrowers, so no save needs a migration.
+   */
+  readonly surfacedOnTurn?: number;
+  /**
    * The bug this squad took alive with a capture net and is carrying
    * home (#1179). It costs the carrier `movePenalty` movement points per
    * action. Kept on the unit's record when it falls, which is what a
@@ -219,7 +229,9 @@ export function isAutonomous(unit: Pick<Unit, "kind">): boolean {
  * before any scoring, pathing or Jev call, keeps its eyes shut (it adds
  * nothing to its side's vision) and neither fires on nor draws
  * overwatch. It can still be seen, targeted and hurt; a hurt dormant bug
- * wakes, and its brood with it (`brood-wake-service`).
+ * wakes, and its brood with it (`brood-wake-service`). A sleeper that is
+ * also under the ground is out of reach as any burrower is: see
+ * `isBurrowed` for where the two statuses meet.
  */
 export function isDormant(unit: Pick<Unit, "status">): boolean {
   return unit.status.includes("dormant");
@@ -268,6 +280,47 @@ export function isStandingForce(
  */
 export function takesOrders(unit: Pick<Unit, "kind" | "trapped">): boolean {
   return !isAutonomous(unit) && !isTrapped(unit);
+}
+
+/**
+ * True while the unit is under the ground (#1179). A burrowed unit is
+ * out of the fight on the surface, and every rule that asks about the
+ * surface asks this:
+ *
+ * ```
+ *   vision     never spotted, so never drawn, listed or remembered there
+ *   combat     neither shoots nor is shot; blasts, fire and hazards pass over
+ *   overwatch  a watcher never reacts to it
+ *   occupancy  holds no tile: surface units walk over it and may stop there
+ *   movement   `Tunnel`, not `Move`; `Surface` brings it up
+ * ```
+ *
+ * It still sees from its tile (it feels the ground shake), so it adds
+ * to its side's shared vision like any other unit — unless it sleeps.
+ *
+ * Where it meets `dormant` (#1179, ruled when burrowers and broods were
+ * merged; each ruling has a test beside the rule it names):
+ *
+ * ```
+ *   dormant + burrowed  asleep under the ground. It sleeps like any bug: the
+ *                       bug phase and Jev skip it before its behaviour is asked
+ *                       (`actingBugIds`, `restingBugIds`), so it neither
+ *                       tunnels, surfaces nor burrows until its brood wakes.
+ *                       It watches nothing (`watchesFor`), and it is out of
+ *                       reach like any burrower: never spotted, shot, blasted,
+ *                       burnt or netted.
+ *   dormant alone       on the surface: spotted, shot, blasted, burnt and netted
+ *                       like any bug, and a hurt one wakes its brood.
+ *   walked over         a squad on its column wakes nothing it would not wake on
+ *                       bare ground: waking reads the squad's side and the
+ *                       zones, never who is underfoot.
+ *   placed on           never: hatchlings, waves, pods and placed bugs
+ *                       (`placeBugsAt`, dormant broods included, and a story's
+ *                       `placeBugAtFirst`) skip its column.
+ * ```
+ */
+export function isBurrowed(unit: Pick<Unit, "status">): boolean {
+  return unit.status.includes("burrowed");
 }
 
 /**

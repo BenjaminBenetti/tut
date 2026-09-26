@@ -29,6 +29,7 @@ import {
 } from "./vision-service";
 import {
   blockUnitAt,
+  burrowerAt,
   missionWith,
   openField,
   ridgedField,
@@ -37,6 +38,14 @@ import {
   withCivilian,
 } from "./tactical-fixtures.test-helper";
 import { UNIT_MOVED } from "../model/unit-moved-event";
+import { BURROW_TUNING } from "../data/burrow-tuning";
+import type { SURFACE } from "../model/surface-command";
+import { surface } from "../model/surface-command";
+import type { TUNNEL } from "../model/tunnel-command";
+import { tunnel } from "../model/tunnel-command";
+import { viewFor } from "./mission-view-service";
+import { createSurfaceHandler } from "./surface-handler";
+import { tunnelHandler } from "./tunnel-handler";
 
 /** An intact egg spawner on a tile, for the vision fixtures. */
 function spawnerAt(id: string, pos: TileCoord): Spawner {
@@ -959,5 +968,135 @@ describe("vision with civilian groups (campaign arc §6.4)", () => {
       "hidden",
       "walking",
     ]);
+  });
+});
+
+// ===========================================
+// Under the ground (#1179)
+// ===========================================
+
+describe("a burrowed unit (#1179)", () => {
+  it("is never spotted, remembered or perceived by the other side, from any tile of an open field", () => {
+    // A squad in the middle sees the whole 8×8 field. A second bug in
+    // plain view keeps the spotting and remembering code live, so a
+    // version that let the burrower through would be caught, not
+    // skipped by an early return on an empty list.
+    for (let x = 0; x < 8; x++) {
+      for (let z = 0; z < 8; z++) {
+        if ((x === 4 && z === 4) || (x === 4 && z === 5)) continue;
+        const mission = missionWith(OPEN, [
+          unitAt("u", "infantry", at(4, 4)),
+          unitAt("seen", "infantry", at(4, 5), { team: "bugs" }),
+          burrowerAt("d", at(x, z)),
+        ]);
+        const { state, events } = withVision({ state: mission, events: [] });
+        const where = `(${x}, ${z})`;
+        expect(state.vision.tdf.visible, where).toContain(
+          new TileIndex(OPEN).keyOf(at(x, z)),
+        );
+        expect(state.vision.tdf.spotted, where).toEqual(["seen"]);
+        expect(state.vision.tdf.lastSeen.d, where).toBeUndefined();
+        expect(state.vision.tdf.lastSeen.seen, where).toEqual(at(4, 5));
+        expect(
+          perceivedUnits(state, "tdf").map((unit) => unit.id),
+          where,
+        ).not.toContain("d");
+        expect(
+          viewFor(state, "tdf").units.map((unit) => unit.id),
+          where,
+        ).not.toContain("d");
+        expect(perceivedOccupantAt(state, "tdf", at(x, z)), where).toBe(
+          undefined,
+        );
+        expect(
+          events.filter(
+            (event) =>
+              event.type === UNIT_SPOTTED && event.payload.unitId === "d",
+          ),
+          where,
+        ).toEqual([]);
+      }
+    }
+  });
+
+  it("still sees for its own side from under the ground", () => {
+    const mission = missionWith(OPEN, [
+      unitAt("u", "infantry", at(4, 4)),
+      burrowerAt("d", at(2, 4)),
+    ]);
+    expect(computeVision(mission, "bugs").spotted).toEqual(["u"]);
+  });
+
+  it("sleeps blind under the ground: a dormant burrower neither watches nor is spotted (#1179)", () => {
+    // The merge of burrowing and broods: sleep is asked before burrowing
+    // for the watcher, and burrowing hides a sleeper as it hides anyone.
+    const mission = missionWith(OPEN, [
+      unitAt("u", "infantry", at(4, 4)),
+      burrowerAt("d", at(2, 4), { status: ["burrowed", "dormant"] }),
+    ]);
+    const bugs = computeVision(mission, "bugs");
+    expect(bugs.visible).toEqual([]);
+    expect(bugs.spotted).toEqual([]);
+    expect(computeVision(mission, "tdf").spotted).toEqual([]);
+  });
+
+  it("stays unseen while it tunnels across the squad's view, and is spotted the moment it comes up", () => {
+    const campaign = (
+      mission: TacticalState,
+    ): MissionCampaignState & { activeMission: TacticalState } => ({
+      meta: {
+        rng: { algorithm: "mulberry32", seed: 1, state: 1 },
+        ids: { counters: {} },
+      },
+      overworld: {} as MissionCampaignState["overworld"],
+      roster: {} as MissionCampaignState["roster"],
+      economy: {} as MissionCampaignState["economy"],
+      tech: { unlocked: [] },
+      activeMission: mission,
+    });
+    const start = withVision({
+      state: missionWith(
+        OPEN,
+        [
+          unitAt("u", "infantry", at(2, 2)),
+          { ...burrowerAt("d", at(6, 6)), ap: 6 },
+        ],
+        { phase: "bugs" },
+      ),
+      events: [],
+    }).state;
+    const dig = liftTacticalHandler<ReturnType<typeof campaign>, typeof TUNNEL>(
+      tunnelHandler,
+    );
+    const rise = liftTacticalHandler<
+      ReturnType<typeof campaign>,
+      typeof SURFACE
+    >(createSurfaceHandler(BURROW_TUNING));
+    const ctx = { rng: new Mulberry32Rng(1), ids: new SequentialIdGenerator() };
+    let state = campaign(start);
+    const seenTypes: string[] = [];
+    // Column by column toward the squad, in its full view the whole way.
+    for (const step of [at(5, 6), at(4, 5), at(3, 4), at(2, 4), at(2, 3)]) {
+      const dug = dig(state, tunnel("d", step), ctx);
+      expect(dug.ok).toBe(true);
+      if (!dug.ok) return;
+      state = dug.value.state;
+      seenTypes.push(...dug.value.events.map((event) => event.type));
+      const vision = state.activeMission.vision.tdf;
+      expect(vision.visible).toContain(new TileIndex(OPEN).keyOf(step));
+      expect(vision.spotted).not.toContain("d");
+      expect(vision.lastSeen.d).toBeUndefined();
+    }
+    expect(seenTypes).not.toContain(UNIT_SPOTTED);
+    const up = rise(state, surface("d"), ctx);
+    expect(up.ok).toBe(true);
+    if (!up.ok) return;
+    const after = up.value.state.activeMission;
+    expect(after?.vision.tdf.spotted).toEqual(["d"]);
+    expect(after?.vision.tdf.lastSeen.d).toEqual(at(2, 3));
+    expect(up.value.events).toContainEqual({
+      type: UNIT_SPOTTED,
+      payload: { team: "tdf", unitId: "d" },
+    });
   });
 });

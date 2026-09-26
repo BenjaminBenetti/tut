@@ -24,6 +24,30 @@ const MOVE_REJECTION_TEXT: Readonly<Record<MoveRejection, string>> = {
   "not-a-step": "the path does not step from tile to tile",
 };
 
+/**
+ * Why a `Tunnel`, `Surface` or `Burrow` was refused (#1179). Closed so
+ * the HUD can phrase each one.
+ */
+export type BurrowRejection =
+  | "not-a-burrower"
+  | "already-burrowed"
+  | "not-burrowed"
+  | "cooldown"
+  | "hard-ground"
+  | "no-footing"
+  | "tile-held";
+
+/** Human-readable text per burrow rejection. */
+const BURROW_REJECTION_TEXT: Readonly<Record<BurrowRejection, string>> = {
+  "not-a-burrower": "it cannot dig",
+  "already-burrowed": "it is already under the ground",
+  "not-burrowed": "it is not under the ground",
+  cooldown: "it came up too recently to dig again",
+  "hard-ground": "the ground there is too hard to dig through",
+  "no-footing": "there is no footing on the ground above",
+  "tile-held": "something is standing on the ground above",
+};
+
 /** Why a tactical command or mission start was rejected. Serializable. */
 export type TacticalError =
   | { readonly kind: "systems-unavailable"; readonly reason: string }
@@ -42,6 +66,13 @@ export type TacticalError =
       readonly unitId: string;
       readonly reason: MoveRejection;
     }
+  | {
+      readonly kind: "illegal-burrow";
+      readonly unitId: string;
+      readonly reason: BurrowRejection;
+    }
+  | { readonly kind: "unit-burrowed"; readonly unitId: string }
+  | { readonly kind: "target-burrowed"; readonly targetId: string }
   | { readonly kind: "mission-over"; readonly outcome: MissionOutcome }
   | { readonly kind: "invalid-loadout"; readonly mechId: string }
   | { readonly kind: "map-recipe"; readonly reason: string }
@@ -219,6 +250,12 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is not in the roster`;
     case "illegal-move":
       return `Unit "${error.unitId}" cannot make that move: ${MOVE_REJECTION_TEXT[error.reason]}`;
+    case "illegal-burrow":
+      return `Unit "${error.unitId}" cannot do that: ${BURROW_REJECTION_TEXT[error.reason]}`;
+    case "unit-burrowed":
+      return `Unit "${error.unitId}" is under the ground`;
+    case "target-burrowed":
+      return `Unit "${error.targetId}" is under the ground`;
     case "mission-over":
       return `The mission is over: ${error.outcome}`;
     case "invalid-loadout":
@@ -365,6 +402,9 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "oversized-deployment": true,
   "unit-not-found": true,
   "illegal-move": true,
+  "illegal-burrow": true,
+  "unit-burrowed": true,
+  "target-burrowed": true,
   "mission-over": true,
   "invalid-loadout": true,
   "map-recipe": true,

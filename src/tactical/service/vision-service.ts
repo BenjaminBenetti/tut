@@ -15,7 +15,7 @@ import type { TechCarcass } from "../model/tech-carcass";
 import { isTrapped } from "../model/civilian";
 import type { MechWreck } from "../model/mech-wreck";
 import type { Team, Unit, UnitId } from "../model/unit";
-import { isDormant } from "../model/unit";
+import { isBurrowed, isDormant } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
 import {
@@ -124,14 +124,24 @@ function eyeSees(
 /**
  * What `team` can see right now (ADR 0006 §2.1): every tile within any
  * living unit's `sightRange` that it has a clear line to, and every enemy
- * standing on one of them. A civilian group still trapped (campaign arc
- * §6.4) is no watcher: it is huddled out of sight, and the building it
- * hides in stays dark until someone comes to look.
+ * standing on one of them. Who looks and who can be seen are each one
+ * predicate, `watchesFor` and `spottableBy`, so the statuses that bear on
+ * sight are ruled in one place:
+ *
+ * - A dormant bug (#1179) is no watcher: a sleeping brood's eyes are shut.
+ *   It can still be spotted, since it lies on the surface.
+ * - A civilian group still trapped (campaign arc §6.4) is no watcher: it
+ *   is huddled out of sight, and the building it hides in stays dark
+ *   until someone comes to look.
+ * - An enemy under the ground (`isBurrowed`, #1179) is on no tile anyone
+ *   can look at, so it is never spotted — and, never spotted, never
+ *   remembered in `lastSeen` either. A burrowed unit still watches from
+ *   its tile for its own side, unless it is also asleep.
  *
  * ```
- *   for each living unit of the side, dormant bugs (#1179) and trapped civilians aside:
+ *   for each unit that watchesFor(team):
  *     tiles within sightRange (manhattan) with hasLineOfSight ──► visible
- *   enemies standing on a visible tile ──────────────────────────► spotted
+ *   each unit spottableBy(team) standing on a visible tile ───► spotted
  * ```
  *
  * `explored` is not computed here; it only ever grows, so `withVision`
@@ -144,12 +154,7 @@ export function computeVision(
   index: TileIndex = new TileIndex(mission.map),
 ): Pick<SideVision, "visible" | "spotted"> {
   const visible = new Set<VisionTileKey>();
-  // A dormant bug's eyes are shut (#1179): a sleeping brood adds nothing
-  // to what the bugs see, and costs nothing to compute.
-  const watchers = mission.units.filter(
-    (unit) =>
-      unit.team === team && unit.hp > 0 && !isDormant(unit) && !isTrapped(unit),
-  );
+  const watchers = mission.units.filter((unit) => watchesFor(unit, team));
   for (const watcher of watchers) {
     const range = sightRangeOf(mission, watcher);
     // Only the diamond within range of each eye, column by column,
@@ -179,7 +184,7 @@ export function computeVision(
   }
   const spotted: UnitId[] = [];
   for (const unit of mission.units) {
-    if (unit.team === team || unit.hp <= 0) {
+    if (!spottableBy(unit, team)) {
       continue;
     }
     // A block is spotted when any tile of it is in view (#1130).
@@ -191,6 +196,55 @@ export function computeVision(
     }
   }
   return { visible: [...visible], spotted };
+}
+
+/**
+ * Whether `unit` adds its eyes to `team`'s vision. The statuses that bear
+ * on it are asked in one fixed order, each ruling a whole class:
+ *
+ * ```
+ *   another side's, or dead        ──► no
+ *   dormant (#1179)                ──► no   a sleeping brood's eyes are shut
+ *   trapped civilians (§6.4)       ──► no   huddled out of sight
+ *   burrowed (#1179)               ──► yes  it feels the ground from its tile
+ *   anyone else                    ──► yes
+ * ```
+ *
+ * Sleep is asked before burrowing, so a burrower that sleeps under the
+ * ground watches nothing until its brood wakes.
+ *
+ * @param unit - The unit that might be looking.
+ * @param team - The side whose vision is being computed.
+ * @returns True when the unit is one of `team`'s eyes.
+ */
+export function watchesFor(unit: Unit, team: Team): boolean {
+  if (unit.team !== team || unit.hp <= 0) {
+    return false;
+  }
+  if (isDormant(unit)) {
+    return false;
+  }
+  return !isTrapped(unit);
+}
+
+/**
+ * Whether `team` could spot `unit` if its tile were in view. The one
+ * status that hides a living enemy is being under the ground: a burrowed
+ * unit (#1179) stands on no tile anyone can look at. A dormant bug lies
+ * on the surface and is spotted like any other.
+ *
+ * ```
+ *   one of the side's own, or dead ──► no
+ *   burrowed (#1179)               ──► no
+ *   dormant (#1179)                ──► yes  asleep, but in plain sight
+ * ```
+ *
+ * @param unit - The unit that might be seen.
+ * @param team - The side that is looking.
+ * @returns True when a visible tile under the unit would spot it.
+ */
+export function spottableBy(unit: Unit, team: Team): boolean {
+  return unit.team !== team && unit.hp > 0 && !isBurrowed(unit);
 }
 
 // ===========================================
@@ -358,9 +412,10 @@ function sameVantage(before: TacticalState, after: TacticalState): boolean {
  * Whether one unit presents the same vantage in both missions. Vision
  * reads life, not health: a shot that hurts without killing changes
  * nothing about who can see what, and most shots are that. It does read
- * sleep: a brood that wakes opens its eyes (#1179). Freeing a trapped
- * civilian group changes it too, since a trapped group watches nothing
- * (campaign arc §6.4).
+ * every status `watchesFor` and `spottableBy` read: a brood that wakes
+ * opens its eyes (#1179), freeing a trapped civilian group makes it a
+ * watcher (campaign arc §6.4), and going under the ground or coming up
+ * (#1179) changes whether a unit can be spotted.
  */
 function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
   if (a === undefined) {
@@ -373,7 +428,8 @@ function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
     a.pos.x === b.pos.x &&
     a.pos.y === b.pos.y &&
     a.pos.z === b.pos.z &&
-    isTrapped(a) === isTrapped(b)
+    isTrapped(a) === isTrapped(b) &&
+    isBurrowed(a) === isBurrowed(b)
   );
 }
 

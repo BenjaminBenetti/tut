@@ -106,3 +106,61 @@ describe("phaseEvents with arrivals (#1116)", () => {
     }
   });
 });
+
+describe("phaseEvents with a burrower coming up (#1179)", () => {
+  const upD = event("tactical:unit-surfaced", { unitId: "d" });
+  const spotD = event("tactical:unit-spotted", { unitId: "d", team: "tdf" });
+  const biteD = event("tactical:attack-resolved", { attackerId: "d" });
+  const stepD = event("tactical:unit-moved", { unitId: "d" });
+
+  it("plays the surfacing as the entrance, with the spot straight behind it", () => {
+    const phases = phaseEvents([upD, biteD, spotD], new Set(["d"]));
+    // The rise out of the ground is the reveal: the spot rides along
+    // with it, and the bite plays on a burrower already up.
+    expect(phases.before).toEqual([upD, spotD, biteD]);
+    expect(phases.after).toEqual([]);
+  });
+
+  it("keeps the spot behind the surfacing even when the rules announced it first", () => {
+    const phases = phaseEvents([spotD, upD, biteD], new Set(["d"]));
+    expect(phases.before).toEqual([upD, spotD, biteD]);
+  });
+
+  it("walks a burrower that came up first from where it came up", () => {
+    const phases = phaseEvents([upD, stepD, spotD], new Set(["d"]));
+    expect(phases.before).toEqual([upD, spotD, stepD]);
+    expect(phases.after).toEqual([]);
+  });
+
+  it("leaves a surfacing nobody placed where it was, and its spot for after the redraw", () => {
+    const phases = phaseEvents([upD, biteD, spotD]);
+    expect(phases.before).toEqual([upD, biteD]);
+    expect(phases.after).toEqual([spotD]);
+  });
+
+  it("plays a surfacing before the redraw and a brood it woke after it, whatever order the rules gave", () => {
+    // A watcher's shot at a burrower coming up inside a chamber wakes the
+    // brood in the same step: the rise and its burst keep their place at
+    // the entrance, and the heave waits for the redraw that uncurls it.
+    const woke = event("tactical:brood-woke");
+    const shot = event("tactical:attack-resolved", { targetId: "d" });
+    for (const batch of [
+      [upD, shot, spotD, woke],
+      [woke, spotD, upD, shot],
+    ]) {
+      const phases = phaseEvents(batch, new Set(["d"]));
+      expect(phases.before).toEqual([upD, spotD, shot]);
+      expect(phases.after).toEqual([woke]);
+    }
+  });
+
+  it("loses nothing and repeats nothing", () => {
+    const batch = [spotD, upD, biteD, stepD, DIED];
+    const phases = phaseEvents(batch, new Set(["d"]));
+    const played = [...phases.before, ...phases.after];
+    expect(played).toHaveLength(batch.length);
+    for (const each of batch) {
+      expect(played.filter((candidate) => candidate === each)).toHaveLength(1);
+    }
+  });
+});

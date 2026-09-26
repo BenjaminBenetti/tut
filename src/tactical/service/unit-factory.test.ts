@@ -638,6 +638,22 @@ describe("bugUnit with a footprint (#1130)", () => {
   });
 });
 
+describe("bugUnit for a digger (#1179)", () => {
+  it("hatches a species that burrows under the ground, and says so on its template", () => {
+    const d = deps();
+    const digger = bugUnit(
+      { ...SWARMER, id: "burrower", burrows: true },
+      AT,
+      d,
+    );
+    expect(digger.template.burrows).toBe(true);
+    expect(digger.unit.status).toEqual(["burrowed"]);
+    const walker = bugUnit(SWARMER, AT, d);
+    expect("burrows" in walker.template).toBe(false);
+    expect(walker.unit.status).toEqual([]);
+  });
+});
+
 // ===========================================
 // Turrets (#1138)
 // ===========================================

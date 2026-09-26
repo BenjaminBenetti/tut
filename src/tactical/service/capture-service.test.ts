@@ -309,6 +309,36 @@ describe("the capture net and civilian groups (#1179, campaign arc §6.4)", () =
 });
 
 // ===========================================
+// Sleeping and burrowed bugs (#1179)
+// ===========================================
+
+describe("the capture net and a sleeping or burrowed bug (#1179)", () => {
+  /** A worn-down lurker beside the squad, carrying `status`. */
+  const beside = (status: Unit["status"]): TacticalState =>
+    netted([{ ...lurker("lurker-1", at(4, 3), 2), status }]);
+
+  it("takes a sleeper lying beside the squad, as it would an awake one", () => {
+    const result = throwNet(beside(["dormant"]), at(4, 3));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(unitOf(result.value.state, "squad")?.carrying?.unitId).toBe(
+      "lurker-1",
+    );
+  });
+
+  it("finds nothing to take over a bug under the ground, asleep or awake", () => {
+    // Nothing under the ground is spotted, and the net takes only what
+    // the thrower's side sees.
+    for (const status of [["burrowed"], ["burrowed", "dormant"]] as const) {
+      const result = throwNet(beside([...status]), at(4, 3));
+      expect(result.ok, status.join("+")).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe("no-capture-target");
+    }
+  });
+});
+
+// ===========================================
 // Carrying
 // ===========================================
 

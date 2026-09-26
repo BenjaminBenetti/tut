@@ -22,6 +22,7 @@ import type { SpeciesMix } from "../model/species-mix";
  *   act-1, 4 played   + brute 5                          ──► 60/90, 25/90, 5/90
  *   act-1, 7 played   + spitter 10                       ──► 60, 25, 5, 10 (/100)
  *   act-2, 0 played   brute and spitter debuted earlier  ──► 40, 20, 10, 15 (/85)
+ *   act-2, 5 played   + burrower 15                      ──► 40, 20, 10, 15, 15 (/100)
  * ```
  *
  * Pure and deterministic: no RNG, and the mix lists species in

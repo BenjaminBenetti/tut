@@ -4,6 +4,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackTarget } from "../model/attack-target";
 import type { TacticalState } from "../model/tactical-state";
+import { isBurrowed } from "../model/unit";
 import { spawnerAttackTarget, unitAttackTarget } from "./attack-target-service";
 import { footprintContains, footprintSizeOf } from "./footprint-service";
 import { hasLineOfSight } from "./sight-service";
@@ -118,7 +119,9 @@ export function blastFootprint(
  * living units of **either side** — a blast does not ask whose it is —
  * and undestroyed egg spawners, less whatever `exclude` names. The
  * attacker excludes itself; a shot aimed at a unit excludes that unit,
- * whose own damage is the shot's and not the blast's.
+ * whose own damage is the shot's and not the blast's. A unit under the
+ * ground (#1179) is not standing in anything: the earth over it takes
+ * the blast, so a grenade cannot be used to find a burrower.
  *
  * In footprint order, units before spawners on the same tile, units in
  * `units` order: the order the damage rolls are drawn in. A unit that
@@ -139,7 +142,12 @@ export function blastVictims(
   const struck = new Set<string>();
   for (const { tile, distance } of footprint) {
     for (const unit of mission.units) {
-      if (unit.hp <= 0 || exclude.has(unit.id) || struck.has(unit.id)) {
+      if (
+        unit.hp <= 0 ||
+        isBurrowed(unit) ||
+        exclude.has(unit.id) ||
+        struck.has(unit.id)
+      ) {
         continue;
       }
       const template = mission.templates[unit.templateId];

@@ -15,6 +15,7 @@ import {
 import {
   BRUTE,
   BUG_SPECIES,
+  BURROWER,
   HIVE_GUARD,
   SPITTER,
   SWARMER,
@@ -42,10 +43,18 @@ import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
 import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
 import { CIVILIAN_SOURCE_ID } from "../../tactical/model/civilian";
 import { MOVE, move } from "../../tactical/model/move-command";
-import { isDormant } from "../../tactical/model/unit";
+import { isBurrowed, isDormant, passMaskFor } from "../../tactical/model/unit";
 import type { Unit } from "../../tactical/model/unit";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { placeDormantBrood } from "../../tactical/service/brood-placement-service";
+import { wakeBrood } from "../../tactical/service/brood-wake-service";
+import { UNIT_BURROWED } from "../../tactical/model/unit-burrowed-event";
+import { BURROW } from "../../tactical/model/burrow-command";
+import { SURFACE, surface } from "../../tactical/model/surface-command";
+import { TUNNEL, tunnel } from "../../tactical/model/tunnel-command";
+import { UNIT_SURFACED } from "../../tactical/model/unit-surfaced-event";
+import { UNIT_TUNNELLED } from "../../tactical/model/unit-tunnelled-event";
+import { allows } from "../../mapgen/model/pass-mask";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { PLACE_UNIT, placeUnit } from "../../tactical/model/place-unit-command";
 import { UNIT_PLACED } from "../../tactical/model/unit-placed-event";
@@ -213,6 +222,10 @@ describe("composeTactical", () => {
       MECH_ACTION,
       ATTACK,
       MOVE,
+      // The burrower's orders (#1179), beside the walk they stand in for.
+      TUNNEL,
+      SURFACE,
+      BURROW,
       OVERWATCH,
       RELOAD,
       USE_EQUIPMENT,
@@ -834,6 +847,9 @@ describe("shippedBugBehaviours", () => {
     expect(tags).toContain("flank");
     expect(tags).toContain("rush");
     expect(tags).toContain("punish-clumps");
+    // #1179: the spitter's snipe and the burrower's burrow.
+    expect(tags).toContain("snipe");
+    expect(tags).toContain("burrow");
     expect(new Set(tags).size).toBe(tags.length);
     expect(
       () => new MapBehaviourRegistry(shippedBugBehaviours()),
@@ -956,6 +972,70 @@ describe("shippedBugBehaviours", () => {
       shots[0]?.type === ATTACK_RESOLVED && shots[0].payload.weaponRange,
     ).toBe(SPITTER.weapon.range);
     expect(outcome.value.state.phase).toBe("player");
+  });
+
+  it("actually drives a burrower in a live mission: one shipped EndTurn tunnels it to the squad and brings it up (#1179)", () => {
+    // The burrower's whole seam: shipped EndTurn -> bugs phase -> runner
+    // -> species catalogue -> BurrowerBehaviour -> Tunnel and Surface ->
+    // a burrower standing beside the squad. It starts under the ground a
+    // few columns off, inside one action's dig of a landing.
+    const mission = startedMission("player");
+    const squad = mission.units.find((u) => u.kind === "squad");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    const placed = withBug(
+      mission,
+      BURROWER,
+      walkableTileNear(mission, {
+        x: squad.pos.x + 3,
+        y: squad.pos.y,
+        z: squad.pos.z + 1,
+      }),
+      "burrower-live",
+    );
+    expect(isBurrowed(placed.bug)).toBe(true);
+    const endTurnHandler = shippedTacticalHandlers()[END_TURN];
+    if (endTurnHandler === undefined) throw new Error("EndTurn is not shipped");
+    const run = () =>
+      endTurnHandler(placed.mission, endTurn(), {
+        rng: new Mulberry32Rng(5),
+        ids: new SequentialIdGenerator(),
+      });
+    const outcome = run();
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const mine = outcome.value.events.filter(
+      (e) =>
+        (e.type === UNIT_TUNNELLED || e.type === UNIT_SURFACED) &&
+        e.payload.unitId === placed.bug.id,
+    );
+    expect(mine.map((e) => e.type)).toEqual([UNIT_TUNNELLED, UNIT_SURFACED]);
+    const after = outcome.value.state.units.find((u) => u.id === placed.bug.id);
+    if (after === undefined) throw new Error("the burrower is gone");
+    expect(isBurrowed(after)).toBe(false);
+    // Beside a TDF unit, on a tile it may stand on, alone there.
+    const surfaced = mine[1];
+    expect(
+      surfaced?.type === UNIT_SURFACED ? surfaced.payload.beside.length : 0,
+    ).toBeGreaterThan(0);
+    const tile = outcome.value.state.map.tiles.find(
+      (t) => t.x === after.pos.x && t.y === after.pos.y && t.z === after.pos.z,
+    );
+    expect(
+      tile !== undefined && allows(tile.pass, passMaskFor(after.passClass)),
+    ).toBe(true);
+    expect(
+      outcome.value.state.units.filter(
+        (u) =>
+          u.hp > 0 &&
+          u.pos.x === after.pos.x &&
+          u.pos.y === after.pos.y &&
+          u.pos.z === after.pos.z,
+      ),
+    ).toHaveLength(1);
+    expect(outcome.value.state.phase).toBe("player");
+    // Determinism: the same seed plays the same phase.
+    const again = run();
+    expect(again.ok && again.value.events).toEqual(outcome.value.events);
   });
 
   it("actually drives a placed Hive Guard in a live mission: one shipped EndTurn throws its spines, and it stays put (#1179)", () => {
@@ -1093,12 +1173,15 @@ describe("shippedBugBehaviours", () => {
 
 describe("dormant broods through the shipped rules (#1179)", () => {
   /**
-   * A started mission in the player's phase with a sleeping swarmer
-   * brood three tiles off the first squad (zone `radius` around the
-   * sleeper) and an awake swarmer on the squad's other side, both
-   * within a bug's sight of it.
+   * A started mission in the player's phase with a sleeping brood of
+   * `species` (swarmers unless told) three tiles off the first squad
+   * (zone `radius` around the sleeper) and an awake swarmer on the
+   * squad's other side, both within a bug's sight of it.
    */
-  function broodBesideSquad(radius: number): {
+  function broodBesideSquad(
+    radius: number,
+    species: typeof SWARMER = SWARMER,
+  ): {
     mission: TacticalState;
     squad: Unit;
     sleeperId: string;
@@ -1126,7 +1209,7 @@ describe("dormant broods through the shipped rules (#1179)", () => {
       awake.mission,
       {
         broodId: "brood-test",
-        species: SWARMER,
+        species,
         positions: [bed],
         wake: { centre: bed, radius },
         label: "east chamber",
@@ -1171,6 +1254,86 @@ describe("dormant broods through the shipped rules (#1179)", () => {
       expect(state.units.find((u) => u.id === sleeperId)).toEqual(sleeper);
     }
     expect(awakeMoved).toBe(true);
+  });
+
+  it("a dormant burrower sleeps under the ground through live EndTurns, and digs once its brood wakes (#1179)", () => {
+    // The ruling where the two statuses meet: a dormant burrower sleeps
+    // like any bug. The bug phase skips it before its behaviour is asked
+    // (`actingBugIds`), so it neither tunnels, surfaces nor burrows until
+    // its brood wakes; then the same behaviour digs it toward the squad.
+    const { mission, sleeperId } = broodBesideSquad(1, BURROWER);
+    const sleeper = mission.units.find((u) => u.id === sleeperId);
+    expect(sleeper?.status).toEqual(["burrowed", "dormant"]);
+    const endTurnHandler = shippedTacticalHandlers()[END_TURN];
+    if (endTurnHandler === undefined) throw new Error("EndTurn is not shipped");
+    const rng = new Mulberry32Rng(5);
+    const ids = new SequentialIdGenerator();
+    const dug = (events: readonly { type: string; payload: unknown }[]) =>
+      events.filter(
+        (e) =>
+          (e.type === UNIT_TUNNELLED ||
+            e.type === UNIT_SURFACED ||
+            e.type === UNIT_BURROWED) &&
+          (e.payload as { unitId: string }).unitId === sleeperId,
+      );
+    let state = mission;
+    for (let turn = 0; turn < 3 && state.outcome === undefined; turn++) {
+      const outcome = endTurnHandler(state, endTurn(), { rng, ids });
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      expect(dug(outcome.value.events)).toEqual([]);
+      state = outcome.value.state;
+      expect(state.units.find((u) => u.id === sleeperId)).toEqual(sleeper);
+    }
+    expect(state.outcome).toBeUndefined();
+    const woken = wakeBrood(state, "brood-test", "noise").state;
+    const after = endTurnHandler(woken, endTurn(), { rng, ids });
+    if (!after.ok) throw new Error("EndTurn was refused");
+    expect(dug(after.value.events).length).toBeGreaterThan(0);
+  });
+
+  it("the burrower's orders go through the waking decorators: a dig in the zone wakes nothing, a surfacing that draws the squad's watch there does (#1179)", () => {
+    // Bugs never wake their kin, so a Tunnel inside the zone is silent.
+    // Coming up beside a watcher draws its shot into the zone: a
+    // squad-side attack, which is what the broods' own rule wakes on.
+    const { mission, squad, sleeperId } = broodBesideSquad(6);
+    const handlers = shippedTacticalHandlers();
+    const dig = handlers[TUNNEL];
+    const rise = handlers[SURFACE];
+    if (dig === undefined || rise === undefined)
+      throw new Error("Tunnel or Surface is not shipped");
+    const beside = walkableTileNear(mission, {
+      x: squad.pos.x + 1,
+      y: squad.pos.y,
+      z: squad.pos.z + 1,
+    });
+    const start = walkableTileNear(mission, {
+      x: squad.pos.x + 3,
+      y: squad.pos.y,
+      z: squad.pos.z + 1,
+    });
+    const placed = withBug(mission, BURROWER, start, "digger");
+    const board: TacticalState = {
+      ...placed.mission,
+      phase: "bugs",
+      units: placed.mission.units.map((u) =>
+        u.id === squad.id ? { ...u, ap: 0, status: ["overwatch"] } : u,
+      ),
+    };
+    const ctx = { rng: new Mulberry32Rng(3), ids: new SequentialIdGenerator() };
+    const dug = dig(board, tunnel("digger", beside), ctx);
+    if (!dug.ok) throw new Error(JSON.stringify(dug.error));
+    expect(dug.value.events.map((e) => e.type)).toEqual([UNIT_TUNNELLED]);
+    const still = dug.value.state.units.find((u) => u.id === sleeperId);
+    expect(still && isDormant(still)).toBe(true);
+    const up = rise(dug.value.state, surface("digger"), ctx);
+    if (!up.ok) throw new Error(JSON.stringify(up.error));
+    const types = up.value.events.map((e) => e.type);
+    expect(types.slice(0, 2)).toEqual([UNIT_SURFACED, ATTACK_RESOLVED]);
+    const woke = up.value.events.find((e) => e.type === BROOD_WOKE);
+    expect(woke?.type === BROOD_WOKE && woke.payload.cause).toBe("attack");
+    const awake = up.value.state.units.find((u) => u.id === sleeperId);
+    expect(awake && isDormant(awake)).toBe(false);
   });
 
   it("a squad step into the zone through the shipped Move wakes the brood, and the next EndTurn plays it", () => {

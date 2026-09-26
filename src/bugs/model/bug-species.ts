@@ -12,11 +12,12 @@ import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
  * closes the distance every turn, `flank` circles for the line's back,
  * `punish-clumps` walks at whatever group is densest, `snipe` (#1179)
  * fires from covered ground at range and backs off when a squad closes,
- * and `guard` (#1179) never moves: it fires at the best target in reach
- * and sight, or holds.
+ * `burrow` (#1179) tunnels under the map to surface beside its mark and
+ * fights in melee once it is up, and `guard` (#1179) never moves: it
+ * fires at the best target in reach and sight, or holds.
  */
 export type BehaviourTag =
-  "rush" | "flank" | "punish-clumps" | "snipe" | "guard";
+  "rush" | "flank" | "punish-clumps" | "snipe" | "burrow" | "guard";
 
 /** Every behaviour tag, in a fixed order. */
 export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
@@ -24,6 +25,7 @@ export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
   "flank",
   "punish-clumps",
   "snipe",
+  "burrow",
   "guard",
 ];
 

@@ -9,6 +9,7 @@ import { PassMask } from "../../mapgen/model/pass-mask";
 import { PropKindIds } from "../../mapgen/data/props";
 import {
   blockUnitAt,
+  burrowerAt,
   missionWith,
   openField,
   twoFloorBuilding,
@@ -386,5 +387,20 @@ describe("units on a 2×2 block (#1130)", () => {
       graph.reachability.canStep(near, onto, infantry),
     );
     expect(footprintCanStep(graph, near, onto, 2, infantry)).toBe(false);
+  });
+});
+
+describe("a burrowed unit on the surface's board (#1179)", () => {
+  it("holds no tile: a squad walks over it and may stop on it", () => {
+    const map = openField().build();
+    const graph = buildMoveGraph(map);
+    const mission = missionWith(map, [
+      unitAt("u", "infantry", at(0, 3)),
+      burrowerAt("d", at(1, 3)),
+    ]);
+    expect(occupiedKeys(mission, graph.index, "u").size).toBe(0);
+    const reach = reachable(mission, "u", graph);
+    expect(reach.get(graph.index.keyOf(at(1, 3)))).toBe(1);
+    expect(pathTo(mission, "u", at(2, 3), graph)).toEqual([at(1, 3), at(2, 3)]);
   });
 });

@@ -16,6 +16,7 @@ import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { TileEffect } from "../model/tile-effect";
 import { TILE_EFFECT_ID_PREFIX } from "../model/tile-effect";
 import type { Team, Unit, UnitId } from "../model/unit";
+import { isBurrowed } from "../model/unit";
 import type { AreaEffect, WeaponProfile } from "../model/weapon-profile";
 import { falloffShare } from "../model/weapon-profile";
 import { footprintContains, unitFootprintSize } from "./footprint-service";
@@ -143,7 +144,8 @@ export function ignite(
  *
  * Entry damage is handled separately by `createHazardReaction`: moving
  * through fire burns immediately, while remaining in it burns again at
- * the next friendly phase. Only this phase hook ages effects.
+ * the next friendly phase. Only this phase hook ages effects. A unit
+ * under the ground (#1179) is beneath the fire, not in it.
  *
  * Damage rolls in the combat tuning's band around the effect's damage,
  * less armor the effect cannot penetrate, from `ctx.rng.fork("hazard")`
@@ -182,6 +184,7 @@ export function burn(
         rule.damage <= 0 ||
         unit.hp <= 0 ||
         unit.team !== acting ||
+        isBurrowed(unit) ||
         !footprintContains(
           unit.pos,
           unitFootprintSize(state, unit),
@@ -253,6 +256,8 @@ export function createBurnStep(
  * then lets surviving units provoke the next reaction (usually overwatch).
  * Jumping invokes this only at the landing tile. Smoke is harmless, clocks
  * do not advance, and a lethal burn stops both reactions and further steps.
+ * A unit under the ground (#1179) passes beneath the fire; one that
+ * surfaces into it burns, because surfacing runs this reaction too.
  */
 export function createHazardReaction(
   hazards: HazardTuning,
@@ -265,7 +270,7 @@ export function createHazardReaction(
     const rng = ctx.rng.fork("hazard-entry");
     for (const effect of mission.effects) {
       const unit = state.units.find((candidate) => candidate.id === unitId);
-      if (!unit || unit.hp <= 0) break;
+      if (!unit || unit.hp <= 0 || isBurrowed(unit)) break;
       const rule = hazards.effects[effect.kind];
       if (
         rule.damage <= 0 ||

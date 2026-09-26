@@ -11,7 +11,7 @@ import type { TacticalError } from "../model/tactical-error";
 import type { TacticalHandler } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
-import { passMaskFor } from "../model/unit";
+import { isBurrowed, passMaskFor } from "../model/unit";
 import { UNIT_MOVED } from "../model/unit-moved-event";
 import type { StepReaction } from "../model/step-reaction";
 import { NO_REACTION } from "../model/step-reaction";
@@ -63,6 +63,8 @@ export function validateMechAction(
       (candidate) =>
         candidate.id === payload.targetId &&
         candidate.hp > 0 &&
+        // Nothing under the ground can be painted (#1179).
+        !isBurrowed(candidate) &&
         candidate.team !== unit.team,
     );
     if (

@@ -32,9 +32,9 @@ import { ARMOURED_VARIANT_TUNING } from "./armoured-variant-tuning";
 //     nobody has asked for yet.
 //   • hatchWeight is what egg spawners roll on: six swarmers to three
 //     lurkers to one brute keeps the first missions swarmy. A weight of
-//     0 is never rolled (the spitter and the armoured variants, until
-//     the bestiary mixes them in; the Hive Guard, which is only ever
-//     placed).
+//     0 is never rolled (the spitter, the burrower and the armoured
+//     variants, until the bestiary mixes them in; the Hive Guard, which
+//     is only ever placed).
 //   • The Act III armoured variants (#1179) are not written out: each is
 //     its base's block plus `ARMOURED_VARIANT_TUNING`'s armour and hit
 //     points (`armouredVariant`), so a retune above carries to them.
@@ -44,8 +44,11 @@ import { ARMOURED_VARIANT_TUNING } from "./armoured-variant-tuning";
 //     lurker is two and a half — a focused turn's work — and a brute six,
 //     because a squad that brings one down has earned its stripes. A
 //     spitter is two: fragile, but it has to be dug out of cover. A
+//     burrower is three: it has to be caught above ground first. A
 //     Hive Guard is four: it cannot chase anyone, but it has to be
 //     walked up to under its fire.
+//   • burrows: the burrower (#1179) arrives under the ground and fights
+//     from beneath it; see `isBurrowed` in `tactical/model/unit`.
 
 /** Tiles every bug sees. One number until a species needs its own (ADR 0006). */
 const SIGHT = 10;
@@ -154,6 +157,43 @@ export const SPITTER: BugSpecies = {
   modelId: "bug.spitter",
   hatchWeight: 0,
   xpValue: 20,
+};
+
+/**
+ * Melee ambusher that moves under the ground (#1179, campaign arc §8).
+ * It arrives `burrowed` — never spotted, shot, blasted or watched — and
+ * tunnels five tiles an action under walls and cover alike, then comes
+ * up on a free tile beside its mark (`burrow`). Surfacing costs an
+ * action, so one that lies in wait beside a squad for a turn comes up
+ * and bites in the same phase; one that tunnels in from afar surfaces
+ * with nothing left and bites the phase after, having given the squad
+ * its turn to answer.
+ *
+ * A mid-weight: a lurker's plate and a little more hide, and the
+ * heaviest bite of the small species — its jaws are the ploughshare it
+ * digs with, so the first strike out of the ground is the one that
+ * hurts. `hatchWeight` is 0 like the spitter's: only the campaign's
+ * bestiary mixes it in, from five missions into Act II (ADR 0013
+ * §2.6), so no Act I mission and no pinned sim ever rolls one.
+ */
+export const BURROWER: BugSpecies = {
+  id: "burrower",
+  name: "Burrower",
+  description:
+    "A banded, low-slung digger with spade forelimbs and a bone ploughshare for a face. It moves under the ground and comes up beside you.",
+  hp: 14,
+  armor: 1,
+  move: 5,
+  ap: 2,
+  // The heaviest bite of the small species, and a point of plate
+  // through: out of the ground, it is the strike that has to be feared.
+  weapon: { range: 1, accuracy: 75, damage: 8, armorPen: 1 },
+  sightRange: SIGHT,
+  behaviour: "burrow",
+  modelId: "bug.burrower",
+  hatchWeight: 0,
+  xpValue: 30,
+  burrows: true,
 };
 
 /**
@@ -277,6 +317,7 @@ export const BUG_SPECIES: Readonly<Record<BugSpeciesId, BugSpecies>> = {
   lurker: LURKER,
   brute: BRUTE,
   spitter: SPITTER,
+  burrower: BURROWER,
   "hive-guard": HIVE_GUARD,
   "swarmer-armoured": SWARMER_ARMOURED,
   "lurker-armoured": LURKER_ARMOURED,

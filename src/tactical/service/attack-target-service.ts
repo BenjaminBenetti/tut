@@ -5,6 +5,7 @@ import {
 } from "../model/spawner-variant";
 import type { Spawner, TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
+import { isBurrowed } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 
 // ===========================================
@@ -111,7 +112,8 @@ export function findAttackTarget(
  * Everything on the map an attacker of `team` could legally aim at: the
  * other side's living units, then its undestroyed egg spawners. The HUD
  * cycles this and the bug AI scores it, so neither has to know that
- * spawners live in their own collection.
+ * spawners live in their own collection. A unit under the ground
+ * (#1179) is not a target, so Tab never cycles onto one.
  */
 export function enemyAttackTargets(
   mission: TacticalState,
@@ -119,7 +121,7 @@ export function enemyAttackTargets(
 ): AttackTarget[] {
   const targets: AttackTarget[] = [];
   for (const unit of mission.units) {
-    if (unit.team === team || unit.hp <= 0) {
+    if (unit.team === team || unit.hp <= 0 || isBurrowed(unit)) {
       continue;
     }
     const template = mission.templates[unit.templateId];

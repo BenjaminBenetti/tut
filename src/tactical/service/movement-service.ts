@@ -10,7 +10,7 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { carryMovePenaltyOf } from "../model/carried-specimen";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
-import { passMaskFor } from "../model/unit";
+import { isBurrowed, passMaskFor } from "../model/unit";
 import {
   footprintTiles,
   unitFootprintSize,
@@ -361,6 +361,11 @@ export function searchMoves(
  * Keys of the tiles held by living units — every tile of a unit's
  * footprint (#1130) — optionally leaving one unit out (the mover).
  * Tiles off the map are not held.
+ *
+ * A unit under the ground (#1179) holds no tile: anything on the
+ * surface walks over it and may stop there, so a burrower never shows
+ * itself by blocking a path, and a squad standing on its tile is simply
+ * one more reason it cannot come up there (`burrow-service`).
  */
 export function occupiedKeys(
   mission: TacticalState,
@@ -369,7 +374,7 @@ export function occupiedKeys(
 ): ReadonlySet<TileKey> {
   const keys = new Set<TileKey>();
   for (const other of mission.units) {
-    if (other.hp <= 0 || other.id === except) {
+    if (other.hp <= 0 || other.id === except || isBurrowed(other)) {
       continue;
     }
     for (const tile of unitFootprintTiles(mission, other)) {

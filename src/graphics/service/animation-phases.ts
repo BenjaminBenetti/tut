@@ -3,6 +3,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { UnitId } from "../../tactical/model/unit";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
+import { UNIT_SURFACED } from "../../tactical/model/unit-surfaced-event";
 
 // ===========================================
 // Types
@@ -54,10 +55,35 @@ export interface AnimationPhases {
  *        └─ after:  (nothing)
  * ```
  *
+ * A burrower that comes up into view (#1179) is an arrival too, placed
+ * where it surfaces. Its entrance is the surfacing, not a walk: the
+ * rise out of the ground is what shows it, so its spot follows the
+ * surfacing directly and the animation queue plays the two as one.
+ *
+ * ```
+ *   arrivals = {d}
+ *   [surfaced d, attacked, spotted d]
+ *        │
+ *        ├─ before: surfaced d, spotted d, attacked
+ *        └─ after:  (nothing)
+ * ```
+ *
  * A **brood waking** (#1179) plays after placement too: the redraw is
  * what uncurls its sleepers, and a member first seen in the same step
  * exists only then, so its stir plays on the awake bugs the player can
- * now see rather than on curled ones about to pop upright.
+ * now see rather than on curled ones about to pop upright. The two never
+ * trade places: a surfacing is `before` and a waking is `after`, so in a
+ * batch that holds both (a watcher's shot at a burrower coming up inside
+ * a chamber) the rise and its dirt burst play first, the redraw runs,
+ * and then the brood heaves.
+ *
+ * ```
+ *   arrivals = {d}
+ *   [surfaced d, attacked, spotted d, brood woke]
+ *        │
+ *        ├─ before: surfaced d, spotted d, attacked
+ *        └─ after:  brood woke
+ * ```
  *
  * Order within each phase is otherwise preserved, so a move still plays
  * before the attack that followed it.
@@ -71,10 +97,15 @@ export function phaseEvents(
 ): AnimationPhases {
   const before: TacticalEvent[] = [];
   const after: TacticalEvent[] = [];
-  /** Arrivals whose first move has been passed. */
-  const announced = new Set<UnitId>();
-  /** Spots pulled ahead of a move, so they are not played twice. */
+  const entrances = entrancesOf(events, arrivals);
+  /** Each arrival's first spot, played at its entrance instead of in place. */
   const pulled = new Set<TacticalEvent>();
+  for (const unitId of entrances.values()) {
+    const spot = firstSpotOf(events, unitId);
+    if (spot !== undefined) {
+      pulled.add(spot);
+    }
+  }
   for (const event of events) {
     if (event.type === BROOD_WOKE) {
       after.push(event);
@@ -84,27 +115,53 @@ export function phaseEvents(
       if (!arrivals.has(event.payload.unitId)) {
         after.push(event);
       } else if (!pulled.has(event)) {
-        // A spot that came before the first move, or a later re-spot:
+        // An arrival that never walks or surfaces, or a later re-spot:
         // the object exists, so it plays in stream order.
-        announced.add(event.payload.unitId);
         before.push(event);
       }
       continue;
     }
-    if (event.type === UNIT_MOVED) {
-      const { unitId } = event.payload;
-      if (arrivals.has(unitId) && !announced.has(unitId)) {
-        announced.add(unitId);
-        const spot = firstSpotOf(events, unitId);
-        if (spot !== undefined) {
-          pulled.add(spot);
-          before.push(spot);
-        }
-      }
+    const entering = entrances.get(event);
+    if (entering === undefined) {
+      before.push(event);
+      continue;
     }
-    before.push(event);
+    const spot = firstSpotOf(events, entering);
+    if (event.type === UNIT_SURFACED) {
+      // The rise is the reveal: the spot rides along behind it.
+      before.push(event);
+      if (spot !== undefined) before.push(spot);
+    } else {
+      // The swell plays where the walk starts, and every step follows.
+      if (spot !== undefined) before.push(spot);
+      before.push(event);
+    }
   }
   return { before, after };
+}
+
+/**
+ * Each arrival's entrance, keyed by the event: the first of its moves or
+ * its surfacing in the batch, whichever comes first. An arrival with
+ * neither (one that was only shot at, say) has no entrance.
+ */
+function entrancesOf(
+  events: readonly TacticalEvent[],
+  arrivals: ReadonlySet<UnitId>,
+): ReadonlyMap<TacticalEvent, UnitId> {
+  const entrances = new Map<TacticalEvent, UnitId>();
+  const entered = new Set<UnitId>();
+  for (const event of events) {
+    if (event.type !== UNIT_MOVED && event.type !== UNIT_SURFACED) {
+      continue;
+    }
+    const { unitId } = event.payload;
+    if (arrivals.has(unitId) && !entered.has(unitId)) {
+      entered.add(unitId);
+      entrances.set(event, unitId);
+    }
+  }
+  return entrances;
 }
 
 /** The first spot of `unitId` in the batch, if the batch announces it. */

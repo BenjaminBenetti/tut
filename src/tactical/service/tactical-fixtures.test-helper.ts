@@ -30,6 +30,8 @@ export const FIXTURE_TEMPLATES = {
   bug: "bug:swarmer",
   /** A bug on a 2×2 block (#1130), otherwise the fixture stats. */
   block: "bug:block",
+  /** A bug that digs (#1179), otherwise the fixture stats. */
+  burrower: "bug:burrower",
 } as const;
 
 /**
@@ -46,6 +48,10 @@ const TEMPLATES: Readonly<Record<string, UnitTemplate>> = {
   [FIXTURE_TEMPLATES.block]: {
     ...template(FIXTURE_TEMPLATES.block, "infantry"),
     footprint: 2,
+  },
+  [FIXTURE_TEMPLATES.burrower]: {
+    ...template(FIXTURE_TEMPLATES.burrower, "infantry"),
+    burrows: true,
   },
 };
 
@@ -129,6 +135,26 @@ export function blockUnitAt(
   return {
     ...unitAt(id, "infantry", pos, { team: "bugs", ...options }),
     templateId: FIXTURE_TEMPLATES.block,
+  };
+}
+
+/**
+ * A living bug that digs (#1179), under the ground at `pos` unless the
+ * options give it another status, with the fixture stats: two actions
+ * of three tiles, so it tunnels up to six columns a turn.
+ */
+export function burrowerAt(
+  id: string,
+  pos: TileCoord,
+  options: UnitOptions = {},
+): Unit {
+  return {
+    ...unitAt(id, "infantry", pos, {
+      team: "bugs",
+      status: ["burrowed"],
+      ...options,
+    }),
+    templateId: FIXTURE_TEMPLATES.burrower,
   };
 }
 

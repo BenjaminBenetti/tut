@@ -20,6 +20,7 @@ import { createBugPhaseRunner } from "../../bugs/ai/bug-phase-runner";
 import { BruteBehaviour } from "../../bugs/ai/brute-behaviour";
 import { HiveGuardBehaviour } from "../../bugs/ai/hive-guard-behaviour";
 import { LurkerBehaviour } from "../../bugs/ai/lurker-behaviour";
+import { BurrowerBehaviour } from "../../bugs/ai/burrower-behaviour";
 import { SpitterBehaviour } from "../../bugs/ai/spitter-behaviour";
 import { SwarmerBehaviour } from "../../bugs/ai/swarmer-behaviour";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
@@ -51,6 +52,13 @@ import {
   withBroodWakingAll,
 } from "../../tactical/service/brood-wake-service";
 import { ATTACK } from "../../tactical/model/attack-command";
+import { BURROW_TUNING } from "../../tactical/data/burrow-tuning";
+import { BURROW } from "../../tactical/model/burrow-command";
+import { SURFACE } from "../../tactical/model/surface-command";
+import { TUNNEL } from "../../tactical/model/tunnel-command";
+import { createBurrowHandler } from "../../tactical/service/burrow-handler";
+import { createSurfaceHandler } from "../../tactical/service/surface-handler";
+import { tunnelHandler } from "../../tactical/service/tunnel-handler";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { EXTRACT } from "../../tactical/model/extract-command";
@@ -354,12 +362,23 @@ export function shippedTacticalHandlers(
     createOverwatchReaction(COMBAT_TUNING, attackDeps),
   );
   // Every action wakes the dormant broods it disturbs (#1179), wherever
-  // it came from: the squad, the bug phase or the Jev driver.
+  // it came from: the squad, the bug phase or the Jev driver. The
+  // burrower's three orders go through the same decorator as every other
+  // rule, and it is the broods' own rule (`wakeBroods`) that decides
+  // what they disturb: only the squad's side steps, shoots or shouts a
+  // brood awake, so a bug tunnelling, surfacing or burrowing inside a
+  // chamber wakes nothing — unless the surfacing draws a watcher's shot
+  // into the zone, which is a squad-side attack like any other.
   const actions: TacticalHandlers = withBroodWakingAll(
     {
       [MECH_ACTION]: createMechActionHandler(movementReaction),
       [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
       [MOVE]: createMoveHandler(movementReaction),
+      // The burrower's three orders (#1179). Coming up is a step onto the
+      // surface, so it answers to the same reaction chain as a walk.
+      [TUNNEL]: tunnelHandler,
+      [SURFACE]: createSurfaceHandler(BURROW_TUNING, movementReaction),
+      [BURROW]: createBurrowHandler(BURROW_TUNING),
       [OVERWATCH]: overwatchHandler,
       [RELOAD]: reloadHandler,
       [USE_EQUIPMENT]: createUseEquipmentHandler(equipment),
@@ -400,6 +419,26 @@ export function shippedTacticalHandlers(
           personaOf,
         ),
     ),
+    // The phase opening, in a deliberate order (#1179 merges three rules
+    // into it):
+    //
+    //   turn engine    flips the phase and, on bugs → player, advances
+    //                  `turn`, before any step runs
+    //   steps          refresh, deadline, pod burst … waves, objectives,
+    //                  then the sitreps last: Dust-off's `departIfDue`
+    //                  strands whoever still stands once every other
+    //                  step (a burn, a turret, a charge) has landed
+    //   wakingStep     wraps each step, so a brood a step disturbs (a
+    //                  fire, a charge) is awake, stamped with this phase,
+    //                  before the next step and before the runner reads
+    //                  who rests (`restingBugIds`)
+    //   bugPhase       last: only then do the awake bugs, burrowers
+    //                  among them, choose; a sleeper is skipped first
+    //
+    // The burrower's re-burrow cooldown is not a step: `burrowCooldownOver`
+    // reads `turn` against `surfacedOnTurn`, and the turn engine has
+    // already advanced `turn` when the runner asks, so there is nothing
+    // to tick and nothing to order.
     [END_TURN]: createEndTurnHandler(
       [
         ...DEFAULT_PHASE_STEPS,
@@ -441,7 +480,9 @@ export function attackDepsOver(registries: MapGenRegistries): AttackDeps {
 /**
  * The bug behaviours that have landed, one line per species issue: the
  * lurker's `flank` (#333), the swarmer's `rush` (#332), the brute's
- * `punish-clumps` (#334), the spitter's `snipe` (#1179) and the Hive
+ * `punish-clumps` (#334), the spitter's `snipe` (#1179), the
+ * burrower's `burrow` (#1179), which reads the burrow rules' own costs
+ * so it plans with the numbers the handlers charge, and the Hive
  * Guard's `guard` (#1179). Every species the catalogue defines has one,
  * so nothing on the map holds still for want of a behaviour.
  *
@@ -455,6 +496,7 @@ export function shippedBugBehaviours(): readonly BugBehaviour[] {
     new SwarmerBehaviour(),
     new BruteBehaviour(),
     new SpitterBehaviour(),
+    new BurrowerBehaviour(BURROW_TUNING),
     new HiveGuardBehaviour(),
   ];
 }

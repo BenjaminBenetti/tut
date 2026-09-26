@@ -5,7 +5,7 @@ import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import type { UnitId } from "../model/unit";
-import { isAutonomous } from "../model/unit";
+import { isAutonomous, isBurrowed } from "../model/unit";
 import { isTrapped } from "../model/civilian";
 
 // ===========================================
@@ -22,6 +22,7 @@ import { isTrapped } from "../model/civilian";
  *   hp <= 0        ──► unit-dead            ap < cost          ──► no-action-points
  *   a turret       ──► takes-no-orders      (#1138: it fires by rule, never on command)
  *   trapped civilians ──► unit-trapped      (campaign arc §6.4: freed by Interact first)
+ *   burrowed       ──► unit-burrowed        (#1179: nothing is done from under the ground)
  * ```
  *
  * One implementation, for the reason #992 gave: `overwatchHandler` and
@@ -58,6 +59,9 @@ export function actingUnit(
   }
   if (isTrapped(unit)) {
     return err({ kind: "unit-trapped", unitId });
+  }
+  if (isBurrowed(unit)) {
+    return err({ kind: "unit-burrowed", unitId });
   }
   if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
     return err({ kind: "wrong-phase", unitId });

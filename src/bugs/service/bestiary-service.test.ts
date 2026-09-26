@@ -81,18 +81,38 @@ describe("bugMixFor on the shipped bestiary", () => {
     expect(mix.brute).toBeCloseTo(10 / 85, 12);
     expect(mix.spitter).toBeCloseTo(15 / 85, 12);
     // Act III and the finale add the armoured variants (#1179), after
-    // the species that came before them.
+    // the species that came before them, the burrower included.
     for (const act of ["act-3", "finale"] as const) {
       expect(Object.keys(bugMixFor(act, 0))).toEqual([
         "swarmer",
         "lurker",
         "brute",
         "spitter",
+        "burrower",
         "swarmer-armoured",
         "lurker-armoured",
         "brute-armoured",
       ]);
     }
+  });
+
+  it("never rolls a burrower in act-1, and brings it into act-2 after five played, renormalised", () => {
+    for (let played = 0; played <= 30; played++) {
+      expect(bugMixFor("act-1", played).burrower).toBeUndefined();
+    }
+    expect(bugMixFor("act-2", 4).burrower).toBeUndefined();
+    const debut = bugMixFor("act-2", 5);
+    expect(debut).toEqual({
+      swarmer: expect.closeTo(0.4, 12) as number,
+      lurker: expect.closeTo(0.2, 12) as number,
+      brute: expect.closeTo(0.1, 12) as number,
+      spitter: expect.closeTo(0.15, 12) as number,
+      burrower: expect.closeTo(0.15, 12) as number,
+    });
+    // Act III's column is whole (100), so the arc's 12 is 12 %; the
+    // finale's is 85 until the Sovereign's escort share lands.
+    expect(bugMixFor("act-3", 0).burrower).toBeCloseTo(12 / 100, 12);
+    expect(bugMixFor("finale", 0).burrower).toBeCloseTo(10 / 85, 12);
   });
 
   it("sums to 1 in every act at every mission count, with no share below or at 0", () => {
@@ -108,29 +128,30 @@ describe("bugMixFor on the shipped bestiary", () => {
   });
 
   it("mixes the armoured variants into Act III from its first mission, renormalised over the act's column (#1179)", () => {
-    // act-3: 20 + 12 + 8 + 13 + (18 + 10 + 7) = 88; the arc's 35 comes
-    // to 35/88 until the burrower's row lands and fills the column.
+    // act-3: 20 + 12 + 8 + 13 + 12 + (18 + 10 + 7) = 100; with the
+    // burrower's row in, the column is whole and the arc's 35 is 35 %.
     const mix = bugMixFor("act-3", 0);
     expect(mix).toEqual({
-      swarmer: expect.closeTo(20 / 88, 12) as number,
-      lurker: expect.closeTo(12 / 88, 12) as number,
-      brute: expect.closeTo(8 / 88, 12) as number,
-      spitter: expect.closeTo(13 / 88, 12) as number,
-      "swarmer-armoured": expect.closeTo(18 / 88, 12) as number,
-      "lurker-armoured": expect.closeTo(10 / 88, 12) as number,
-      "brute-armoured": expect.closeTo(7 / 88, 12) as number,
+      swarmer: expect.closeTo(20 / 100, 12) as number,
+      lurker: expect.closeTo(12 / 100, 12) as number,
+      brute: expect.closeTo(8 / 100, 12) as number,
+      spitter: expect.closeTo(13 / 100, 12) as number,
+      burrower: expect.closeTo(12 / 100, 12) as number,
+      "swarmer-armoured": expect.closeTo(18 / 100, 12) as number,
+      "lurker-armoured": expect.closeTo(10 / 100, 12) as number,
+      "brute-armoured": expect.closeTo(7 / 100, 12) as number,
     });
     const armoured =
       mix["swarmer-armoured"]! +
       mix["lurker-armoured"]! +
       mix["brute-armoured"]!;
-    expect(armoured).toBeCloseTo(35 / 88, 12);
-    // The finale: 15 + 10 + 8 + 12 + (14 + 9 + 7) = 75.
+    expect(armoured).toBeCloseTo(35 / 100, 12);
+    // The finale: 15 + 10 + 8 + 12 + 10 + (14 + 9 + 7) = 85.
     const finale = bugMixFor("finale", 0);
-    expect(finale["swarmer-armoured"]).toBeCloseTo(14 / 75, 12);
-    expect(finale["lurker-armoured"]).toBeCloseTo(9 / 75, 12);
-    expect(finale["brute-armoured"]).toBeCloseTo(7 / 75, 12);
-    expect(finale.swarmer).toBeCloseTo(15 / 75, 12);
+    expect(finale["swarmer-armoured"]).toBeCloseTo(14 / 85, 12);
+    expect(finale["lurker-armoured"]).toBeCloseTo(9 / 85, 12);
+    expect(finale["brute-armoured"]).toBeCloseTo(7 / 85, 12);
+    expect(finale.swarmer).toBeCloseTo(15 / 85, 12);
   });
 
   it("leaves every Act I and II mix exactly as it was before the variants' rows (#1179)", () => {

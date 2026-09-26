@@ -1844,6 +1844,17 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "bug.burrower": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-burrower.glb",
+    // The digger (#1179): a banded, low-slung body behind two spade
+    // forelimbs and a bone ploughshare face. It spends most of a mission
+    // under the ground; surfacing is a rise and a dirt burst.
+    footprint: { w: 1, d: 1 },
+    height: 0.45,
+    sockets: [],
+    quality: "final",
+  },
   "bug.hive-guard": {
     category: "bugs",
     path: "assets/models/bugs/bug-hive-guard.glb",

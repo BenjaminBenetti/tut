@@ -76,6 +76,10 @@ const MAP_EDGE_MARGIN = 2;
  *                               infestation?, placeProfile?, site?, landmark? } }
  *                ▲ archetype, site and landmark from the rule
  * ```
+ *
+ * A rule whose plan names its own board and hook list (`plan.size`,
+ * `plan.hooks`: the hive cavern) replaces the named size and the type's
+ * hooks with them; the carcass is still appended, fitted to that board.
  */
 export function missionToMapRecipe(
   mission: Mission,
@@ -93,14 +97,22 @@ export function missionToMapRecipe(
   if (!registries.mapSizes.has(size)) {
     return err({ kind: "unknown-size", id: size });
   }
-  const dimensions = registries.mapSizes.get(size);
   const plan = rules[mission.typeId].recipe(mission, missionType);
+  const dimensions = plan.size ?? registries.mapSizes.get(size);
   const hooks: HookRequirement[] = [];
-  for (const requirement of [
-    ...missionType.requiredHooks,
-    ...carcassHooks(mission),
-    ...plan.extraHooks,
-  ]) {
+  for (const requirement of plan.hooks ?? []) {
+    if (!registries.hookPlacers.has(requirement.kind)) {
+      return err({ kind: "unknown-hook-kind", id: requirement.kind });
+    }
+    hooks.push(requirement);
+  }
+  for (const requirement of plan.hooks === undefined
+    ? [
+        ...missionType.requiredHooks,
+        ...carcassHooks(mission),
+        ...plan.extraHooks,
+      ]
+    : carcassHooks(mission)) {
     if (!registries.hookPlacers.has(requirement.kind)) {
       return err({ kind: "unknown-hook-kind", id: requirement.kind });
     }
@@ -119,7 +131,7 @@ export function missionToMapRecipe(
       archetype: plan.archetype,
       biome,
       settlement,
-      size,
+      size: plan.size ?? size,
       hooks,
       ...(mission.mapParams.infestation === undefined
         ? {}

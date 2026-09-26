@@ -24,7 +24,7 @@ import { spawnerObjectivesCleared } from "./objectives/wreck-objectives";
  *   hp − damage, never below zero ──► SpawnerDamaged { damage, hp, destroyed }
  *          │
  *          └─ hp reaches 0 ──► destroyed, the open wreck objectives
- *                              (destroy-spawner, destroy-pod) tracking it
+ *                              (destroy-spawner, destroy-pod, destroy-hive-core) tracking it
  *                              (spawnerObjectivesCleared)
  *                              marked complete ──► ObjectiveUpdated
  * ```

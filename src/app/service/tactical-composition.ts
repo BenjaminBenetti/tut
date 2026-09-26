@@ -76,6 +76,7 @@ import type { AttackDeps } from "../../tactical/service/combat-service";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
 import { createTurretStep } from "../../tactical/service/turret-service";
@@ -262,6 +263,8 @@ export function composeTactical(
     // What a hive cavern's setup stands its dormant broods from (#1179).
     broods: { species: Object.values(BUG_SPECIES), tuning: BROOD_TUNING },
     civilian: CIVILIAN_TUNING,
+    hiveGuard: BUG_SPECIES["hive-guard"],
+    hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
     setupRules: MISSION_SETUP_RULES,
     // A story mission's own setup on top of its type's, and the bugs a
     // setup may place: Live Specimen's lurkers (#1179).

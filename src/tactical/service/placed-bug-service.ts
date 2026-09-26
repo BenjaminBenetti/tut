@@ -9,7 +9,11 @@ import type { Unit } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
 import { coordOf, facingToward } from "./missions/map-placement";
-import { footprintFits, occupiedKeys } from "./movement-service";
+import {
+  footprintFits,
+  liveSpawnerKeys,
+  occupiedKeys,
+} from "./movement-service";
 import { buriedKeys } from "./tunnel-service";
 import { bugUnit } from "./unit-factory";
 
@@ -161,10 +165,8 @@ function placeUpTo(
   for (const key of buriedKeys(state, snapshot.index)) {
     taken.add(key);
   }
-  for (const spawner of state.spawners) {
-    if (!spawner.destroyed && snapshot.index.inBounds(spawner.pos)) {
-      taken.add(snapshot.index.keyOf(spawner.pos));
-    }
+  for (const key of liveSpawnerKeys(state, snapshot.index)) {
+    taken.add(key);
   }
   const units: Unit[] = [...state.units];
   const templates: Record<string, UnitTemplate> = { ...state.templates };

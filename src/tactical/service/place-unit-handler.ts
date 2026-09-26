@@ -27,7 +27,11 @@ import { UNIT_PLACED } from "../model/unit-placed-event";
 import type { UnitTemplate } from "../model/unit-template";
 import type { UnitTuning } from "../model/unit-tuning";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
-import { footprintFits, occupiedKeys } from "./movement-service";
+import {
+  footprintFits,
+  liveSpawnerKeys,
+  occupiedKeys,
+} from "./movement-service";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
 import { bugUnit, civilianUnit, mechUnit, squadUnit } from "./unit-factory";
 import { joinRescue } from "./missions/civilian-setup";
@@ -162,12 +166,10 @@ export function createPlaceUnitHandler(
       return err({ kind: "tile-blocked", x: tile.x, y: tile.y, z: tile.z });
     }
     // The same occupancy a hatchling is held to (#1130): every tile a
-    // living unit holds, and a live spawner's own tile.
+    // living unit holds, and every tile of a live spawner.
     const taken = new Set(occupiedKeys(mission, snapshot.index));
-    for (const spawner of mission.spawners) {
-      if (!spawner.destroyed && snapshot.index.inBounds(spawner.pos)) {
-        taken.add(snapshot.index.keyOf(spawner.pos));
-      }
+    for (const key of liveSpawnerKeys(mission, snapshot.index)) {
+      taken.add(key);
     }
     if (
       footprintTiles(tile, footprint).some((cell) =>

@@ -8,6 +8,7 @@ import type { MissionTypeId } from "../../content/model/mission-type-id";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { ACTS } from "../data/acts";
+import { HIVE_TUNING } from "../data/hive-tuning";
 import { MISSION_TUNING } from "../data/mission-tuning";
 import type { ActCatalogue, ActDefinition } from "../model/act-definition";
 import type { Mission } from "../model/mission";
@@ -83,6 +84,7 @@ function deps(
     acts: ACTS,
     decorators: [],
     pinTriggers: [],
+    hiveTuning: HIVE_TUNING,
     ...overrides,
   };
 }
@@ -159,6 +161,7 @@ function bothDrawn(
     "crash-site": fakeOffer("crash-site"),
     "wreck-recovery": MISSION_OFFER_RULES["wreck-recovery"],
     evacuation: fakeOffer("evacuation"),
+    "hive-assault": MISSION_OFFER_RULES["hive-assault"],
   };
 }
 
@@ -174,6 +177,7 @@ function firstDraws(
     "crash-site": 0,
     "wreck-recovery": 0,
     evacuation: 0,
+    "hive-assault": 0,
   };
   const acts = actsWith({ boardCap: 1, typeWeights });
   for (let seed = 1; seed <= runs; seed += 1) {
@@ -417,6 +421,7 @@ describe("generateMissions — type draw", () => {
       "crash-site": 0,
       "wreck-recovery": 0,
       evacuation: 0,
+      "hive-assault": 0,
     });
   });
 
@@ -437,6 +442,7 @@ describe("generateMissions — type draw", () => {
       "crash-site": 0,
       "wreck-recovery": 0,
       evacuation: 0,
+      "hive-assault": 0,
     });
   });
 
@@ -449,6 +455,7 @@ describe("generateMissions — type draw", () => {
       "crash-site": 0,
       "wreck-recovery": 0,
       evacuation: 0,
+      "hive-assault": 0,
     });
   });
 
@@ -543,6 +550,88 @@ describe("generateMissions — Defend Installation", () => {
         deps(3, { tuning }),
       );
     expect(board(ALWAYS_DEFEND)).toEqual(board(MISSION_TUNING));
+  });
+});
+
+// ===========================================
+// Hive Assault
+// ===========================================
+
+describe("generateMissions — Hive Assault (arc §6.5)", () => {
+  const EAST_HIVE = { id: "hive-1", regionId: "east", formedDay: 5 };
+
+  it("pins one assault per hive on top of a full board, outside the cap", () => {
+    const { state, events } = generateMissions(
+      fixtureState({ hives: [EAST_HIVE] }),
+      deps(1),
+    );
+    const hive = state.missions.filter((m) => m.typeId === "hive-assault");
+
+    expect(hive.map((m) => [m.cityId, m.pinned, m.hive?.hiveId])).toEqual([
+      ["full", true, "hive-1"],
+    ]);
+    expect(
+      state.missions.filter((m) => countsAgainstCap(m, MISSION_OFFER_RULES)),
+    ).toHaveLength(2);
+    expect(events.map((e) => e.type)).toContain(MISSION_OFFERED);
+  });
+
+  it("re-levels the standing assault each day instead of pinning another", () => {
+    const first = generateMissions(
+      fixtureState({ hives: [EAST_HIVE] }),
+      deps(1),
+    ).state;
+    const offer = first.missions.find((m) => m.typeId === "hive-assault");
+
+    const week = generateMissions({ ...first, day: 12 }, deps(2)).state;
+    const hive = week.missions.filter((m) => m.typeId === "hive-assault");
+
+    expect(hive).toHaveLength(1);
+    expect(hive[0]?.id).toBe(offer?.id);
+    expect(hive[0]?.hive?.level).toBe(1);
+    expect(hive[0]?.difficulty).toBeGreaterThanOrEqual(offer?.difficulty ?? 0);
+  });
+
+  it("re-levels in place and raises no event when nothing new is offered", () => {
+    const first = generateMissions(
+      fixtureState({ hives: [EAST_HIVE] }),
+      deps(1),
+    ).state;
+    const later = { ...first, day: 12 };
+
+    const { state, events } = generateMissions(later, deps(2));
+
+    expect(events).toEqual([]);
+    expect(state).not.toBe(later);
+    expect(state.missions.map((m) => m.id)).toEqual(
+      later.missions.map((m) => m.id),
+    );
+  });
+
+  it("withdraws the assault of a hive that is gone and frees its city", () => {
+    const first = generateMissions(
+      fixtureState({ hives: [EAST_HIVE] }),
+      deps(1),
+    ).state;
+
+    const { state } = generateMissions({ ...first, hives: [] }, deps(2));
+
+    expect(state.missions.map((m) => m.typeId)).not.toContain("hive-assault");
+  });
+
+  it("draws the same board with no hive as it did before the type existed", () => {
+    const board = (offerRules: MissionOfferRules) =>
+      generateMissions(fixtureState(), deps(3, { offerRules }));
+    const withoutRefresh: MissionOfferRules = {
+      ...MISSION_OFFER_RULES,
+      "hive-assault": {
+        kind: "trigger",
+        typeId: "hive-assault",
+        trigger: () => [],
+      },
+    };
+
+    expect(board(MISSION_OFFER_RULES)).toEqual(board(withoutRefresh));
   });
 });
 
@@ -741,6 +830,7 @@ describe("generateMissions — onOffered (arc §6.3)", () => {
       "crash-site": spy(MISSION_CONSEQUENCE_RULES["crash-site"]),
       "wreck-recovery": spy(MISSION_CONSEQUENCE_RULES["wreck-recovery"]),
       evacuation: spy(MISSION_CONSEQUENCE_RULES.evacuation),
+      "hive-assault": spy(MISSION_CONSEQUENCE_RULES["hive-assault"]),
     };
   }
 

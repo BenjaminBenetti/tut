@@ -103,6 +103,44 @@ describe("MissionListView", () => {
     expect(tag?.title).toBe("Tech carcass reported");
   });
 
+  it("writes a type's offer note under its row: a hive's level and next growth (#1179)", () => {
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
+    );
+    view.mount(root);
+    const plain = missionAt("mission-1", "cairo", 6, 2);
+    const assault = {
+      ...missionAt("mission-2", "tehran", 9, 5),
+      typeId: "hive-assault" as const,
+      hive: { hiveId: "hive-1", regionId: "middle-east", level: 1 },
+      pinned: true,
+    };
+    const onDay = (day: number) => {
+      const state = campaignOnDay(day, [plain, assault]);
+      return {
+        ...state,
+        overworld: {
+          ...state.overworld,
+          hives: [{ id: "hive-1", regionId: "middle-east", formedDay: 1 }],
+        },
+      };
+    };
+    const note = (id: string) =>
+      rows()
+        .find((row) => row.dataset.missionId === id)!
+        .querySelector<HTMLElement>('[data-field="note"]')!;
+
+    view.update(onDay(10), NONE);
+
+    expect(note("mission-1").hidden).toBe(true);
+    expect(note("mission-1").textContent).toBe("");
+    expect(note("mission-2").hidden).toBe(false);
+    expect(note("mission-2").textContent).toBe("Hive level 1 · grows in 5 d");
+    view.update(onDay(11), NONE);
+    expect(note("mission-2").textContent).toBe("Hive level 1 · grows in 4 d");
+  });
+
   it("shows the empty state until missions exist", () => {
     const view = new MissionListView(
       { missionTypes: MISSION_TYPES },

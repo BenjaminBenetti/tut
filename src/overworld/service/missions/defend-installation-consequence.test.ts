@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import { CITY_INFESTATION_CHANGED } from "../../model/city-infestation-changed-event";
 import type { OverworldState } from "../../model/overworld-state";
@@ -11,7 +12,7 @@ import {
   resultFor,
 } from "./mission-fixtures.test-helper";
 
-const CTX = { tuning: MISSION_TUNING };
+const CTX = { tuning: MISSION_TUNING, hive: HIVE_TUNING };
 const DEFEND = missionAt("c0", 9, 15, "defend-installation");
 
 /** c0's infestation in `state`. */

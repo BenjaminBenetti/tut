@@ -84,6 +84,8 @@ export interface MissionTuning {
   readonly wreck: WreckRecoveryTuning;
   /** Where an evacuation is offered, how many groups it holds and what it pays (arc §6.4). */
   readonly evacuation: EvacuationTuning;
+  /** What a Hive Assault pays on top of its difficulty (campaign arc §6.5). */
+  readonly hiveAssault: HiveAssaultTuning;
 }
 
 // ===========================================
@@ -109,6 +111,27 @@ export interface WreckRecoveryTuning {
    * tactical setup copies it onto the strip-wreck objective. At least 1.
    */
   readonly stripTurns: number;
+}
+
+// ===========================================
+// Hive assault
+// ===========================================
+
+/**
+ * The Hive Assault's reward knob (campaign arc §6.5: "TP reward is
+ * large"). The offer's tech points are the type's ordinary award at its
+ * difficulty, multiplied and rounded down:
+ *
+ * ```
+ *   techPoints = floor((techRewardBase + techRewardPerDifficulty × d) × techRewardMultiplier)
+ * ```
+ *
+ * Credits are not multiplied: the hive's pay-off is the liberated
+ * region and the research it feeds, not cash.
+ */
+export interface HiveAssaultTuning {
+  /** Multiplier on the offer's ordinary tech-point award. At least `1`. */
+  readonly techRewardMultiplier: number;
 }
 
 // ===========================================

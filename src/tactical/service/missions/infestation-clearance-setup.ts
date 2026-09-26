@@ -87,7 +87,7 @@ export function standEggSpawners(
   mission: Mission,
   deps: MissionSetupDeps,
 ): TacticalState {
-  const spawners = spawnersFrom(
+  const spawners = eggSpawnersFrom(
     map,
     deps.ids,
     deps.spawnTuning,
@@ -113,8 +113,19 @@ export const INFESTATION_CLEARANCE_SETUP: MissionSetupRule = {
 // Helpers
 // ===========================================
 
-/** One spawner per egg-spawner objective hook, on the hook's first tile, a full hatch interval from hatching. */
-function spawnersFrom(
+/**
+ * One egg spawner per egg-spawner objective hook, on the hook's first
+ * tile, a full hatch interval from hatching; no objectives.
+ * `standEggSpawners` appends them for the clearance, which gives each
+ * one, and for a wreck recovery; the Hive Assault's chamber nests stand
+ * from here too, with a bounty and no objective.
+ *
+ * @param map - The map whose egg-spawner hooks the nests stand on.
+ * @param ids - Issues one spawner id per nest, in hook order.
+ * @param tuning - Spawner hit points and hatch interval.
+ * @param difficulty - The offer's difficulty, which shortens the interval.
+ */
+export function eggSpawnersFrom(
   map: TacticalMap,
   ids: IdGenerator,
   tuning: SpawnTuning,

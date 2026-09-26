@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { HIVE_TUNING } from "../data/hive-tuning";
 import { MISSION_TUNING } from "../data/mission-tuning";
 import { MAX_INFESTATION } from "../model/city";
 import { CITY_INFESTATION_CHANGED } from "../model/city-infestation-changed-event";
@@ -23,7 +24,7 @@ import {
 
 const DEPS: MissionExpiryDeps = {
   consequences: MISSION_CONSEQUENCE_RULES,
-  context: { tuning: MISSION_TUNING },
+  context: { tuning: MISSION_TUNING, hive: HIVE_TUNING },
 };
 
 // ===========================================
@@ -134,6 +135,7 @@ describe("expireMissions", () => {
       "crash-site": spy(MISSION_CONSEQUENCE_RULES["crash-site"]),
       "wreck-recovery": spy(MISSION_CONSEQUENCE_RULES["wreck-recovery"]),
       evacuation: spy(MISSION_CONSEQUENCE_RULES.evacuation),
+      "hive-assault": spy(MISSION_CONSEQUENCE_RULES["hive-assault"]),
     };
     const state = fixtureState({
       day: 5,

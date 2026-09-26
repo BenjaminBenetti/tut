@@ -464,21 +464,37 @@ export class MissionResultsScreen implements Screen {
   }
 
   /**
-   * The tech points line (#1171): the total, and how much of it a squad
-   * stripped from a carcass on the map when any was. A lost mission
-   * brings nothing home, so a harvest there is named as lost with it
-   * rather than counted.
+   * The tech points line: the total, and the parts of it that did not
+   * come from the offer's reward — what a squad stripped from a carcass
+   * (#1171) and the bounty on nests wrecked on the way (#1179). A lost
+   * mission brings nothing home, so those parts are named as lost with
+   * it rather than counted.
+   *
+   * ```
+   *   28 TP
+   *   28 TP (5 harvested from a carcass)
+   *   62 TP (10 bounty on wrecked nests)
+   *   0 TP (5 harvested from a carcass, lost with the squad)
+   * ```
    */
   private techPointsLine(result: MissionResult): string {
     const total = formatTechPoints(result.techPointsAwarded);
-    if (result.techPointsHarvested === undefined) {
+    const parts: string[] = [];
+    if (result.techPointsHarvested !== undefined) {
+      parts.push(
+        `${formatWhole(result.techPointsHarvested)} harvested from a carcass`,
+      );
+    }
+    if (result.techPointsBounty !== undefined) {
+      parts.push(
+        `${formatWhole(result.techPointsBounty)} bounty on wrecked nests`,
+      );
+    }
+    if (parts.length === 0) {
       return total;
     }
-    const harvested = formatWhole(result.techPointsHarvested);
-    if (result.outcome === "lost") {
-      return `${total} (${harvested} harvested from a carcass, lost with the squad)`;
-    }
-    return `${total} (${harvested} harvested from a carcass)`;
+    const lost = result.outcome === "lost" ? ", lost with the squad" : "";
+    return `${total} (${parts.join(", ")}${lost})`;
   }
 
   /**

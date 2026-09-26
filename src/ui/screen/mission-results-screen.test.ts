@@ -545,6 +545,25 @@ describe("MissionResultsScreen payout prominence", () => {
     );
   });
 
+  it("says how much of the tech was bounty on wrecked nests, beside any harvest (#1179)", () => {
+    const bounty = mountWith({ techPointsAwarded: 62, techPointsBounty: 10 });
+    expect(
+      bounty.querySelector('[data-field="tech-points"]')?.textContent,
+    ).toBe("62 TP (10 bounty on wrecked nests)");
+  });
+
+  it("names a bounty and a harvest as lost with the squad on a lost mission (#1179)", () => {
+    const both = mountWith({
+      outcome: "lost",
+      techPointsAwarded: 0,
+      techPointsHarvested: 5,
+      techPointsBounty: 10,
+    });
+    expect(both.querySelector('[data-field="tech-points"]')?.textContent).toBe(
+      "0 TP (5 harvested from a carcass, 10 bounty on wrecked nests, lost with the squad)",
+    );
+  });
+
   /** Index of a `data-field` block among the panel's children, in reading order. */
   function orderOf(container: HTMLElement, field: string): number {
     const blocks = [...container.querySelectorAll("[data-field]")];

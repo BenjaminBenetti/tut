@@ -292,6 +292,13 @@ export class MissionListView {
     carcass.title = "Tech carcass reported";
     carcass.hidden = true;
     row.appendChild(carcass);
+    // A type may add a line of its own (ADR 0013 §2.3): a hive's level
+    // and when it next grows (#1179), from the presentation's offerNote.
+    const note = doc.createElement("span");
+    note.className = "tut-badge tut-badge--bug tut-missions__note";
+    note.dataset.field = "note";
+    note.hidden = true;
+    row.appendChild(note);
     // So are its sitreps (campaign arc §11): one compact tag each on a
     // line of their own, a helping one marked `+ ` as well as coloured.
     const sitreps = doc.createElement("span");
@@ -336,6 +343,19 @@ export class MissionListView {
           cell.textContent = text;
         }
         cell.hidden = mission.storyId === undefined;
+        continue;
+      }
+      if (field === "note") {
+        const text =
+          state === undefined
+            ? undefined
+            : this.presentations[mission.typeId]?.offerNote?.(mission, {
+                state,
+              });
+        if (cell.textContent !== (text ?? "")) {
+          cell.textContent = text ?? "";
+        }
+        cell.hidden = text === undefined;
         continue;
       }
       if (field === "carcass") {

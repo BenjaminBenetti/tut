@@ -116,6 +116,8 @@ export interface TacticalResolveDeps {
  *   outcome ──► partsFor: the offer's parts on a win, as the auto-resolver pays them
  *   log CarcassHarvested { techPoints } ──► summed into techPointsFor as
  *                                 harvested; techPointsHarvested says so (#1171)
+ *   destroyed spawners' bounty ──► summed into techPointsFor beside the
+ *                                 harvest; techPointsBounty says so (#1179)
  *   log UnitDied of a bug ──► its species, once each, into speciesKilled
  *   objectives ──► one ObjectiveResult row each, and each kind's own
  *                  fields (a defence's `defence`), via OBJECTIVE_RULES
@@ -189,6 +191,7 @@ export function tacticalMissionResult(
 
   const harvested = techPointsHarvested(tactical);
   const parts = partsFor(outcome, mission);
+  const bounty = techPointsBounty(tactical);
   return {
     missionId: mission.id,
     cityId: mission.cityId,
@@ -198,11 +201,17 @@ export function tacticalMissionResult(
     mechsDestroyed,
     mechDamage,
     creditsAwarded: creditsFor(outcome, mission, deps.tuning),
-    techPointsAwarded: techPointsFor(outcome, mission, deps.tuning, harvested),
+    techPointsAwarded: techPointsFor(
+      outcome,
+      mission,
+      deps.tuning,
+      harvested + bounty,
+    ),
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
     ...leftBehindField(tactical, roster),
     ...(harvested > 0 ? { techPointsHarvested: harvested } : {}),
     ...(parts.length > 0 ? { partsAwarded: parts } : {}),
+    ...(bounty > 0 ? { techPointsBounty: bounty } : {}),
     ...objectivesField(tactical),
     ...objectiveResultFields(tactical),
     ...speciesKilledField(tactical, roster),
@@ -240,6 +249,27 @@ function techPointsHarvested(tactical: TacticalState): number {
     }
   }
   return harvested;
+}
+
+/**
+ * Whole tech points of bounty on the spawners the squads wrecked this
+ * mission (#1179): the Hive Assault's chamber nests, optional targets
+ * that pay beside the core. Summed off the final spawners; like the
+ * harvest, `techPointsFor` alone decides whether the outcome keeps it,
+ * so a lost assault pays none of it.
+ *
+ * ```
+ *   Σ max(0, spawner.bounty ?? 0)   over destroyed spawners
+ * ```
+ */
+function techPointsBounty(tactical: TacticalState): number {
+  let bounty = 0;
+  for (const spawner of tactical.spawners) {
+    if (spawner.destroyed) {
+      bounty += Math.max(0, spawner.bounty ?? 0);
+    }
+  }
+  return bounty;
 }
 
 /**

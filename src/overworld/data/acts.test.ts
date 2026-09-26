@@ -56,6 +56,15 @@ describe("ACTS", () => {
     }
   });
 
+  it("gives trigger-driven Hive Assault no weight in any act", () => {
+    // Every hive is pinned its own offer (hive-assault-trigger.ts), so no
+    // hive is ever left for the board: the arc's "20% for non-pinned
+    // hives" row has nothing to draw.
+    for (const id of ACT_IDS) {
+      expect(ACTS[id].typeWeights).not.toHaveProperty("hive-assault");
+    }
+  });
+
   it("weighs only known types, with positive finite weights", () => {
     for (const id of ACT_IDS) {
       for (const [typeId, weight] of Object.entries(ACTS[id].typeWeights)) {

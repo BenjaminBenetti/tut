@@ -19,7 +19,11 @@ import type { Team, Unit, UnitId } from "../model/unit";
 import { isBurrowed } from "../model/unit";
 import type { AreaEffect, WeaponProfile } from "../model/weapon-profile";
 import { falloffShare } from "../model/weapon-profile";
-import { footprintContains, unitFootprintSize } from "./footprint-service";
+import {
+  footprintContains,
+  spawnerCovers,
+  unitFootprintSize,
+} from "./footprint-service";
 import { damageRange } from "./attack-formulae";
 import { downedEvent } from "./downed-unit-event";
 import { damageSpawner } from "./spawner-damage-service";
@@ -202,7 +206,8 @@ export function burn(
         if (
           spawner.destroyed ||
           spawner.hp <= 0 ||
-          !sameTile(spawner.pos, effect.tile)
+          // Any tile of the hive core burns it, as any tile of a brute does.
+          !spawnerCovers(spawner, effect.tile)
         ) {
           continue;
         }

@@ -5,6 +5,7 @@ import type { MissionTypeId } from "../../../content/model/mission-type-id";
 import { Mulberry32Rng } from "../../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { ACTS } from "../../data/acts";
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import type { ActDefinition } from "../../model/act-definition";
 import type { CampaignProgress } from "../../model/campaign-progress";
@@ -219,5 +220,6 @@ export function offerContext(
     missionTypes: MISSION_TYPES,
     intelBonus,
     act,
+    hive: HIVE_TUNING,
   };
 }

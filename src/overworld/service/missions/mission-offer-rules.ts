@@ -2,6 +2,7 @@ import type { MissionOfferRules } from "../../model/mission-offer-rule";
 import { CRASH_SITE_OFFER } from "./crash-site-offer";
 import { DEFEND_INSTALLATION_TRIGGER } from "./defend-installation-trigger";
 import { EVACUATION_OFFER } from "./evacuation-offer";
+import { HIVE_ASSAULT_TRIGGER } from "./hive-assault-trigger";
 import { INFESTATION_CLEARANCE_OFFER } from "./infestation-clearance-offer";
 import { WRECK_RECOVERY_TRIGGER } from "./wreck-recovery-trigger";
 
@@ -22,6 +23,7 @@ import { WRECK_RECOVERY_TRIGGER } from "./wreck-recovery-trigger";
  *   wreck-recovery         ──► wreck-recovery-trigger.ts         trigger: a mech lost on a lost mission
  *   evacuation             ──► evacuation-offer.ts               offer: detected city ≥ 25, weighted by
  *                                                                population, from Act I mission 3
+ *   hive-assault           ──► hive-assault-trigger.ts           trigger: pinned, one per hive; re-levelled daily
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -36,4 +38,5 @@ export const MISSION_OFFER_RULES: MissionOfferRules = {
   "crash-site": CRASH_SITE_OFFER,
   "wreck-recovery": WRECK_RECOVERY_TRIGGER,
   evacuation: EVACUATION_OFFER,
+  "hive-assault": HIVE_ASSAULT_TRIGGER,
 };

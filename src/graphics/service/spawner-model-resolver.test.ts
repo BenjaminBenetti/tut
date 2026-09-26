@@ -21,12 +21,45 @@ describe("spawnerModelId (#1179)", () => {
     );
   });
 
-  it("names only registered models", () => {
+  it("draws a hive core whole, and broken once below half its hit points", () => {
+    const core = (hp: number, maxHp?: number) =>
+      spawnerModelId(
+        { variant: "hive-core", hp, ...(maxHp === undefined ? {} : { maxHp }) },
+        false,
+        SPAWNER_MODELS,
+      );
+
+    expect(core(90, 90)).toBe("bug.hive-core");
+    expect(core(45, 90)).toBe("bug.hive-core");
+    expect(core(44, 90)).toBe("bug.hive-core-damaged");
+    expect(core(1, 90)).toBe("bug.hive-core-damaged");
+    // A core that does not know its full health is never drawn broken.
+    expect(core(1)).toBe("bug.hive-core");
+  });
+
+  it("never draws a variant without a damaged model as damaged", () => {
+    expect(
+      spawnerModelId(
+        { variant: "spore-pod", hp: 1, maxHp: 40 },
+        false,
+        SPAWNER_MODELS,
+      ),
+    ).toBe("bug.spore-pod");
+  });
+
+  it("names only registered models, the hive core's 3×3", () => {
     for (const models of Object.values(SPAWNER_MODELS)) {
       expect(MODEL_MANIFEST[models.standing]).toBeDefined();
-      if (models.ripe !== undefined) {
-        expect(MODEL_MANIFEST[models.ripe]).toBeDefined();
+      for (const other of [models.ripe, models.damaged]) {
+        if (other !== undefined) {
+          expect(MODEL_MANIFEST[other]).toBeDefined();
+        }
       }
     }
+    expect(MODEL_MANIFEST["bug.hive-core"].footprint).toEqual({ w: 3, d: 3 });
+    expect(MODEL_MANIFEST["bug.hive-core-damaged"].footprint).toEqual({
+      w: 3,
+      d: 3,
+    });
   });
 });

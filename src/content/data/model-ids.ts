@@ -156,6 +156,8 @@ export const MODEL_IDS = [
   "bug.egg-spawner",
   "bug.spore-pod",
   "bug.spore-pod-mature",
+  "bug.hive-core",
+  "bug.hive-core-damaged",
   "bug.tech-carcass",
   "prop.barrier-concrete",
   "prop.bench",

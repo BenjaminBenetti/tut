@@ -1,6 +1,6 @@
 import { smokeBlocksSight } from "./obscuration-service";
 import type { GridPos } from "../../core/model/grid";
-import { gridPosEquals, manhattanDistance } from "../../core/service/grid-math";
+import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
@@ -20,6 +20,8 @@ import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
 import {
   footprintContains,
+  spawnerCovers,
+  spawnerFootprintTiles,
   unitFootprintSize,
   unitFootprintTiles,
 } from "./footprint-service";
@@ -480,8 +482,11 @@ export function perceivedSpawners(
   index: TileIndex = new TileIndex(mission.map),
 ): readonly Spawner[] {
   const explored = new Set(mission.vision[team]?.explored ?? []);
+  // Any explored tile of the hive core's 3×3 reveals it.
   return mission.spawners.filter((spawner) =>
-    explored.has(index.keyOf(spawner.pos)),
+    spawnerFootprintTiles(spawner).some(
+      (tile) => index.inBounds(tile) && explored.has(index.keyOf(tile)),
+    ),
   );
 }
 
@@ -594,7 +599,7 @@ export function perceivedOccupantAt(
     return { kind: "unit", unit };
   }
   const spawner = perceivedSpawners(mission, team, index).find(
-    (candidate) => !candidate.destroyed && gridPosEquals(candidate.pos, tile),
+    (candidate) => !candidate.destroyed && spawnerCovers(candidate, tile),
   );
   return spawner === undefined ? undefined : { kind: "spawner", spawner };
 }

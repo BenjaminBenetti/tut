@@ -173,7 +173,7 @@ describe("stipend step with event modifiers", () => {
       base.overworld,
       evacuation,
       resultFor(evacuation, "won", 0),
-      { tuning: MISSION_TUNING },
+      { tuning: MISSION_TUNING, hive: HIVE_TUNING },
     );
     let state: GameState = { ...base, overworld: won.state };
     /** What a day pays with the base and floor scaled by `factor`. */

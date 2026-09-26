@@ -1,5 +1,8 @@
+import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import type { TacticalState } from "../model/tactical-state";
+import type { SpawnerVariantCarrier } from "../model/spawner-variant";
+import { spawnerTraitsOf } from "../model/spawner-variant";
+import type { Spawner, TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 
@@ -133,4 +136,93 @@ export function unitFootprintTiles(
   unit: Unit,
 ): TileCoord[] {
   return footprintTiles(unit.pos, unitFootprintSize(mission, unit));
+}
+
+// ===========================================
+// Spawners
+// ===========================================
+
+/**
+ * Tiles per side a spawner stands on, from its variant's traits: one for
+ * a nest or a pod, three for the hive core. Anchored at `pos` the way a
+ * unit's footprint is, so every footprint helper above serves it.
+ *
+ * @param spawner - Anything carrying the optional `variant` field.
+ * @returns Tiles per side, `1` or more.
+ */
+export function spawnerFootprintSize(spawner: SpawnerVariantCarrier): number {
+  return footprintSizeOf(spawnerTraitsOf(spawner));
+}
+
+/**
+ * Every tile `spawner` stands on, anchor first. The one call for any
+ * rule that asks "which tiles does this spawner hold" — occupancy,
+ * blasts, fires, spotting, charges — so a 3×3 core is as hittable and as
+ * solid on its far corner as on its anchor.
+ *
+ * @param spawner - The spawner.
+ * @returns Its tiles: one for a nest or a pod, nine for the hive core.
+ */
+export function spawnerFootprintTiles(
+  spawner: Pick<Spawner, "pos" | "variant">,
+): TileCoord[] {
+  return footprintTiles(spawner.pos, spawnerFootprintSize(spawner));
+}
+
+/**
+ * True when `tile` is one of the tiles `spawner` stands on.
+ *
+ * @param spawner - The spawner.
+ * @param tile - The tile asked about.
+ * @returns Whether the spawner covers that tile.
+ */
+export function spawnerCovers(
+  spawner: Pick<Spawner, "pos" | "variant">,
+  tile: TileCoord,
+): boolean {
+  return footprintContains(spawner.pos, spawnerFootprintSize(spawner), tile);
+}
+
+/**
+ * The tile of `spawner`'s footprint nearest `from`: `nearestFootprintTile`
+ * over the spawner's own square. For a one-tile spawner it is `pos`.
+ * Charges are planted against it, so reaching any face of the hive core
+ * is reaching the core.
+ *
+ * @param spawner - The spawner.
+ * @param from - Where the asker stands.
+ * @returns The nearest footprint tile.
+ */
+export function nearestSpawnerTile(
+  spawner: Pick<Spawner, "pos" | "variant">,
+  from: TileCoord,
+): TileCoord {
+  return nearestFootprintTile(spawner.pos, spawnerFootprintSize(spawner), from);
+}
+
+/**
+ * The tile of the footprint of `size` anchored at `pos` nearest `from`
+ * by Manhattan distance on the ground plane, first in footprint order on
+ * a tie. For a single tile it is `pos` itself.
+ *
+ * @param pos - The anchor.
+ * @param size - Tiles per side.
+ * @param from - Where the asker stands.
+ * @returns The nearest footprint tile.
+ */
+export function nearestFootprintTile(
+  pos: TileCoord,
+  size: number,
+  from: TileCoord,
+): TileCoord {
+  let best: TileCoord = pos;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const tile of footprintTiles(pos, size)) {
+    const distance = manhattanDistance(tile, from);
+    if (distance < bestDistance) {
+      best = tile;
+      bestDistance = distance;
+    }
+  }
+  return best;
 }

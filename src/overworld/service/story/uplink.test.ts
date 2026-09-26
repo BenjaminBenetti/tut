@@ -4,6 +4,7 @@ import { MISSION_TYPES } from "../../../content/data/mission-types";
 import { Mulberry32Rng } from "../../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
 import { ACTS } from "../../data/acts";
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import { STORY_SPINE } from "../../data/story-spine";
 import type { Mission } from "../../model/mission";
@@ -63,6 +64,7 @@ function directed(state: OverworldState, seed = 1) {
     acts: ACTS,
     decorators: [],
     pinTriggers: [createStoryPinTrigger(STORY_MISSION_RULES)],
+    hiveTuning: HIVE_TUNING,
   });
 }
 

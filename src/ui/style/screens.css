@@ -436,11 +436,13 @@
 }
 
 /*
- * A story title and a reported carcass (#1171) each take a second line
- * under the whole row.
+ * A story title, a reported carcass (#1171) and a type's own note (a
+ * hive's level and next growth, #1179) each take a second line under the
+ * whole row.
  */
 .tut-missions__row .tut-missions__story,
-.tut-missions__row .tut-missions__carcass {
+.tut-missions__row .tut-missions__carcass,
+.tut-missions__row .tut-missions__note {
   grid-column: 1 / -1;
   justify-self: start;
 }

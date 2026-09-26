@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import { CITY_INFESTATION_CHANGED } from "../../model/city-infestation-changed-event";
 import type { MissionConsequenceContext } from "../../model/mission-consequence-rule";
@@ -16,7 +17,10 @@ import {
 // Fixtures
 // ===========================================
 
-const CTX: MissionConsequenceContext = { tuning: MISSION_TUNING };
+const CTX: MissionConsequenceContext = {
+  tuning: MISSION_TUNING,
+  hive: HIVE_TUNING,
+};
 
 /** A one-city board with c0 at `infestation`, and a clearance on it. */
 function cityAt(infestation: number): OverworldState {
@@ -112,6 +116,7 @@ describe("INFESTATION_CLEARANCE_CONSEQUENCE.onResolved", () => {
         ...MISSION_TUNING,
         clearance: { ...MISSION_TUNING.clearance, mopUpBelow: 0 },
       },
+      hive: HIVE_TUNING,
     };
     const { state } = INFESTATION_CLEARANCE_CONSEQUENCE.onResolved(
       cityAt(30),

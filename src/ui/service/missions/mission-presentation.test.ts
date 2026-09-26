@@ -67,6 +67,14 @@ const EVACUATION: Mission = {
   evacuation: { groups: 5, creditsPerGroup: 100 },
 };
 
+const ASSAULT: Mission = {
+  ...CLEARANCE,
+  id: "mission-6",
+  typeId: "hive-assault",
+  hive: { hiveId: "hive-1", regionId: "middle-east", level: 2 },
+  pinned: true,
+};
+
 /**
  * One offer per type, carrying the type's payload. Keyed by the union,
  * so a new type cannot join the table without a fixture here.
@@ -77,9 +85,21 @@ const OFFERS: Readonly<Record<MissionTypeId, Mission>> = {
   "crash-site": CRASH,
   "wreck-recovery": RECOVERY,
   evacuation: EVACUATION,
+  "hive-assault": ASSAULT,
 };
 
-const CTX = { state: campaignOnDay(4, [CLEARANCE, DEFENCE]) };
+const CAMPAIGN = campaignOnDay(4, [CLEARANCE, DEFENCE, ASSAULT]);
+
+/** The campaign with the assaulted hive standing, formed on day 1. */
+const CTX = {
+  state: {
+    ...CAMPAIGN,
+    overworld: {
+      ...CAMPAIGN.overworld,
+      hives: [{ id: "hive-1", regionId: "middle-east", formedDay: 1 }],
+    },
+  },
+};
 
 const RESULT: MissionResult = {
   missionId: "mission-2",
@@ -250,6 +270,7 @@ describe("briefingFieldsOf", () => {
       "crash-site": stub("crash-site"),
       "wreck-recovery": stub("wreck-recovery"),
       evacuation: stub("evacuation"),
+      "hive-assault": stub("hive-assault"),
     };
     expect(briefingFieldsOf(catalogue).map((f) => f.field)).toEqual([
       "hives",
@@ -258,7 +279,7 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three and the evacuation's four", () => {
+  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four and the assault's three", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
@@ -272,6 +293,9 @@ describe("briefingFieldsOf", () => {
       { field: "evacuation-win", label: "Win" },
       { field: "evacuation-saved", label: "Saved" },
       { field: "evacuation-lost", label: "Lost or ignored" },
+      { field: "hive-level", label: "Hive level" },
+      { field: "liberates", label: "Liberates" },
+      { field: "tech-multiplier", label: "Tech multiplier" },
     ]);
   });
 });
@@ -368,6 +392,7 @@ describe("debriefTaglineFor", () => {
       "crash-site": stub("crash-site"),
       "wreck-recovery": stub("wreck-recovery"),
       evacuation: stub("evacuation"),
+      "hive-assault": stub("hive-assault"),
     };
     expect(debriefTaglineFor(RESULT, CTX, catalogue)).toBe("second");
     expect(first).toHaveBeenCalledWith(RESULT, CTX);
@@ -386,6 +411,7 @@ describe("debriefTaglineFor", () => {
         "crash-site": stub("crash-site"),
         "wreck-recovery": stub("wreck-recovery"),
         evacuation: stub("evacuation"),
+        "hive-assault": stub("hive-assault"),
       }),
     ).toBe("first");
     expect(skipped).not.toHaveBeenCalled();

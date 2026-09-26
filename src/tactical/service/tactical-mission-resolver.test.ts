@@ -28,7 +28,9 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
@@ -37,7 +39,7 @@ import { CARCASS_HARVESTED } from "../model/carcass-harvested-event";
 import { CIVILIANS_KILLED } from "../model/civilians-killed-event";
 import { MISSION_ENDED } from "../model/mission-ended-event";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
-import type { Objective } from "../model/tactical-state";
+import type { Objective, Spawner } from "../model/tactical-state";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { UNIT_DIED } from "../model/unit-died-event";
@@ -879,6 +881,8 @@ describe("TacticalMissionResolver", () => {
         garrison: GARRISON_TUNING,
         generator: GENERATOR_TUNING,
         civilian: CIVILIAN_TUNING,
+        hiveGuard: BUG_SPECIES["hive-guard"],
+        hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
         ids,
         registries: createDefaultRegistries(),
       }),
@@ -1114,6 +1118,99 @@ describe("tacticalMissionResult on a capture (#1179)", () => {
   it("carries no specimen field when the squads came home empty-handed", () => {
     const result = resolve([squadUnit("unit-1", "squad-1", SQUAD_HP)]);
     expect("specimenCaptured" in result).toBe(false);
+  });
+});
+
+// ===========================================
+// Hive assault
+// ===========================================
+
+describe("tacticalMissionResult on a hive assault (#1179)", () => {
+  const CORE: Spawner = {
+    id: "spawner-1",
+    variant: "hive-core",
+    pos: at(2, 2),
+    hatchRadius: 3,
+    hp: 0,
+    maxHp: 60,
+    timer: 0,
+    destroyed: true,
+  };
+  const OBJECTIVE: Objective = {
+    id: "objective-1",
+    kind: "destroy-hive-core",
+    targetId: CORE.id,
+    complete: true,
+  };
+
+  /** A nest worth `bounty`, wrecked or standing. */
+  function nest(id: string, destroyed: boolean, bounty = 5): Spawner {
+    return {
+      id,
+      pos: at(6, 6),
+      hatchRadius: 3,
+      hp: destroyed ? 0 : 20,
+      timer: 2,
+      destroyed,
+      bounty,
+    };
+  }
+
+  /** The assault resolved with `outcome`, the core fallen, and `nests`. */
+  function resolve(
+    outcome: "won" | "extracted" | "lost",
+    nests: readonly Spawner[],
+  ) {
+    const home = [squadUnit("unit-1", "squad-1", SQUAD_HP)];
+    const tactical: TacticalState = missionWith(
+      MAP,
+      outcome === "lost" ? [squadUnit("unit-1", "squad-1", 0)] : [],
+      {
+        spawners: [CORE, ...nests],
+        objectives: [OBJECTIVE],
+        extracted: outcome === "lost" ? [] : home,
+        outcome,
+      },
+    );
+    return tacticalMissionResult(
+      {
+        tactical,
+        mission: { ...mission(3), rewards: { credits: 1000, techPoints: 20 } },
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+  }
+
+  it("reports that the core fell", () => {
+    expect(resolve("won", []).hiveCoreDestroyed).toBe(true);
+  });
+
+  it("pays each wrecked nest's bounty beside the reward, and says so", () => {
+    const nests = [nest("spawner-2", true), nest("spawner-3", true, 7)];
+
+    const won = resolve("won", [...nests, nest("spawner-4", false)]);
+
+    expect(won.techPointsAwarded).toBe(20 + 12);
+    expect(won.techPointsBounty).toBe(12);
+    expect(resolve("extracted", nests).techPointsAwarded).toBe(
+      Math.floor(20 * TUNING.extractedRewardFraction) + 12,
+    );
+  });
+
+  it("pays no bounty on a lost assault", () => {
+    const lost = resolve("lost", [nest("spawner-2", true)]);
+
+    expect(lost.techPointsAwarded).toBe(0);
+    expect(lost.hiveCoreDestroyed).toBe(true);
+  });
+
+  it("carries no bounty field when no nest fell", () => {
+    const quiet = resolve("won", [nest("spawner-2", false)]);
+
+    expect(quiet.techPointsAwarded).toBe(20);
+    expect("techPointsBounty" in quiet).toBe(false);
   });
 });
 

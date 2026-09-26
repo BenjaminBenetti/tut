@@ -20,6 +20,7 @@ import {
   clampToBand,
   difficultyFor,
   mapSizeFor,
+  repriceOffer,
 } from "./mission-offer-builder";
 
 // ===========================================
@@ -281,6 +282,51 @@ describe("buildOfferAtDifficulty", () => {
     expect(offer.rewards.credits).toBe(9 * CLEARANCE.rewardPerDifficulty);
     expect(offer.mapParams.size).toBe(mapSizeFor(9, RULE));
     expect(offer.mapParams.techCarcass).toEqual({ techPoints: 10 + 2 * 9 });
+  });
+});
+
+describe("repriceOffer", () => {
+  it("re-derives what follows from the difficulty and keeps everything else", () => {
+    const state = fixtureState();
+    const ctx = withCarcassChance(offerContext(3, ACTS["act-1"]), 1);
+    const offer = buildOfferAtDifficulty(
+      state,
+      getCity(state.map, "low"),
+      "infestation-clearance",
+      2,
+      ctx,
+    );
+
+    const repriced = repriceOffer(offer, 9, ctx);
+
+    expect(repriced).toEqual({
+      ...offer,
+      difficulty: 9,
+      mapParams: {
+        ...offer.mapParams,
+        size: mapSizeFor(9, RULE),
+        techCarcass: { techPoints: 10 + 2 * 9 },
+      },
+      rewards: {
+        credits: 9 * CLEARANCE.rewardPerDifficulty,
+        techPoints:
+          CLEARANCE.techRewardBase + 9 * CLEARANCE.techRewardPerDifficulty,
+      },
+    });
+  });
+
+  it("never gives an offer a carcass it did not roll", () => {
+    const bare = missionAt("low", 9);
+
+    expect(repriceOffer(bare, 7, offerContext(1)).mapParams).not.toHaveProperty(
+      "techCarcass",
+    );
+  });
+
+  it("returns the offer itself at its own difficulty", () => {
+    const bare = missionAt("low", 9);
+
+    expect(repriceOffer(bare, bare.difficulty, offerContext(1))).toBe(bare);
   });
 });
 

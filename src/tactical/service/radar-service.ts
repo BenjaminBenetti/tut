@@ -12,6 +12,7 @@ import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
 import type { Team, Unit } from "../model/unit";
 import { isBurrowed, passMaskFor } from "../model/unit";
+import { spawnerCovers } from "./footprint-service";
 import type { MoveGraph } from "./movement-service";
 import { buildMoveGraph, occupiedKeys } from "./movement-service";
 import type { PhaseStep } from "./turn-service";
@@ -66,7 +67,7 @@ export function validateRadarSite(
   if (
     occupiedKeys(mission, graph.index).has(key) ||
     mission.spawners.some(
-      (s) => !s.destroyed && s.hp > 0 && graph.index.keyOf(s.pos) === key,
+      (s) => !s.destroyed && s.hp > 0 && spawnerCovers(s, tile),
     ) ||
     mission.radars.some((r) => graph.index.keyOf(r.pos) === key)
   ) {

@@ -10,6 +10,7 @@ import type {
 import { CRASH_SITE_PRESENTATION } from "./crash-site-presentation";
 import { DEFEND_INSTALLATION_PRESENTATION } from "./defend-installation-presentation";
 import { EVACUATION_PRESENTATION } from "./evacuation-presentation";
+import { HIVE_ASSAULT_PRESENTATION } from "./hive-assault-presentation";
 import { INFESTATION_CLEARANCE_PRESENTATION } from "./infestation-clearance-presentation";
 import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
 
@@ -28,6 +29,7 @@ import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
  *   crash-site             ──► crash-site-presentation.ts
  *   wreck-recovery         ──► wreck-recovery-presentation.ts (over the shipped parts)
  *   evacuation             ──► evacuation-presentation.ts
+ *   hive-assault           ──► hive-assault-presentation.ts
  * ```
  *
  * The wreck's rows name parts, so its entry is built over the shipped
@@ -41,6 +43,7 @@ export const MISSION_PRESENTATION: MissionPresentationCatalogue = {
     new StaticPartCatalogue(STARTER_PARTS),
   ),
   evacuation: EVACUATION_PRESENTATION,
+  "hive-assault": HIVE_ASSAULT_PRESENTATION,
 };
 
 // ===========================================

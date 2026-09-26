@@ -10,6 +10,7 @@ import type { SitrepId } from "../../content/model/sitrep-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { PartId } from "../../roster/model/mech-part";
 import type { CityId } from "./city";
+import type { HiveAssaultSpec } from "./hive-assault-spec";
 import type { CrashSiteSpec } from "./crash-site-spec";
 import type { EvacuationSpec } from "./evacuation-spec";
 import type { WreckRecoverySpec } from "./wreck-recovery-spec";
@@ -170,6 +171,13 @@ export interface Mission {
    * none, and an older save's missions have none either.
    */
   readonly defence?: InstallationDefence;
+  /**
+   * The hive a Hive Assault destroys and its level (campaign arc §6.5).
+   * Present exactly when `typeId` is `"hive-assault"`; re-priced daily
+   * by the trigger while the offer stands, so the level rises with the
+   * hive's age.
+   */
+  readonly hive?: HiveAssaultSpec;
   /**
    * The landing a crash site (campaign arc §6.3) started when it was
    * offered: the city and its infestation before the seed. Present on

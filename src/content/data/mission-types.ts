@@ -190,6 +190,43 @@ export const EVACUATION: MissionType = {
 };
 
 /**
+ * The assault on a hive (campaign arc §6.5): one pinned offer per hive,
+ * fought in a hive cavern. Destroy the hive core in the deepest chamber,
+ * then bring the squad back out through the cavern mouth.
+ *
+ * Numbers against the clearance: the same credits per difficulty; tech
+ * starts from the defence's base and the hive-assault tuning multiplies
+ * the whole award (`MISSION_TUNING.hiveAssault`), because a hive is the
+ * richest harvest in the campaign. The expiry and the ignore penalty
+ * are never read: the offer is pinned while its hive stands, so it
+ * never expires, and a hive left alone already costs its region every
+ * day through growth. The map is large, and the hook list is the one
+ * the cavern needs — the mission-map rule hands mapgen the cavern's own
+ * hook list (`HIVE_CAVERN_HOOKS`), so this list is what the content
+ * contract checks (deploy, the core, extraction).
+ */
+export const HIVE_ASSAULT: MissionType = {
+  id: "hive-assault",
+  name: "Hive Assault",
+  description:
+    "A hive has dug in beneath the region. Push into the cavern, destroy the hive core in its deepest chamber, and get the squad back out.",
+  difficultyBand: { min: 1, max: 10 },
+  rewardPerDifficulty: 300,
+  techRewardBase: 10,
+  techRewardPerDifficulty: 3,
+  expiryDays: 7,
+  ignorePenalty: 0,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "hive-core", count: 1 },
+    { kind: "egg-spawner", count: 3 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "large",
+};
+
+/**
  * Every mission type keyed by id. Typed as a record over the closed
  * `MissionTypeId` union so a new id without a definition (or a definition
  * whose key and `id` disagree, see the data test) fails at compile time
@@ -201,4 +238,5 @@ export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   "crash-site": CRASH_SITE,
   "wreck-recovery": WRECK_RECOVERY,
   evacuation: EVACUATION,
+  "hive-assault": HIVE_ASSAULT,
 };

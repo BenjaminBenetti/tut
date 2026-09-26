@@ -17,6 +17,7 @@ import type { Unit, UnitId } from "../model/unit";
 import { isAutonomous, isStandingForce } from "../model/unit";
 import { isCivilian, isTrapped } from "../model/civilian";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
+import { nearestFootprintTile } from "./footprint-service";
 import { endIfOver } from "./mission-end-service";
 import {
   OBJECTIVE_RULES,
@@ -192,7 +193,7 @@ export interface ReachableObjective {
  *     off-phase, out of actions                  ──► []
  *   objective complete, kind not workedUntilEmpty ──► skipped
  *   kind has no reachable target, or it is gone  ──► skipped
- *   manhattan(unit, target) > interactRange      ──► skipped
+ *   manhattan(unit, nearest target tile) > interactRange ──► skipped
  *   otherwise ──► { objective, target, distance }, nearest first
  * ```
  *
@@ -241,7 +242,11 @@ export function reachableObjectives(
     if (target === undefined) {
       continue;
     }
-    const distance = manhattanDistance(unit.pos, target.pos);
+    // To the target's nearest tile: any face of the 3×3 hive core.
+    const distance = manhattanDistance(
+      unit.pos,
+      nearestFootprintTile(target.pos, target.footprint ?? 1, unit.pos),
+    );
     if (distance <= tuning.interactRange) {
       reachable.push({ objective, target, spawner: target, distance });
     }

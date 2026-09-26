@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import type { Mission } from "../../model/mission";
 import type {
@@ -24,7 +25,7 @@ import {
 // Fixtures
 // ===========================================
 
-const CTX = { tuning: MISSION_TUNING };
+const CTX = { tuning: MISSION_TUNING, hive: HIVE_TUNING };
 
 /** A d3 evacuation at "mid" with four groups at 100 credits each. */
 const EVACUATION: Mission = {

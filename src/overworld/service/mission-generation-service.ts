@@ -5,6 +5,7 @@ import type { Rng } from "../../core/model/rng";
 import type { ActCatalogue } from "../model/act-definition";
 import type { CampaignProgress } from "../model/campaign-progress";
 import type { EarthMap } from "../model/earth-map";
+import type { HiveTuning } from "../model/hive-tuning";
 import type { IntelBonus } from "../model/intel-bonus";
 import type { Mission } from "../model/mission";
 import type { MissionConsequenceRules } from "../model/mission-consequence-rule";
@@ -62,6 +63,8 @@ export interface MissionGenerationDeps {
    * (ADR 0013 §2.4): the story spine's pin trigger. Empty pins nothing.
    */
   readonly pinTriggers: readonly MissionPinTrigger[];
+  /** How hives level with age; handed to the rules as `ctx.hive`. */
+  readonly hiveTuning: HiveTuning;
 }
 
 /** A drawable type today: its rule, its weight in the act, and its eligible sites. */
@@ -121,6 +124,10 @@ export function countsAgainstCap(
  *
  * ```
  *   act = acts[progress.act]
+ *   0. refresh   for each offer already on the board whose type's trigger rule
+ *                has a `refresh` (the Hive Assault's daily re-levelling):
+ *                  rule.refresh(offer, state) ──► the offer as it stands today,
+ *                                                  or withdrawn (undefined)
  *   1. pins      for trigger in pinTriggers (the story spine):
  *                  trigger.pin(state, rng.fork(`pin:${id}`)) ──► pinned offers (outside the cap)
  *                  an ordinary offer on a pinned offer's city ──► withdrawn, MissionWithdrawn
@@ -154,8 +161,10 @@ export function countsAgainstCap(
  * forks, so adding one never changes what the board draws, and a pin
  * trigger that pins nothing changes nothing at all. The draw order is
  * part of the determinism contract: the same state, seed and deps always
- * offer the same missions. Returns the input state untouched when
- * nothing was offered.
+ * offer the same missions. A refresh draws nothing, so re-pricing an
+ * offer never moves a draw either. Returns the input state untouched
+ * when nothing was offered, re-priced or withdrawn; a re-priced or
+ * withdrawn offer raises no event, since the board reads the state.
  *
  * @throws {RangeError} if `intelBonus` names a region that is not on the
  *   map or holds a value that is not a non-negative integer, or if a pin
@@ -176,9 +185,10 @@ export function generateMissions(
     missionTypes: deps.missionTypes,
     intelBonus: deps.intelBonus,
     act,
+    hive: deps.hiveTuning,
   });
 
-  let current = state;
+  let current = refreshOffers(state, deps, contextOn);
   const events: OverworldDomainEvent[] = [];
   const offer = (mission: Mission, ctx: MissionOfferContext): void => {
     const decorated = decorate(mission, current, ctx, deps);
@@ -187,7 +197,7 @@ export function generateMissions(
     const landed = deps.consequences[decorated.typeId].onOffered?.(
       current,
       decorated,
-      { tuning: deps.tuning },
+      { tuning: deps.tuning, hive: deps.hiveTuning },
     );
     if (landed !== undefined) {
       current = landed.state;
@@ -237,7 +247,7 @@ export function generateMissions(
   }
 
   if (events.length === 0) {
-    return { state, events: [] };
+    return { state: current, events: [] };
   }
   return { state: current, events };
 }
@@ -245,6 +255,39 @@ export function generateMissions(
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * The board with every standing offer asked its trigger rule's
+ * `refresh`, in board order: a changed offer replaces the old one in
+ * place, a withdrawn one is dropped, and one whose rule has no
+ * `refresh` is kept as it is. Each rule is handed its own labelled
+ * fork, though a refresh draws nothing. Returns `state` itself when
+ * every offer came back unchanged.
+ */
+function refreshOffers(
+  state: OverworldState,
+  deps: Pick<MissionGenerationDeps, "rng" | "offerRules">,
+  contextOn: (rng: Rng) => MissionOfferContext,
+): OverworldState {
+  let changed = false;
+  const missions: Mission[] = [];
+  for (const mission of state.missions) {
+    const rule = deps.offerRules[mission.typeId];
+    if (rule.kind !== "trigger" || rule.refresh === undefined) {
+      missions.push(mission);
+      continue;
+    }
+    const ctx = contextOn(deps.rng.fork(`refresh:${mission.typeId}`));
+    const refreshed = rule.refresh(mission, state, ctx);
+    if (refreshed !== mission) {
+      changed = true;
+    }
+    if (refreshed !== undefined) {
+      missions.push(refreshed);
+    }
+  }
+  return changed ? { ...state, missions } : state;
+}
 
 /**
  * `state` with `pin`'s city cleared for it (#1179): untouched when the

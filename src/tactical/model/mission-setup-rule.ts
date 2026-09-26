@@ -3,10 +3,11 @@ import type { Result } from "../../core/model/result";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Mission } from "../../overworld/model/mission";
-import type { BugUnitSource } from "./bug-unit-source";
 import type { BroodSetupDeps } from "./brood-tuning";
+import type { BugUnitSource } from "./bug-unit-source";
 import type { CivilianTuning } from "./civilian";
 import type { GeneratorTuning } from "./generator";
+import type { HiveAssaultSetupTuning } from "./hive-assault-setup-tuning";
 import type { SpawnTuning } from "./spawn-tuning";
 import type { TacticalError } from "./tactical-error";
 import type { TacticalState } from "./tactical-state";
@@ -46,6 +47,14 @@ export interface MissionSetupDeps {
   readonly broods?: BroodSetupDeps;
   /** What an evacuation's civilian groups are (campaign arc §6.4). */
   readonly civilian: CivilianTuning;
+  /**
+   * The Hive Guard's stat block (`BUG_SPECIES["hive-guard"]`), which a
+   * Hive Assault stands beside its core (campaign arc §6.5). Passed in so
+   * `tactical` reads no bug catalogue.
+   */
+  readonly hiveGuard: BugUnitSource;
+  /** What a Hive Assault stands in the cavern, by hive level (#1179). */
+  readonly hiveAssault: HiveAssaultSetupTuning;
 }
 
 // ===========================================

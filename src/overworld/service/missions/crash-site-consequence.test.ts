@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import { CAMPAIGN_FLAG_SET } from "../../model/campaign-flag-set-event";
 import { CITY_INFESTATION_CHANGED } from "../../model/city-infestation-changed-event";
@@ -20,7 +21,7 @@ import {
 // Fixtures
 // ===========================================
 
-const CTX = { tuning: MISSION_TUNING };
+const CTX = { tuning: MISSION_TUNING, hive: HIVE_TUNING };
 
 /** A crash site that landed at "low" (10 before the landing). */
 const CRASH: Mission = {

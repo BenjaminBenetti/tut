@@ -26,6 +26,12 @@ import type { MissionTuning } from "../model/mission-tuning";
  *   harder on the region than the clearance does (80 % / 20 %) because
  *   the waves are the region's bugs. Waves: 3 plus one per 20 points of
  *   regional infestation, so 5 at the threshold and 8 at the cap.
+ * - A Hive Assault (arc §6.5) prices its host city like a clearance
+ *   (70 % / 30 %) and then adds the hive's level before the act clamps
+ *   it; its map is always the large hive cavern, so it is "large" from
+ *   difficulty 1. It pays twice the ordinary tech points: a difficulty-7
+ *   assault pays (10 + 3 × 7) × 2 = 62, against 23 for a difficulty-5
+ *   clearance.
  * - A crash site (arc §6.3) takes its difficulty like a clearance (70 %
  *   the landing city, landing included, 30 % threat, arc §3); its map
  *   stays small to medium, because the pod's eight-turn clock is
@@ -62,6 +68,12 @@ export const MISSION_TUNING: MissionTuning = {
       threatWeight: 0.2,
       mediumFromDifficulty: 3,
       largeFromDifficulty: 8,
+    },
+    "hive-assault": {
+      infestationWeight: 0.7,
+      threatWeight: 0.3,
+      mediumFromDifficulty: 1,
+      largeFromDifficulty: 1,
     },
     "crash-site": {
       infestationWeight: 0.7,
@@ -105,6 +117,9 @@ export const MISSION_TUNING: MissionTuning = {
     baseWaves: 3,
     wavesPerInfestationPoint: 0.05,
     maxWaves: 8,
+  },
+  hiveAssault: {
+    techRewardMultiplier: 2,
   },
   crashSite: {
     landingInfestation: 10,

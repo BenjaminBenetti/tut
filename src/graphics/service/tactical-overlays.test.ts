@@ -20,7 +20,9 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -73,6 +75,8 @@ function mission(): TacticalState {
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
       civilian: CIVILIAN_TUNING,
+      hiveGuard: BUG_SPECIES["hive-guard"],
+      hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

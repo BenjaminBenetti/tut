@@ -23,7 +23,9 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
+import { HIVE_ASSAULT_SETUP_TUNING } from "../data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { attack } from "../model/attack-command";
@@ -118,6 +120,8 @@ function inMission(): GameState {
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
       civilian: CIVILIAN_TUNING,
+      hiveGuard: BUG_SPECIES["hive-guard"],
+      hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

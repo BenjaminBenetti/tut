@@ -38,3 +38,5 @@ Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 Recipe and environment notes: `docs/design/art-tooling.md` §1. Prompt skeleton: `docs/design/style-guide.md` §10.
 
 Mech customisation reference (chassis, legs, arms, arm weapons, back weapons as separate swappable pieces): [`mech-bay/`](mech-bay/README.md).
+
+Campaign reference (new species, armoured variants, mission objectives, hive cavern and spore platform key art): [`campaign/`](campaign/README.md). The modelling brief for them is the [campaign bestiary](../kits/campaign-bestiary.md).

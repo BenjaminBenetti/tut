@@ -1,0 +1,39 @@
+# Concept: Armoured lurker
+
+![Armoured lurker](armoured-lurker.png)
+
+- **Status:** accepted on attempt 3 (regenerated 2×; rejected attempts are not committed, see below).
+- **Generator:** Codex CLI 0.157.1 (`codex exec`), built-in `image_gen` through its imagegen skill; image model as served by the tool, via a scratch copy of `tools/art/gen-image.sh` that adds `-i docs/design/renders/bug.lurker_045.png` to its `codex exec` call (the repository script takes no reference image); otherwise identical, including the appended save-path suffix.
+- **Date:** 2026-09-26
+- **Asset:** `armoured-lurker.png`, 1536×1024, unmodified tool output. Documentation only, not a runtime asset.
+- **Prompt file:** [`prompts/armoured-lurker.txt`](prompts/armoured-lurker.txt): the exact text passed to the generator, plus the standard save-path suffix the script appends.
+- **Modeller brief:** [campaign bestiary](../../kits/campaign-bestiary.md#armoured-variants)
+- **Campaign arc:** §8 bestiary (Act III armoured variants), §10 autopsy (armour-piercing rounds)
+- **Reference image:** [`bug.lurker_045.png`](../../../../docs/design/renders/bug.lurker_045.png)
+
+## Prompt
+
+```
+Scene/backdrop: a seamless, evenly lit, light neutral grey #8E8A82 studio backdrop, the same light grey in every corner and behind every view, like a clean product sheet.
+
+The attached image is a render of the shipped base lurker model, given as an anatomy reference only: keep its wedge face, feelers, swept shoulder fins, ringed thorax, four thin legs and two long sickles, add the armour described below, and draw it in the flat faceted concept-sheet style on the grey backdrop, not as a copy of the render.
+
+Concept sheet for the armoured lurker, a late-game armoured variant of the lurker bug from Terra Under Threat, a near-future Earth turn-based tactics game played from an isometric camera. Base lurker: a tall, thin, forward-leaning mantis-like stalker about 2.6 metres tall, with an exposed wedge-shaped face, raised feelers, swept shoulder fins, a slender ringed thorax, four slender running legs and two very long sickle arms that are longer than its legs; no hood. Its eye clusters glow magenta #E23DFF. Keep the base species body plan, limb count, proportions and outline exactly, and add heavy armour on top: thick overlapping slab plates in dark umber #2E2118 with bevelled pale horn #DDC39B rims, layered like scale armour over the brown shell, with small knobbed bosses where plates overlap. The armour makes the creature visibly bulkier and darker, with a pale horn rim on every plate so the armour reads at small size. On the armoured lurker: an armoured mask plate covers the wedge face with the magenta eyes showing through narrow slits, thick layered armour collars ring the thorax, heavy armour sleeves run along the backs of both sickles, and the shoulder fins become armoured plates. It must stay tall and thin: the armour thickens it but never turns it into a bulky brute. Colours, hexes exact: walnut-brown primary shell #5C3B25, chestnut overlapping plates and limb armour #8B5D36, dark umber joints, undersides and blade backs #2E2118, broad toasted-tan markings and shell lips #B88B58, sandy shell highlights #C6A275, russet tissue between plates #73452E, pale horn cutting edges, spines and toe tips #DDC39B. No purple, violet or blue on the creature. Crisp stylized low-poly game model style: large faceted planes, hard edges, flat shading, clean vector-like fills with no noise, grain or painterly texture, matte organic chitin. Not photoreal and not a glossy 3D render. Bioluminescent spots are small, crisp and few. Background: a flat, evenly and brightly lit mid-grey #8E8A82 studio backdrop, exactly the same light grey at every edge and corner, like a product shot on grey card; the only shading on it is a small soft grey contact shadow under each view. No scenery, no ground plane, no props. No text, no labels, no captions, no watermark, no logos, no borders or panels. Wide landscape 3:2 concept sheet of the same single design, all views at the same scale: one large isometric three-quarter view from 35 degrees above filling the top two-thirds, and below it a clean side-profile view and a smaller front view, evenly spaced.
+
+Avoid: dark or black background, vignette, spotlight, coloured glow around the silhouette, dramatic rim lighting, text, labels, watermark. Keep the Scene/backdrop line when you write the image prompt.
+```
+
+## Keep
+
+- The shipped lurker's anatomy: wedge face, feelers, swept shoulder fins, ringed thorax, four thin legs and two long sickles.
+- Dark slab sleeves along the sickle backs, pale-rimmed collars round the thorax, armoured shoulder fins, a face mask with the magenta eyes showing through.
+
+## Change on the model
+
+- The armour is subtler than on the other two variants. Thicken the sickle sleeves and thorax collars a little so the variant reads at 64 px, but keep the tall, thin silhouette.
+
+## Attempts
+
+- **v1:** rejected: the backdrop came out as a dark vignette with a warm glow halo round the creature instead of flat grey; the creature also lost the lurker's forward lean.
+- **v2:** rejected: the same dark backdrop and glow, after the background sentence was reworded. v3 adds the `Scene/backdrop:` and `Avoid:` lines, and attaches the shipped render `docs/design/renders/bug.lurker_045.png` as an anatomy reference.
+- **v3:** accepted (this image).

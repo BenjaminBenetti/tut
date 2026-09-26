@@ -28,7 +28,8 @@ export interface MissionConsequenceContext {
  * module under `overworld/service/missions/` and one table entry.
  *
  * ```
- *   LaunchMission ──► shared bookkeeping ──► onResolved(overworld, mission, result)
+ *   director       ──► MissionOffered ─────► onOffered?(overworld, mission)
+ *   LaunchMission  ──► shared bookkeeping ──► onResolved(overworld, mission, result)
  *   mission-expiry ──► MissionExpired ─────► onExpired(overworld, mission)
  * ```
  *
@@ -38,6 +39,23 @@ export interface MissionConsequenceContext {
 export interface MissionConsequenceRule {
   /** The mission type this rule serves; equal to its table key. */
   readonly typeId: MissionTypeId;
+  /**
+   * What making the offer does to the overworld, for a type whose offer
+   * is itself an event (a crash site's landing, arc §6.3). The director
+   * calls it for every offer of the type, however it was made (pinned
+   * story offer, trigger or board draw), after the decorators and before
+   * the next offer is made, so later offers see its effect. Absent on a
+   * type whose offer changes nothing.
+   *
+   * @param state - The overworld with the offer already on the board.
+   * @param mission - The offer just made, decorated.
+   * @param ctx - Tuning the rule may read.
+   */
+  onOffered?(
+    state: OverworldState,
+    mission: Mission,
+    ctx: MissionConsequenceContext,
+  ): OverworldApplied<OverworldState>;
   /**
    * What the played mission does to the overworld.
    *

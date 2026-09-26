@@ -1,4 +1,5 @@
 import type { StoryMissionRules } from "../../model/story-mission-rule";
+import { FIRST_SKYFALL } from "./first-skyfall";
 
 // ===========================================
 // The table
@@ -11,8 +12,7 @@ import type { StoryMissionRules } from "../../model/story-mission-rule";
  * them through the story service.
  *
  * ```
- *   (none yet)
- *   first-skyfall   ──► arrives with the Crash Site package
+ *   first-skyfall   ──► first-skyfall.ts   Act I, the second mission: a d1 crash site
  *   live-specimen   ──► arrives with the capture package
  * ```
  *
@@ -21,10 +21,12 @@ import type { StoryMissionRules } from "../../model/story-mission-rule";
  * an act exists only once the mission that ends it is here
  * (`STORY_SPINE`), and `advance-act` past the last act that exists wins
  * the campaign. So every build ends in a campaign that can be finished
- * (arc §13). With the table empty the campaign stays in Act I and ends
- * only in defeat.
+ * (arc §13). First Skyfall ends no act, so until Live Specimen is built
+ * the campaign stays in Act I and ends only in defeat.
  *
  * The composition root passes it to the day tick (pinning) and the
  * launch handler (resolution); tests substitute their own.
  */
-export const STORY_MISSION_RULES: StoryMissionRules = {};
+export const STORY_MISSION_RULES: StoryMissionRules = {
+  "first-skyfall": FIRST_SKYFALL,
+};

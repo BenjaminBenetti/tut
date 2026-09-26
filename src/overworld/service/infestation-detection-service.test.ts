@@ -10,6 +10,7 @@ import {
   applyDetection,
   detectionThresholds,
   isDetectable,
+  witnessCity,
 } from "./infestation-detection-service";
 
 // ===========================================
@@ -241,5 +242,34 @@ describe("applyDetection", () => {
     expect(() => applyDetection(fixture(), { mars: 0.5 }, TUNING)).toThrow(
       /unknown region "mars"/,
     );
+  });
+});
+
+// ===========================================
+// witnessCity
+// ===========================================
+
+describe("witnessCity", () => {
+  it("finds a quietly infested city whatever the thresholds say, and announces it", () => {
+    const map = fixture();
+    const { state, events } = witnessCity(map, "low");
+    expect(state.cities.find((city) => city.id === "low")?.detected).toBe(true);
+    expect(events).toEqual([
+      {
+        type: CITY_DETECTED,
+        payload: { cityId: "low", regionId: "west", infestation: 10 },
+      },
+    ]);
+    expect(map.cities.find((city) => city.id === "low")?.detected).toBe(false);
+  });
+
+  it("leaves a clean city, a detected one and an unknown one alone", () => {
+    const map = fixture();
+    for (const cityId of ["clean", "loud", "nowhere"]) {
+      expect(witnessCity(map, cityId), cityId).toEqual({
+        state: map,
+        events: [],
+      });
+    }
   });
 });

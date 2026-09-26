@@ -38,7 +38,9 @@ import type { SpawnTuning } from "../model/spawn-tuning";
  * at difficulty one, five more per step, so charges alone (10 a plant)
  * take four actions and gunfire takes a squad a couple of turns. It
  * matures when turn 8 ends; `pod-sweep.sim.test.ts` measures when a
- * squad that goes straight for it gets it down.
+ * squad that goes straight for it gets it down. A crash site sends two
+ * edge waves (turns 3 and 7) and then falls quiet: the clock is the
+ * pressure, and a matured pod's burst is the punishment.
  */
 export const SPAWN_TUNING: SpawnTuning = {
   spawnerHp: 20,
@@ -60,4 +62,5 @@ export const SPAWN_TUNING: SpawnTuning = {
   podHpPerDifficulty: 5,
   podMaturityTurn: 8,
   podBurstBonus: 2,
+  podEdgeWaves: 2,
 };

@@ -1,5 +1,5 @@
 import type { Applied } from "../../core/model/domain-event";
-import type { City } from "../model/city";
+import type { City, CityId } from "../model/city";
 import { MIN_INFESTATION } from "../model/city";
 import type { CityDetectedEvent } from "../model/city-detected-event";
 import { CITY_DETECTED } from "../model/city-detected-event";
@@ -126,6 +126,55 @@ export function applyDetection(
   return {
     state: changed ? { regions: map.regions, cities } : map,
     events,
+  };
+}
+
+// ===========================================
+// Witnessed infestations
+// ===========================================
+
+/**
+ * The map with city `cityId` found because the player saw its
+ * infestation arrive (a crash site's landing, arc §6.3), whatever the
+ * thresholds say: rebuilt with `detected: true` and announced by a
+ * `CityDetected`, as `applyDetection` would. A clean city, one already
+ * detected, or one not on the map is left alone, and the map returned
+ * as it is.
+ *
+ * ```
+ *   infested ∧ ¬detected ──► detected: true + CityDetected
+ *   otherwise            ──► unchanged, no event
+ * ```
+ */
+export function witnessCity(
+  map: EarthMap,
+  cityId: CityId,
+): Applied<EarthMap, CityDetectedEvent> {
+  const city = map.cities.find((candidate) => candidate.id === cityId);
+  if (
+    city === undefined ||
+    city.detected ||
+    city.infestation === MIN_INFESTATION
+  ) {
+    return { state: map, events: [] };
+  }
+  return {
+    state: {
+      regions: map.regions,
+      cities: map.cities.map((candidate) =>
+        candidate === city ? { ...city, detected: true } : candidate,
+      ),
+    },
+    events: [
+      {
+        type: CITY_DETECTED,
+        payload: {
+          cityId: city.id,
+          regionId: city.regionId,
+          infestation: city.infestation,
+        },
+      },
+    ],
   };
 }
 

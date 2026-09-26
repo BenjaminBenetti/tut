@@ -9,6 +9,7 @@ import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { SitrepId } from "../../content/model/sitrep-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { CityId } from "./city";
+import type { CrashSiteSpec } from "./crash-site-spec";
 
 // ===========================================
 // Ids
@@ -150,6 +151,13 @@ export interface Mission {
    * none, and an older save's missions have none either.
    */
   readonly defence?: InstallationDefence;
+  /**
+   * The landing a crash site (campaign arc §6.3) started when it was
+   * offered: the city and its infestation before the seed. Present on
+   * every `"crash-site"` offer, story ones included; absent on every
+   * other type and on offers saved before crash sites existed.
+   */
+  readonly crashSite?: CrashSiteSpec;
   /** What success pays. */
   readonly rewards: MissionRewards;
   /** Overworld day the mission appeared. */

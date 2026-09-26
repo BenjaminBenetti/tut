@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CRASH_SITE,
   DEFEND_INSTALLATION,
   INFESTATION_CLEARANCE,
 } from "../../content/data/mission-types";
 import type { MissionType } from "../../content/model/mission-type";
+import { manhattanDistance } from "../../core/service/grid-math";
 import type { Mission } from "../../overworld/model/mission";
+import { CRASH_SITE_MISSION_HOOKS } from "../data/hook-requirements";
 import { HookKinds } from "../model/hook";
+import type { MapRecipe } from "../model/map-recipe";
 import type {
   MissionMapRule,
   MissionMapRules,
@@ -460,6 +464,67 @@ describe("missionToMapRecipe with the mission map rules (ADR 0013 §2.3)", () =>
     expect(validateTacticalMap(map, registries)).toEqual([]);
     const kinds = map.hooks.objectives.map((h) => h.kind).sort();
     expect(kinds).toEqual([HookKinds.SPORE_POD, HookKinds.TECH_CARCASS]);
+  });
+});
+
+describe("missionToMapRecipe for a crash site (arc §6.3, §6.9)", () => {
+  /** A shipped crash-site offer at d1, First Skyfall's when `story`. */
+  function crash(story: boolean, seed = "crash-map"): Mission {
+    return mission(
+      {
+        typeId: "crash-site",
+        difficulty: 1,
+        crashSite: { landingCityId: "city-1", preLandingInfestation: 0 },
+        ...(story ? { storyId: "first-skyfall" as const, pinned: true } : {}),
+      },
+      { settlement: "rural", seed, infestation: 1 },
+    );
+  }
+
+  it("asks the crater for exactly the crash site's hook set", () => {
+    const recipe = unwrap(missionToMapRecipe(crash(false), CRASH_SITE));
+    expect(recipe.params.archetype).toBe("crash-site");
+    expect(recipe.params.hooks).toEqual(CRASH_SITE_MISSION_HOOKS);
+  });
+
+  it("brings First Skyfall's pod to between 6 and 14 of the drop zone, and nothing else", () => {
+    const drawn = unwrap(missionToMapRecipe(crash(false), CRASH_SITE));
+    const scripted = unwrap(missionToMapRecipe(crash(true), CRASH_SITE));
+    const pod = (recipe: MapRecipe) =>
+      recipe.params.hooks.find((h) => h.kind === HookKinds.SPORE_POD);
+    expect(pod(scripted)).toEqual({
+      kind: HookKinds.SPORE_POD,
+      count: 1,
+      requiredPass: PassMask.ALL,
+      minDistanceFromDeploy: 6,
+      maxNearestDistanceFromDeploy: 14,
+    });
+    expect(
+      scripted.params.hooks.filter((h) => h.kind !== HookKinds.SPORE_POD),
+    ).toEqual(drawn.params.hooks.filter((h) => h.kind !== HookKinds.SPORE_POD));
+    expect(JSON.parse(JSON.stringify(scripted))).toEqual(scripted);
+  });
+
+  it("builds First Skyfall's crater with the pod within reach of the drop zone", () => {
+    for (const seed of ["skyfall-1", "skyfall-2", "skyfall-3"]) {
+      const recipe = unwrap(missionToMapRecipe(crash(true, seed), CRASH_SITE));
+      const map = generateTacticalMap(recipe, { registries });
+      expect(validateTacticalMap(map, registries), seed).toEqual([]);
+      const pod = map.hooks.objectives.find(
+        (h) => h.kind === HookKinds.SPORE_POD,
+      );
+      const at = pod?.tiles[0];
+      if (at === undefined) {
+        throw new Error(`${seed}: no pod`);
+      }
+      const distance = Math.min(
+        ...map.hooks.deployZones
+          .flatMap((zone) => zone.tiles)
+          .map((tile) => manhattanDistance(tile, at)),
+      );
+      expect(distance, seed).toBeGreaterThanOrEqual(6);
+      expect(distance, seed).toBeLessThanOrEqual(14);
+    }
   });
 });
 

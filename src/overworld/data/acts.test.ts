@@ -41,11 +41,11 @@ describe("ACTS", () => {
     expect(floors).toEqual([...floors].sort((a, b) => a - b));
   });
 
-  it("weights clearance 33 / 25 / 20 and draws nothing in the finale (arc §5)", () => {
+  it("weights clearance 33 / 25 / 20, crash site 33 / 10 / 10, and draws nothing in the finale (arc §5)", () => {
     expect(ACT_IDS.map((id) => ACTS[id].typeWeights)).toEqual([
-      { "infestation-clearance": 33 },
-      { "infestation-clearance": 25 },
-      { "infestation-clearance": 20 },
+      { "infestation-clearance": 33, "crash-site": 33 },
+      { "infestation-clearance": 25, "crash-site": 10 },
+      { "infestation-clearance": 20, "crash-site": 10 },
       {},
     ]);
   });

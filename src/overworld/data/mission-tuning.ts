@@ -26,6 +26,15 @@ import type { MissionTuning } from "../model/mission-tuning";
  *   harder on the region than the clearance does (80 % / 20 %) because
  *   the waves are the region's bugs. Waves: 3 plus one per 20 points of
  *   regional infestation, so 5 at the threshold and 8 at the cap.
+ * - A crash site (arc §6.3) takes its difficulty like a clearance (70 %
+ *   the landing city, landing included, 30 % threat, arc §3); its map
+ *   stays small to medium, because the pod's eight-turn clock is
+ *   measured on a crater a force can cross (large only at d10, which no
+ *   act's band draws for it). Each one seeds 10 at a city in a region
+ *   the player has eyes on, four times as likely a clean or low one
+ *   (under 20) as a city already deep in it, and from Act II twice as
+ *   likely in a region with a working sensor array. It pays its tech
+ *   points half again.
  */
 export const MISSION_TUNING: MissionTuning = {
   difficulty: {
@@ -40,6 +49,12 @@ export const MISSION_TUNING: MissionTuning = {
       threatWeight: 0.2,
       mediumFromDifficulty: 3,
       largeFromDifficulty: 8,
+    },
+    "crash-site": {
+      infestationWeight: 0.7,
+      threatWeight: 0.3,
+      mediumFromDifficulty: 4,
+      largeFromDifficulty: 10,
     },
   },
   techCarcass: {
@@ -65,5 +80,14 @@ export const MISSION_TUNING: MissionTuning = {
     baseWaves: 3,
     wavesPerInfestationPoint: 0.05,
     maxWaves: 8,
+  },
+  crashSite: {
+    landingInfestation: 10,
+    lowInfestationBelow: 20,
+    lowCityWeight: 4,
+    sensorArrayFromAct: "act-2",
+    sensorArrayType: "sensor-array",
+    sensorArrayWeight: 2,
+    techPointMultiplier: 1.5,
   },
 };

@@ -5,6 +5,7 @@ import type {
   MissionPresentationCatalogue,
   MissionPresentationContext,
 } from "../../model/mission-presentation";
+import { CRASH_SITE_PRESENTATION } from "./crash-site-presentation";
 import { DEFEND_INSTALLATION_PRESENTATION } from "./defend-installation-presentation";
 import { INFESTATION_CLEARANCE_PRESENTATION } from "./infestation-clearance-presentation";
 
@@ -20,11 +21,13 @@ import { INFESTATION_CLEARANCE_PRESENTATION } from "./infestation-clearance-pres
  * ```
  *   infestation-clearance  ──► infestation-clearance-presentation.ts
  *   defend-installation    ──► defend-installation-presentation.ts
+ *   crash-site             ──► crash-site-presentation.ts
  * ```
  */
 export const MISSION_PRESENTATION: MissionPresentationCatalogue = {
   "infestation-clearance": INFESTATION_CLEARANCE_PRESENTATION,
   "defend-installation": DEFEND_INSTALLATION_PRESENTATION,
+  "crash-site": CRASH_SITE_PRESENTATION,
 };
 
 // ===========================================
@@ -59,7 +62,8 @@ export function briefingFieldsOf(
  * A `MissionResult` carries no type id: the offer is removed in the same
  * update that stores the result. So every type is asked in
  * `MISSION_TYPE_IDS` order and the first answer wins; each tagline reads
- * its own payload (`result.defence`) and answers undefined otherwise.
+ * its own payload (`result.defence`, `result.podDestroyed`) and answers
+ * undefined otherwise.
  */
 export function debriefTaglineFor(
   result: MissionResult,

@@ -44,6 +44,8 @@ export const POD_SCATTER = 1.5;
  *
  *   open ground, flat, off the boundary, clear of hooks and connector ends,
  *   >= minDistance from deploy
+ *     ├─ within maxNearest: on the floor, reachable       ──► only when the recipe
+ *     ├─ within maxNearest: anywhere, reachable           ──► sets maxNearest
  *     ├─ on the crater floor, reachable by every required class ──► preferred
  *     ├─ on the crater floor                                    ──► the connectivity pass repairs
  *     ├─ anywhere, reachable                                    ──► no crater, or no floor left
@@ -55,6 +57,14 @@ export const POD_SCATTER = 1.5;
  * something is found. Without a crater — a pod asked of a settlement —
  * the target is the board's centre, so the hook still lands somewhere
  * sensible rather than failing the map.
+ *
+ * `maxNearestDistanceFromDeploy` is a preference, as for the other
+ * placers: a scripted landing (First Skyfall) asks for the pod within
+ * reach of the drop zone, and gets the reachable tile nearest the
+ * bowl's centre inside that reach, on the floor if the floor comes that
+ * close and on the near terraces if not. When nothing is that close the
+ * ordinary tiers apply. Without it the tiers, and the draws, are
+ * exactly the ordinary ones.
  */
 export class SporePodPlacer implements HookPlacer {
   // ===========================================
@@ -98,7 +108,16 @@ export class SporePodPlacer implements HookPlacer {
       crater === undefined
         ? []
         : ground.filter((coord) => onCraterFloor(coord, crater));
+    const maxNearest = requirement.maxNearestDistanceFromDeploy;
+    const near = (coord: TileCoord): boolean =>
+      maxNearest !== undefined && distanceToDeploy(draft, coord) <= maxNearest;
     const tiers: readonly (readonly TileCoord[])[] = [
+      ...(maxNearest === undefined
+        ? []
+        : [
+            floor.filter((coord) => near(coord) && reachable(coord)),
+            ground.filter((coord) => near(coord) && reachable(coord)),
+          ]),
       floor.filter(reachable),
       floor,
       ground.filter(reachable),

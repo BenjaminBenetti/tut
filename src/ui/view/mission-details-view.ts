@@ -3,6 +3,7 @@ import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
+import { STORY_MISSION_TITLES } from "../data/story-mission-titles";
 import type {
   BriefingRow,
   MissionPresentationCatalogue,
@@ -99,6 +100,7 @@ interface Slot {
  * when it carries any (campaign arc §11).
  *
  * ```
+ *   Briefing · <story title, on a story mission>
  *   description
  *   ── sitreps (SitrepTagsView), hidden when none ──
  *   Type · City · Difficulty · Reward · Tech reward · Tech carcass
@@ -116,6 +118,7 @@ export class MissionDetailsView {
   private readonly handlers: MissionDetailsViewHandlers;
   private readonly sitrepTags: SitrepTagsView;
   private root: HTMLElement | undefined;
+  private title: HTMLElement | undefined;
   private description: HTMLElement | undefined;
   private plan: HTMLButtonElement | undefined;
   private readonly values = new Map<Field, HTMLElement>();
@@ -156,6 +159,7 @@ export class MissionDetailsView {
     section.hidden = true;
 
     const title = doc.createElement("h3");
+    title.dataset.field = "briefing-heading";
     title.textContent = "Briefing";
 
     const description = doc.createElement("p");
@@ -192,6 +196,7 @@ export class MissionDetailsView {
     plan.addEventListener("click", this.onPlan);
 
     this.root = section;
+    this.title = title;
     this.description = description;
     this.plan = plan;
   }
@@ -236,6 +241,10 @@ export class MissionDetailsView {
     if (this.description.textContent !== type.description) {
       this.description.textContent = type.description;
     }
+    const heading = briefingHeading(mission);
+    if (this.title && this.title.textContent !== heading) {
+      this.title.textContent = heading;
+    }
     this.shown = mission.id;
     this.root.dataset.missionId = mission.id;
     this.root.hidden = false;
@@ -249,6 +258,7 @@ export class MissionDetailsView {
     this.sitrepTags.unmount();
     this.root?.remove();
     this.root = undefined;
+    this.title = undefined;
     this.description = undefined;
     this.plan = undefined;
     this.values.clear();
@@ -285,6 +295,13 @@ export class MissionDetailsView {
 // ===========================================
 // Helpers
 // ===========================================
+
+/** "Briefing", or "Briefing · <title>" for a story mission (arc §6.9). */
+function briefingHeading(mission: Mission): string {
+  return mission.storyId === undefined
+    ? "Briefing"
+    : `Briefing · ${STORY_MISSION_TITLES[mission.storyId]}`;
+}
 
 /** Appends one term and its value cell (`data-field="detail-<field>"`) to `grid`. */
 function appendSlot(grid: HTMLElement, field: string, label: string): Slot {

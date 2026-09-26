@@ -131,6 +131,7 @@ describe("expireMissions", () => {
       "defend-installation": spy(
         MISSION_CONSEQUENCE_RULES["defend-installation"],
       ),
+      "crash-site": spy(MISSION_CONSEQUENCE_RULES["crash-site"]),
     };
     const state = fixtureState({
       day: 5,

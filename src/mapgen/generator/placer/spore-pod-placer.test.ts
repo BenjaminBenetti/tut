@@ -327,6 +327,66 @@ describe("SporePodPlacer on the crash-site archetype", () => {
     }
   });
 
+  it("brings a pod within the recipe's reach of a distant drop zone, nearest the bowl", () => {
+    // Deploy in the corner, the bowl's floor 30-odd tiles away: without a
+    // reach the pod sinks to the floor; with one it stays within it, on
+    // reachable ground, as near the centre as that reach allows.
+    for (let seed = 0; seed < 6; seed++) {
+      const label = `seed ${String(seed)}`;
+      const at = (requirement: HookRequirement) => {
+        const { draft, place } = bowl(`reach-${String(seed)}`);
+        const deploy = draft.groundCoord(1, 1);
+        draft.addHook("deployZones", HookKinds.DEPLOY, [deploy], PassMask.ALL);
+        place(requirement);
+        const pod = draft.hooks.objectives[0]!.tiles[0]!;
+        return {
+          distance: manhattanDistance(pod, deploy),
+          y: pod.y,
+          crater: draft.crater!,
+        };
+      };
+      const free = at({ ...POD, minDistanceFromDeploy: 6 });
+      expect(free.y, label).toBe(free.crater.floorLevel);
+      expect(free.distance, label).toBeGreaterThan(14);
+
+      const near = at({
+        ...POD,
+        minDistanceFromDeploy: 6,
+        maxNearestDistanceFromDeploy: 14,
+      });
+      expect(near.distance, label).toBeGreaterThanOrEqual(6);
+      // Nearest the centre inside the reach: at its edge, give or take the
+      // scatter.
+      expect(near.distance, label).toBeGreaterThanOrEqual(12);
+      expect(near.distance, label).toBeLessThanOrEqual(14);
+    }
+  });
+
+  it("falls back to the ordinary tiers, draw for draw, when nothing lies within reach", () => {
+    for (let seed = 0; seed < 6; seed++) {
+      const at = (requirement: HookRequirement) => {
+        const { draft, place } = bowl(`unreachable-${String(seed)}`);
+        draft.addHook(
+          "deployZones",
+          HookKinds.DEPLOY,
+          [draft.groundCoord(1, 1)],
+          PassMask.ALL,
+        );
+        place(requirement);
+        return draft.hooks.objectives[0]!.tiles[0]!;
+      };
+      // Nothing is at least 6 and at most 5 from the drop zone.
+      expect(
+        at({
+          ...POD,
+          minDistanceFromDeploy: 6,
+          maxNearestDistanceFromDeploy: 5,
+        }),
+        `seed ${String(seed)}`,
+      ).toEqual(at({ ...POD, minDistanceFromDeploy: 6 }));
+    }
+  });
+
   it("is deterministic for a seed", () => {
     const recipe = crashSite("temperate", "small", 0);
     const podOf = (map: TacticalMap) =>

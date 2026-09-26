@@ -6,11 +6,12 @@ import type {
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import type { Mission } from "../../overworld/model/mission";
+import type { HookKindDefaults } from "../data/hook-kind-defaults";
 import { HOOK_KIND_DEFAULTS } from "../data/hook-kind-defaults";
 import { HookKinds } from "../model/hook";
 import type { MapDimensions } from "../model/map-recipe";
 import type { HookRequirement, MapRecipe } from "../model/map-recipe";
-import type { MissionMapRules } from "../model/mission-map-rule";
+import type { HookPlacement, MissionMapRules } from "../model/mission-map-rule";
 import type { MapGenRegistries } from "../model/registries";
 import { createDefaultRegistries } from "./default-registries";
 import { MISSION_MAP_RULES } from "./missions/mission-map-rules";
@@ -68,7 +69,7 @@ const MAP_EDGE_MARGIN = 2;
  *   MissionType.requiredHooks [{ kind, count, countPerDifficulty }]
  *   + { kind: "tech-carcass", count: 1 } when mapParams.techCarcass is set (#1171)
  *   + rules[mission.typeId].recipe(mission, type).extraHooks
- *          │  × difficulty, + HOOK_KIND_DEFAULTS[kind]
+ *          │  × difficulty, + HOOK_KIND_DEFAULTS[kind] ◄── plan.hookPlacement[kind] over it
  *          ▼
  *   MapRecipe { seed, params: { archetype, biome, settlement, size, hooks,
  *                               infestation?, placeProfile?, site?, landmark? } }
@@ -102,7 +103,14 @@ export function missionToMapRecipe(
     if (!registries.hookPlacers.has(requirement.kind)) {
       return err({ kind: "unknown-hook-kind", id: requirement.kind });
     }
-    hooks.push(toHookRequirement(requirement, mission.difficulty, dimensions));
+    hooks.push(
+      toHookRequirement(
+        requirement,
+        mission.difficulty,
+        dimensions,
+        plan.hookPlacement?.[requirement.kind],
+      ),
+    );
   }
   return ok({
     seed,
@@ -153,13 +161,20 @@ function carcassHooks(mission: Mission): readonly MissionHookRequirement[] {
     : [{ kind: HookKinds.TECH_CARCASS, count: 1 }];
 }
 
-/** Completes a content requirement with the kind's mapgen defaults. */
+/**
+ * Completes a content requirement with the kind's mapgen defaults, and
+ * the mission's own `placement` for the kind laid over them.
+ */
 function toHookRequirement(
   requirement: MissionHookRequirement,
   difficulty: number,
   size: MapDimensions,
+  placement?: HookPlacement,
 ): HookRequirement {
-  const defaults = HOOK_KIND_DEFAULTS[requirement.kind];
+  const kindDefaults: HookKindDefaults | undefined =
+    HOOK_KIND_DEFAULTS[requirement.kind];
+  const defaults =
+    placement === undefined ? kindDefaults : { ...kindDefaults, ...placement };
   const distance = fitDistanceToMap(defaults?.minDistanceFromDeploy, size);
   return {
     kind: requirement.kind,

@@ -1,4 +1,5 @@
 import type { ActId } from "../../content/model/act-id";
+import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 
 // ===========================================
@@ -77,6 +78,8 @@ export interface MissionTuning {
   readonly clearance: ClearanceTuning;
   /** When a defend-installation mission is triggered and how many waves it sends (#1175). */
   readonly defence: InstallationDefenceTuning;
+  /** Where a crash site lands, how big the landing is and what it pays (arc §6.3). */
+  readonly crashSite: CrashSiteTuning;
 }
 
 // ===========================================
@@ -134,6 +137,44 @@ export interface InstallationDefenceTuning {
   readonly wavesPerInfestationPoint: number;
   /** Most waves a defend mission sends. At least `baseWaves`. */
   readonly maxWaves: number;
+}
+
+// ===========================================
+// Crash site
+// ===========================================
+
+/**
+ * The crash site's overworld rules (campaign arc §5, §6.3):
+ *
+ * ```
+ *   eligible   a region with a detected city; every free city in it may be
+ *              the landing, weighted
+ *                city < lowInfestationBelow          ──► × lowCityWeight
+ *                act ≥ sensorArrayFromAct, region holds an
+ *                online sensorArrayType installation ──► × sensorArrayWeight
+ *   offered    landing city + landingInfestation, and the city is seen
+ *   rewards    techPoints = round(ordinary × techPointMultiplier)
+ * ```
+ *
+ * What a lapsed or lost landing costs is the type's `ignorePenalty` in
+ * content, frozen on the offer, so the briefing and the rule read one
+ * number.
+ */
+export interface CrashSiteTuning {
+  /** Infestation the landing seeds at its city when the offer is made (arc: 10). */
+  readonly landingInfestation: number;
+  /** A city under this infestation is a clean or low landing site. `0..100`. */
+  readonly lowInfestationBelow: number;
+  /** How many times as often a clean or low city is drawn as the landing. At least `1`. */
+  readonly lowCityWeight: number;
+  /** The first act in which sensor arrays pull landings towards their region. */
+  readonly sensorArrayFromAct: ActId;
+  /** The installation that counts as a sensor array when it is online in the region. */
+  readonly sensorArrayType: DeployableTypeId;
+  /** Site weight multiplier for a region holding an online sensor array (arc: ×2). */
+  readonly sensorArrayWeight: number;
+  /** Tech points a crash site pays, as a multiple of the type's ordinary reward (arc: ×1.5). */
+  readonly techPointMultiplier: number;
 }
 
 // ===========================================

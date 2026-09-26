@@ -1,6 +1,6 @@
 # ADR 0013 — Campaign progression and mission-type modules
 
-- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built.
+- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built; §2.3 and §2.4 add `onOffered` and `hookPlacement` for Crash Site (#1179).
 - Context doc: [Campaign Arc](../design/campaign-arc.md)
 - Supersedes: nothing. It extends ADR 0003 (state, commands, data) and ADR 0011 (tech tree).
 
@@ -89,8 +89,8 @@ Each domain owns a small interface and a table keyed by `MissionTypeId`. A `Read
 | Domain | Interface (model file) | Table | Replaces |
 |---|---|---|---|
 | overworld | `MissionOfferRule`: `debut`, `eligible(state, ctx) → MissionSite[]`, `create(state, site, ctx) → Mission` (director-drawn types); **or** `MissionTriggerRule`: `trigger(state, ctx) → Mission[]` (pinned and event types) | `MISSION_OFFER_RULES` in `overworld/service/missions/mission-offer-rules.ts` | the `trigger` switch and `defenceFor` in `mission-generation-service.ts` |
-| overworld | `MissionConsequenceRule`: `onResolved(state, mission, result, ctx) → OverworldApplied`, `onExpired(state, mission, ctx) → OverworldApplied` | `MISSION_CONSEQUENCE_RULES` in `overworld/service/missions/mission-consequence-rules.ts` | `infestationDeltaFor` for every type; `ignorePenalty` handling |
-| mapgen | `MissionMapRule`: `recipe(mission, type) → { archetype, extraHooks, site?, landmark? }` | `MISSION_MAP_RULES` in `mapgen/service/missions/mission-map-rules.ts` | the hard-coded `archetype: "settlement"`, `generatorHooks`, `site: mission.defence…` |
+| overworld | `MissionConsequenceRule`: `onOffered?(state, mission, ctx) → OverworldApplied`, `onResolved(state, mission, result, ctx) → OverworldApplied`, `onExpired(state, mission, ctx) → OverworldApplied` | `MISSION_CONSEQUENCE_RULES` in `overworld/service/missions/mission-consequence-rules.ts` | `infestationDeltaFor` for every type; `ignorePenalty` handling |
+| mapgen | `MissionMapRule`: `recipe(mission, type) → { archetype, extraHooks, site?, landmark?, hookPlacement? }` | `MISSION_MAP_RULES` in `mapgen/service/missions/mission-map-rules.ts` | the hard-coded `archetype: "settlement"`, `generatorHooks`, `site: mission.defence…` |
 | tactical | `MissionSetupRule`: `setup(state, map, mission, deps) → TacticalState` adds the type's objectives, entities and schedules | `MISSION_SETUP_RULES` in `tactical/service/missions/mission-setup-rules.ts` | the spawner, generator and `totalWaves` conditionals in `mission-start-service.ts` |
 | ui | `MissionPresentation`: `icon`, `briefingRows(mission)`, `debriefTagline?(result)` | `MISSION_PRESENTATION` in `ui/service/missions/mission-presentation.ts` | `TYPE_ICONS`, `DEFENCE_FIELDS`, `defenceTagline` |
 
@@ -119,6 +119,10 @@ The `mission-generation` tick step keeps its name and becomes the director. It r
 **Streams.** Each pin trigger draws on `rng.fork("pin:<id>")`, each trigger rule on `rng.fork("trigger:<type>")`, and the fill on the board stream. A trigger that offers nothing changes nothing.
 
 **Decorators** (`MISSION_OFFER_DECORATORS`) apply to every new offer, pinned or not, each on its own fork.
+
+**Offered** (#1179). Once an offer is on the board and its `MissionOffered` is emitted, the director runs its type's optional `onOffered` and appends its events. Crash Site lands its pod there: +10 on the landing city, which is seen. Later offers in the same tick see the landed map. `onOffered` draws nothing, so no stream moves.
+
+**Hook placement** (#1179). A `MissionMapPlan` may carry `hookPlacement`: per hook kind, `minDistanceFromDeploy` and `maxNearestDistanceFromDeploy` laid over `HOOK_KIND_DEFAULTS` for that one mission. First Skyfall uses it to bring its pod within 14 of deploy. A plan without it produces the same recipe as before.
 
 ### 2.5 The story spine
 

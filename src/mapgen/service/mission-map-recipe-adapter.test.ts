@@ -7,6 +7,10 @@ import {
 import type { MissionType } from "../../content/model/mission-type";
 import type { Mission } from "../../overworld/model/mission";
 import { HookKinds } from "../model/hook";
+import type {
+  MissionMapRule,
+  MissionMapRules,
+} from "../model/mission-map-rule";
 import { PassMask } from "../model/pass-mask";
 import { createDefaultRegistries } from "./default-registries";
 import { createRegistry } from "../../core/service/definition-registry";
@@ -16,6 +20,7 @@ import {
   missionToMapRecipe,
   scaledHookCount,
 } from "./mission-map-recipe-adapter";
+import { MISSION_MAP_RULES } from "./missions/mission-map-rules";
 
 const registries = createDefaultRegistries();
 
@@ -332,6 +337,129 @@ describe("missionToMapRecipe", () => {
     expect(map.hooks.objectives).toHaveLength(3);
     expect(map.hooks.edgeSpawns).toHaveLength(3);
     expect(map.recipe.seed).toBe("mission-1-map");
+  });
+});
+
+describe("missionToMapRecipe with the mission map rules (ADR 0013 §2.3)", () => {
+  /** The shipped table with the clearance's rule swapped for `rule`. */
+  function withClearanceRule(
+    rule: Omit<MissionMapRule, "typeId">,
+  ): MissionMapRules {
+    return {
+      ...MISSION_MAP_RULES,
+      "infestation-clearance": { typeId: "infestation-clearance", ...rule },
+    };
+  }
+
+  it("takes the archetype, extra hooks, site and landmark from the type's rule", () => {
+    const seen: [Mission, MissionType][] = [];
+    const rules = withClearanceRule({
+      recipe: (m, type) => {
+        seen.push([m, type]);
+        return {
+          archetype: "crash-site",
+          extraHooks: [{ kind: HookKinds.SPORE_POD, count: 1 }],
+          site: "a-site",
+          landmark: "a-landmark",
+        };
+      },
+    });
+    const offer = mission();
+    const recipe = unwrap(
+      missionToMapRecipe(offer, INFESTATION_CLEARANCE, registries, rules),
+    );
+    expect(seen).toEqual([[offer, INFESTATION_CLEARANCE]]);
+    expect(recipe.params.archetype).toBe("crash-site");
+    expect(recipe.params.site).toBe("a-site");
+    expect(recipe.params.landmark).toBe("a-landmark");
+    // The extra hook is completed from the kind's defaults like any other.
+    expect(
+      recipe.params.hooks.find((h) => h.kind === HookKinds.SPORE_POD),
+    ).toEqual({
+      kind: HookKinds.SPORE_POD,
+      count: 1,
+      requiredPass: PassMask.ALL,
+      minDistanceFromDeploy: 10,
+    });
+    expect(JSON.parse(JSON.stringify(recipe))).toEqual(recipe);
+  });
+
+  it("keeps the hook order: the type's, then the carcass, then the rule's", () => {
+    const recipe = unwrap(
+      missionToMapRecipe(
+        mission(
+          {
+            typeId: "defend-installation",
+            defence: {
+              installation: "repellent-dispersal",
+              deployableId: "dep-1",
+              generators: 3,
+              waves: 4,
+            },
+          },
+          { techCarcass: { techPoints: 10 } },
+        ),
+        DEFEND_INSTALLATION,
+        registries,
+      ),
+    );
+    expect(recipe.params.hooks.map((h) => h.kind)).toEqual([
+      HookKinds.DEPLOY,
+      HookKinds.EDGE_SPAWN,
+      HookKinds.EXTRACTION,
+      HookKinds.TECH_CARCASS,
+      HookKinds.GENERATOR,
+    ]);
+    expect(Object.keys(recipe.params)).toEqual([
+      "archetype",
+      "biome",
+      "settlement",
+      "size",
+      "hooks",
+      "site",
+    ]);
+  });
+
+  it("refuses an extra hook kind no placer serves", () => {
+    const rules = withClearanceRule({
+      recipe: () => ({
+        archetype: "settlement",
+        extraHooks: [{ kind: "hive-core", count: 1 }],
+      }),
+    });
+    expect(
+      missionToMapRecipe(mission(), INFESTATION_CLEARANCE, registries, rules),
+    ).toEqual({
+      ok: false,
+      error: { kind: "unknown-hook-kind", id: "hive-core" },
+    });
+  });
+
+  it("builds a crash site the generator accepts, pod and all, from a crash-site rule", () => {
+    const crashSite: MissionType = {
+      ...INFESTATION_CLEARANCE,
+      requiredHooks: [
+        { kind: HookKinds.DEPLOY, count: 1 },
+        { kind: HookKinds.SPORE_POD, count: 1 },
+        { kind: HookKinds.EDGE_SPAWN, count: 2 },
+        { kind: HookKinds.EXTRACTION, count: 1 },
+      ],
+    };
+    const rules = withClearanceRule({
+      recipe: () => ({ archetype: "crash-site", extraHooks: [] }),
+    });
+    const recipe = unwrap(
+      missionToMapRecipe(
+        mission({}, { settlement: "rural", techCarcass: { techPoints: 9 } }),
+        crashSite,
+        registries,
+        rules,
+      ),
+    );
+    const map = generateTacticalMap(recipe, { registries });
+    expect(validateTacticalMap(map, registries)).toEqual([]);
+    const kinds = map.hooks.objectives.map((h) => h.kind).sort();
+    expect(kinds).toEqual([HookKinds.SPORE_POD, HookKinds.TECH_CARCASS]);
   });
 });
 

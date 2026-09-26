@@ -1,5 +1,5 @@
 import type { MapDimensions, MapGenParams } from "../model/map-recipe";
-import { isMapSizePreset } from "../model/map-recipe";
+import { isMapSizePreset, MAP_ARCHETYPES } from "../model/map-recipe";
 import {
   MAX_MAP_DIMENSION,
   MIN_MAP_DIMENSION,
@@ -23,14 +23,11 @@ export type ParamResolverRegistries = Pick<
 >;
 
 /**
- * Archetypes the generator can build today. `crash-site` is a prototype
- * reachable only from the preview harness and tests — no mission type
- * names it, so nothing in the game can ask for one (#447).
+ * Archetypes the generator can build: every member of the union. The
+ * check guards recipes read back from a save, which the compiler never
+ * saw.
  */
-const SUPPORTED_ARCHETYPES: ReadonlySet<string> = new Set([
-  "settlement",
-  "crash-site",
-]);
+const SUPPORTED_ARCHETYPES: ReadonlySet<string> = new Set(MAP_ARCHETYPES);
 
 /**
  * Expands presets and looks up ids so passes only ever see concrete

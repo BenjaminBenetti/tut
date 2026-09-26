@@ -1,3 +1,4 @@
+import type { CraterSite } from "./crater-site";
 import type { MissionSitePlacement } from "./mission-site";
 import type { InfestationPlan } from "./infestation-plan";
 import type { Direction } from "../../core/model/direction";
@@ -100,6 +101,8 @@ export class MapDraft {
   readonly sites: MissionSitePlacement[] = [];
   /** Colony districts planned before settlement parcels. Absent on clean maps. */
   infestation?: InfestationPlan;
+  /** The impact bowl the crater pass sank; absent outside the crash-site pipeline. */
+  crater?: CraterSite;
   /** The production site pass ran; missing sites must not silently become legacy blobs. */
   requiresDropships = false;
   readonly hooks: DraftHooks = {

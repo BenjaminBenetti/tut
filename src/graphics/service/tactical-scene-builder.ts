@@ -68,6 +68,13 @@ export interface TacticalSceneBuilderOptions {
    * `models`.
    */
   readonly unitModels?: UnitModelSource;
+  /**
+   * Draws the map's objective hooks as coloured slabs (`HOOK_COLOURS`):
+   * the mapgen preview's diagnostic view, where the objectives are what
+   * is being judged. Off by default, because a mission marks objectives
+   * through the fog from state instead (#1173).
+   */
+  readonly objectiveMarkers?: boolean;
 }
 
 /**
@@ -226,9 +233,10 @@ export class TacticalSceneBuilder
     // The map view's own hook slabs stay off in a mission: the objective
     // is marked through the fog by `ObjectiveMarkerView` instead (#1173),
     // a blip from state rather than a slab from the map's hooks, so it
-    // goes when the nest is seen or falls (ADR 0006 §2.4).
+    // goes when the nest is seen or falls (ADR 0006 §2.4). The mapgen
+    // preview asks for them back.
     this.mapView = new TacticalMapView(options.map, this.ghostUniforms, {
-      objectiveMarkers: false,
+      objectiveMarkers: options.objectiveMarkers ?? false,
       textures: options.textures,
     });
     this.unitsGroup = new Group();

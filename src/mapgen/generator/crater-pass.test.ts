@@ -106,6 +106,63 @@ describe("crash-site archetype (prototype)", () => {
     }
   }, 30_000);
 
+  it("records the bowl it sank on the draft", () => {
+    // Flat ground again, so every column outside the bowl is the rim.
+    for (let seed = 0; seed < 6; seed++) {
+      const label = `seed ${String(seed)}`;
+      const draft = new MapDraft(
+        48,
+        48,
+        new SequentialIdGenerator(),
+        SurfaceIds.GRASS,
+      );
+      new CraterPass().run({
+        params: {
+          archetype: "crash-site",
+          width: draft.width,
+          depth: draft.depth,
+          biome: BIOME_DEFINITIONS.temperate,
+          settlement: SETTLEMENT_DEFINITIONS.rural,
+          hooks: [],
+          slopeShare: 1,
+          infestation: 0,
+        },
+        rng: new Mulberry32Rng(hashSeed(`record-${String(seed)}`)),
+        draft,
+        registries,
+        diagnostics: new DiagnosticsCollector().forPass("crater"),
+      });
+      const crater = draft.crater;
+      expect(crater, label).toBeDefined();
+      if (crater === undefined) continue;
+      expect(crater.rimLevel - crater.floorLevel, label).toBe(
+        CRATER_RIM * STOREY_LAYERS,
+      );
+      expect(crater.floorRadius, label).toBeGreaterThan(0);
+      expect(crater.floorRadius, label).toBeLessThan(crater.radius);
+      let floor = 0;
+      for (let z = 0; z < draft.depth; z++) {
+        for (let x = 0; x < draft.width; x++) {
+          const distance = Math.hypot(x - crater.centre.x, z - crater.centre.z);
+          const level = draft.groundLevelAt(x, z);
+          if (distance <= crater.floorRadius) {
+            expect(level, `${label} at ${String(x)},${String(z)}`).toBe(
+              crater.floorLevel,
+            );
+            floor++;
+          } else if (distance > crater.radius) {
+            expect(level, `${label} at ${String(x)},${String(z)}`).toBe(
+              crater.rimLevel,
+            );
+          } else {
+            expect(level, label).toBeGreaterThan(crater.floorLevel);
+          }
+        }
+      }
+      expect(floor, label).toBeGreaterThan(0);
+    }
+  });
+
   it("leaves the crater floor reachable from the deploy zone", () => {
     for (const biome of BIOME_IDS) {
       const map = generateTacticalMap(

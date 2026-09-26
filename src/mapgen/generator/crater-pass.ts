@@ -58,7 +58,10 @@ export class CraterPass implements GenerationPass {
   // Public Methods
   // ===========================================
 
-  /** Sinks one terraced bowl into the middle of the plat. */
+  /**
+   * Sinks one terraced bowl into the middle of the plat and records it as
+   * `draft.crater`, so the spore pod's placer can find the floor.
+   */
   run(context: GenerationContext): void {
     const { draft, rng, diagnostics } = context;
     // The grid has no level below zero, so the plat rises by the depth of
@@ -101,6 +104,13 @@ export class CraterPass implements GenerationPass {
         sunk++;
       }
     }
+    draft.crater = {
+      centre,
+      radius,
+      floorRadius: floor,
+      rimLevel: rim,
+      floorLevel: rim - CRATER_DEPTH * STOREY_LAYERS,
+    };
     diagnostics.note(
       `crater r${radius} at ${centre.x},${centre.z}, ${sunk} columns sunk`,
     );

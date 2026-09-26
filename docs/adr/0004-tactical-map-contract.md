@@ -297,7 +297,7 @@ reachable by a ladder or a stair to roof; `levels` must include that layer.
 
 ```ts
 // src/mapgen/model/hook.ts
-export type HookKind = string;         // 'deploy' | 'egg-spawner' | 'edge-spawn' | 'extraction' | later: 'hive-core', 'crash-site', 'vip', ...
+export type HookKind = string;         // 'deploy' | 'egg-spawner' | 'edge-spawn' | 'extraction' | 'tech-carcass' | 'generator' | 'spore-pod' | later: 'hive-core', 'vip', ...
 
 export interface Hook {
   readonly id: string;
@@ -353,7 +353,7 @@ export type SettlementScale = 'rural' | 'town' | 'city';
 export type MapSizeId = 'small' | 'medium' | 'large';        // 48², 72², 96² by default (ADR 0009)
 
 // src/mapgen/model/map-recipe.ts
-export type MapArchetype = 'settlement';            // M3: 'hive' | 'crash-site'; M4: 'platform'
+export type MapArchetype = 'settlement' | 'crash-site'; // picked by the mission type's MissionMapRule (ADR 0013 §2.3); later: 'hive', 'platform'
 export type MapSizePreset = MapSizeId;
 
 export interface HookRequirement {
@@ -596,15 +596,20 @@ existing pass.
 ```
 src/mapgen/
   model/      tile-coord, pass-mask, cover, surface, wall, tile, connector, prop, building, hook,
-              map-recipe, tactical-map, map-draft, generation-pass, registries
-  data/       surfaces, props, biomes, settlements, building-templates, map-sizes, hook-placers
+              map-recipe, tactical-map, map-draft, generation-pass, registries, crater-site,
+              mission-map-rule
+  data/       surfaces, props, biomes, settlements, building-templates, map-sizes, hook-placers,
+              hook-kind-defaults, hook-requirements
   generator/  terrain-pass, water-pass, road-pass (+ road/ builders), lot-pass, building-pass,
               interior-pass (+ interior/ partitioner, stair placer), prop-pass, ramp-pass, kerb-pass, hook-pass,
-              connectivity-pass, placer/{deploy,egg-spawner,edge-spawn,extraction,default-hook-placers}
+              connectivity-pass, crater-pass, debris-pass,
+              placer/{deploy,egg-spawner,edge-spawn,extraction,tech-carcass,generator,site-objective,spore-pod,
+              default-hook-placers}
   service/    generate-tactical-map (entry), pipeline-map-generator, settlement-pipeline (factory),
               draft-freezer, draft-queries, ground-components, tile-index, reachability-service,
               map-validator, value-noise, ascii-map-renderer, fixture-map-builder (tests),
-              mission-map-recipe-adapter, generation-sweep.test (property sweep + golden seeds)
+              mission-map-recipe-adapter, missions/{mission-map-rules,<type-id>-map} (ADR 0013 §2.3),
+              generation-sweep.test (property sweep + golden seeds)
 ```
 
 `ascii-map-renderer` is pure TS and doubles as the fastest preview: one character per column per layer,

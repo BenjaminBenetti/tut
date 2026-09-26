@@ -115,8 +115,7 @@ export function onTechUnlocked<TState extends CampaignState>(
  * What a played story mission does to the spine (ADR 0013 §2.5), called
  * by the launch handler after the mission type's own `onResolved`, so a
  * story Crash Site still has the Crash Site consequences. An offer
- * without a `storyId`, or one whose story mission is no longer built,
- * changes nothing.
+ * without a `storyId` changes nothing.
  *
  * ```
  *   won ──► storyWon + id, retry delay dropped, chronicled ──► rule.onWon effects, in order
@@ -124,10 +123,20 @@ export function onTechUnlocked<TState extends CampaignState>(
  *     retry     storyRetryDay[id] = day + delayDays
  *     platform  first:  every city + cityInfestation, platform-failed
  *               second: campaign-lost (defeat on the next tick)
+ *   no rule for the id (a Great Hive):
+ *     won ──► storyWon + id, chronicled; no effects
+ *     lost or extracted ──► nothing: the type's consequence rule owns it
  * ```
  *
  * Only `won` moves the story on: extracting before the objective is
  * done is a loss for the spine.
+ *
+ * A story mission offered without a rule of its own is still a story
+ * mission: the Great Hives carry `great-hive` but are pinned by their
+ * own trigger, three under one id, and their fall and their retry are
+ * the Great Hive consequence's. Their wins are recorded and chronicled
+ * like any other, so the end screen's chronicle lists all three (every
+ * win is kept, repeats included) and `storyWon` says one fell (#1179).
  *
  * @param state - The overworld after the type's consequence rule.
  * @param mission - The offer that was played.
@@ -143,20 +152,23 @@ export function onStoryMissionResolved(
   if (mission.storyId === undefined) {
     return { state, events: [] };
   }
-  const rule = ctx.rules[mission.storyId];
-  if (rule === undefined) {
-    return { state, events: [] };
-  }
+  const id = mission.storyId;
+  const rule = ctx.rules[id];
   if (result.outcome === "won") {
     const recorded: OverworldState = {
       ...state,
       progress: chronicleStoryWin(
-        recordStoryWin(state.progress, rule.id),
-        rule.id,
+        recordStoryWin(state.progress, id),
+        id,
         state.day,
       ),
     };
-    return applyStoryEffects(recorded, rule.onWon, ctx);
+    return rule === undefined
+      ? { state: recorded, events: [] }
+      : applyStoryEffects(recorded, rule.onWon, ctx);
+  }
+  if (rule === undefined) {
+    return { state, events: [] };
   }
   return applyStoryLoss(state, rule);
 }

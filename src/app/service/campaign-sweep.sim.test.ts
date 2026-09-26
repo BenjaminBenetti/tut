@@ -15,7 +15,6 @@ import type { TechNode, TechNodeKind } from "../../tech/model/tech-node";
 import type {
   CampaignMark,
   CampaignRecord,
-  StoryTrack,
   SummaryLine,
 } from "./campaign-sweep.test-helper";
 import {
@@ -29,6 +28,7 @@ import {
   quantile,
   SHIPPED_STORY,
   storyWith,
+  storyPlays,
   SUMMARY_HEADER,
   summarise,
   summaryRows,
@@ -121,6 +121,19 @@ const AVERAGE_FINALE = {
    */
   lastHopeInTime: 0.5,
 } as const;
+
+/**
+ * The share of Average and Strong campaigns that play the Broodmother
+ * sighting (arc §3, §6.8): the Broodmother is part of every campaign, and
+ * the ordinary Alpha Hunts, her nemesis record and her autopsy all wait
+ * on the sighting. Measured at 60/60 for both (#1179); before the
+ * sighting could fall back to a city outside a hive region and be
+ * brought forward by Pod Telemetry, 31/60 and 0/60.
+ */
+const SIGHTING_PLAYED = 0.9;
+
+/** The players the sighting pin holds for. */
+const SIGHTING_PLAYERS: readonly ModelledPlayerId[] = ["average", "strong"];
 
 /** Earliest median finale arrival for the Story-only player (arc §4, §12). */
 const STORY_ONLY_FINALE_MISSIONS = 30;
@@ -230,8 +243,6 @@ describe("campaign sweep (campaign arc §12)", () => {
     for (const id of MISSION_TYPE_IDS) {
       const story = PINNED_ONLY_TYPES[id];
       if (story !== undefined) {
-        const played = (track: StoryTrack): number =>
-          track.losses + (track.won === undefined ? 0 : 1);
         expect(
           total((record) =>
             record.stories[story].pinnedDays === undefined ? 0 : 1,
@@ -239,7 +250,7 @@ describe("campaign sweep (campaign arc §12)", () => {
           id,
         ).toBeGreaterThan(0);
         expect(
-          total((record) => played(record.stories[story])),
+          total((record) => storyPlays(record.stories[story])),
           id,
         ).toBeGreaterThan(0);
         continue;
@@ -257,6 +268,15 @@ describe("campaign sweep (campaign arc §12)", () => {
     expect(formed.length).toBeGreaterThan(average.length / 2);
     const dissected = average.filter((record) => record.nodes.autopsy > 0);
     expect(dissected.length).toBe(average.length);
+  });
+
+  it("the Average and Strong players meet the Broodmother: the sighting is played in at least 90% of their campaigns (arc §6.8)", () => {
+    for (const id of SIGHTING_PLAYERS) {
+      const records = SWEEP.shipped[id];
+      expect(sightingShare(records), id).toBeGreaterThanOrEqual(
+        SIGHTING_PLAYED,
+      );
+    }
   });
 
   it("the D2 pin catches a story mission that also waits on missions played", () => {
@@ -417,6 +437,14 @@ function sortedValues(
  */
 function finaleReached(record: CampaignRecord): CampaignMark | undefined {
   return record.acts.finale ?? record.stories[FINALE_GATE].won;
+}
+
+/** The share of `records` that played the Broodmother sighting at least once. */
+function sightingShare(records: readonly CampaignRecord[]): number {
+  const played = records.filter(
+    (record) => storyPlays(record.stories["broodmother-sighting"]) > 0,
+  );
+  return played.length / records.length;
 }
 
 /** How many campaigns had a flag-gated story gate open and timed. */

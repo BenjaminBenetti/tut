@@ -8,6 +8,9 @@ import { HIVE_TUNING } from "../../data/hive-tuning";
 import { MISSION_TUNING } from "../../data/mission-tuning";
 import { NEMESIS_LORE } from "../../data/nemesis-lore";
 import { STORY_SPINE } from "../../data/story-spine";
+import type { CampaignFlagId } from "../../../content/model/campaign-flag-id";
+import type { EarthMap } from "../../model/earth-map";
+import type { Hive } from "../../model/hive";
 import type { Mission } from "../../model/mission";
 import { isMissionExpired } from "../../model/mission";
 import type { MissionOutcome } from "../../model/mission-result";
@@ -19,12 +22,17 @@ import { BROODMOTHER_SIGHTED_FLAG } from "../missions/alpha-hunt-quarry";
 import { MISSION_CONSEQUENCE_RULES } from "../missions/mission-consequence-rules";
 import {
   fixtureState,
+  missionAt,
   progressIn,
   resultFor,
 } from "../missions/mission-fixtures.test-helper";
 import { MISSION_OFFER_RULES } from "../missions/mission-offer-rules";
 import { onStoryMissionResolved } from "../story-service";
-import { BROODMOTHER_SIGHTING_DIFFICULTY } from "./broodmother-sighting";
+import {
+  BROODMOTHER_SIGHTING_DIFFICULTY,
+  BROODMOTHER_SIGHTING_EARLY_FLAG,
+  isSightingDue,
+} from "./broodmother-sighting";
 import { createStoryPinTrigger } from "./story-pin-trigger";
 import { STORY_MISSION_RULES } from "./story-mission-rules";
 
@@ -43,6 +51,35 @@ function campaign(played: number, day = 30): OverworldState {
     hives: [{ id: "hive-1", regionId: "east", formedDay: 1 }],
     progress: { ...progressIn("act-2", played), storyWon: ["first-skyfall"] },
   });
+}
+
+/** A hive formed on day 1 in `regionId`. */
+function hiveIn(regionId: string): Hive {
+  return { id: `hive-${regionId}`, regionId, formedDay: 1 };
+}
+
+/** `state`'s map with city `cityId` not detected. */
+function undetect(state: OverworldState, cityId: string): EarthMap {
+  return {
+    ...state.map,
+    cities: state.map.cities.map((city) =>
+      city.id === cityId ? { ...city, detected: false } : city,
+    ),
+  };
+}
+
+/** `state` with `flags` added to its campaign progress. */
+function withFlags(
+  state: OverworldState,
+  flags: readonly CampaignFlagId[],
+): OverworldState {
+  return {
+    ...state,
+    progress: {
+      ...state.progress,
+      flags: [...state.progress.flags, ...flags],
+    },
+  };
 }
 
 /** One day of the shipped director on `state`. */
@@ -146,9 +183,51 @@ describe("Broodmother sighting", () => {
     expect(offer === undefined || isMissionExpired(offer, 999)).toBe(false);
   });
 
-  it("waits for a hive: none in any region, none pinned", () => {
+  it("prefers a hive region to a worse city elsewhere", () => {
+    const west = { ...campaign(10), hives: [hiveIn("west")] };
+    expect(sighting(direct(west))?.cityId).toBe("low");
+  });
+
+  it("falls back to the worst detected city anywhere when no hive stands (#1179)", () => {
     const hiveless = { ...campaign(10), hives: [] };
-    expect(sighting(direct(hiveless))).toBeUndefined();
+    expect(sighting(direct(hiveless))?.cityId).toBe("full");
+    const hidden = { ...hiveless, map: undetect(hiveless, "full") };
+    expect(sighting(direct(hidden))?.cityId).toBe("mid");
+  });
+
+  it("falls back when every city of the hive region holds an offer it may not take", () => {
+    const west = { ...campaign(10), hives: [hiveIn("west")] };
+    const held = {
+      ...west,
+      missions: [{ ...missionAt("low", 99), pinned: true }],
+    };
+    expect(sighting(direct(held))?.cityId).toBe("full");
+  });
+
+  it("is pinned early once Pod Telemetry is researched, so a fast Act II still meets her (#1179)", () => {
+    expect(sighting(direct(campaign(4)))).toBeUndefined();
+    const early = withFlags(campaign(4), [BROODMOTHER_SIGHTING_EARLY_FLAG]);
+    expect(isSightingDue(early.progress)).toBe(true);
+    expect(sighting(direct(early))).toMatchObject({
+      storyId: "broodmother-sighting",
+      cityId: "full",
+      act: "act-2",
+    });
+  });
+
+  it("is due at ten Act II missions or at Pod Telemetry, and at neither before", () => {
+    expect(BROODMOTHER_SIGHTING_EARLY_FLAG).toBe("pod-telemetry");
+    expect(isSightingDue(progressIn("act-2", 9))).toBe(false);
+    expect(isSightingDue(progressIn("act-2", 10))).toBe(true);
+    expect(isSightingDue(progressIn("act-1", 30))).toBe(false);
+  });
+
+  it("is never pinned outside Act II, due or not", () => {
+    const late = withFlags(
+      { ...campaign(0), progress: { ...progressIn("act-3", 0) } },
+      [BROODMOTHER_SIGHTING_EARLY_FLAG],
+    );
+    expect(sighting(direct(late))).toBeUndefined();
   });
 
   it("holds the ordinary hunts back while it waits on the board", () => {

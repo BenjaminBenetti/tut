@@ -360,6 +360,32 @@ describe("Great Hives through the day tick", () => {
     expect(campaign.greatOffers()).toEqual([]);
   });
 
+  it("each won assault is a story win, chronicled on its day; a lost one is not (#1179)", () => {
+    const campaign = uplinkWon(13);
+    campaign.advance();
+    const greatWins = (): readonly number[] =>
+      (campaign.state.overworld.progress.chronicle?.storyWins ?? [])
+        .filter((win) => win.storyId === "great-hive")
+        .map((win) => win.day);
+    const [first, ...rest] = campaign.greatOffers();
+    if (first === undefined) {
+      throw new Error("A Great Hive offer is pinned");
+    }
+    campaign.play(first, "lost");
+    expect(greatWins()).toEqual([]);
+    expect(campaign.state.overworld.progress.storyWon).not.toContain(
+      "great-hive",
+    );
+    const days: number[] = [];
+    for (const offer of rest) {
+      days.push(campaign.state.overworld.day);
+      campaign.play(offer, "won");
+      campaign.advance();
+    }
+    expect(greatWins()).toEqual(days);
+    expect(campaign.state.overworld.progress.storyWon).toContain("great-hive");
+  });
+
   it("without platform-approach, the third win does not pin Launch Window", () => {
     const campaign = uplinkWon(13);
     campaign.advance();

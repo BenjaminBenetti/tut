@@ -28,7 +28,8 @@ import { UPLINK } from "./uplink";
  *   uplink          ──► uplink.ts          Act III's opener: hold the tracking array, d6
  *   launch-window   ──► launch-window.ts   Act III's ending: hold the launch site, d8
  *   broodmother-    ──► broodmother-       Act II's side beat: the first Alpha Hunt, d5,
- *     sighting            sighting.ts        pinned ten missions in, in a hive region
+ *     sighting            sighting.ts        pinned ten missions in or at Intel II, in a
+ *                                            hive region if one can be had
  *   spore-platform  ──► spore-platform.ts  the finale: the hull, then the core, d10;
  *                                          won is victory, lost twice is defeat (D7)
  * ```

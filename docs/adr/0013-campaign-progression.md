@@ -1,6 +1,6 @@
 # ADR 0013 — Campaign progression and mission-type modules
 
-- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built; §2.3 and §2.4 add `onOffered` and `hookPlacement` for Crash Site (#1179); §2.3 adds optional objectives and §2.5 the story setup and presentation tables for Live Specimen (#1179); §2.3 adds `settle` and source-keyed stipend windows for Evacuation (#1179).
+- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built; §2.3 and §2.4 add `onOffered` and `hookPlacement` for Crash Site (#1179); §2.3 adds optional objectives and §2.5 the story setup and presentation tables for Live Specimen (#1179); §2.3 adds `settle` and source-keyed stipend windows for Evacuation (#1179); §2.5 records the wins of a story mission that has no rule, the Great Hives (#1179).
 - Context doc: [Campaign Arc](../design/campaign-arc.md)
 - Supersedes: nothing. It extends ADR 0003 (state, commands, data) and ADR 0011 (tech tree).
 
@@ -186,6 +186,7 @@ Another story mission, a hive, or a triggered Defend Installation is never claim
 - The launch handler runs the type's `onResolved` first, then `onStoryMissionResolved` when `storyId` is set. A story Crash Site keeps the Crash Site consequences.
 - **Won:** the id is added to `storyWon`, then `onWon` applies.
 - **Lost or extracted:** `onLost` applies. Only `won` moves the story on.
+- **No rule of its own** (#1179): the Great Hives carry `storyId: "great-hive"` but are pinned by their own trigger, three under one id, so the table has no entry for them. A win of such an offer is still recorded: the id joins `storyWon` and the win is chronicled, with no effects. A loss is left to the type's consequence rule, which re-pins the Great Hive.
 - **Tracking** uses optional `CampaignProgress` fields, so it needs no migration (§2.9): `storyWon?: StoryMissionId[]` and `storyRetryDay?: Partial<Record<StoryMissionId, number>>`.
 
 **On the map** (#1179). A story offer keeps its type's `typeId`, so the type's `MissionSetupRule` stands up the map first. A story that needs more adds a `StorySetupRule` (`tactical/model/story-setup-rule.ts`) to `STORY_SETUP_RULES` in `tactical/service/story/story-setup-rules.ts`, one file per story mission. The table is `Partial`: a story whose type's setup is the whole of it has no entry.

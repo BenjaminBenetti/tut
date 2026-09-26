@@ -10,6 +10,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { IconId } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
+import { speciesNoun } from "../service/species-noun";
 import type { TacticalNames } from "../service/tactical-error-text";
 
 // ===========================================
@@ -181,19 +182,19 @@ export function describeEvent(
         text:
           event.payload.dropped === undefined
             ? `${nameOf(event.payload.unitId)} destroyed`
-            : `${nameOf(event.payload.unitId)} destroyed · dropped the ${event.payload.dropped.species} specimen`,
+            : `${nameOf(event.payload.unitId)} destroyed · dropped the ${speciesNoun(event.payload.dropped.species)} specimen`,
         icon: "warning",
         tone: "danger",
       };
     case "tactical:specimen-captured":
       return {
-        text: `${nameOf(event.payload.unitId)} netted a live ${event.payload.specimen.species} · carrying it`,
+        text: `${nameOf(event.payload.unitId)} netted a live ${speciesNoun(event.payload.specimen.species)} · carrying it`,
         icon: "bug",
         tone: "ok",
       };
     case "tactical:specimen-picked-up":
       return {
-        text: `${nameOf(event.payload.unitId)} picked up the ${event.payload.specimen.species} specimen`,
+        text: `${nameOf(event.payload.unitId)} picked up the ${speciesNoun(event.payload.specimen.species)} specimen`,
         icon: "interact",
         tone: "ok",
       };

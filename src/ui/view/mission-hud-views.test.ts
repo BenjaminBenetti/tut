@@ -1178,6 +1178,54 @@ describe("capturing a specimen (#1179)", () => {
       ),
     ).toBeUndefined();
   });
+
+  it("names an armoured specimen by its species name, never its id (#1179)", () => {
+    const ARMOURED = { ...LURKER, species: "lurker-armoured" as const };
+    const view = new UnitCardView();
+    view.mount(root);
+    view.update(
+      hudUnit("s1", "tdf", "rifle", 1, 1, { carrying: ARMOURED }),
+      hudTemplate("rifle", "Rifle Squad"),
+    );
+    expect(field("carrying")?.textContent).toBe("live armoured lurker");
+    const names = { ...NAMES, unit: () => "Alpha" };
+    expect(
+      describeEvent(
+        {
+          type: "tactical:specimen-captured",
+          payload: {
+            unitId: "s1",
+            specimen: ARMOURED,
+            pos: { x: 2, y: 0, z: 1 },
+          },
+        } as never,
+        names,
+      )?.text,
+    ).toBe("Alpha netted a live armoured lurker · carrying it");
+    expect(
+      describeEvent(
+        {
+          type: "tactical:unit-died",
+          payload: { unitId: "s1", dropped: ARMOURED },
+        } as never,
+        names,
+      )?.text,
+    ).toBe("Alpha destroyed · dropped the armoured lurker specimen");
+    expect(
+      describeEvent(
+        {
+          type: "tactical:specimen-picked-up",
+          payload: {
+            unitId: "s1",
+            fromUnitId: "s2",
+            specimen: ARMOURED,
+            pos: { x: 2, y: 0, z: 1 },
+          },
+        } as never,
+        names,
+      )?.text,
+    ).toBe("Alpha picked up the armoured lurker specimen");
+  });
 });
 
 describe("event vocabulary for dormant broods (#1179)", () => {

@@ -115,8 +115,25 @@ def abdomen(name, start, count, width, length, rise):
 # ===========================================
 
 
+#: The swarmer's physical bounds: height, then the widest and deepest it may be.
+SWARMER_BOUNDS = (0.5, 0.98, 1.02)
+
+
 def build_swarmer() -> None:
     """Small, swift ground hunter; the approved brown Crescent silhouette."""
+    swarmer_anatomy()
+    finish(*SWARMER_BOUNDS)
+
+
+def swarmer_anatomy() -> dict:
+    """Every swarmer node at its authored size, before `finish` scales it.
+
+    The armoured variant (bug-swarmer-armoured.py) builds this, adds its
+    plates to these nodes, and finishes at its own height. Returns each
+    limb node's authored path (legs: hip to foot; blades: shoulder, elbow,
+    wrist, then the hook), so the plates follow the limbs they cover.
+    """
+    limbs = {}
     before = set(mesh_objects())
     bead("thorax", (0, -0.02, 0.245), 0.19, "bug-chitin-black", scale=(1.1, 1.25, 0.55),
          segments=20, rings=12)
@@ -136,15 +153,20 @@ def build_swarmer() -> None:
     face((0, -0.32, 0.255), 0.10)
     for side in (-1, 1):
         s = "l" if side < 0 else "r"
-        limb(f"leg_{s}0", [(side * 0.17, -0.06, 0.255), (side * 0.34, -0.19, 0.225),
-                           (side * 0.405, -0.24, 0.085), (side * 0.47, -0.31, 0.015)], 0.038)
-        limb(f"leg_{s}1", [(side * 0.15, 0.18, 0.265), (side * 0.32, 0.285, 0.255),
-                           (side * 0.39, 0.365, 0.07), (side * 0.44, 0.44, 0.015)], 0.042)
+        limbs[f"leg_{s}0"] = [(side * 0.17, -0.06, 0.255), (side * 0.34, -0.19, 0.225),
+                              (side * 0.405, -0.24, 0.085), (side * 0.47, -0.31, 0.015)]
+        limb(f"leg_{s}0", limbs[f"leg_{s}0"], 0.038)
+        limbs[f"leg_{s}1"] = [(side * 0.15, 0.18, 0.265), (side * 0.32, 0.285, 0.255),
+                              (side * 0.39, 0.365, 0.07), (side * 0.44, 0.44, 0.015)]
+        limb(f"leg_{s}1", limbs[f"leg_{s}1"], 0.042)
         wrist = (side * 0.205, -0.425, 0.18)
+        limbs[f"blade_{s}"] = [(side * 0.12, -0.22, 0.255), (side * 0.245, -0.34, 0.22), wrist,
+                               (side * 0.245, -0.475, 0.155), (side * 0.25, -0.53, 0.095),
+                               (side * 0.205, -0.555, 0.035)]
         forearm(f"blade_{s}", (side * 0.12, -0.22, 0.255), (side * 0.245, -0.34, 0.22), wrist,
                 [wrist, (side * 0.245, -0.475, 0.155), (side * 0.25, -0.53, 0.095),
                  (side * 0.205, -0.555, 0.035)], [0.026, 0.041, 0.028, 0.001], 0.035)
-    finish(0.5, 0.98, 1.02)
+    return limbs
 
 
 # ===========================================
@@ -152,8 +174,24 @@ def build_swarmer() -> None:
 # ===========================================
 
 
+#: The lurker's physical bounds: height, then the widest and deepest it may be.
+LURKER_BOUNDS = (1.3, 0.95, 1.05)
+
+
 def build_lurker() -> None:
     """A lean mantis with an exposed wedge face and no enclosing hood."""
+    lurker_anatomy()
+    finish(*LURKER_BOUNDS)
+
+
+def lurker_anatomy() -> dict:
+    """Every lurker node at its authored size, before `finish` scales it.
+
+    The armoured variant (bug-lurker-armoured.py) builds this, adds its
+    plates to these nodes, and finishes at its own height. Returns each
+    limb node's authored path, as `swarmer_anatomy` does.
+    """
+    limbs = {}
     before = set(mesh_objects())
     sweep("thorax", [(0, 0.11, 0.50), (0, 0.07, 0.70), (0, -0.04, 0.90), (0, -0.20, 1.055)],
           [0.10, 0.075, 0.084, 0.067], [0.105, 0.08, 0.08, 0.06],
@@ -190,16 +228,21 @@ def build_lurker() -> None:
     group_new(head_start, "head")
     for side in (-1, 1):
         label = "l" if side < 0 else "r"
-        limb(f"leg_{label}0", [(side * 0.075, 0.055, 0.59), (side * 0.20, -0.09, 0.37),
-                              (side * 0.145, -0.09, 0.10), (side * 0.20, -0.22, 0.015)], 0.033)
-        limb(f"leg_{label}1", [(side * 0.08, 0.15, 0.56), (side * 0.24, 0.31, 0.45),
-                              (side * 0.25, 0.28, 0.12), (side * 0.31, 0.42, 0.015)], 0.036)
+        limbs[f"leg_{label}0"] = [(side * 0.075, 0.055, 0.59), (side * 0.20, -0.09, 0.37),
+                                  (side * 0.145, -0.09, 0.10), (side * 0.20, -0.22, 0.015)]
+        limb(f"leg_{label}0", limbs[f"leg_{label}0"], 0.033)
+        limbs[f"leg_{label}1"] = [(side * 0.08, 0.15, 0.56), (side * 0.24, 0.31, 0.45),
+                                  (side * 0.25, 0.28, 0.12), (side * 0.31, 0.42, 0.015)]
+        limb(f"leg_{label}1", limbs[f"leg_{label}1"], 0.036)
         wrist = (side * 0.31, -0.345, 0.88)
+        limbs[f"scythe_{label}"] = [(side * 0.07, -0.07, 0.89), (side * 0.27, -0.11, 1.005), wrist,
+                                    (side * 0.38, -0.46, 0.77), (side * 0.42, -0.53, 0.57),
+                                    (side * 0.38, -0.56, 0.34), (side * 0.27, -0.49, 0.13)]
         forearm(f"scythe_{label}", (side * 0.07, -0.07, 0.89), (side * 0.27, -0.11, 1.005), wrist,
                 [wrist, (side * 0.38, -0.46, 0.77), (side * 0.42, -0.53, 0.57),
                  (side * 0.38, -0.56, 0.34), (side * 0.27, -0.49, 0.13)],
                 [0.038, 0.066, 0.077, 0.049, 0.001], 0.044)
-    finish(1.3, 0.95, 1.05)
+    return limbs
 
 
 # ===========================================

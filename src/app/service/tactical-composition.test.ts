@@ -257,6 +257,7 @@ describe("composeTactical", () => {
       const beside = walkableTileNear(mission, mission.units[0]!.pos);
       return {
         tactical,
+        dispatcher,
         store: new GameStore(started.value, dispatcher),
         missionId,
         beside,
@@ -328,6 +329,95 @@ describe("composeTactical", () => {
           (objective) => objective.kind === "rescue-civilians",
         ),
       ).toMatchObject({ groupIds: [placed.id] });
+    });
+
+    describe("the armoured variants' plate in a live mission (#1179)", () => {
+      /**
+       * Fires the first squad's weapon at `species`, put down beside it by
+       * the development tools, from the given mission state and RNG: the
+       * shipped PlaceUnit and Attack rules end to end, species catalogue
+       * and combat tuning included.
+       */
+      function shotAt(
+        live: ReturnType<typeof liveMission>,
+        species: "swarmer" | "swarmer-armoured",
+        seed: number,
+      ): { hit: boolean; damage: number; targetHp: number; hp: number } {
+        const start = live.store.getState();
+        const mission = start.activeMission!;
+        const squad = mission.units.find((u) => u.kind === "squad")!;
+        // The fixture started its mission on a fresh id generator, so the
+        // store's own counter would hand the new bug the mech's id: move
+        // it past every unit already on the map.
+        const store = new GameStore(
+          {
+            ...start,
+            meta: {
+              ...start.meta,
+              rng: { ...start.meta.rng, state: seed },
+              ids: {
+                ...start.meta.ids,
+                counters: { ...start.meta.ids.counters, unit: 100 },
+              },
+            },
+          },
+          live.dispatcher,
+        );
+        const tile = walkableTileNear(mission, squad.pos);
+        const placed = store.dispatch(
+          placeUnit(live.missionId, "bug", species, tile),
+        );
+        if (!placed.ok) throw new Error(`placing a ${species} failed`);
+        const target = store.getState().activeMission!.units.at(-1)!;
+        expect(target.sourceId).toBe(species);
+        const fired = store.dispatch({
+          type: ATTACK,
+          payload: { attackerId: squad.id, targetId: target.id },
+        });
+        if (!fired.ok) throw new Error(`the shot failed: ${fired.error.code}`);
+        const shot = fired.value.events.find((e) => e.type === ATTACK_RESOLVED);
+        if (shot?.type !== ATTACK_RESOLVED) throw new Error("no shot resolved");
+        return { ...shot.payload, hp: target.hp };
+      }
+
+      it("an armoured swarmer takes less from the same shot than a swarmer, a point of plate less", () => {
+        const live = liveMission(true);
+        const plate =
+          BUG_SPECIES["swarmer-armoured"].armor - BUG_SPECIES.swarmer.armor;
+        expect(plate).toBe(1);
+        let compared = 0;
+        for (let seed = 1; seed <= 12; seed++) {
+          const plain = shotAt(live, "swarmer", seed);
+          const armoured = shotAt(live, "swarmer-armoured", seed);
+          // Placed at full strength: the variant's extra body is there.
+          expect(plain.hp).toBe(BUG_SPECIES.swarmer.hp);
+          expect(armoured.hp).toBe(BUG_SPECIES["swarmer-armoured"].hp);
+          // The same roll to hit: plate turns damage, not the shot.
+          expect(armoured.hit).toBe(plain.hit);
+          if (!plain.hit) continue;
+          compared++;
+          expect(armoured.damage).toBe(Math.max(1, plain.damage - plate));
+          expect(armoured.damage).toBeLessThan(plain.damage);
+          expect(armoured.targetHp).toBe(armoured.hp - armoured.damage);
+        }
+        // Enough hits among the seeds for the comparison to mean something.
+        expect(compared).toBeGreaterThanOrEqual(3);
+      });
+
+      it("lists each variant in the development tools' enemies, by its species name", () => {
+        const { tactical } = liveMission(true);
+        for (const [id, name] of [
+          ["swarmer-armoured", "Armoured Swarmer"],
+          ["lurker-armoured", "Armoured Lurker"],
+          ["brute-armoured", "Armoured Brute"],
+        ] as const) {
+          expect(tactical.devTools?.placeable).toContainEqual({
+            kind: "bug",
+            id,
+            name,
+          });
+        }
+      });
     });
   });
 

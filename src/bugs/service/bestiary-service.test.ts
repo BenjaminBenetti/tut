@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { ACT_IDS } from "../../content/model/act-id";
+import { BESTIARY } from "../data/bestiary";
+import { ARMOURED_VARIANT_BASES } from "../data/species";
 import type { Bestiary } from "../model/bestiary";
 import type { SpeciesMix } from "../model/species-mix";
 import { bugMixFor, hasDebuted } from "./bestiary-service";
@@ -78,12 +80,17 @@ describe("bugMixFor on the shipped bestiary", () => {
     expect(mix.lurker).toBeCloseTo(20 / 85, 12);
     expect(mix.brute).toBeCloseTo(10 / 85, 12);
     expect(mix.spitter).toBeCloseTo(15 / 85, 12);
+    // Act III and the finale add the armoured variants (#1179), after
+    // the species that came before them.
     for (const act of ["act-3", "finale"] as const) {
       expect(Object.keys(bugMixFor(act, 0))).toEqual([
         "swarmer",
         "lurker",
         "brute",
         "spitter",
+        "swarmer-armoured",
+        "lurker-armoured",
+        "brute-armoured",
       ]);
     }
   });
@@ -98,6 +105,55 @@ describe("bugMixFor on the shipped bestiary", () => {
         }
       }
     }
+  });
+
+  it("mixes the armoured variants into Act III from its first mission, renormalised over the act's column (#1179)", () => {
+    // act-3: 20 + 12 + 8 + 13 + (18 + 10 + 7) = 88; the arc's 35 comes
+    // to 35/88 until the burrower's row lands and fills the column.
+    const mix = bugMixFor("act-3", 0);
+    expect(mix).toEqual({
+      swarmer: expect.closeTo(20 / 88, 12) as number,
+      lurker: expect.closeTo(12 / 88, 12) as number,
+      brute: expect.closeTo(8 / 88, 12) as number,
+      spitter: expect.closeTo(13 / 88, 12) as number,
+      "swarmer-armoured": expect.closeTo(18 / 88, 12) as number,
+      "lurker-armoured": expect.closeTo(10 / 88, 12) as number,
+      "brute-armoured": expect.closeTo(7 / 88, 12) as number,
+    });
+    const armoured =
+      mix["swarmer-armoured"]! +
+      mix["lurker-armoured"]! +
+      mix["brute-armoured"]!;
+    expect(armoured).toBeCloseTo(35 / 88, 12);
+    // The finale: 15 + 10 + 8 + 12 + (14 + 9 + 7) = 75.
+    const finale = bugMixFor("finale", 0);
+    expect(finale["swarmer-armoured"]).toBeCloseTo(14 / 75, 12);
+    expect(finale["lurker-armoured"]).toBeCloseTo(9 / 75, 12);
+    expect(finale["brute-armoured"]).toBeCloseTo(7 / 75, 12);
+    expect(finale.swarmer).toBeCloseTo(15 / 75, 12);
+  });
+
+  it("leaves every Act I and II mix exactly as it was before the variants' rows (#1179)", () => {
+    // The same table with the variant rows taken out: what every Act I
+    // and II offer rolled before they landed. Same weights, same key
+    // order, byte for byte, at every mission count.
+    const variants = new Set<string>(Object.keys(ARMOURED_VARIANT_BASES));
+    const before: Bestiary = Object.fromEntries(
+      Object.entries(BESTIARY).filter(([id]) => !variants.has(id)),
+    );
+    for (const act of ["act-1", "act-2"] as const) {
+      for (let played = 0; played <= 30; played++) {
+        const mix = bugMixFor(act, played);
+        expect(Object.keys(mix).filter((id) => variants.has(id))).toEqual([]);
+        expect(JSON.stringify(mix)).toBe(
+          JSON.stringify(bugMixFor(act, played, before)),
+        );
+      }
+    }
+    // And the variants really are in the table the check stripped.
+    expect(JSON.stringify(bugMixFor("act-3", 0))).not.toBe(
+      JSON.stringify(bugMixFor("act-3", 0, before)),
+    );
   });
 
   it("is pure: the same inputs give the same mix, in the same key order", () => {

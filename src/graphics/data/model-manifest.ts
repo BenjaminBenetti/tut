@@ -1801,6 +1801,16 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "bug.brute-armoured": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-brute-armoured.glb",
+    // The Act III armoured brute (#1179): bug.brute's nodes under a
+    // tortoise shell of slabs, at the same 2×2 footprint.
+    footprint: { w: 2, d: 2 },
+    height: 1.0,
+    sockets: [],
+    quality: "final",
+  },
   "bug.hive-guard": {
     category: "bugs",
     path: "assets/models/bugs/bug-hive-guard.glb",
@@ -1819,6 +1829,16 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "bug.lurker-armoured": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-lurker-armoured.glb",
+    // The Act III armoured lurker (#1179): bug.lurker's nodes with a face
+    // mask, thorax collars and slab sleeves on the sickle backs.
+    footprint: { w: 1, d: 1 },
+    height: 1.35,
+    sockets: [],
+    quality: "final",
+  },
   "bug.spitter": {
     category: "bugs",
     path: "assets/models/bugs/bug-spitter.glb",
@@ -1834,6 +1854,16 @@ export const MODEL_MANIFEST = {
     path: "assets/models/bugs/bug-swarmer.glb",
     footprint: { w: 1, d: 1 },
     height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
+  "bug.swarmer-armoured": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-swarmer-armoured.glb",
+    // The Act III armoured swarmer (#1179): bug.swarmer's nodes under a
+    // doubled hood, a three-slab spine and leg and hook cuffs.
+    footprint: { w: 1, d: 1 },
+    height: 0.55,
     sockets: [],
     quality: "final",
   },

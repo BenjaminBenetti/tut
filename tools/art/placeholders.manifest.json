@@ -5342,6 +5342,48 @@
     "bytes": 232740
   },
   {
+    "id": "bug.swarmer-armoured",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-swarmer-armoured.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 15668,
+    "bytes": 422900
+  },
+  {
+    "id": "bug.lurker-armoured",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-lurker-armoured.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.35,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 16356,
+    "bytes": 436012
+  },
+  {
+    "id": "bug.brute-armoured",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-brute-armoured.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 1.0,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 18668,
+    "bytes": 499468
+  },
+  {
     "id": "civ.group",
     "category": "units",
     "path": "assets/models/units/civ-group.glb",

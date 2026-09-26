@@ -39,7 +39,7 @@ The spitter has its own brief and sheet in a separate package. Everything here f
 | anything else                                                                                                                       | body                             | Bobs and rolls on a walk; lunges or recoils on an attack.                                                                                                                                              |
 
 - Put `motion_joint: true` (glTF extras) on each leg or arm node whose origin sits at the hip or shoulder. The authored joint is used **only when that side's group is a single top-level node**. Parent armour, claws, hands and toe caps under their limb node; never make them siblings of it.
-- The rig chooses its behaviour by model id. Ids starting `bug.` get the bug roll and bug arm grouping. Only the exact id `bug.swarmer` gets the swarmer's leg swing, and only `tdf.infantry.` ids get the per-figure rig (`fig<n>_legs`, `fig<n>_knee`, `fig<n>_upper`). The armoured-swarmer and civilian entries below each need a one-line rig change; see [Follow-ups](#follow-ups).
+- The rig chooses its behaviour by model id. Ids starting `bug.` get the bug roll and bug arm grouping. Ids starting `bug.swarmer` get the swarmer's leg swing, so the armoured swarmer walks like its base (#1179), and only `tdf.infantry.` ids get the per-figure rig (`fig<n>_legs`, `fig<n>_knee`, `fig<n>_upper`). The civilian entry below needs a one-line rig change; see [Follow-ups](#follow-ups).
 - A unit that never moves needs no `leg_*` nodes, because the walk cycle only runs while a unit moves.
 
 ### Summary
@@ -172,6 +172,8 @@ The Act III armoured swarmer, lurker and brute (§8). They use the same AI as th
 | Armoured lurker  | 1×1, 1.35 u          | `leg_[lr][01]`, `scythe_[lr]`  | A face mask with eye slits; thorax collars; slab sleeves on the sickle backs; armoured fins                                      | [armoured-lurker.png](../concepts/campaign/armoured-lurker.png). Thicken past the sheet a little and keep it thin. |
 | Armoured brute   | 2×2, 1.0 u           | `leg_[lr]0..2`, `cleaver_[lr]` | A tortoise-shell of slabs over the wing cases; a ram brow plate; leg cuffs; dark-backed cleavers                                 | [armoured-brute.png](../concepts/campaign/armoured-brute.png)                                                      |
 
+- **As built (#1179):** each script calls its base's anatomy (`swarmer_anatomy`, `lurker_anatomy` in `bug_parts.py`; `brute_anatomy` in `brute_parts.py`), which returns the limb paths, then joins its armour into the same nodes through the shared `armour_parts.py` (slabs, bone lips, bosses, cuffs and blade backs). Node names, pivots and `motion_joint` extras match the base's. Sizes: swarmer 15,668 triangles, lurker 16,356, brute 18,668, all under the 500 KiB cap. Two departures from the rows above: the lurker's mask has no cut slits, and its eyes glow under the mask's edge instead; the brute's shell covers the wing cases only, twelve slabs, not the whole back. Build each with `blender -b --python tools/art/make_model.py -- --script tools/art/models/bug-<base>-armoured.py --id bug.<base>-armoured --category bugs --file bug-<base>-armoured.glb --quality final`. Renders are `docs/design/renders/bug.*-armoured_*.png`; [bug-armoured-lineup.png](../bug-armoured-lineup.png) puts each beside its base (`tools/art/preview/armoured-bugs.html`, captured by `capture-armoured-bugs.mjs`), and [bug-armoured-in-game.png](../bug-armoured-in-game.png) shows them on the battlefield.
+
 ## Objectives
 
 ### Spore pod
@@ -251,7 +253,6 @@ The civilian group needs colours the palette does not have. Infantry faces are `
 
 ## Follow-ups
 
-- **Armoured swarmer gait:** `UnitMotionRig` checks `modelId === "bug.swarmer"` for the swarmer's leg swing. With `bug.swarmer-armoured`, change the check to `startsWith("bug.swarmer")`.
 - **Civilian figures:** the figure rig runs only for `tdf.infantry.` ids. A `civ.` id needs that check widened, or the group only bobs as one body.
 - **Footprints of 3 and 4:** the Broodmother, Sovereign and hive core are the first 3×3 and 4×4 units and props. Movement, spawn fit, vision and wall cutting were proven at 2 (#1130).
 - **Sockets:** `socket_clutch`, `socket_crown` and `socket_charge` are new names, and nothing reads them yet. `socket_muzzle` and `socket_hatch` are existing names.

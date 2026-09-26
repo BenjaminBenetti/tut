@@ -1,5 +1,11 @@
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
+import type {
+  ArmouredBaseId,
+  ArmouredVariantId,
+} from "../model/armoured-variant";
 import type { BugSpecies } from "../model/bug-species";
+import { armouredVariant } from "../service/armoured-variant-factory";
+import { ARMOURED_VARIANT_TUNING } from "./armoured-variant-tuning";
 
 // ===========================================
 // Bug species (GDD §6.4)
@@ -26,8 +32,12 @@ import type { BugSpecies } from "../model/bug-species";
 //     nobody has asked for yet.
 //   • hatchWeight is what egg spawners roll on: six swarmers to three
 //     lurkers to one brute keeps the first missions swarmy. A weight of
-//     0 is never rolled (the spitter, until the bestiary mixes it in;
-//     the Hive Guard, which is only ever placed).
+//     0 is never rolled (the spitter and the armoured variants, until
+//     the bestiary mixes them in; the Hive Guard, which is only ever
+//     placed).
+//   • The Act III armoured variants (#1179) are not written out: each is
+//     its base's block plus `ARMOURED_VARIANT_TUNING`'s armour and hit
+//     points (`armouredVariant`), so a retune above carries to them.
 //   • xpValue is what a kill is worth to the killer (#1130), sized to the
 //     rank ladder in `roster/data/ranks.ts` where a swarmer is the unit:
 //     a swarmer is one rung's worth at the bottom of the ladder, a
@@ -184,6 +194,79 @@ export const HIVE_GUARD: BugSpecies = {
   xpValue: 40,
 };
 
+// ===========================================
+// Armoured variants (campaign arc §8, #1179)
+// ===========================================
+
+/**
+ * The Act III swarmer under slab armour: a second hood layer, a slab
+ * spine and plated legs (`bug.swarmer-armoured`). Same rush, same bite,
+ * one more point of plate.
+ */
+export const SWARMER_ARMOURED: BugSpecies = armouredVariant(
+  SWARMER,
+  {
+    id: "swarmer-armoured",
+    name: "Armoured Swarmer",
+    description:
+      "A swarmer under a second hood of dark slab plate with pale rims. It still comes in numbers, and a burst no longer ends it.",
+    modelId: "bug.swarmer-armoured",
+  },
+  ARMOURED_VARIANT_TUNING.swarmer,
+);
+
+/**
+ * The Act III lurker under slab armour: a slit-eyed face mask, thorax
+ * collars and plated sickles (`bug.lurker-armoured`). Same flank, same
+ * scythes, one more point of plate.
+ */
+export const LURKER_ARMOURED: BugSpecies = armouredVariant(
+  LURKER,
+  {
+    id: "lurker-armoured",
+    name: "Armoured Lurker",
+    description:
+      "A lurker behind a slit-eyed mask, its thorax collared and its sickles sleeved in plate. It still circles for the line's back, and takes nearly twice the shooting to bring down.",
+    modelId: "bug.lurker-armoured",
+  },
+  ARMOURED_VARIANT_TUNING.lurker,
+);
+
+/**
+ * The Act III brute under slab armour: a tortoise-shell of plates, a ram
+ * brow and plate-backed cleavers (`bug.brute-armoured`). Same 2×2 block,
+ * same wall-opening cleavers, two more points of plate.
+ */
+export const BRUTE_ARMOURED: BugSpecies = armouredVariant(
+  BRUTE,
+  {
+    id: "brute-armoured",
+    name: "Armoured Brute",
+    description:
+      "A brute under a tortoise-shell of slab plates, with a ram brow over its head. Small arms barely mark it; bring something that punches through.",
+    modelId: "bug.brute-armoured",
+  },
+  ARMOURED_VARIANT_TUNING.brute,
+);
+
+/**
+ * Each armoured variant's base species (arc §8): what it is derived
+ * from, and the row of `ARMOURED_VARIANT_TUNING` it adds. Its autopsy
+ * (arc §10.2) and anything else that asks "is this an armoured bug"
+ * reads it rather than parsing ids.
+ */
+export const ARMOURED_VARIANT_BASES: Readonly<
+  Record<ArmouredVariantId, ArmouredBaseId>
+> = {
+  "swarmer-armoured": "swarmer",
+  "lurker-armoured": "lurker",
+  "brute-armoured": "brute",
+};
+
+// ===========================================
+// Catalogue
+// ===========================================
+
 /**
  * Every bug species keyed by id. Typed as a record over the closed
  * `BugSpeciesId` union so a new id without a definition fails at compile
@@ -195,4 +278,7 @@ export const BUG_SPECIES: Readonly<Record<BugSpeciesId, BugSpecies>> = {
   brute: BRUTE,
   spitter: SPITTER,
   "hive-guard": HIVE_GUARD,
+  "swarmer-armoured": SWARMER_ARMOURED,
+  "lurker-armoured": LURKER_ARMOURED,
+  "brute-armoured": BRUTE_ARMOURED,
 };

@@ -28,6 +28,19 @@ const MODELS = [
   "bug.brute",
   "bug.spitter",
   "civ.group",
+  "bug.swarmer-armoured",
+  "bug.lurker-armoured",
+  "bug.brute-armoured",
+] as const;
+
+/**
+ * The Act III armoured variants (#1179), each beside the species whose
+ * anatomy it wears: same rig nodes and pivots, so the same gait.
+ */
+const ARMOURED = [
+  ["bug.swarmer-armoured", "bug.swarmer"],
+  ["bug.lurker-armoured", "bug.lurker"],
+  ["bug.brute-armoured", "bug.brute"],
 ] as const;
 
 /**
@@ -114,9 +127,9 @@ describe("unit motion on the shipped models", () => {
         // Crescent bugs have four running legs and two independently
         // grouped blade arms; the beetle brute walks on six since #1134,
         // and the spitter (#1179) has no blades at all: it spits, and
-        // its shot plays as the body's recoil. Joining the sculpt into
-        // one mesh must fail.
-        expect(legs).toHaveLength(id === "bug.brute" ? 6 : 4);
+        // its shot plays as the body's recoil. An armoured variant has
+        // its base's limbs. Joining the sculpt into one mesh must fail.
+        expect(legs).toHaveLength(id.startsWith("bug.brute") ? 6 : 4);
         const arms: Object3D[] = [];
         clone.traverse((part) => {
           if (part.name.startsWith("motion-arm-")) arms.push(part);
@@ -213,6 +226,53 @@ describe("unit motion on a rooted bug (#1179)", () => {
   );
 });
 
+/** Every joint the rig built, by name, with its current local rotation. */
+function jointRotations(model: Object3D): Record<string, number[]> {
+  const joints: Record<string, number[]> = {};
+  model.traverse((part) => {
+    if (/^motion-(?:leg|arm)-/.test(part.name)) {
+      joints[part.name] = [part.rotation.x, part.rotation.y, part.rotation.z];
+    }
+  });
+  return joints;
+}
+
+describe("unit motion on the armoured variants (#1179)", () => {
+  it.each(ARMOURED)(
+    "walks and strikes %s exactly as its base %s",
+    async (variant, base) => {
+      const armoured = new UnitMesh(
+        "variant",
+        await loadModel(variant),
+        variant,
+      );
+      const plain = new UnitMesh("base", await loadModel(base), base);
+      // The same legs and blades, found under the same names.
+      expect(Object.keys(jointRotations(armoured.object)).sort()).toEqual(
+        Object.keys(jointRotations(plain.object)).sort(),
+      );
+      // Mid-stride, every leg and arm swings through the base's angle:
+      // the swarmer's variant keeps the swarmer's longer stride.
+      for (const strides of [0.13, 0.37, 0.8]) {
+        armoured.motion!.walk(strides);
+        plain.motion!.walk(strides);
+        const moving = jointRotations(armoured.object);
+        expect(Object.values(moving).some(([x]) => Math.abs(x!) > 0.1)).toBe(
+          true,
+        );
+        expect(moving).toEqual(jointRotations(plain.object));
+      }
+      armoured.motion!.attack(0.35, true);
+      plain.motion!.attack(0.35, true);
+      expect(jointRotations(armoured.object)).toEqual(
+        jointRotations(plain.object),
+      );
+      armoured.dispose();
+      plain.dispose();
+    },
+  );
+});
+
 it.each([
   ["tdf.mech.assembled-a", "socket_muzzle"],
   // The leader kneels front-centre, and since #1132 every figure's upper
@@ -220,6 +280,7 @@ it.each([
   // the front marker where its rifle used to be.
   ["tdf.infantry.rifle", "fig0_upper"],
   ["bug.swarmer", "head"],
+  ["bug.swarmer-armoured", "head"],
   // A rooted guard never walks, so turning toward its target is the only
   // way it aims (#1179): its head behind the shield must lead.
   ["bug.hive-guard", "head"],

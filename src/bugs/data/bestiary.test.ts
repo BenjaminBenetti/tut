@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { ACT_IDS } from "../../content/model/act-id";
+import type { ActId } from "../../content/model/act-id";
+import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
+import type { ArmouredBaseId } from "../model/armoured-variant";
 import { BESTIARY } from "./bestiary";
+import { ARMOURED_VARIANT_BASES } from "./species";
 
 describe("BESTIARY", () => {
   it("carries the campaign arc §8 shares and debuts for the shipped species, and places the Hive Guard", () => {
@@ -28,6 +32,21 @@ describe("BESTIARY", () => {
         debut: { act: "act-1", missionsInAct: 7 },
       },
       "hive-guard": { kind: "placed" },
+      "swarmer-armoured": {
+        kind: "rolled",
+        shares: { "act-1": 0, "act-2": 0, "act-3": 18, finale: 14 },
+        debut: { act: "act-3", missionsInAct: 0 },
+      },
+      "lurker-armoured": {
+        kind: "rolled",
+        shares: { "act-1": 0, "act-2": 0, "act-3": 10, finale: 9 },
+        debut: { act: "act-3", missionsInAct: 0 },
+      },
+      "brute-armoured": {
+        kind: "rolled",
+        shares: { "act-1": 0, "act-2": 0, "act-3": 7, finale: 7 },
+        debut: { act: "act-3", missionsInAct: 0 },
+      },
     });
   });
 
@@ -53,4 +72,53 @@ describe("BESTIARY", () => {
       expect(entry.shares[entry.debut.act]).toBeGreaterThan(0);
     }
   });
+});
+
+describe("BESTIARY's armoured variants (#1179)", () => {
+  const variants = Object.entries(ARMOURED_VARIANT_BASES) as [
+    keyof typeof ARMOURED_VARIANT_BASES,
+    ArmouredBaseId,
+  ][];
+
+  /** A rolled entry's share in an act (a placed entry has none). */
+  function share(id: BugSpeciesId, act: ActId): number {
+    const entry = BESTIARY[id];
+    return entry?.kind === "rolled" ? entry.shares[act] : 0;
+  }
+
+  it("take nothing before Act III and debut at its first mission", () => {
+    for (const [variant] of variants) {
+      expect([
+        variant,
+        share(variant, "act-1"),
+        share(variant, "act-2"),
+      ]).toEqual([variant, 0, 0]);
+      const entry = BESTIARY[variant];
+      expect(entry?.kind === "rolled" && entry.debut).toEqual({
+        act: "act-3",
+        missionsInAct: 0,
+      });
+    }
+  });
+
+  it.each([
+    ["act-3", 35],
+    ["finale", 30],
+  ] as const)(
+    "split the arc's %s total of %i in proportion to their bases, each within a point",
+    (act, total) => {
+      const shares = variants.map(([variant]) => share(variant, act));
+      expect(shares.reduce((sum, value) => sum + value, 0)).toBe(total);
+      const bases = variants.map(([, base]) => share(base, act));
+      const baseTotal = bases.reduce((sum, value) => sum + value, 0);
+      for (const [index, [variant]] of variants.entries()) {
+        const exact = (total * bases[index]!) / baseTotal;
+        expect([variant, Math.abs(shares[index]! - exact) < 1]).toEqual([
+          variant,
+          true,
+        ]);
+        expect(Number.isInteger(shares[index])).toBe(true);
+      }
+    },
+  );
 });

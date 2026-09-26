@@ -114,6 +114,7 @@ import type { UnitStatusChip } from "./unit-status-layer-view";
 import { UnitStatusLayerView } from "./unit-status-layer-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { chargeRegisterFor } from "../service/charge-register";
+import { speciesNoun } from "../service/species-noun";
 import { jevEndTurnPending } from "../../tactical/service/jev-control-service";
 
 // ===========================================
@@ -2214,7 +2215,7 @@ export class TacticalHudView {
         // A netted specimen rides on its carrier's chip (#1179).
         ...(unit.carrying === undefined
           ? {}
-          : { carrying: `live ${unit.carrying.species}` }),
+          : { carrying: `live ${speciesNoun(unit.carrying.species)}` }),
       });
     }
     this.status.show(chips);

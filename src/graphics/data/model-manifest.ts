@@ -1798,6 +1798,16 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "bug.spitter": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-spitter.glb",
+    // The first ranged bug (#1179): a caged acid sac over four legs and
+    // a spout. `socket_muzzle` marks the spout's lip.
+    footprint: { w: 1, d: 1 },
+    height: 0.9,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
   "bug.swarmer": {
     category: "bugs",
     path: "assets/models/bugs/bug-swarmer.glb",

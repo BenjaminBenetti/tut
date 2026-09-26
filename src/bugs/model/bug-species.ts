@@ -10,15 +10,18 @@ import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
 /**
  * How a species fights, as a tag the bug AI (M2) switches on: `rush`
  * closes the distance every turn, `flank` circles for the line's back,
- * `punish-clumps` walks at whatever group is densest.
+ * `punish-clumps` walks at whatever group is densest, and `snipe`
+ * (#1179) fires from covered ground at range and backs off when a
+ * squad closes.
  */
-export type BehaviourTag = "rush" | "flank" | "punish-clumps";
+export type BehaviourTag = "rush" | "flank" | "punish-clumps" | "snipe";
 
 /** Every behaviour tag, in a fixed order. */
 export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
   "rush",
   "flank",
   "punish-clumps",
+  "snipe",
 ];
 
 // ===========================================
@@ -65,7 +68,13 @@ export interface BugSpecies extends BugUnitSource {
   readonly behaviour: BehaviourTag;
   /** Model rendered on the map. */
   readonly modelId: ModelAssetId;
-  /** Relative chance of hatching from an egg spawner. Positive; weights need not sum to 1. */
+  /**
+   * Relative chance of hatching from an egg spawner or arriving in an
+   * edge wave; weights need not sum to 1. Non-negative: `0` means the
+   * species is never rolled by default (the spitter until the
+   * campaign's bestiary mixes it in, #1179), though the debug
+   * placement tool and a per-mission mix can still field it.
+   */
   readonly hatchWeight: number;
   /**
    * Experience the killer's squad or mech earns for one of these

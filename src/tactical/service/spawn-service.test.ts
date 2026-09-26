@@ -312,6 +312,34 @@ describe("edgeWave", () => {
     expect(mission.units).toEqual([]);
   });
 
+  it("never rolls a species of weight 0, and brings nobody when every weight is 0 (#1179)", () => {
+    // A species can ship at weight 0 — the spitter does, until the
+    // campaign's bestiary mixes it in — and must then never arrive by
+    // the default roll. Held back last in the list, where a roll that
+    // lands exactly on the running total would otherwise fall through
+    // to it.
+    const held: SpawnSource = { ...SWARMER, id: "held", hatchWeight: 0 };
+    const mission = missionWith(fieldWithEdges(), [], {
+      phase: "bugs",
+      turn: 9,
+      difficulty: 5,
+      edgeSpawn: { nextTurn: 9, wave: 3 },
+    });
+    for (let seed = 1; seed <= 12; seed++) {
+      const result = edgeWave(mission, ctxFor(seed), {
+        species: [SWARMER, BRUTE, held],
+        tuning: T,
+      });
+      const ids = bugsOf(result.state).map((b) => b.sourceId);
+      expect(ids.length).toBeGreaterThan(0);
+      expect(ids).not.toContain("held");
+    }
+    // Nothing to roll: the wave is skipped rather than the roll failing.
+    const none = edgeWave(mission, ctxFor(1), { species: [held], tuning: T });
+    expect(bugsOf(none.state)).toEqual([]);
+    expect(none.events).toEqual([]);
+  });
+
   it("escalates with the waves so far, difficulty and threat, capped by the hook's free tiles", () => {
     const mission = missionWith(
       fieldWithEdges(),

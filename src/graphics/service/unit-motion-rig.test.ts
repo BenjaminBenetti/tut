@@ -26,6 +26,7 @@ const MODELS = [
   "bug.swarmer",
   "bug.lurker",
   "bug.brute",
+  "bug.spitter",
 ] as const;
 
 /** Loads real geometry and node transforms, omitting browser-only image decoding. */
@@ -102,14 +103,16 @@ describe("unit motion on the shipped models", () => {
       );
       if (id.startsWith("bug.")) {
         // Crescent bugs have four running legs and two independently
-        // grouped blade arms; the beetle brute walks on six since #1134.
-        // Joining the sculpt into one mesh must fail.
+        // grouped blade arms; the beetle brute walks on six since #1134,
+        // and the spitter (#1179) has no blades at all: it spits, and
+        // its shot plays as the body's recoil. Joining the sculpt into
+        // one mesh must fail.
         expect(legs).toHaveLength(id === "bug.brute" ? 6 : 4);
         const arms: Object3D[] = [];
         clone.traverse((part) => {
           if (part.name.startsWith("motion-arm-")) arms.push(part);
         });
-        expect(arms).toHaveLength(2);
+        expect(arms).toHaveLength(id === "bug.spitter" ? 0 : 2);
         // Every limb's origin is its attachment. Rotation must keep it
         // at the pivot instead of orbiting around the limb's bounding box.
         for (const joint of [...legs, ...arms]) {

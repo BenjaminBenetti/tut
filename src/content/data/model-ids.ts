@@ -139,6 +139,7 @@ export const MODEL_IDS = [
   // Bugs
   "bug.brute",
   "bug.lurker",
+  "bug.spitter",
   "bug.swarmer",
   // Props
   "tdf.dropship",

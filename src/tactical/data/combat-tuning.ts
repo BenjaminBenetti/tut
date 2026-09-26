@@ -11,8 +11,9 @@ import type { CombatTuning } from "../model/combat-tuning";
  *   costs 1, so a rifle squad (65%) at eight tiles is at 58%. It cost 2
  *   until #1121, when the Executive Director found the arsenal missing
  *   too often in play: at ten tiles the starter mortar went from 42 % to
- *   51 % and the autocannon from 57 % to 66 %. Bugs are melee and never
- *   paid this, so the lift is the player's alone.
+ *   51 % and the autocannon from 57 % to 66 %. Bugs were all melee then
+ *   and never paid this, so the lift was the player's alone; the
+ *   spitter (#1179) pays the same 1 a tile, from 60 % point-blank.
  * - Low cover is worth −20, high cover −40; being flanked out of cover
  *   hands the attacker +15; each level of height is ±10, at most ±20.
  * - Distance is measured in three dimensions and a shooter standing a

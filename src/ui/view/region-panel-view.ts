@@ -1,6 +1,8 @@
 import { BIOME_INFO } from "../../content/data/biome-info";
 import type { City, CityId } from "../../overworld/model/city";
 import { MAX_INFESTATION } from "../../overworld/model/city";
+import type { HiveTuning } from "../../overworld/model/hive-tuning";
+import type { RegionId } from "../../overworld/model/region";
 import {
   citiesInRegion,
   findRegion,
@@ -9,8 +11,10 @@ import { regionInfestation } from "../../overworld/service/threat-service";
 import type { GameState } from "../../save/model/game-state";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
 import { formatWhole } from "../service/format";
+import { hiveText } from "../service/hive-text";
 import type { ThreatTone } from "../service/threat-band";
 import { threatTone } from "../service/threat-band";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -20,6 +24,12 @@ import { threatTone } from "../service/threat-band";
 export interface RegionPanelViewHandlers {
   /** The player clicked a city row. */
   readonly onSelectCity: (cityId: CityId) => void;
+}
+
+/** What the region panel reads besides the campaign. */
+export interface RegionPanelViewDeps {
+  /** How fast a hive levels, for the hive line (campaign arc §6.5). */
+  readonly hiveTuning: Pick<HiveTuning, "difficultyStepDays">;
 }
 
 // ===========================================
@@ -43,7 +53,8 @@ const METER_CLASS: Readonly<Record<ThreatTone, string>> = {
 /**
  * The Situation panel's region card (#1154, GDD §5.1): the selected
  * region's name and biome, its worst and mean infestation with a meter
- * on the worst, and one row per city with that city's scale and
+ * on the worst, the region's hive and its level when it holds one
+ * (campaign arc §6.5), and one row per city with that city's scale and
  * infestation. The selected city's row is `aria-current`; clicking a
  * row selects that city. Built once in `mount`; `update` rewrites the
  * values and reuses rows, so a tick never rebuilds it.
@@ -53,6 +64,7 @@ const METER_CLASS: Readonly<Record<ThreatTone, string>> = {
  *   │ EAST ASIA                                   │
  *   │ Biome  Temperate   Worst 62   Mean 41       │
  *   │ ▮▮▮▮▮▮░░░░                                  │
+ *   │ ⬡ Hive (level 2)          (only with a hive) │
  *   │ ▸ Tokyo      city   62                      │
  *   │   Seoul      city   37                      │
  *   │   Beijing    city   24                      │
@@ -65,6 +77,7 @@ export class RegionPanelView {
   // ===========================================
 
   private readonly handlers: RegionPanelViewHandlers;
+  private readonly deps: RegionPanelViewDeps;
   private root: HTMLElement | undefined;
   private name: HTMLElement | undefined;
   private biome: HTMLElement | undefined;
@@ -72,6 +85,8 @@ export class RegionPanelView {
   private mean: HTMLElement | undefined;
   private meter: HTMLElement | undefined;
   private fill: HTMLElement | undefined;
+  private hive: HTMLElement | undefined;
+  private hiveLabel: HTMLElement | undefined;
   private list: HTMLElement | undefined;
   private body: HTMLElement | undefined;
   private empty: HTMLElement | undefined;
@@ -83,9 +98,13 @@ export class RegionPanelView {
   // Constructor
   // ===========================================
 
-  /** @param handlers - Callback for the city rows. */
-  constructor(handlers: RegionPanelViewHandlers) {
+  /**
+   * @param handlers - Callback for the city rows.
+   * @param deps - Tuning the hive line reads.
+   */
+  constructor(handlers: RegionPanelViewHandlers, deps: RegionPanelViewDeps) {
     this.handlers = handlers;
+    this.deps = deps;
   }
 
   // ===========================================
@@ -133,11 +152,19 @@ export class RegionPanelView {
     fill.className = "tut-meter__fill";
     meter.appendChild(fill);
 
+    const hive = doc.createElement("p");
+    hive.className = "tut-region__hive";
+    hive.dataset.field = "hive";
+    hive.hidden = true;
+    const hiveLabel = doc.createElement("span");
+    hiveLabel.dataset.field = "hive-label";
+    hive.append(iconGlyph(doc, "marker-hive"), hiveLabel);
+
     const list = doc.createElement("ul");
     list.className = "tut-list tut-region__cities";
     list.dataset.role = "city-list";
 
-    body.append(grid, meter, list);
+    body.append(grid, meter, hive, list);
     section.append(title, name, empty, body);
     parent.appendChild(section);
 
@@ -167,6 +194,8 @@ export class RegionPanelView {
     this.mean = mean;
     this.meter = meter;
     this.fill = fill;
+    this.hive = hive;
+    this.hiveLabel = hiveLabel;
     this.list = list;
     this.body = body;
     this.empty = empty;
@@ -207,6 +236,7 @@ export class RegionPanelView {
       formatWhole(regionInfestation(state.overworld.map, region.id)),
     );
     this.updateMeter(worst);
+    this.updateHive(state, region.id);
     this.updateRows(cities, selection.cityId);
     this.body.hidden = false;
     this.empty.hidden = true;
@@ -238,6 +268,8 @@ export class RegionPanelView {
     this.mean = undefined;
     this.meter = undefined;
     this.fill = undefined;
+    this.hive = undefined;
+    this.hiveLabel = undefined;
     this.list = undefined;
     this.body = undefined;
     this.empty = undefined;
@@ -280,6 +312,24 @@ export class RegionPanelView {
       "--value",
       `${String((100 * worst) / MAX_INFESTATION)}%`,
     );
+  }
+
+  /**
+   * Shows the region's hive and its level today, or hides the line when
+   * the region holds none.
+   */
+  private updateHive(state: GameState, regionId: RegionId): void {
+    if (!this.hive) {
+      return;
+    }
+    const text = hiveText(state.overworld, regionId, this.deps.hiveTuning);
+    this.hive.hidden = text === undefined;
+    this.setText(this.hiveLabel, text?.label ?? "");
+    if (text === undefined) {
+      this.hive.removeAttribute("title");
+    } else {
+      this.hive.title = text.detail;
+    }
   }
 
   /** Syncs one row per city, in region order, marking the selected one current. */

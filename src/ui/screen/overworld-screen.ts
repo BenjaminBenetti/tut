@@ -6,6 +6,7 @@ import type { DeployableId } from "../../overworld/model/deployable";
 import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
 import type { CityId } from "../../overworld/model/city";
 import type { EventTypeCatalogue } from "../../overworld/model/event-type-catalogue";
+import type { HiveTuning } from "../../overworld/model/hive-tuning";
 import type { MissionId } from "../../overworld/model/mission";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { resolveEvent } from "../../overworld/model/resolve-event-command";
@@ -57,6 +58,8 @@ export interface OverworldScreenDeps {
   readonly missionTypes: MissionTypeCatalogue;
   /** Copy and choices for the pending event dialog. */
   readonly eventTypes: EventTypeCatalogue;
+  /** How fast a hive levels, for the region card's hive line (campaign arc §6.5). */
+  readonly hiveTuning: HiveTuning;
   /** Lends the map canvas to the layout's map cell while mounted; absent in unit tests. */
   readonly mapViewport?: MapViewportHost;
   /** Pointer picks on the map and where a city's marker is, for the city wheel (#1154); absent in unit tests. */
@@ -187,11 +190,14 @@ export class OverworldScreen implements Screen {
         this.deps.router.navigate("tactical");
       },
     });
-    this.regionPanel = new RegionPanelView({
-      onSelectCity: (cityId) => {
-        this.deps.selection.select(cityId);
+    this.regionPanel = new RegionPanelView(
+      {
+        onSelectCity: (cityId) => {
+          this.deps.selection.select(cityId);
+        },
       },
-    });
+      { hiveTuning: deps.hiveTuning },
+    );
     this.wheel = new RadialMenuView({
       onSelect: (id) => {
         this.chooseFromWheel(id);

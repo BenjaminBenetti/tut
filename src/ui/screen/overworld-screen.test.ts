@@ -8,6 +8,7 @@ import { err, ok } from "../../core/model/result";
 import { SimpleEventBus } from "../../core/service/simple-event-bus";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { HIVE_TUNING } from "../../overworld/data/hive-tuning";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
@@ -319,6 +320,7 @@ const depsFor = (
   deployableTypes: DEPLOYABLE_TYPES_CATALOGUE,
   missionTypes: MISSION_TYPES,
   eventTypes: EVENT_TYPES_CATALOGUE,
+  hiveTuning: HIVE_TUNING,
   ...(cityPicks === undefined ? {} : { cityPicks }),
   ...(installationPicks === undefined ? {} : { installationPicks }),
 });

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BIOME_INFO } from "../../content/data/biome-info";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { HIVE_TUNING } from "../../overworld/data/hive-tuning";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
@@ -50,6 +51,8 @@ function eastAsia(infestations: Readonly<Record<string, number>>): GameState {
   };
 }
 
+const DEPS = { hiveTuning: HIVE_TUNING };
+
 const pick = (
   regionId: string | undefined,
   cityId: string | undefined = undefined,
@@ -70,7 +73,7 @@ describe("RegionPanelView", () => {
   });
 
   it("shows the placeholder with no selection, no campaign, or an unknown region", () => {
-    const view = new RegionPanelView({ onSelectCity: vi.fn() });
+    const view = new RegionPanelView({ onSelectCity: vi.fn() }, DEPS);
     view.mount(root);
     view.update(newGame(), pick(undefined));
     expect(root.querySelector("#selected-region")?.textContent).toBe("—");
@@ -87,7 +90,7 @@ describe("RegionPanelView", () => {
   });
 
   it("renders the region name, biome, worst and mean infestation with a toned meter", () => {
-    const view = new RegionPanelView({ onSelectCity: vi.fn() });
+    const view = new RegionPanelView({ onSelectCity: vi.fn() }, DEPS);
     view.mount(root);
     view.update(
       eastAsia({ tokyo: 62, seoul: 37, beijing: 24 }),
@@ -113,7 +116,7 @@ describe("RegionPanelView", () => {
   });
 
   it("tints the meter by the worst city's band", () => {
-    const view = new RegionPanelView({ onSelectCity: vi.fn() });
+    const view = new RegionPanelView({ onSelectCity: vi.fn() }, DEPS);
     view.mount(root);
     view.update(
       eastAsia({ tokyo: 0, seoul: 0, beijing: 0 }),
@@ -127,8 +130,39 @@ describe("RegionPanelView", () => {
     );
   });
 
+  it("shows the region's hive with its level today, and nothing for a region without one", () => {
+    const view = new RegionPanelView({ onSelectCity: vi.fn() }, DEPS);
+    view.mount(root);
+    const hive = (): HTMLElement | null => field("hive");
+
+    view.update(newGame(), pick("east-asia"));
+    expect(hive()?.hidden).toBe(true);
+
+    const base = eastAsia({ tokyo: 80, seoul: 70, beijing: 60 });
+    const hived: GameState = {
+      ...base,
+      overworld: {
+        ...base.overworld,
+        day: 44,
+        hives: [{ id: "hive-1", regionId: "east-asia", formedDay: 30 }],
+      },
+    };
+    view.update(hived, pick("east-asia"));
+    expect(hive()?.hidden).toBe(false);
+    expect(field("hive-label")?.textContent).toBe("Hive (level 2)");
+    expect(hive()?.title).toBe("Formed on day 30. Gains a level every 7 days.");
+    expect(
+      hive()?.querySelector<HTMLElement>('[data-icon="marker-hive"]'),
+    ).not.toBeNull();
+
+    const otherRegion = EARTH_MAP.regions.find((r) => r.id !== "east-asia");
+    view.update(hived, pick(otherRegion?.id));
+    expect(hive()?.hidden).toBe(true);
+    expect(hive()?.hasAttribute("title")).toBe(false);
+  });
+
   it("lists every city in region order with scale and toned infestation, the selected one current", () => {
-    const view = new RegionPanelView({ onSelectCity: vi.fn() });
+    const view = new RegionPanelView({ onSelectCity: vi.fn() }, DEPS);
     view.mount(root);
     view.update(
       eastAsia({ tokyo: 62, seoul: 7, beijing: 88 }),
@@ -160,7 +194,7 @@ describe("RegionPanelView", () => {
   });
 
   it("hides an undetected city's infestation behind a question mark with no tone (GDD §5.3)", () => {
-    const view = new RegionPanelView({ onSelectCity: vi.fn() });
+    const view = new RegionPanelView({ onSelectCity: vi.fn() }, DEPS);
     view.mount(root);
     const base = eastAsia({ tokyo: 62, seoul: 40, beijing: 0 });
     const hidden: GameState = {
@@ -195,7 +229,7 @@ describe("RegionPanelView", () => {
   });
 
   it("reuses rows across updates and moves the current mark with the selection", () => {
-    const view = new RegionPanelView({ onSelectCity: vi.fn() });
+    const view = new RegionPanelView({ onSelectCity: vi.fn() }, DEPS);
     view.mount(root);
     view.update(eastAsia({ tokyo: 10 }), pick("east-asia", "tokyo"));
     const before = rows();
@@ -218,7 +252,7 @@ describe("RegionPanelView", () => {
 
   it("a click or Enter on a row selects that city", () => {
     const onSelectCity = vi.fn();
-    const view = new RegionPanelView({ onSelectCity });
+    const view = new RegionPanelView({ onSelectCity }, DEPS);
     view.mount(root);
     view.update(newGame(), pick("east-asia"));
     rows()[2]
@@ -237,7 +271,7 @@ describe("RegionPanelView", () => {
 
   it("focus lands on the card and unmount removes it with its listeners", () => {
     const onSelectCity = vi.fn();
-    const view = new RegionPanelView({ onSelectCity });
+    const view = new RegionPanelView({ onSelectCity }, DEPS);
     view.mount(root);
     view.update(newGame(), pick("east-asia"));
     view.focus();

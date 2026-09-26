@@ -219,6 +219,26 @@
 }
 
 /*
+ * The region's hive (campaign arc §6.5): the hive marker glyph and its
+ * level, in the bug tint the style guide keeps for the enemy.
+ */
+.tut-region__hive {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  color: var(--ui-bug);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tut-region__hive[hidden] {
+  display: none;
+}
+
+/*
  * One row per city in the region (#1154): name takes the width, scale
  * and infestation are fixed monospace tracks so the numbers line up.
  * As specific as `.tut-list > li`, which would otherwise win with its

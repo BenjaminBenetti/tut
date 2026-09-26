@@ -8,6 +8,7 @@ import { LedgerTransactionService } from "../../economy/service/transaction-serv
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { DEPLOYABLE_TYPES } from "../data/deployable-types";
 import { EARTH_MAP } from "../data/earth-map";
+import { HIVE_TUNING } from "../data/hive-tuning";
 import { INFESTATION_TUNING } from "../data/infestation-tuning";
 import { MISSION_TUNING } from "../data/mission-tuning";
 import { NEW_GAME_TUNING } from "../data/new-game-tuning";
@@ -55,6 +56,7 @@ const TICK_DEPS: TickDeps = {
     EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
   ),
   eventTuning: EVENT_TUNING,
+  hiveTuning: HIVE_TUNING,
 };
 
 function newGame(seed: number): GameState {
@@ -259,11 +261,12 @@ describe("createAdvanceDayHandler", () => {
 // ===========================================
 
 describe("default tick pipeline", () => {
-  it("lists the M1 steps in the documented order", () => {
+  it("lists the steps in the documented order", () => {
     expect(createDefaultTickSteps(TICK_DEPS).map((step) => step.name)).toEqual([
       TICK_STEP_NAMES.upkeep,
       TICK_STEP_NAMES.growth,
       TICK_STEP_NAMES.spread,
+      TICK_STEP_NAMES.hiveFormation,
       TICK_STEP_NAMES.detection,
       TICK_STEP_NAMES.missionExpiry,
       TICK_STEP_NAMES.missionGeneration,

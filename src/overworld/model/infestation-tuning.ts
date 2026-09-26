@@ -8,7 +8,8 @@
  *   growth = baseGrowthRate × (1 + threatFactor × threat / 100) × growthFactor[city]
  *
  *   spread: city ≥ spreadThreshold, off cooldown
- *             ──► one least-infested neighbour += spreadAmount × hiveSpreadMultiplier?
+ *             ──► one least-infested neighbour += spreadAmount
+ *                                                   (× hiveSpreadMultiplier in a hive region)
  *             ──► cooldown[city] = spreadCooldownDays
  *
  *   seed:   P(clean city) = seedChance × threat / 100 × (1 − deterrence[region])
@@ -49,8 +50,8 @@ export interface InfestationTuning {
   readonly seedAmount: number;
   /**
    * Multiplier on `spreadAmount` for cities in a region that hosts a bug
-   * hive (GDD §5.3, M3). Hook point for #M3: nothing reads it until hives
-   * exist, so it is `1` in the defaults. Positive.
+   * hive (GDD §5.3, campaign arc §6.5). The spread service rounds the
+   * product to a whole point (`spreadAmountFrom`). Positive.
    */
   readonly hiveSpreadMultiplier: number;
   /**

@@ -212,6 +212,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             selection,
             missionTypes: game.content.missionTypes,
             eventTypes: game.content.eventTypes,
+            hiveTuning: game.content.hiveTuning,
             deployableTypes,
             mapViewport,
             cityPicks,

@@ -44,9 +44,53 @@ export interface InfestationSpreadState {
 export type InfestationSpreadEventUnion =
   InfestationSpreadEvent | InfestationSeededEvent;
 
+/**
+ * What the day's hives and liberations change about spread (campaign
+ * arc §6.5), by region: a city in a hive region pushes
+ * `hiveSpreadMultiplier` times as much, and a city in a region under a
+ * growth pause does not spread at all.
+ */
+export interface SpreadRegionConditions {
+  /** Regions that hold a hive. */
+  readonly hiveRegions: ReadonlySet<RegionId>;
+  /** Regions whose growth and spread are paused today. */
+  readonly pausedRegions: ReadonlySet<RegionId>;
+}
+
+// ===========================================
+// Constants
+// ===========================================
+
+/** No hives and no pauses: spread exactly as it was before hives existed. */
+export const NO_SPREAD_CONDITIONS: SpreadRegionConditions = {
+  hiveRegions: new Set(),
+  pausedRegions: new Set(),
+};
+
 // ===========================================
 // Formula
 // ===========================================
+
+/**
+ * Infestation points one spread from a city in `regionId` pushes, before
+ * clamping (arc §6.5): `spreadAmount`, times `hiveSpreadMultiplier` and
+ * rounded to a whole point when the region holds a hive.
+ *
+ * ```
+ *   hive region ──► round(spreadAmount × hiveSpreadMultiplier)   10 × 1.5 = 15
+ *   otherwise   ──► spreadAmount                                 10
+ * ```
+ */
+export function spreadAmountFrom(
+  regionId: RegionId,
+  hiveRegions: ReadonlySet<RegionId>,
+  tuning: InfestationTuning,
+): number {
+  if (!hiveRegions.has(regionId)) {
+    return tuning.spreadAmount;
+  }
+  return Math.round(tuning.spreadAmount * tuning.hiveSpreadMultiplier);
+}
 
 /**
  * Probability that one clean city is seeded today (GDD §5.3):
@@ -76,11 +120,14 @@ export function seedProbability(
  *
  * ```
  *   1. cooldowns tick down by one day; entries at zero are dropped
- *   2. spread   each city ≥ spreadThreshold and off cooldown, in map order:
+ *   2. spread   each city ≥ spreadThreshold, off cooldown and not in a
+ *               paused region, in map order:
  *                 candidates = neighbours below MAX_INFESTATION (levels as of
  *                              the start of the day)
  *                 target     = rng.pick(least-infested candidates)
- *                 target    += spreadAmount   (clamped; several sources stack)
+ *                 target    += spreadAmountFrom(city's region)
+ *                              (× hiveSpreadMultiplier in a hive region;
+ *                               clamped; several sources stack)
  *                 cooldown[city] = spreadCooldownDays
  *   3. seed     each city still clean after spread, in map order:
  *                 rng.chance(seedProbability(threat, deterrence[region]))
@@ -93,7 +140,9 @@ export function seedProbability(
  *
  * RNG draws happen in exactly that order and only for those decisions,
  * so a fixed seed replays the same day. The caller passes a fork of the
- * tick's RNG labelled for this step.
+ * tick's RNG labelled for this step. A paused city draws nothing, and
+ * with `NO_SPREAD_CONDITIONS` (no hives, no pauses: every Act I day) the
+ * draws and amounts are exactly those from before hives existed.
  *
  * @throws {RangeError} if `threat` is outside `[MIN_THREAT, MAX_THREAT]`,
  *   if a deterrence value is outside `[0, 1]` or names an unknown
@@ -107,6 +156,7 @@ export function applySpread(
   cooldowns: SpreadCooldowns,
   rng: Rng,
   tuning: InfestationTuning,
+  regions: SpreadRegionConditions = NO_SPREAD_CONDITIONS,
 ): Applied<InfestationSpreadState, InfestationSpreadEventUnion> {
   assertThreat(threat);
   assertDeterrence(map, deterrence);
@@ -122,7 +172,8 @@ export function applySpread(
   for (const city of map.cities) {
     if (
       city.infestation < tuning.spreadThreshold ||
-      nextCooldowns[city.id] !== undefined
+      nextCooldowns[city.id] !== undefined ||
+      regions.pausedRegions.has(city.regionId)
     ) {
       continue;
     }
@@ -132,7 +183,9 @@ export function applySpread(
     }
     const target = rng.pick(candidates);
     const before = levels.get(target.id) ?? target.infestation;
-    const after = clampInfestation(before + tuning.spreadAmount);
+    const after = clampInfestation(
+      before + spreadAmountFrom(city.regionId, regions.hiveRegions, tuning),
+    );
     const amount = after - before;
     if (amount <= 0) {
       continue;

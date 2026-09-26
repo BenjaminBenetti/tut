@@ -10,11 +10,13 @@ import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
 /**
  * How a species fights, as a tag the bug AI (M2) switches on: `rush`
  * closes the distance every turn, `flank` circles for the line's back,
- * `punish-clumps` walks at whatever group is densest, and `snipe`
- * (#1179) fires from covered ground at range and backs off when a
- * squad closes.
+ * `punish-clumps` walks at whatever group is densest, `snipe` (#1179)
+ * fires from covered ground at range and backs off when a squad closes,
+ * and `guard` (#1179) never moves: it fires at the best target in reach
+ * and sight, or holds.
  */
-export type BehaviourTag = "rush" | "flank" | "punish-clumps" | "snipe";
+export type BehaviourTag =
+  "rush" | "flank" | "punish-clumps" | "snipe" | "guard";
 
 /** Every behaviour tag, in a fixed order. */
 export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
@@ -22,6 +24,7 @@ export const BEHAVIOUR_TAGS: readonly BehaviourTag[] = [
   "flank",
   "punish-clumps",
   "snipe",
+  "guard",
 ];
 
 // ===========================================
@@ -56,7 +59,11 @@ export interface BugSpecies extends BugUnitSource {
   readonly hp: number;
   /** Armor points subtracted from each hit after `armorPen`. Non-negative. */
   readonly armor: number;
-  /** Tiles moved per movement action. Positive. */
+  /**
+   * Tiles moved per movement action. Non-negative: `0` is a rooted
+   * species (the Hive Guard, #1179), whose move budget is empty so the
+   * movement rules refuse every path it could be given.
+   */
   readonly move: number;
   /** Action points per turn. Positive. */
   readonly ap: number;

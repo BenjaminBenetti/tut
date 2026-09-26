@@ -6,7 +6,14 @@ import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
 import { DEMOLITION_TUNING } from "../../tactical/data/demolition-tuning";
 import { isMelee } from "../../tactical/model/weapon-profile";
 import { BEHAVIOUR_TAGS } from "../model/bug-species";
-import { BRUTE, BUG_SPECIES, LURKER, SPITTER, SWARMER } from "./species";
+import {
+  BRUTE,
+  BUG_SPECIES,
+  HIVE_GUARD,
+  LURKER,
+  SPITTER,
+  SWARMER,
+} from "./species";
 
 describe("bug species data", () => {
   it("defines every id exactly once, keyed by its own id", () => {
@@ -16,17 +23,23 @@ describe("bug species data", () => {
     for (const id of BUG_SPECIES_IDS) {
       expect(BUG_SPECIES[id].id).toBe(id);
     }
-    expect([SWARMER, LURKER, BRUTE, SPITTER].map((s) => s.id)).toEqual(
-      BUG_SPECIES_IDS,
-    );
+    expect(
+      [SWARMER, LURKER, BRUTE, SPITTER, HIVE_GUARD].map((s) => s.id),
+    ).toEqual(BUG_SPECIES_IDS);
   });
 
   it("keeps every stat positive where it must be and in range where it is bounded", () => {
     for (const species of Object.values(BUG_SPECIES)) {
-      for (const value of [species.hp, species.move, species.ap]) {
+      for (const value of [species.hp, species.ap]) {
         expect(Number.isInteger(value)).toBe(true);
         expect(value).toBeGreaterThan(0);
       }
+      // Zero move is a rooted species, and only the guard behaviour,
+      // which never plans a step, may drive one (#1179).
+      expect(Number.isInteger(species.move)).toBe(true);
+      expect(species.move).toBeGreaterThanOrEqual(
+        species.behaviour === "guard" ? 0 : 1,
+      );
       // Zero is a weight: a species the default roll never produces
       // (see "rolls only the species with a weight above 0").
       expect(Number.isInteger(species.hatchWeight)).toBe(true);
@@ -66,6 +79,8 @@ describe("bug species data", () => {
       .map((s) => s.id);
     expect(rolled).toEqual(["swarmer", "lurker", "brute"]);
     expect(SPITTER.hatchWeight).toBe(0);
+    // The Hive Guard is never rolled at all: missions place it (#1179).
+    expect(HIVE_GUARD.hatchWeight).toBe(0);
     // The default mix itself is unchanged: six to three to one.
     expect([SWARMER, LURKER, BRUTE].map((s) => s.hatchWeight)).toEqual([
       6, 3, 1,
@@ -96,6 +111,9 @@ describe("bug species data", () => {
     expect(LURKER.xpValue).toBeLessThan(BRUTE.xpValue);
     expect(SPITTER.xpValue).toBeGreaterThan(SWARMER.xpValue);
     expect(SPITTER.xpValue).toBeLessThan(LURKER.xpValue);
+    // The Hive Guard sits between a lurker and a brute (#1179).
+    expect(HIVE_GUARD.xpValue).toBeGreaterThan(LURKER.xpValue);
+    expect(HIVE_GUARD.xpValue).toBeLessThan(BRUTE.xpValue);
     for (const species of Object.values(BUG_SPECIES)) {
       expect(Number.isInteger(species.xpValue) && species.xpValue > 0).toBe(
         true,
@@ -130,6 +148,7 @@ describe("the brute's block and cleavers (#1130)", () => {
     expect(SWARMER.footprint).toBeUndefined();
     expect(LURKER.footprint).toBeUndefined();
     expect(SPITTER.footprint).toBeUndefined();
+    expect(HIVE_GUARD.footprint).toBeUndefined();
   });
 
   it("brings enough force to open a solid wall, since it fits through no door", () => {
@@ -141,7 +160,7 @@ describe("the brute's block and cleavers (#1130)", () => {
 });
 
 describe("the spitter's acid (#1179)", () => {
-  it("is the one ranged bug: about six tiles, so cover protects against it", () => {
+  it("is the one ranged bug that walks: about six tiles, so cover protects against it", () => {
     // Melee ignores cover (#446); a ranged weapon does not. The spitter
     // is the first bug a squad in cover is safer from.
     expect(isMelee(SPITTER.weapon)).toBe(false);
@@ -162,5 +181,32 @@ describe("the spitter's acid (#1179)", () => {
     expect(SPITTER.move).toBeGreaterThan(BRUTE.move);
     expect(SPITTER.behaviour).toBe("snipe");
     expect(SPITTER.modelId).toBe("bug.spitter");
+  });
+});
+
+describe("the Hive Guard's spines (#1179)", () => {
+  it("is rooted: no move at all, and the guard behaviour that never asks for one", () => {
+    expect(HIVE_GUARD.move).toBe(0);
+    expect(HIVE_GUARD.behaviour).toBe("guard");
+    expect(HIVE_GUARD.modelId).toBe("bug.hive-guard");
+    for (const species of [SWARMER, LURKER, BRUTE, SPITTER]) {
+      expect([species.id, species.move > 0]).toEqual([species.id, true]);
+    }
+  });
+
+  it("throws spines a tile further than the spitter spits, inside a carbine's reach", () => {
+    expect(isMelee(HIVE_GUARD.weapon)).toBe(false);
+    expect(HIVE_GUARD.weapon.range).toBe(7);
+    expect(HIVE_GUARD.weapon.range).toBeGreaterThan(SPITTER.weapon.range);
+    expect(HIVE_GUARD.weapon.aoe).toBeUndefined();
+  });
+
+  it("hits moderately and takes a beating: tougher than a lurker, softer than a brute", () => {
+    expect(HIVE_GUARD.weapon.damage).toBeGreaterThan(SPITTER.weapon.damage);
+    expect(HIVE_GUARD.weapon.damage).toBeLessThan(LURKER.weapon.damage);
+    expect(HIVE_GUARD.hp).toBeGreaterThan(LURKER.hp);
+    expect(HIVE_GUARD.hp).toBeLessThan(BRUTE.hp);
+    expect(HIVE_GUARD.armor).toBeGreaterThanOrEqual(1);
+    expect(HIVE_GUARD.armor).toBeLessThanOrEqual(2);
   });
 });

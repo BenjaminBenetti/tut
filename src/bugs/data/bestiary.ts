@@ -15,13 +15,15 @@ import type { Bestiary } from "../model/bestiary";
  *   lurker      25     20     12     10     act-1, first mission (M1)
  *   brute        5     10      8      8     act-1, after 4 played (M5)
  *   spitter     10     15     13     12     act-1, after 7 played (M8)
+ *   hive-guard  placed: stood by its mission's setup, never rolled
  * ```
  *
  * Shares are the arc's percentages as written. The arc's other rolled
  * species (the burrower, from act-2 after 5 played, and the armoured
  * variants, from act-3) add their rows when they land; until then a mix
- * renormalises over the species here. The placed bosses (Hive Guard,
- * Broodmother, Sovereign) take a `placed` entry when they land.
+ * renormalises over the species here. The placed bugs take a `placed`
+ * entry: the Hive Guard now, the Broodmother and the Sovereign when
+ * they land.
  *
  * The brute is held back to M5 so its arrival is an event, and the
  * spitter to M8.
@@ -47,4 +49,7 @@ export const BESTIARY: Bestiary = {
     shares: { "act-1": 10, "act-2": 15, "act-3": 13, finale: 12 },
     debut: { act: "act-1", missionsInAct: 7 },
   },
+  // Placed beside the hive core by the Hive Assault's setup (arc §6.5,
+  // §7.5), never rolled into a hatch or a wave (ADR 0013 §2.6).
+  "hive-guard": { kind: "placed" },
 };

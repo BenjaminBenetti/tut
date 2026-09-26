@@ -12,10 +12,11 @@ import type { BugSpecies } from "../model/bug-species";
 //     lurkers take a focused turn, brutes soak a squad's volley.
 //   • move is in tiles per action; swarmers outrun infantry, brutes do
 //     not. Every species has two actions, so a swarmer can move twice
-//     or move and bite.
-//   • Weapons are melee (range 1) except the spitter's acid (#1179);
-//     accuracy and damage climb with size, and only the brute's blades
-//     punch through mech armor. The
+//     or move and bite. The Hive Guard's is 0: it is rooted in its
+//     chamber and never moves at all (#1179).
+//   • Weapons are melee (range 1) except the spitter's acid and the Hive
+//     Guard's spines (#1179); accuracy and damage climb with size, and
+//     only the brute's blades punch through mech armor. The
 //     brute's blow also sweeps the tiles beside its mark and opens
 //     walls (#1121, #1130); the small species mark nothing.
 //   • footprint: the brute stands on a 2×2 block (#1130); the small
@@ -25,13 +26,16 @@ import type { BugSpecies } from "../model/bug-species";
 //     nobody has asked for yet.
 //   • hatchWeight is what egg spawners roll on: six swarmers to three
 //     lurkers to one brute keeps the first missions swarmy. A weight of
-//     0 is never rolled (the spitter, until the bestiary mixes it in).
+//     0 is never rolled (the spitter, until the bestiary mixes it in;
+//     the Hive Guard, which is only ever placed).
 //   • xpValue is what a kill is worth to the killer (#1130), sized to the
 //     rank ladder in `roster/data/ranks.ts` where a swarmer is the unit:
 //     a swarmer is one rung's worth at the bottom of the ladder, a
 //     lurker is two and a half — a focused turn's work — and a brute six,
 //     because a squad that brings one down has earned its stripes. A
-//     spitter is two: fragile, but it has to be dug out of cover.
+//     spitter is two: fragile, but it has to be dug out of cover. A
+//     Hive Guard is four: it cannot chase anyone, but it has to be
+//     walked up to under its fire.
 
 /** Tiles every bug sees. One number until a species needs its own (ADR 0006). */
 const SIGHT = 10;
@@ -142,6 +146,42 @@ export const SPITTER: BugSpecies = {
 };
 
 /**
+ * Stationary spine thrower (#1179, campaign arc §6.5, §7.5 and §8): a
+ * living turret rooted in a hive chamber, placed beside the hive core
+ * by the mission that fights there, never hatched or rolled. It has no
+ * move at all (`move: 0`), so the movement rules refuse any path it
+ * could be handed; its `guard` behaviour throws spines at the best
+ * target in reach and sight, or holds.
+ *
+ * Tough rather than big: a lurker's armour and one more point, and
+ * two thirds of a brute's hit points on one tile (the modeller's brief
+ * authors it at 1×1, about two metres across). Its spines reach seven
+ * tiles, inside a carbine's eight, so a squad that closes behind cover
+ * can always answer; they bite a point of plate, and hit a little
+ * harder than acid.
+ *
+ * `hatchWeight` is 0 and its bestiary entry is `placed` (ADR 0013
+ * §2.6): only a placement path (`placeHiveGuards`) or the debug tool
+ * puts one on a map.
+ */
+export const HIVE_GUARD: BugSpecies = {
+  id: "hive-guard",
+  name: "Hive Guard",
+  description:
+    "A squat fortress of chitin rooted to the hive floor, a shield plate in front and racks of spines on its back. It never leaves its chamber; it throws spines at anything that comes in.",
+  hp: 20,
+  armor: 2,
+  move: 0,
+  ap: 2,
+  weapon: { range: 7, accuracy: 65, damage: 5, armorPen: 1 },
+  sightRange: SIGHT,
+  behaviour: "guard",
+  modelId: "bug.hive-guard",
+  hatchWeight: 0,
+  xpValue: 40,
+};
+
+/**
  * Every bug species keyed by id. Typed as a record over the closed
  * `BugSpeciesId` union so a new id without a definition fails at compile
  * time rather than at runtime.
@@ -151,4 +191,5 @@ export const BUG_SPECIES: Readonly<Record<BugSpeciesId, BugSpecies>> = {
   lurker: LURKER,
   brute: BRUTE,
   spitter: SPITTER,
+  "hive-guard": HIVE_GUARD,
 };

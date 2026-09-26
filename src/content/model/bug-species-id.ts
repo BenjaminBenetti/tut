@@ -9,7 +9,8 @@
  * new member here plus one entry there, and any table keyed by this id
  * that forgets one fails to compile.
  */
-export type BugSpeciesId = "swarmer" | "lurker" | "brute" | "spitter";
+export type BugSpeciesId =
+  "swarmer" | "lurker" | "brute" | "spitter" | "hive-guard";
 
 /** Every bug species id, in a fixed order. */
 export const BUG_SPECIES_IDS: readonly BugSpeciesId[] = [
@@ -17,4 +18,5 @@ export const BUG_SPECIES_IDS: readonly BugSpeciesId[] = [
   "lurker",
   "brute",
   "spitter",
+  "hive-guard",
 ];

@@ -5,7 +5,7 @@ import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
 import { BESTIARY } from "./bestiary";
 
 describe("BESTIARY", () => {
-  it("carries the campaign arc §8 shares and debuts for the shipped species", () => {
+  it("carries the campaign arc §8 shares and debuts for the shipped species, and places the Hive Guard", () => {
     expect(BESTIARY).toEqual({
       swarmer: {
         kind: "rolled",
@@ -27,6 +27,7 @@ describe("BESTIARY", () => {
         shares: { "act-1": 10, "act-2": 15, "act-3": 13, finale: 12 },
         debut: { act: "act-1", missionsInAct: 7 },
       },
+      "hive-guard": { kind: "placed" },
     });
   });
 

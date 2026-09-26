@@ -12,7 +12,13 @@ import {
   walkableTileNear,
   withBug,
 } from "../../bugs/ai/bug-mission.test-helper";
-import { BRUTE, BUG_SPECIES, SPITTER, SWARMER } from "../../bugs/data/species";
+import {
+  BRUTE,
+  BUG_SPECIES,
+  HIVE_GUARD,
+  SPITTER,
+  SWARMER,
+} from "../../bugs/data/species";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { ok } from "../../core/model/result";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -50,6 +56,8 @@ import { MISSION_SETUP_RULES } from "../../tactical/service/missions/mission-set
 import { hasLineOfSight } from "../../tactical/service/sight-service";
 import { attackDistance } from "../../tactical/service/weapon-reach-service";
 import { NO_ACTIVE_MISSION } from "../../tactical/service/tactical-command-handlers";
+import { placeHiveGuards } from "../../tactical/service/placed-bug-service";
+import { withVision } from "../../tactical/service/vision-service";
 import { TacticalMissionResolver } from "../../tactical/service/tactical-mission-resolver";
 import {
   campaignOnDay,
@@ -596,6 +604,63 @@ describe("shippedBugBehaviours", () => {
     expect(
       shots[0]?.type === ATTACK_RESOLVED && shots[0].payload.weaponRange,
     ).toBe(SPITTER.weapon.range);
+    expect(outcome.value.state.phase).toBe("player");
+  });
+
+  it("actually drives a placed Hive Guard in a live mission: one shipped EndTurn throws its spines, and it stays put (#1179)", () => {
+    // The guard's whole seam: the placement path a mission's setup takes
+    // (placeHiveGuards, ADR 0013 §2.6) -> shipped EndTurn -> bugs phase
+    // -> runner -> species catalogue -> HiveGuardBehaviour -> the attack
+    // rules -> a ranged volley that resolved. Stood on the nearest tile
+    // that sees the squad from four to seven tiles out.
+    const mission = startedMission("player");
+    const squad = mission.units.find((u) => u.kind === "squad");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    const occupied = new Set(
+      mission.units.map((u) => `${u.pos.x},${u.pos.y},${u.pos.z}`),
+    );
+    const post = mission.map.tiles.find(
+      (tile) =>
+        tile.y === squad.pos.y &&
+        tile.pass !== 0 &&
+        !occupied.has(`${tile.x},${tile.y},${tile.z}`) &&
+        attackDistance(tile, squad.pos) >= 4 &&
+        attackDistance(tile, squad.pos) <= HIVE_GUARD.weapon.range &&
+        hasLineOfSight(mission.map, tile, squad.pos) &&
+        walkableTileNear(mission, tile).x === tile.x &&
+        walkableTileNear(mission, tile).z === tile.z,
+    );
+    if (post === undefined) throw new Error("no post in sight of the squad");
+    const stood = placeHiveGuards(
+      mission,
+      [{ x: post.x, y: post.y, z: post.z }],
+      {
+        ids: new SequentialIdGenerator({ counters: { unit: 900 } }),
+        guard: HIVE_GUARD,
+      },
+    );
+    // The mission start computes the first look after its setup rule has
+    // stood the guards (initialVision); this is that look.
+    const placed = withVision({ state: stood, events: [] }).state;
+    const guard = placed.units.find((u) => u.sourceId === "hive-guard");
+    if (guard === undefined) throw new Error("the guard was not placed");
+    const endTurnHandler = shippedTacticalHandlers()[END_TURN];
+    if (endTurnHandler === undefined) throw new Error("EndTurn is not shipped");
+    const outcome = endTurnHandler(placed, endTurn(), {
+      rng: new Mulberry32Rng(5),
+      ids: new SequentialIdGenerator(),
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const shots = outcome.value.events.filter(
+      (e) => e.type === ATTACK_RESOLVED && e.payload.attackerId === guard.id,
+    );
+    expect(shots).toHaveLength(1);
+    expect(
+      shots[0]?.type === ATTACK_RESOLVED && shots[0].payload.weaponRange,
+    ).toBe(HIVE_GUARD.weapon.range);
+    const after = outcome.value.state.units.find((u) => u.id === guard.id);
+    expect(after?.pos).toEqual(guard.pos);
     expect(outcome.value.state.phase).toBe("player");
   });
 

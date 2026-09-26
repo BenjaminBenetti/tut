@@ -138,6 +138,7 @@ export const MODEL_IDS = [
   "building.wall-door-plaster",
   // Bugs
   "bug.brute",
+  "bug.hive-guard",
   "bug.lurker",
   "bug.spitter",
   "bug.swarmer",

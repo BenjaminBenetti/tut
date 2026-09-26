@@ -1790,6 +1790,16 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "bug.hive-guard": {
+    category: "bugs",
+    path: "assets/models/bugs/bug-hive-guard.glb",
+    // The rooted spine thrower (#1179): a shielded dome on four buried
+    // roots with two quill racks. `socket_muzzle` marks the racks' tips.
+    footprint: { w: 1, d: 1 },
+    height: 1.3,
+    sockets: ["socket_muzzle"],
+    quality: "final",
+  },
   "bug.lurker": {
     category: "bugs",
     path: "assets/models/bugs/bug-lurker.glb",

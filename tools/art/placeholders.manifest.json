@@ -5294,6 +5294,22 @@
     "bytes": 348060
   },
   {
+    "id": "bug.hive-guard",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-hive-guard.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.3,
+    "sockets": [
+      "socket_muzzle"
+    ],
+    "quality": "final",
+    "triangles": 10792,
+    "bytes": 319784
+  },
+  {
     "id": "bug.spore-pod",
     "category": "bugs",
     "path": "assets/models/bugs/bug-spore-pod.glb",

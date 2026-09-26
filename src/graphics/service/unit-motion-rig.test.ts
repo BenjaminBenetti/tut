@@ -29,6 +29,12 @@ const MODELS = [
   "bug.spitter",
 ] as const;
 
+/**
+ * Bugs that never walk (#1179): the Hive Guard is rooted to its chamber,
+ * so it has no legs for a walk cycle to swing, only arms to recoil.
+ */
+const ROOTED = ["bug.hive-guard"] as const;
+
 /** Loads real geometry and node transforms, omitting browser-only image decoding. */
 async function loadModel(id: ModelAssetId): Promise<Object3D> {
   const source = readFileSync(`public/${MODEL_MANIFEST[id].path}`);
@@ -131,7 +137,7 @@ describe("unit motion on the shipped models", () => {
     },
   );
 
-  it.each(MODELS)(
+  it.each([...MODELS, ...ROOTED])(
     "preserves %s's authored bounds when the rig is at rest",
     async (id) => {
       const model = await loadModel(id);
@@ -159,6 +165,51 @@ describe("unit motion on the shipped models", () => {
   );
 });
 
+describe("unit motion on a rooted bug (#1179)", () => {
+  it.each(ROOTED)(
+    "gives %s no legs to walk on and two spine racks that recoil and restore",
+    async (id) => {
+      const prototype = await loadModel(id);
+      const original = pose(prototype);
+      const clone = prototype.clone(true);
+      const mesh = new UnitMesh("actor", clone, id);
+      mesh.setPose({ x: 3, y: 2, z: 5 }, "e");
+      const rest = pose(clone);
+      const root = mesh.object.position.clone();
+      const named = (prefix: string): Object3D[] => {
+        const found: Object3D[] = [];
+        clone.traverse((part) => {
+          if (part.name.startsWith(prefix)) found.push(part);
+        });
+        return found;
+      };
+      // Its roots are part of the body: nothing for a walk cycle to swing.
+      expect(named("motion-leg-")).toHaveLength(0);
+      expect(clone.getObjectsByProperty("name", "motion-body")).toHaveLength(1);
+      const arms = named("motion-arm-");
+      expect(arms.map((arm) => arm.name).sort()).toEqual([
+        "motion-arm-l",
+        "motion-arm-r",
+      ]);
+      // Each rack pivots on its authored joint at the rack's root.
+      for (const joint of arms) {
+        expect(joint.children).toHaveLength(1);
+        expect(joint.children[0]!.userData.motion_joint).toBe(true);
+        expect(joint.children[0]!.position.length()).toBeLessThan(1e-6);
+      }
+      // A volley kicks both racks back, and the pose comes home after.
+      mesh.motion!.attack(0.35, true);
+      expect(arms.every((arm) => Math.abs(arm.rotation.x) > 0.1)).toBe(true);
+      expect(mesh.object.position).toEqual(root);
+      mesh.motion!.attack(1, true);
+      expect(pose(clone)).toEqual(rest);
+      expect(pose(prototype)).toEqual(original);
+      mesh.dispose();
+      expect(pose(clone)).toEqual(rest);
+    },
+  );
+});
+
 it.each([
   ["tdf.mech.assembled-a", "socket_muzzle"],
   // The leader kneels front-centre, and since #1132 every figure's upper
@@ -166,6 +217,9 @@ it.each([
   // the front marker where its rifle used to be.
   ["tdf.infantry.rifle", "fig0_upper"],
   ["bug.swarmer", "head"],
+  // A rooted guard never walks, so turning toward its target is the only
+  // way it aims (#1179): its head behind the shield must lead.
+  ["bug.hive-guard", "head"],
 ] as const)(
   "turns %s's actual front toward its tactical facing",
   async (id, front) => {

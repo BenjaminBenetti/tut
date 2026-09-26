@@ -16,6 +16,7 @@ import type { EventTuning } from "../model/event-tuning";
 import type { PendingEvent } from "../model/pending-event";
 import type { TickContext } from "../model/tick-step";
 import { DataEventTypeCatalogue } from "../repository/event-type-catalogue";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import type { EventStepDeps } from "./event-generation-service";
 import {
@@ -77,6 +78,7 @@ function campaign(
       pendingEvents: overrides.pendingEvents ?? [],
       deployables: [],
       hives: [],
+      progress: createInitialCampaignProgress(),
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
     economy: { credits: overrides.credits ?? 5000, ledger: [], techPoints: 0 },

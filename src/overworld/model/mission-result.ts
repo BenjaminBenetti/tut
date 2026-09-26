@@ -1,3 +1,4 @@
+import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import type { MechId } from "../../roster/model/mech";
 import type { SquadId } from "../../roster/model/squad";
@@ -77,6 +78,7 @@ export interface MechDamageReport {
  *                 ├─ creditsAwarded ─────────────────► economy (#53)
  *                 ├─ techPointsAwarded ──────────────► economy (#1171)
  *                 ├─ infestationDelta ───────────────► host city
+ *                 ├─ outcome, speciesKilled? ────────► campaign progress
  *                 └─ intel? ─────────────────────────► reserved (#52 sensor array)
  * ```
  *
@@ -142,6 +144,14 @@ export interface MissionResult {
   readonly leftBehind?: readonly string[];
   /** For a defence (#1175): which installation, and whether a generator still ran at the end. */
   readonly defence?: MissionResultDefence;
+  /**
+   * Every bug species killed in the mission, each once, in the order
+   * their first death was logged (ADR 0013 §2.1). The launch handler
+   * merges them into the campaign's first-kill record. Absent when the
+   * resolver cannot say, as the auto-resolver does not, or when no bug
+   * died.
+   */
+  readonly speciesKilled?: readonly BugSpeciesId[];
 }
 
 /** How a defend-installation mission left its installation (#1175). */

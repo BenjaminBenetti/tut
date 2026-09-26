@@ -35,6 +35,7 @@ import {
 import { renameMech } from "../model/rename-mech-command";
 import { repairMech } from "../model/repair-mech-command";
 import { upgradePart } from "../model/upgrade-part-command";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { RosterHandlerDeps } from "./roster-command-handlers";
 import { registerRosterCommands } from "./roster-command-handlers";
@@ -60,6 +61,7 @@ const BASE: CampaignState = {
     pendingEvents: [],
     deployables: [],
     hives: [],
+    progress: createInitialCampaignProgress(),
   },
   roster: {
     squads: [

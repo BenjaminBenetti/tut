@@ -13,6 +13,7 @@ import { EVENT_TYPE_IDS } from "../model/event-type";
 import type { PendingEvent } from "../model/pending-event";
 import { THREAT_CHANGED } from "../model/threat-changed-event";
 import { DataEventTypeCatalogue } from "../repository/event-type-catalogue";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import type { EventResolutionDeps } from "./event-resolution-service";
 import { resolveEvent } from "./event-resolution-service";
@@ -121,6 +122,7 @@ function campaign(
       pendingEvents: events,
       deployables: [],
       hives: [],
+      progress: createInitialCampaignProgress(),
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
     economy: { credits, ledger: [], techPoints: 0 },

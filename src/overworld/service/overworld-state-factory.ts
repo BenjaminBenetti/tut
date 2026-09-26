@@ -6,6 +6,7 @@ import type { InclusiveRange, NewGameTuning } from "../model/new-game-tuning";
 import type { OverworldState } from "../model/overworld-state";
 import { FIRST_DAY } from "../model/overworld-state";
 import type { ThreatTuning } from "../model/threat-tuning";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { computeThreat } from "./threat-service";
 
 // ===========================================
@@ -27,9 +28,10 @@ export interface OverworldStateFactoryDeps {
 /**
  * Builds the overworld a new campaign starts on: the given Earth with a
  * few cities seeded with infestation, day `FIRST_DAY`, the threat that
- * map implies, and nothing else happening yet. The opening landings are
- * the reason the campaign exists, so they start detected (GDD §5.3):
- * day one offers missions rather than a hunt.
+ * map implies, the campaign at the start of Act I, and nothing else
+ * happening yet. The opening landings are the reason the campaign
+ * exists, so they start detected (GDD §5.3): day one offers missions
+ * rather than a hunt.
  *
  * Draws from `deps.rng`, in order:
  *
@@ -73,6 +75,7 @@ export function createInitialOverworldState(
     pendingEvents: [],
     deployables: [],
     hives: [],
+    progress: createInitialCampaignProgress(),
   };
 }
 

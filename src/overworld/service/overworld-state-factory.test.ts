@@ -7,6 +7,7 @@ import type { CitySeed } from "../model/earth-map-spec";
 import type { NewGameTuning } from "../model/new-game-tuning";
 import type { OverworldState } from "../model/overworld-state";
 import { FIRST_DAY } from "../model/overworld-state";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import { createInitialOverworldState } from "./overworld-state-factory";
 import { computeThreat } from "./threat-service";
@@ -48,7 +49,7 @@ function build(seed: number, tuning: NewGameTuning = TUNING): OverworldState {
 }
 
 describe("createInitialOverworldState", () => {
-  it("starts on the first day with nothing else happening", () => {
+  it("starts on the first day, in Act I, with nothing else happening", () => {
     const state = build(1);
     expect(state.day).toBe(FIRST_DAY);
     expect(state.missions).toEqual([]);
@@ -56,6 +57,7 @@ describe("createInitialOverworldState", () => {
     expect(state.pendingEvents).toEqual([]);
     expect(state.deployables).toEqual([]);
     expect(state.hives).toEqual([]);
+    expect(state.progress).toEqual(createInitialCampaignProgress());
     expect(state.outcome).toBeUndefined();
     expect(state.lastMissionResult).toBeUndefined();
   });

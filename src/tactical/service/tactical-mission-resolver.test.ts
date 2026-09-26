@@ -705,6 +705,65 @@ describe("tacticalMissionResult casualties", () => {
     ]);
   });
 
+  it("names each bug species that died, once, in first-death order (ADR 0013 §2.1)", () => {
+    const of = (id: string, sourceId: string, hp = 0): Unit => ({
+      ...bugUnit(id),
+      sourceId,
+      hp,
+    });
+    const tactical: TacticalState = {
+      ...missionWith(
+        MAP,
+        [
+          squadUnit("unit-1", "squad-1", 0),
+          of("unit-2", "brute"),
+          of("unit-3", "swarmer"),
+          of("unit-4", "brute"),
+          // Alive at the end: never died, so never counted.
+          of("unit-5", "lurker", 10),
+          // Not a species id: a fixture or a future placed unit.
+          of("unit-6", "hive-core"),
+        ],
+        { objectives: OPEN, outcome: "lost" },
+      ),
+      log: [
+        { type: UNIT_DIED, payload: { unitId: "unit-2", killerId: "unit-1" } },
+        // One of ours dying names no species.
+        { type: UNIT_DIED, payload: { unitId: "unit-1", killerId: "unit-3" } },
+        // A death with no killer still counts.
+        { type: UNIT_DIED, payload: { unitId: "unit-3" } },
+        { type: UNIT_DIED, payload: { unitId: "unit-4", killerId: "unit-1" } },
+        { type: UNIT_DIED, payload: { unitId: "unit-6", killerId: "unit-1" } },
+      ],
+    };
+    const result = tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+    expect(result.speciesKilled).toEqual(["brute", "swarmer"]);
+  });
+
+  it("carries no species field when no bug died", () => {
+    const result = tacticalMissionResult(
+      {
+        tactical: missionWith(MAP, [squadUnit("unit-1", "squad-1", SQUAD_HP)], {
+          objectives: DONE,
+          outcome: "won",
+        }),
+        mission: mission(),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+    expect(result).not.toHaveProperty("speciesKilled");
+  });
+
   it("reports no losses for a deployed unit with no token on the map", () => {
     const result = tacticalMissionResult(
       {

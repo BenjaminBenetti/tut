@@ -4,6 +4,7 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { MISSION_DIFFICULTY_RANGE } from "../../content/model/mission-type";
+import type { ActId } from "../../content/model/act-id";
 import type { DeployableTypeId } from "../../content/model/deployable-type-id";
 import { MISSION_TUNING } from "../data/mission-tuning";
 import type { Deployable } from "../model/deployable";
@@ -20,6 +21,7 @@ import {
   MISSION_OFFERED,
 } from "../model/overworld-domain-event";
 import type { OverworldState } from "../model/overworld-state";
+import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import type { MissionGenerationDeps } from "./mission-generation-service";
 import {
@@ -156,6 +158,7 @@ function fixtureState(overrides: Partial<OverworldState> = {}): OverworldState {
     pendingEvents: [],
     deployables: [],
     hives: [],
+    progress: createInitialCampaignProgress(),
     ...overrides,
   };
 }
@@ -317,6 +320,26 @@ describe("expireMissions", () => {
     const state = fixtureState({ day: 4, missions: [missionAt("mid", 5)] });
     expect(expireMissions(state).state.missions).toHaveLength(1);
   });
+
+  it("never expires a pinned mission, however late (ADR 0013 §2.2)", () => {
+    const pinned: Mission = { ...missionAt("mid", 5, 10), pinned: true };
+    const state = fixtureState({
+      day: 30,
+      missions: [pinned, missionAt("low", 5)],
+    });
+    const result = expireMissions(state);
+    expect(result.state.missions).toEqual([pinned]);
+    expect(result.state.missions[0]).toBe(pinned);
+    expect(
+      result.events.filter((e) => e.type === MISSION_EXPIRED),
+    ).toHaveLength(1);
+    expect(result.state.map.cities.find((c) => c.id === "mid")).toBe(
+      state.map.cities.find((c) => c.id === "mid"),
+    );
+    expect(
+      expireMissions(fixtureState({ day: 30, missions: [pinned] })).events,
+    ).toEqual([]);
+  });
 });
 
 // ===========================================
@@ -414,6 +437,30 @@ describe("generateMissions", () => {
       type: MISSION_OFFERED,
       payload: { mission: mid },
     });
+  });
+
+  it("freezes the campaign's act on every offer without drawing anything more (ADR 0013 §2.2)", () => {
+    const inAct = (act: ActId, tuning: MissionTuning) =>
+      generateMissions(
+        fixtureState({
+          deployables: [installation("dep-1", "east")],
+          progress: { ...createInitialCampaignProgress(), act },
+        }),
+        deps(3, tuning),
+      ).state.missions;
+    const withoutAct = (missions: readonly Mission[]) =>
+      missions.map(({ act: _act, ...rest }) => rest);
+    for (const tuning of [ALWAYS, ALWAYS_DEFEND]) {
+      const first = inAct("act-1", tuning);
+      const third = inAct("act-3", tuning);
+      expect(first.length).toBeGreaterThan(0);
+      expect(first.every((m) => m.act === "act-1")).toBe(true);
+      expect(third.every((m) => m.act === "act-3")).toBe(true);
+      expect(withoutAct(third)).toEqual(withoutAct(first));
+    }
+    expect(inAct("act-2", ALWAYS_DEFEND).map((m) => m.typeId)).toEqual([
+      "defend-installation",
+    ]);
   });
 
   it("rolls a tech carcass per mission on its own stream, worth the tuned points (#1171)", () => {

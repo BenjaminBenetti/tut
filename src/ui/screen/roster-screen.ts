@@ -6,10 +6,17 @@ import {
 } from "../../overworld/model/overworld-command";
 import { renameMech } from "../../overworld/model/rename-mech-command";
 import { repairMech } from "../../overworld/model/repair-mech-command";
+import type {
+  InfantryUpgradeDefinition,
+  InfantryUpgradeId,
+} from "../../roster/model/infantry-upgrade";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
+import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import { infantryUpgradesFor } from "../../tech/service/infantry-upgrade-service";
+import { lockedSquadTypes } from "../../tech/service/squad-type-availability-service";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
@@ -32,6 +39,15 @@ export interface RosterScreenDeps {
   readonly parts: PartCatalogue;
   /** Repair pricing. */
   readonly rosterTuning: RosterTuning;
+  /**
+   * The tech tree (campaign arc §10.3): which squad types are still
+   * locked, and which infantry upgrades the campaign has researched.
+   */
+  readonly tech: TechCatalogue;
+  /** Names and describes the infantry upgrades the tree grants. */
+  readonly infantryUpgrades: Readonly<
+    Record<InfantryUpgradeId, InfantryUpgradeDefinition>
+  >;
 }
 
 // ===========================================
@@ -42,7 +58,9 @@ export interface RosterScreenDeps {
  * The roster (GDD §5.7): squads, mechs and the graveyard, with hire,
  * reinforce, repair and rename dispatched through the campaign store.
  * Every store change re-renders the three views; a rejected command is
- * shown in the header's status line, never thrown.
+ * shown in the header's status line, never thrown. The squad panel is
+ * told what the tech tree has done for the infantry (campaign arc
+ * §10.3): the upgrades every squad carries, and the types still locked.
  *
  * ```
  *   ┌ #roster-bar  ROSTER  ¢5,000 ── status ── [Mech bay] [Overworld] ┐
@@ -195,7 +213,20 @@ export class RosterScreen implements Screen {
       return;
     }
     const model = { roster: state.roster, credits: state.economy.credits };
-    this.squads.update(model);
+    this.squads.update({
+      ...model,
+      lockedTypes: new Map(
+        Array.from(
+          lockedSquadTypes(this.deps.tech, state.tech),
+          ([typeId, node]) => [typeId, node.name],
+        ),
+      ),
+      upgrades: infantryUpgradesFor(
+        this.deps.tech,
+        this.deps.infantryUpgrades,
+        state.tech,
+      ),
+    });
     this.mechs.update(model);
     this.graveyard.update(state.roster.graveyard, state.overworld.map);
   }

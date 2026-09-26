@@ -26,9 +26,13 @@ import { MISSION_TYPES } from "../../content/data/mission-types";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
+import { INFANTRY_UPGRADES } from "../../roster/data/infantry-upgrades";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
+import { TECH_FAMILIES } from "../../tech/data/tech-families";
+import { TECH_NODES } from "../../tech/data/tech-tree";
+import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { ATTACK } from "../../tactical/model/attack-command";
@@ -83,6 +87,8 @@ const CONTENT: TacticalContent = {
   rating: MECH_RATING_TUNING,
   upgrades: UPGRADE_TUNING,
   missionTypes: MISSION_TYPES,
+  tech: new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES)),
+  infantryUpgrades: INFANTRY_UPGRADES,
 };
 
 /** A stub EndTurn rule: bumps the turn and reports it. */
@@ -450,6 +456,51 @@ describe("composeTactical", () => {
     expect(mission?.map.width).toBeGreaterThan(0);
     expect(mission?.units.filter((u) => u.team === "tdf")).toHaveLength(
       state.roster.squads.length + state.roster.mechs.length,
+    );
+  });
+
+  it("mission-start deps fold the campaign's infantry research into every squad it deploys (campaign arc §10.3)", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    const { state: fresh, missionId } = campaignWithMission();
+    /** The squads' templates of a mission started from `state`. */
+    const squadTemplates = (state: GameState) => {
+      const started = startTacticalMission(
+        state,
+        missionId,
+        {
+          missionId,
+          squadIds: state.roster.squads.map((s) => s.id),
+          mechIds: [],
+        },
+        tactical.missionStartDepsFor(new SequentialIdGenerator()),
+      );
+      if (!started.ok) throw new Error("mission should start");
+      const mission = started.value.activeMission!;
+      return mission.units
+        .filter((u) => u.kind === "squad")
+        .map((u) => mission.templates[u.templateId]!);
+    };
+    const bare = squadTemplates(fresh);
+    expect(bare.length).toBeGreaterThan(0);
+    expect(bare.every((t) => t.armor === 0)).toBe(true);
+    expect(bare.every((t) => t.equipment?.includes("grenade"))).toBe(true);
+
+    const researched = squadTemplates({
+      ...fresh,
+      tech: {
+        unlocked: [
+          "tech.squad-armour-1",
+          "tech.squad-armour-2",
+          "tech.frag-grenades",
+        ],
+      },
+    });
+    expect(researched.map((t) => t.armor)).toEqual(bare.map(() => 2));
+    expect(researched.map((t) => t.equipment)).toEqual(
+      bare.map((t) =>
+        t.equipment?.map((id) => (id === "grenade" ? "frag-grenade" : id)),
+      ),
     );
   });
 });

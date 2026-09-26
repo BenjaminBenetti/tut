@@ -23,6 +23,7 @@ import {
 } from "../model/roster-event";
 import type { RosterState } from "../model/roster-state";
 import type { Squad, SquadId } from "../model/squad";
+import type { SquadTypeAvailability } from "../model/squad-type-availability";
 import { SQUAD_ID_PREFIX } from "../model/squad";
 import type { SquadTypeId } from "../model/squad-type";
 import type { SquadTypeCatalogue } from "../model/squad-type-catalogue";
@@ -48,6 +49,8 @@ export interface RosterServiceDeps {
   readonly ids: IdGenerator;
   /** Which parts the tech tree lets a build use today (#1171). */
   readonly availability: PartAvailability;
+  /** Which squad types the tech tree lets the player hire today (campaign arc §10.3). */
+  readonly squadTypeAvailability: SquadTypeAvailability;
 }
 
 /** The two slices every roster command reads and returns. */
@@ -66,8 +69,9 @@ export type RosterResult = Result<RosterApplied, RosterError>;
 /**
  * Hires a fresh, full-strength squad of `typeId` named `name`, charging
  * the type's `hireCost` as a `purchase` against the new squad's id
- * (GDD §5.7). Rejects an unknown type, an empty name or an unaffordable
- * hire without drawing an id or touching either slice.
+ * (GDD §5.7). Rejects an unknown type, a type the tech tree has not
+ * opened yet (campaign arc §10.3), an empty name or an unaffordable
+ * hire, in that order, without drawing an id or touching either slice.
  */
 export function hireSquad(
   slices: RosterSlices,
@@ -79,6 +83,9 @@ export function hireSquad(
   const type = deps.squadTypes.getSquadType(typeId);
   if (type === undefined) {
     return err({ code: "unknown-squad-type", typeId });
+  }
+  if (!deps.squadTypeAvailability.isAvailable(typeId)) {
+    return err({ code: "squad-type-locked", typeId });
   }
   const nameError = checkName(name);
   if (nameError !== undefined) {

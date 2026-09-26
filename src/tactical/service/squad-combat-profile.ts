@@ -1,4 +1,6 @@
+import type { InfantryUpgradeDefinition } from "../../roster/model/infantry-upgrade";
 import { SQUAD_MAX_STRENGTH } from "../../roster/model/squad";
+import { infantryArmorBonus } from "../../roster/service/infantry-upgrade-effect-service";
 import type { SquadType } from "../../roster/model/squad-type";
 import type { SquadCombatProfile } from "../model/squad-combat-profile";
 import type { InfantryUnitTuning } from "../model/unit-tuning";
@@ -11,29 +13,37 @@ import { PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 
 /**
  * The field numbers a squad type comes out as (#321, #1132): hit points
- * scale with soldiers (`maxStrength × hpPerSoldier`), actions, move,
- * armor and sight are the infantry tuning's, and the weapon is the
- * type's own (`squadWeapon`).
+ * scale with soldiers (`maxStrength × hpPerSoldier`), actions, move and
+ * sight are the infantry tuning's, armor is the tuning's plus what the
+ * campaign's infantry upgrades add (campaign arc §10.3), and the weapon
+ * is the type's own (`squadWeapon`).
  *
  * One derivation for the screens and the unit factory, so a hire panel
  * that says what a squad does and the squad that walks off the drop
  * ship agree. Pure: reads only its arguments.
  *
+ * ```
+ *   armor = infantry.armor + Σ upgrade.armorBonus
+ *           0              + squad armour I (1) + squad armour II (1) = 2
+ * ```
+ *
  * @param squadType - The catalogue entry the squad is of.
  * @param infantry - The infantry slice of the unit tuning.
  * @param maxStrength - Soldiers in the squad at full strength.
+ * @param upgrades - The campaign's infantry upgrades; none by default.
  * @returns The squad at full strength, green.
  */
 export function squadCombatProfile(
   squadType: SquadType,
   infantry: InfantryUnitTuning,
   maxStrength: number = SQUAD_MAX_STRENGTH,
+  upgrades: readonly InfantryUpgradeDefinition[] = [],
 ): SquadCombatProfile {
   return {
     maxHp: maxStrength * infantry.hpPerSoldier,
     maxAp: infantry.maxAp,
     move: infantry.move,
-    armor: infantry.armor,
+    armor: infantry.armor + infantryArmorBonus(upgrades),
     sightRange: infantry.sightRange,
     weapon: squadWeapon(squadType, infantry),
   };

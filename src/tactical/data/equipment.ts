@@ -1,4 +1,9 @@
-import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
+import type {
+  EquipmentDefinition,
+  EquipmentId,
+  HealProfile,
+} from "../model/equipment";
+import type { WeaponProfile } from "../model/weapon-profile";
 
 // ===========================================
 // Equipment (GDD §6.2.4, #1132)
@@ -12,8 +17,11 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //   |------------------|--------|------|----|-------|-----|-----|-----|-------------------|------|-------|------|
 //   | Radar dish       | radar  | 3    | 1  | 2     | —   | —   | —   | —                 | —    | —     | —    |
 //   | Grenade          | blast  | 2    | 1  | 5     | 75  | 6   | 0   | 2 / 0.4           | 1    | —     | —    |
+//   | Frag grenade     | blast  | 2    | 1  | 5     | 75  | 8   | 0   | 2 / 0.3           | 1    | —     | —    |
+//   | Incendiary gren. | blast  | 2    | 1  | 5     | 75  | 8   | 0   | 2 / 0.3 + fire    | 1    | —     | —    |
 //   | Breaching charge | charge | 1    | 1  | 2     | —   | 20  | 3   | 3 / 0.3           | 3    | 2     | —    |
 //   | Medkit           | heal   | 4    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 10   |
+//   | Field medkit     | heal   | 4    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 15   |
 //   | Repair kit       | heal   | 2    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 25   |
 //   | Turret           | turret | 2    | 1  | 2     | —   | —   | —   | —                 | —    | —     | —    |
 //
@@ -37,6 +45,16 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //     hit points takes nothing.
 //   • A turret (#1138) is carried like the dish and put down as a unit
 //     of its own; its gun, plate and battery are `turret-tuning.ts`.
+//   • The infantry branch of the tech tree (campaign arc §10.3, #1179)
+//     swaps items rather than retuning them, so a mission save keeps
+//     the item it started with: frag grenades hit for 8 and lose less
+//     to the edge (70 % and 40 % of the impact's damage at one and two
+//     tiles, against 60 % and 20 %); incendiary grenades are the frag
+//     grenade that also sets the footprint alight, the impact tile for
+//     certain and 65 % and 30 % of the tiles one and two out, the
+//     flamer's fire (`hazard-tuning.ts`); field medic training makes
+//     the medkit mend 15 in place of 10. The swaps themselves are
+//     `roster/data/infantry-upgrades.ts`.
 
 /**
  * How far a thrown kit goes and how wide it lands: the grenade's
@@ -45,6 +63,23 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
  */
 const THROWN_KIT_RANGE = 5;
 const THROWN_KIT_BLAST_RADIUS = 2;
+
+/** What a frag grenade does where it lands; the incendiary grenade adds fire to it. */
+const FRAG_PROFILE: WeaponProfile = {
+  range: THROWN_KIT_RANGE,
+  accuracy: 75,
+  damage: 8,
+  armorPen: 0,
+  aoe: { radius: THROWN_KIT_BLAST_RADIUS, falloff: 0.3 },
+  demoForce: 1,
+};
+
+/** What the medic's medkit mends; the field medkit mends more. */
+const MEDKIT_HEAL: HealProfile = {
+  amount: 10,
+  target: "organic",
+  radius: THROWN_KIT_BLAST_RADIUS,
+};
 
 /** The radio squad's scanner (#1130 battery; #1132 three uses). */
 export const RADAR_DISH: EquipmentDefinition = {
@@ -71,6 +106,38 @@ export const GRENADE: EquipmentDefinition = {
     armorPen: 0,
     aoe: { radius: THROWN_KIT_BLAST_RADIUS, falloff: 0.4 },
     demoForce: 1,
+  },
+};
+
+/**
+ * Every squad's grenades once frag grenades are researched (campaign
+ * arc §10.3): the grenade's throw and footprint, a third more damage,
+ * and more of it reaching the edge.
+ */
+export const FRAG_GRENADE: EquipmentDefinition = {
+  id: "frag-grenade",
+  name: "Frag grenade",
+  kind: "blast",
+  uses: GRENADE.uses,
+  apCost: GRENADE.apCost,
+  range: THROWN_KIT_RANGE,
+  profile: FRAG_PROFILE,
+};
+
+/**
+ * Every squad's grenades once incendiary grenades are researched
+ * (campaign arc §10.3): the frag grenade that also leaves fire, certain
+ * on the impact tile and fading 35 % a tile. The fire is the flamer's
+ * (`tile-effect-service`): it burns whoever stands in it as their phase
+ * opens, either side, for two rounds.
+ */
+export const INCENDIARY_GRENADE: EquipmentDefinition = {
+  ...FRAG_GRENADE,
+  id: "incendiary-grenade",
+  name: "Incendiary grenade",
+  profile: {
+    ...FRAG_PROFILE,
+    aoeEffect: { kind: "fire", chance: 1, falloff: 0.35 },
   },
 };
 
@@ -101,7 +168,7 @@ export const MEDKIT: EquipmentDefinition = {
   uses: 4,
   apCost: 1,
   range: THROWN_KIT_RANGE,
-  heal: { amount: 10, target: "organic", radius: THROWN_KIT_BLAST_RADIUS },
+  heal: MEDKIT_HEAL,
 };
 
 /** The engineer squad's repair kit (#1138): twenty-five hit points to every mechanical unit in the area, twice. */
@@ -113,6 +180,17 @@ export const REPAIR_KIT: EquipmentDefinition = {
   apCost: 1,
   range: THROWN_KIT_RANGE,
   heal: { amount: 25, target: "mechanical", radius: THROWN_KIT_BLAST_RADIUS },
+};
+
+/**
+ * The medic squad's medkit once field medic training is researched
+ * (campaign arc §10.3): the same kit, mending 15 in place of 10.
+ */
+export const FIELD_MEDKIT: EquipmentDefinition = {
+  ...MEDKIT,
+  id: "field-medkit",
+  name: "Field medkit",
+  heal: { ...MEDKIT_HEAL, amount: 15 },
 };
 
 /**
@@ -155,4 +233,7 @@ export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
   [MEDKIT.id]: MEDKIT,
   [REPAIR_KIT.id]: REPAIR_KIT,
   [TURRET.id]: TURRET,
+  [FRAG_GRENADE.id]: FRAG_GRENADE,
+  [INCENDIARY_GRENADE.id]: INCENDIARY_GRENADE,
+  [FIELD_MEDKIT.id]: FIELD_MEDKIT,
 };

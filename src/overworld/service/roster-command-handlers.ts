@@ -7,6 +7,7 @@ import type { PartAvailability } from "../../roster/model/part-availability";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import { describeRosterError } from "../../roster/model/roster-error";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
+import type { SquadTypeAvailability } from "../../roster/model/squad-type-availability";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { repairMech } from "../../roster/service/repair-service";
@@ -67,6 +68,13 @@ export interface RosterHandlerDeps {
    * slice for one command (#1171).
    */
   readonly availabilityFor: (state: CampaignState) => PartAvailability;
+  /**
+   * Which squad types the tech tree lets the player hire, read off the
+   * campaign's tech slice for one command (campaign arc §10.3).
+   */
+  readonly squadTypeAvailabilityFor: (
+    state: CampaignState,
+  ) => SquadTypeAvailability;
 }
 
 /** One handler per roster command, ready to register. */
@@ -111,6 +119,7 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
     transactions: deps.transactionsFor(ids),
     ids,
     availability: deps.availabilityFor(state),
+    squadTypeAvailability: deps.squadTypeAvailabilityFor(state),
   });
 
   return {

@@ -1,4 +1,5 @@
 import type { TechNode } from "../model/tech-node";
+import { INFANTRY_TECH_NODES } from "./infantry-tech-tree";
 
 // ===========================================
 // Costs
@@ -28,9 +29,10 @@ export const TIER_3_COST = 40;
 /**
  * The tech tree: every tier 2 and tier 3 part of the catalogue, filed
  * under the six research families of `docs/design/mech-roster.md`, as
- * `kind: "part"` nodes priced by tier (ADR 0011). The other kinds of
- * ADR 0013 §2.7 (intel, autopsy, infantry, story) carry their own
- * prices and land with the campaign content that reveals them. Tier
+ * `kind: "part"` nodes priced by tier (ADR 0011), then the infantry
+ * family (`INFANTRY_TECH_NODES`, campaign arc §10.3). The other kinds
+ * of ADR 0013 §2.7 (intel, autopsy, story) carry their own prices and
+ * land with the campaign content that reveals them. Tier
  * 2 nodes have no prerequisites, so every family opens at once and the
  * first unlock is a real choice; each tier 3 node needs one tier 2 node
  * of its family, so a capital system is reached by building up to it.
@@ -45,6 +47,8 @@ export const TIER_3_COST = 40;
  *                 Rotary
  *   support       Tracker · Surveyor · Recon ·    Marksman · Designator
  *                 Field Repair
+ *   infantry      Armour I · Frag · Field Medic   Armour II · Heavy Weapons ·
+ *                                                 Incendiary
  * ```
  */
 export const TECH_NODES: readonly TechNode[] = [
@@ -369,4 +373,6 @@ export const TECH_NODES: readonly TechNode[] = [
     requires: ["tech.recon-sensor"],
     effects: [{ kind: "part", partId: "utility-target-designator" }],
   },
+  // ---- Infantry (campaign arc §10.3) ----
+  ...INFANTRY_TECH_NODES,
 ];

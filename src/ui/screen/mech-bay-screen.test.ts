@@ -7,6 +7,7 @@ import { ok } from "../../core/model/result";
 import { SimpleEventBus } from "../../core/service/simple-event-bus";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { ALL_PARTS_AVAILABLE } from "../../roster/model/part-availability";
+import { ALL_SQUAD_TYPES_AVAILABLE } from "../../roster/model/squad-type-availability";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
@@ -151,6 +152,7 @@ class RealStore implements CampaignStore {
       upgrades: UPGRADE_TUNING,
       transactionsFor: (ids) => new LedgerTransactionService(ids),
       availabilityFor: () => ALL_PARTS_AVAILABLE,
+      squadTypeAvailabilityFor: () => ALL_SQUAD_TYPES_AVAILABLE,
     });
     registerTechCommands(this.dispatcher, {
       catalogue: TECH,

@@ -250,6 +250,8 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             squadTypes: game.content.squadTypes,
             parts: game.content.parts,
             rosterTuning: game.content.rosterTuning,
+            tech: game.content.tech,
+            infantryUpgrades: game.content.infantryUpgrades,
           }),
       ],
       [

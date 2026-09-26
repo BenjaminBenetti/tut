@@ -22,8 +22,11 @@ import type { LoadoutDescription } from "../../roster/service/loadout-validation
 import { describeLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import type { TechConditions } from "../../tech/model/tech-conditions";
+import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import { partIdsOf } from "../../tech/model/tech-effect";
 import { createPartAvailability } from "../../tech/service/part-availability-service";
+import { isTechNodeHidden } from "../../tech/service/tech-status-service";
 import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import type { GameSession } from "../model/game-session";
 import type { MechPreviewHost } from "../model/mech-preview-host";
@@ -49,6 +52,14 @@ export interface MechBayScreenDeps {
   readonly parts: PartCatalogue;
   /** The tree that decides which parts above tier 1 are purchasable (#1171). */
   readonly tech: TechCatalogue;
+  /**
+   * The campaign's conditions (`GameComposition.techConditionsOf`), the
+   * same function the tech tree and the unlock handler use (ADR 0013
+   * §2.7). A locked part whose node is still hidden has its lock name
+   * the research generically, so the palette never names a node the
+   * tree does not show yet (an autopsy before its first kill).
+   */
+  readonly conditionsOf: (state: GameState) => TechConditions;
   /** Combat-rating weights for the sheet. */
   readonly rating: MechRatingTuning;
   /**
@@ -66,6 +77,12 @@ export interface MechBayScreenDeps {
    */
   readonly preview?: MechPreviewHost;
 }
+
+/**
+ * What a locked part's lock names when the node that unlocks it is still
+ * hidden: it reads "Unlock classified research on the tech tree".
+ */
+export const HIDDEN_RESEARCH_NAME = "classified research";
 
 /** Name a fresh draft gets when the campaign has no saved template to start from. */
 const NEW_LOADOUT_NAME = "New loadout";
@@ -104,6 +121,7 @@ const DEFAULT_MECH_NAME = "Mech";
  *   palette drag ──► stage drop ──► fitPart(draft, part, slot) ──► validate(draft')
  *   validate(draft) ──► describeLoadout(availability) ──► sheet, stage badges, preview host, Build button
  *   store.subscribe ──► createPartAvailability(tech, parts, state.tech) ──► palette locks, re-validate
+ *                   └─► conditionsOf(state) ──► a hidden node's lock says "classified research"
  *   [Save]  ──► store.dispatch(saveLoadout(draft))
  *   [Build] ──► store.dispatch(saveLoadout(draft)) then store.dispatch(buildMech(draft.name, mechName))
  *   store.subscribe ──► credits, saved list, Build button
@@ -439,13 +457,19 @@ export class MechBayScreen implements Screen {
   }
 
   /**
-   * Rebuilds what the tree has unlocked when the unlocked set changed
-   * (#1171): marks the palette's locked parts and re-validates the
-   * draft, so a `part-locked` error appears or clears with the tree.
-   * With no campaign every part is offered, as the editor always did.
+   * Rebuilds what the tree has unlocked when the unlocked set or the
+   * campaign's conditions changed (#1171, ADR 0013 §2.7): marks the
+   * palette's locked parts and re-validates the draft, so a
+   * `part-locked` error appears or clears with the tree. With no
+   * campaign every part is offered, as the editor always did.
    */
   private refreshAvailability(state: GameState | undefined): void {
-    const key = state?.tech.unlocked.join(",") ?? "";
+    const conditions = state
+      ? this.deps.conditionsOf(state)
+      : NO_TECH_CONDITIONS;
+    const key = state
+      ? `${state.tech.unlocked.join(",")}|${[...conditions.flags].sort().join(",")}`
+      : "";
     if (key === this.availabilityKey) {
       return;
     }
@@ -453,7 +477,7 @@ export class MechBayScreen implements Screen {
     this.availability = state
       ? createPartAvailability(this.deps.tech, this.deps.parts, state.tech)
       : ALL_PARTS_AVAILABLE;
-    this.palette.setLocked(this.lockedParts());
+    this.palette.setLocked(this.lockedParts(conditions));
     if (this.draft) {
       this.validate(this.draft);
     }
@@ -461,14 +485,18 @@ export class MechBayScreen implements Screen {
 
   /**
    * Every part the availability refuses, with the name of the node that
-   * unlocks it, found by scanning the tree once.
+   * unlocks it, found by scanning the tree once. A node still hidden
+   * under `conditions` is named `HIDDEN_RESEARCH_NAME` instead.
    */
-  private lockedParts(): ReadonlyMap<string, string> {
+  private lockedParts(conditions: TechConditions): ReadonlyMap<string, string> {
     const locked = new Map<string, string>();
     for (const node of this.deps.tech.listNodes()) {
+      const name = isTechNodeHidden(node, conditions)
+        ? HIDDEN_RESEARCH_NAME
+        : node.name;
       for (const partId of partIdsOf(node)) {
         if (!this.availability.isAvailable(partId)) {
-          locked.set(partId, node.name);
+          locked.set(partId, name);
         }
       }
     }

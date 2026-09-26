@@ -35,10 +35,14 @@ const newGame = (): GameState =>
     },
   );
 
-const ended = (kind: GameOutcome["kind"]): GameState => {
+const ended = (
+  kind: GameOutcome["kind"],
+  cause?: GameOutcome["cause"],
+): GameState => {
   const base = newGame();
   const outcome: GameOutcome = {
     kind,
+    ...(cause === undefined ? {} : { cause }),
     day: 41,
     summary: {
       citiesLost: 3,
@@ -141,14 +145,49 @@ describe("GameOverScreen", () => {
     expect(field("final-threat")?.textContent).toBe("100");
   });
 
-  it("shows the victory placeholder banner", () => {
+  it("shows plain victory text for a story victory", () => {
+    const base = newGame();
+    const won = applyOutcome({
+      ...base,
+      overworld: {
+        ...base.overworld,
+        progress: { ...base.overworld.progress, flags: ["campaign-won"] },
+      },
+    }).state;
+    new GameOverScreen({
+      router: fakeRouter().router,
+      session: sessionWith(won),
+    }).mount(root);
+    expect(field("outcome-kind")?.textContent).toBe("Victory");
+    expect(field("outcome-kind")?.dataset.kind).toBe("victory");
+    expect(field("outcome-tagline")?.textContent).toBe(
+      "The last story mission is won. Earth holds.",
+    );
+    expect(
+      root.querySelector<HTMLElement>(".tut-game-over__scrim")?.dataset.tone,
+    ).toBe("ok");
+  });
+
+  it("words a story defeat as the failed platform, not the threat limit", () => {
+    new GameOverScreen({
+      router: fakeRouter().router,
+      session: sessionWith(ended("defeat", "story")),
+    }).mount(root);
+    expect(field("outcome-kind")?.textContent).toBe("Assault failed");
+    expect(field("outcome-tagline")?.textContent).toContain("spore platform");
+    expect(
+      root.querySelector<HTMLElement>(".tut-game-over__scrim")?.dataset.tone,
+    ).toBe("danger");
+  });
+
+  it("still reads an old save that ended on the retired victory stub", () => {
     new GameOverScreen({
       router: fakeRouter().router,
       session: sessionWith(ended("victory-stub")),
     }).mount(root);
     expect(field("outcome-kind")?.textContent).toBe("Earth secured");
     expect(field("outcome-kind")?.dataset.kind).toBe("victory-stub");
-    expect(field("outcome-tagline")?.textContent).toContain("M4");
+    expect(field("outcome-tagline")?.textContent).toContain("old victory rule");
   });
 
   it("notes when no campaign has ended and still offers the menu", () => {

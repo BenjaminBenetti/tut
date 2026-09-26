@@ -47,7 +47,8 @@ import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
-import { MechBayScreen } from "./mech-bay-screen";
+import type { MechBayScreenDeps } from "./mech-bay-screen";
+import { HIDDEN_RESEARCH_NAME, MechBayScreen } from "./mech-bay-screen";
 
 type NavigateMock = Mock<(id: ScreenId) => void>;
 
@@ -222,12 +223,13 @@ const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   clear: () => undefined,
 });
 
-/** Mounts the screen over `state`. */
+/** Mounts the screen over `state`, with any of its deps replaced by `overrides`. */
 function mountWith(
   state: GameState | undefined,
   root: HTMLElement,
   live = false,
   preview?: MechPreviewHost,
+  overrides: Partial<MechBayScreenDeps> = {},
 ): {
   store: CampaignStore | undefined;
   navigate: NavigateMock;
@@ -249,10 +251,12 @@ function mountWith(
     session: sessionWith(store),
     parts: PARTS,
     tech: TECH,
+    conditionsOf: () => NO_TECH_CONDITIONS,
     rating: MECH_RATING_TUNING,
     unitTuning: UNIT_TUNING,
     upgrades: UPGRADE_TUNING,
     preview,
+    ...overrides,
   });
   screen.mount(root);
   return { store, navigate, screen };
@@ -849,6 +853,36 @@ describe("MechBayScreen", () => {
       ].map((el) => el.dataset.partId);
       const named = TECH_NODES.flatMap((node) => [...partIdsOf(node)]);
       expect(locked.sort()).toEqual([...named].sort());
+    });
+
+    it("never names a node the tree still hides; the name appears with its flag (ADR 0013 §2.7)", () => {
+      // The real tree with Jump Jets hidden behind a flag, as an autopsy
+      // node is hidden behind `killed:<species>` until the first kill.
+      const hiddenJumpJets = new StaticTechCatalogue(
+        TECH_NODES.map((node) =>
+          [...partIdsOf(node)].includes("legs-jumper")
+            ? { ...node, requiresFlags: ["killed:spitter"] }
+            : node,
+        ),
+        Object.values(TECH_FAMILIES),
+      );
+      const lockTitle = (): string | undefined =>
+        card("legs-jumper").querySelector<HTMLElement>('[data-role="lock"]')
+          ?.title;
+      const hidden = mountWith(newGame(), root, false, undefined, {
+        tech: hiddenJumpJets,
+      });
+      expect(card("legs-jumper").dataset.locked).toBe("true");
+      expect(lockTitle()).toBe(
+        `Unlock ${HIDDEN_RESEARCH_NAME} on the tech tree`,
+      );
+      expect(card("legs-jumper").title).not.toContain("Jump Jets");
+      hidden.screen.unmount();
+      mountWith(newGame(), root, false, undefined, {
+        tech: hiddenJumpJets,
+        conditionsOf: () => ({ flags: new Set(["killed:spitter"]) }),
+      });
+      expect(lockTitle()).toBe("Unlock Jump Jets on the tech tree");
     });
 
     it("a locked card is not draggable and refuses a drag, Enter and a double-click (2026-09-19)", () => {

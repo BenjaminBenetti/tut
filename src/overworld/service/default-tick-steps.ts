@@ -14,6 +14,7 @@ import type { MissionOfferDecorator } from "../model/mission-offer-decorator";
 import type { MissionOfferRules } from "../model/mission-offer-rule";
 import type { MissionTuning } from "../model/mission-tuning";
 import type { MissionTypeCatalogue } from "../model/mission-type-catalogue";
+import type { StoryMissionRules } from "../model/story-mission-rule";
 import { THREAT_CHANGED } from "../model/overworld-domain-event";
 import type { ThreatTuning } from "../model/threat-tuning";
 import type { TickStep } from "../model/tick-step";
@@ -29,6 +30,7 @@ import { applyGrowth } from "./infestation-growth-service";
 import { applySpread } from "./infestation-spread-service";
 import { expireMissions } from "./mission-expiry-service";
 import { generateMissions } from "./mission-generation-service";
+import { createStoryPinTrigger } from "./story/story-pin-trigger";
 import { applyOutcome } from "./outcome-service";
 import {
   stipendFactor,
@@ -60,6 +62,11 @@ export interface TickDeps {
   readonly offerDecorators: readonly MissionOfferDecorator[];
   /** Board cap, difficulty band and type weights per act. */
   readonly acts: ActCatalogue;
+  /**
+   * The story missions built so far; the director pins each one the
+   * spine says is due (ADR 0013 §2.5). Empty pins nothing.
+   */
+  readonly storyMissions: StoryMissionRules;
   readonly threatTuning: ThreatTuning;
   readonly economyTuning: EconomyTuning;
   readonly eventTypes: EventTypeCatalogue;
@@ -103,13 +110,13 @@ export const TICK_STEP_NAMES = {
  *   4. hive-formation      from Act II, a week at mean ≥ 60 roots a hive (arc §6.5)
  *   5. detection           infested cities past the (sensor-lowered) thresholds are found
  *   6. mission-expiry      lapsed missions go; each type's rule says what that costs
- *   7. mission-generation  the director: trigger rules, then fill the board to
- *                          the act's cap (+ intel bonus)
+ *   7. mission-generation  the director: story pins, trigger rules, then fill
+ *                          the board to the act's cap (+ intel bonus)
  *   8. events              lapsed events resolve by default; maybe a new one (#71)
  *   9. stipend             Earth pays for the day, scaled by how much is unfested,
  *                          by any event-driven stipend modifiers (#70), plus the banks
  *  10. threat              recompute and store global threat
- *  11. outcome             defeat / victory-stub check, once
+ *  11. outcome             the story's verdict, then threat defeat, once
  * ```
  *
  * Growth and spread read the threat stored by the previous tick; the
@@ -269,10 +276,11 @@ function missionExpiryStep<TState extends CampaignState>(
   };
 }
 
-/** The mission director: triggered offers, then the board filled to the act's cap. */
+/** The mission director: story pins, triggered offers, then the board filled to the act's cap. */
 function missionGenerationStep<TState extends CampaignState>(
   deps: TickDeps,
 ): TickStep<TState> {
+  const pinTriggers = [createStoryPinTrigger(deps.storyMissions)];
   return {
     name: TICK_STEP_NAMES.missionGeneration,
     run: (state, ctx) => {
@@ -285,6 +293,7 @@ function missionGenerationStep<TState extends CampaignState>(
         offerRules: deps.missionOffers,
         acts: deps.acts,
         decorators: deps.offerDecorators,
+        pinTriggers,
       });
       if (generated.state === state.overworld) {
         return { state, events: [] };
@@ -377,7 +386,7 @@ function threatStep<TState extends CampaignState>(
   };
 }
 
-/** Ends the campaign the first day a defeat or victory condition holds. */
+/** Ends the campaign the first day the story reaches a verdict or threat hits its maximum. */
 function outcomeStep<TState extends CampaignState>(): TickStep<TState> {
   return {
     name: TICK_STEP_NAMES.outcome,

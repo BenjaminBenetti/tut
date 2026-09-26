@@ -38,6 +38,11 @@ import type { TickDeps } from "./default-tick-steps";
 import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
 import { MISSION_OFFER_DECORATORS } from "./missions/mission-offer-decorators";
 import { MISSION_OFFER_RULES } from "./missions/mission-offer-rules";
+import {
+  fixtureStoryRule,
+  storyRulesOf,
+} from "./story/story-fixtures.test-helper";
+import { STORY_MISSION_RULES } from "./story/story-mission-rules";
 import { createDefaultTickSteps, TICK_STEP_NAMES } from "./default-tick-steps";
 import { unfestedFraction } from "./threat-service";
 
@@ -64,6 +69,7 @@ const TICK_DEPS: TickDeps = {
   ),
   eventTuning: EVENT_TUNING,
   hiveTuning: HIVE_TUNING,
+  storyMissions: STORY_MISSION_RULES,
 };
 
 function newGame(): GameState {
@@ -349,5 +355,57 @@ describe("hives and growth pauses in the day tick", () => {
     const without = play(42, 150, "act-2", true);
     expect(withHives.state.overworld.hives.length).toBeGreaterThan(0);
     expect(withHives.state).not.toEqual(without.state);
+  });
+});
+
+// ===========================================
+// Story pins in the day tick
+// ===========================================
+
+describe("story missions in the day tick (ADR 0013 §2.5)", () => {
+  /** `days` ticks of the new game with `storyMissions`, collecting each day's board. */
+  function play(
+    storyMissions: TickDeps["storyMissions"],
+    days: number,
+  ): GameState["overworld"]["missions"][] {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    dispatcher.register(
+      ADVANCE_DAY,
+      createAdvanceDayHandler(
+        createDefaultTickSteps<GameState>({ ...TICK_DEPS, storyMissions }),
+        { catalogue: TICK_DEPS.catalogue },
+      ),
+    );
+    let state = newGame();
+    const boards: GameState["overworld"]["missions"][] = [];
+    for (let i = 0; i < days; i++) {
+      const result = dispatcher.process(state, advanceDay());
+      if (!result.ok) throw new Error(result.error.message);
+      state = result.value.state;
+      boards.push(state.overworld.missions);
+    }
+    return boards;
+  }
+
+  it("pins a built story mission on day 1 and keeps it, unexpired, while the board turns over", () => {
+    const expiry = MISSION_TYPES["infestation-clearance"].expiryDays;
+    const boards = play(
+      storyRulesOf(fixtureStoryRule("live-specimen")),
+      expiry * 3,
+    );
+    const story = boards[0]?.find((m) => m.storyId === "live-specimen");
+    expect(story).toMatchObject({ pinned: true });
+    for (const board of boards) {
+      expect(board.filter((m) => m.storyId !== undefined)).toEqual([story]);
+      expect(board.filter((m) => m.pinned !== true).length).toBeLessThanOrEqual(
+        ACTS["act-1"].boardCap,
+      );
+    }
+    // Every drawn offer of day 1 has expired by the last day; the story one has not.
+    const lastIds = new Set(boards[boards.length - 1]?.map((m) => m.id));
+    const drawnDayOne = boards[0]?.filter((m) => m.pinned !== true) ?? [];
+    expect(drawnDayOne.length).toBeGreaterThan(0);
+    expect(drawnDayOne.some((m) => lastIds.has(m.id))).toBe(false);
+    expect(story !== undefined && lastIds.has(story.id)).toBe(true);
   });
 });

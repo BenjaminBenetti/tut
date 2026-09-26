@@ -27,20 +27,46 @@ interface OutcomeCopy {
 // Constants
 // ===========================================
 
-/** Headline and explanation for each way a campaign ends (GDD §5.3). */
+/**
+ * Headline and explanation for each way a campaign ends (GDD §5.3, arc
+ * D1). Victory is plain text until the victory screen lands; the
+ * retired `victory-stub` keeps a line so an old save that ended that
+ * way still reads sensibly.
+ */
 const OUTCOME_COPY: Readonly<Record<GameOutcome["kind"], OutcomeCopy>> = {
   defeat: {
     title: "Threat limit reached",
     tagline: `Global threat reached ${formatWhole(MAX_THREAT)}, ending the campaign.`,
     tone: "danger",
   },
+  victory: {
+    title: "Victory",
+    tagline: "The last story mission is won. Earth holds.",
+    tone: "ok",
+  },
   "victory-stub": {
     title: "Earth secured",
     tagline:
-      "Every city is clean and no hive remains. The final mission arrives with M4; until then this is the victory.",
+      "Every city was clean and no hive remained. This campaign ended under the old victory rule.",
     tone: "ok",
   },
 };
+
+/** A defeat the story decided: the spore platform failed twice (arc D7). */
+const STORY_DEFEAT_COPY: OutcomeCopy = {
+  title: "Assault failed",
+  tagline:
+    "The spore platform assault failed a second time, ending the campaign.",
+  tone: "danger",
+};
+
+/** The copy for `outcome`: by kind, with a story defeat worded as such. */
+function copyFor(outcome: GameOutcome): OutcomeCopy {
+  if (outcome.kind === "defeat" && outcome.cause === "story") {
+    return STORY_DEFEAT_COPY;
+  }
+  return OUTCOME_COPY[outcome.kind];
+}
 
 // ===========================================
 // GameOverScreen
@@ -98,7 +124,7 @@ export class GameOverScreen implements Screen {
     // world bright, because there the picture and the words agree.
     const scrim = doc.createElement("div");
     scrim.className = "tut-game-over__scrim";
-    scrim.dataset.tone = outcome ? OUTCOME_COPY[outcome.kind].tone : "ok";
+    scrim.dataset.tone = outcome ? copyFor(outcome).tone : "ok";
     root.appendChild(scrim);
     this.disposers.push(() => {
       scrim.remove();
@@ -160,7 +186,7 @@ export class GameOverScreen implements Screen {
       note.textContent = "No campaign has ended.";
       return [note];
     }
-    const copy = OUTCOME_COPY[outcome.kind];
+    const copy = copyFor(outcome);
     const title = doc.createElement("h1");
     title.className = `tut-game-over__title tut-game-over__title--${copy.tone}`;
     title.dataset.field = "outcome-kind";

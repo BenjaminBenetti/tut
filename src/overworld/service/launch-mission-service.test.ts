@@ -29,6 +29,14 @@ import type { MissionResolver } from "../model/mission-resolver";
 import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
 import { MISSION_TUNING } from "../data/mission-tuning";
+import { STORY_SPINE } from "../data/story-spine";
+import { CAMPAIGN_FLAG_SET } from "../model/campaign-flag-set-event";
+import type { StoryMissionRules } from "../model/story-mission-rule";
+import { STORY_RETRY_DAYS } from "../model/story-mission-rule";
+import {
+  fixtureStoryRule,
+  storyRulesOf,
+} from "./story/story-fixtures.test-helper";
 import type {
   MissionConsequenceRule,
   MissionConsequenceRules,
@@ -211,6 +219,7 @@ class StubResolver implements MissionResolver {
 function deps(
   resolver: MissionResolver,
   consequences: MissionConsequenceRules = MISSION_CONSEQUENCE_RULES,
+  rules: StoryMissionRules = {},
 ): LaunchMissionDeps {
   return {
     resolver,
@@ -219,6 +228,7 @@ function deps(
     techPoints: new TechPointTreasury(),
     consequences,
     missionTuning: MISSION_TUNING,
+    story: { rules, spine: STORY_SPINE },
   };
 }
 
@@ -608,6 +618,59 @@ describe("createLaunchMissionHandler", () => {
     expect(
       result.value.events.filter((e) => e.type === CITY_INFESTATION_CHANGED),
     ).toHaveLength(1);
+  });
+
+  it("hands a story mission to the story layer after its type's consequences (ADR 0013 §2.5)", () => {
+    const skyfall: Mission = {
+      ...MISSION,
+      pinned: true,
+      storyId: "first-skyfall",
+    };
+    const threatRule: MissionConsequenceRule = {
+      ...MISSION_CONSEQUENCE_RULES["infestation-clearance"],
+      onResolved: (state) => ({ state: { ...state, threat: 99 }, events: [] }),
+    };
+    const rules = storyRulesOf(
+      fixtureStoryRule("first-skyfall", {
+        onWon: [{ kind: "flag", flag: "spore-sample" }],
+      }),
+    );
+    const launch = (result: MissionResult) => {
+      const applied = createLaunchMissionHandler<CampaignState>(
+        deps(
+          new StubResolver(result),
+          { ...MISSION_CONSEQUENCE_RULES, "infestation-clearance": threatRule },
+          rules,
+        ),
+      )(
+        campaign({ missions: [skyfall] }),
+        launchMission("mission-1", DEPLOYMENT),
+        context(),
+      );
+      if (!applied.ok) throw new Error(applied.error.message);
+      return applied.value;
+    };
+
+    // Won: the type's consequence stands and the story records its win.
+    const won = launch(WIN);
+    expect(won.state.overworld.threat).toBe(99);
+    expect(won.state.overworld.progress).toMatchObject({
+      flags: ["spore-sample"],
+      storyWon: ["first-skyfall"],
+    });
+    expect(won.events.at(-1)).toEqual({
+      type: CAMPAIGN_FLAG_SET,
+      payload: { flag: "spore-sample" },
+    });
+
+    // Lost: the type's consequence stands and the story waits five days.
+    const lost = launch(LOSS);
+    expect(lost.state.overworld.threat).toBe(99);
+    expect(lost.state.overworld.progress.flags).toEqual([]);
+    expect(lost.state.overworld.progress.storyRetryDay).toEqual({
+      "first-skyfall": DAY + STORY_RETRY_DAYS,
+    });
+    expect(lost.state.overworld.missions).toEqual([]);
   });
 
   it("mops up a won clearance that leaves the city under 15 (arc §5)", () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
+import type { CampaignFlagId } from "../../content/model/campaign-flag-id";
 import type { Transaction } from "../../economy/model/transaction";
 import type { CampaignState } from "../model/campaign-state";
 import type { GameOutcome } from "../model/game-outcome";
@@ -13,7 +14,8 @@ import {
   applyOutcome,
   evaluateOutcome,
   isDefeat,
-  isVictory,
+  isStoryDefeat,
+  isStoryVictory,
   summarise,
 } from "./outcome-service";
 
@@ -30,6 +32,7 @@ function campaign(
     hives?: boolean;
     outcome?: GameOutcome;
     ledger?: readonly Transaction[];
+    flags?: readonly CampaignFlagId[];
   } = {},
 ): CampaignState {
   const map = buildEarthMap({
@@ -82,7 +85,10 @@ function campaign(
       hives: options.hives
         ? [{ id: "hive-1", regionId: "r", formedDay: 1 }]
         : [],
-      progress: createInitialCampaignProgress(),
+      progress: {
+        ...createInitialCampaignProgress(),
+        flags: options.flags ?? [],
+      },
       ...(options.outcome === undefined ? {} : { outcome: options.outcome }),
     },
     roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
@@ -111,16 +117,17 @@ describe("isDefeat", () => {
   });
 });
 
-describe("isVictory", () => {
-  it("needs every city clean", () => {
-    expect(isVictory(campaign([0, 0, 0]).overworld)).toBe(true);
-    expect(isVictory(campaign([0, 1, 0]).overworld)).toBe(false);
-  });
-
-  it("is blocked by a remaining hive", () => {
-    expect(isVictory(campaign([0, 0, 0], { hives: true }).overworld)).toBe(
-      false,
-    );
+describe("isStoryVictory and isStoryDefeat", () => {
+  it("read the story's verdict flags and nothing else", () => {
+    const won = campaign([50, 50, 50], { flags: ["campaign-won"] });
+    const lost = campaign([50, 50, 50], { flags: ["campaign-lost"] });
+    const neither = campaign([0, 0, 0], { flags: ["platform-failed"] });
+    expect(isStoryVictory(won.overworld.progress)).toBe(true);
+    expect(isStoryDefeat(won.overworld.progress)).toBe(false);
+    expect(isStoryDefeat(lost.overworld.progress)).toBe(true);
+    expect(isStoryVictory(lost.overworld.progress)).toBe(false);
+    expect(isStoryVictory(neither.overworld.progress)).toBe(false);
+    expect(isStoryDefeat(neither.overworld.progress)).toBe(false);
   });
 });
 
@@ -139,10 +146,18 @@ describe("evaluateOutcome", () => {
     ).toBeUndefined();
   });
 
-  it("reports defeat at maximum threat with the day and summary", () => {
+  it("never produces the retired victory stub, even with every city clean and no hive (D1)", () => {
+    const clean = campaign([0, 0, 0], { threat: 0, day: 90 });
+    expect(clean.overworld.hives).toEqual([]);
+    expect(evaluateOutcome(clean)).toBeUndefined();
+    expect(applyOutcome(clean).state).toBe(clean);
+  });
+
+  it("reports defeat at maximum threat with the day, the cause and the summary", () => {
     const state = campaign([100, 60, 0], { threat: MAX_THREAT, day: 40 });
     expect(evaluateOutcome(state)).toEqual({
       kind: "defeat",
+      cause: "threat",
       day: 40,
       summary: {
         citiesLost: 1,
@@ -155,18 +170,48 @@ describe("evaluateOutcome", () => {
     });
   });
 
-  it("reports the victory stub when Earth is clean and hive-free", () => {
-    const state = campaign([0, 0, 0], { threat: 12, day: 90 });
+  it("reports victory once the story is won, however infested Earth is", () => {
+    const state = campaign([80, 60, 40], {
+      threat: 70,
+      day: 66,
+      flags: ["campaign-won"],
+    });
     expect(evaluateOutcome(state)).toMatchObject({
-      kind: "victory-stub",
-      day: 90,
-      summary: { citiesLost: 0, citiesInfested: 0, finalThreat: 12 },
+      kind: "victory",
+      cause: "story",
+      day: 66,
+      summary: { citiesInfested: 3, finalThreat: 70 },
     });
   });
 
-  it("prefers defeat when both conditions hold", () => {
-    const state = campaign([0, 0, 0], { threat: MAX_THREAT });
-    expect(evaluateOutcome(state)?.kind).toBe("defeat");
+  it("reports a story defeat when the platform has fallen twice (D7)", () => {
+    const state = campaign([80, 60, 40], {
+      threat: 55,
+      flags: ["platform-failed", "last-hope", "campaign-lost"],
+    });
+    expect(evaluateOutcome(state)).toMatchObject({
+      kind: "defeat",
+      cause: "story",
+    });
+  });
+
+  it("decides the story's verdict before threat, since the mission was played before the tick", () => {
+    const won = campaign([0, 0, 0], {
+      threat: MAX_THREAT,
+      flags: ["campaign-won"],
+    });
+    expect(evaluateOutcome(won)).toMatchObject({
+      kind: "victory",
+      cause: "story",
+    });
+    const lost = campaign([0, 0, 0], {
+      threat: MAX_THREAT,
+      flags: ["campaign-lost"],
+    });
+    expect(evaluateOutcome(lost)).toMatchObject({
+      kind: "defeat",
+      cause: "story",
+    });
   });
 
   it("returns a stored outcome unchanged even if the map now says otherwise", () => {
@@ -232,8 +277,10 @@ describe("applyOutcome", () => {
   });
 
   it("never overwrites a stored outcome, even when a different condition now holds", () => {
-    const won = applyOutcome(campaign([0, 0, 0], { day: 20 }));
-    expect(won.state.overworld.outcome?.kind).toBe("victory-stub");
+    const won = applyOutcome(
+      campaign([0, 0, 0], { day: 20, flags: ["campaign-won"] }),
+    );
+    expect(won.state.overworld.outcome?.kind).toBe("victory");
 
     const overrun: CampaignState = {
       ...won.state,
@@ -246,7 +293,7 @@ describe("applyOutcome", () => {
   });
 
   it("never mutates its input and keeps the other slices", () => {
-    const state = campaign([0, 0, 0]);
+    const state = campaign([0, 0, 0], { flags: ["campaign-won"] });
     const before = JSON.parse(JSON.stringify(state)) as CampaignState;
     const { state: next } = applyOutcome(state);
     expect(state).toEqual(before);

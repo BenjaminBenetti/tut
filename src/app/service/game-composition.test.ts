@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { isCampaignFlagId } from "../../content/model/campaign-flag-id";
 import { UNKNOWN_COMMAND } from "../../overworld/model/command-dispatcher";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/overworld-command";
@@ -378,6 +379,77 @@ describe("composeGame", () => {
     expect(one.force).toBeGreaterThan(0);
     expect(one.winProbability).toBeGreaterThan(empty.winProbability);
     expect(one.target).toBeGreaterThan(0);
+  });
+
+  // ===========================================
+  // Story and tech conditions (ADR 0013 §2.5, §2.7)
+  // ===========================================
+
+  it("hands the tech tree the story's flags and a killed:<species> flag per species killed", () => {
+    const { game } = build();
+    const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
+    expect(game.techConditionsOf(fresh).flags.size).toBe(0);
+    const state = {
+      ...fresh,
+      overworld: {
+        ...fresh.overworld,
+        progress: {
+          ...fresh.overworld.progress,
+          flags: ["spore-sample" as const],
+          speciesKilled: ["spitter" as const],
+        },
+      },
+    };
+    expect([...game.techConditionsOf(state).flags].sort()).toEqual([
+      "killed:spitter",
+      "spore-sample",
+    ]);
+  });
+
+  it("ships a tree whose every flag effect is a campaign flag the story records", () => {
+    const { game } = build();
+    const flags = game.content.tech
+      .listNodes()
+      .flatMap((node) => node.effects)
+      .flatMap((effect) => (effect.kind === "flag" ? [effect.flag] : []));
+    expect(flags.filter((flag) => !isCampaignFlagId(flag))).toEqual([]);
+  });
+
+  it("never ends a campaign for a clean Earth; the story's verdict ends it on the next day", () => {
+    const { game } = build();
+    const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
+    const clean = {
+      ...fresh,
+      overworld: {
+        ...fresh.overworld,
+        map: {
+          ...fresh.overworld.map,
+          cities: fresh.overworld.map.cities.map((city) => ({
+            ...city,
+            infestation: 0,
+          })),
+        },
+        hives: [],
+      },
+    };
+    game.session.start(clean);
+    game.session.store?.dispatch(advanceDay());
+    expect(game.session.state?.overworld.outcome).toBeUndefined();
+
+    const current = game.session.state;
+    if (!current) throw new Error("no campaign");
+    game.session.replace({
+      ...current,
+      overworld: {
+        ...current.overworld,
+        progress: { ...current.overworld.progress, flags: ["campaign-won"] },
+      },
+    });
+    game.session.store?.dispatch(advanceDay());
+    expect(game.session.state?.overworld.outcome).toMatchObject({
+      kind: "victory",
+      cause: "story",
+    });
   });
 
   // ===========================================

@@ -38,6 +38,12 @@ import {
 import { buildOffer } from "./missions/mission-offer-builder";
 import { MISSION_OFFER_DECORATORS } from "./missions/mission-offer-decorators";
 import { MISSION_OFFER_RULES } from "./missions/mission-offer-rules";
+import {
+  fixtureStoryRule,
+  storyRulesOf,
+} from "./story/story-fixtures.test-helper";
+import { STORY_MISSION_RULES } from "./story/story-mission-rules";
+import { createStoryPinTrigger } from "./story/story-pin-trigger";
 
 // ===========================================
 // Fixtures
@@ -57,6 +63,7 @@ function deps(
     offerRules: MISSION_OFFER_RULES,
     acts: ACTS,
     decorators: [],
+    pinTriggers: [],
     ...overrides,
   };
 }
@@ -485,6 +492,78 @@ describe("generateMissions — Defend Installation", () => {
         deps(3, { tuning }),
       );
     expect(board(ALWAYS_DEFEND)).toEqual(board(MISSION_TUNING));
+  });
+});
+
+// ===========================================
+// Story pins
+// ===========================================
+
+describe("generateMissions — story pins (ADR 0013 §2.4, §2.5)", () => {
+  const storyPins = (...ids: Parameters<typeof fixtureStoryRule>[0][]) => [
+    createStoryPinTrigger(
+      storyRulesOf(...ids.map((id) => fixtureStoryRule(id))),
+    ),
+  ];
+
+  it("pins a story offer first, on top of a full board, outside the cap", () => {
+    const { state, events } = generateMissions(
+      wideBoard(8),
+      deps(1, { pinTriggers: storyPins("live-specimen") }),
+    );
+    expect(state.missions).toHaveLength(ACTS["act-1"].boardCap + 1);
+    expect(state.missions[0]).toMatchObject({
+      storyId: "live-specimen",
+      pinned: true,
+      cityId: "c0",
+    });
+    expect(
+      state.missions.filter((mission) =>
+        countsAgainstCap(mission, MISSION_OFFER_RULES),
+      ),
+    ).toHaveLength(ACTS["act-1"].boardCap);
+    expect(new Set(offeredCities(state)).size).toBe(state.missions.length);
+    expect(events.map((event) => event.type)).toEqual(
+      state.missions.map(() => MISSION_OFFERED),
+    );
+  });
+
+  it("keeps a pinned story offer on the board without pinning it twice", () => {
+    const once = generateMissions(
+      wideBoard(8),
+      deps(1, { pinTriggers: storyPins("live-specimen") }),
+    ).state;
+    const twice = generateMissions(
+      once,
+      deps(2, { pinTriggers: storyPins("live-specimen") }),
+    );
+    expect(twice.state).toBe(once);
+  });
+
+  it("decorates a pinned offer like any other new offer", () => {
+    const { state } = generateMissions(
+      wideBoard(8),
+      deps(1, {
+        pinTriggers: storyPins("live-specimen"),
+        decorators: [tagging("mix")],
+      }),
+    );
+    expect(state.missions[0]?.mapParams.seed).toMatch(/\|mix$/);
+  });
+
+  it("draws the same board with the shipped, empty story table as with no pins", () => {
+    const board = (pinTriggers: MissionGenerationDeps["pinTriggers"]) =>
+      generateMissions(
+        fixtureState({ deployables: [installation("dep-1", "east")] }),
+        deps(3, {
+          pinTriggers,
+          decorators: MISSION_OFFER_DECORATORS,
+          tuning: ALWAYS_DEFEND,
+        }),
+      );
+    expect(board([createStoryPinTrigger(STORY_MISSION_RULES)])).toEqual(
+      board([]),
+    );
   });
 });
 

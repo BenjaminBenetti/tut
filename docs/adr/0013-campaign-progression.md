@@ -1,6 +1,6 @@
 # ADR 0013 — Campaign progression and mission-type modules
 
-- Status: Accepted (2026-09-26)
+- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built.
 - Context doc: [Campaign Arc](../design/campaign-arc.md)
 - Supersedes: nothing. It extends ADR 0003 (state, commands, data) and ADR 0011 (tech tree).
 
@@ -67,7 +67,8 @@ interface CampaignProgress {
 
 New `Mission` fields are **optional**, so older saves stay valid:
 
-- `pinned?: boolean`: a story, hive, defend or wreck offer. It ignores the board cap and never expires unless its rule says so.
+- `pinned?: boolean`: a story, hive or wreck offer. It ignores the board cap and never expires unless its rule says so.
+  - Defend Installation is **not** pinned. Its trigger rule offers it outside the cap, and it lapses on its own `expiresDay` like any offer.
 - `storyId?: StoryMissionId`: `content/model/story-mission-id.ts`.
 - `act?: ActId`: frozen at offer.
 - `sitreps?: readonly SitrepId[]`: `content/model/sitrep-id.ts`, frozen at offer.
@@ -106,26 +107,95 @@ Each domain owns a small interface and a table keyed by `MissionTypeId`. A `Read
 
 The `mission-generation` tick step keeps its name and becomes the director. It runs in this order:
 
-1. Run every `MissionTriggerRule` for pinned and event offers.
-2. Count the unpinned offers.
-3. While that count is below `ACTS[act].boardCap`:
+1. Run every **pin trigger** (`MissionPinTrigger` in `overworld/model/mission-pin-trigger.ts`). Today there is one: the story's (§2.5). Pins run first, so a story mission claims its city before any other offer.
+2. Run every `MissionTriggerRule` for event offers, such as Defend Installation.
+3. Count the offers that count against the cap: not `pinned`, and of a type with an offer rule. A triggered defence sits outside the cap too (`countsAgainstCap`).
+4. While that count is below `ACTS[act].boardCap`:
    1. draw a type with `rng.pickWeighted` from the act's `typeWeights`, restricted to types that have debuted and have an eligible site;
    2. pick the site;
    3. create the offer.
-4. Clamp every non-story offer's difficulty into the act's `difficultyBand`.
+5. Clamp every non-story offer's difficulty into the act's `difficultyBand`. A story offer keeps its fixed difficulty.
+
+**Streams.** Each pin trigger draws on `rng.fork("pin:<id>")`, each trigger rule on `rng.fork("trigger:<type>")`, and the fill on the board stream. A trigger that offers nothing changes nothing.
+
+**Decorators** (`MISSION_OFFER_DECORATORS`) apply to every new offer, pinned or not, each on its own fork.
 
 ### 2.5 The story spine
 
-`overworld/service/story-service.ts` reacts to two things:
+`overworld/service/story-service.ts` owns the spine. It reacts to two things, and the mission director pins from what they record.
 
-- **Tech unlocks.** `onTechUnlocked(state, nodeId)` is called from `tech-command-handlers.ts` after a successful `unlockTech`. It can set flags and pin story missions.
-- **Story mission results.** These go through the consequence rules of the story mission types. They can advance the act, set flags, win the campaign, or apply D7.
+**Tech unlocks.**
 
-**Outcome:**
+- `onTechUnlocked(state, node)` is `TechHandlerDeps.onUnlocked`. The composition wires it.
+- It records each `{kind:"flag"}` effect with `withFlag` and emits `CampaignFlagSet`. Other effects are for other readers.
+- It never pins. The director pins from flags on the next tick, so research and play reach the board through one path.
 
-- `GameOutcomeKind` gains `"victory"`.
-- `"victory-stub"` stays in the union so old saves still load, but no rule produces it any more.
-- Defeat is threat ≥ 100, or a second Spore Platform loss.
+**Story missions are modules.**
+
+- **Model:** `StoryMissionRule` in `overworld/model/story-mission-rule.ts`.
+- **Table:** `STORY_MISSION_RULES: Readonly<Partial<Record<StoryMissionId, StoryMissionRule>>>` in `overworld/service/story/story-mission-rules.ts`. One file per story mission.
+- The table is `Partial` because story missions land package by package. An absent entry means "not built yet".
+- **Tests:** `fixtureStoryRule(id, overrides)` in `story/story-fixtures.test-helper.ts` builds a rule for tests.
+
+| Field | Meaning |
+|---|---|
+| `id` | the `StoryMissionId`, equal to its table key |
+| `act` | the act it is pinned in; stamped on the offer |
+| `pinWhen` | flags that must all be set before it is pinned |
+| `create(state, ctx)` | the pinned offer, or `undefined` for "no site today". `buildStoryOffer` builds it on an existing `typeId` at a fixed difficulty, with `pinned`, `storyId` and `act` |
+| `onWon` | `StoryEffect[]`, in order: `{kind:"flag", flag}`, `{kind:"advance-act"}` or `{kind:"victory"}` |
+| `onLost` | `StoryLossRule`: `{kind:"retry", delayDays}` (arc §4: 5 days) or `{kind:"platform", cityInfestation}` (D7: 30) |
+
+**Pinning.** The story pin trigger pins each built rule when all of these hold:
+
+- the campaign is in the rule's `act`;
+- every `pinWhen` flag is set;
+- its `storyId` is not on the board;
+- it has not been won;
+- its loss rule does not hold it back: a retry waits until `storyRetryDay[id]`, and the platform waits after `platform-failed` until `last-hope`.
+
+Each rule draws on its own fork, labelled with its id. A pinned story offer never expires and ignores the cap.
+
+**Results.**
+
+- The launch handler runs the type's `onResolved` first, then `onStoryMissionResolved` when `storyId` is set. A story Crash Site keeps the Crash Site consequences.
+- **Won:** the id is added to `storyWon`, then `onWon` applies.
+- **Lost or extracted:** `onLost` applies. Only `won` moves the story on.
+- **Tracking** uses optional `CampaignProgress` fields, so it needs no migration (§2.9): `storyWon?: StoryMissionId[]` and `storyRetryDay?: Partial<Record<StoryMissionId, number>>`.
+
+**The spine rule** (arc §13: "the spine ends the game after the last act that exists").
+
+- `STORY_SPINE` in `overworld/data/story-spine.ts` names the story mission that ends each act.
+- An act **exists** when that mission is defined in `STORY_MISSION_RULES`.
+- `advance-act` moves into the next act only if it exists. Otherwise it sets `campaign-won`.
+
+| Act | Ended by | Entering it |
+|---|---|---|
+| `act-1` | `live-specimen` | |
+| `act-2` | `intact-pod` | scripts the first hive (`formFirstHive`) |
+| `act-3` | `launch-window` (pinned when the Great Hives and Intel III are done) | |
+| `finale` | `spore-platform` (its win is `victory`) | |
+
+The arc files Launch Window under the finale. The spine plays it as Act III's last mission, so the finale holds only the platform.
+
+**D7, the platform** (`{kind:"platform"}`):
+
+- **First loss:** every city gains `cityInfestation` through `addCityInfestation`, capped at 100. The story sets `platform-failed`. The platform is not pinned again until `last-hope` is set.
+- **Last Hope:** a hidden node with `requiresFlags: ["platform-failed"]` and the flag effect `last-hope`. It is not in the tree yet.
+- **Second loss:** the story sets `campaign-lost`.
+
+**Other rules set flags through one door.** `setCampaignFlag(state, flag)` sets a flag and emits `CampaignFlagSet`. The Crash Site consequence rule calls it on its first win to set `spore-sample`, which reveals Intel I.
+
+**Outcome.** The outcome step runs last in the day tick and checks in this order:
+
+1. an outcome already stored;
+2. `campaign-lost`: defeat, `cause: "story"`;
+3. `campaign-won`: victory, `cause: "story"`;
+4. threat ≥ 100: defeat, `cause: "threat"`.
+
+- `GameOutcomeKind` gains `"victory"`. `GameOutcome.cause?` is optional.
+- `"victory-stub"` stays in the union so old saves still load, but nothing produces it.
+- The story's verdict comes before threat, because the mission was played before the day ended.
 
 ### 2.6 The bestiary by act
 
@@ -162,3 +232,4 @@ The `mission-generation` tick step keeps its name and becomes the director. It r
 - **Existing behaviour is preserved by refactor first.** The existing two types move into modules with no gameplay change, and the existing sims and tests must stay green.
 - **More indirection:** a reader follows the table to the module. Each table's file lists its modules in one place.
 - **Victory changes:** the "every city at 0" victory is retired. Old saves with a `victory-stub` outcome still load.
+- **Adding a story mission** is one file plus one entry in `STORY_MISSION_RULES`. Building the mission that ends an act makes that act exist.

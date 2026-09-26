@@ -27,6 +27,8 @@ import type { MissionTuning } from "../model/mission-tuning";
 import type { OverworldState } from "../model/overworld-state";
 import { recordMission } from "./campaign-progress-service";
 import { findCity } from "./earth-map-query-service";
+import type { StoryDeps } from "./story-service";
+import { onStoryMissionResolved } from "./story-service";
 
 // ===========================================
 // Types
@@ -49,6 +51,12 @@ export interface LaunchMissionDeps {
   readonly consequences: MissionConsequenceRules;
   /** Handed to the consequence rules; the clearance's mop-up threshold lives here. */
   readonly missionTuning: MissionTuning;
+  /**
+   * The story missions built so far and each act's gate: a played story
+   * offer is resolved by the story service after its type's consequence
+   * rule (ADR 0013 §2.5).
+   */
+  readonly story: StoryDeps;
 }
 
 /** What a valid launch resolved to: the mission and its host city. */
@@ -190,13 +198,18 @@ export function validateLaunch(
  *   6. overworld ── consequences[mission.typeId].onResolved(overworld,      (the rule's events,
  *                 mission, result): the type's own effect, e.g. the         e.g. CityInfestationChanged)
  *                 clearance's infestation cut and mop-up (ADR 0013 §2.3)
+ *   7. story     ── storyId set? onStoryMissionResolved: a win applies the   (CampaignFlagSet,
+ *                 rule's onWon (flags, the next act, victory), a loss its   ActAdvanced, HiveFormed,
+ *                 onLost (retry delay, D7) (ADR 0013 §2.5)                  CityInfestationChanged)
  * ```
  *
  * This is the single place the campaign counts missions: every resolved
  * mission, won, extracted or lost, passes through here exactly once. The
- * consequence rule runs last, on an overworld that no longer holds the
- * offer and has already counted the mission, so a rule may offer again
- * (a story mission re-pinned after a loss) or move the act on.
+ * consequence rule and then the story run last, on an overworld that no
+ * longer holds the offer and has already counted the mission, so the
+ * story may move the act on, and the type's rule and the story layer
+ * stay separate: a story Crash Site still has the Crash Site
+ * consequences.
  *
  * Resolver-agnostic: M2 swaps the auto-resolver for the tactical layer
  * without touching this service.
@@ -267,11 +280,16 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
       { tuning: deps.missionTuning },
     );
     events.push(...consequence.events);
+    const story = onStoryMissionResolved(consequence.state, mission, result, {
+      ...deps.story,
+      ids: ctx.ids,
+    });
+    events.push(...story.events);
 
     return ok({
       state: {
         ...state,
-        overworld: consequence.state,
+        overworld: story.state,
         roster: casualties.roster,
         economy,
       },

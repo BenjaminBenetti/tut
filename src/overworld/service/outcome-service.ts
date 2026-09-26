@@ -1,12 +1,19 @@
 import type { Applied } from "../../core/model/domain-event";
 import type { Transaction } from "../../economy/model/transaction";
 import type { CampaignState } from "../model/campaign-state";
+import type { CampaignProgress } from "../model/campaign-progress";
 import { MAX_INFESTATION, MIN_INFESTATION } from "../model/city";
-import type { GameOutcome, GameOutcomeSummary } from "../model/game-outcome";
+import type {
+  GameOutcome,
+  GameOutcomeCause,
+  GameOutcomeKind,
+  GameOutcomeSummary,
+} from "../model/game-outcome";
 import type { GameEndedEvent } from "../model/overworld-domain-event";
 import { GAME_ENDED } from "../model/overworld-domain-event";
 import type { OverworldState } from "../model/overworld-state";
 import { MAX_THREAT } from "../model/threat";
+import { hasFlag } from "./campaign-progress-service";
 
 // ===========================================
 // Conditions
@@ -18,14 +25,22 @@ export function isDefeat(overworld: OverworldState): boolean {
 }
 
 /**
- * True when every city is clean and no hive remains (GDD §5.3). Until M4
- * ships the final mission this is the victory stub.
+ * True when the story spine has been won (campaign arc D1, ADR 0013
+ * §2.5): the story service set `campaign-won` when the gate mission of
+ * the last act that exists fell. The only way to win; the retired stub
+ * ("every city clean, no hive") no longer ends anything.
  */
-export function isVictory(overworld: OverworldState): boolean {
-  return (
-    overworld.hives.length === 0 &&
-    overworld.map.cities.every((city) => city.infestation === MIN_INFESTATION)
-  );
+export function isStoryVictory(progress: CampaignProgress): boolean {
+  return hasFlag(progress, "campaign-won");
+}
+
+/**
+ * True when the story has been lost (campaign arc D7): the story service
+ * set `campaign-lost` when the Spore Platform assault failed a second
+ * time.
+ */
+export function isStoryDefeat(progress: CampaignProgress): boolean {
+  return hasFlag(progress, "campaign-lost");
 }
 
 // ===========================================
@@ -35,34 +50,47 @@ export function isVictory(overworld: OverworldState): boolean {
 /**
  * The outcome the campaign is in, if any. Sticky: an outcome already
  * stored on the state is returned as is, so nothing downstream can
- * flip a defeat into a victory or restamp the day. Otherwise defeat is
- * checked before victory: maximum threat ends the campaign independently
- * of the number of cities lost.
+ * flip a defeat into a victory or restamp the day. Otherwise the story's
+ * verdicts come first, because they record a mission already played
+ * before this tick, and threat is checked last:
  *
  * ```
- *   outcome set? ──yes──► that outcome
+ *   outcome set? ───────────yes──► that outcome
  *        │no
- *   threat ≥ 100? ──yes──► defeat
+ *   flag campaign-lost? ────yes──► defeat   (cause story, D7)
  *        │no
- *   all clean, no hives? ──yes──► victory-stub
+ *   flag campaign-won? ─────yes──► victory  (cause story, D1)
+ *        │no
+ *   threat ≥ 100? ──────────yes──► defeat   (cause threat)
  *        │no
  *   undefined
  * ```
+ *
+ * A clean Earth with no hive is no longer a victory: `victory-stub` is
+ * never produced (ADR 0013 §2.5).
  */
 export function evaluateOutcome(state: CampaignState): GameOutcome | undefined {
   const { overworld } = state;
   if (overworld.outcome !== undefined) {
     return overworld.outcome;
   }
-  if (isDefeat(overworld)) {
-    return { kind: "defeat", day: overworld.day, summary: summarise(state) };
+  const ended = (
+    kind: GameOutcomeKind,
+    cause: GameOutcomeCause,
+  ): GameOutcome => ({
+    kind,
+    cause,
+    day: overworld.day,
+    summary: summarise(state),
+  });
+  if (isStoryDefeat(overworld.progress)) {
+    return ended("defeat", "story");
   }
-  if (isVictory(overworld)) {
-    return {
-      kind: "victory-stub",
-      day: overworld.day,
-      summary: summarise(state),
-    };
+  if (isStoryVictory(overworld.progress)) {
+    return ended("victory", "story");
+  }
+  if (isDefeat(overworld)) {
+    return ended("defeat", "threat");
   }
   return undefined;
 }

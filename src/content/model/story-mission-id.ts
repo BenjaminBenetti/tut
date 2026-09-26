@@ -16,7 +16,7 @@
  * | `intact-pod`     | II → III | keep a pod alive to recovery; opens Act III  |
  * | `uplink`         | III      | defend a tracking array; reveals Great Hives |
  * | `great-hive`     | III      | one of the three Great Hive assaults         |
- * | `launch-window`  | finale   | defend the launch site                       |
+ * | `launch-window`  | III      | defend the launch site; opens the finale     |
  * | `spore-platform` | finale   | the two-map platform assault; the win        |
  */
 export type StoryMissionId =

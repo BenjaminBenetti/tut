@@ -32,6 +32,7 @@ import { createNewGame } from "../../save/service/new-game-service";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
+import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { HAZARD_TUNING } from "../data/hazard-tuning";
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
@@ -201,6 +202,7 @@ function startedDefence(
       spawnTuning: SPAWN_TUNING,
       garrison: GARRISON_TUNING,
       generator: GENERATOR_TUNING,
+      civilian: CIVILIAN_TUNING,
       ids,
       registries: createDefaultRegistries(),
     },

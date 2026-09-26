@@ -11,7 +11,11 @@ export const UNIT_EXTRACTED = "tactical:unit-extracted";
 /** Payload of `UnitExtracted`. */
 export interface UnitExtractedPayload {
   readonly unitId: UnitId;
-  /** TDF units still standing on the map after this one left. */
+  /**
+   * Squads and mechs still standing on the map after this one left
+   * (`isStandingForce`); civilian groups, turrets and generators are not
+   * counted.
+   */
   readonly remaining: number;
 }
 

@@ -38,6 +38,7 @@ import type { GameState } from "../../save/model/game-state";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
+import { CIVILIAN_SOURCE_ID } from "../../tactical/model/civilian";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { PLACE_UNIT, placeUnit } from "../../tactical/model/place-unit-command";
@@ -300,6 +301,27 @@ describe("composeTactical", () => {
       // Vision was recomputed by the lift: a bug put down beside the
       // force is seen at once.
       expect(mission.vision.tdf.spotted).toContain(placed.id);
+    });
+
+    it("in a dev build places a trapped civilian group that the mission's rescue tracks (campaign arc §6.4)", () => {
+      const { tactical, store, missionId, beside } = liveMission(true);
+      expect(tactical.devTools?.placeable).toContainEqual({
+        kind: "civilian",
+        id: CIVILIAN_SOURCE_ID,
+        name: "Civilians (trapped)",
+      });
+      const outcome = store.dispatch(
+        placeUnit(missionId, "civilian", CIVILIAN_SOURCE_ID, beside),
+      );
+      expect(outcome.ok).toBe(true);
+      const mission = store.getState().activeMission!;
+      const placed = mission.units.at(-1)!;
+      expect(placed).toMatchObject({ kind: "civilian", trapped: true, ap: 0 });
+      expect(
+        mission.objectives.find(
+          (objective) => objective.kind === "rescue-civilians",
+        ),
+      ).toMatchObject({ groupIds: [placed.id] });
     });
   });
 

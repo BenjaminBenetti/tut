@@ -1,14 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { CarriedSpecimen } from "../../tactical/model/carried-specimen";
 import type { Unit } from "../../tactical/model/unit";
 import { HookKinds } from "../../mapgen/model/hook";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { TileIndex } from "../../mapgen/service/tile-index";
+import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import {
+  FIXTURE_TEMPLATES,
   missionWith,
   unitAt,
+  withCivilian,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import {
+  attackOptions,
   bestBy,
   clumpScore,
   distanceScore,
@@ -263,5 +270,143 @@ describe("huntSite (#1175)", () => {
     const mission = missionWith(plain, []);
     expect(huntSite(mission, at(0, 0))).toEqual(landingSite(mission, at(0, 0)));
     expect(huntSite(mission, at(0, 0))).toEqual(at(11, 11));
+  });
+});
+
+// ===========================================
+// Civilians (campaign arc §6.4)
+// ===========================================
+
+describe("civilian groups as prey (campaign arc §6.4)", () => {
+  const at = (x: number, z: number) => ({ x, y: 0, z });
+  const open = new FixtureMapBuilder(10, 10, 2).fillGround().build();
+  const bug = unitAt("bug", "infantry", at(4, 4), { team: "bugs" });
+  /** The bug between a squad and a freed civilian group, both one step off. */
+  const between = (squadHp = 10) =>
+    withCivilian(
+      missionWith(
+        open,
+        [bug, unitAt("squad", "infantry", at(3, 4), { hp: squadHp })],
+        { phase: "bugs" },
+      ),
+      "civ",
+      at(5, 4),
+      { trapped: false },
+    );
+
+  it("bites a civilian group before a squad when the two bites are worth the same", () => {
+    const options = attackOptions(between(), "bug", COMBAT_TUNING);
+    const civ = options.find((option) => option.target.id === "civ");
+    const squad = options.find((option) => option.target.id === "squad");
+    // The fixture squad and the group both stand at ten hit points
+    // with no armour: the bites are worth the same.
+    expect(civ?.value).toBeCloseTo(squad?.value ?? -1);
+    expect(options.map((option) => option.target.id)).toEqual(["civ", "squad"]);
+  });
+
+  it("still finishes a wounded squad first: the preference is a weight, not a fixation", () => {
+    const options = attackOptions(between(2), "bug", COMBAT_TUNING);
+    expect(options[0]?.target.id).toBe("squad");
+    // Without the weight the group would lose a tie, not win it.
+    expect(
+      attackOptions(between(), "bug", COMBAT_TUNING, { civilianWeight: 1 })[0]
+        ?.target.id,
+    ).toBe("squad");
+  });
+
+  it("hunts a group alongside the squad, never in place of it", () => {
+    expect(huntableEnemies(between(), bug).map((unit) => unit.id)).toEqual([
+      "squad",
+      "civ",
+    ]);
+  });
+
+  it("heads for the nearest civilian hook it has not yet looked at, and passes one it has", () => {
+    const map = new FixtureMapBuilder(12, 12, 2)
+      .fillGround()
+      .deploy([at(11, 11)])
+      .objective(HookKinds.CIVILIAN, [at(2, 2)])
+      .objective(HookKinds.CIVILIAN, [at(8, 8)])
+      .build();
+    const blind = missionWith(map, []);
+    expect(huntSite(blind, at(0, 0))).toEqual(at(2, 2));
+    const index = new TileIndex(map);
+    const looked = {
+      ...blind,
+      vision: {
+        ...blind.vision,
+        bugs: { ...blind.vision.bugs, explored: [index.keyOf(at(2, 2))] },
+      },
+    };
+    expect(huntSite(looked, at(0, 0))).toEqual(at(8, 8));
+    // What the squad has seen is not the bugs' to know.
+    const tdfLooked = {
+      ...blind,
+      vision: {
+        ...blind.vision,
+        tdf: { ...blind.vision.tdf, explored: [index.keyOf(at(2, 2))] },
+      },
+    };
+    expect(huntSite(tdfLooked, at(0, 0))).toEqual(at(2, 2));
+  });
+});
+
+// ===========================================
+// Carriers (#1179)
+// ===========================================
+
+describe("a squad carrying a specimen as prey (#1179)", () => {
+  const at = (x: number, z: number) => ({ x, y: 0, z });
+  const open = new FixtureMapBuilder(10, 10, 2).fillGround().build();
+  const bug = unitAt("bug", "infantry", at(4, 4), { team: "bugs" });
+  const LURKER: CarriedSpecimen = {
+    unitId: "lurker-1",
+    species: "lurker",
+    templateId: FIXTURE_TEMPLATES.bug,
+    movePenalty: 1,
+  };
+  /** `id`, a fixture squad at `pos`, holding the lurker when `carries`. */
+  const squad = (id: string, pos: TileCoord, carries: boolean): Unit => ({
+    ...unitAt(id, "infantry", pos),
+    ...(carries ? { carrying: LURKER } : {}),
+  });
+
+  it("ranks a carrier as the squad it is, by its value alone", () => {
+    // Two equal squads either side of the bug; either may carry. Equal
+    // bites keep unit order, so a weight on carrying, either way,
+    // would reorder one of the two cases.
+    for (const carrier of ["west", "east"]) {
+      const mission = missionWith(
+        open,
+        [
+          bug,
+          squad("west", at(3, 4), carrier === "west"),
+          squad("east", at(5, 4), carrier === "east"),
+        ],
+        { phase: "bugs" },
+      );
+      const options = attackOptions(mission, "bug", COMBAT_TUNING);
+      expect(options[0]?.value).toBeCloseTo(options[1]?.value ?? -1);
+      expect(
+        options.map((option) => option.target.id),
+        carrier,
+      ).toEqual(["west", "east"]);
+    }
+  });
+
+  it("bites a civilian group before a carrier worth the same", () => {
+    const mission = withCivilian(
+      missionWith(open, [bug, squad("carrier", at(3, 4), true)], {
+        phase: "bugs",
+      }),
+      "civ",
+      at(5, 4),
+      { trapped: false },
+    );
+    expect(
+      attackOptions(mission, "bug", COMBAT_TUNING).map(
+        (option) => option.target.id,
+      ),
+    ).toEqual(["civ", "carrier"]);
   });
 });

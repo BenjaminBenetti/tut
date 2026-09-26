@@ -14,6 +14,7 @@ import {
   missionWith,
   openField,
   unitAt,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 
 // ===========================================
@@ -271,5 +272,63 @@ describe("leaveMissionSummary on a defence (#1175)", () => {
       .filter((event) => event.type === UNIT_ABANDONED)
       .map((event) => event.payload.unitId);
     expect(stranded).toEqual(["unit-1"]);
+  });
+});
+
+// ===========================================
+// Civilian groups (campaign arc §6.4)
+// ===========================================
+
+describe("AbandonMission with civilian groups (campaign arc §6.4)", () => {
+  /** A squad on the map, two groups: one aboard, one still trapped. */
+  function town(squadAboard: boolean): TacticalState {
+    const squad = {
+      ...unitAt("unit-1", "infantry", at(2, 2)),
+      sourceId: "squad-1",
+    };
+    let mission = missionWith(openField().build(), [squad], {
+      objectives: [
+        {
+          id: "rescue",
+          kind: "rescue-civilians",
+          groupIds: ["civ-1", "civ-2"],
+          complete: true,
+          failed: false,
+        },
+      ],
+    });
+    mission = withCivilian(mission, "civ-1", at(0, 0), { trapped: false });
+    mission = withCivilian(mission, "civ-2", at(6, 6));
+    const aboard = mission.units.filter(
+      (unit) => unit.id === "civ-1" || (squadAboard && unit.id === "unit-1"),
+    );
+    return {
+      ...mission,
+      units: mission.units.filter((unit) => !aboard.includes(unit)),
+      extracted: aboard,
+    };
+  }
+
+  it("strands the squad but never a group, which is no roster entry", () => {
+    const mission = town(false);
+    expect(leaveMissionSummary(mission).leftBehind).toEqual([
+      { unitId: "unit-1", sourceId: "squad-1" },
+    ]);
+    const applied = handler(mission, abandonMission(), ctx);
+    if (!applied.ok) throw new Error(`refused: ${applied.error.kind}`);
+    expect(
+      applied.value.events
+        .filter((event) => event.type === UNIT_ABANDONED)
+        .map((event) => event.payload),
+    ).toEqual([{ unitId: "unit-1" }]);
+    expect(
+      applied.value.state.units.find((unit) => unit.id === "civ-2")?.hp,
+    ).toBeGreaterThan(0);
+  });
+
+  it("records a loss when only a group got out, however the rescue stands", () => {
+    // One of two aboard is the half: the rescue is complete.
+    expect(leaveMissionSummary(town(false)).outcome).toBe("lost");
+    expect(leaveMissionSummary(town(true)).outcome).toBe("won");
   });
 });

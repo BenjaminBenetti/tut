@@ -152,6 +152,14 @@ export interface MissionResult {
    */
   readonly podDestroyed?: boolean;
   /**
+   * For a rescue (campaign arc §6.4): civilian groups aboard the drop
+   * ship at the end, beside `civiliansTotal`. Each group out adds to the
+   * reward. Absent when the mission had no civilians.
+   */
+  readonly civiliansRescued?: number;
+  /** For a rescue: how many civilian groups the mission had, beside `civiliansRescued`. */
+  readonly civiliansTotal?: number;
+  /**
    * Every bug species killed in the mission, each once, in the order
    * their first death was logged (ADR 0013 §2.1). The launch handler
    * merges them into the campaign's first-kill record. Absent when the

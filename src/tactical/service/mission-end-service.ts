@@ -2,7 +2,7 @@ import type { MissionOutcome } from "../../overworld/model/mission-result";
 import { MISSION_ENDED } from "../model/mission-ended-event";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
-import { isAutonomous } from "../model/unit";
+import { isCombatUnit, isStandingForce } from "../model/unit";
 
 import { objectiveComplete } from "./objectives/objective-status";
 
@@ -29,7 +29,11 @@ import { objectiveComplete } from "./objectives/objective-status";
  * objective open is **extracted**; nobody out is **lost**, whatever
  * they finished, because nobody came home to say so. A deployed turret
  * is not somebody (#1138): it cannot come home, so a turret still
- * standing after the last squad has gone keeps nothing open.
+ * standing after the last squad has gone keeps nothing open. Neither is
+ * a civilian group (campaign arc §6.4): it is who the force came for,
+ * so the force leaving or falling ends the mission with any group still
+ * on the map lost, and a group that got out alone is not somebody of
+ * the force coming home.
  *
  * ```
  *   a TDF unit still standing ──► undefined (play on)
@@ -48,13 +52,10 @@ import { objectiveComplete } from "./objectives/objective-status";
 export function missionOutcome(
   mission: TacticalState,
 ): MissionOutcome | undefined {
-  const standing = mission.units.some(
-    (unit) => unit.team === "tdf" && unit.hp > 0 && !isAutonomous(unit),
-  );
-  if (standing) {
+  if (mission.units.some(isStandingForce)) {
     return undefined;
   }
-  if (mission.extracted.length === 0) {
+  if (!forceExtracted(mission)) {
     return "lost";
   }
   return objectivesComplete(mission) ? "won" : "extracted";
@@ -75,6 +76,19 @@ export function objectivesComplete(mission: TacticalState): boolean {
       objectiveComplete(mission, objective),
     )
   );
+}
+
+/**
+ * Whether any member of the force got out (campaign arc §6.4): a squad
+ * or a mech among the extracted. Civilians aboard are rescued, not the
+ * force coming home, so they alone do not turn a loss into an
+ * extraction.
+ *
+ * @param mission - The mission to read.
+ * @returns True once a squad or mech has boarded.
+ */
+export function forceExtracted(mission: TacticalState): boolean {
+  return mission.extracted.some(isCombatUnit);
 }
 
 // ===========================================

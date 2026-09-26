@@ -108,6 +108,12 @@ export type TacticalError =
   // A unit nobody orders (#1138): a deployed turret fires by rule and
   // refuses every command that asks it to act.
   | { readonly kind: "takes-no-orders"; readonly unitId: string }
+  // A civilian group still shut in its building (campaign arc §6.4):
+  // it waits for a squad or mech to free it with Interact.
+  | { readonly kind: "unit-trapped"; readonly unitId: string }
+  // Only the force works objectives (campaign arc §6.4): a civilian
+  // group is who the squad came for, not a hand to plant charges.
+  | { readonly kind: "cannot-interact"; readonly unitId: string }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
   | { readonly kind: "objective-complete"; readonly objectiveId: string }
   // Held, not worked (#1175): a defence has nothing to interact with.
@@ -264,6 +270,10 @@ export function describeTacticalError(error: TacticalError): string {
       return "Deploy the turret on a free tile within reach that the squad can walk to";
     case "takes-no-orders":
       return `Unit "${error.unitId}" takes no orders; it fires on its own`;
+    case "unit-trapped":
+      return `Unit "${error.unitId}" is trapped; a squad or mech beside it must free it first`;
+    case "cannot-interact":
+      return `Unit "${error.unitId}" cannot work objectives; a squad or mech must`;
     case "objective-not-found":
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":
@@ -373,6 +383,8 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "turret-out-of-reach": true,
   "turret-tile-blocked": true,
   "takes-no-orders": true,
+  "unit-trapped": true,
+  "cannot-interact": true,
   "objective-not-found": true,
   "objective-complete": true,
   "objective-not-interactive": true,

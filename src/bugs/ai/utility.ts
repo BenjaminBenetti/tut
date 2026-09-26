@@ -1,5 +1,6 @@
 import type { Rng } from "../../core/model/rng";
 import { CoverLevel } from "../../mapgen/model/cover";
+import { HookKinds } from "../../mapgen/model/hook";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
@@ -8,6 +9,9 @@ import { move } from "../../tactical/model/move-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import { isAutonomous } from "../../tactical/model/unit";
+import { isCivilian } from "../../tactical/model/civilian";
+import { PREY_TUNING } from "../data/prey-tuning";
+import type { PreyTuning } from "../model/prey-tuning";
 import {
   attackTerrain,
   damageRange,
@@ -264,14 +268,23 @@ export function recalledSite(
 
 /**
  * Where a bug with nothing in view goes (#1175): the nearest generator
- * hook the swarm has not already wrecked, else the landing site. Like
- * the landing site it is **static map knowledge** — the generators are
- * why the bugs came, and a hook tile is where one stands — not a live
- * position; a generator the bug has seen destroyed no longer draws it,
- * one it has not seen still does, until it arrives and finds the wreck.
+ * hook the swarm has not already wrecked, or civilian hook it has not
+ * yet looked at, else the landing site. Like the landing site it is
+ * **static map knowledge** — the generators are why the bugs came, the
+ * buildings are where people shelter, and a hook tile is where one
+ * stands — not a live position; a generator the bug has seen destroyed
+ * no longer draws it, one it has not seen still does, until it arrives
+ * and finds the wreck.
+ *
+ * A civilian group (campaign arc §6.4) draws the swarm the same way
+ * until the side has seen its tile: then either the group is there and
+ * the bugs perceive it, so it is hunted as a unit, or it has gone and
+ * there is nothing left to find. Only the side's own `explored` set is
+ * read, so a group that walked off is never followed by smell.
  *
  * ```
  *   generator hooks − tiles of generators this side has seen at 0 hp
+ *   + civilian hooks − tiles this side has explored
  *     ├─ any left  ──► nearest by tile distance
  *     └─ none      ──► landingSite
  * ```
@@ -285,14 +298,24 @@ export function huntSite(
       .filter((unit) => unit.kind === "generator" && unit.hp <= 0)
       .map((unit) => tileKeyOf(mission, unit.pos)),
   );
+  let explored: ReadonlySet<number> | undefined;
+  /** True for a tile the hunt no longer needs to visit. */
+  const spent = (kind: string, tile: TileCoord): boolean => {
+    if (kind === HookKinds.GENERATOR) {
+      return wrecked.has(tileKeyOf(mission, tile));
+    }
+    // The hunt is the bugs': their own memory of the map, nobody else's.
+    explored ??= new Set(mission.vision.bugs?.explored ?? []);
+    return explored.has(tileKeyOf(mission, tile));
+  };
   let best: TileCoord | undefined;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const hook of mission.map.hooks.objectives) {
-    if (hook.kind !== "generator") {
+    if (hook.kind !== HookKinds.GENERATOR && hook.kind !== HookKinds.CIVILIAN) {
       continue;
     }
     for (const tile of hook.tiles) {
-      if (wrecked.has(tileKeyOf(mission, tile))) {
+      if (spent(hook.kind, tile)) {
         continue;
       }
       const distance = tileDistance(from, tile);
@@ -552,12 +575,25 @@ export function targetValue(
 /**
  * Every enemy `unitId` could attack from where it stands right now,
  * validated by the combat service (range, line of sight, action
- * points) and sorted best value first.
+ * points) and sorted best value first. A civilian group's value is
+ * weighted by `prey.civilianWeight` for the ranking only (campaign arc
+ * §6.4): people who cannot shoot back are the juicier bite, but not so
+ * much juicier that a clearly better bite on a fighter waits. A squad
+ * carrying a netted specimen (#1179) ranks as the squad it is, by its
+ * value alone: the swarm does not hunt the carrier to free its kin, and
+ * the load it carries does not make it a softer or a harder target.
+ *
+ * @param mission - The mission as the attacker's side perceives it.
+ * @param unitId - The attacker.
+ * @param combat - Combat tuning, for hit chance and damage.
+ * @param prey - How much a civilian group is preferred; shipped by default.
+ * @returns The attacks it could make now, best first.
  */
 export function attackOptions(
   mission: TacticalState,
   unitId: UnitId,
   combat: CombatTuning,
+  prey: PreyTuning = PREY_TUNING,
 ): AttackOption[] {
   const attacker = mission.units.find((u) => u.id === unitId);
   if (attacker === undefined) {
@@ -574,7 +610,11 @@ export function attackOptions(
       ...targetValue(mission, attacker, attacker.pos, target, combat, index),
     });
   }
-  return options.sort((a, b) => b.value - a.value);
+  const rank = (option: AttackOption): number =>
+    isCivilian(option.target)
+      ? option.value * prey.civilianWeight
+      : option.value;
+  return options.sort((a, b) => rank(b) - rank(a));
 }
 
 /** Every tile `unitId` can reach this turn, with its step cost, excluding where it stands. */

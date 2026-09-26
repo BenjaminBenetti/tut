@@ -2,8 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { MISSION_ENDED } from "../model/mission-ended-event";
 import type { Objective } from "../model/tactical-state";
-import { endIfOver, missionOutcome } from "./mission-end-service";
-import { openField, unitAt } from "./tactical-fixtures.test-helper";
+import {
+  endIfOver,
+  forceExtracted,
+  missionOutcome,
+} from "./mission-end-service";
+import {
+  openField,
+  unitAt,
+  withCivilian,
+} from "./tactical-fixtures.test-helper";
 import { missionWith } from "./tactical-fixtures.test-helper";
 
 // ===========================================
@@ -171,5 +179,94 @@ describe("missionOutcome with a deployed turret (#1138)", () => {
         missionWith(map, [turret, unitAt("u", "infantry", at(0, 0))]),
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("missionOutcome with civilian groups (campaign arc §6.4)", () => {
+  const map = openField().build();
+  const rescue = [
+    {
+      id: "o1",
+      kind: "rescue-civilians",
+      groupIds: ["civ-1", "civ-2"],
+      complete: false,
+      failed: false,
+    },
+  ] as const;
+
+  it("does not let a group on the map keep the mission open once the force is gone", () => {
+    const fallen = withCivilian(
+      missionWith(map, [unitAt("u", "infantry", at(0, 0), { hp: 0 })], {
+        objectives: rescue,
+      }),
+      "civ-1",
+      at(3, 3),
+      { trapped: false },
+    );
+    expect(missionOutcome(fallen)).toBe("lost");
+    expect(
+      missionOutcome(
+        withCivilian(
+          missionWith(map, [unitAt("u", "infantry", at(0, 0))], {
+            objectives: rescue,
+          }),
+          "civ-1",
+          at(3, 3),
+        ),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("does not count a group aboard as the force coming home", () => {
+    const aboard = withCivilian(
+      missionWith(map, [], { objectives: rescue }),
+      "civ-1",
+      at(0, 0),
+      { trapped: false },
+    );
+    const onlyCivilians = {
+      ...aboard,
+      units: [unitAt("u", "infantry", at(2, 2), { hp: 0 })],
+      extracted: aboard.units,
+    };
+    expect(forceExtracted(onlyCivilians)).toBe(false);
+    expect(missionOutcome(onlyCivilians)).toBe("lost");
+
+    const withSquad = {
+      ...onlyCivilians,
+      units: [],
+      extracted: [...aboard.units, unitAt("u", "infantry", at(0, 0))],
+    };
+    // With the squad home, the same group aboard is half of two: won.
+    expect(forceExtracted(withSquad)).toBe(true);
+    expect(missionOutcome(withSquad)).toBe("won");
+  });
+
+  it("does not let a group keep a crash site open after its pod burst (campaign arc §6.3)", () => {
+    // The pod matured (its objective failed) and burst; the squad got
+    // home, and a freed group is still walking.
+    const burst = withCivilian(
+      missionWith(map, [], {
+        objectives: [
+          {
+            id: "o1",
+            kind: "destroy-pod",
+            targetId: "pod-1",
+            deadlineTurn: 8,
+            complete: false,
+            failed: true,
+          },
+        ],
+      }),
+      "civ-1",
+      at(3, 3),
+      { trapped: false },
+    );
+    const home = {
+      ...burst,
+      extracted: [unitAt("u", "infantry", at(0, 0))],
+    };
+    expect(missionOutcome(home)).toBe("extracted");
+    expect(missionOutcome({ ...home, extracted: [] })).toBe("lost");
   });
 });

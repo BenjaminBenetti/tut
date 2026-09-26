@@ -1,4 +1,5 @@
 import { jumpArcPoint } from "../../tactical/service/jump-trajectory-service";
+import { CIVILIANS_KILLED } from "../../tactical/model/civilians-killed-event";
 import { MECH_SYSTEM_USED } from "../../tactical/model/mech-system-used-event";
 import type { UnitMotion } from "../model/unit-motion";
 import type { Camera, DataTexture, Object3D, Texture } from "three";
@@ -629,6 +630,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         struck.push(event.payload.unitId);
       } else if (event?.type === TURRET_DESTROYED) {
         struck.push(event.payload.turretId);
+      } else if (event?.type === CIVILIANS_KILLED) {
+        struck.push(event.payload.unitId);
       } else if (event?.type === SPAWNER_DAMAGED) {
         struck.push(event.payload.spawnerId);
       } else {
@@ -715,6 +718,9 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         // A turret leaves as a unit does (#1155): the scene has already
         // taken its mesh, so the fade is what the eye gets.
         return this.fade(event.payload.turretId);
+      case CIVILIANS_KILLED:
+        // A civilian group dies as a squad does (campaign arc §6.4).
+        return this.fade(event.payload.unitId);
       case SPAWNER_DAMAGED:
         return this.spawnerBurst(event.payload);
       case BLAST_RESOLVED:
@@ -1305,6 +1311,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
           parts.push({
             at: landsAt,
             start: () => this.fade(event.payload.turretId),
+          });
+          break;
+        case CIVILIANS_KILLED:
+          parts.push({
+            at: landsAt,
+            start: () => this.fade(event.payload.unitId),
           });
           break;
         case SPAWNER_DAMAGED:

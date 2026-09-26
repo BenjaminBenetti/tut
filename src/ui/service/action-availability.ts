@@ -8,6 +8,7 @@ import { actingUnit } from "../../tactical/service/acting-unit";
 import { weaponOptions } from "../../tactical/service/combat-service";
 import type { ReachableObjective } from "../../tactical/service/objective-service";
 import { reachableObjectives } from "../../tactical/service/objective-service";
+import { validateOverwatch } from "../../tactical/service/overwatch-handler";
 import { reloadPools } from "../../tactical/service/reload-handler";
 
 // ===========================================
@@ -54,7 +55,8 @@ const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
  *   attack   ──► actingUnit(1 AP) then any weapon with charges
  *   reload   ──► actingUnit(1 AP) then a pool that is not full
  *   interact ──► actingUnit(1 AP) then an objective in reach
- *   move / overwatch ──► actingUnit(1 AP)
+ *   overwatch ──► validateOverwatch: actingUnit(1 AP) then a weapon
+ *   move     ──► actingUnit(1 AP)
  * ```
  *
  * @param mission - The mission the unit is in.
@@ -95,6 +97,14 @@ export function actionRefusal(
     const refusal = spent ? options[0]?.refusal : undefined;
     if (refusal !== undefined) {
       return refusal;
+    }
+  }
+  if (action === "overwatch") {
+    // A watch needs a weapon: the handler's own check (a civilian group
+    // carries none, campaign arc §6.4).
+    const watch = validateOverwatch(mission, unitId);
+    if (!watch.ok) {
+      return watch.error;
     }
   }
   if (action === "reload") {

@@ -17,6 +17,7 @@ import { previewAttack } from "../../tactical/service/combat-service";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
 import { TacticalHudView } from "./tactical-hud-view";
 import { withVision } from "../../tactical/service/vision-service";
+import { withCivilian } from "../../tactical/service/tactical-fixtures.test-helper";
 import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -2430,6 +2431,31 @@ describe("TacticalHudView", () => {
 // ===========================================
 // Fog of war (#531)
 // ===========================================
+
+describe("TacticalHudView's TDF count (campaign arc §6.4)", () => {
+  it("counts the squads and mechs standing, not a civilian group, a turret or a generator", () => {
+    const { hud, mission } = setup();
+    const crowded = withCivilian(
+      {
+        ...mission,
+        units: [
+          ...mission.units,
+          hudUnit("t", "tdf", "rifle", 6, 1, { kind: "turret" }),
+          hudUnit("g", "tdf", "rifle", 7, 1, { kind: "generator" }),
+          hudUnit("m", "tdf", "rifle", 8, 1, { kind: "mech" }),
+        ],
+      },
+      "civ",
+      { x: 8, y: 0, z: 3 },
+      { trapped: false },
+    );
+    hud.update(crowded);
+    // s1, s2 and the mech.
+    expect(
+      root.querySelector('#turn-banner [data-field="tdf-units"]')?.textContent,
+    ).toBe("3");
+  });
+});
 
 describe("TacticalHudView under fog", () => {
   it("neither counts nor cycles onto an enemy the player has never seen", () => {

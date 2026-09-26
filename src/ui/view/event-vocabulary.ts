@@ -361,6 +361,29 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:civilians-freed":
+      return {
+        text: `${nameOf(event.payload.unitId)} freed by ${nameOf(event.payload.rescuerId)}`,
+        icon: "interact",
+        tone: "ok",
+      };
+    case "tactical:civilians-extracted":
+      // The group has left the map, so the line counts rather than
+      // names: there is no unit left to ask for a name.
+      return {
+        text: `Civilians aboard: ${formatWhole(event.payload.rescued)} of ${formatWhole(event.payload.total)} rescued`,
+        icon: "extract",
+        tone: "ok",
+      };
+    case "tactical:civilians-killed":
+      return {
+        text:
+          event.payload.killerId === undefined
+            ? `${nameOf(event.payload.unitId)} killed`
+            : `${nameOf(event.payload.unitId)} killed by ${nameOf(event.payload.killerId)}`,
+        icon: "warning",
+        tone: "danger",
+      };
     case "tactical:unit-placed":
       // The development tools did this, and the log says so (#1136):
       // a tester reading back a staged fight should see where the
@@ -447,6 +470,11 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return event.payload.turretId;
     case "tactical:generator-destroyed":
       return event.payload.generatorId;
+    case "tactical:civilians-freed":
+      // Above the group: being let out is what happened to it.
+      return event.payload.unitId;
+    case "tactical:civilians-killed":
+      return event.payload.unitId;
     case "tactical:charge-placed":
       return event.payload.charge.ownerId;
     case "tactical:specimen-captured":
@@ -484,6 +512,8 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:mission-ended":
     case "tactical:unit-abandoned":
     case "tactical:spore-pod-matured":
+    case "tactical:civilians-extracted":
+      // Aboard and gone: there is nobody left on the map to mark.
       return undefined;
     default:
       return undefined;

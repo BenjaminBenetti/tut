@@ -93,6 +93,10 @@ Hex values are the single source of truth. Model materials, textures, sprites an
 | `tdf-orange` | `#F08A24` | Unit markings, lights, weapon tips, selection ring. Also the UI accent. |
 | `tdf-orange-dim` | `#B86414` | Orange in shadow, hazard stripes |
 | `tdf-visor` | `#7FD1FF` | Visors, optics, mech cockpit glow (emissive) |
+| `civ-skin` | `#C08A5E` | Civilian faces and hands. Flat, untextured unit token for civilians ([campaign arc](campaign-arc.md) §6.4) |
+| `civ-skin-deep` | `#8E6544` | Civilian faces and hands, second tone. Flat, untextured unit token for civilians |
+| `civ-hair` | `#614C40` | Civilian hair. Flat, untextured unit token for civilians |
+| `civ-hair-grey` | `#D5C4B8` | The elderly civilian's hair. Flat, untextured unit token for civilians |
 
 Rule: orange covers at most 10 % of any TDF model's visible surface. It is a marker, not a colour scheme.
 

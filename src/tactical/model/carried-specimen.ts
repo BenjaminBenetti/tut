@@ -44,8 +44,33 @@ export interface CarriedSpecimen {
  * The unit kinds that can carry a specimen (#1179): infantry squads. A
  * mech has no hands free, a bug is the thing carried, and a turret or
  * a generator takes no orders.
+ *
+ * A civilian group (campaign arc §6.4) never carries one either: the
+ * townsfolk are who the squad came for, not porters, and a group that
+ * boarded with a lurker would complete Live Specimen without a squad
+ * lifting a finger. So the net, the pick-up and the capture's "free
+ * hands" all pass a group by, and a group's death drops nothing.
+ *
+ * ```
+ *   squad                                     ──► carries
+ *   mech, bug, turret, generator, civilian    ──► never
+ * ```
  */
 export const SPECIMEN_CARRIER_KINDS: readonly UnitKind[] = ["squad"];
+
+/**
+ * The unit kinds a capture net can take alive (#1179): bugs, and only
+ * bugs. A civilian group is never netted — it is ours, it walks to the
+ * drop ship on its own feet once freed, and it is no specimen — and
+ * neither is a squad, a mech, a turret or a generator.
+ *
+ * The swarm does not treat a carrier differently for it (`attackOptions`
+ * in `bugs/ai/utility.ts`): a squad carrying a specimen ranks as the
+ * squad it is, weighed by its attack value alone. Only a civilian group
+ * carries a prey weight; carrying neither draws the bugs to a squad nor
+ * turns them from it.
+ */
+export const NETTABLE_KINDS: readonly UnitKind[] = ["bug"];
 
 /**
  * Whether the unit is of a kind that can carry a specimen (#1179). It
@@ -57,6 +82,18 @@ export const SPECIMEN_CARRIER_KINDS: readonly UnitKind[] = ["squad"];
  */
 export function canCarrySpecimen(unit: Pick<Unit, "kind">): boolean {
   return SPECIMEN_CARRIER_KINDS.includes(unit.kind);
+}
+
+/**
+ * Whether the unit is of a kind a capture net can take (#1179): a bug.
+ * It says nothing about whether this bug is wanted or worn down enough;
+ * `validateCapture` judges that.
+ *
+ * @param unit - The unit, or anything with its kind.
+ * @returns True for a bug; false for a civilian group and every unit of the force.
+ */
+export function canBeNetted(unit: Pick<Unit, "kind">): boolean {
+  return NETTABLE_KINDS.includes(unit.kind);
 }
 
 /**

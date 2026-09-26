@@ -4,6 +4,7 @@ import { SequentialIdGenerator } from "../../../core/service/sequential-id-gener
 import { HookKinds } from "../../../mapgen/model/hook";
 import { PassMask } from "../../../mapgen/model/pass-mask";
 import type { Mission } from "../../../overworld/model/mission";
+import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
@@ -52,6 +53,7 @@ function deps(): MissionSetupDeps {
     ids: new SequentialIdGenerator(),
     spawnTuning: SPAWN_TUNING,
     generator: GENERATOR_TUNING,
+    civilian: CIVILIAN_TUNING,
   };
 }
 

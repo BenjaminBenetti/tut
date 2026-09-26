@@ -41,6 +41,12 @@ export const HookKinds = {
    * `{ chamberId, radius, depth }`.
    */
   BROOD_CHAMBER: "brood-chamber",
+  /**
+   * A civilian group trapped in a building (campaign arc §6.4): one
+   * point hook per group on an interior floor tile, at most one group a
+   * building, each with an infantry route from deploy to its door.
+   */
+  CIVILIAN: "civilian",
 } as const;
 
 /** Scalar metadata a hook or requirement may carry, e.g. `hatchRadius`. */

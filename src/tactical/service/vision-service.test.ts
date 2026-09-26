@@ -31,6 +31,7 @@ import {
   ridgedField,
   unitAt,
   walledField,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 import { UNIT_MOVED } from "../model/unit-moved-event";
 
@@ -797,5 +798,69 @@ describe("vision for units on a 2×2 block (#1130)", () => {
     // The same map object, nothing moved: still skipped.
     const same = withVision({ state: before, events: [] }, before);
     expect(same.state).toBe(before);
+  });
+});
+
+// ===========================================
+// Civilian groups (campaign arc §6.4)
+// ===========================================
+
+describe("vision with civilian groups (campaign arc §6.4)", () => {
+  it("lends no eyes to a trapped group, and a freed one sees", () => {
+    const index = new TileIndex(WALLED);
+    const behind = index.keyOf(at(6, 0));
+    const base = missionWith(WALLED, [unitAt("u", "infantry", at(0, 0))]);
+    const trapped = withCivilian(base, "c", at(5, 0));
+    expect(computeVision(trapped, "tdf", index).visible).not.toContain(behind);
+    const freed = withCivilian(base, "c", at(5, 0), { trapped: false });
+    expect(computeVision(freed, "tdf", index).visible).toContain(behind);
+  });
+
+  it("hides the side's own trapped group until its tile is explored", () => {
+    // The squad at (0, 0) cannot see past the wall; the group waits
+    // behind it at (5, 0). A freed group watches, so it is always known.
+    const base = withCivilian(
+      withCivilian(
+        missionWith(WALLED, [unitAt("u", "infantry", at(0, 0))]),
+        "hidden",
+        at(5, 0),
+      ),
+      "walking",
+      at(1, 5),
+      { trapped: false },
+    );
+    const dark = withVision({
+      state: { ...base, vision: emptyVision() },
+      events: [],
+    }).state;
+    expect(perceivedUnits(dark, "tdf").map((u) => u.id)).toEqual([
+      "u",
+      "walking",
+    ]);
+
+    // Once a squad has stood beside it, the ground is explored for good.
+    const moved = withVision({
+      state: {
+        ...dark,
+        units: dark.units.map((unit) =>
+          unit.id === "u" ? { ...unit, pos: at(4, 2) } : unit,
+        ),
+      },
+      events: [],
+    }).state;
+    const back = withVision({
+      state: {
+        ...moved,
+        units: moved.units.map((unit) =>
+          unit.id === "u" ? { ...unit, pos: at(0, 0) } : unit,
+        ),
+      },
+      events: [],
+    }).state;
+    expect(perceivedUnits(back, "tdf").map((u) => u.id)).toEqual([
+      "u",
+      "hidden",
+      "walking",
+    ]);
   });
 });

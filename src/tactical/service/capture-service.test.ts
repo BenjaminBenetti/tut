@@ -5,6 +5,7 @@ import { COMBAT_TUNING } from "../data/combat-tuning";
 import { CAPTURE_NET, EQUIPMENT, GRENADE } from "../data/equipment";
 import { RADAR_TUNING } from "../data/radar-tuning";
 import { TURRET_TUNING } from "../data/turret-tuning";
+import { canBeNetted } from "../model/carried-specimen";
 import { usesLeftOf } from "../model/equipment";
 import { EQUIPMENT_USED } from "../model/equipment-used-event";
 import { SPECIMEN_CAPTURED } from "../model/specimen-captured-event";
@@ -29,6 +30,7 @@ import {
   openField,
   riggedRng,
   unitAt,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 import { withVision } from "./vision-service";
 
@@ -281,6 +283,28 @@ describe("UseEquipment with the capture net (#1179)", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.kind).toBe("cannot-carry");
+  });
+});
+
+// ===========================================
+// Civilian groups (campaign arc §6.4)
+// ===========================================
+
+describe("the capture net and civilian groups (#1179, campaign arc §6.4)", () => {
+  it("nets bugs only: never a civilian group, trapped or freed, however worn down", () => {
+    expect(canBeNetted({ kind: "bug" })).toBe(true);
+    expect(canBeNetted({ kind: "civilian" })).toBe(false);
+    for (const trapped of [true, false]) {
+      // A group of one hit point beside the squad, where a lurker would
+      // be taken; the capture still wants a lurker.
+      const mission = sighted(
+        withCivilian(netted([]), "civ", at(4, 3), { trapped, hp: 1 }),
+      );
+      const result = throwNet(mission, at(4, 3));
+      expect(result.ok, `trapped: ${String(trapped)}`).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe("no-capture-target");
+    }
   });
 });
 

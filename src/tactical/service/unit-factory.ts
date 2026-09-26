@@ -12,6 +12,8 @@ import type { Squad } from "../../roster/model/squad";
 import type { SquadType } from "../../roster/model/squad-type";
 import type { BugUnitSource } from "../model/bug-unit-source";
 import type { EquipmentId } from "../model/equipment";
+import type { CivilianTuning } from "../model/civilian";
+import { CIVILIAN_SOURCE_ID } from "../model/civilian";
 import type { GeneratorTuning } from "../model/generator";
 import { GENERATOR_SOURCE_ID } from "../model/generator";
 import type { TurretTuning } from "../model/turret";
@@ -334,6 +336,59 @@ export function generatorUnit(
     placement,
     ids,
   );
+}
+
+/**
+ * Builds a civilian group from its tuning (campaign arc §6.4), for an
+ * evacuation's start and the debug menu. Every group shares one template
+ * (`"civilian:civilians"`): no weapon, a squad's pace, `organic`, so a
+ * medkit mends it. A group starts **trapped** — no action points, and
+ * `trapped` set — until a squad or mech frees it with Interact; pass
+ * `trapped: false` for one already walking. Pure: reads only its
+ * arguments and draws one id.
+ *
+ * ```
+ *   trapped ──► ap 0, trapped: true     (waits for Interact)
+ *   free    ──► ap maxAp                 (moves and boards like a squad)
+ * ```
+ *
+ * @param tuning - The group's stats.
+ * @param placement - Where it huddles and which way it faces.
+ * @param ids - Issues its unit id.
+ * @param trapped - Whether it starts shut in; true by default.
+ */
+export function civilianUnit(
+  tuning: CivilianTuning,
+  placement: UnitPlacement,
+  ids: IdGenerator,
+  trapped = true,
+): UnitBuild {
+  const template: UnitTemplate = {
+    id: templateIdFor("civilian", CIVILIAN_SOURCE_ID),
+    name: tuning.name,
+    maxHp: tuning.maxHp,
+    maxAp: tuning.maxAp,
+    move: tuning.move,
+    weapons: [],
+    sightRange: tuning.sightRange,
+    armor: tuning.armor,
+    passClass: "infantry",
+    modelId: tuning.modelId,
+    construction: "organic",
+  };
+  const built = build(
+    "civilian",
+    "tdf",
+    CIVILIAN_SOURCE_ID,
+    template,
+    tuning.maxHp,
+    placement,
+    ids,
+  );
+  return {
+    template,
+    unit: trapped ? { ...built.unit, ap: 0, trapped: true } : built.unit,
+  };
 }
 
 // ===========================================

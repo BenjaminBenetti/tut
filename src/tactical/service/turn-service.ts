@@ -22,6 +22,7 @@ import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
+import { isTrapped } from "../model/civilian";
 import { leaveOverwatch, spendOverwatchShot } from "./overwatch-status";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackDeps } from "./combat-service";
@@ -54,8 +55,10 @@ export type { PhaseStep } from "../model/phase-step";
  * lapses here, its shot count with it (#1138; a turret's is granted
  * again by `createTurretStep`, which runs after this); suppression laid
  * on during the enemy's phase holds through the victim's own phase and
- * lifts once it has endured it. The dead are left alone. No per-unit
- * events: `TurnStarted` announces the refresh.
+ * lifts once it has endured it. The dead are left alone, and so is a
+ * civilian group still trapped (campaign arc §6.4): it holds no action
+ * points until Interact frees it. No per-unit events: `TurnStarted`
+ * announces the refresh.
  */
 export const refreshSides: PhaseStep = (mission) => {
   const acting = TEAM_FOR_PHASE[mission.phase];
@@ -71,7 +74,7 @@ export const refreshSides: PhaseStep = (mission) => {
         designatedAccuracy: undefined,
       };
     }
-    if (unit.hp <= 0) {
+    if (unit.hp <= 0 || isTrapped(unit)) {
       return unit;
     }
     if (unit.team === acting) {

@@ -11,6 +11,7 @@ import { CAPTURE_SPECIMEN_PRESENTATION } from "./capture-specimen-presentation";
 import { DEFEND_GENERATORS_PRESENTATION } from "./defend-generators-presentation";
 import { DESTROY_POD_PRESENTATION } from "./destroy-pod-presentation";
 import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
+import { RESCUE_CIVILIANS_PRESENTATION } from "./rescue-civilians-presentation";
 
 // ===========================================
 // Table
@@ -27,6 +28,7 @@ import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
  *   defend-generators  ──► defend-generators-presentation.ts
  *   destroy-pod        ──► destroy-pod-presentation.ts
  *   capture-specimen   ──► capture-specimen-presentation.ts
+ *   rescue-civilians   ──► rescue-civilians-presentation.ts
  * ```
  */
 export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
@@ -34,6 +36,7 @@ export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
   "defend-generators": DEFEND_GENERATORS_PRESENTATION,
   "destroy-pod": DESTROY_POD_PRESENTATION,
   "capture-specimen": CAPTURE_SPECIMEN_PRESENTATION,
+  "rescue-civilians": RESCUE_CIVILIANS_PRESENTATION,
 } satisfies { readonly [K in ObjectiveKind]: { readonly kind: K } };
 
 // ===========================================

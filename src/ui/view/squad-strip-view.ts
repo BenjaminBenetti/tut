@@ -1,6 +1,6 @@
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
-import { isAutonomous } from "../../tactical/model/unit";
+import { takesOrders } from "../../tactical/model/unit";
 import { formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
 import { JEV_PROMPT_MAX_LENGTH } from "../../tactical/model/jev-control";
@@ -472,10 +472,13 @@ export class SquadStripView {
  * The units on the player's side that take orders, in mission order. A
  * deployed turret (#1138) is left out: the strip counts who has still
  * to act, and a turret never acts on command — it is read by clicking
- * it on the map, where its card shows the battery.
+ * it on the map, where its card shows the battery. A trapped civilian
+ * group (campaign arc §6.4) is left out until it is freed, for the
+ * same reason, and because the strip would give away a group the
+ * squad has not found yet.
  */
 export function playerUnits(mission: TacticalState): readonly Unit[] {
   return mission.units.filter(
-    (unit) => unit.team === "tdf" && !isAutonomous(unit),
+    (unit) => unit.team === "tdf" && takesOrders(unit),
   );
 }

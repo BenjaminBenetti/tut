@@ -10,6 +10,7 @@ import { createCaptureSpecimenObjective } from "./capture-specimen-objective";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
 import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
+import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
 
 // ===========================================
 // The table
@@ -28,6 +29,7 @@ import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
  *   destroy-pod        ──► destroy-pod-objective.ts
  *   capture-specimen   ──► capture-specimen-objective.ts (with the shipped
  *                          equipment, to tell a net from the rest)
+ *   rescue-civilians   ──► rescue-civilians-objective.ts
  * ```
  *
  * Typed by `ObjectiveRulesTable`, so a kind added to `Objective` without
@@ -40,6 +42,7 @@ export const OBJECTIVE_RULES: ObjectiveRulesTable = {
   "defend-generators": DEFEND_GENERATORS_OBJECTIVE,
   "destroy-pod": DESTROY_POD_OBJECTIVE,
   "capture-specimen": createCaptureSpecimenObjective(SHIPPED_EQUIPMENT),
+  "rescue-civilians": RESCUE_CIVILIANS_OBJECTIVE,
 };
 
 // ===========================================

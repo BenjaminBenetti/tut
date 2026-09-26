@@ -60,6 +60,7 @@ import type { AttackDeps } from "../../tactical/service/combat-service";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { GARRISON_TUNING } from "../../tactical/data/garrison-tuning";
 import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
+import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
 import { createTurretStep } from "../../tactical/service/turret-service";
 import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
@@ -226,6 +227,8 @@ export function composeTactical(
     mechs: DEBUG_MECHS,
     sheetFor: sheetForLoadout,
     unitTuning: UNIT_TUNING,
+    // A trapped group to stage a rescue with (campaign arc §6.4).
+    civilian: CIVILIAN_TUNING,
   };
   handlers ??= shippedTacticalHandlers(registries, placement);
   registerTacticalCommands(dispatcher, handlers);
@@ -239,6 +242,7 @@ export function composeTactical(
     registries,
     garrison: GARRISON_TUNING,
     generator: GENERATOR_TUNING,
+    civilian: CIVILIAN_TUNING,
     setupRules: MISSION_SETUP_RULES,
     // Every squad deployed carries what the tree has researched for the
     // infantry (campaign arc §10.3), the capture net among it (#1179),

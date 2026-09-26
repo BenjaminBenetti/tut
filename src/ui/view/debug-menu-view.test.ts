@@ -14,6 +14,7 @@ const ENTRIES: readonly PlaceableUnit[] = [
   { kind: "mech", id: "starter", name: "Mech (starter)" },
   { kind: "bug", id: "swarmer", name: "Swarmer" },
   { kind: "bug", id: "brute", name: "Brute" },
+  { kind: "civilian", id: "civilians", name: "Civilians (trapped)" },
 ];
 
 let root: HTMLElement;
@@ -96,10 +97,12 @@ describe("DebugMenuView (#1136, #1138)", () => {
     expect(tool("spawn")).toBeNull();
     expect(pageTitle()).toBe("Spawn");
     expect(back()).not.toBeNull();
+    // A civilian group is the force's to rescue (campaign arc §6.4).
     expect(names("friendly")).toEqual([
       "Rifle Squad",
       "Rocket Squad",
       "Mech (starter)",
+      "Civilians (trapped)",
     ]);
     expect(names("hostile")).toEqual(["Swarmer", "Brute"]);
     expect(

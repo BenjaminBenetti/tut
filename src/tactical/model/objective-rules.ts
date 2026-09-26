@@ -82,7 +82,14 @@ export interface ObjectiveTally {
  * own adds its optional field to `MissionResult` and names it here.
  */
 export type ObjectiveResultFields = Partial<
-  Pick<MissionResult, "defence" | "podDestroyed" | "specimenCaptured">
+  Pick<
+    MissionResult,
+    | "defence"
+    | "podDestroyed"
+    | "specimenCaptured"
+    | "civiliansRescued"
+    | "civiliansTotal"
+  >
 >;
 
 // ===========================================
@@ -102,9 +109,11 @@ export type ObjectiveResultFields = Partial<
  *                   ├── complete / failed      objective-status (end, abandon, result)
  *                   ├── interaction?           Interact handler (refused when absent)
  *                   ├── reachable?             reachableObjectives, the HUD's offer
- *                   ├── marker?                objectiveMarkers, the fog blip
+ *                   ├── workedUntilEmpty?      Interact, reach and blips past the flags
+ *                   ├── marker? / markers?     objectiveMarkers, the fog blips
  *                   ├── destination?           Jev destinations
  *                   ├── onDeadline?            the deadline phase step
+ *                   ├── onExtracted?           the Extract handler, per unit aboard
  *                   ├── phaseStep?             EndTurn's phase steps
  *                   ├── tally? resultFields?   the mission result
  *                   └── kind                   must equal its table key
@@ -140,14 +149,28 @@ export interface ObjectiveRules<K extends ObjectiveKind> {
   /** Runs at every phase start after the edge waves; the kind's passive rule, as a defence's is. */
   readonly phaseStep?: PhaseStep;
   /**
+   * True for a kind worked until it has nothing left, whatever its
+   * flags say: a rescue (campaign arc §6.4) is complete at half the
+   * groups aboard, or failed once half can no longer get out, and every
+   * group still freed and walked out counts toward the reward either
+   * way. The Interact handler, the reach query and the fog blips then
+   * leave the flags alone and let the kind's own `interaction`,
+   * `reachable` and `markers` say when nothing is left. Absent: a
+   * complete objective is done with, and a failed one is not blipped.
+   */
+  readonly workedUntilEmpty?: boolean;
+  /**
    * The target a unit works this objective on, or undefined when there
    * is nothing left to work. `reachableObjectives` measures the unit's
    * distance to it; a kind with an `interaction` supplies this, or the
-   * HUD never offers what the handler would accept.
+   * HUD never offers what the handler would accept. `unit` is the one
+   * asking, when there is one, so a kind with several targets — a
+   * rescue's groups — can answer with the one nearest it.
    */
   reachable?(
     objective: ObjectiveOfKind<K>,
     mission: TacticalState,
+    unit?: Unit,
   ): ObjectiveTarget | undefined;
   /**
    * Where to put the white fog blip for this open objective (#1173),
@@ -158,6 +181,16 @@ export interface ObjectiveRules<K extends ObjectiveKind> {
     objective: ObjectiveOfKind<K>,
     mission: TacticalState,
   ): TileCoord | undefined;
+  /**
+   * Every fog blip for an objective with several places at once — a
+   * rescue's trapped groups (campaign arc §6.4). Read instead of
+   * `marker` when present; the blips already in view are dropped by
+   * `objectiveMarkers` as a single one is.
+   */
+  markers?(
+    objective: ObjectiveOfKind<K>,
+    mission: TacticalState,
+  ): readonly TileCoord[];
   /** Where an entity controller should look for this objective (ADR 0012). */
   destination?(
     objective: ObjectiveOfKind<K>,
@@ -173,6 +206,19 @@ export interface ObjectiveRules<K extends ObjectiveKind> {
     objective: ObjectiveOfKind<K>,
     mission: TacticalState,
     ctx: TacticalContext,
+  ): TacticalApplied<TacticalState>;
+  /**
+   * What happens when a unit boards the drop ship, called by the Extract
+   * handler for every objective after the unit has left the map and
+   * before the terminal check: a rescue counting a group aboard
+   * (campaign arc §6.4). `unit` is the unit as it left. Answers the
+   * mission unchanged, with no events, when the unit is not this
+   * objective's business.
+   */
+  onExtracted?(
+    objective: ObjectiveOfKind<K>,
+    mission: TacticalState,
+    unit: Unit,
   ): TacticalApplied<TacticalState>;
   /** How far the objective got, for its `ObjectiveResult` row; absent, the row carries no count. */
   tally?(objective: ObjectiveOfKind<K>, mission: TacticalState): ObjectiveTally;

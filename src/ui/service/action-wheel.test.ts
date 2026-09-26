@@ -5,6 +5,7 @@ import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { previewAttack } from "../../tactical/service/combat-service";
 import { buildMoveGraph } from "../../tactical/service/movement-service";
+import { withCivilian } from "../../tactical/service/tactical-fixtures.test-helper";
 import { withVision } from "../../tactical/service/vision-service";
 import {
   hudMission,
@@ -1384,5 +1385,76 @@ describe("actionWheel with a capture net (#1179)", () => {
         (item) => item.id === "interact:objective-capture",
       ),
     ).toMatchObject({ label: "Pick up", disabled: true });
+  });
+});
+
+describe("actionWheel with civilian groups (campaign arc §6.4)", () => {
+  /** `s1` at (1, 1) beside the trapped `c1`; the freed `c2` out at (6, 3). */
+  function town(): TacticalState {
+    let mission = hudMission({
+      objectives: [
+        {
+          id: "rescue",
+          kind: "rescue-civilians",
+          groupIds: ["c1", "c2"],
+          complete: false,
+          failed: false,
+        },
+      ],
+    });
+    mission = withCivilian(mission, "c1", { x: 2, y: 0, z: 1 });
+    return withCivilian(
+      mission,
+      "c2",
+      { x: 6, y: 0, z: 3 },
+      { trapped: false },
+    );
+  }
+
+  const entries = (page: {
+    items: readonly { id: string; disabled?: boolean; detail?: string }[];
+  }) =>
+    page.items.map((item) => [item.id, item.disabled ?? false, item.detail]);
+
+  it("puts Interact on the ring of a squad beside a trapped group", () => {
+    const mission = town();
+    const page = actionWheel(
+      { kind: "unit", unitId: "s1" },
+      contextFor(mission, "s1"),
+    );
+    expect(ids(page)).toContain("interact:rescue");
+    expect(
+      page.items.find((item) => item.id === "interact:rescue")?.disabled,
+    ).toBeUndefined();
+  });
+
+  it("lets a freed group walk, and closes the watch and the shot it has no weapon for", () => {
+    const mission = town();
+    const ctx = contextFor(mission, "c2");
+    expect(
+      entries(actionWheel({ kind: "tile", tile: { x: 6, y: 0, z: 4 } }, ctx)),
+    ).toEqual([
+      ["move:6,0,4", false, "1 tile"],
+      ["attack-tile:6,0,4", true, "not at the ground"],
+      ["overwatch", true, "unarmed"],
+      ["reload", true, "nothing to reload"],
+    ]);
+    expect(entries(actionWheel({ kind: "unit", unitId: "b2" }, ctx))).toEqual([
+      ["attack:b2", true, "unarmed"],
+      ["overwatch", true, "unarmed"],
+      ["reload", true, "nothing to reload"],
+    ]);
+  });
+
+  it("closes every entry for a group still trapped", () => {
+    const mission = town();
+    expect(
+      entries(
+        actionWheel({ kind: "unit", unitId: "c1" }, contextFor(mission, "c1")),
+      ),
+    ).toEqual([
+      ["overwatch", true, "trapped"],
+      ["reload", true, "trapped"],
+    ]);
   });
 });

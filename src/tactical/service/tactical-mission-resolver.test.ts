@@ -29,9 +29,12 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
+import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
+import { abandonMission } from "../model/abandon-mission-command";
 import { CARCASS_HARVESTED } from "../model/carcass-harvested-event";
+import { CIVILIANS_KILLED } from "../model/civilians-killed-event";
 import { MISSION_ENDED } from "../model/mission-ended-event";
 import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import type { Objective } from "../model/tactical-state";
@@ -43,11 +46,14 @@ import {
   TacticalMissionResolver,
   tacticalMissionResult,
 } from "./tactical-mission-resolver";
+import { createAbandonMissionHandler } from "./abandon-mission-handler";
 import {
+  ctxWith,
   FIXTURE_TEMPLATES,
   missionWith,
   openField,
   unitAt,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 
 // ===========================================
@@ -872,6 +878,7 @@ describe("TacticalMissionResolver", () => {
         spawnTuning: SPAWN_TUNING,
         garrison: GARRISON_TUNING,
         generator: GENERATOR_TUNING,
+        civilian: CIVILIAN_TUNING,
         ids,
         registries: createDefaultRegistries(),
       }),
@@ -1142,5 +1149,97 @@ describe("tacticalMissionResult objective rows (ADR 0013 §2.3)", () => {
 
   it("carries no objectives field on a mission without objectives", () => {
     expect("objectives" in resolveWith([])).toBe(false);
+  });
+});
+
+describe("tacticalMissionResult on a rescue (campaign arc §6.4)", () => {
+  const RESCUE: Objective = {
+    id: "objective-1",
+    kind: "rescue-civilians",
+    groupIds: ["civ-1", "civ-2", "civ-3"],
+    complete: false,
+    failed: false,
+  };
+
+  /**
+   * The squad bailing out of a town: one group aboard, one still trapped,
+   * one the bugs killed. The abandon handler's events go on the log, as
+   * the lifting adapter puts them there.
+   */
+  function bailedOut(): TacticalState {
+    let town = missionWith(MAP, [squadUnit("unit-1", "squad-1", SQUAD_HP)], {
+      objectives: [RESCUE],
+    });
+    town = withCivilian(town, "civ-1", at(0, 0), { trapped: false });
+    town = withCivilian(town, "civ-2", at(5, 5));
+    town = withCivilian(town, "civ-3", at(6, 6), { hp: 0 });
+    const aboard = town.units.filter((unit) => unit.id === "civ-1");
+    const played: TacticalState = {
+      ...town,
+      units: town.units.filter((unit) => !aboard.includes(unit)),
+      extracted: aboard,
+      log: [
+        {
+          type: CIVILIANS_KILLED,
+          payload: { unitId: "civ-3", pos: at(6, 6), killerId: "unit-1" },
+        },
+      ],
+    };
+    const left = createAbandonMissionHandler()(
+      played,
+      abandonMission(),
+      ctxWith(new Mulberry32Rng(1)),
+    );
+    if (!left.ok) throw new Error(`refused: ${left.error.kind}`);
+    return {
+      ...left.value.state,
+      log: [...played.log, ...left.value.events],
+    };
+  }
+
+  it("reports the groups got out and never a group as a casualty, a kill or a unit left behind", () => {
+    const result = tacticalMissionResult(
+      {
+        tactical: bailedOut(),
+        mission: mission(3),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+    expect(result.outcome).toBe("lost");
+    expect(result.leftBehind).toEqual(["squad-1"]);
+    expect(result.squadCasualties).toEqual([{ squadId: "squad-1", losses: 5 }]);
+    expect(result.squadsWiped).toEqual(["squad-1"]);
+    expect(result.mechsDestroyed).toEqual([]);
+    expect(result.speciesKilled).toBeUndefined();
+    expect(result.civiliansRescued).toBe(1);
+    expect(result.civiliansTotal).toBe(3);
+    expect(result.objectives).toEqual([
+      {
+        kind: "rescue-civilians",
+        complete: false,
+        failed: true,
+        done: 1,
+        total: 3,
+      },
+    ]);
+  });
+
+  it("carries no civilian fields on a mission without a rescue", () => {
+    const result = tacticalMissionResult(
+      {
+        tactical: missionWith(MAP, [squadUnit("unit-1", "squad-1", SQUAD_HP)], {
+          objectives: DONE,
+          outcome: "won",
+        }),
+        mission: mission(3),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+    expect(result).not.toHaveProperty("civiliansRescued");
+    expect(result).not.toHaveProperty("civiliansTotal");
   });
 });

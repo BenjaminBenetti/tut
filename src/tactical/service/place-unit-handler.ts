@@ -12,6 +12,8 @@ import type { Squad } from "../../roster/model/squad";
 import { SQUAD_MAX_STRENGTH } from "../../roster/model/squad";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { BugUnitSource } from "../model/bug-unit-source";
+import type { CivilianTuning } from "../model/civilian";
+import { CIVILIAN_SOURCE_ID } from "../model/civilian";
 import type {
   PlaceableUnit,
   PlaceUnitCommand,
@@ -27,7 +29,8 @@ import type { UnitTuning } from "../model/unit-tuning";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
 import { footprintFits, occupiedKeys } from "./movement-service";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
-import { bugUnit, mechUnit, squadUnit } from "./unit-factory";
+import { bugUnit, civilianUnit, mechUnit, squadUnit } from "./unit-factory";
+import { joinRescue } from "./missions/civilian-setup";
 
 // ===========================================
 // Types
@@ -60,6 +63,12 @@ export interface PlaceUnitDeps {
   /** A loadout's stat sheet, or undefined when it does not validate. */
   readonly sheetFor: (loadout: MechLoadout) => MechStatSheet | undefined;
   readonly unitTuning: UnitTuning;
+  /**
+   * What a placed civilian group is (campaign arc §6.4). Absent: the
+   * menu offers no civilians and a civilian placement is refused as an
+   * unknown type.
+   */
+  readonly civilian?: CivilianTuning;
 }
 
 /** Id prefixes for the roster records a placed squad or mech stands in for. */
@@ -78,6 +87,15 @@ interface PlacementSource {
   readonly passClass: PassClass;
   /** Builds the unit at the placement, drawing its ids. */
   readonly build: (placement: UnitPlacement, ids: IdGenerator) => UnitBuild;
+  /**
+   * What else the mission needs once the unit stands: a civilian group
+   * joins the rescue, which is made when there is none. Absent: nothing.
+   */
+  readonly settle?: (
+    state: TacticalState,
+    unit: UnitBuild["unit"],
+    ids: IdGenerator,
+  ) => TacticalState;
 }
 
 // ===========================================
@@ -102,6 +120,7 @@ interface PlacementSource {
  *   footprint overlaps a living unit
  *     or a live spawner              ──► tile-occupied
  *   otherwise ──► units + unit, templates ∪ template, UnitPlaced
+ *                 (a civilian group: trapped, and joined to the rescue)
  * ```
  *
  * The refusal order puts the cheap checks first and draws an id only
@@ -162,12 +181,13 @@ export function createPlaceUnitHandler(
       facing: facingToCentre(tile, mission.map),
     };
     const built = source.value.build(placement, ctx.ids);
+    const placed: TacticalState = {
+      ...mission,
+      units: [...mission.units, built.unit],
+      templates: withTemplate(mission.templates, built.template),
+    };
     return ok({
-      state: {
-        ...mission,
-        units: [...mission.units, built.unit],
-        templates: withTemplate(mission.templates, built.template),
-      },
+      state: source.value.settle?.(placed, built.unit, ctx.ids) ?? placed,
       events: [
         {
           type: UNIT_PLACED,
@@ -191,10 +211,12 @@ export function createPlaceUnitHandler(
  * Everything the menu can offer, from the same deps the handler places
  * from, so the list and the rule cannot disagree about what exists
  * (#1136): the squad types in catalogue order, then the mechs, then the
- * species. The HUD splits them into friendly and hostile by `kind`.
+ * species, then a trapped civilian group when the deps carry civilians
+ * (campaign arc §6.4). The HUD splits them into friendly and hostile by
+ * `kind`.
  */
 export function placeableUnits(
-  deps: Pick<PlaceUnitDeps, "species" | "squadTypes" | "mechs">,
+  deps: Pick<PlaceUnitDeps, "species" | "squadTypes" | "mechs" | "civilian">,
 ): readonly PlaceableUnit[] {
   return [
     ...deps.squadTypes.listSquadTypes().map((type): PlaceableUnit => ({
@@ -212,6 +234,15 @@ export function placeableUnits(
       id: species.id,
       name: species.name,
     })),
+    ...(deps.civilian === undefined
+      ? []
+      : [
+          {
+            kind: "civilian",
+            id: CIVILIAN_SOURCE_ID,
+            name: `${deps.civilian.name} (trapped)`,
+          } satisfies PlaceableUnit,
+        ]),
   ];
 }
 
@@ -282,6 +313,21 @@ function resolveSource(
       // (#1138): there is no catalogue of turrets to pick from. A
       // generator is the map's (#1175), stood up at mission start.
       return unknown();
+    case "civilian": {
+      // A trapped group (campaign arc §6.4), so a playtest can stage a
+      // rescue in any building: it joins the mission's rescue, which
+      // the placement makes when the mission has none.
+      const tuning = deps.civilian;
+      if (tuning === undefined || id !== CIVILIAN_SOURCE_ID) {
+        return unknown();
+      }
+      return ok({
+        footprint: 1,
+        passClass: "infantry",
+        build: (placement, ids) => civilianUnit(tuning, placement, ids),
+        settle: (state, unit, ids) => joinRescue(state, [unit.id], ids),
+      });
+    }
     case "mech": {
       const source = deps.mechs.find((entry) => entry.id === id);
       if (source === undefined) {

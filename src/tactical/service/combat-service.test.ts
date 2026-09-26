@@ -19,6 +19,7 @@ import type { TacticalContext } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { TURRET_TUNING } from "../data/turret-tuning";
+import { CIVILIANS_KILLED } from "../model/civilians-killed-event";
 import { TURRET_DESTROYED } from "../model/turret-destroyed-event";
 import { UNIT_DIED } from "../model/unit-died-event";
 import { armTurret } from "./turret-service";
@@ -34,6 +35,7 @@ import {
   openField,
   riggedRng,
   unitAt,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 import { attackTile } from "../model/attack-command";
 import { BLAST_RESOLVED } from "../model/blast-resolved-event";
@@ -535,6 +537,40 @@ describe("resolveAttack", () => {
     expect(events.some((e) => e.type === UNIT_DIED)).toBe(false);
   });
 
+  it("ends a civilian group a bug bites down with CiviliansKilled, never a UnitDied (campaign arc §6.4)", () => {
+    for (const trapped of [true, false]) {
+      const m = withCivilian(
+        missionWith(
+          openField().build(),
+          [unitAt("b1", "infantry", { x: 4, y: 0, z: 0 }, { team: "bugs" })],
+          { phase: "bugs" },
+        ),
+        "civ-1",
+        { x: 3, y: 0, z: 0 },
+        { trapped, hp: 1 },
+      );
+      const result = resolveAttack(
+        m,
+        attack("b1", "civ-1"),
+        ctxWith(riggedRng(true, "high")),
+        T,
+        DEPS,
+      );
+      if (!result.ok) throw new Error(`refused: ${result.error.kind}`);
+      const { state, events } = result.value;
+      expect(state.units.find((u) => u.id === "civ-1")?.hp).toBe(0);
+      expect(events.map((e) => e.type)).toEqual([
+        ATTACK_RESOLVED,
+        CIVILIANS_KILLED,
+      ]);
+      expect(events[1]?.payload).toEqual({
+        unitId: "civ-1",
+        pos: { x: 3, y: 0, z: 0 },
+        killerId: "b1",
+      });
+    }
+  });
+
   it("spends only the attack cost when attacks do not end the turn, and a miss changes no hit points", () => {
     const tuning: CombatTuning = {
       ...T,
@@ -544,6 +580,7 @@ describe("resolveAttack", () => {
         bug: false,
         turret: false,
         generator: false,
+        civilian: false,
       },
       maxHitChance: 5,
       minHitChance: 5,
@@ -604,6 +641,7 @@ describe("resolveAttack", () => {
           bug: false,
           turret: false,
           generator: false,
+          civilian: false,
         },
       },
       DEPS,

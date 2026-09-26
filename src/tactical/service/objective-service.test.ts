@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { err, ok } from "../../core/model/result";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { CIVILIANS_EXTRACTED } from "../model/civilians-extracted-event";
+import { CIVILIANS_FREED } from "../model/civilians-freed-event";
 import { extract } from "../model/extract-command";
 import { interact } from "../model/interact-command";
 import { MISSION_ENDED } from "../model/mission-ended-event";
@@ -12,6 +14,7 @@ import type { TacticalOutcome } from "../model/tactical-handler";
 import { SPAWNER_DAMAGED } from "../model/spawner-damaged-event";
 import type {
   Objective,
+  RescueCiviliansObjective,
   Spawner,
   TacticalState,
 } from "../model/tactical-state";
@@ -20,6 +23,7 @@ import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./objectives/defend-generators-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./objectives/destroy-spawner-objective";
 import { OBJECTIVE_RULES } from "./objectives/objective-rules";
+import { rescueProgress } from "./objectives/rescue-civilians-objective";
 import {
   createExtractHandler,
   createInteractHandler,
@@ -32,6 +36,7 @@ import {
   openField,
   riggedRng,
   unitAt,
+  withCivilian,
 } from "./tactical-fixtures.test-helper";
 
 // ===========================================
@@ -505,6 +510,29 @@ describe("createExtractHandler", () => {
     ]);
   });
 
+  it("counts only squads and mechs as remaining: a group, a turret and a generator are not the force", () => {
+    const mission = withCivilian(
+      {
+        ...missionWith(MAP, [
+          unitAt("u", "infantry", at(0, 0)),
+          unitAt("m", "mech", at(5, 5)),
+          { ...unitAt("t", "infantry", at(4, 4)), kind: "turret" },
+          { ...unitAt("g", "infantry", at(3, 3)), kind: "generator" },
+        ]),
+        ...ZONE,
+      },
+      "civ",
+      at(6, 2),
+      { trapped: false },
+    );
+    const applied = handler(mission, extract("u"), CTX);
+    if (!applied.ok) throw new Error(`refused: ${applied.error.kind}`);
+    // Only the mech is left of the force.
+    expect(applied.value.events).toEqual([
+      { type: UNIT_EXTRACTED, payload: { unitId: "u", remaining: 1 } },
+    ]);
+  });
+
   it("ends the mission as extracted once the last unit walks out", () => {
     const first = handler({ ...onTheZone(), ...ZONE }, extract("u"), CTX);
     if (!first.ok) throw new Error(`refused: ${first.error.kind}`);
@@ -651,5 +679,197 @@ describe("createExtractHandler with a deployed turret (#1138)", () => {
       "not-extractable",
     );
     expect(refusal(handler(mission, extract("u"), CTX))).toBe("ok");
+  });
+});
+
+// ===========================================
+// Civilian groups (campaign arc §6.4)
+// ===========================================
+
+describe("rescue-civilians through Interact and Extract (campaign arc §6.4)", () => {
+  const interactHandler = createInteractHandler(TUNING);
+  const extractHandler = createExtractHandler(TUNING);
+
+  /** Three groups; two must get out. */
+  const RESCUE: RescueCiviliansObjective = {
+    id: "objective-rescue",
+    kind: "rescue-civilians",
+    groupIds: ["civ-1", "civ-2", "civ-3"],
+    complete: false,
+    failed: false,
+  };
+
+  /** How a group stands: trapped at a tile, freed at a tile, or aboard. */
+  type Group = { readonly at: TileCoord; readonly trapped: boolean } | "aboard";
+
+  /**
+   * The squad `u` at `squad`, a bug far off, the extraction zone on
+   * (0, 0) and (1, 0), and the three groups of `RESCUE` as given. A
+   * group aboard is freed and in `extracted`.
+   */
+  function town(
+    squad: TileCoord,
+    groups: readonly [Group, Group, Group],
+    rescue: RescueCiviliansObjective = RESCUE,
+  ): TacticalState {
+    let mission: TacticalState = {
+      ...missionWith(
+        MAP,
+        [
+          unitAt("u", "infantry", squad),
+          unitAt("b", "infantry", at(7, 7), { team: "bugs" }),
+        ],
+        { objectives: [rescue] },
+      ),
+      extraction: [at(0, 0), at(1, 0)],
+    };
+    const aboard: string[] = [];
+    groups.forEach((group, index) => {
+      const id = RESCUE.groupIds[index]!;
+      if (group === "aboard") {
+        aboard.push(id);
+        mission = withCivilian(mission, id, at(0, 0), { trapped: false });
+      } else {
+        mission = withCivilian(mission, id, group.at, {
+          trapped: group.trapped,
+        });
+      }
+    });
+    return {
+      ...mission,
+      units: mission.units.filter((unit) => !aboard.includes(unit.id)),
+      extracted: mission.units.filter((unit) => aboard.includes(unit.id)),
+    };
+  }
+
+  const trapped = (x: number, z: number): Group => ({
+    at: at(x, z),
+    trapped: true,
+  });
+  const freed = (x: number, z: number): Group => ({
+    at: at(x, z),
+    trapped: false,
+  });
+
+  /** The outcome's events' types, or the refusal. */
+  function typesOf(outcome: TacticalOutcome): readonly string[] {
+    if (!outcome.ok) throw new Error(`refused: ${outcome.error.kind}`);
+    return outcome.value.events.map((event) => event.type);
+  }
+
+  it("frees the group beside the squad for one action, and nothing else changes", () => {
+    const mission = town(at(3, 4), [
+      trapped(4, 4),
+      trapped(6, 1),
+      trapped(1, 6),
+    ]);
+    expect(
+      reachableObjectives(mission, "u", TUNING).map((reach) => reach.target),
+    ).toEqual([{ id: "civ-1", pos: at(4, 4) }]);
+
+    const applied = interactHandler(mission, interact("u", RESCUE.id), CTX);
+    expect(typesOf(applied)).toEqual([CIVILIANS_FREED]);
+    if (!applied.ok) return;
+    const { state } = applied.value;
+    const civ1 = state.units.find((unit) => unit.id === "civ-1")!;
+    expect(civ1.trapped).toBeUndefined();
+    expect(civ1.ap).toBe(civ1.maxAp);
+    expect(state.units.find((unit) => unit.id === "u")?.ap).toBe(
+      2 - TUNING.interactApCost,
+    );
+    expect(state.objectives).toEqual([RESCUE]);
+    expect(state.outcome).toBeUndefined();
+
+    // With civ-1 out, nothing trapped is in reach: offered nothing,
+    // and the handler agrees.
+    expect(reachableObjectives(state, "u", TUNING)).toEqual([]);
+    expect(refusal(interactHandler(state, interact("u", RESCUE.id), CTX))).toBe(
+      "objective-out-of-reach",
+    );
+  });
+
+  it("refuses a group trying to free another, trapped or freed", () => {
+    const mission = town(at(7, 0), [freed(4, 4), trapped(5, 4), trapped(4, 5)]);
+    expect(
+      refusal(interactHandler(mission, interact("civ-1", RESCUE.id), CTX)),
+    ).toBe("cannot-interact");
+    expect(
+      refusal(interactHandler(mission, interact("civ-2", RESCUE.id), CTX)),
+    ).toBe("cannot-interact");
+    expect(reachableObjectives(mission, "civ-1", TUNING)).toEqual([]);
+  });
+
+  it("keeps freeing groups after the half is aboard, and says so when none is left", () => {
+    const done: RescueCiviliansObjective = { ...RESCUE, complete: true };
+    const mission = town(at(3, 4), ["aboard", "aboard", trapped(4, 4)], done);
+    expect(
+      typesOf(interactHandler(mission, interact("u", RESCUE.id), CTX)),
+    ).toEqual([CIVILIANS_FREED]);
+    const empty = town(at(3, 4), ["aboard", "aboard", freed(4, 4)], done);
+    expect(refusal(interactHandler(empty, interact("u", RESCUE.id), CTX))).toBe(
+      "no-objective-in-reach",
+    );
+  });
+
+  it("boards a freed group, but never a trapped one", () => {
+    const mission = town(at(5, 5), [freed(0, 0), trapped(1, 0), trapped(6, 1)]);
+    expect(refusal(extractHandler(mission, extract("civ-2"), CTX))).toBe(
+      "unit-trapped",
+    );
+    expect(refusal(extractHandler(mission, extract("civ-1"), CTX))).toBe("ok");
+  });
+
+  it("counts each group aboard and completes the rescue with the one that makes the half", () => {
+    const mission = town(at(5, 5), [freed(0, 0), freed(1, 0), trapped(6, 1)]);
+    const first = extractHandler(mission, extract("civ-1"), CTX);
+    expect(typesOf(first)).toEqual([UNIT_EXTRACTED, CIVILIANS_EXTRACTED]);
+    if (!first.ok) return;
+    expect(first.value.events[1]?.payload).toMatchObject({
+      rescued: 1,
+      total: 3,
+    });
+    expect(first.value.state.objectives).toEqual([RESCUE]);
+
+    const second = extractHandler(first.value.state, extract("civ-2"), CTX);
+    expect(typesOf(second)).toEqual([
+      UNIT_EXTRACTED,
+      CIVILIANS_EXTRACTED,
+      OBJECTIVE_UPDATED,
+    ]);
+    if (!second.ok) return;
+    expect(second.value.events[1]?.payload).toMatchObject({
+      rescued: 2,
+      total: 3,
+    });
+    expect(second.value.state.objectives).toEqual([
+      { ...RESCUE, complete: true },
+    ]);
+    // The squad is still out there: the groups do not end the mission.
+    expect(second.value.state.outcome).toBeUndefined();
+  });
+
+  it("ends the mission when the last squad boards, with every group still out there lost", () => {
+    // One aboard of the two needed, one walking, one still trapped.
+    const short = town(at(0, 0), ["aboard", freed(3, 3), trapped(6, 1)]);
+    const left = extractHandler(short, extract("u"), CTX);
+    expect(typesOf(left)).toEqual([UNIT_EXTRACTED, MISSION_ENDED]);
+    if (!left.ok) return;
+    expect(left.value.state.outcome).toBe("extracted");
+    expect(rescueProgress(left.value.state, RESCUE)).toMatchObject({
+      rescued: 1,
+      lost: 2,
+      status: "failed",
+    });
+
+    // Half aboard: the mission is won, and the group left behind is lost.
+    const half = town(at(0, 0), ["aboard", "aboard", trapped(6, 1)]);
+    const won = extractHandler(half, extract("u"), CTX);
+    if (!won.ok) throw new Error(`refused: ${won.error.kind}`);
+    expect(won.value.state.outcome).toBe("won");
+    expect(rescueProgress(won.value.state, RESCUE)).toMatchObject({
+      rescued: 2,
+      lost: 1,
+      status: "complete",
+    });
   });
 });

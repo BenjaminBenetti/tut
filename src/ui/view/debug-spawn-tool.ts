@@ -13,9 +13,13 @@ import { iconGlyph } from "./icon-glyph";
 /** The spawn tool's id, and so its list button's test id suffix. */
 export const SPAWN_TOOL_ID = "spawn";
 
-/** The two lists, by which side the placed unit fights for. */
+/**
+ * The two lists, by which side the placed unit fights for. A civilian
+ * group is the player's to rescue (campaign arc §6.4), so it is listed
+ * with the force.
+ */
 const SIDES = [
-  { title: "Friendly", kinds: ["squad", "mech"] },
+  { title: "Friendly", kinds: ["squad", "mech", "civilian"] },
   { title: "Hostile", kinds: ["bug"] },
 ] as const;
 
@@ -32,7 +36,7 @@ const SIDES = [
  * ```
  *   Friendly
  *     [Rifle Squad] [Rocket Squad] …
- *     [Mech (starter)]
+ *     [Mech (starter)] [Civilians (trapped)]
  *   Hostile
  *     [Swarmer] [Lurker] [Brute]
  *   Place: Swarmer — click the map, Esc cancels
@@ -183,8 +187,10 @@ function iconFor(kind: PlaceableUnit["kind"]): "squad" | "mech" | "egg" {
     case "squad":
     case "turret":
     case "generator":
+    case "civilian":
       // A turret is never listed (#1138), nor a generator (#1175); they
-      // would read as infantry.
+      // would read as infantry. A civilian group (campaign arc §6.4) is
+      // on the squad's side and on foot, so it reads as one too.
       return "squad";
   }
 }

@@ -1428,6 +1428,17 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "placeholder",
   },
+  "civ.group": {
+    category: "units",
+    path: "assets/models/units/civ-group.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.9,
+    sockets: [],
+    quality: "final",
+  },
   "tdf.radar-scanner": {
     category: "props",
     path: "assets/models/props/tdf-radar-scanner.glb",

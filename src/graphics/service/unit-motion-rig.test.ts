@@ -27,6 +27,7 @@ const MODELS = [
   "bug.lurker",
   "bug.brute",
   "bug.spitter",
+  "civ.group",
 ] as const;
 
 /**
@@ -104,8 +105,10 @@ describe("unit motion on the shipped models", () => {
       clone.traverse((part) => {
         if (part.name.startsWith("motion-leg-")) legs.push(part);
       });
+      // Five soldiers walk on ten legs; the four townspeople of a
+      // civilian group (campaign arc §6.4) on eight.
       expect(legs.length).toBeGreaterThanOrEqual(
-        id.startsWith("tdf.infantry") ? 10 : 2,
+        id.startsWith("tdf.infantry") ? 10 : id === "civ.group" ? 8 : 2,
       );
       if (id.startsWith("bug.")) {
         // Crescent bugs have four running legs and two independently

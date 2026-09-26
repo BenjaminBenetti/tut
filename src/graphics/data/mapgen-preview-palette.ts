@@ -148,6 +148,9 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   // in `bug-chitin-tan`, the colour of the egg ribs waiting there (#1179).
   [HookKinds.HIVE_CORE]: 0xe23dff,
   [HookKinds.BROOD_CHAMBER]: 0xb88b58,
+  // People to fetch: a warm white, apart from the generators' amber and
+  // the carcass's bone, so a sheltering group reads as not ours to fight.
+  [HookKinds.CIVILIAN]: 0xfff1d6,
 };
 
 /** Warning yellow for hook kinds the palette does not know. */

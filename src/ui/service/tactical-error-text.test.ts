@@ -69,6 +69,8 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "turret-out-of-reach", range: 2 },
   { kind: "turret-tile-blocked" },
   { kind: "takes-no-orders", unitId: ID },
+  { kind: "unit-trapped", unitId: ID },
+  { kind: "cannot-interact", unitId: ID },
   { kind: "objective-not-found", objectiveId: ID },
   { kind: "objective-complete", objectiveId: ID },
   { kind: "objective-not-interactive", objectiveId: ID },
@@ -364,6 +366,7 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
       },
       "destroy-pod": OBJECTIVE_PRESENTATION["destroy-pod"],
       "capture-specimen": OBJECTIVE_PRESENTATION["capture-specimen"],
+      "rescue-civilians": OBJECTIVE_PRESENTATION["rescue-civilians"],
     };
     const names = namesFor(
       {

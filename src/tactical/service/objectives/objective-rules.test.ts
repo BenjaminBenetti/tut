@@ -4,6 +4,7 @@ import type { ObjectiveRulesTable } from "../../model/objective-rules";
 import type { Objective } from "../../model/tactical-state";
 import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
+import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
 import {
   OBJECTIVE_RULES,
   objectivePhaseSteps,
@@ -62,6 +63,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
     expect(objectivePhaseSteps()).toEqual([
       DEFEND_GENERATORS_OBJECTIVE.phaseStep,
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
+      RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
     ]);
     const extra = (): never => {
       throw new Error("not run");
@@ -75,6 +77,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       extra,
       DEFEND_GENERATORS_OBJECTIVE.phaseStep,
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
+      RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
     ]);
   });
 });

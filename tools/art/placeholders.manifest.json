@@ -5340,5 +5340,19 @@
     "quality": "final",
     "triangles": 3246,
     "bytes": 232740
+  },
+  {
+    "id": "civ.group",
+    "category": "units",
+    "path": "assets/models/units/civ-group.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.9,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1196,
+    "bytes": 78576
   }
 ]

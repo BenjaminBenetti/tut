@@ -431,6 +431,31 @@ describe("TacticalAnimationQueue", () => {
       "vfx.tdf-death",
     );
   });
+
+  it("fades a civilian group the bugs killed as it fades a squad (campaign arc §6.4)", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([
+      {
+        type: "tactical:civilians-killed",
+        payload: {
+          unitId: "unit-2",
+          pos: { x: 4, y: 0, z: 0 },
+          killerId: "unit-1",
+        },
+      },
+    ]);
+    queue.update(0.01);
+    expect(queue.root.children.map((child) => child.name)).toContain(
+      "vfx.tdf-death",
+    );
+    queue.update(1);
+    expect(s.objects.get("unit-2")!.scale.x).toBeLessThan(0.1);
+  });
 });
 
 // ===========================================

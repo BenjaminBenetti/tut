@@ -12,6 +12,7 @@ import type {
 } from "../model/tactical-state";
 import { NO_VISION, TEAMS_BY_VISION } from "../model/tactical-state";
 import type { TechCarcass } from "../model/tech-carcass";
+import { isTrapped } from "../model/civilian";
 import type { Team, Unit, UnitId } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
@@ -121,10 +122,12 @@ function eyeSees(
 /**
  * What `team` can see right now (ADR 0006 §2.1): every tile within any
  * living unit's `sightRange` that it has a clear line to, and every enemy
- * standing on one of them.
+ * standing on one of them. A civilian group still trapped (campaign arc
+ * §6.4) is no watcher: it is huddled out of sight, and the building it
+ * hides in stays dark until someone comes to look.
  *
  * ```
- *   for each living unit of the side:
+ *   for each living unit of the side, trapped civilians aside:
  *     tiles within sightRange (manhattan) with hasLineOfSight ──► visible
  *   enemies standing on a visible tile ──────────────────────────► spotted
  * ```
@@ -140,7 +143,7 @@ export function computeVision(
 ): Pick<SideVision, "visible" | "spotted"> {
   const visible = new Set<VisionTileKey>();
   const watchers = mission.units.filter(
-    (unit) => unit.team === team && unit.hp > 0,
+    (unit) => unit.team === team && unit.hp > 0 && !isTrapped(unit),
   );
   for (const watcher of watchers) {
     const range = sightRangeOf(mission, watcher);
@@ -349,7 +352,9 @@ function sameVantage(before: TacticalState, after: TacticalState): boolean {
 /**
  * Whether one unit presents the same vantage in both missions. Vision
  * reads life, not health: a shot that hurts without killing changes
- * nothing about who can see what, and most shots are that.
+ * nothing about who can see what, and most shots are that. Freeing a
+ * trapped civilian group changes it, since a trapped group watches
+ * nothing (campaign arc §6.4).
  */
 function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
   if (a === undefined) {
@@ -360,7 +365,8 @@ function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
     a.hp > 0 === b.hp > 0 &&
     a.pos.x === b.pos.x &&
     a.pos.y === b.pos.y &&
-    a.pos.z === b.pos.z
+    a.pos.z === b.pos.z &&
+    isTrapped(a) === isTrapped(b)
   );
 }
 
@@ -432,14 +438,29 @@ export function perceivedCarcasses(
   );
 }
 
-/** Every unit of `team`, plus the enemies it can see. */
+/**
+ * Every unit of `team`, plus the enemies it can see. A civilian group of
+ * its own still trapped (campaign arc §6.4) is known only once its tile
+ * has been explored: until then the fog blip says where it is, and the
+ * group is not drawn hanging in unexplored black (#551's rule for
+ * spawners).
+ */
 export function perceivedUnits(
   mission: TacticalState,
   team: Team,
+  index?: TileIndex,
 ): readonly Unit[] {
   const spotted = new Set(mission.vision[team]?.spotted ?? []);
-  return mission.units.filter(
-    (unit) => unit.team === team || spotted.has(unit.id),
+  let explored: ReadonlySet<VisionTileKey> | undefined;
+  let tiles: TileIndex | undefined = index;
+  /** Whether `unit`'s tile is ground `team` has seen. */
+  const known = (unit: Unit): boolean => {
+    tiles ??= new TileIndex(mission.map);
+    explored ??= new Set(mission.vision[team]?.explored ?? []);
+    return tiles.inBounds(unit.pos) && explored.has(tiles.keyOf(unit.pos));
+  };
+  return mission.units.filter((unit) =>
+    unit.team === team ? !isTrapped(unit) || known(unit) : spotted.has(unit.id),
   );
 }
 

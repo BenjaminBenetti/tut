@@ -1,4 +1,5 @@
 import type { HookPlacer } from "../../model/hook-placer";
+import { CivilianPlacer } from "./civilian-placer";
 import { DeployPlacer } from "./deploy-placer";
 import { EdgeSpawnPlacer } from "./edge-spawn-placer";
 import { EggSpawnerPlacer } from "./egg-spawner-placer";
@@ -26,4 +27,5 @@ export const DEFAULT_HOOK_PLACERS: readonly HookPlacer[] = [
   new GeneratorPlacer(),
   new SporePodPlacer(),
   new HiveCorePlacer(),
+  new CivilianPlacer(),
 ];

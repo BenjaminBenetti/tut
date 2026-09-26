@@ -40,8 +40,6 @@ import type {
 } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import { isAutonomous } from "../../tactical/model/unit";
-import type { DefendGeneratorsObjective } from "../../tactical/model/tactical-state";
-import { defenceProgress } from "../../tactical/service/defence-service";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import {
   enemyAttackTargets,
@@ -72,6 +70,7 @@ import type {
 } from "../model/tactical-intent";
 import type { GameState } from "../../save/model/game-state";
 import { describeRefusal, namesFor } from "../service/tactical-error-text";
+import { objectiveProgress } from "../service/objectives/objective-presentation";
 import type { UnitAction } from "../service/action-availability";
 import { actionRefusal, interactTarget } from "../service/action-availability";
 import type { WheelContext, WheelPage } from "../service/action-wheel";
@@ -2387,15 +2386,13 @@ export class TacticalHudView {
         : undefined,
     );
     const inReach = this.interactTarget();
-    const defence = mission.objectives.find(
-      (objective): objective is DefendGeneratorsObjective =>
-        objective.kind === "defend-generators",
-    );
+    // Live numbers for every objective whose kind takes them (a
+    // defence's generators and waves, #1175), read afresh each update.
     this.objectives.update(
       mission.objectives,
       mission.spawners,
       inReach?.objective.id,
-      defence === undefined ? undefined : defenceProgress(mission, defence),
+      objectiveProgress(mission),
     );
     // The rail names units through the same resolver as the card, the
     // banner and the log (#1040).

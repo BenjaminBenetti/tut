@@ -1,4 +1,3 @@
-import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import { advanceDay } from "../../overworld/model/advance-day-command";
 import type {
   MissionOutcome,
@@ -17,6 +16,7 @@ import {
 import { attachRankTooltip } from "../view/rank-tooltip-view";
 import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
+import type { MissionPresentationCatalogue } from "../model/mission-presentation";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import {
@@ -24,6 +24,7 @@ import {
   formatTechPoints,
   formatWhole,
 } from "../service/format";
+import { debriefTaglineFor } from "../service/missions/mission-presentation";
 
 // ===========================================
 // Types
@@ -45,6 +46,8 @@ export interface MissionResultsScreenDeps {
   readonly session: GameSession;
   /** The rank ladder and the per-mission experience, to read a promotion back off the roster (#1130). */
   readonly rosterTuning: RosterTuning;
+  /** Each type's debrief tagline (ADR 0013 §2.3); the shipped table when omitted. */
+  readonly missionPresentation?: MissionPresentationCatalogue;
 }
 
 /** Banner copy per outcome. */
@@ -78,27 +81,6 @@ const OUTCOME_COPY: Readonly<Record<MissionOutcome, OutcomeCopy>> = {
     tone: "danger",
   },
 };
-
-/**
- * A defence says what became of the installation (#1175) instead of the
- * generic line: held through every wave, held when the force pulled
- * out, or lost with its generators. Undefined for any other mission.
- */
-function defenceTagline(result: MissionResult): string | undefined {
-  if (result.defence === undefined) {
-    return undefined;
-  }
-  const name = INSTALLATION_SITES[result.defence.installation].name;
-  if (result.outcome === "won") {
-    return `The ${name.toLowerCase()} held through every wave. The force is coming home with full rewards.`;
-  }
-  if (result.defence.held) {
-    return `The force pulled out with the ${name.toLowerCase()} still running. Survivors are coming home.`;
-  }
-  return result.outcome === "lost"
-    ? `The generators fell and the ${name.toLowerCase()} is lost. The force was wiped, or the mission was left with the installation down.`
-    : `The generators fell; the ${name.toLowerCase()} is lost. Survivors are coming home.`;
-}
 
 /**
  * Shown when a stored result names a city the map no longer has — only
@@ -257,7 +239,12 @@ export class MissionResultsScreen implements Screen {
     const tagline = doc.createElement("p");
     tagline.className = "tut-dim";
     tagline.dataset.field = "tagline";
-    tagline.textContent = defenceTagline(result) ?? copy.tagline;
+    // A type with its own words for the outcome says them (a defence
+    // names what became of the installation, #1175); every other
+    // mission keeps the outcome's line.
+    tagline.textContent =
+      debriefTaglineFor(result, { state }, this.deps.missionPresentation) ??
+      copy.tagline;
     // The city, not the id (#739). The player chose this mission from a
     // list that called it Seoul; the screen they land on afterwards has
     // to agree. `cityId` is carried on the result because the mission

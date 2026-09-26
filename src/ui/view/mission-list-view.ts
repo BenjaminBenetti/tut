@@ -1,4 +1,3 @@
-import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { CityId } from "../../overworld/model/city";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import type { RegionId } from "../../overworld/model/region";
@@ -8,14 +7,15 @@ import {
 } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
-import type { IconId } from "../data/icon-manifest";
 import { iconUrl } from "../data/icon-manifest";
+import type { MissionPresentationCatalogue } from "../model/mission-presentation";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
 import {
   formatCredits,
   formatTechPoints,
   formatWhole,
 } from "../service/format";
+import { MISSION_PRESENTATION } from "../service/missions/mission-presentation";
 
 // ===========================================
 // Types
@@ -32,6 +32,8 @@ export interface MissionListViewHandlers {
 /** What the list needs to name things. */
 export interface MissionListViewDeps {
   readonly missionTypes: MissionTypeCatalogue;
+  /** Each type's glyph (ADR 0013 §2.3); the shipped table when omitted. */
+  readonly presentations?: MissionPresentationCatalogue;
 }
 
 // ===========================================
@@ -61,6 +63,7 @@ export class MissionListView {
   // ===========================================
 
   private readonly deps: MissionListViewDeps;
+  private readonly presentations: MissionPresentationCatalogue;
   private readonly handlers: MissionListViewHandlers;
   private root: HTMLElement | undefined;
   private heading: HTMLElement | undefined;
@@ -76,11 +79,12 @@ export class MissionListView {
   // ===========================================
 
   /**
-   * @param deps - Catalogue for naming mission types.
+   * @param deps - Catalogue for naming mission types, and their glyphs.
    * @param handlers - Callback for row selection.
    */
   constructor(deps: MissionListViewDeps, handlers: MissionListViewHandlers) {
     this.deps = deps;
+    this.presentations = deps.presentations ?? MISSION_PRESENTATION;
     this.handlers = handlers;
   }
 
@@ -296,10 +300,15 @@ export class MissionListView {
       }
       if (field === "type") {
         // The glyph carries it; the name stays in the tooltip, so the
-        // information is still there for anyone who wants it.
+        // information is still there for anyone who wants it. The name
+        // used to be a text column that ellipsised at a different point
+        // on every row ("Infestation ...", "Infestat...", "I..."); a
+        // fixed 16 px glyph says the same and gives the width back to
+        // the city. Each type's glyph is its presentation's `icon`
+        // (ADR 0013 §2.3), so a new type needs no change here.
         cell.style.setProperty(
           "--icon",
-          iconUrl(TYPE_ICONS[mission.typeId] ?? "mission"),
+          iconUrl(this.presentations[mission.typeId]?.icon ?? "mission"),
         );
         if (cell.title !== type.name) {
           cell.title = type.name;
@@ -313,31 +322,6 @@ export class MissionListView {
     }
   }
 }
-
-// ===========================================
-// Type glyphs
-// ===========================================
-
-/**
- * The glyph standing in for a mission's type in the list.
- *
- * The name used to be a text column, for a value that is the same on
- * every row -- there is exactly one mission type. It never fitted, and
- * because the row is laid out per row rather than as a table, each one
- * ellipsised at a different point: "Infestation ...", "Infestat...",
- * "Infestatio...", and for Johannesburg simply "I...". A column that is
- * constant carries nothing; a column that is constant *and* illegible
- * is noise with a ragged edge.
- *
- * A glyph says the same thing in a fixed 16 px, keeps the full name in
- * its tooltip, and gives the flexible width back to the city -- which is
- * the column a player actually reads. A second mission type takes its
- * own glyph here and the list needs no other change.
- */
-const TYPE_ICONS: Readonly<Record<MissionTypeId, IconId>> = {
-  "infestation-clearance": "infestation",
-  "defend-installation": "defend",
-};
 
 // ===========================================
 // Filtering and sorting

@@ -1,14 +1,21 @@
 import { BIOME_INFO } from "../../content/data/biome-info";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
-import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
+import type {
+  BriefingRow,
+  MissionPresentationCatalogue,
+} from "../model/mission-presentation";
 import {
   formatCredits,
   formatTechPoints,
   formatWhole,
 } from "../service/format";
+import {
+  MISSION_PRESENTATION,
+  briefingFieldsOf,
+} from "../service/missions/mission-presentation";
 
 // ===========================================
 // Types
@@ -23,18 +30,22 @@ export interface MissionDetailsViewHandlers {
 /** What the panel needs to name and describe things. */
 export interface MissionDetailsViewDeps {
   readonly missionTypes: MissionTypeCatalogue;
+  /** The rows each type adds (ADR 0013 §2.3); the shipped table when omitted. */
+  readonly presentations?: MissionPresentationCatalogue;
 }
 
-/** Fields shown in the label/value grid, in order. */
-const FIELDS = [
+/** Shared fields before the type's own rows, in order. */
+const LEAD_FIELDS = [
   "type",
   "city",
   "difficulty",
   "reward",
   "tech",
   "carcass",
-  "installation",
-  "waves",
+] as const;
+
+/** Shared fields after the type's own rows, in order. */
+const TAIL_FIELDS = [
   "days-left",
   "biome",
   "settlement",
@@ -42,10 +53,7 @@ const FIELDS = [
   "penalty",
 ] as const;
 
-type Field = (typeof FIELDS)[number];
-
-/** Rows that only a defence has (#1175); hidden for every other type. */
-const DEFENCE_FIELDS: readonly Field[] = ["installation", "waves"];
+type Field = (typeof LEAD_FIELDS)[number] | (typeof TAIL_FIELDS)[number];
 
 const LABELS: Readonly<Record<Field, string>> = {
   type: "Type",
@@ -54,14 +62,18 @@ const LABELS: Readonly<Record<Field, string>> = {
   reward: "Reward",
   tech: "Tech reward",
   carcass: "Tech carcass",
-  installation: "Installation",
-  waves: "Bug waves",
   "days-left": "Days left",
   biome: "Biome",
   settlement: "Settlement",
   size: "Map size",
   penalty: "Ignore penalty",
 };
+
+/** One label/value pair of the grid. */
+interface Slot {
+  readonly term: HTMLElement;
+  readonly value: HTMLElement;
+}
 
 // ===========================================
 // MissionDetailsView
@@ -72,6 +84,17 @@ const LABELS: Readonly<Record<Field, string>> = {
  * the list shows, the map parameters generation will use, the ignore
  * penalty, and the Plan deployment button. Hidden when nothing is
  * selected; values are rewritten in place, never rebuilt.
+ *
+ * Between the shared rows sit the rows mission types add (ADR 0013
+ * §2.3). Every type's slots are built once at mount; a mission shows
+ * the ones its type fills and the rest stay hidden, so a clearance keeps
+ * the grid it always had and a defence adds its installation and waves.
+ *
+ * ```
+ *   Type · City · Difficulty · Reward · Tech reward · Tech carcass
+ *   ── type rows (MissionPresentation.briefingRows) ──
+ *   Days left · Biome · Settlement · Map size · Ignore penalty
+ * ```
  */
 export class MissionDetailsView {
   // ===========================================
@@ -79,12 +102,14 @@ export class MissionDetailsView {
   // ===========================================
 
   private readonly deps: MissionDetailsViewDeps;
+  private readonly presentations: MissionPresentationCatalogue;
   private readonly handlers: MissionDetailsViewHandlers;
   private root: HTMLElement | undefined;
   private description: HTMLElement | undefined;
   private plan: HTMLButtonElement | undefined;
   private readonly values = new Map<Field, HTMLElement>();
-  private readonly terms = new Map<Field, HTMLElement>();
+  /** The rows mission types add, keyed by their field. */
+  private readonly typeSlots = new Map<string, Slot>();
   private shown: MissionId | undefined;
   private onPlan: (() => void) | undefined;
 
@@ -93,7 +118,8 @@ export class MissionDetailsView {
   // ===========================================
 
   /**
-   * @param deps - Catalogue for naming and describing mission types.
+   * @param deps - Catalogue for naming and describing mission types, and
+   *   the rows each type adds.
    * @param handlers - Callback for the Plan deployment button.
    */
   constructor(
@@ -101,6 +127,7 @@ export class MissionDetailsView {
     handlers: MissionDetailsViewHandlers,
   ) {
     this.deps = deps;
+    this.presentations = deps.presentations ?? MISSION_PRESENTATION;
     this.handlers = handlers;
   }
 
@@ -124,16 +151,14 @@ export class MissionDetailsView {
 
     const grid = doc.createElement("dl");
     grid.className = "tut-kv";
-    for (const field of FIELDS) {
-      const term = doc.createElement("dt");
-      term.className = "tut-label";
-      term.textContent = LABELS[field];
-      const value = doc.createElement("dd");
-      value.className = "tut-mono";
-      value.dataset.field = `detail-${field}`;
-      grid.append(term, value);
-      this.values.set(field, value);
-      this.terms.set(field, term);
+    for (const field of LEAD_FIELDS) {
+      this.values.set(field, appendSlot(grid, field, LABELS[field]).value);
+    }
+    for (const { field, label } of briefingFieldsOf(this.presentations)) {
+      this.typeSlots.set(field, appendSlot(grid, field, label));
+    }
+    for (const field of TAIL_FIELDS) {
+      this.values.set(field, appendSlot(grid, field, LABELS[field]).value);
     }
 
     const plan = doc.createElement("button");
@@ -179,12 +204,6 @@ export class MissionDetailsView {
       carcass: mission.mapParams.techCarcass
         ? `Reported · +${formatTechPoints(mission.mapParams.techCarcass.techPoints)}`
         : "None reported",
-      installation: mission.defence
-        ? `${INSTALLATION_SITES[mission.defence.installation].name} · ${formatWhole(mission.defence.generators)} generators`
-        : "",
-      waves: mission.defence
-        ? `${formatWhole(mission.defence.waves)} timed waves`
-        : "",
       "days-left": `${formatWhole(mission.expiresDay - state.overworld.day)} d`,
       biome: BIOME_INFO[mission.mapParams.biome].name,
       settlement: mission.mapParams.settlement,
@@ -195,17 +214,10 @@ export class MissionDetailsView {
       if (element.textContent !== values[field]) {
         element.textContent = values[field];
       }
-      // A defence's rows only appear on a defence (#1175); a clearance
-      // briefing keeps the grid it always had.
-      if (DEFENCE_FIELDS.includes(field)) {
-        const hidden = mission.defence === undefined;
-        element.hidden = hidden;
-        const term = this.terms.get(field);
-        if (term) {
-          term.hidden = hidden;
-        }
-      }
     }
+    this.fillTypeRows(
+      this.presentations[mission.typeId].briefingRows(mission, { state }),
+    );
     if (this.description.textContent !== type.description) {
       this.description.textContent = type.description;
     }
@@ -224,7 +236,49 @@ export class MissionDetailsView {
     this.description = undefined;
     this.plan = undefined;
     this.values.clear();
+    this.typeSlots.clear();
     this.shown = undefined;
     this.onPlan = undefined;
   }
+
+  // ===========================================
+  // Private methods
+  // ===========================================
+
+  /**
+   * Shows the type rows the mission fills and hides the rest, emptied, so
+   * a clearance keeps the grid it always had (#1175).
+   */
+  private fillTypeRows(rows: readonly BriefingRow[]): void {
+    const filled = new Map(rows.map((row) => [row.field, row]));
+    for (const [field, slot] of this.typeSlots) {
+      const row = filled.get(field);
+      const value = row?.value ?? "";
+      if (slot.value.textContent !== value) {
+        slot.value.textContent = value;
+      }
+      if (row && slot.term.textContent !== row.label) {
+        slot.term.textContent = row.label;
+      }
+      slot.value.hidden = row === undefined;
+      slot.term.hidden = row === undefined;
+    }
+  }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** Appends one term and its value cell (`data-field="detail-<field>"`) to `grid`. */
+function appendSlot(grid: HTMLElement, field: string, label: string): Slot {
+  const doc = grid.ownerDocument;
+  const term = doc.createElement("dt");
+  term.className = "tut-label";
+  term.textContent = label;
+  const value = doc.createElement("dd");
+  value.className = "tut-mono";
+  value.dataset.field = `detail-${field}`;
+  grid.append(term, value);
+  return { term, value };
 }

@@ -140,7 +140,14 @@ export function namesFor(
   campaign?: GameState,
   presentations: ObjectivePresentationCatalogue = OBJECTIVE_PRESENTATION,
 ): TacticalNames {
-  const units = new Map((mission?.units ?? []).map((unit) => [unit.id, unit]));
+  // A bug that fled off the map (#1179) keeps its name: the line that
+  // says it escaped is read after it has left `units`.
+  const units = new Map(
+    [...(mission?.escaped ?? []), ...(mission?.units ?? [])].map((unit) => [
+      unit.id,
+      unit,
+    ]),
+  );
   const objectives = mission?.objectives ?? [];
   const spawners = new Set((mission?.spawners ?? []).map((nest) => nest.id));
   /** The index of the objective tracking `id` as its target, or -1. */

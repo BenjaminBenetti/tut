@@ -1,3 +1,4 @@
+import type { ModelAssetId } from "../../content/data/model-ids";
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type {
   ArmouredBaseId,
@@ -46,7 +47,8 @@ import { ARMOURED_VARIANT_TUNING } from "./armoured-variant-tuning";
 //     spitter is two: fragile, but it has to be dug out of cover. A
 //     burrower is three: it has to be caught above ground first. A
 //     Hive Guard is four: it cannot chase anyone, but it has to be
-//     walked up to under its fire.
+//     walked up to under its fire. The Broodmother is ten: a boss, and
+//     one the squad has to catch before she reaches the edge.
 //   • burrows: the burrower (#1179) arrives under the ground and fights
 //     from beneath it; see `isBurrowed` in `tactical/model/unit`.
 
@@ -308,6 +310,50 @@ export const ARMOURED_VARIANT_BASES: Readonly<
 // ===========================================
 
 /**
+ * The Broodmother (#1179, campaign arc §6.8, §8 and §9): the boss of
+ * Alpha Hunt, a mobile egg-layer. She is placed by her mission
+ * (`placeBroodmother`), never hatched or rolled, and she is not a
+ * fighter: a weak bite, a boss's hit points, and a behaviour
+ * (`broodmother`) that keeps her out of the squad's reach while her
+ * clutches — an egg spawner every three turns — do the fighting. At
+ * half health she runs for the map edge, and one that reaches it is
+ * gone.
+ *
+ * `hp` is her difficulty-1 value; the mission that places her scales
+ * it with difficulty and scars (`broodmotherHp`). She stands on a 3×3
+ * block (the modeller's kit): lower than a mech and far wider than a
+ * brute, so she fits through no door and walks the streets.
+ */
+export const BROODMOTHER: BugSpecies = {
+  id: "broodmother",
+  name: "Broodmother",
+  description:
+    "A huge ribbed egg sac caged in bone behind a small armoured head. She lays a clutch of eggs every few turns, keeps out of reach, and runs for the edge when she is hurt.",
+  hp: 60,
+  armor: 1,
+  move: 5,
+  ap: 2,
+  // A weak bite: she is not a fighter. A swarmer's bite with one more
+  // point and a little less aim, and nothing that dents plate.
+  weapon: { range: 1, accuracy: 55, damage: 4, armorPen: 0 },
+  sightRange: SIGHT,
+  behaviour: "broodmother",
+  modelId: "bug.broodmother",
+  hatchWeight: 0,
+  xpValue: 100,
+  footprint: 3,
+};
+
+/**
+ * The model of a Broodmother who has escaped before (#1179, arc §6.8):
+ * the same build scarred across the crest, two cage spines gone and
+ * dark regrowth on her left flank. `placeBroodmother` stands her in it
+ * when she carries a scar.
+ */
+export const BROODMOTHER_SCARRED_MODEL_ID: ModelAssetId =
+  "bug.broodmother-scarred";
+
+/**
  * Every bug species keyed by id. Typed as a record over the closed
  * `BugSpeciesId` union so a new id without a definition fails at compile
  * time rather than at runtime.
@@ -322,4 +368,5 @@ export const BUG_SPECIES: Readonly<Record<BugSpeciesId, BugSpecies>> = {
   "swarmer-armoured": SWARMER_ARMOURED,
   "lurker-armoured": LURKER_ARMOURED,
   "brute-armoured": BRUTE_ARMOURED,
+  broodmother: BROODMOTHER,
 };

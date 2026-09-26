@@ -383,6 +383,26 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:clutch-laid":
+      // A Broodmother's clutch (#1179): a new nest on the map, which is
+      // the reason she is worth hunting before it hatches.
+      return {
+        text: `${nameOf(event.payload.unitId)} laid a clutch of eggs`,
+        icon: "egg",
+        tone: "bug",
+      };
+    case "tactical:broodmother-fleeing":
+      return {
+        text: `${nameOf(event.payload.unitId)} is fleeing for the map edge`,
+        icon: "warning",
+        tone: "danger",
+      };
+    case "tactical:broodmother-escaped":
+      return {
+        text: `${nameOf(event.payload.unitId)} escaped off the map edge`,
+        icon: "warning",
+        tone: "danger",
+      };
     case "tactical:brood-woke":
       // The whole brood in one line (#1179): its members get the stir
       // on the map, not a status sentence each.
@@ -526,6 +546,10 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return event.payload.turretId;
     case "tactical:generator-destroyed":
       return event.payload.generatorId;
+    case "tactical:clutch-laid":
+    case "tactical:broodmother-fleeing":
+      // Above the Broodmother: she laid it, and she turned.
+      return event.payload.unitId;
     case "tactical:civilians-freed":
       // Above the group: being let out is what happened to it.
       return event.payload.unitId;
@@ -580,8 +604,10 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:drop-ship-departed":
     case "tactical:brood-woke":
     case "tactical:civilians-extracted":
+    case "tactical:broodmother-escaped":
       // A brood is many bugs, and the scene stirs each of them; civilians
-      // aboard and gone leave nobody on the map to mark.
+      // aboard and gone leave nobody on the map to mark, and neither does
+      // a Broodmother that escaped off its edge (#1179).
       return undefined;
     default:
       return undefined;

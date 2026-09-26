@@ -12,9 +12,12 @@ import type {
   ArmouredBaseId,
   ArmouredVariantId,
 } from "../model/armoured-variant";
+import { broodmotherHp } from "../service/broodmother-service";
 import { ARMOURED_VARIANT_TUNING } from "./armoured-variant-tuning";
 import {
   ARMOURED_VARIANT_BASES,
+  BROODMOTHER,
+  BROODMOTHER_SCARRED_MODEL_ID,
   BRUTE,
   BRUTE_ARMOURED,
   BUG_SPECIES,
@@ -60,6 +63,7 @@ describe("bug species data", () => {
         SWARMER_ARMOURED,
         LURKER_ARMOURED,
         BRUTE_ARMOURED,
+        BROODMOTHER,
       ].map((s) => s.id),
     ).toEqual(BUG_SPECIES_IDS);
   });
@@ -127,13 +131,15 @@ describe("bug species data", () => {
     expect(rolled).toEqual(["swarmer", "lurker", "brute"]);
     expect(SPITTER.hatchWeight).toBe(0);
     expect(BURROWER.hatchWeight).toBe(0);
-    // The Hive Guard is never rolled at all: missions place it (#1179).
+    // The Hive Guard and the Broodmother are never rolled at all:
+    // missions place them (#1179).
     expect(HIVE_GUARD.hatchWeight).toBe(0);
     // The armoured variants, like the spitter, arrive only through the
     // bestiary's Act III and finale mixes (#1179).
     for (const [variant] of VARIANTS) {
       expect([variant.id, variant.hatchWeight]).toEqual([variant.id, 0]);
     }
+    expect(BROODMOTHER.hatchWeight).toBe(0);
     // The default mix itself is unchanged: six to three to one.
     expect([SWARMER, LURKER, BRUTE].map((s) => s.hatchWeight)).toEqual([
       6, 3, 1,
@@ -145,6 +151,8 @@ describe("bug species data", () => {
       expect(MODEL_IDS).toContain(species.modelId);
       expect(species.modelId.startsWith("bug.")).toBe(true);
     }
+    // A Broodmother that has escaped comes back wearing her scars.
+    expect(MODEL_IDS).toContain(BROODMOTHER_SCARRED_MODEL_ID);
   });
 
   it("orders the species by weight: swarmer light and fast, brute heavy and slow", () => {
@@ -158,7 +166,7 @@ describe("bug species data", () => {
     expect(BRUTE.weapon.armorPen).toBeGreaterThan(SWARMER.weapon.armorPen);
   });
 
-  it("prices a kill by weight: a swarmer is the unit, a brute is worth the most (#1130)", () => {
+  it("prices a kill by weight: a swarmer is the unit, a brute the most a nest rolls, the Broodmother more (#1130, #1179)", () => {
     expect(SWARMER.xpValue).toBe(10);
     expect(SWARMER.xpValue).toBeLessThan(LURKER.xpValue);
     expect(LURKER.xpValue).toBeLessThan(BRUTE.xpValue);
@@ -167,6 +175,12 @@ describe("bug species data", () => {
     // The Hive Guard sits between a lurker and a brute (#1179).
     expect(HIVE_GUARD.xpValue).toBeGreaterThan(LURKER.xpValue);
     expect(HIVE_GUARD.xpValue).toBeLessThan(BRUTE.xpValue);
+    // A boss is worth more than anything a nest hatches.
+    for (const species of Object.values(BUG_SPECIES)) {
+      if (species.id !== "broodmother") {
+        expect(BROODMOTHER.xpValue).toBeGreaterThan(species.xpValue);
+      }
+    }
     for (const species of Object.values(BUG_SPECIES)) {
       expect(Number.isInteger(species.xpValue) && species.xpValue > 0).toBe(
         true,
@@ -196,8 +210,9 @@ describe("bug species data", () => {
 });
 
 describe("the brute's block and cleavers (#1130)", () => {
-  it("stands on a 2×2 block while the small species take one tile", () => {
+  it("stands on a 2×2 block while the small species take one tile, and the Broodmother on a 3×3", () => {
     expect(BRUTE.footprint).toBe(2);
+    expect(BROODMOTHER.footprint).toBe(3);
     expect(SWARMER.footprint).toBeUndefined();
     expect(LURKER.footprint).toBeUndefined();
     expect(SPITTER.footprint).toBeUndefined();
@@ -303,7 +318,7 @@ describe("damage tags (campaign arc §10.2)", () => {
     // one only when its autopsy plates against it.
     expect(SPITTER.weapon.tags).toEqual(["acid"]);
     expect(HIVE_GUARD.weapon.tags).toEqual(["spine"]);
-    for (const species of [SWARMER, LURKER, BRUTE]) {
+    for (const species of [SWARMER, LURKER, BRUTE, BROODMOTHER]) {
       expect([species.id, species.weapon.tags]).toEqual([
         species.id,
         undefined,
@@ -381,5 +396,32 @@ describe("the Act III armoured variants (#1179)", () => {
       ["lurker-armoured", 2, 14],
       ["brute-armoured", 5, 36],
     ]);
+  });
+});
+
+describe("the Broodmother (#1179, campaign arc §6.8)", () => {
+  it("is a placed boss: never rolled, and on her own behaviour", () => {
+    expect(BROODMOTHER.hatchWeight).toBe(0);
+    expect(BROODMOTHER.behaviour).toBe("broodmother");
+    expect(BROODMOTHER.modelId).toBe("bug.broodmother");
+  });
+
+  it("is a boss in hit points and armour, and moves at a squad's pace", () => {
+    // Her catalogue hit points are a difficulty-1 mission's; placement
+    // scales them by the mission and her scars.
+    expect(BROODMOTHER.hp).toBe(broodmotherHp(1, 0));
+    expect(BROODMOTHER.hp).toBeGreaterThan(BRUTE.hp);
+    expect(BROODMOTHER.armor).toBe(1);
+    expect(BROODMOTHER.move).toBe(5);
+  });
+
+  it("bites weakly: melee, about a swarmer's bite and under a lurker's, and nothing that opens a wall", () => {
+    expect(isMelee(BROODMOTHER.weapon)).toBe(true);
+    expect(BROODMOTHER.weapon.damage).toBeLessThanOrEqual(
+      SWARMER.weapon.damage + 1,
+    );
+    expect(BROODMOTHER.weapon.damage).toBeLessThan(LURKER.weapon.damage);
+    expect(BROODMOTHER.weapon.aoe).toBeUndefined();
+    expect(BROODMOTHER.weapon.demoForce).toBeUndefined();
   });
 });

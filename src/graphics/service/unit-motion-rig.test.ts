@@ -30,6 +30,8 @@ const MODELS = [
   "bug.brute",
   "bug.spitter",
   "bug.burrower",
+  "bug.broodmother",
+  "bug.broodmother-scarred",
   "civ.group",
   "bug.swarmer-armoured",
   "bug.lurker-armoured",
@@ -133,8 +135,14 @@ describe("unit motion on the shipped models", () => {
         // its shot plays as the body's recoil. The burrower (#1179) digs
         // on six stub legs and two spade blades. An armoured variant has
         // its base's limbs. Joining the sculpt into one mesh must fail.
+        // The Broodmother (#1179) carries her sac on six, stepping as a
+        // tripod, and folds two sickles in front of her.
         expect(legs).toHaveLength(
-          id.startsWith("bug.brute") || id === "bug.burrower" ? 6 : 4,
+          id.startsWith("bug.brute") ||
+            id === "bug.burrower" ||
+            id.startsWith("bug.broodmother")
+            ? 6
+            : 4,
         );
         const arms: Object3D[] = [];
         clone.traverse((part) => {
@@ -327,6 +335,8 @@ it.each([
   // A rooted guard never walks, so turning toward its target is the only
   // way it aims (#1179): its head behind the shield must lead.
   ["bug.hive-guard", "head"],
+  // Her head leads a body three tiles long (#1179): the sac trails.
+  ["bug.broodmother", "head"],
 ] as const)(
   "turns %s's actual front toward its tactical facing",
   async (id, front) => {

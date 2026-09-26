@@ -61,4 +61,14 @@ describe("persona data", () => {
       }
     }
   });
+
+  it("plays the Broodmother on her own behaviour without Jev, and asks Jev for the same plan (#1179)", () => {
+    // Headless, or with Jev switched off, she keeps her distance, lays and
+    // runs by the deterministic behaviour; Jev's orders say the same.
+    expect(BROODMOTHER.fallback).toBe("broodmother");
+    const prompt = BROODMOTHER.entityPrompt.toLowerCase();
+    for (const plan of ["clutch", "weapon range", "half", "edge"]) {
+      expect([plan, prompt.includes(plan)]).toEqual([plan, true]);
+    }
+  });
 });

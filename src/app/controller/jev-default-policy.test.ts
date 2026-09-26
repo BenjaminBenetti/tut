@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { PERSONAS } from "../../bugs/data/personas";
+import {
+  fieldMap,
+  motherMission,
+} from "../../bugs/service/broodmother.test-helper";
 import { createPersonaLookup } from "../../bugs/service/persona-lookup";
 import type { PersonaId } from "../../content/model/persona-id";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
@@ -296,5 +300,37 @@ describe("JevDefaultPolicy", () => {
       },
     });
     expect(dispatched).toEqual([]);
+  });
+});
+
+describe("the Broodmother as her mission places her (#1179, campaign arc §6.8)", () => {
+  /** A player-phase mission with a squad and her, placed through the real seam. */
+  function withMother(): { state: TacticalState; motherId: string } {
+    const { mission, mother } = motherMission(
+      fieldMap(16, 16).build(),
+      [squad("tdf", 0)],
+      { x: 8, y: 0, z: 8 },
+      { phase: "player" },
+    );
+    return { state: mission, motherId: mother.id };
+  }
+
+  it("is Jev-driven by default: configured with her own orders as the mission opens", () => {
+    const { state, motherId } = withMother();
+    const { store, dispatched } = storeWith(state);
+    policyOver(store).start();
+    expect(dispatched.map((c) => c.payload.unitId)).toEqual([motherId]);
+    expect(store.getState().activeMission?.jev?.entities[motherId]).toEqual({
+      enabled: true,
+      entityPrompt: PERSONAS.broodmother.entityPrompt,
+    });
+  });
+
+  it("is left to her own behaviour when the Jev switch is off", () => {
+    const { state } = withMother();
+    const { store, dispatched } = storeWith(state);
+    policyOver(store, { enabled: () => false }).start();
+    expect(dispatched).toEqual([]);
+    expect(store.getState().activeMission?.jev).toBeUndefined();
   });
 });

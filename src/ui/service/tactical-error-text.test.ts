@@ -323,6 +323,22 @@ describe("namesFor", () => {
     expect(names.unit("unit-12")).toBe("Swarmer");
     expect(names.unit("unit-9")).toBe("Swarmer");
   });
+
+  it("still names a Broodmother who has escaped off the map, for the line that says so (#1179)", () => {
+    const escapedMother = {
+      id: "unit-20",
+      sourceId: "broodmother",
+      templateId: "bug:broodmother",
+      persona: "broodmother",
+    };
+    const after = {
+      ...twoRifleSquads.mission,
+      escaped: [escapedMother],
+    } as unknown as Parameters<typeof namesFor>[0];
+    expect(namesFor(after, twoRifleSquads.campaign).unit("unit-20")).toBe(
+      "Broodmother",
+    );
+  });
 });
 
 describe("namesFor on a defence (#1175)", () => {

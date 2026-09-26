@@ -20,6 +20,7 @@ import type { Bestiary } from "../model/bestiary";
  *   swarmer-armoured     0      0     18     14     act-3, first mission
  *   lurker-armoured      0      0     10      9     act-3, first mission
  *   brute-armoured       0      0      7      7     act-3, first mission
+ *   broodmother       placed: stood by Alpha Hunt's setup, never rolled
  *                      ───    ───    ───    ───
  *   rolled total       100    100    100     85
  * ```
@@ -29,7 +30,7 @@ import type { Bestiary } from "../model/bestiary";
  * to 85: its other 15 is the Sovereign's escort share (arc §8, footnote),
  * which lands with the Sovereign; until then a finale mix renormalises
  * over the species here. The placed bugs take a `placed` entry: the Hive
- * Guard now, the Broodmother and the Sovereign when they land.
+ * Guard and the Broodmother now, the Sovereign when it lands.
  *
  * The brute is held back to M5 so its arrival is an event, and the
  * spitter to M8. The burrower is Act II's surprise: it holds no share
@@ -98,4 +99,7 @@ export const BESTIARY: Bestiary = {
     shares: { "act-1": 0, "act-2": 0, "act-3": 7, finale: 7 },
     debut: { act: "act-3", missionsInAct: 0 },
   },
+  // Placed by Alpha Hunt's setup (arc §6.8) through `placeBroodmother`,
+  // never rolled: a boss arrives once, by name (ADR 0013 §2.6).
+  broodmother: { kind: "placed" },
 };

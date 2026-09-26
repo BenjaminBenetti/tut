@@ -9,7 +9,7 @@ import { BESTIARY } from "./bestiary";
 import { ARMOURED_VARIANT_BASES } from "./species";
 
 describe("BESTIARY", () => {
-  it("carries the campaign arc §8 shares and debuts for the shipped species, and places the Hive Guard", () => {
+  it("carries the campaign arc §8 shares and debuts for the shipped species, and places the Hive Guard and the Broodmother", () => {
     expect(BESTIARY).toEqual({
       swarmer: {
         kind: "rolled",
@@ -52,6 +52,7 @@ describe("BESTIARY", () => {
         shares: { "act-1": 0, "act-2": 0, "act-3": 7, finale: 7 },
         debut: { act: "act-3", missionsInAct: 0 },
       },
+      broodmother: { kind: "placed" },
     });
   });
 

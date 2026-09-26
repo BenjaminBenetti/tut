@@ -220,8 +220,6 @@ const COMFORTABLE_HIT_CHANCE = 50;
  *                      the tile the enemy stands on (#1143)
  *   spawner   ──► Attack (as at an enemy, at the spawner's tile) · Interact
  *                 (if this one is in reach) · Overwatch · Reload
- *   other unit ─► as at an enemy, with Interact when it is an objective's
- *                 target in reach (a trapped group its rescue frees)
  *   own unit  ──► Overwatch · Reload · Interact (one per objective in reach)
  *                 · Harvest (a carcass in reach, #1171) · Board
  *   a tile with a carcass on it also carries Harvest, closed with the
@@ -928,26 +926,31 @@ function parseTile(argument: string): TileCoord | undefined {
  * squad beside both a trapped group and a wreck (#1179) can pick either:
  *
  * ```
- *   one in reach   ──► Interact
+ *   one in reach   ──► Interact  the civilians
  *   several        ──► Interact  the wreck        (the key's: first)
- *                      Interact  the townsfolk
+ *                      Interact  the civilians
  * ```
  *
- * With several, each entry names its objective in the detail line, the
- * way the tracker names it, so two entries never read the same.
+ * Every entry names its objective in the detail line, the way the
+ * tracker names it, so two entries never read the same — and one alone
+ * still says what it works: a squad that has worked the wreck this turn
+ * still stands beside it, and there a bare "Interact" read as the wreck
+ * when it frees the group (#1179, seen in the render). This page is
+ * where a rescue is offered: a click on a trapped group is a click on a
+ * friendly unit, which the HUD answers by selecting it (its card reads
+ * "trapped"), not by opening the rescuer's wheel on it.
  */
 function selfPage(unit: Unit, ctx: WheelContext): WheelPage {
   const items: RadialMenuItem[] = [
     overwatchItem(unit, ctx),
     reloadItem(unit, ctx),
   ];
-  const reachable = reachableObjectives(
+  for (const { objective } of reachableObjectives(
     ctx.mission,
     unit.id,
     ctx.deps.objectiveTuning,
-  );
-  for (const { objective } of reachable) {
-    items.push(interactItem(objective.id, unit, ctx, reachable.length > 1));
+  )) {
+    items.push(interactItem(objective.id, unit, ctx, true));
   }
   const carcass = reachableCarcasses(
     ctx.mission,
@@ -966,8 +969,8 @@ function selfPage(unit: Unit, ctx: WheelContext): WheelPage {
 /**
  * Attack first, with the hit chance at the centre; Interact when the
  * clicked thing is itself the target of an objective in reach — a
- * spawner, or a trapped group its rescue would free — whether or not
- * that objective is the one the Interact key would work first.
+ * spawner — whether or not that objective is the one the Interact key
+ * would work first.
  */
 function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
   const attack = enemyAttackItem(targetId, unit, ctx);
@@ -1184,8 +1187,9 @@ function reloadItem(unit: Unit, ctx: WheelContext): RadialMenuItem {
 
 /**
  * Interact with one objective, open or marked with why not. `named`
- * puts the objective's name in the detail line, for a ring with more
- * than one Interact on it.
+ * puts the objective's name in the detail line, for the unit's own
+ * ring, where nothing else says what the entry works; on a spawner's
+ * ring the spawner clicked says it.
  */
 function interactItem(
   objectiveId: string,

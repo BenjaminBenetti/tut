@@ -229,7 +229,7 @@ describe("strip-wreck presentation (arc §6.6)", () => {
     expect(strip.name(STRIP_OBJECTIVE, 1)).toBe("the wreck");
   });
 
-  it("counts the turns worked beside the label while there is work or carrying left", () => {
+  it("counts the turns worked under the label while there is work or carrying left", () => {
     const reading = objectiveProgress(mission(STRIP_OBJECTIVE)).get(
       STRIP_OBJECTIVE.id,
     );
@@ -244,7 +244,7 @@ describe("strip-wreck presentation (arc §6.6)", () => {
       icon: "interact",
       label: "Strip the wreck",
       data: { targetId: "wreck-1", status: "open" },
-      layout: "inline",
+      layout: "stacked",
       complete: false,
       detail: { text: "1 / 2 turns", role: "strip-progress" },
     });

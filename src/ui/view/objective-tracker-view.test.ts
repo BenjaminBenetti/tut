@@ -209,6 +209,38 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
       root.querySelector('[data-field="objective-summary"]')?.textContent,
     ).toBe("1 / 1 — board the drop ship");
   });
+
+  // Rendered on #1179: "0 / 2 turns" and "in reach" both beside the
+  // label left it narrower than "Strip", so the turns were drawn over
+  // it and "the" and "wreck" took a line each.
+  it("puts a wreck's turns under its label, so the in-reach mark beside them leaves the label its width", () => {
+    const strip: StripWreckObjective = {
+      id: "objective-w",
+      kind: "strip-wreck",
+      targetId: "wreck-1",
+      turnsNeeded: 2,
+      turnsWorked: 0,
+      workedBy: [],
+      complete: false,
+    };
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([strip], [], strip.id);
+
+    const row = rowOf(strip.id);
+    const stack = row?.querySelector<HTMLElement>(".tut-hud__defence");
+    expect(stack?.parentElement).toBe(row);
+    expect([...(stack?.children ?? [])].map((c) => c.textContent)).toEqual([
+      "Strip the wreck",
+      "0 / 2 turns",
+    ]);
+    expect(
+      row?.querySelector('[data-role="strip-progress"]')?.parentElement,
+    ).toBe(stack);
+    const reach = row?.lastElementChild;
+    expect(reach?.getAttribute("data-role")).toBe("in-reach");
+    expect(reach?.parentElement).toBe(row);
+  });
 });
 
 // ===========================================

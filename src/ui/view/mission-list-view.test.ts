@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { campaignOnDay, missionAt } from "./mission-fixtures.test-helper";
+import type { MissionPresentationCatalogue } from "../model/mission-presentation";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
+import { MISSION_PRESENTATION } from "../service/missions/mission-presentation";
 import {
   MissionListView,
   missionsInRegion,
@@ -283,5 +285,35 @@ describe("sortByExpiry", () => {
       "mission-0",
       "mission-3",
     ]);
+  });
+});
+
+describe("MissionListView marks each type with its MISSION_PRESENTATION glyph (ADR 0013 §2.3)", () => {
+  it("draws the glyph the mission's type presents", () => {
+    document.body.innerHTML = "";
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    // A glyph no shipped type uses, so only the injected table can draw it.
+    const presentations: MissionPresentationCatalogue = {
+      ...MISSION_PRESENTATION,
+      "infestation-clearance": {
+        ...MISSION_PRESENTATION["infestation-clearance"],
+        icon: "radar",
+      },
+    };
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES, presentations },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
+    );
+    view.mount(root);
+    view.update(
+      campaignOnDay(4, [missionAt("mission-1", "cairo", 6, 2)]),
+      NONE,
+    );
+    const glyph = root.querySelector<HTMLElement>(
+      '[data-mission-id="mission-1"] [data-field="type"]',
+    );
+    expect(glyph?.style.getPropertyValue("--icon")).toContain("radar");
+    expect(glyph?.title).toBe("Infestation Clearance");
   });
 });

@@ -833,6 +833,11 @@ describe("ObjectiveTrackerView on a defence (#1175)", () => {
     status: "open",
     ...overrides,
   });
+  /** The HUD hands the tracker its readings keyed by objective id. */
+  const readings = (
+    overrides: Partial<DefenceProgress> = {},
+  ): ReadonlyMap<string, DefenceProgress> =>
+    new Map([[DEFENCE.id, progress(overrides)]]);
   const row = (): HTMLElement | null =>
     root.querySelector<HTMLElement>('[data-objective-id="objective-d"]');
   const detail = (): string =>
@@ -841,7 +846,7 @@ describe("ObjectiveTrackerView on a defence (#1175)", () => {
   it("names the installation, counts generators and waves, and never shows a unit id", () => {
     const view = new ObjectiveTrackerView();
     view.mount(root);
-    view.update([DEFENCE], [], undefined, progress());
+    view.update([DEFENCE], [], undefined, readings());
     expect(row()?.textContent).toContain("Defend the sensor array");
     expect(row()?.dataset.status).toBe("open");
     expect(row()?.dataset.failed).toBe("false");
@@ -853,7 +858,7 @@ describe("ObjectiveTrackerView on a defence (#1175)", () => {
   it("counts the bugs left only once the last wave is in", () => {
     const view = new ObjectiveTrackerView();
     view.mount(root);
-    view.update([DEFENCE], [], undefined, progress({ wave: 5, bugsLeft: 1 }));
+    view.update([DEFENCE], [], undefined, readings({ wave: 5, bugsLeft: 1 }));
     expect(detail()).toBe("2 / 3 generators · wave 5 / 5 · 1 bug left");
   });
 
@@ -864,7 +869,7 @@ describe("ObjectiveTrackerView on a defence (#1175)", () => {
       [{ ...DEFENCE, complete: true }],
       [],
       undefined,
-      progress({ wave: 5, bugsLeft: 0, status: "complete" }),
+      readings({ wave: 5, bugsLeft: 0, status: "complete" }),
     );
     expect(row()?.textContent).toContain("Held the sensor array");
     expect(field("objective-summary")?.textContent).toContain(
@@ -874,7 +879,7 @@ describe("ObjectiveTrackerView on a defence (#1175)", () => {
       [{ ...DEFENCE, failed: true }],
       [],
       undefined,
-      progress({ standing: 0, status: "failed" }),
+      readings({ standing: 0, status: "failed" }),
     );
     expect(row()?.textContent).toContain("Lost the sensor array");
     expect(row()?.dataset.failed).toBe("true");

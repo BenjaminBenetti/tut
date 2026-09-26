@@ -2,6 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
+import type { MissionPresentationCatalogue } from "../model/mission-presentation";
+import { MISSION_PRESENTATION } from "../service/missions/mission-presentation";
 import { MissionDetailsView } from "./mission-details-view";
 import { campaignOnDay, missionAt } from "./mission-fixtures.test-helper";
 
@@ -128,5 +130,51 @@ describe("MissionDetailsView on a defence (#1175)", () => {
     view.update(campaignOnDay(4, [base]), base);
     expect(field("installation")?.hidden).toBe(true);
     expect(field("waves")?.hidden).toBe(true);
+  });
+});
+
+describe("MissionDetailsView briefs through MISSION_PRESENTATION (ADR 0013 §2.3)", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("builds a slot per declared field and fills what the mission's type answers", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const briefingRows = vi.fn(() => [
+      { field: "hives", label: "Hive count", value: "3 hives" },
+    ]);
+    // A field no shipped type declares, so only the injected table can
+    // put it in the grid.
+    const presentations: MissionPresentationCatalogue = {
+      ...MISSION_PRESENTATION,
+      "infestation-clearance": {
+        ...MISSION_PRESENTATION["infestation-clearance"],
+        briefingFields: [{ field: "hives", label: "Hives" }],
+        briefingRows,
+      },
+    };
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES, presentations },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const cell = (name: string): HTMLElement | null =>
+      root.querySelector<HTMLElement>(`[data-field="detail-${name}"]`);
+    expect(cell("hives")).not.toBeNull();
+
+    const mission = missionAt("mission-1", "cairo", 7, 4);
+    const state = campaignOnDay(4, [mission]);
+    view.update(state, mission);
+    expect(briefingRows).toHaveBeenCalledWith(mission, { state });
+    expect(cell("hives")?.textContent).toBe("3 hives");
+    expect(cell("hives")?.hidden).toBe(false);
+    expect(cell("hives")?.previousElementSibling?.textContent).toBe(
+      "Hive count",
+    );
+    // The shipped type's own slots stay, empty and hidden, for a type
+    // that does not fill them.
+    expect(cell("installation")?.hidden).toBe(true);
+    expect(cell("installation")?.textContent).toBe("");
   });
 });

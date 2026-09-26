@@ -1,4 +1,3 @@
-import { INSTALLATION_SITES } from "../../content/data/installation-sites";
 import type { GameState } from "../../save/model/game-state";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { CommandError } from "../../core/model/command-error";
@@ -9,8 +8,10 @@ import {
   tacticalCause,
 } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { ObjectivePresentationCatalogue } from "../model/objective-presentation";
 import type { ChargeRegister } from "./charge-register";
 import { chargeRegisterFor } from "./charge-register";
+import { OBJECTIVE_PRESENTATION } from "./objectives/objective-presentation";
 
 // ===========================================
 // Types
@@ -37,12 +38,15 @@ export interface TacticalNames {
    */
   unit(id: string): string;
   /**
-   * An objective, named by its **ordinal** — "spawner 2".
+   * An objective, named the way its kind's presentation names it:
+   * a spawner by its **ordinal** — "spawner 2" — and a defence by what
+   * it holds — "the sensor array" (#1175).
    *
-   * By ordinal and not by any name of its own, because that is what the
-   * objective tracker says (#949): `Destroy spawner ${index + 1}`,
-   * counted in `mission.objectives`. A refusal that named the same nest
-   * any other way would contradict the panel next to it.
+   * A spawner goes by ordinal and not by any name of its own, because
+   * that is what the objective tracker says (#949): `Destroy spawner
+   * ${index + 1}`, counted in `mission.objectives`. The tracker builds
+   * its label on the same `name`, so a refusal can never contradict the
+   * panel next to it.
    */
   objective(id: string): string;
   /**
@@ -116,21 +120,31 @@ const ANONYMOUS = {
  * @param mission - The mission in progress, for unit and objective names.
  * @param campaign - The campaign, for the roster and the map. Optional:
  *   a tactical screen without one still resolves everything in-mission.
+ * @param presentations - How each objective kind is named; the shipped
+ *   table by default.
  * @returns A resolver for every id a refusal can carry.
  */
 export function namesFor(
   mission: TacticalState | undefined,
   campaign?: GameState,
+  presentations: ObjectivePresentationCatalogue = OBJECTIVE_PRESENTATION,
 ): TacticalNames {
   const units = new Map((mission?.units ?? []).map((unit) => [unit.id, unit]));
   const objectives = mission?.objectives ?? [];
   const spawners = new Set((mission?.spawners ?? []).map((nest) => nest.id));
-  /** The ordinal of the objective tracking `id` as its target, or -1. */
+  /** The index of the objective tracking `id` as its target, or -1. */
   const trackedAs = (id: string): number =>
     objectives.findIndex(
       (objective) =>
-        objective.kind !== "defend-generators" && objective.targetId === id,
+        presentations[objective.kind].trackedId?.(objective) === id,
     );
+  /** The objective at `index` by its kind's name, or the anonymous form. */
+  const nameAt = (index: number): string => {
+    const objective = objectives[index];
+    return objective === undefined
+      ? ANONYMOUS.objective
+      : presentations[objective.kind].name(objective, index + 1);
+  };
   const nameUnit = (id: string): string => {
     const unit = units.get(id);
     if (!unit) {
@@ -148,15 +162,11 @@ export function namesFor(
   };
   return {
     unit: nameUnit,
-    // A defence is named for what it holds (#1175); a spawner objective
-    // by its ordinal, as the tracker shows it.
-    objective: (id) => {
-      const objective = objectives.find((candidate) => candidate.id === id);
-      return objective?.kind === "defend-generators"
-        ? `the ${INSTALLATION_SITES[objective.installation].name.toLowerCase()}`
-        : ordinalOf(objectives.findIndex((candidate) => candidate.id === id));
-    },
-    spawner: (id) => ordinalOf(trackedAs(id)),
+    // Each kind names its own (#1175): a defence for what it holds, a
+    // spawner objective by its ordinal, as the tracker shows it.
+    objective: (id) =>
+      nameAt(objectives.findIndex((candidate) => candidate.id === id)),
+    spawner: (id) => nameAt(trackedAs(id)),
     // Units first: they are the common target and the id sets do not
     // overlap, since the mission issues both from one generator. Then
     // anything an objective tracks, by that objective's ordinal -- the
@@ -169,7 +179,7 @@ export function namesFor(
       }
       const tracked = trackedAs(id);
       if (tracked >= 0) {
-        return ordinalOf(tracked);
+        return nameAt(tracked);
       }
       return spawners.has(id) ? ANONYMOUS.spawner : ANONYMOUS.unit;
     },
@@ -340,11 +350,6 @@ export function describeRefusal(
 export function refusalText(error: CommandError, names: TacticalNames): string {
   const cause = tacticalCause(error);
   return cause === undefined ? error.message : describeRefusal(cause, names);
-}
-
-/** "spawner 2" from an index, or the anonymous form when there is none. */
-function ordinalOf(index: number): string {
-  return index < 0 ? ANONYMOUS.objective : `spawner ${String(index + 1)}`;
 }
 
 /** The move rejection's own words, taken from the shared text. */

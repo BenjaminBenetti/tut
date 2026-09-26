@@ -1,0 +1,213 @@
+import { describe, expect, it, vi } from "vitest";
+
+import type { MissionTypeId } from "../../../content/model/mission-type-id";
+import { MISSION_TYPE_IDS } from "../../../content/model/mission-type-id";
+import type { Mission } from "../../../overworld/model/mission";
+import type { MissionResult } from "../../../overworld/model/mission-result";
+import { ICON_MANIFEST } from "../../data/icon-manifest";
+import type {
+  MissionPresentation,
+  MissionPresentationCatalogue,
+} from "../../model/mission-presentation";
+import {
+  campaignOnDay,
+  missionAt,
+} from "../../view/mission-fixtures.test-helper";
+import {
+  MISSION_PRESENTATION,
+  briefingFieldsOf,
+  debriefTaglineFor,
+} from "./mission-presentation";
+
+// ===========================================
+// Fixtures
+// ===========================================
+
+const CLEARANCE = missionAt("mission-1", "cairo", 7, 4);
+
+const DEFENCE: Mission = {
+  ...CLEARANCE,
+  id: "mission-2",
+  typeId: "defend-installation",
+  defence: {
+    installation: "sensor-array",
+    deployableId: "deployable-1",
+    generators: 2,
+    waves: 3,
+  },
+};
+
+/**
+ * One offer per type, carrying the type's payload. Keyed by the union,
+ * so a new type cannot join the table without a fixture here.
+ */
+const OFFERS: Readonly<Record<MissionTypeId, Mission>> = {
+  "infestation-clearance": CLEARANCE,
+  "defend-installation": DEFENCE,
+};
+
+const CTX = { state: campaignOnDay(4, [CLEARANCE, DEFENCE]) };
+
+const RESULT: MissionResult = {
+  missionId: "mission-2",
+  cityId: "cairo",
+  outcome: "won",
+  squadCasualties: [],
+  squadsWiped: [],
+  mechsDestroyed: [],
+  mechDamage: [],
+  creditsAwarded: 0,
+  techPointsAwarded: 0,
+  infestationDelta: 0,
+};
+
+/** A presentation with only what a test needs; the rest is inert. */
+function stub(
+  typeId: MissionTypeId,
+  overrides: Partial<MissionPresentation> = {},
+): MissionPresentation {
+  return {
+    typeId,
+    icon: "mission",
+    briefingFields: [],
+    briefingRows: () => [],
+    ...overrides,
+  };
+}
+
+// ===========================================
+// MISSION_PRESENTATION
+// ===========================================
+
+describe("MISSION_PRESENTATION", () => {
+  it("has one entry per mission type, each keyed by its own id", () => {
+    expect(Object.keys(MISSION_PRESENTATION).sort()).toEqual(
+      [...MISSION_TYPE_IDS].sort(),
+    );
+    for (const typeId of MISSION_TYPE_IDS) {
+      expect(MISSION_PRESENTATION[typeId].typeId).toBe(typeId);
+    }
+  });
+
+  it("gives every type a registered glyph of its own, so the list tells them apart", () => {
+    const icons = MISSION_TYPE_IDS.map((id) => MISSION_PRESENTATION[id].icon);
+    for (const icon of icons) {
+      expect(Object.keys(ICON_MANIFEST)).toContain(icon);
+    }
+    expect(new Set(icons).size).toBe(MISSION_TYPE_IDS.length);
+  });
+
+  it("fills only fields its type declares, in their declared order", () => {
+    for (const typeId of MISSION_TYPE_IDS) {
+      const presentation = MISSION_PRESENTATION[typeId];
+      const declared = presentation.briefingFields.map((f) => f.field);
+      const filled = presentation
+        .briefingRows(OFFERS[typeId], CTX)
+        .map((row) => row.field);
+      expect(declared.filter((field) => filled.includes(field))).toEqual(
+        filled,
+      );
+    }
+  });
+
+  it("briefs a defence's installation and waves, and nothing without its payload (#1175)", () => {
+    const defend = MISSION_PRESENTATION["defend-installation"];
+    expect(defend.briefingRows(DEFENCE, CTX)).toEqual([
+      {
+        field: "installation",
+        label: "Installation",
+        value: "Sensor array · 2 generators",
+      },
+      { field: "waves", label: "Bug waves", value: "3 timed waves" },
+    ]);
+    const { defence: _dropped, ...bare } = DEFENCE;
+    expect(defend.briefingRows(bare, CTX)).toEqual([]);
+    expect(
+      MISSION_PRESENTATION["infestation-clearance"].briefingRows(
+        CLEARANCE,
+        CTX,
+      ),
+    ).toEqual([]);
+  });
+});
+
+// ===========================================
+// briefingFieldsOf
+// ===========================================
+
+describe("briefingFieldsOf", () => {
+  it("lists every type's fields in type order, a shared field once at its first place", () => {
+    const waves = { field: "waves", label: "Bug waves" };
+    const catalogue: MissionPresentationCatalogue = {
+      "infestation-clearance": stub("infestation-clearance", {
+        briefingFields: [{ field: "hives", label: "Hives" }, waves],
+      }),
+      "defend-installation": stub("defend-installation", {
+        briefingFields: [
+          { field: "installation", label: "Installation" },
+          waves,
+        ],
+      }),
+    };
+    expect(briefingFieldsOf(catalogue).map((f) => f.field)).toEqual([
+      "hives",
+      "waves",
+      "installation",
+    ]);
+  });
+
+  it("gives the shipped briefing the defence's two rows", () => {
+    expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
+      { field: "installation", label: "Installation" },
+      { field: "waves", label: "Bug waves" },
+    ]);
+  });
+});
+
+// ===========================================
+// debriefTaglineFor
+// ===========================================
+
+describe("debriefTaglineFor", () => {
+  it("says what became of a defended installation, and leaves a clearance to its outcome's line", () => {
+    expect(
+      debriefTaglineFor(
+        { ...RESULT, defence: { installation: "sensor-array", held: true } },
+        CTX,
+      ),
+    ).toBe(
+      "The sensor array held through every wave. The force is coming home with full rewards.",
+    );
+    expect(debriefTaglineFor(RESULT, CTX)).toBeUndefined();
+  });
+
+  it("asks each type in id order with the context, and takes the first answer", () => {
+    const first = vi.fn(() => undefined);
+    const second = vi.fn(() => "second");
+    const catalogue: MissionPresentationCatalogue = {
+      "infestation-clearance": stub("infestation-clearance", {
+        debriefTagline: first,
+      }),
+      "defend-installation": stub("defend-installation", {
+        debriefTagline: second,
+      }),
+    };
+    expect(debriefTaglineFor(RESULT, CTX, catalogue)).toBe("second");
+    expect(first).toHaveBeenCalledWith(RESULT, CTX);
+    expect(second).toHaveBeenCalledWith(RESULT, CTX);
+
+    const answered = vi.fn(() => "first");
+    const skipped = vi.fn(() => "second");
+    expect(
+      debriefTaglineFor(RESULT, CTX, {
+        "infestation-clearance": stub("infestation-clearance", {
+          debriefTagline: answered,
+        }),
+        "defend-installation": stub("defend-installation", {
+          debriefTagline: skipped,
+        }),
+      }),
+    ).toBe("first");
+    expect(skipped).not.toHaveBeenCalled();
+  });
+});

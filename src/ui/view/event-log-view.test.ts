@@ -124,8 +124,8 @@ describe("EventLogView", () => {
     const state = {
       ...mission(),
       objectives: [
-        { id: "objective-1", targetId: "spawner-1" },
-        { id: "objective-2", targetId: "spawner-2" },
+        { id: "objective-1", kind: "destroy-spawner", targetId: "spawner-1" },
+        { id: "objective-2", kind: "destroy-spawner", targetId: "spawner-2" },
       ],
     } as unknown as TacticalState;
     view.append(
@@ -331,8 +331,18 @@ describe("EventLogView naming non-unit things", () => {
         { id: "spawner-loose", hp: 20, destroyed: false },
       ],
       objectives: [
-        { id: "objective-a", targetId: "spawner-a", complete: false },
-        { id: "objective-b", targetId: "spawner-b", complete: true },
+        {
+          id: "objective-a",
+          kind: "destroy-spawner",
+          targetId: "spawner-a",
+          complete: false,
+        },
+        {
+          id: "objective-b",
+          kind: "destroy-spawner",
+          targetId: "spawner-b",
+          complete: true,
+        },
       ],
     } as unknown as TacticalState;
   }

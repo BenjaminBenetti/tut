@@ -7,7 +7,9 @@ import {
 } from "../../tactical/model/tactical-error";
 import type { TacticalNames } from "./tactical-error-text";
 import { describeRefusal, namesFor } from "./tactical-error-text";
+import type { ObjectivePresentationCatalogue } from "../model/objective-presentation";
 import { chargeRegisterFor } from "./charge-register";
+import { OBJECTIVE_PRESENTATION } from "./objectives/objective-presentation";
 
 /**
  * A sentinel in every entity id a refusal can carry. If it reaches the
@@ -255,7 +257,9 @@ describe("namesFor", () => {
       {
         ...twoRifleSquads.mission,
         spawners: [{ id: "spawner-7" }],
-        objectives: [{ id: "objective-1", targetId: "spawner-7" }],
+        objectives: [
+          { id: "objective-1", kind: "destroy-spawner", targetId: "spawner-7" },
+        ],
       } as unknown as Parameters<typeof namesFor>[0],
       twoRifleSquads.campaign,
     );
@@ -300,5 +304,40 @@ describe("namesFor on a defence (#1175)", () => {
     ).toBe(
       "The defensive battery is held by standing your ground, not by working it",
     );
+  });
+});
+
+describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2.3)", () => {
+  it("asks each kind for its name and for the id it tracks", () => {
+    // Names no shipped kind would give, so only the injected table can.
+    const presentations: ObjectivePresentationCatalogue = {
+      "destroy-spawner": {
+        ...OBJECTIVE_PRESENTATION["destroy-spawner"],
+        name: (_objective, ordinal) => `probe nest #${ordinal}`,
+        trackedId: () => "spawner-7",
+      },
+      "defend-generators": {
+        ...OBJECTIVE_PRESENTATION["defend-generators"],
+        name: (_objective, ordinal) => `holdout #${ordinal}`,
+      },
+    };
+    const names = namesFor(
+      {
+        units: [],
+        spawners: [{ id: "spawner-7" }],
+        objectives: [
+          { id: "objective-d", kind: "defend-generators" },
+          { id: "objective-s", kind: "destroy-spawner", targetId: "other" },
+        ],
+      } as unknown as Parameters<typeof namesFor>[0],
+      undefined,
+      presentations,
+    );
+    expect(names.objective("objective-d")).toBe("holdout #1");
+    expect(names.objective("objective-s")).toBe("probe nest #2");
+    // Tracked by what the kind says it tracks, not by `targetId`.
+    expect(names.spawner("spawner-7")).toBe("probe nest #2");
+    expect(names.target("spawner-7")).toBe("probe nest #2");
+    expect(names.objective("objective-404")).toBe("that objective");
   });
 });

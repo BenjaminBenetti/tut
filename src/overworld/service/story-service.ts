@@ -215,11 +215,25 @@ export function nextActOf(act: ActId): ActId | undefined {
 
 /**
  * Whether `act` exists in this build (arc §13): the story mission that
- * ends it is defined in the rules. An act whose ending is not built yet
- * is never entered; the spine ends in victory before it.
+ * ends it is defined in the rules, **and every earlier act exists**. An
+ * act that does not exist is never entered; the spine ends in victory
+ * before it.
+ *
+ * Existence is contiguous because story missions land out of order:
+ * Launch Window (Act III's ending) can be built while Intact Pod (Act
+ * II's) is not. Act III does not exist then, so the campaign can never
+ * reach it through a gap, and "the last act that exists" is always the
+ * end of an unbroken run from Act I.
+ *
+ * ```
+ *   built:  live-specimen  ·  (intact-pod)  ·  launch-window  ·  (spore-platform)
+ *   exists: act-1 ✓           act-2 ✗          act-3 ✗            finale ✗
+ * ```
  */
 export function actExists(act: ActId, deps: StoryDeps): boolean {
-  return deps.rules[deps.spine[act].endedBy] !== undefined;
+  return ACT_IDS.slice(0, ACT_IDS.indexOf(act) + 1).every(
+    (upTo) => deps.rules[deps.spine[upTo].endedBy] !== undefined,
+  );
 }
 
 /**

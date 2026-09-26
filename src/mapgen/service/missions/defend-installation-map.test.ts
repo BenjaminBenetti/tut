@@ -46,6 +46,27 @@ describe("DEFEND_INSTALLATION_MAP_RULE", () => {
     });
   });
 
+  it("raises the compound a story facility borrows: the tracking array stands in the sensor array's yard", () => {
+    const uplink = defence(true);
+    expect(
+      DEFEND_INSTALLATION_MAP_RULE.recipe(
+        {
+          ...uplink,
+          defence: {
+            installation: "tracking-array",
+            generators: 2,
+            waves: 5,
+          },
+        },
+        DEFEND_INSTALLATION,
+      ),
+    ).toEqual({
+      archetype: "settlement",
+      extraHooks: [{ kind: HookKinds.GENERATOR, count: 2 }],
+      site: "sensor-array",
+    });
+  });
+
   it("falls back to a plain settlement for an offer without a defence", () => {
     expect(
       DEFEND_INSTALLATION_MAP_RULE.recipe(defence(false), DEFEND_INSTALLATION),

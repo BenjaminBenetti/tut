@@ -77,6 +77,30 @@ describe("MapgenPreviewScreen", () => {
     expect(screen.getState().seed).toBe("terra-03");
   });
 
+  it("offers only the authored installation compounds, never a story facility that borrows one (#1179)", () => {
+    const root = document.createElement("div");
+    new MapgenPreviewScreen(
+      root,
+      {
+        seed: "s",
+        biome: "temperate",
+        settlement: "town",
+        size: "small",
+        archetype: "settlement",
+        slopeShare: 1,
+      },
+      { onGenerate: vi.fn(), onLevelChange: vi.fn() },
+    );
+    const control = root.querySelector<HTMLSelectElement>("#site")!;
+    expect([...control.options].map((o) => o.value)).toEqual([
+      "",
+      "sensor-array",
+      "repellent-dispersal",
+      "defensive-battery",
+      "bank",
+    ]);
+  });
+
   it("offers every archetype and generates the one picked (#1179)", () => {
     const onGenerate = vi.fn();
     const root = document.createElement("div");

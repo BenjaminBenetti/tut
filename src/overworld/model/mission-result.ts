@@ -1,5 +1,5 @@
 import type { BugSpeciesId } from "../../content/model/bug-species-id";
-import type { DeployableTypeId } from "../../content/model/deployable-type-id";
+import type { InstallationSiteId } from "../../content/model/installation-site-id";
 import type { MechId } from "../../roster/model/mech";
 import type { PartId } from "../../roster/model/mech-part";
 import type { SquadId } from "../../roster/model/squad";
@@ -220,7 +220,8 @@ export interface ObjectiveResult {
 
 /** How a defend-installation mission left its installation (#1175). */
 export interface MissionResultDefence {
-  readonly installation: DeployableTypeId;
+  /** The facility that was defended: a built installation or a story facility. */
+  readonly installation: InstallationSiteId;
   readonly held: boolean;
 }
 

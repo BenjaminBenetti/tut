@@ -43,6 +43,7 @@ import { MISSION_OFFER_RULES } from "../../overworld/service/missions/mission-of
 import { STORY_SPINE } from "../../overworld/data/story-spine";
 import { campaignTechConditions } from "../../overworld/service/campaign-tech-conditions";
 import { STORY_MISSION_RULES } from "../../overworld/service/story/story-mission-rules";
+import type { StoryDeps } from "../../overworld/service/story-service";
 import { onTechUnlocked } from "../../overworld/service/story-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
@@ -134,6 +135,14 @@ export interface GameCompositionDeps {
    * debug menu — and nothing else; absent means a production build.
    */
   readonly devTools?: boolean;
+  /**
+   * The story missions and the spine (ADR 0013 §2.5): the day tick pins
+   * from these rules and the launch handler resolves through them.
+   * Absent means the shipped `STORY_MISSION_RULES` and `STORY_SPINE`;
+   * tests pass fixture rules for the story missions not built yet, to
+   * reach an act the shipped build cannot.
+   */
+  readonly story?: StoryDeps;
 }
 
 /** Shipped content and tuning screens read to label and price things. */
@@ -277,7 +286,8 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     onUnlocked: onTechUnlocked,
     devTools: deps.devTools === true,
   });
-  const tickDeps = composeTickDeps(deps.debug);
+  const story = deps.story ?? SHIPPED_STORY;
+  const tickDeps = composeTickDeps(deps.debug, story);
   registerDeployableCommands(dispatcher, {
     catalogue: tickDeps.catalogue,
     transactionsFor: tickDeps.createTransactions,
@@ -354,7 +364,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     techPoints,
     consequences: MISSION_CONSEQUENCE_RULES,
     missionTuning: MISSION_TUNING,
-    story: { rules: STORY_MISSION_RULES, spine: STORY_SPINE },
+    story,
   });
   dispatcher.register(LAUNCH_MISSION, launch);
   registerStartMission(dispatcher, {
@@ -381,6 +391,16 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
 }
 
 // ===========================================
+// Constants
+// ===========================================
+
+/** The story the shipped game runs: the built story missions on the shipped spine. */
+const SHIPPED_STORY: StoryDeps = {
+  rules: STORY_MISSION_RULES,
+  spine: STORY_SPINE,
+};
+
+// ===========================================
 // Helpers
 // ===========================================
 
@@ -396,8 +416,11 @@ function techConditionsOf(state: GameState): TechConditions {
   return campaignTechConditions(state.overworld.progress);
 }
 
-/** The shipped content, tuning and services the day tick runs on. */
-function composeTickDeps(debug: CampaignDebugOptions | undefined): TickDeps {
+/** The shipped content, tuning and services the day tick runs on, pinning from `story`. */
+function composeTickDeps(
+  debug: CampaignDebugOptions | undefined,
+  story: StoryDeps,
+): TickDeps {
   return {
     catalogue: new DataDeployableTypeCatalogue(
       DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
@@ -410,7 +433,7 @@ function composeTickDeps(debug: CampaignDebugOptions | undefined): TickDeps {
     missionConsequences: MISSION_CONSEQUENCE_RULES,
     offerDecorators: MISSION_OFFER_DECORATORS,
     acts: ACTS,
-    storyMissions: STORY_MISSION_RULES,
+    storyMissions: story.rules,
     threatTuning: applyDebugThreat(THREAT_TUNING, debug),
     economyTuning: ECONOMY_TUNING,
     eventTypes: new DataEventTypeCatalogue(

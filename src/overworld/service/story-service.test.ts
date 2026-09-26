@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ACT_IDS } from "../../content/model/act-id";
 import type { CampaignFlagId } from "../../content/model/campaign-flag-id";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -36,6 +37,7 @@ import {
   pinContext,
   storyRulesOf,
 } from "./story/story-fixtures.test-helper";
+import { STORY_MISSION_RULES } from "./story/story-mission-rules";
 import type { StoryResolutionContext } from "./story-service";
 import {
   actExists,
@@ -141,6 +143,12 @@ const LIVE_SPECIMEN = fixtureStoryRule("live-specimen", { onWon: ADVANCE });
 /** The Act II gate, so Act II exists. */
 const INTACT_POD = fixtureStoryRule("intact-pod", {
   act: "act-2",
+  onWon: ADVANCE,
+});
+
+/** Act III's ending, so Act III can exist. */
+const LAUNCH_WINDOW = fixtureStoryRule("launch-window", {
+  act: "act-3",
   onWon: ADVANCE,
 });
 
@@ -330,7 +338,7 @@ describe("the spine", () => {
       act: "act-3",
       onWon: ADVANCE,
     });
-    const rules = storyRulesOf(INTACT_POD, launch);
+    const rules = storyRulesOf(LIVE_SPECIMEN, INTACT_POD, launch);
     const won = play(flagged([], {}, "act-2"), INTACT_POD, "won", rules);
     expect(won.state.progress.act).toBe("act-3");
     expect(won.state.hives).toEqual([]);
@@ -347,14 +355,58 @@ describe("the spine", () => {
     }
   });
 
-  it("says an act exists only when the mission that ends it is built", () => {
-    const deps = { rules: storyRulesOf(INTACT_POD), spine: STORY_SPINE };
-    expect(actExists("act-2", deps)).toBe(true);
-    expect(actExists("act-1", deps)).toBe(false);
-    expect(actExists("finale", deps)).toBe(false);
+  it("says an act exists only when its ending and every earlier act's are built", () => {
+    const exists = (...rules: readonly StoryMissionRule[]) => {
+      const deps = { rules: storyRulesOf(...rules), spine: STORY_SPINE };
+      return ACT_IDS.filter((act) => actExists(act, deps));
+    };
+    expect(exists()).toEqual([]);
+    expect(exists(LIVE_SPECIMEN)).toEqual(["act-1"]);
+    expect(exists(LIVE_SPECIMEN, INTACT_POD)).toEqual(["act-1", "act-2"]);
+    // A gap ends the run: Act III's ending is built, Act II's is not.
+    expect(exists(LIVE_SPECIMEN, LAUNCH_WINDOW)).toEqual(["act-1"]);
+    expect(exists(INTACT_POD, LAUNCH_WINDOW, SPORE_PLATFORM)).toEqual([]);
+    expect(
+      exists(LIVE_SPECIMEN, INTACT_POD, LAUNCH_WINDOW, SPORE_PLATFORM),
+    ).toEqual(["act-1", "act-2", "act-3", "finale"]);
     expect(nextActOf("act-1")).toBe("act-2");
     expect(nextActOf("act-3")).toBe("finale");
     expect(nextActOf("finale")).toBeUndefined();
+  });
+
+  it("keeps a Live Specimen win the campaign's victory while Intact Pod is unbuilt, whatever Act III holds", () => {
+    // Launch Window and Uplink ship in the table; Intact Pod does not.
+    const rules: StoryMissionRules = {
+      ...STORY_MISSION_RULES,
+      "live-specimen": LIVE_SPECIMEN,
+    };
+    expect(rules["launch-window"]).toBeDefined();
+    expect(rules["intact-pod"]).toBeUndefined();
+    const won = play(flagged([]), LIVE_SPECIMEN, "won", rules);
+    expect(won.state.progress.act).toBe("act-1");
+    expect(won.state.progress.flags).toEqual(["campaign-won"]);
+    expect(won.events.map((event) => event.type)).toEqual([CAMPAIGN_FLAG_SET]);
+    expect(evaluateOutcome(campaignOf(won.state))).toMatchObject({
+      kind: "victory",
+      cause: "story",
+    });
+  });
+
+  it("never enters an act through a gap: Act III needs Act I's ending too", () => {
+    // A campaign already in Act II (a debug start) with Act II's and
+    // Act III's endings built but not Act I's: Act III does not exist,
+    // so the Intact Pod win is the last thing the story holds.
+    const rules = storyRulesOf(INTACT_POD, LAUNCH_WINDOW);
+    const won = play(flagged([], {}, "act-2"), INTACT_POD, "won", rules);
+    expect(won.state.progress.act).toBe("act-2");
+    expect(won.state.progress.flags).toEqual(["campaign-won"]);
+  });
+
+  it("enters Act III from Act II once every act up to it is built", () => {
+    const rules = storyRulesOf(LIVE_SPECIMEN, INTACT_POD, LAUNCH_WINDOW);
+    const won = play(flagged([], {}, "act-2"), INTACT_POD, "won", rules);
+    expect(won.state.progress).toMatchObject({ act: "act-3", flags: [] });
+    expect(evaluateOutcome(campaignOf(won.state))).toBeUndefined();
   });
 
   it("is deterministic: the same win on the same state gives the same campaign", () => {

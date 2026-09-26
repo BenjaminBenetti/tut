@@ -97,6 +97,8 @@ describe("MapgenPreviewScreen", () => {
       "settlement",
       "crash-site",
       "hive-cavern",
+      "spore-platform-hull",
+      "spore-platform-core",
     ]);
     expect(control.value).toBe("settlement");
     expect(control.closest("label")?.textContent).toContain("Crash site");

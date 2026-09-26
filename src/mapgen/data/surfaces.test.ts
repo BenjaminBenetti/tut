@@ -28,10 +28,27 @@ describe("surface definitions", () => {
     expect(bedrock.isInterior).toBe(false);
   });
 
-  it("count exactly water and bedrock as impassable ground", () => {
+  it("count exactly water, bedrock and void as impassable ground", () => {
     expect([...IMPASSABLE_GROUND_SURFACES].sort()).toEqual(
-      [SurfaceIds.BEDROCK, SurfaceIds.WATER].sort(),
+      [SurfaceIds.BEDROCK, SurfaceIds.VOID, SurfaceIds.WATER].sort(),
     );
+  });
+
+  it("admit nobody on the void past a spore platform's edge (#1179)", () => {
+    const space = registry.get(SurfaceIds.VOID);
+    expect(space.defaultPass).toBe(PassMask.NONE);
+    expect(space.isInterior).toBe(false);
+  });
+
+  it("let everyone walk the spore platform's hull plates (#1179)", () => {
+    for (const id of [
+      SurfaceIds.HULL_PLATE,
+      SurfaceIds.HULL_PLATE_DARK,
+      SurfaceIds.HULL_RIM,
+    ]) {
+      expect(registry.get(id).defaultPass, id).toBe(PassMask.ALL);
+      expect(registry.get(id).isInterior, id).toBe(false);
+    }
   });
 
   it("restrict interiors and roofs to infantry", () => {

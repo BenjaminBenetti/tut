@@ -99,6 +99,7 @@ import { NaturalMaterialTransitions } from "../service/natural-material-transiti
 import {
   type PARAMETERISED_TERRAIN_MODELS,
   surfaceModel,
+  UNDRAWN_SURFACES,
 } from "../data/map-model-table";
 import {
   TerrainSlopeModelFactory,
@@ -1237,6 +1238,8 @@ export class TacticalMapView implements Disposable, TilePicker {
     const slabs = new Map<string, Batch>();
     const foundations = new Map<string, Batch>();
     for (const tile of this.map.tiles) {
+      // Space past a spore platform's edge is never drawn (#1179).
+      if (UNDRAWN_SURFACES.has(tile.surface)) continue;
       const colour =
         this.surfaceColours[tile.surface] ?? FALLBACK_SURFACE_COLOUR;
       const top = tileTop(tile.y);

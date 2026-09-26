@@ -24,6 +24,7 @@ import { footprintSizeOf } from "../../tactical/service/footprint-service";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { GhostController } from "../../graphics/service/ghost-controller";
 import { SceneService } from "../../graphics/service/scene-service";
+import { backdropFor } from "../../graphics/service/map-backdrop";
 import { TacticalAnimationQueue } from "../../graphics/service/tactical-animation-queue";
 import {
   TacticalOverlays,
@@ -223,6 +224,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
         builder.turretUpdatable,
       ],
     });
+    // A spore platform is fought in orbit, over Earth's limb (#1179).
+    scene.setBackdrop(backdropFor(mission.map));
     input.attach(container);
     input.setLocked(this.inputLocked);
     // The height cut is the scene's, not the input controller's, so the

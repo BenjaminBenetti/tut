@@ -72,6 +72,13 @@ export const SURFACE_COLOURS: Readonly<Record<string, number>> = {
   // The hive cavern's surrounding rock (#1179): `env-roof`, a shade under
   // the floor's `env-rock` so the walls read apart from what is walked.
   bedrock: 0x55524c,
+  // The spore platform (#1179): space is `ui-bg`, the scene's clear colour,
+  // and never drawn; plates are the bugs' own chitin, walnut and chestnut,
+  // with `bug-chitin-tan` only on the rims.
+  void: 0x0b0d12,
+  "hull-plate": 0x8b5d36,
+  "hull-plate-dark": 0x5c3b25,
+  "hull-rim": 0xb88b58,
 };
 
 /** Loud magenta so an unknown surface is impossible to miss. */
@@ -154,6 +161,15 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   // Something of ours that was lost: scorched gunmetal orange, the burnt
   // edge of TDF amber, apart from the generator's clean amber (arc §6.6).
   [HookKinds.WRECK]: 0xc2643a,
+  // The spore platform (#1179): the docking ring's iris and the core seed
+  // glow `bug-bio-magenta` like the hive's heart; the hatch to stage 2 is
+  // spore violet; the Sovereign's dais is `bug-horn` #DDC39B, the crown
+  // it waits under, and its guards' posts `bug-chitin-light`.
+  [HookKinds.DOCKING_RING]: 0xe23dff,
+  [HookKinds.PLATFORM_EXIT]: 0xc15bff,
+  [HookKinds.PLATFORM_CORE]: 0xe23dff,
+  [HookKinds.SOVEREIGN_DAIS]: 0xddc39b,
+  [HookKinds.GUARD_POST]: 0xc6a275,
 };
 
 /** Warning yellow for hook kinds the palette does not know. */

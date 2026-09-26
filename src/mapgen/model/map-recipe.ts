@@ -23,10 +23,20 @@ import type { PassMask } from "./pass-mask";
  * - `hive-cavern`: the Hive Assault board (#1179), an open-topped chain
  *   of chambers sunk into impassable rock, deployed at the mouth, with
  *   the hive core in the deepest chamber (`docs/design/mapgen-pipeline.md`).
- *
- * The space platform follows the same route when its turn comes.
+ * - `spore-platform-hull`: the finale's first stage (#1179), a deck of
+ *   terraced hull plates hanging in space, with the drop ship docked at
+ *   its prow, the docking ring on one flank and the hatch down to the
+ *   core at the far end.
+ * - `spore-platform-core`: the finale's second stage (#1179), a round
+ *   chamber of terraces reached along one narrow causeway, with the core
+ *   seed behind the Sovereign's dais.
  */
-export type MapArchetype = "settlement" | "crash-site" | "hive-cavern";
+export type MapArchetype =
+  | "settlement"
+  | "crash-site"
+  | "hive-cavern"
+  | "spore-platform-hull"
+  | "spore-platform-core";
 
 /**
  * Every archetype, in a fixed order: what the parameter resolver accepts
@@ -36,6 +46,8 @@ export const MAP_ARCHETYPES: readonly MapArchetype[] = [
   "settlement",
   "crash-site",
   "hive-cavern",
+  "spore-platform-hull",
+  "spore-platform-core",
 ];
 
 /**

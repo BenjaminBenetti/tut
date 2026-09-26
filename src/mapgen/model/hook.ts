@@ -53,6 +53,35 @@ export const HookKinds = {
    * the squad strips the parts. Meta `{ footprint }`, the square's side.
    */
   WRECK: "wreck",
+  /**
+   * The spore platform's docking ring (#1179): exactly one, a level 5×5
+   * pad on the hull's flank, the iris the finale's first stage is fought
+   * over. Meta `{ footprint }`.
+   */
+  DOCKING_RING: "docking-ring",
+  /**
+   * Where the platform's first stage hands over to the second (#1179):
+   * exactly one level 4×4 hatch at the far end of the hull. Meta
+   * `{ footprint }`.
+   */
+  PLATFORM_EXIT: "platform-exit",
+  /**
+   * The platform's core seed (#1179): exactly one level 6×6 pad in the
+   * core chamber's arena, behind the Sovereign's dais. Meta
+   * `{ footprint }`.
+   */
+  PLATFORM_CORE: "platform-core",
+  /**
+   * The 4×4 dais in front of the core where the Sovereign stands (#1179):
+   * flush with the arena floor and the lane from the causeway, so a 4×4
+   * unit can walk onto it and off it. Meta `{ footprint }`.
+   */
+  SOVEREIGN_DAIS: "sovereign-dais",
+  /**
+   * A level 2×2 post flanking the Sovereign's dais where a guard waits
+   * (#1179). Meta `{ footprint, side }`, `side` being `west` or `east`.
+   */
+  GUARD_POST: "guard-post",
 } as const;
 
 /** Scalar metadata a hook or requirement may carry, e.g. `hatchRadius`. */

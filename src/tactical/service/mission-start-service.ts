@@ -100,6 +100,7 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *                                          (mechs on mech-passable ones first)
  *   map.hooks.objectives (tech-carcass) ──► carcasses, worth mapParams.techCarcass (#1171)
  *   map.hooks.extraction               ──► extraction tiles
+ *   mission.bugMix?                    ──► bugMix, the species the spawns roll
  *   setupRules[mission.typeId]         ──► the type's objectives, entities, schedules
  *                                          (a clearance's spawners, a defence's generators)
  *   options.garrisonTurrets            ──► garrison turrets on random clear tiles (#1155)
@@ -179,6 +180,9 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     seed,
     difficulty: mission.difficulty,
     threat: state.overworld.threat,
+    // The species mix frozen on the offer (ADR 0013 §2.6); an older
+    // offer has none and its spawns roll by hatch weight, as before.
+    ...(mission.bugMix === undefined ? {} : { bugMix: mission.bugMix }),
     map,
     units: placed.value.units,
     templates: placed.value.templates,

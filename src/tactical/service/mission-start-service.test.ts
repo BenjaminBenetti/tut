@@ -933,3 +933,67 @@ describe("startTacticalMission with injected setup rules (ADR 0013 §2.3)", () =
     expect(result).toEqual({ ok: false, error: refusal });
   });
 });
+
+describe("startTacticalMission with a species mix (ADR 0013 §2.6, #1179)", () => {
+  const MIX = { swarmer: 0.6, lurker: 0.25, brute: 0.05, spitter: 0.1 };
+
+  /** The clearance fixture, or its defence twin, with the offer's mix frozen on it. */
+  function mixed(typeId: Mission["typeId"]) {
+    const base = campaign();
+    const mission: Mission = {
+      ...base.mission,
+      typeId,
+      bugMix: MIX,
+      ...(typeId === "defend-installation"
+        ? {
+            defence: {
+              installation: "repellent-dispersal",
+              deployableId: "deployable-1",
+              generators: 4,
+              waves: 5,
+            },
+          }
+        : {}),
+    };
+    const state: GameState = {
+      ...base.state,
+      overworld: { ...base.state.overworld, missions: [mission] },
+    };
+    return { state, mission, deployment: base.deployment };
+  }
+
+  it("copies the offer's mix onto the mission, through each type's setup rule", () => {
+    for (const typeId of [
+      "infestation-clearance",
+      "defend-installation",
+    ] as const) {
+      const { state, mission, deployment } = mixed(typeId);
+      const tactical = unwrap(
+        startTacticalMission(state, mission.id, deployment, deps()),
+      ).activeMission;
+      expect([typeId, tactical?.bugMix]).toEqual([typeId, MIX]);
+    }
+  });
+
+  it("leaves an older offer's mission without one, and otherwise exactly as it was", () => {
+    const old = campaign();
+    const plain = unwrap(
+      startTacticalMission(old.state, old.mission.id, old.deployment, deps()),
+    ).activeMission;
+    if (!plain) throw new Error("no mission");
+    expect("bugMix" in plain).toBe(false);
+    const withMix = mixed("infestation-clearance");
+    const stamped = unwrap(
+      startTacticalMission(
+        withMix.state,
+        withMix.mission.id,
+        withMix.deployment,
+        deps(),
+      ),
+    ).activeMission;
+    if (!stamped) throw new Error("no mission");
+    const { bugMix, ...rest } = stamped;
+    expect(bugMix).toEqual(MIX);
+    expect(rest).toEqual(plain);
+  });
+});

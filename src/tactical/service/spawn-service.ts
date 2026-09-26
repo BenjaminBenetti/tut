@@ -1,3 +1,4 @@
+import type { SpeciesMix } from "../../bugs/model/species-mix";
 import type { Direction } from "../../core/model/direction";
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { Rng } from "../../core/model/rng";
@@ -29,7 +30,11 @@ import { bugUnit } from "./unit-factory";
 
 /** What spawning needs injected: the species it may hatch and the knobs. */
 export interface SpawnDeps {
-  /** Every species that may appear; weights below or at zero never do. */
+  /**
+   * Every species that may appear. A mission with a `bugMix` rolls the
+   * ones it names by its weights; otherwise each is rolled by its
+   * `hatchWeight`. A weight below or at zero never appears.
+   */
   readonly species: readonly SpawnSource[];
   readonly tuning: SpawnTuning;
 }
@@ -38,6 +43,12 @@ export interface SpawnDeps {
 interface Placement {
   readonly state: TacticalState;
   readonly unitIds: readonly UnitId[];
+}
+
+/** A species the roll may draw, with the weight it is drawn by. */
+interface Rollable {
+  readonly source: SpawnSource;
+  readonly weight: number;
 }
 
 // ===========================================
@@ -72,7 +83,8 @@ export function createEdgeWaveStep(deps: SpawnDeps): PhaseStep {
  *   for spawner in order:  destroyed ──► unchanged
  *                          timer − 1 > 0 ──► tick
  *                          otherwise ──► shuffle free hatch tiles, take hatchCount,
- *                                        one weighted species roll per bug,
+ *                                        one weighted species roll per bug
+ *                                        (by bugMix, else hatchWeight),
  *                                        BugsSpawned { source: "spawner" }, timer ← interval
  * ```
  *
@@ -288,8 +300,10 @@ export function waveSize(
 /**
  * Puts up to `count` bugs on free, infantry-passable tiles among the
  * candidates: the candidates are shuffled and the first `count` taken,
- * then each gets one species rolled by hatch weight. New units arrive
- * with no action points; their templates join the mission's if missing.
+ * then each gets one species rolled by `rollableSpecies` — the
+ * mission's species mix when it has one, hatch weight otherwise. New
+ * units arrive with no action points; their templates join the
+ * mission's if missing.
  *
  * A species with a footprint (#1130) needs its whole block to fit —
  * every tile standing, passable and free, the block unbroken by walls —
@@ -311,7 +325,7 @@ function placeBugs(
   species: readonly SpawnSource[],
   facingOf: (tile: Tile) => Direction,
 ): Placement {
-  const weighted = species.filter((source) => source.hatchWeight > 0);
+  const weighted = rollableSpecies(species, mission.bugMix);
   if (count <= 0 || weighted.length === 0) {
     return { state: mission, unitIds: [] };
   }
@@ -337,7 +351,7 @@ function placeBugs(
   const templates: Record<string, UnitTemplate> = { ...mission.templates };
   const unitIds: UnitId[] = [];
   for (const tile of chosen) {
-    const source = rng.pickWeighted(weighted, (entry) => entry.hatchWeight);
+    const { source } = rng.pickWeighted(weighted, (entry) => entry.weight);
     const size = footprintSizeOf(source);
     const anchor = footprintTiles(tile, size)
       .map((corner) => ({
@@ -368,6 +382,50 @@ function placeBugs(
     unitIds.push(built.unit.id);
   }
   return { state: { ...mission, units, templates }, unitIds };
+}
+
+/**
+ * The species a roll draws from, in `species` order, each with its
+ * weight (ADR 0013 §2.6). With a mix, a species is weighed by its entry
+ * there and one the mix does not name, or weighs at zero or below, is
+ * left out; a species the mix names that is not in `species` is simply
+ * never drawn. Without a mix — an offer from before the bestiary — or
+ * with one that leaves nothing to draw, each species is weighed by its
+ * `hatchWeight`, exactly as the roll always has, so an old mission's
+ * draws are unchanged.
+ *
+ * ```
+ *   bugMix present, some species it names are here ──► weight = bugMix[id]
+ *   otherwise                                       ──► weight = hatchWeight
+ *   weight ≤ 0 ──► left out (pickWeighted's fall-through never lands on it)
+ * ```
+ */
+function rollableSpecies(
+  species: readonly SpawnSource[],
+  mix: SpeciesMix | undefined,
+): readonly Rollable[] {
+  if (mix !== undefined) {
+    const mixed = species
+      .map((source) => ({ source, weight: mixWeight(mix, source.id) }))
+      .filter((entry) => entry.weight > 0);
+    if (mixed.length > 0) {
+      return mixed;
+    }
+  }
+  return species
+    .filter((source) => source.hatchWeight > 0)
+    .map((source) => ({ source, weight: source.hatchWeight }));
+}
+
+/**
+ * A species' weight in a mix: its entry when that is a finite number,
+ * else 0. The id is a unit source's plain string, not a `BugSpeciesId`,
+ * so anything it finds that is not a number (a prototype member, a
+ * `null` from a hand-edited save) weighs nothing.
+ */
+function mixWeight(mix: SpeciesMix, id: string): number {
+  const weight: unknown = (mix as Readonly<Record<string, unknown>>)[id];
+  return typeof weight === "number" && Number.isFinite(weight) ? weight : 0;
 }
 
 /** The direction from one tile towards another along the longer axis; south when they coincide. */

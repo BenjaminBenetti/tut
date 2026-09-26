@@ -129,8 +129,8 @@ The `mission-generation` tick step keeps its name and becomes the director. It r
 
 ### 2.6 The bestiary by act
 
-- **Data:** `BESTIARY: Readonly<Record<ActId, SpeciesMix>>` in `bugs/data/bestiary.ts`, with debut rules. `SpeciesMix = Readonly<Partial<Record<BugSpeciesId, number>>>`.
-- **Offer time:** `bugMixFor(act, missionsPlayed)` computes the mix and the director freezes it on `Mission.bugMix`.
+- **Data:** `BESTIARY: Bestiary` in `bugs/data/bestiary.ts`, one `BestiaryEntry` per species (`bugs/model/bestiary.ts`), so a species' shares and debut sit in one row and a new species adds one entry. `Bestiary = Readonly<Partial<Record<BugSpeciesId, BestiaryEntry>>>`. An entry is `{ kind: "rolled", shares: Record<ActId, number>, debut: { act, missionsInAct } }` or `{ kind: "placed" }` for bosses. `SpeciesMix = Readonly<Partial<Record<BugSpeciesId, number>>>` in `bugs/model/species-mix.ts`.
+- **Offer time:** `bugMixFor(act, missionsInAct)` in `bugs/service/bestiary-service.ts` keeps the species that have debuted (arc §3: a species that debuted in an earlier act is always in) and renormalises their shares to sum to 1. `withBugMix(mission, progress)` in `overworld/service/missions/bestiary-offer.ts` freezes it on `Mission.bugMix`; the director applies it to every new offer.
 - **Tactical:** `startTacticalMission` copies it to `TacticalState.bugMix?`. `spawn-service` rolls species by `bugMix` when it is present, and by `hatchWeight` otherwise.
 - **Placed bugs:** bosses and placed bugs (Broodmother, Hive Guard, Sovereign, dormant broods) use a placement path at mission start (`MissionSetupRule`). The weighted roll is not used for them.
 

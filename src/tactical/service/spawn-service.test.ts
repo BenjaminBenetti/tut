@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { SpeciesMix } from "../../bugs/model/species-mix";
 import { manhattanDistance } from "../../core/service/grid-math";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -562,5 +563,166 @@ describe("edgeWave with a wave total (#1175)", () => {
     const result = edgeWave(mission, ctxFor(3), DEPS);
     expect(result.state).toBe(mission);
     expect(result.events).toEqual([]);
+  });
+});
+
+// ===========================================
+// The mission's species mix (ADR 0013 §2.6, #1179)
+// ===========================================
+
+describe("rolling species by the mission's bug mix (#1179)", () => {
+  const LURKER: SpawnSource = { ...SWARMER, id: "lurker", hatchWeight: 3 };
+  /** One-tile brute, so a roll is never lost to a block that does not fit. */
+  const SMALL_BRUTE: SpawnSource = { ...SWARMER, id: "brute", hatchWeight: 1 };
+  /** Weight 0 like the shipped spitter, and last in the list. */
+  const SPITTER: SpawnSource = { ...SWARMER, id: "spitter", hatchWeight: 0 };
+  const FOUR: SpawnDeps = {
+    species: [SWARMER, LURKER, SMALL_BRUTE, SPITTER],
+    tuning: { ...T, hatchCount: 6 },
+  };
+
+  /** A spawner about to hatch, with room for ten on an open field. */
+  function ripe(bugMix?: SpeciesMix): TacticalState {
+    const mission = missionWith(openField().build(), [], {
+      phase: "bugs",
+      spawners: [spawnerAt("ripe", at(4, 4), 1, { hatchRadius: 3 })],
+    });
+    return bugMix === undefined ? mission : { ...mission, bugMix };
+  }
+
+  /** An edge wave due now on the two-hook field. */
+  function due(bugMix?: SpeciesMix): TacticalState {
+    const mission = missionWith(fieldWithEdges(), [], {
+      phase: "bugs",
+      turn: 9,
+      difficulty: 5,
+      edgeSpawn: { nextTurn: 9, wave: 3 },
+    });
+    return bugMix === undefined ? mission : { ...mission, bugMix };
+  }
+
+  /** Each bug as `species@x,z`, in the order they were placed. */
+  function signature(mission: TacticalState): string {
+    return bugsOf(mission)
+      .map((b) => `${b.sourceId}@${String(b.pos.x)},${String(b.pos.z)}`)
+      .join(" ");
+  }
+
+  it("rolls exactly the pre-bestiary sequence when the mission has no mix", () => {
+    // Recorded from spawn-service before the bestiary landed: one
+    // hatch-weight roll per bug, the weight-0 species never drawn.
+    const before: Record<string, string> = {
+      "hatch 1":
+        "lurker@5,2 swarmer@3,6 swarmer@3,3 lurker@6,3 swarmer@3,4 lurker@2,5",
+      "edge 1": "swarmer@0,5 swarmer@0,2 swarmer@0,3 swarmer@0,4",
+      "hatch 2":
+        "swarmer@5,6 swarmer@4,7 lurker@4,5 lurker@7,4 brute@3,3 swarmer@6,5",
+      "edge 2": "lurker@0,2 swarmer@0,5 brute@0,4 lurker@0,3",
+      "hatch 3":
+        "swarmer@5,4 swarmer@6,3 swarmer@5,3 brute@6,5 brute@2,3 lurker@3,6",
+      "edge 3": "swarmer@0,2 swarmer@0,3 swarmer@0,4 swarmer@0,5",
+      "hatch 4":
+        "swarmer@4,3 swarmer@3,3 lurker@4,6 swarmer@4,7 brute@4,5 lurker@2,3",
+      "edge 4": "swarmer@7,5 swarmer@7,2 swarmer@7,4 lurker@7,3",
+      "hatch 5":
+        "lurker@5,2 swarmer@6,5 swarmer@3,3 swarmer@4,2 swarmer@3,6 brute@6,3",
+      "edge 5": "lurker@0,5 swarmer@0,4 swarmer@0,3 swarmer@0,2",
+      "hatch 6":
+        "swarmer@2,4 swarmer@2,5 swarmer@7,4 swarmer@4,5 swarmer@1,4 lurker@4,1",
+      "edge 6": "swarmer@0,5 swarmer@0,4 swarmer@0,2 brute@0,3",
+    };
+    for (let seed = 1; seed <= 6; seed++) {
+      const hatched = hatch(ripe(), ctxFor(seed), FOUR).state;
+      expect(signature(hatched)).toBe(before[`hatch ${String(seed)}`]);
+      const landed = edgeWave(due(), ctxFor(seed), FOUR).state;
+      expect(signature(landed)).toBe(before[`edge ${String(seed)}`]);
+    }
+  });
+
+  it("follows the mix's weights over 500 seeded rolls, a hatch-weight-0 species included", () => {
+    // Far from the hatch weights (6:3:1:0), so a roll that ignored the
+    // mix could not land inside the tolerance. One roll on each of 500
+    // seeds, so every roll comes from its own stream.
+    const mix: SpeciesMix = {
+      swarmer: 0.2,
+      lurker: 0.1,
+      brute: 0.3,
+      spitter: 0.4,
+    };
+    const deps: SpawnDeps = { ...FOUR, tuning: { ...T, hatchCount: 1 } };
+    const counts = new Map<string, number>();
+    let rolled = 0;
+    for (let seed = 1; seed <= 500; seed++) {
+      for (const bug of bugsOf(hatch(ripe(mix), ctxFor(seed), deps).state)) {
+        counts.set(bug.sourceId, (counts.get(bug.sourceId) ?? 0) + 1);
+        rolled += 1;
+      }
+    }
+    expect(rolled).toBe(500);
+    for (const [id, share] of Object.entries(mix)) {
+      const seen = (counts.get(id) ?? 0) / rolled;
+      // Three standard errors of a share over 500 independent rolls:
+      // 0.04 for the lurker's 0.1, 0.066 for the spitter's 0.4.
+      const tolerance = 3 * Math.sqrt((share * (1 - share)) / rolled);
+      expect(Math.abs(seen - share), id).toBeLessThanOrEqual(tolerance);
+    }
+  });
+
+  it("brings an edge wave from the mix too", () => {
+    for (let seed = 1; seed <= 6; seed++) {
+      const ids = bugsOf(
+        edgeWave(due({ spitter: 1 }), ctxFor(seed), FOUR).state,
+      ).map((b) => b.sourceId);
+      expect(ids.length).toBeGreaterThan(0);
+      expect(new Set(ids)).toEqual(new Set(["spitter"]));
+    }
+  });
+
+  it("never rolls a species the mix leaves out or weighs at 0, whatever its hatch weight", () => {
+    // The swarmer has the largest hatch weight; the spitter, weighed at
+    // 0 and last in the list, is where a roll on the running total
+    // would fall through to.
+    for (let seed = 1; seed <= 12; seed++) {
+      const ids = bugsOf(
+        hatch(ripe({ brute: 2, lurker: 1, spitter: 0 }), ctxFor(seed), FOUR)
+          .state,
+      ).map((b) => b.sourceId);
+      expect(ids).toHaveLength(6);
+      expect(ids.filter((id) => id !== "brute" && id !== "lurker")).toEqual([]);
+    }
+  });
+
+  it("skips a species the mix names that spawning cannot build, and falls back to hatch weight when that leaves nothing", () => {
+    const noSpitter: SpawnDeps = {
+      ...FOUR,
+      species: [SWARMER, LURKER, SMALL_BRUTE],
+    };
+    for (let seed = 1; seed <= 6; seed++) {
+      const ids = bugsOf(
+        hatch(ripe({ spitter: 0.9, lurker: 0.1 }), ctxFor(seed), noSpitter)
+          .state,
+      ).map((b) => b.sourceId);
+      expect(ids).toEqual(Array.from({ length: 6 }, () => "lurker"));
+      // A mix of nothing it can build, or of nothing but zeros, rolls
+      // as an old mission would rather than failing the roll.
+      const old = signature(hatch(ripe(), ctxFor(seed), noSpitter).state);
+      const lost = hatch(ripe({ spitter: 1 }), ctxFor(seed), noSpitter);
+      expect(signature(lost.state)).toBe(old);
+      const zeros = hatch(
+        ripe({ swarmer: 0, lurker: 0 }),
+        ctxFor(seed),
+        noSpitter,
+      );
+      expect(signature(zeros.state)).toBe(old);
+    }
+  });
+
+  it("replays the same bugs for a seed with the same mix", () => {
+    const mix: SpeciesMix = { swarmer: 0.5, spitter: 0.5 };
+    for (let seed = 1; seed <= 4; seed++) {
+      const once = hatch(ripe(mix), ctxFor(seed), FOUR);
+      expect(hatch(ripe(mix), ctxFor(seed), FOUR)).toEqual(once);
+      expect(once.state.bugMix).toBe(mix);
+    }
   });
 });

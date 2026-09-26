@@ -34,7 +34,9 @@ describe("infestation tuning", () => {
     expect(INFESTATION_TUNING.seedAmount).toBeGreaterThan(0);
   });
 
-  it("leaves the hive hook at no boost", () => {
-    expect(INFESTATION_TUNING.hiveSpreadMultiplier).toBe(1);
+  it("makes a hive region spread half again as far, in whole points", () => {
+    const { hiveSpreadMultiplier, spreadAmount } = INFESTATION_TUNING;
+    expect(hiveSpreadMultiplier).toBe(1.5);
+    expect(Number.isInteger(spreadAmount * hiveSpreadMultiplier)).toBe(true);
   });
 });

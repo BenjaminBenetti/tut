@@ -18,7 +18,12 @@ import type { InfestationTuning } from "../model/infestation-tuning";
  * - `seedChance` 0.02: at maximum threat a clean city has a two percent
  *   chance per day of a fresh landing; at low threat seeding is rare.
  * - `seedAmount` 5: a seeded city starts as a small foothold.
- * - `hiveSpreadMultiplier` 1: no hives in M1, so no boost.
+ * - `hiveSpreadMultiplier` 1.5 (campaign arc §6.5: "a region with a
+ *   hive grows faster"): a city in a hive region pushes 15 points per
+ *   spread instead of 10, so a standing hive infects its neighbours half
+ *   again as fast and the pinned Hive Assault is worth answering. Hives
+ *   only form from Act II (`HIVE_TUNING.formsFromAct`), so Act I spreads
+ *   exactly as before.
  * - `regionDetectionThreshold` 15, `cityDetectionThreshold` 30 (GDD
  *   §5.3): a lone foothold seeded at 5 grows 3 a day and is found on its
  *   own after about eight days; in a region whose mean has reached 15
@@ -33,7 +38,7 @@ export const INFESTATION_TUNING: InfestationTuning = {
   spreadCooldownDays: 5,
   seedChance: 0.02,
   seedAmount: 5,
-  hiveSpreadMultiplier: 1,
+  hiveSpreadMultiplier: 1.5,
   regionDetectionThreshold: 15,
   cityDetectionThreshold: 30,
 };

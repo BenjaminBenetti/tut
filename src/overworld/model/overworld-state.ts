@@ -4,6 +4,7 @@ import type { EarthMap } from "./earth-map";
 import type { PendingEvent } from "./pending-event";
 import type { StipendModifier } from "./stipend-modifier";
 import type { GameOutcome } from "./game-outcome";
+import type { Hive } from "./hive";
 import type { Mission } from "./mission";
 import type { MissionResult } from "./mission-result";
 import type { RegionId } from "./region";
@@ -15,21 +16,6 @@ import type { SpreadCooldowns } from "./spread-cooldown";
 
 /** The day a campaign starts on. Days count up from here (GDD §5.2). */
 export const FIRST_DAY = 1;
-
-// ===========================================
-// Placeholders
-// ===========================================
-//
-// Minimal shapes for records that later issues define in full. Each is
-// only ever an element of an empty list in a new game, so widening it
-// later changes no persisted data. When the owning issue lands, replace
-// the placeholder with an import of the real type.
-
-/** Placeholder until M3 defines bug hives (GDD §5.3). */
-export interface Hive {
-  readonly id: string;
-  readonly regionId: RegionId;
-}
 
 // ===========================================
 // Overworld state
@@ -51,7 +37,9 @@ export interface Hive {
  *   ├── pendingEvents[]     choices awaiting the player
  *   ├── stipendModifiers?   event-driven scales on upcoming stipends
  *   ├── deployables[]       regional installations
- *   ├── hives[]             (M3) persistent bug hives
+ *   ├── hives[]             bug hives, at most one per region (arc §6.5)
+ *   ├── hiveWatch?          days each hive-less region has held the formation threshold
+ *   ├── growthPausedUntil?  liberated regions: the day each one grows again
  *   ├── progress            act, missions played, story flags, first kills, nemeses
  *   ├── outcome?            set once the campaign is won or lost
  *   └── lastMissionResult?  what the results screen shows
@@ -93,8 +81,29 @@ export interface OverworldState {
   readonly stipendModifiers?: readonly StipendModifier[];
   /** Installations built on regions. */
   readonly deployables: readonly Deployable[];
-  /** Bug hives (M3). Always empty in M1. */
+  /**
+   * Bug hives rooted in regions (campaign arc §6.5), at most one per
+   * region, in formation order. Empty until Act II: the formation step
+   * and `formFirstHive` add them, `liberateRegion` removes them.
+   */
   readonly hives: readonly Hive[];
+  /**
+   * Consecutive days each region without a hive has held its mean
+   * infestation at or above the formation threshold, keyed by region id.
+   * A region not listed has no streak. Written only by the
+   * `hive-formation` tick step, and never before hives can form, so it
+   * is absent in Act I and in every save written before hives existed.
+   */
+  readonly hiveWatch?: Readonly<Record<RegionId, number>>;
+  /**
+   * Liberated regions under a growth pause (arc §6.5), keyed by region
+   * id: the first tick day on which the region grows and spreads again.
+   * A region is paused on day `d` while `d` is before its entry; an entry
+   * on or before today is a pause that has lifted. Set by
+   * `liberateRegion`, one entry per region, so it never outgrows the
+   * region list. Absent until the first liberation.
+   */
+  readonly growthPausedUntil?: Readonly<Record<RegionId, number>>;
   /**
    * How far the campaign has come (ADR 0013 §2.1): the act, the missions
    * played and won, story flags, first kills and nemeses. The launch

@@ -12,8 +12,16 @@ import {
 import type { InfestationSeededEvent } from "../model/overworld-domain-event";
 import type { SpreadCooldowns } from "../model/spread-cooldown";
 import { buildEarthMap } from "./earth-map-builder";
-import type { RegionDeterrence } from "./infestation-spread-service";
-import { applySpread, seedProbability } from "./infestation-spread-service";
+import type {
+  RegionDeterrence,
+  SpreadRegionConditions,
+} from "./infestation-spread-service";
+import {
+  applySpread,
+  NO_SPREAD_CONDITIONS,
+  seedProbability,
+  spreadAmountFrom,
+} from "./infestation-spread-service";
 
 // ===========================================
 // Fixtures
@@ -287,6 +295,143 @@ describe("applySpread: spread", () => {
     });
     const { state } = day(map, 0, 1);
     expect(levels(state.map).m).toBe(20);
+  });
+});
+
+// ===========================================
+// Hives and growth pauses
+// ===========================================
+
+describe("spreadAmountFrom", () => {
+  it("is spreadAmount outside a hive region and the rounded product inside one", () => {
+    const hives = new Set(["west"]);
+    const tuning = { ...TUNING, spreadAmount: 10, hiveSpreadMultiplier: 1.5 };
+    expect(spreadAmountFrom("east", hives, tuning)).toBe(10);
+    expect(spreadAmountFrom("west", hives, tuning)).toBe(15);
+    expect(
+      spreadAmountFrom("west", hives, { ...tuning, spreadAmount: 5 }),
+    ).toBe(8);
+  });
+});
+
+describe("applySpread: hives and growth pauses", () => {
+  /**
+   * The fixture with `c` past the threshold too, so each region has one
+   * spreading city: `hot` (west) spreads into `a` or `b`, and `c` (east)
+   * into `far`, its only neighbour below it.
+   *
+   *          a(0) ── hot(70) ── c(60) ── far(0)
+   *                    │
+   *                   b(0)
+   */
+  function twoSources(): EarthMap {
+    const map = fixture();
+    return {
+      ...map,
+      cities: map.cities.map((c) =>
+        c.id === "c" ? { ...c, infestation: 60 } : c,
+      ),
+    };
+  }
+
+  /** One day of `twoSources` under the given region conditions. */
+  function withRegions(regions: SpreadRegionConditions, seed = 1) {
+    return applySpread(
+      twoSources(),
+      0,
+      {},
+      {},
+      rng(seed),
+      { ...TUNING, hiveSpreadMultiplier: 1.5 },
+      regions,
+    );
+  }
+
+  /** Amount pushed by each source city, keyed by its id. */
+  function pushedBy(
+    events: readonly { type: string; payload: unknown }[],
+  ): Record<string, number> {
+    const pushed: Record<string, number> = {};
+    for (const event of events) {
+      if (event.type === INFESTATION_SPREAD) {
+        const payload = event.payload as { fromCityId: string; amount: number };
+        pushed[payload.fromCityId] = payload.amount;
+      }
+    }
+    return pushed;
+  }
+
+  it("multiplies the push only from cities in a region that holds a hive", () => {
+    const none = withRegions(NO_SPREAD_CONDITIONS);
+    expect(pushedBy(none.events)).toEqual({ hot: 10, c: 10 });
+
+    const east = withRegions({
+      hiveRegions: new Set(["east"]),
+      pausedRegions: new Set(),
+    });
+    expect(pushedBy(east.events)).toEqual({ hot: 10, c: 15 });
+    expect(levels(east.state.map).far).toBe(15);
+
+    const west = withRegions({
+      hiveRegions: new Set(["west"]),
+      pausedRegions: new Set(),
+    });
+    expect(pushedBy(west.events)).toEqual({ hot: 15, c: 10 });
+  });
+
+  it("judges the boost by the spreading city's region, not the receiving one's", () => {
+    // a and b at 45 leave c (east, 30) as hot's least-infested neighbour,
+    // so west's hot spreads across the border.
+    const map = fixture();
+    const across: EarthMap = {
+      ...map,
+      cities: map.cities.map((c) =>
+        c.id === "a" || c.id === "b" ? { ...c, infestation: 45 } : c,
+      ),
+    };
+    const dayWith = (hiveRegion: string) =>
+      applySpread(
+        across,
+        0,
+        {},
+        {},
+        rng(1),
+        { ...TUNING, hiveSpreadMultiplier: 1.5 },
+        { hiveRegions: new Set([hiveRegion]), pausedRegions: new Set() },
+      );
+    const fromWest = dayWith("west");
+    expect(fromWest.events.map((e) => e.payload)).toEqual([
+      { fromCityId: "hot", toCityId: "c", amount: 15 },
+    ]);
+    expect(dayWith("east").events.map((e) => e.payload)).toEqual([
+      { fromCityId: "hot", toCityId: "c", amount: 10 },
+    ]);
+  });
+
+  it("spreads nothing from a paused region and starts no cooldown there", () => {
+    const paused = withRegions({
+      hiveRegions: new Set(["west"]),
+      pausedRegions: new Set(["west"]),
+    });
+    expect(pushedBy(paused.events)).toEqual({ c: 10 });
+    expect(paused.state.cooldowns).toEqual({ c: 2 });
+    expect(levels(paused.state.map)).toMatchObject({ a: 0, b: 0, hot: 70 });
+  });
+
+  it("is the same day with no conditions given as with NO_SPREAD_CONDITIONS", () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const omitted = applySpread(twoSources(), 80, {}, {}, rng(seed), TUNING);
+      const none = applySpread(
+        twoSources(),
+        80,
+        {},
+        {},
+        rng(seed),
+        TUNING,
+        NO_SPREAD_CONDITIONS,
+      );
+      expect(none).toEqual(omitted);
+    }
   });
 });
 

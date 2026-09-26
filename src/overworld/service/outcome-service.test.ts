@@ -79,7 +79,9 @@ function campaign(
       missions: [],
       pendingEvents: [],
       deployables: [],
-      hives: options.hives ? [{ id: "hive-1", regionId: "r" }] : [],
+      hives: options.hives
+        ? [{ id: "hive-1", regionId: "r", formedDay: 1 }]
+        : [],
       progress: createInitialCampaignProgress(),
       ...(options.outcome === undefined ? {} : { outcome: options.outcome }),
     },

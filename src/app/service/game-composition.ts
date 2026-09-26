@@ -6,6 +6,7 @@ import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EVENT_TUNING } from "../../overworld/data/event-tuning";
 import { EVENT_TYPES } from "../../overworld/data/event-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { HIVE_TUNING } from "../../overworld/data/hive-tuning";
 import { INFESTATION_TUNING } from "../../overworld/data/infestation-tuning";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
@@ -15,6 +16,7 @@ import { applyDebugThreat } from "../../overworld/service/campaign-debug-service
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { DeploymentAssessor } from "../../overworld/model/deployment-assessment";
 import type { EventTypeCatalogue } from "../../overworld/model/event-type-catalogue";
+import type { HiveTuning } from "../../overworld/model/hive-tuning";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { EVENT_TYPE_IDS } from "../../overworld/model/event-type";
 import { ADVANCE_DAY } from "../../overworld/model/overworld-command";
@@ -128,6 +130,8 @@ export interface GameContent {
   readonly eventTypes: EventTypeCatalogue;
   /** The tech tree (#1171): nodes, families and what each unlocks. */
   readonly tech: TechCatalogue;
+  /** Hive levels for the region panel (campaign arc §6.5). */
+  readonly hiveTuning: HiveTuning;
 }
 
 /** The simulation-facing services screens are handed. */
@@ -224,6 +228,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
       EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
     ),
     tech: new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES)),
+    hiveTuning: HIVE_TUNING,
   };
   const techPoints = new TechPointTreasury();
   registerRosterCommands(dispatcher, {
@@ -368,6 +373,7 @@ function composeTickDeps(debug: CampaignDebugOptions | undefined): TickDeps {
       EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
     ),
     eventTuning: EVENT_TUNING,
+    hiveTuning: HIVE_TUNING,
   };
 }
 

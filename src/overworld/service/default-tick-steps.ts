@@ -6,12 +6,19 @@ import type { TransactionService } from "../../economy/model/transaction-service
 import { applyStipend } from "../../economy/service/income-service";
 import type { CampaignState } from "../model/campaign-state";
 import type { DeployableTypeCatalogue } from "../model/deployable-type-catalogue";
+import type { HiveTuning } from "../model/hive-tuning";
 import type { InfestationTuning } from "../model/infestation-tuning";
 import type { MissionTuning } from "../model/mission-tuning";
 import { THREAT_CHANGED } from "../model/overworld-domain-event";
 import type { ThreatTuning } from "../model/threat-tuning";
 import type { TickStep } from "../model/tick-step";
 import { chargeUpkeep } from "./deployable-effects-service";
+import { pausedRegions, withPausedGrowth } from "./growth-pause-service";
+import {
+  createHiveFormationStep,
+  HIVE_FORMATION_STEP_NAME,
+} from "./hive-formation-service";
+import { hiveRegionIds } from "./hive-service";
 import { applyDetection } from "./infestation-detection-service";
 import { applyGrowth } from "./infestation-growth-service";
 import { applySpread } from "./infestation-spread-service";
@@ -44,17 +51,20 @@ export interface TickDeps {
   readonly economyTuning: EconomyTuning;
   readonly eventTypes: EventTypeCatalogue;
   readonly eventTuning: EventTuning;
+  /** When hives form, how they level and what liberation does (arc §6.5). */
+  readonly hiveTuning: HiveTuning;
 }
 
 // ===========================================
 // Step names
 // ===========================================
 
-/** Names of the M1 steps, in pipeline order. Also the RNG fork labels. */
+/** Names of the day's steps, in pipeline order. Also the RNG fork labels. */
 export const TICK_STEP_NAMES = {
   upkeep: "upkeep",
   growth: "growth",
   spread: "spread",
+  hiveFormation: HIVE_FORMATION_STEP_NAME,
   detection: "detection",
   missionExpiry: "mission-expiry",
   missionGeneration: "mission-generation",
@@ -69,20 +79,23 @@ export const TICK_STEP_NAMES = {
 // ===========================================
 
 /**
- * The M1 day tick (GDD §5.2), one step per service, in this order:
+ * The day tick (GDD §5.2), one step per service, in this order:
  *
  * ```
  *   1. upkeep              charge deployables; offline ones stop contributing
- *   2. growth              infested cities grow, slowed by repellent
- *   3. spread              infested cities spread to neighbours; threat seeds clean ones
- *   4. detection           infested cities past the (sensor-lowered) thresholds are found
- *   5. mission-expiry      lapsed missions go; host cities pay the ignore penalty
- *   6. mission-generation  detected cities may offer missions (+ intel bonus)
- *   7. events              lapsed events resolve by default; maybe a new one (#71)
- *   8. stipend             Earth pays for the day, scaled by how much is unfested,
+ *   2. growth              infested cities grow, slowed by repellent;
+ *                          a liberated region under its pause does not grow
+ *   3. spread              infested cities spread to neighbours (more from a hive
+ *                          region, none from a paused one); threat seeds clean ones
+ *   4. hive-formation      from Act II, a week at mean ≥ 60 roots a hive (arc §6.5)
+ *   5. detection           infested cities past the (sensor-lowered) thresholds are found
+ *   6. mission-expiry      lapsed missions go; host cities pay the ignore penalty
+ *   7. mission-generation  detected cities may offer missions (+ intel bonus)
+ *   8. events              lapsed events resolve by default; maybe a new one (#71)
+ *   9. stipend             Earth pays for the day, scaled by how much is unfested,
  *                          by any event-driven stipend modifiers (#70), plus the banks
- *   9. threat              recompute and store global threat
- *  10. outcome             defeat / victory-stub check, once
+ *  10. threat              recompute and store global threat
+ *  11. outcome             defeat / victory-stub check, once
  * ```
  *
  * Growth and spread read the threat stored by the previous tick; the
@@ -97,6 +110,7 @@ export function createDefaultTickSteps<TState extends CampaignState>(
     upkeepStep(deps),
     growthStep(deps),
     spreadStep(deps),
+    createHiveFormationStep<TState>(deps),
     detectionStep(deps),
     missionExpiryStep(),
     missionGenerationStep(deps),
@@ -125,7 +139,10 @@ function upkeepStep<TState extends CampaignState>(
   };
 }
 
-/** Grows every infested city, slowed by the day's growth factors. */
+/**
+ * Grows every infested city, slowed by the day's growth factors. A
+ * region under a growth pause is held still by a factor of 0.
+ */
 function growthStep<TState extends CampaignState>(
   deps: TickDeps,
 ): TickStep<TState> {
@@ -136,7 +153,11 @@ function growthStep<TState extends CampaignState>(
       const grown = applyGrowth(
         overworld.map,
         overworld.threat,
-        ctx.modifiers.growthFactor,
+        withPausedGrowth(
+          overworld.map,
+          ctx.modifiers.growthFactor,
+          pausedRegions(overworld, ctx.day),
+        ),
         deps.infestationTuning,
       );
       if (grown.events.length === 0) {
@@ -150,7 +171,10 @@ function growthStep<TState extends CampaignState>(
   };
 }
 
-/** Spreads between neighbours and seeds clean cities; always advances cooldowns. */
+/**
+ * Spreads between neighbours and seeds clean cities; always advances
+ * cooldowns. Hive regions spread further and paused regions not at all.
+ */
 function spreadStep<TState extends CampaignState>(
   deps: TickDeps,
 ): TickStep<TState> {
@@ -165,6 +189,10 @@ function spreadStep<TState extends CampaignState>(
         overworld.spreadCooldowns,
         ctx.rng,
         deps.infestationTuning,
+        {
+          hiveRegions: hiveRegionIds(overworld),
+          pausedRegions: pausedRegions(overworld, ctx.day),
+        },
       );
       return {
         state: {

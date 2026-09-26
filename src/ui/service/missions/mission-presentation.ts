@@ -9,6 +9,7 @@ import type {
 } from "../../model/mission-presentation";
 import { CRASH_SITE_PRESENTATION } from "./crash-site-presentation";
 import { DEFEND_INSTALLATION_PRESENTATION } from "./defend-installation-presentation";
+import { EVACUATION_PRESENTATION } from "./evacuation-presentation";
 import { INFESTATION_CLEARANCE_PRESENTATION } from "./infestation-clearance-presentation";
 import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
 
@@ -26,6 +27,7 @@ import { createWreckRecoveryPresentation } from "./wreck-recovery-presentation";
  *   defend-installation    ──► defend-installation-presentation.ts
  *   crash-site             ──► crash-site-presentation.ts
  *   wreck-recovery         ──► wreck-recovery-presentation.ts (over the shipped parts)
+ *   evacuation             ──► evacuation-presentation.ts
  * ```
  *
  * The wreck's rows name parts, so its entry is built over the shipped
@@ -38,6 +40,7 @@ export const MISSION_PRESENTATION: MissionPresentationCatalogue = {
   "wreck-recovery": createWreckRecoveryPresentation(
     new StaticPartCatalogue(STARTER_PARTS),
   ),
+  evacuation: EVACUATION_PRESENTATION,
 };
 
 // ===========================================

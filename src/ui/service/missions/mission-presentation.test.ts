@@ -59,6 +59,14 @@ const RECOVERY: Mission = {
   ),
 };
 
+const EVACUATION: Mission = {
+  ...CLEARANCE,
+  id: "mission-5",
+  typeId: "evacuation",
+  ignorePenalty: 0,
+  evacuation: { groups: 5, creditsPerGroup: 100 },
+};
+
 /**
  * One offer per type, carrying the type's payload. Keyed by the union,
  * so a new type cannot join the table without a fixture here.
@@ -68,6 +76,7 @@ const OFFERS: Readonly<Record<MissionTypeId, Mission>> = {
   "defend-installation": DEFENCE,
   "crash-site": CRASH,
   "wreck-recovery": RECOVERY,
+  evacuation: EVACUATION,
 };
 
 const CTX = { state: campaignOnDay(4, [CLEARANCE, DEFENCE]) };
@@ -178,6 +187,49 @@ describe("MISSION_PRESENTATION", () => {
   });
 });
 
+describe("EVACUATION_PRESENTATION (arc §6.4)", () => {
+  const evacuation = MISSION_PRESENTATION.evacuation;
+
+  it("briefs the groups, the half to extract and the stipend's stakes", () => {
+    expect(evacuation.icon).toBe("evacuate");
+    expect(evacuation.briefingRows(EVACUATION, CTX)).toEqual([
+      {
+        field: "civilians",
+        label: "Civilians",
+        value: "Free 5 civilian groups",
+      },
+      { field: "evacuation-win", label: "Win", value: "At least 3 extracted" },
+      {
+        field: "evacuation-saved",
+        label: "Saved",
+        value: "Stipend +50% for 10 days · ¢100 a group",
+      },
+      {
+        field: "evacuation-lost",
+        label: "Lost or ignored",
+        value: "Stipend −10% for 10 days",
+      },
+    ]);
+    const four = {
+      ...EVACUATION,
+      evacuation: { groups: 4, creditsPerGroup: 100 },
+    };
+    expect(evacuation.briefingRows(four, CTX)[1]?.value).toBe(
+      "At least 2 extracted",
+    );
+  });
+
+  it("keeps the stakes and drops the counts for an offer without its spec", () => {
+    const { evacuation: _dropped, ...bare } = EVACUATION;
+    expect(
+      evacuation.briefingRows(bare, CTX).map((row) => [row.field, row.value]),
+    ).toEqual([
+      ["evacuation-saved", "Stipend +50% for 10 days"],
+      ["evacuation-lost", "Stipend −10% for 10 days"],
+    ]);
+  });
+});
+
 // ===========================================
 // briefingFieldsOf
 // ===========================================
@@ -197,6 +249,7 @@ describe("briefingFieldsOf", () => {
       }),
       "crash-site": stub("crash-site"),
       "wreck-recovery": stub("wreck-recovery"),
+      evacuation: stub("evacuation"),
     };
     expect(briefingFieldsOf(catalogue).map((f) => f.field)).toEqual([
       "hives",
@@ -205,7 +258,7 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows, the crash site's three and the wreck's three", () => {
+  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three and the evacuation's four", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
@@ -215,6 +268,10 @@ describe("briefingFieldsOf", () => {
       { field: "wreck", label: "Wreck" },
       { field: "parts", label: "Parts" },
       { field: "strip", label: "Strip time" },
+      { field: "civilians", label: "Civilians" },
+      { field: "evacuation-win", label: "Win" },
+      { field: "evacuation-saved", label: "Saved" },
+      { field: "evacuation-lost", label: "Lost or ignored" },
     ]);
   });
 });
@@ -261,6 +318,43 @@ describe("debriefTaglineFor", () => {
     );
   });
 
+  it("counts an evacuation's groups aboard and says what it does to the stipend (arc §6.4)", () => {
+    const evacuated = (
+      rescued: number,
+      outcome: MissionResult["outcome"],
+      complete: boolean,
+    ): MissionResult => ({
+      ...RESULT,
+      outcome,
+      civiliansRescued: rescued,
+      civiliansTotal: 4,
+      objectives: [
+        {
+          kind: "rescue-civilians",
+          complete,
+          failed: !complete,
+          done: rescued,
+          total: 4,
+        },
+      ],
+    });
+    expect(debriefTaglineFor(evacuated(4, "won", true), CTX)).toBe(
+      "Every civilian group in Cairo is aboard. Stipend +50% for 10 days.",
+    );
+    expect(debriefTaglineFor(evacuated(3, "won", true), CTX)).toBe(
+      "3 of 4 civilian groups are out of Cairo. Stipend +50% for 10 days.",
+    );
+    expect(debriefTaglineFor(evacuated(2, "lost", true), CTX)).toBe(
+      "2 of 4 civilian groups are out of Cairo. The force did not make it home. Stipend +50% for 10 days.",
+    );
+    expect(debriefTaglineFor(evacuated(1, "extracted", false), CTX)).toBe(
+      "Only 1 of 4 civilian groups got out of Cairo. Stipend −10% for 10 days.",
+    );
+    expect(debriefTaglineFor(evacuated(0, "lost", false), CTX)).toBe(
+      "No civilian group got out of Cairo. Stipend −10% for 10 days.",
+    );
+  });
+
   it("asks each type in id order with the context, and takes the first answer", () => {
     const first = vi.fn(() => undefined);
     const second = vi.fn(() => "second");
@@ -273,6 +367,7 @@ describe("debriefTaglineFor", () => {
       }),
       "crash-site": stub("crash-site"),
       "wreck-recovery": stub("wreck-recovery"),
+      evacuation: stub("evacuation"),
     };
     expect(debriefTaglineFor(RESULT, CTX, catalogue)).toBe("second");
     expect(first).toHaveBeenCalledWith(RESULT, CTX);
@@ -290,6 +385,7 @@ describe("debriefTaglineFor", () => {
         }),
         "crash-site": stub("crash-site"),
         "wreck-recovery": stub("wreck-recovery"),
+        evacuation: stub("evacuation"),
       }),
     ).toBe("first");
     expect(skipped).not.toHaveBeenCalled();

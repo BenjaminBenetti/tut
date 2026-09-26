@@ -7,6 +7,8 @@ import { CAMPAIGN_FLAG_SET } from "../../overworld/model/campaign-flag-set-event
 import type { Mission } from "../../overworld/model/mission";
 import { MISSION_EXPIRED } from "../../overworld/model/mission-expired-event";
 import { MISSION_WITHDRAWN } from "../../overworld/model/mission-withdrawn-event";
+import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
+import { asEvacuationOffer } from "../../overworld/service/missions/evacuation-offer";
 import { unlockTech } from "../../overworld/model/unlock-tech-command";
 import { missionAt } from "../../overworld/service/missions/mission-fixtures.test-helper";
 import type { GameState } from "../../save/model/game-state";
@@ -374,14 +376,22 @@ describe("Live Specimen through the composition root (#1179)", () => {
 });
 
 describe("Live Specimen on a crowded board, through the composition root (arc D2, #1179)", () => {
-  it("is pinned the day after the net is bought, taking an ordinary offer's city, which lapses for nothing", () => {
-    const game = build();
+  /**
+   * A fresh campaign with an ordinary offer (`offerAt`, expiring in ten
+   * days) on every city, so no city the hunt could use is free, whatever
+   * the day's spread and detection bring. Buys Pheromone Analysis, then
+   * advances the day the hunt is pinned on.
+   *
+   * @returns The offers laid on the board and the pin day's events.
+   */
+  function crowdedPinDay(
+    game: GameComposition,
+    offerAt: (cityId: string, expiresDay: number) => Mission,
+  ) {
     const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
     const day = fresh.overworld.day;
-    // An ordinary clearance on every city, so no city the hunt could use
-    // is free, whatever the day's spread and detection bring.
     const ordinary = fresh.overworld.map.cities.map((city) =>
-      missionAt(city.id, day + 10),
+      offerAt(city.id, day + 10),
     );
     game.session.start({
       ...fresh,
@@ -403,7 +413,14 @@ describe("Live Specimen on a crowded board, through the composition root (arc D2
     );
     expect(bought?.ok).toBe(true);
     expect(live(game).overworld.progress.flags).toContain("capture-net");
-    const events = nextDay(game);
+    return { ordinary, events: nextDay(game) };
+  }
+
+  it("is pinned the day after the net is bought, taking an ordinary offer's city, which lapses for nothing", () => {
+    const game = build();
+    const { ordinary, events } = crowdedPinDay(game, (cityId, expiresDay) =>
+      missionAt(cityId, expiresDay),
+    );
 
     const offer = specimen(live(game));
     expect(offer).toBeDefined();
@@ -434,5 +451,49 @@ describe("Live Specimen on a crowded board, through the composition root (arc D2
     );
     expect(city?.detected).toBe(true);
     expect(city?.infestation).toBe(worst);
+  });
+
+  it("withdraws an evacuation for nothing: no stipend window, no expiry, and it never lapses later (arc §6.4)", () => {
+    const game = build();
+    const { ordinary, events } = crowdedPinDay(game, (cityId, expiresDay) =>
+      asEvacuationOffer(
+        missionAt(cityId, expiresDay, 0, "evacuation"),
+        MISSION_TUNING.evacuation,
+      ),
+    );
+
+    const offer = specimen(live(game));
+    expect(offer).toBeDefined();
+    const displaced = ordinary.find((m) => m.cityId === offer?.cityId);
+    expect(displaced?.evacuation).toBeDefined();
+    expect(
+      events.filter((e) => e.type === MISSION_WITHDRAWN).map((e) => e.payload),
+    ).toEqual([
+      {
+        missionId: displaced?.id,
+        typeId: "evacuation",
+        cityId: offer?.cityId,
+        replacedBy: offer?.id,
+      },
+    ]);
+    expect(events.map((e) => e.type)).not.toContain(MISSION_EXPIRED);
+    // A withdrawal is neither an ignore nor an expiry: no window queued,
+    // and the day's stipend was paid unscaled.
+    expect(live(game).overworld.stipendModifiers).toBeUndefined();
+    const board = live(game).overworld.missions;
+    expect(board.map((m) => m.id)).not.toContain(displaced?.id);
+    expect(board).toHaveLength(ordinary.length);
+
+    // Past the day it would have lapsed, the others lapse; it never does.
+    const lapsed: string[] = [];
+    while (live(game).overworld.day <= (displaced?.expiresDay ?? 0)) {
+      for (const event of nextDay(game)) {
+        if (event.type === MISSION_EXPIRED) {
+          lapsed.push(event.payload.missionId);
+        }
+      }
+    }
+    expect(lapsed).not.toContain(displaced?.id);
+    expect(lapsed.length).toBeGreaterThan(0);
   });
 });

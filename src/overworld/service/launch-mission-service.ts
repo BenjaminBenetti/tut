@@ -190,7 +190,8 @@ export function validateLaunch(
  *   validateLaunch ──err──► CommandError (nothing rolled, nothing changed)
  *        │ok
  *   result = resolver.resolve(mission, deployment, { squads, mechs, city }, fork)
- *        │
+ *        │   consequences[mission.typeId].settle? ──► its credits and delta laid over
+ *        │                                           (an evacuation's per-group credits)
  *   1. MissionResolved { result }
  *   2. roster  ── applyCasualties ──► losses, damage, wipes, graveyard, xp   (roster events)
  *              ── stockParts(partsAwarded) ──► recovered parts (arc §6.6)  (PartsStocked)
@@ -232,12 +233,18 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
     const { mission, city } = validated.value;
     const day = state.overworld.day;
 
-    const result = deps.resolver.resolve(
+    const rule = deps.consequences[mission.typeId];
+    const consequenceCtx = { tuning: deps.missionTuning };
+    const resolved = deps.resolver.resolve(
       mission,
       deployment,
       { squads: state.roster.squads, mechs: state.roster.mechs, city },
       ctx.rng.fork(`mission:${mission.id}`),
     );
+    const result: MissionResult =
+      rule.settle === undefined
+        ? resolved
+        : { ...resolved, ...rule.settle(mission, resolved, consequenceCtx) };
     const events: CampaignEvent[] = [
       { type: MISSION_RESOLVED, payload: { result } },
     ];
@@ -293,11 +300,11 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
       state.roster.mechs,
       deps.missionTuning.wreck,
     );
-    const consequence = deps.consequences[mission.typeId].onResolved(
+    const consequence = rule.onResolved(
       settled,
       mission,
       result,
-      { tuning: deps.missionTuning },
+      consequenceCtx,
     );
     events.push(...consequence.events);
     const story = onStoryMissionResolved(consequence.state, mission, result, {

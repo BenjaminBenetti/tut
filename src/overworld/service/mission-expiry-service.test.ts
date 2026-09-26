@@ -133,6 +133,7 @@ describe("expireMissions", () => {
       ),
       "crash-site": spy(MISSION_CONSEQUENCE_RULES["crash-site"]),
       "wreck-recovery": spy(MISSION_CONSEQUENCE_RULES["wreck-recovery"]),
+      evacuation: spy(MISSION_CONSEQUENCE_RULES.evacuation),
     };
     const state = fixtureState({
       day: 5,

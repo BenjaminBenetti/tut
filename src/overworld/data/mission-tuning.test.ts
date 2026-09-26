@@ -58,4 +58,16 @@ describe("mission tuning", () => {
       expect(rule.largeFromDifficulty).toBeLessThanOrEqual(max);
     }
   });
+
+  it("offers an evacuation from 25 infestation, 3–5 groups, +50% / −10% stipend for 10 days (arc §6.4)", () => {
+    const tuning = MISSION_TUNING.evacuation;
+    expect(tuning.minInfestation).toBe(25);
+    expect(tuning.minGroups).toBe(3);
+    expect(tuning.maxGroups).toBe(5);
+    expect(tuning.difficultyPerGroup).toBeGreaterThan(0);
+    expect(tuning.populationWeightUnit).toBeGreaterThan(0);
+    expect(tuning.creditsPerGroup).toBeGreaterThan(0);
+    expect(tuning.savedStipend).toEqual({ factor: 1.5, days: 10 });
+    expect(tuning.lostStipend).toEqual({ factor: 0.9, days: 10 });
+  });
 });

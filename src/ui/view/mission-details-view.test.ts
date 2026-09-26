@@ -307,3 +307,49 @@ describe("MissionDetailsView briefs through MISSION_PRESENTATION (ADR 0013 §2.3
     expect(cell("installation")?.textContent).toBe("");
   });
 });
+
+describe("MissionDetailsView on an evacuation (#1179)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const cell = (name: string): HTMLElement | null =>
+    root.querySelector<HTMLElement>(`[data-field="detail-${name}"]`);
+
+  it("briefs the groups, the win line and both stipend windows, and drops the +0 infestation penalty", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const base = missionAt("mission-1", "cairo", 7, 4);
+    const evacuation = {
+      ...base,
+      typeId: "evacuation" as const,
+      ignorePenalty: 0,
+      evacuation: { groups: 4, creditsPerGroup: 100 },
+    };
+    view.update(campaignOnDay(4, [evacuation]), evacuation);
+    expect(cell("civilians")?.textContent).toBe("Free 4 civilian groups");
+    expect(cell("evacuation-win")?.textContent).toBe("At least 2 extracted");
+    expect(cell("evacuation-saved")?.textContent).toBe(
+      "Stipend +50% for 10 days · ¢100 a group",
+    );
+    expect(cell("evacuation-lost")?.textContent).toBe(
+      "Stipend −10% for 10 days",
+    );
+    expect(cell("penalty")?.hidden).toBe(true);
+    expect(
+      cell("penalty")?.previousElementSibling?.hasAttribute("hidden"),
+    ).toBe(true);
+
+    view.update(campaignOnDay(4, [base]), base);
+    expect(cell("civilians")?.hidden).toBe(true);
+    expect(cell("penalty")?.hidden).toBe(false);
+    expect(cell("penalty")?.textContent).toBe("+10 infestation");
+  });
+});

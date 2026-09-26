@@ -82,6 +82,8 @@ export interface MissionTuning {
   readonly crashSite: CrashSiteTuning;
   /** How long a lost mech's wreck waits for its recovery offer (arc §6.6). */
   readonly wreck: WreckRecoveryTuning;
+  /** Where an evacuation is offered, how many groups it holds and what it pays (arc §6.4). */
+  readonly evacuation: EvacuationTuning;
 }
 
 // ===========================================
@@ -202,6 +204,55 @@ export interface CrashSiteTuning {
   readonly sensorArrayWeight: number;
   /** Tech points a crash site pays, as a multiple of the type's ordinary reward (arc: ×1.5). */
   readonly techPointMultiplier: number;
+}
+
+// ===========================================
+// Evacuation
+// ===========================================
+
+/**
+ * A timed scale on the daily stipend a mission's outcome grants: the
+ * factor applies to the next `days` payments.
+ */
+export interface StipendWindow {
+  /** Multiplier on each payment in the window. Positive. */
+  readonly factor: number;
+  /** Payments the window covers. Positive integer. */
+  readonly days: number;
+}
+
+/**
+ * The evacuation's overworld rules (campaign arc §6.4):
+ *
+ * ```
+ *   eligible   detected city, no offer, infestation ≥ minInfestation
+ *   weight     1 + log10(max(1, population / populationWeightUnit))
+ *              (under 100k ─► 1, 1M ─► 2, 10M ─► 3; bigger cities are
+ *              drawn more often, but a megacity never drowns the rest)
+ *   groups     clamp(minGroups + ⌊(difficulty − 1) / difficultyPerGroup⌋,
+ *                    minGroups, maxGroups)
+ *   saved      credits + creditsPerGroup × groups aboard, and savedStipend
+ *   lost       credits paid as any mission's, + creditsPerGroup × groups aboard,
+ *              and lostStipend; an evacuation left to lapse gets lostStipend too
+ * ```
+ */
+export interface EvacuationTuning {
+  /** Least city infestation at which a detected city may be offered one. `0..100`. */
+  readonly minInfestation: number;
+  /** Population one step of the site weight stands for; `100_000` makes a town weigh 1. */
+  readonly populationWeightUnit: number;
+  /** Groups trapped at difficulty 1; the fewest an evacuation holds. */
+  readonly minGroups: number;
+  /** Most groups an evacuation holds. At least `minGroups`. */
+  readonly maxGroups: number;
+  /** Difficulty steps per extra group. Positive. */
+  readonly difficultyPerGroup: number;
+  /** Credits each group walked aboard adds to the payout. */
+  readonly creditsPerGroup: number;
+  /** The stipend window a saved evacuation grants (arc: +50% for 10 days). */
+  readonly savedStipend: StipendWindow;
+  /** The stipend window a lost or ignored evacuation costs (arc: −10% for 10 days). */
+  readonly lostStipend: StipendWindow;
 }
 
 // ===========================================

@@ -57,7 +57,8 @@ export interface City {
   readonly biome?: BiomeId;
   /**
    * People living there, approximately (#1154): `37_000_000` for Tokyo.
-   * Flavour for the city's info wheel; the simulation does not read it.
+   * Shown on the city's info wheel; the only rule that reads it is the
+   * evacuation offer, which draws bigger cities more often (arc §6.4).
    */
   readonly population: number;
   /** Cities the infestation can spread to. Adjacency is symmetric. */

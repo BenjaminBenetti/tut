@@ -630,6 +630,47 @@ describe("createLaunchMissionHandler", () => {
     ).toHaveLength(1);
   });
 
+  it("pays, announces and records what the type's settle makes of the result", () => {
+    const received: MissionResult[] = [];
+    const settling: MissionConsequenceRule = {
+      ...MISSION_CONSEQUENCE_RULES["infestation-clearance"],
+      settle: (mission, result, ctx) => {
+        expect(mission).toBe(MISSION);
+        expect(result).toBe(WIN);
+        expect(ctx.tuning).toBe(MISSION_TUNING);
+        return {
+          creditsAwarded: result.creditsAwarded + 250,
+          infestationDelta: 0,
+        };
+      },
+      onResolved: (state, _mission, result) => {
+        received.push(result);
+        return { state, events: [] };
+      },
+    };
+    const launched = createLaunchMissionHandler<CampaignState>(
+      deps(new StubResolver(WIN), {
+        ...MISSION_CONSEQUENCE_RULES,
+        "infestation-clearance": settling,
+      }),
+    )(campaign(), launchMission("mission-1", DEPLOYMENT), context());
+    if (!launched.ok) throw new Error(launched.error.message);
+    const settled: MissionResult = {
+      ...WIN,
+      creditsAwarded: 1150,
+      infestationDelta: 0,
+    };
+    const next = launched.value.state;
+    expect(next.economy.credits).toBe(1000 + 1150);
+    expect(next.economy.ledger[0]).toMatchObject({ amount: 1150 });
+    expect(next.overworld.lastMissionResult).toEqual(settled);
+    expect(received).toEqual([settled]);
+    expect(launched.value.events[0]).toEqual({
+      type: MISSION_RESOLVED,
+      payload: { result: settled },
+    });
+  });
+
   it("hands a story mission to the story layer after its type's consequences (ADR 0013 §2.5)", () => {
     const skyfall: Mission = {
       ...MISSION,

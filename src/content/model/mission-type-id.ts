@@ -12,13 +12,16 @@
  * built. `crash-site` (campaign arc §6.3) is a spore pod come down near
  * a city, to be destroyed before it matures at the end of turn 8.
  * `wreck-recovery` is the event offer a mech lost on a lost or abandoned
- * mission leaves behind (arc §6.6): strip its parts.
+ * mission leaves behind (arc §6.6): strip its parts. `evacuation`
+ * (campaign arc §6.4) is civilians trapped in an infested city, to be
+ * freed and walked to the drop ship.
  */
 export type MissionTypeId =
   | "infestation-clearance"
   | "defend-installation"
   | "crash-site"
-  | "wreck-recovery";
+  | "wreck-recovery"
+  | "evacuation";
 
 /**
  * Every mission type id, in a fixed order. The order is the order the
@@ -30,4 +33,5 @@ export const MISSION_TYPE_IDS: readonly MissionTypeId[] = [
   "defend-installation",
   "crash-site",
   "wreck-recovery",
+  "evacuation",
 ];

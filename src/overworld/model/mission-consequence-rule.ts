@@ -15,6 +15,15 @@ export interface MissionConsequenceContext {
   readonly tuning: MissionTuning;
 }
 
+/**
+ * The part of a result a type may revise before the campaign pays it
+ * (`settle`): what it pays in credits and what it does to its city.
+ */
+export type MissionSettlement = Pick<
+  MissionResult,
+  "creditsAwarded" | "infestationDelta"
+>;
+
 // ===========================================
 // Rule
 // ===========================================
@@ -29,7 +38,8 @@ export interface MissionConsequenceContext {
  *
  * ```
  *   director       ──► MissionOffered ─────► onOffered?(overworld, mission)
- *   LaunchMission  ──► shared bookkeeping ──► onResolved(overworld, mission, result)
+ *   LaunchMission  ──► resolver's result ──► settle?(mission, result)      what is paid
+ *                  ──► shared bookkeeping ──► onResolved(overworld, mission, result)
  *   mission-expiry ──► MissionExpired ─────► onExpired(overworld, mission)
  * ```
  *
@@ -56,6 +66,25 @@ export interface MissionConsequenceRule {
     mission: Mission,
     ctx: MissionConsequenceContext,
   ): OverworldApplied<OverworldState>;
+  /**
+   * The payout of the played mission, for a type that pays by more than
+   * its outcome (an evacuation's credits per group brought home, arc
+   * §6.4). The launch handler lays it over the resolver's result before
+   * anything is paid or recorded, so `MissionResolved`, the credits
+   * earned, `lastMissionResult` (the debrief) and `onResolved` all see
+   * the same numbers. Absent on a type that pays what the resolver
+   * reported.
+   *
+   * @param mission - The offer that was played.
+   * @param result - What the resolver reported.
+   * @param ctx - Tuning the rule may read.
+   * @returns The credits and infestation change the campaign applies.
+   */
+  settle?(
+    mission: Mission,
+    result: MissionResult,
+    ctx: MissionConsequenceContext,
+  ): MissionSettlement;
   /**
    * What the played mission does to the overworld.
    *

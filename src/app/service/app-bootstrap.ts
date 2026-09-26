@@ -308,7 +308,13 @@ export async function bootstrapApp(doc: Document): Promise<void> {
       ],
       [
         "game-over",
-        () => new GameOverScreen({ router, session: game.session }),
+        () =>
+          new GameOverScreen({
+            router,
+            session: game.session,
+            baseUrl: import.meta.env.BASE_URL,
+            ranks: game.content.rosterTuning.ranks.ladder,
+          }),
       ],
       [
         "tactical",

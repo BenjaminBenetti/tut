@@ -29,3 +29,11 @@ Two sheets used a reference image (codex `-i`), which the script does not pass; 
 | [spore-platform-core](spore-platform-core.md) | Key art: finale stage 2, the core chamber and the Sovereign                     | map       | 2        |
 
 The attempts column counts generations: most rejects had a dark vignette and glow instead of the flat grey backdrop. What fixed it was a leading `Scene/backdrop:` line and a closing `Avoid:` line, written in the format the codex imagegen skill uses for its own prompts. Start new prompts from one of the later files (for example [`prompts/sovereign.txt`](prompts/sovereign.txt)).
+
+## Screen key art
+
+Unlike the sheets above, these ship: each has a web-sized copy under `public/assets/ui/backdrops/`, and its sidecar gives the conversion.
+
+| Art                                     | Subject                                                               | Runtime asset                   | Attempts |
+| --------------------------------------- | --------------------------------------------------------------------- | ------------------------------- | -------- |
+| [victory-backdrop](victory-backdrop.md) | The spore platform breaking up over a wrecked city at dawn; TDF mechs | `backdrops/victory.webp`, 105 KB | 1        |

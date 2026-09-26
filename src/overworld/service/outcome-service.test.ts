@@ -11,6 +11,12 @@ import { MAX_THREAT } from "../model/threat";
 import { createInitialCampaignProgress } from "./campaign-progress-factory";
 import { buildEarthMap } from "./earth-map-builder";
 import {
+  firstAttemptVictory,
+  lastHopeVictory,
+  storyDefeat,
+  threatDefeatInActTwo,
+} from "./outcome-chronicle-fixtures.test-helper";
+import {
   applyOutcome,
   evaluateOutcome,
   isDefeat,
@@ -166,6 +172,20 @@ describe("evaluateOutcome", () => {
         missionsRun: 0,
         daysSurvived: 40,
         finalThreat: MAX_THREAT,
+        // The chronicle: still in Act I, nothing played, nobody named.
+        missionsPlayed: 0,
+        missionsWon: 0,
+        acts: [
+          {
+            act: "act-1",
+            fromDay: 1,
+            toDay: 40,
+            missionsBefore: 0,
+            missions: 0,
+          },
+        ],
+        nemeses: [],
+        squad: [],
       },
     });
   });
@@ -248,6 +268,89 @@ describe("summarise", () => {
       ],
     });
     expect(summarise(state).missionsRun).toBe(2);
+  });
+});
+
+// ===========================================
+// The chronicle
+// ===========================================
+
+describe("the chronicle in the frozen summary", () => {
+  /** The summary `applyOutcome` stores on `state`; throws if the campaign did not end. */
+  const frozen = (state: CampaignState): GameOutcome => {
+    const outcome = applyOutcome(state).state.overworld.outcome;
+    if (outcome === undefined) throw new Error("the campaign must end");
+    return outcome;
+  };
+
+  it("fills every field on a victory, as the campaign ends", () => {
+    const outcome = frozen(firstAttemptVictory());
+    expect(outcome).toMatchObject({ kind: "victory", cause: "story", day: 67 });
+    expect(outcome.summary).toMatchObject({
+      daysSurvived: 67,
+      missionsPlayed: 50,
+      missionsWon: 41,
+      platformAttempts: 1,
+    });
+    expect(outcome.summary.acts?.map((act) => act.act)).toEqual([
+      "act-1",
+      "act-2",
+      "act-3",
+      "finale",
+    ]);
+    expect(outcome.summary.acts?.at(-1)?.endedBy).toBe("spore-platform");
+    expect(outcome.summary.storyWins).toHaveLength(9);
+    expect(outcome.summary.nemeses?.map((n) => n.killedDay)).toEqual([
+      52,
+      undefined,
+    ]);
+    expect(outcome.summary.squad?.map((entry) => entry.name)).toEqual([
+      "Hammerhead",
+      "Lantern",
+      "Alpha",
+    ]);
+    expect(frozen(lastHopeVictory()).summary.platformAttempts).toBe(2);
+  });
+
+  it("fills them on a story defeat, whose last act nothing ended", () => {
+    const outcome = frozen(storyDefeat());
+    expect(outcome).toMatchObject({ kind: "defeat", cause: "story", day: 75 });
+    expect(outcome.summary.platformAttempts).toBe(2);
+    expect(outcome.summary.acts).toHaveLength(4);
+    expect(outcome.summary.acts?.at(-1)).not.toHaveProperty("endedBy");
+    expect(outcome.summary.nemeses).toEqual([
+      { id: "nemesis-1", name: "Old Scald", speciesId: "broodmother" },
+    ]);
+  });
+
+  it("fills them on a threat defeat: how far the campaign got", () => {
+    const outcome = frozen(threatDefeatInActTwo());
+    expect(outcome).toMatchObject({ kind: "defeat", cause: "threat", day: 29 });
+    expect(outcome.summary.acts?.map((act) => [act.act, act.endedBy])).toEqual([
+      ["act-1", "live-specimen"],
+      ["act-2", undefined],
+    ]);
+    expect(outcome.summary.storyWins?.map((win) => win.storyId)).toEqual([
+      "first-skyfall",
+      "live-specimen",
+    ]);
+    expect(outcome.summary).not.toHaveProperty("platformAttempts");
+  });
+
+  it("is frozen: the outcome keeps its chronicle when the campaign moves on", () => {
+    const ended = applyOutcome(firstAttemptVictory()).state;
+    const later: CampaignState = {
+      ...ended,
+      overworld: {
+        ...ended.overworld,
+        progress: { ...ended.overworld.progress, missionsPlayed: 99 },
+      },
+      roster: { ...ended.roster, mechs: [] },
+    };
+    expect(applyOutcome(later).state.overworld.outcome).toBe(
+      ended.overworld.outcome,
+    );
+    expect(later.overworld.outcome?.summary.missionsPlayed).toBe(50);
   });
 });
 

@@ -14,6 +14,7 @@ import { GAME_ENDED } from "../model/overworld-domain-event";
 import type { OverworldState } from "../model/overworld-state";
 import { MAX_THREAT } from "../model/threat";
 import { hasFlag } from "./campaign-progress-service";
+import { chronicleSummary } from "./outcome-chronicle-service";
 
 // ===========================================
 // Conditions
@@ -68,6 +69,10 @@ export function isStoryDefeat(progress: CampaignProgress): boolean {
  *
  * A clean Earth with no hive is no longer a victory: `victory-stub` is
  * never produced (ADR 0013 §2.5).
+ *
+ * The summary is the plain numbers (`summarise`) and the campaign's
+ * chronicle (`chronicleSummary`): its acts, story wins, nemeses, squad
+ * and platform attempts, frozen with the outcome.
  */
 export function evaluateOutcome(state: CampaignState): GameOutcome | undefined {
   const { overworld } = state;
@@ -81,7 +86,7 @@ export function evaluateOutcome(state: CampaignState): GameOutcome | undefined {
     kind,
     cause,
     day: overworld.day,
-    summary: summarise(state),
+    summary: { ...summarise(state), ...chronicleSummary(state, kind) },
   });
   if (isStoryDefeat(overworld.progress)) {
     return ended("defeat", "story");

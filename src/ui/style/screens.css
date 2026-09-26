@@ -860,18 +860,37 @@
 /* =========================================== */
 
 /*
- * The world behind the verdict.
+ * The end screen (campaign arc §13). A platform victory stands over its
+ * key art, the panel in the art's quiet right third; every other ending
+ * sits centred over the world. The panel never scrolls: it is capped at
+ * the window and the chronicle, the one part that grows with the
+ * campaign, scrolls inside its own frame.
  *
- * The game-over panel borrows `.tut-menu`, which is the title screen's
- * treatment and deliberately shows Earth bright. On defeat that put
- * "EARTH OVERRUN — could not hold the line" over a pristine blue-green
- * world dotted with healthy city markers: the picture flatly denying
- * the words. Draining the colour is the honest backdrop for a world
- * that has been lost, and it is a channel nothing else on this screen
- * uses.
- *
- * Victory keeps the world as it is: there the picture and the words
- * already agree, and a bright Earth is the reward.
+ *   ┌ .tut-game-over__art (key art, full-bleed) ────┬ .tut-game-over ─┐
+ *   │                                                │ title, tagline  │
+ *   │                                                │ __numbers  3×2  │
+ *   │                                                │ .tut-chronicle  │ flex: 1, scrolls
+ *   │                                                │ __record        │ nemeses, squad (scrolls)
+ *   │                                                │ __actions       │
+ *   └────────────────────────────────────────────────┴─────────────────┘
+ */
+.tut-game-over__art {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The art keeps its action in the left two thirds: anchored left, a
+     narrow window crops the empty sky rather than the platform. */
+  object-position: left 30%;
+  pointer-events: none;
+}
+
+/*
+ * The world behind the verdict. On defeat a bright Earth dotted with
+ * healthy city markers flatly denied the words, so the scrim drains the
+ * colour; victory keeps the world (or the key art) as it is.
  */
 .tut-game-over__scrim {
   position: absolute;
@@ -886,12 +905,39 @@
 }
 
 .tut-game-over {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  width: min(560px, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+}
+
+.tut-game-over[data-art="key-art"] {
+  left: auto;
+  right: var(--space-4);
+  width: min(560px, 44vw);
+  transform: translateY(-50%);
+}
+
+.tut-game-over > * {
+  flex: 0 0 auto;
+}
+
+.tut-game-over > .tut-panel__title {
+  margin-bottom: 0;
 }
 
 .tut-game-over__title {
-  margin: var(--space-2) 0;
-  letter-spacing: 0.08em;
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -901,6 +947,245 @@
 
 .tut-game-over__title--ok {
   color: var(--ui-ok);
+}
+
+.tut-game-over__tagline {
+  margin: calc(-1 * var(--space-2)) 0 0;
+}
+
+.tut-game-over__numbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--line);
+  margin: 0;
+  border: var(--line) solid var(--ui-line);
+  background: var(--ui-line);
+}
+
+/* Label over value, the value's note (`41 won`) on the value's line. */
+.tut-game-over__number {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--ui-panel-raised);
+}
+
+.tut-game-over__number dt {
+  flex-basis: 100%;
+}
+
+.tut-game-over__number dd {
+  margin: 0;
+}
+
+.tut-game-over__value {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tut-game-over__value[data-tone="danger"] {
+  color: var(--ui-danger);
+}
+
+.tut-game-over__note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.tut-game-over__actions .tut-btn {
+  justify-content: center;
+}
+
+/* The chronicle: one row per act on a vertical rule, a square marker
+   each, green for an act its gate ended and red for the one a defeat
+   stopped. */
+.tut-chronicle {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 120px;
+  border: var(--line) solid var(--ui-line);
+  background: var(--ui-bg);
+}
+
+.tut-chronicle__heading {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--line) solid var(--ui-line);
+  font-weight: normal;
+}
+
+.tut-chronicle__acts {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-3) 0 var(--space-4);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.tut-chronicle__act {
+  position: relative;
+  padding: 0 0 var(--space-3) var(--space-4);
+  border-left: var(--line) solid var(--ui-line);
+}
+
+.tut-chronicle__act:last-child {
+  border-left-color: transparent;
+}
+
+.tut-chronicle__act::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  background: var(--ui-ok);
+}
+
+.tut-chronicle__act[data-ended="defeat"]::before {
+  background: var(--ui-danger);
+}
+
+.tut-chronicle__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+}
+
+.tut-chronicle__name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tut-chronicle__span {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-dim);
+}
+
+.tut-chronicle__wins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--ui-text-dim);
+}
+
+.tut-chronicle__end {
+  margin: var(--space-1) 0 0;
+  font-size: 12px;
+  color: var(--ui-ok);
+}
+
+.tut-chronicle__act[data-ended="defeat"] .tut-chronicle__end {
+  color: var(--ui-danger);
+}
+
+/* The nemeses on one line, then the squad roll, one row per entry,
+   scrolling in its own frame when a long campaign's roster outgrows
+   the room the chronicle leaves. */
+.tut-game-over__record {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  max-height: 24vh;
+}
+
+.tut-nemeses {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+}
+
+.tut-roll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tut-roll__heading,
+.tut-nemeses__heading {
+  margin: 0 0 var(--space-1);
+  font-weight: normal;
+}
+
+.tut-roll__list,
+.tut-nemeses__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.tut-roll__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  border-top: var(--line) solid var(--ui-line);
+}
+
+.tut-nemeses__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+}
+
+.tut-roll__entry {
+  display: grid;
+  grid-template-columns: 9em minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--space-3);
+  padding: 3px 0;
+  border-bottom: var(--line) solid var(--ui-line);
+}
+
+.tut-roll__name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tut-roll__role {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tut-roll__record {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-dim);
+}
+
+.tut-nemeses__fate[data-fate="alive"] {
+  color: var(--ui-bug);
+}
+
+@media (max-width: 900px) {
+  .tut-game-over[data-art="key-art"] {
+    right: auto;
+    left: 50%;
+    width: min(560px, calc(100vw - 2 * var(--space-4)));
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* The picture of the mech being built (#694). Sits under the stat

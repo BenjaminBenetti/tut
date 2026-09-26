@@ -17,7 +17,7 @@ export interface TechUnlockedPayload {
   readonly nodeId: TechNodeId;
   /** Tech points the unlock cost. */
   readonly cost: number;
-  /** The parts that just became purchasable. */
+  /** The parts that just became purchasable: `partIdsOf(node)`, empty for a node with no part effect. */
   readonly parts: readonly PartId[];
 }
 

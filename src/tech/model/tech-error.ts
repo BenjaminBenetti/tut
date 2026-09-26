@@ -4,6 +4,16 @@ import type { TechNodeId } from "./tech-node";
 // Errors
 // ===========================================
 
+/**
+ * An unlock named a node that is hidden: a flag it requires is not set
+ * yet (ADR 0013 §2.7). Checked before anything else, so a hidden node is
+ * refused the same way whatever else is true of it.
+ */
+export interface TechHiddenError {
+  readonly code: "tech-hidden";
+  readonly nodeId: TechNodeId;
+}
+
 /** An unlock named a node the tree lacks. */
 export interface UnknownTechError {
   readonly code: "unknown-tech";
@@ -38,6 +48,7 @@ export interface TechInsufficientPointsError {
  * why a card is closed.
  */
 export type TechError =
+  | TechHiddenError
   | UnknownTechError
   | TechAlreadyUnlockedError
   | TechPrerequisiteLockedError
@@ -53,6 +64,8 @@ export type TechErrorCode = TechError["code"];
 /** One human-readable sentence for a tech error, for logs and command errors. */
 export function describeTechError(error: TechError): string {
   switch (error.code) {
+    case "tech-hidden":
+      return `Tech "${error.nodeId}" has not been discovered yet.`;
     case "unknown-tech":
       return `No tech "${error.nodeId}" exists in the tree.`;
     case "tech-already-unlocked":

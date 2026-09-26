@@ -42,6 +42,8 @@ import type { TechDevTools } from "../../tech/model/tech-dev-tools";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import type { TechConditions } from "../../tech/model/tech-conditions";
+import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import { createPartAvailability } from "../../tech/service/part-availability-service";
 import type { DevTools, TacticalComposition } from "./tactical-composition";
@@ -160,6 +162,14 @@ export interface GameComposition {
    * otherwise, and then the tree renders no Free TP button.
    */
   readonly techDevTools: TechDevTools | undefined;
+  /**
+   * The campaign's conditions as the tech tree sees them (ADR 0013
+   * §2.7): which flags are set, so which nodes are hidden. The unlock
+   * handler was wired with this same function, and the tech tree screen
+   * must be handed it too, so a card never shows what the command
+   * refuses.
+   */
+  readonly techConditionsOf: (state: GameState) => TechConditions;
 }
 
 // ===========================================
@@ -225,6 +235,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   registerTechCommands(dispatcher, {
     catalogue: content.tech,
     techPoints,
+    conditionsOf: techConditionsOf,
     devTools: deps.devTools === true,
   });
   const tickDeps = composeTickDeps(deps.debug);
@@ -313,12 +324,33 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     autoResolve,
     devTools: tactical.devTools,
     techDevTools: deps.devTools === true ? TECH_DEV_TOOLS : undefined,
+    techConditionsOf,
   };
 }
 
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * The campaign's conditions for the tech tree (ADR 0013 §2.7). **For
+ * now, no flags at all**: the campaign has no flags yet, so every node
+ * with `requiresFlags` stays hidden, which is right for the shipped tree
+ * (it has none). ADR 0013 §2.1 adds `state.overworld.progress.flags` in
+ * a parallel package; once it lands the campaign coordinator wires it
+ * here, and only here, as
+ *
+ * ```
+ *   (state) => ({ flags: new Set(state.overworld.progress.flags) })
+ * ```
+ *
+ * so the unlock handler and the tech tree screen pick it up together.
+ * The unlock hook (`onUnlocked` on the tech handlers) is left unset
+ * until the story spine (ADR 0013 §2.5) provides one.
+ */
+function techConditionsOf(): TechConditions {
+  return NO_TECH_CONDITIONS;
+}
 
 /** The shipped content, tuning and services the day tick runs on. */
 function composeTickDeps(debug: CampaignDebugOptions | undefined): TickDeps {

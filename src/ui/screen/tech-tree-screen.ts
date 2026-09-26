@@ -3,12 +3,17 @@ import { grantTechPoints } from "../../overworld/model/grant-tech-points-command
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { unlockTech } from "../../overworld/model/unlock-tech-command";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
+import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import type { TechCatalogue } from "../../tech/model/tech-catalogue";
+import type { TechConditions } from "../../tech/model/tech-conditions";
+import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import type { TechDevTools } from "../../tech/model/tech-dev-tools";
+import type { TechEffect } from "../../tech/model/tech-effect";
 import type { TechNode, TechNodeId } from "../../tech/model/tech-node";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
 import {
+  isTechNodeHidden,
   missingPrerequisites,
   techNodeStatus,
 } from "../../tech/service/tech-status-service";
@@ -16,8 +21,10 @@ import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import type { TechGraphFrame, TechGraphHost } from "../model/tech-graph-host";
+import type { TechEffectLabels } from "../model/tech-effect-labels";
 import type { TechGraphLayout } from "../model/tech-graph-layout";
 import { formatTechPoints, formatWhole } from "../service/format";
+import { describeTechEffect } from "../service/tech-effect-describer";
 import { layoutTechGraph } from "../service/tech-graph-layout";
 
 // ===========================================
@@ -32,6 +39,17 @@ export interface TechTreeScreenDeps {
   readonly tech: TechCatalogue;
   /** Names the parts a node unlocks. */
   readonly parts: PartCatalogue;
+  /**
+   * The campaign's conditions, which decide which nodes are hidden (ADR
+   * 0013 §2.7). Must be the function the unlock handler was wired with
+   * (`GameComposition.techConditionsOf`), so a card never shows a node
+   * the command refuses. With no campaign the screen assumes no flags.
+   */
+  readonly conditionsOf: (state: GameState) => TechConditions;
+  /** Names the squad type a squad-type effect opens; absent, its id's words are shown. */
+  readonly squadTypes?: SquadTypeCatalogue;
+  /** Names flag and infantry upgrade effects; absent, their ids' words are shown. */
+  readonly effectLabels?: TechEffectLabels;
   /**
    * Draws the graph in three (#1171); absent in unit tests that only
    * check the DOM, and then the labels are built but never placed.
@@ -76,6 +94,7 @@ const STATUS_LABELS: Readonly<Record<TechNodeStatus, string>> = {
   available: "Available",
   unaffordable: "Unaffordable",
   locked: "Locked",
+  hidden: "Undiscovered",
 };
 
 /** Badge tone per status, from the theme's badge modifiers. */
@@ -84,6 +103,7 @@ const STATUS_TONES: Readonly<Record<TechNodeStatus, string>> = {
   available: "info",
   unaffordable: "warn",
   locked: "",
+  hidden: "",
 };
 
 /** What the stage says under the graph. */
@@ -127,8 +147,17 @@ const LABEL_MIN_SCALE = 0.7;
  *   host.framed(frame) ──► every label's transform
  * ```
  *
- * Labels are built once in `mount` and only their status and position
- * change afterwards.
+ * Only the nodes the campaign has discovered are drawn (ADR 0013
+ * §2.7). The graph is laid out on the first render and again whenever
+ * the set of hidden nodes changes, which happens while the screen is up
+ * when an unlock sets a flag another node needs; then the labels are
+ * rebuilt and the graph re-attached with the new layout. Otherwise the
+ * labels are built once and only their status and position change.
+ *
+ * ```
+ *   render(state) ──► conditionsOf(state) ──► hidden set changed? ──► layout, labels, host.attach
+ *                                                                └──► statuses, detail
+ * ```
  */
 export class TechTreeScreen implements Screen {
   // ===========================================
@@ -137,8 +166,13 @@ export class TechTreeScreen implements Screen {
 
   readonly id: ScreenId = "tech-tree";
   private readonly deps: TechTreeScreenDeps;
-  private readonly layout: TechGraphLayout;
+  /** The layout drawn now; undefined until the first render lays one out. */
+  private layout: TechGraphLayout | undefined;
+  /** The hidden node ids `layout` was built for, joined. */
+  private hiddenKey: string | undefined;
   private root: HTMLElement | undefined;
+  private stage: HTMLElement | undefined;
+  private labelLayer: HTMLElement | undefined;
   private balance: HTMLElement | undefined;
   private status: HTMLElement | undefined;
   private detail: DetailPanel | undefined;
@@ -147,22 +181,23 @@ export class TechTreeScreen implements Screen {
   private selected: TechNodeId | undefined;
   private unsubscribe: Unsubscribe | undefined;
   private readonly disposers: (() => void)[] = [];
+  /** The label listeners, released whenever the labels are rebuilt. */
+  private labelDisposers: (() => void)[] = [];
 
   // ===========================================
   // Constructor
   // ===========================================
 
-  /** @param deps - Router, session, catalogues, the graph host and the dev tools. */
+  /** @param deps - Router, session, catalogues, the conditions, the graph host and the dev tools. */
   constructor(deps: TechTreeScreenDeps) {
     this.deps = deps;
-    this.layout = layoutTechGraph(deps.tech);
   }
 
   // ===========================================
   // Screen
   // ===========================================
 
-  /** Builds the bar, the stage with its labels and the detail panel, attaches the graph and subscribes to the store. */
+  /** Builds the bar, the stage and the detail panel, lays the graph out and attaches it on the first render, and subscribes to the store. */
   mount(root: HTMLElement): void {
     const doc = root.ownerDocument;
     const layout = doc.createElement("section");
@@ -178,15 +213,6 @@ export class TechTreeScreen implements Screen {
     root.appendChild(layout);
     this.root = layout;
 
-    this.deps.graph?.attach(stage, this.layout, {
-      framed: (frame) => {
-        this.place(frame);
-      },
-      picked: (nodeId) => {
-        this.select(nodeId);
-      },
-    });
-
     const store = this.deps.session.store;
     this.render(store?.getState());
     this.unsubscribe = store?.subscribe((change) => {
@@ -199,11 +225,18 @@ export class TechTreeScreen implements Screen {
     this.deps.graph?.release();
     this.unsubscribe?.();
     this.unsubscribe = undefined;
-    for (const dispose of this.disposers.splice(0)) {
+    for (const dispose of [
+      ...this.disposers.splice(0),
+      ...this.labelDisposers.splice(0),
+    ]) {
       dispose();
     }
     this.root?.remove();
     this.root = undefined;
+    this.stage = undefined;
+    this.labelLayer = undefined;
+    this.layout = undefined;
+    this.hiddenKey = undefined;
     this.balance = undefined;
     this.status = undefined;
     this.detail = undefined;
@@ -216,8 +249,14 @@ export class TechTreeScreen implements Screen {
   // Rendering
   // ===========================================
 
-  /** Rewrites the balance, every label's status, the graph's tints and the detail panel from `state`. */
+  /**
+   * Re-lays the graph out if the hidden set changed, then rewrites the
+   * balance, every label's status, the graph's tints and the detail
+   * panel from `state`.
+   */
   private render(state: GameState | undefined): void {
+    const conditions = this.conditionsFor(state);
+    this.relayout(conditions);
     if (this.balance) {
       this.balance.textContent = state
         ? formatTechPoints(state.economy.techPoints)
@@ -226,7 +265,7 @@ export class TechTreeScreen implements Screen {
     const statuses = new Map<TechNodeId, TechNodeStatus>();
     for (const label of this.labels.values()) {
       const status = state
-        ? techNodeStatus(label.node, state.tech, state.economy)
+        ? techNodeStatus(label.node, state.tech, state.economy, conditions)
         : "locked";
       statuses.set(label.node.id, status);
       label.root.dataset.status = status;
@@ -234,6 +273,56 @@ export class TechTreeScreen implements Screen {
     }
     this.deps.graph?.setStatuses(statuses);
     this.renderDetail(state);
+  }
+
+  /**
+   * Lays the graph out for `conditions` when there is no layout yet or
+   * the set of hidden nodes differs from the one it was built for: the
+   * labels are rebuilt, a selection that is no longer drawn is dropped,
+   * and the host is re-attached with the new layout (which rebuilds its
+   * scene and reframes the camera). A render that changes no node's
+   * visibility does nothing here.
+   */
+  private relayout(conditions: TechConditions): void {
+    const stage = this.stage;
+    if (!stage) {
+      return;
+    }
+    const hiddenKey = this.deps.tech
+      .listNodes()
+      .filter((node) => isTechNodeHidden(node, conditions))
+      .map((node) => node.id)
+      .join("|");
+    if (this.layout !== undefined && hiddenKey === this.hiddenKey) {
+      return;
+    }
+    const layout = layoutTechGraph(this.deps.tech, conditions);
+    this.layout = layout;
+    this.hiddenKey = hiddenKey;
+    this.buildLabels(stage.ownerDocument, layout);
+    if (this.selected !== undefined && !this.labels.has(this.selected)) {
+      this.selected = undefined;
+    }
+    this.deps.graph?.attach(stage, layout, {
+      framed: (frame) => {
+        this.place(frame);
+      },
+      picked: (nodeId) => {
+        this.select(nodeId);
+      },
+    });
+    if (this.selected !== undefined) {
+      const label = this.labels.get(this.selected);
+      if (label) {
+        label.root.dataset.selected = "true";
+      }
+      this.deps.graph?.setSelected(this.selected);
+    }
+  }
+
+  /** The conditions of `state`, or none without a campaign. */
+  private conditionsFor(state: GameState | undefined): TechConditions {
+    return state ? this.deps.conditionsOf(state) : NO_TECH_CONDITIONS;
   }
 
   /** The detail panel: empty until a node is selected, then that node against `state`. */
@@ -261,12 +350,9 @@ export class TechTreeScreen implements Screen {
     detail.cost.textContent = formatTechPoints(node.cost);
     detail.description.textContent = node.description;
     detail.unlocks.replaceChildren(
-      ...node.unlocks.map((partId) => {
-        const item = detail.unlocks.ownerDocument.createElement("li");
-        item.dataset.partId = partId;
-        item.textContent = this.deps.parts.getPart(partId)?.name ?? partId;
-        return item;
-      }),
+      ...node.effects.map((effect) =>
+        this.createEffectItem(detail.unlocks.ownerDocument, effect),
+      ),
     );
     if (!state) {
       detail.root.dataset.status = "locked";
@@ -277,7 +363,12 @@ export class TechTreeScreen implements Screen {
       detail.button.hidden = false;
       return;
     }
-    const status = techNodeStatus(node, state.tech, state.economy);
+    const status = techNodeStatus(
+      node,
+      state.tech,
+      state.economy,
+      this.conditionsFor(state),
+    );
     detail.root.dataset.status = status;
     this.setBadge(detail.badge, status);
     detail.reason.textContent = this.reasonFor(node, status, state);
@@ -303,6 +394,8 @@ export class TechTreeScreen implements Screen {
         );
         return `Requires ${names.join(", ")}`;
       }
+      case "hidden":
+        return "Not yet discovered.";
       case "unlocked":
       case "available":
         return "";
@@ -343,13 +436,19 @@ export class TechTreeScreen implements Screen {
   // Actions
   // ===========================================
 
-  /** Selects `nodeId` (or clears): the pedestal lights, the label and the detail follow. */
+  /**
+   * Selects `nodeId` (or clears): the pedestal lights, the label and the
+   * detail follow. A node that is not drawn — hidden, or unknown —
+   * clears the selection rather than showing what the web does not.
+   */
   private select(nodeId: TechNodeId | undefined): void {
-    this.selected = nodeId;
+    const drawn =
+      nodeId !== undefined && this.labels.has(nodeId) ? nodeId : undefined;
+    this.selected = drawn;
     for (const label of this.labels.values()) {
-      label.root.dataset.selected = String(label.node.id === nodeId);
+      label.root.dataset.selected = String(label.node.id === drawn);
     }
-    this.deps.graph?.setSelected(nodeId);
+    this.deps.graph?.setSelected(drawn);
     this.renderDetail(this.deps.session.store?.getState());
   }
 
@@ -436,7 +535,7 @@ export class TechTreeScreen implements Screen {
     return bar;
   }
 
-  /** The stage: the graph's container with the label layer and the controls hint over it. */
+  /** The stage: the graph's container with the (empty) label layer and the controls hint over it. */
   private createStage(doc: Document): HTMLElement {
     const stage = doc.createElement("div");
     stage.className = "tut-tech-tree__stage";
@@ -444,26 +543,47 @@ export class TechTreeScreen implements Screen {
     const labels = doc.createElement("div");
     labels.className = "tut-tech-tree__labels";
     labels.dataset.role = "tech-labels";
-    for (const family of this.layout.families) {
-      const label = doc.createElement("div");
-      label.className = "tut-label tut-tech-tree__family";
-      label.dataset.family = family.id;
-      label.textContent = family.name;
-      labels.appendChild(label);
-      this.familyLabels.set(family.id, label);
-    }
-    for (const placement of this.layout.nodes) {
-      const node = this.deps.tech.getNode(placement.id);
-      if (node) {
-        labels.appendChild(this.createLabel(doc, node));
-      }
-    }
     const hint = doc.createElement("div");
     hint.className = "tut-dim tut-tech-tree__hint";
     hint.dataset.role = "controls-hint";
     hint.textContent = CONTROLS_HINT;
     stage.append(labels, hint);
+    this.stage = stage;
+    this.labelLayer = labels;
     return stage;
+  }
+
+  /**
+   * Fills the label layer from `layout`, replacing any labels already
+   * there: one per family plinth in draw order, then one per placed
+   * node. A hidden node is not placed, so it gets no label.
+   */
+  private buildLabels(doc: Document, layout: TechGraphLayout): void {
+    const layer = this.labelLayer;
+    if (!layer) {
+      return;
+    }
+    for (const dispose of this.labelDisposers.splice(0)) {
+      dispose();
+    }
+    this.labels = new Map();
+    this.familyLabels = new Map();
+    const labels: HTMLElement[] = [];
+    for (const family of layout.families) {
+      const label = doc.createElement("div");
+      label.className = "tut-label tut-tech-tree__family";
+      label.dataset.family = family.id;
+      label.textContent = family.name;
+      labels.push(label);
+      this.familyLabels.set(family.id, label);
+    }
+    for (const placement of layout.nodes) {
+      const node = this.deps.tech.getNode(placement.id);
+      if (node) {
+        labels.push(this.createLabel(doc, node));
+      }
+    }
+    layer.replaceChildren(...labels);
   }
 
   /** One node's floating label: name, cost and status; a click selects it. */
@@ -489,11 +609,44 @@ export class TechTreeScreen implements Screen {
     badge.dataset.role = "status";
     line.append(cost, badge);
     label.append(name, line);
-    this.listen(label, () => {
-      this.select(node.id);
-    });
+    this.listen(
+      label,
+      () => {
+        this.select(node.id);
+      },
+      this.labelDisposers,
+    );
     this.labels.set(node.id, { node, root: label, badge });
     return label;
+  }
+
+  /**
+   * One line of the detail panel's "Unlocks" list: the effect in words,
+   * tagged with its kind and id so a spec can find it.
+   */
+  private createEffectItem(doc: Document, effect: TechEffect): HTMLElement {
+    const item = doc.createElement("li");
+    item.dataset.effectKind = effect.kind;
+    switch (effect.kind) {
+      case "part":
+        item.dataset.partId = effect.partId;
+        break;
+      case "flag":
+        item.dataset.flag = effect.flag;
+        break;
+      case "squad-type":
+        item.dataset.squadTypeId = effect.squadTypeId;
+        break;
+      case "infantry-upgrade":
+        item.dataset.upgradeId = effect.upgradeId;
+        break;
+    }
+    item.textContent = describeTechEffect(effect, {
+      parts: this.deps.parts,
+      ...(this.deps.squadTypes ? { squadTypes: this.deps.squadTypes } : {}),
+      ...(this.deps.effectLabels ? { labels: this.deps.effectLabels } : {}),
+    });
+    return item;
   }
 
   /** The detail panel: what the selected node is, unlocks and costs, and Unlock. */
@@ -591,10 +744,18 @@ export class TechTreeScreen implements Screen {
     return button;
   }
 
-  /** Attaches a click handler and remembers how to remove it. */
-  private listen(target: HTMLElement, handler: () => void): void {
+  /**
+   * Attaches a click handler and remembers how to remove it, in
+   * `disposers` — the screen's own list unless the caller keeps a
+   * shorter-lived one, as the labels do.
+   */
+  private listen(
+    target: HTMLElement,
+    handler: () => void,
+    disposers: (() => void)[] = this.disposers,
+  ): void {
     target.addEventListener("click", handler);
-    this.disposers.push(() => {
+    disposers.push(() => {
       target.removeEventListener("click", handler);
     });
   }

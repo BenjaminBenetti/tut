@@ -10,10 +10,11 @@ const NODE: TechNode = {
   name: "A",
   description: "",
   family: "mobility",
+  kind: "part",
   tier: 2,
   cost: 1,
   requires: [],
-  unlocks: ["legs-jumper"],
+  effects: [{ kind: "part", partId: "legs-jumper" }],
 };
 
 describe("StaticTechCatalogue", () => {

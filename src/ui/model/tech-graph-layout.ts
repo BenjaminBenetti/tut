@@ -1,5 +1,10 @@
 import type { PartId } from "../../roster/model/mech-part";
-import type { TechFamilyId, TechNodeId } from "../../tech/model/tech-node";
+import type {
+  TechFamilyId,
+  TechNodeId,
+  TechNodeKind,
+  TechNodeTier,
+} from "../../tech/model/tech-node";
 
 // ===========================================
 // Types
@@ -15,9 +20,30 @@ export interface GroundPoint {
 export interface TechGraphNodePlacement extends GroundPoint {
   readonly id: TechNodeId;
   readonly familyId: TechFamilyId;
-  readonly tier: 2 | 3;
-  /** The parts the node makes purchasable; the first one is the one drawn. */
+  /** The ring it stands on: 2 inner, 3 outer. */
+  readonly tier: TechNodeTier;
+  /** What sort of research it is, so a scene can dress non-part nodes differently. */
+  readonly kind: TechNodeKind;
+  /**
+   * The parts the node makes purchasable; the first one with a model is
+   * the one drawn. Empty for a node with no part effect, which then
+   * stands a generic module on its pedestal.
+   */
   readonly partIds: readonly PartId[];
+}
+
+/**
+ * The radii the layout actually used. They start at the tuning's and
+ * grow when more families share the circle than the tuning was sized
+ * for, so a family's nodes always fit its sector.
+ */
+export interface TechGraphRings {
+  /** Distance of the family plinths from the core. */
+  readonly family: number;
+  /** Distance of the tier 2 ring from the core. */
+  readonly tier2: number;
+  /** Distance of the tier 3 ring from the core. */
+  readonly tier3: number;
 }
 
 /** Where one family's plinth stands. */
@@ -53,6 +79,10 @@ export interface TechGraphEdge {
  *                 ·T3
  * ```
  *
+ * Only what the player can see is laid out: a hidden node (ADR 0013
+ * §2.7) has no placement and no edge, and a family with nothing visible
+ * has no plinth.
+ *
  * `radius` is how far the graph reaches from the origin, so a camera
  * can bound and frame it without walking the placements.
  */
@@ -60,5 +90,7 @@ export interface TechGraphLayout {
   readonly nodes: readonly TechGraphNodePlacement[];
   readonly families: readonly TechGraphFamilyPlacement[];
   readonly edges: readonly TechGraphEdge[];
+  /** The rings the nodes and plinths stand on. */
+  readonly rings: TechGraphRings;
   readonly radius: number;
 }

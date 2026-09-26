@@ -3,9 +3,9 @@ import { expect, test } from "@playwright/test";
 import { FixtureMapBuilder } from "../src/mapgen/service/fixture-map-builder";
 import type { GameState } from "../src/save/model/game-state";
 import type { TileEffect } from "../src/tactical/model/tile-effect";
-import { initialVision } from "../src/tactical/service/vision-service";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import { stageMission } from "./mission-staging.helper";
 
 /** The autosave the mission is rewritten through. */
 const SAVE_KEY = "tut:save:autosave";
@@ -45,23 +45,17 @@ test("burning tiles smoke", async ({ page }) => {
   const force = mission.units.filter(
     (unit) => unit.team === "tdf" && unit.hp > 0,
   );
-  const { vision: _stale, ...blind } = {
-    ...mission,
-    map: new FixtureMapBuilder(32, 24, 1).fillGround().build(),
-    units: force.map((unit, index) => ({
-      ...unit,
-      pos: { x: 6 + index * 2, y: 0, z: 7 },
-      facing: "s" as const,
-    })),
-    spawners: [],
-    objectives: [],
-    extraction: [],
-    radars: [],
-    effects: [...FIRES],
-  };
   const rewritten: GameState = {
     ...envelope.state,
-    activeMission: { ...blind, vision: initialVision(blind) },
+    activeMission: stageMission(mission, {
+      map: new FixtureMapBuilder(32, 24, 1).fillGround().build(),
+      units: force.map((unit, index) => ({
+        ...unit,
+        pos: { x: 6 + index * 2, y: 0, z: 7 },
+        facing: "s" as const,
+      })),
+      effects: [...FIRES],
+    }),
   };
   await page.evaluate(
     ({ key, saved }) => {

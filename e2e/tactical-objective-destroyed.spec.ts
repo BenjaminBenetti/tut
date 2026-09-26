@@ -7,6 +7,8 @@ import { nearestSightPosition } from "../src/tactical/service/map-assessment-ser
 import { expect, test } from "@playwright/test";
 
 import { waitForBugPhasePlayed } from "./bug-phase.helper";
+import { BERLIN_CLEARANCE_FIXTURE } from "./fixtures/mission-maps";
+import { reachFirstMission } from "./mission-capture.helper";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 
@@ -14,9 +16,6 @@ import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
 }
-
-/** Days to advance before giving up on a mission appearing for the fixed seed. */
-const MAX_DAYS = 40;
 
 /** Turns to allow for closing on the objective and shooting it. */
 const MAX_TURNS = 20;
@@ -33,8 +32,15 @@ const SETTLE_MS = 250;
  */
 const TEST_TIMEOUT_MS = 180_000;
 
-/** Seed whose first mission puts a spawner within reach of the deploy zone. */
+/**
+ * The campaign seed, which only has to reach a first offer; the
+ * battlefield is pinned below rather than left to whichever city the
+ * director offers first (#1179).
+ */
 const SEED = "f2";
+
+/** A generated battlefield with a spawner within reach of the deploy zone. */
+const BATTLEFIELD = BERLIN_CLEARANCE_FIXTURE;
 
 /** What the mission looks like from outside: just enough to drive and assert. */
 interface MissionSnapshot {
@@ -111,25 +117,12 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
     errors.push(error.message);
   });
 
-  await page.goto("/");
+  // Shared with the capture specs, which also clears an event that
+  // arrives on the same day as the first offer: its dialog covers the
+  // mission list and takes the click meant for the row.
+  await reachFirstMission(page, SEED, BATTLEFIELD);
   const body = page.locator("body");
-  await expect(body).toHaveAttribute("data-app-state", "ready");
-  await page.locator('[data-field="seed"]').fill(SEED);
-  await page.locator('[data-action="new-game"]').click();
-  await expect(body).toHaveAttribute("data-screen", "overworld");
-
   const rows = page.locator('[data-role="mission-list"] [data-mission-id]');
-  const advance = page.locator('[data-action="advance-day"]');
-  const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
-  for (let day = 0; day < MAX_DAYS && (await rows.count()) === 0; day++) {
-    if (await choice.first().isVisible()) {
-      await choice.first().click();
-    }
-    await expect(advance).toBeEnabled();
-    await advance.click();
-  }
-  await expect(rows.first()).toBeVisible();
-
   await rows.first().click();
   await page
     .locator('[data-role="mission-details"] [data-action="plan-deployment"]')

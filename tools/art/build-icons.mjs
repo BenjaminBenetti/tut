@@ -62,6 +62,9 @@ const ICONS = {
   close: '<path d="M5 5 L19 19 M19 5 L5 19"/>',
   back: '<path d="M15 4 L7 12 L15 20"/>',
   lock: '<path d="M5 11 H19 V21 H5 Z"/><path d="M8 11 V7 A4 4 0 0 1 16 7 V11"/>',
+  // A tunnel sabotage (campaign arc §6.7): a burrow under the ground, its slabs heaved up.
+  tunnel:
+    '<path d="M2 10 H6 M13 10 H22"/><path d="M6 10 C6 17 11 21 21 21"/><path d="M13 10 C13 13 16 15 21 15"/><path d="M4 6 L8 4 M12 3 L16 6"/>',
   // Overworld map glyphs (#143). Markers point at their tile with a stem.
   "marker-city":
     '<path d="M12 2 L20 6.5 V15.5 L12 20 L4 15.5 V6.5 Z"/><path d="M12 20 V23"/><path d="M8 14 V10 H11 V14 M13 14 V8 H16 V14"/>',

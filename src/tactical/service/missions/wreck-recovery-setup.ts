@@ -1,7 +1,6 @@
 import { ok } from "../../../core/model/result";
 import { HookKinds } from "../../../mapgen/model/hook";
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
-import type { TileCoord } from "../../../mapgen/model/tile-coord";
 import type { WreckRecoverySpec } from "../../../overworld/model/wreck-recovery-spec";
 import type { MechWreck } from "../../model/mech-wreck";
 import { WRECK_ID_PREFIX } from "../../model/mech-wreck";
@@ -15,7 +14,7 @@ import type {
 } from "../../model/tactical-state";
 import { OBJECTIVE_ID_PREFIX } from "../../model/tactical-state";
 import { standEggSpawners } from "./infestation-clearance-setup";
-import { coordOf } from "./map-placement";
+import { coordOf, middleOf } from "./map-placement";
 
 // ===========================================
 // The wreck
@@ -105,27 +104,3 @@ export const WRECK_RECOVERY_SETUP: MissionSetupRule = {
     );
   },
 };
-
-// ===========================================
-// Helpers
-// ===========================================
-
-/**
- * The tile nearest the footprint's centre: the middle of a 3 × 3
- * square, the first of the middle four of an even one, in hook order.
- * `first` is the hook's first tile, the answer for a one-tile wreck.
- */
-function middleOf(tiles: readonly TileCoord[], first: TileCoord): TileCoord {
-  const cx = tiles.reduce((sum, tile) => sum + tile.x, 0) / tiles.length;
-  const cz = tiles.reduce((sum, tile) => sum + tile.z, 0) / tiles.length;
-  let best = first;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const tile of tiles) {
-    const distance = Math.abs(tile.x - cx) + Math.abs(tile.z - cz);
-    if (distance < bestDistance) {
-      best = tile;
-      bestDistance = distance;
-    }
-  }
-  return best;
-}

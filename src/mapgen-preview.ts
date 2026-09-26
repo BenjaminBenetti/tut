@@ -22,7 +22,10 @@ import { OrthographicCameraRig } from "./graphics/service/orthographic-camera-ri
 import { PlaceholderModelFactory } from "./graphics/service/placeholder-model-factory";
 import { SceneService } from "./graphics/service/scene-service";
 import { TacticalSceneBuilder } from "./graphics/service/tactical-scene-builder";
-import { ARCHETYPE_MISSION_HOOKS } from "./mapgen/data/hook-requirements";
+import {
+  ARCHETYPE_MISSION_HOOKS,
+  MISSION_HOOK_PRESETS,
+} from "./mapgen/data/hook-requirements";
 import type { MapArchetype, MapRecipe } from "./mapgen/model/map-recipe";
 import { MAP_ARCHETYPES } from "./mapgen/model/map-recipe";
 import { ARCHETYPE_RECIPE_DEFAULTS } from "./mapgen/data/archetype-recipe-defaults";
@@ -206,6 +209,12 @@ async function main(): Promise<void> {
   // place that renders a map with nothing else in the frame.
   const showModels =
     new URLSearchParams(window.location.search).get("models") === "1";
+  // `?hooks=tunnel-sabotage` lays a mission type's own hook set in
+  // place of the archetype's (#1179): the three tunnel mouths.
+  const hookPreset =
+    MISSION_HOOK_PRESETS[
+      new URLSearchParams(window.location.search).get("hooks") ?? ""
+    ];
   let view: TacticalSceneBuilder | undefined;
   let input: TacticalInputController | undefined;
   let hud: TacticalHudView | undefined;
@@ -227,7 +236,7 @@ async function main(): Promise<void> {
         // and brood chambers in a hive cavern.
         hooks:
           state.site === undefined
-            ? ARCHETYPE_MISSION_HOOKS[state.archetype]
+            ? (hookPreset ?? ARCHETYPE_MISSION_HOOKS[state.archetype])
             : [
                 ...ARCHETYPE_MISSION_HOOKS[state.archetype].filter(
                   (hook) => hook.kind !== HookKinds.EGG_SPAWNER,

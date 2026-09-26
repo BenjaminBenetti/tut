@@ -227,6 +227,44 @@ export const HIVE_ASSAULT: MissionType = {
 };
 
 /**
+ * A city at the spread threshold is tunnelling toward its neighbour
+ * (arc §6.7): set a charge on each of the three tunnel mouths, survive
+ * the three-turn fuses, then extract. A win holds the city's spread for
+ * 10 days; the overworld's offer and consequence rules say how.
+ *
+ * Numbers against the clearance, the arc's "ordinary" scale: the same
+ * credits per difficulty and the same tech. The pay-off is the held
+ * spread, not a bonus. Its expiry is not this number: the offer lasts
+ * until the spread is due (at most 2 days, the offer window), so
+ * `expiryDays` is only the ceiling a caller without the spec reads. It
+ * carries no ignore penalty, because ignoring it already costs the
+ * spread (arc §6.7: "the spread happens as normal").
+ *
+ * The hook list is the settlement's modest threat: two edge spawn zones
+ * and no egg spawners (the open mouths are the mission's spawners,
+ * surfacing burrowers), around a deploy zone and the extraction. The
+ * three mouths come from the type's map rule.
+ */
+export const TUNNEL_SABOTAGE: MissionType = {
+  id: "tunnel-sabotage",
+  name: "Tunnel Sabotage",
+  description:
+    "The swarm is tunnelling toward the next city. Set a charge on each of the three tunnel mouths, hold while the fuses burn, then extract.",
+  difficultyBand: { min: 1, max: 10 },
+  rewardPerDifficulty: 300,
+  techRewardBase: 8,
+  techRewardPerDifficulty: 3,
+  expiryDays: 2,
+  ignorePenalty: 0,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "medium",
+};
+
+/**
  * Every mission type keyed by id. Typed as a record over the closed
  * `MissionTypeId` union so a new id without a definition (or a definition
  * whose key and `id` disagree, see the data test) fails at compile time
@@ -239,4 +277,5 @@ export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   "wreck-recovery": WRECK_RECOVERY,
   evacuation: EVACUATION,
   "hive-assault": HIVE_ASSAULT,
+  "tunnel-sabotage": TUNNEL_SABOTAGE,
 };

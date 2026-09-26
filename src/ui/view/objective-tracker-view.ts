@@ -65,6 +65,10 @@ const DEADLINE_CLASS = "tut-deadline";
  *   OBJECTIVES  0 / 1                      (the optional rows are not counted)
  *   ├ ○ Destroy spawner 1 · 20 hp · OPTIONAL
  *   └ ○ Capture a lurker
+ *
+ *   OBJECTIVES  0 / 1
+ *   └ ◇ Tunnels sealed · 1 / 3
+ *       Tunnel 2 blows in 2 turns          (a row's own countdown: data-role="fuse")
  * ```
  *
  * An optional objective (#1179, a story mission's host nests) gets its
@@ -77,7 +81,9 @@ const DEADLINE_CLASS = "tut-deadline";
  * kind with live numbers (a defence, #1175) reads them from the readings
  * the HUD takes, since the objective record only mirrors them at phase
  * ends. An objective with a deadline gets its countdown under its label,
- * whatever its kind, from the countdowns the HUD takes. A sitrep with a
+ * whatever its kind, from the countdowns the HUD takes, and a kind may
+ * add countdowns of its own on its row (each tunnel charge's fuse, arc
+ * §6.7), under the deadline. A sitrep with a
  * deadline (Dust-off Window, campaign arc §11) gets a row of its own
  * after the objectives, `data-sitrep-id`, with its countdown under its
  * name; it is not an objective, so the summary does not count it.
@@ -225,7 +231,9 @@ export class ObjectiveTrackerView {
  * with the detail beside it (`inline`) or under it (`stacked`), the
  * `optional` tag on an objective that does not decide the mission
  * (#1179), and the `in reach` mark last. A countdown goes under the label
- * (and under a stacked detail), which stacks an inline row's label for it.
+ * (and under a stacked detail), which stacks an inline row's label for it;
+ * the row's own countdowns (a tunnel charge's fuse, arc §6.7) follow the
+ * deadline, one line each.
  */
 function rowElement(
   doc: Document,
@@ -251,7 +259,12 @@ function rowElement(
   const label = doc.createElement("span");
   label.textContent = row.label;
   const detail = row.detail && detailElement(doc, row.detail);
-  const deadline = countdown && countdownElement(doc, countdown);
+  const timers = [
+    ...(countdown ? [countdownElement(doc, countdown)] : []),
+    ...(row.countdowns ?? []).map((timer) =>
+      countdownElement(doc, timer, timer.role),
+    ),
+  ];
   if (row.layout === "stacked") {
     // The label over its detail, not beside it: "2 / 3 generators ·
     // wave 3 / 5" is wider than the rail leaves, and beside the label it
@@ -262,17 +275,15 @@ function rowElement(
     if (detail) {
       stack.appendChild(detail);
     }
-    if (deadline) {
-      stack.appendChild(deadline);
-    }
+    stack.append(...timers);
     item.append(glyph, stack);
   } else {
-    if (deadline) {
+    if (timers.length > 0) {
       // "Pod matures in 3 turns" is as wide as the rail, so it goes
       // under the label rather than beside it, and the detail stays put.
       const stack = doc.createElement("span");
       stack.className = STACK_CLASS;
-      stack.append(label, deadline);
+      stack.append(label, ...timers);
       item.append(glyph, stack);
     } else {
       item.append(glyph, label);
@@ -320,16 +331,18 @@ function sitrepRowElement(
 }
 
 /**
- * A deadline countdown as a monospace line, `data-role="deadline"`,
- * with `data-urgent` saying whether it pulses.
+ * A countdown as a monospace line, `data-role="deadline"` unless the
+ * row names another role (`fuse`), with `data-urgent` saying whether it
+ * pulses.
  */
 function countdownElement(
   doc: Document,
   countdown: ObjectiveCountdown,
+  role = "deadline",
 ): HTMLElement {
   const span = doc.createElement("span");
   span.className = `tut-mono ${DEADLINE_CLASS}`;
-  span.dataset.role = "deadline";
+  span.dataset.role = role;
   span.dataset.urgent = countdown.urgent ? "true" : "false";
   span.textContent = countdown.text;
   return span;

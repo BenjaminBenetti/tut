@@ -5,6 +5,7 @@ import type {
   DefendGeneratorsObjective,
   DestroyPodObjective,
   DestroySpawnerObjective,
+  SealTunnelsObjective,
   Spawner,
   StripWreckObjective,
   TacticalState,
@@ -102,6 +103,7 @@ describe("ObjectiveTrackerView draws rows from OBJECTIVE_PRESENTATION (ADR 0013 
       "rescue-civilians": OBJECTIVE_PRESENTATION["rescue-civilians"],
       "strip-wreck": OBJECTIVE_PRESENTATION["strip-wreck"],
       "destroy-hive-core": OBJECTIVE_PRESENTATION["destroy-hive-core"],
+      "seal-tunnels": OBJECTIVE_PRESENTATION["seal-tunnels"],
     };
     const view = new ObjectiveTrackerView(presentations);
     view.mount(root);
@@ -378,6 +380,128 @@ describe("ObjectiveTrackerView with optional objectives (#1179)", () => {
     view.update([{ ...OPTIONAL_NEST, complete: false }, HOLD], SPAWNERS);
     expect(summary()?.textContent).toBe("1 / 1 — board the drop ship");
     expect(summary()?.dataset.complete).toBe("true");
+  });
+});
+
+// ===========================================
+// A row's own countdowns
+// ===========================================
+
+describe("ObjectiveTrackerView draws a row's own countdowns (arc §6.7)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const SEAL: SealTunnelsObjective = {
+    id: "objective-t",
+    kind: "seal-tunnels",
+    mouthIds: ["tunnel-1", "tunnel-2", "tunnel-3"],
+    complete: false,
+  };
+
+  /** A mouth whose charge tile is (x, 0), charged or sealed as given. */
+  const mouth = (id: string, x: number, sealedOnTurn?: number) => ({
+    id,
+    pos: { x, y: 0, z: 0 },
+    tiles: [{ x, y: 0, z: 0 }],
+    chargeId: `${id}-charge`,
+    ...(sealedOnTurn === undefined ? {} : { sealedOnTurn }),
+  });
+
+  /** A charge on `mouthId`, blowing as `detonatesOnTurn` opens. */
+  const charge = (mouthId: string, x: number, detonatesOnTurn: number) => ({
+    id: `${mouthId}-charge`,
+    ownerId: "squad-1",
+    equipmentId: "breaching-charge",
+    tile: { x, y: 0, z: 0 },
+    detonatesOnTurn,
+  });
+
+  it("puts a fuse line per burning charge under the label, the count beside it", () => {
+    const mission = {
+      turn: 5,
+      objectives: [SEAL],
+      tunnelMouths: [
+        mouth("tunnel-1", 0, 4),
+        mouth("tunnel-2", 12),
+        mouth("tunnel-3", 24),
+      ],
+      charges: [charge("tunnel-2", 12, 6), charge("tunnel-3", 24, 8)],
+    } as unknown as TacticalState;
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([SEAL], [], undefined, objectiveProgress(mission));
+
+    const row = root.querySelector<HTMLElement>(
+      `[data-objective-id="${SEAL.id}"]`,
+    );
+    const fuses = [
+      ...(row?.querySelectorAll<HTMLElement>('[data-role="fuse"]') ?? []),
+    ];
+    expect(fuses.map((line) => line.textContent)).toEqual([
+      "Tunnel 2 blows at the end of this turn",
+      "Tunnel 3 blows in 3 turns",
+    ]);
+    expect(fuses.map((line) => line.dataset.urgent)).toEqual(["true", "false"]);
+    // Under the label in the stacked column; the count stays beside it.
+    expect(fuses[0]?.parentElement?.className).toBe("tut-hud__defence");
+    expect(fuses[0]?.previousElementSibling?.textContent).toBe(
+      "Tunnels sealed",
+    );
+    expect(
+      row?.querySelector('[data-role="tunnels-sealed"]')?.textContent,
+    ).toBe("1 / 3");
+    expect(row?.querySelector('[data-role="deadline"]')).toBeNull();
+  });
+
+  it("sets a row's countdowns after its deadline, one line each, in a stacked row too", () => {
+    const TIMED_ROW: ObjectiveRow = {
+      ...STACKED_ROW,
+      countdowns: [
+        {
+          text: "Probe blinks in 2 turns",
+          turnsLeft: 2,
+          urgent: true,
+          role: "probe",
+        },
+      ],
+    };
+    const presentations: ObjectivePresentationCatalogue = {
+      ...OBJECTIVE_PRESENTATION,
+      "destroy-pod": {
+        ...OBJECTIVE_PRESENTATION["destroy-pod"],
+        row: () => TIMED_ROW,
+      },
+    };
+    const pod: DestroyPodObjective = {
+      id: "objective-p",
+      kind: "destroy-pod",
+      targetId: "spawner-p",
+      complete: false,
+      deadlineTurn: 8,
+    };
+    const view = new ObjectiveTrackerView(presentations);
+    view.mount(root);
+    view.update(
+      [pod],
+      [],
+      undefined,
+      undefined,
+      objectiveCountdowns({
+        turn: 6,
+        objectives: [pod],
+      } as unknown as TacticalState),
+    );
+    const stack = root.querySelector(".tut-hud__defence");
+    expect(
+      [...(stack?.children ?? [])].map(
+        (child) => (child as HTMLElement).dataset.role ?? child.textContent,
+      ),
+    ).toEqual(["Hold the probe", "3 / 4 up", "deadline", "probe"]);
   });
 });
 

@@ -385,6 +385,8 @@ export const MODEL_IDS = [
   "prop.rubble-concrete",
   "prop.rubble-timber",
   "prop.infested-pipe",
+  "prop.tunnel-mouth",
+  "prop.tunnel-mouth-sealed",
   "building.wall-window-concrete-infested",
   "building.wall-window-plaster-infested",
   "building.wall-window-panel-infested",

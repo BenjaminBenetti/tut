@@ -1682,3 +1682,56 @@ describe("event vocabulary for wreck recovery (arc §6.6)", () => {
     expect(actorOf(worked(1))).toBe("unit-2");
   });
 });
+
+describe("event vocabulary for tunnel sabotage (arc §6.7)", () => {
+  const names = { ...NAMES, unit: () => "Rifle Squad" };
+
+  const SET = {
+    type: "tactical:tunnel-charge-set" as const,
+    payload: {
+      unitId: "unit-2",
+      mouthId: "tunnel-1",
+      objectiveId: "objective-1",
+      chargeId: "tunnel-1-charge",
+      detonatesOnTurn: 7,
+    },
+  };
+
+  const SEALED = {
+    type: "tactical:tunnel-sealed" as const,
+    payload: {
+      mouthId: "tunnel-1",
+      objectiveId: "objective-1",
+      chargeId: "tunnel-1-charge",
+      sealed: 1,
+      total: 3,
+    },
+  };
+
+  it("logs the charge set over the squad with its fuse, and the seal with the count", () => {
+    expect(describeEvent(SET, names)).toEqual({
+      text: "Rifle Squad set a charge on a tunnel mouth · blows in 3 turns",
+      icon: "warning",
+      tone: "accent",
+    });
+    expect(actorOf(SET)).toBe("unit-2");
+    expect(describeEvent(SEALED, names)).toEqual({
+      text: "Tunnel mouth sealed · 1 / 3",
+      icon: "check",
+      tone: "ok",
+    });
+    expect(actorOf(SEALED)).toBeUndefined();
+  });
+
+  it("counts one burrower up a mouth as one bug", () => {
+    expect(
+      describeEvent(
+        {
+          type: "tactical:bugs-spawned",
+          payload: { unitIds: ["b1"], source: "tunnel", sourceId: "tunnel-1" },
+        },
+        names,
+      )?.text,
+    ).toBe("1 bug stirred below a tunnel mouth");
+  });
+});

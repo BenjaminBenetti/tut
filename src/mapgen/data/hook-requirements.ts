@@ -79,6 +79,40 @@ export const CIVILIAN_MISSION_HOOKS: readonly HookRequirement[] = [
 ];
 
 /**
+ * The hook set a tunnel sabotage carries (campaign arc §6.7): one deploy
+ * zone, three tunnel mouths spread across the settlement, two edge
+ * spawn zones and an extraction. No egg spawners: the open mouths are
+ * the mission's spawners, surfacing burrowers. Distances and footprint
+ * match `HOOK_KIND_DEFAULTS`, which the Tunnel Sabotage map rule's mouth
+ * requirement is completed from.
+ */
+export const TUNNEL_SABOTAGE_MISSION_HOOKS: readonly HookRequirement[] = [
+  { kind: HookKinds.DEPLOY, count: 1, requiredPass: PassMask.ALL },
+  {
+    kind: HookKinds.TUNNEL_MOUTH,
+    count: 3,
+    requiredPass: PassMask.ALL,
+    minDistanceFromDeploy: 10,
+    maxNearestDistanceFromDeploy: 30,
+    meta: { footprint: 2 },
+  },
+  { kind: HookKinds.EDGE_SPAWN, count: 2, requiredPass: PassMask.INFANTRY },
+  { kind: HookKinds.EXTRACTION, count: 1, requiredPass: PassMask.ALL },
+];
+
+/**
+ * Hook sets Map Lab can ask for by name (`?hooks=<name>`) in place of
+ * the archetype's own, for a mission type that shares an archetype but
+ * brings objectives of its own: `?hooks=tunnel-sabotage` lays a
+ * settlement with its three tunnel mouths.
+ */
+export const MISSION_HOOK_PRESETS: Readonly<
+  Record<string, readonly HookRequirement[]>
+> = {
+  "tunnel-sabotage": TUNNEL_SABOTAGE_MISSION_HOOKS,
+};
+
+/**
  * The hook set the preview harness asks of each archetype, so Map Lab
  * shows a map with the objectives its missions will have. A new
  * archetype is a compile error here until it names one.

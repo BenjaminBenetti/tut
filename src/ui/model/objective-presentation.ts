@@ -71,6 +71,18 @@ export interface ObjectiveCountdown {
 }
 
 /**
+ * A countdown a kind keeps on its own row, beside any deadline: a
+ * tunnel charge's fuse, "Tunnel 2 blows in 3 turns" (arc §6.7). Built
+ * with `countdownAt`, so it counts, words and pulses as a deadline does;
+ * `role` names its line's `data-role`, so a spec can tell a fuse from a
+ * deadline.
+ */
+export interface ObjectiveRowCountdown extends ObjectiveCountdown {
+  /** `data-role` of the countdown's line: "fuse". */
+  readonly role: string;
+}
+
+/**
  * One tracker row as its kind describes it; the tracker turns it into
  * DOM. `inline` sets the detail beside the label; `stacked` sets it
  * under the label, for a progress line wider than the rail leaves.
@@ -95,6 +107,12 @@ export interface ObjectiveRow {
   readonly layout: "inline" | "stacked";
   /** The row's numbers, when it shows any now. */
   readonly detail?: ObjectiveRowDetail;
+  /**
+   * The row's own countdowns, one line each under the label after any
+   * deadline: each burning tunnel charge's fuse (arc §6.7). Absent or
+   * empty, the row shows none.
+   */
+  readonly countdowns?: readonly ObjectiveRowCountdown[];
   /**
    * Whether the row reads the objective done, for a kind whose
    * completion is live rather than recorded: a wreck's parts are home

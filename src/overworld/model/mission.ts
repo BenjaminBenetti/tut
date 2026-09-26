@@ -13,6 +13,7 @@ import type { CityId } from "./city";
 import type { HiveAssaultSpec } from "./hive-assault-spec";
 import type { CrashSiteSpec } from "./crash-site-spec";
 import type { EvacuationSpec } from "./evacuation-spec";
+import type { TunnelSabotageSpec } from "./tunnel-sabotage-spec";
 import type { WreckRecoverySpec } from "./wreck-recovery-spec";
 
 // ===========================================
@@ -199,6 +200,12 @@ export interface Mission {
    * evacuations existed.
    */
   readonly evacuation?: EvacuationSpec;
+  /**
+   * The spread a tunnel sabotage (arc §6.7) is racing: the city and the
+   * day its next spread is due, which is also the offer's `expiresDay`.
+   * Present exactly when `typeId` is `"tunnel-sabotage"`.
+   */
+  readonly tunnelSabotage?: TunnelSabotageSpec;
   /** What success pays. */
   readonly rewards: MissionRewards;
   /** Overworld day the mission appeared. */

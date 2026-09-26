@@ -778,6 +778,22 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "prop.tunnel-mouth": {
+    category: "props",
+    path: "assets/models/props/prop-tunnel-mouth.glb",
+    footprint: { w: 2, d: 2 },
+    height: 0.3,
+    sockets: ["socket_charge"],
+    quality: "final",
+  },
+  "prop.tunnel-mouth-sealed": {
+    category: "props",
+    path: "assets/models/props/prop-tunnel-mouth-sealed.glb",
+    footprint: { w: 2, d: 2 },
+    height: 0.27,
+    sockets: ["socket_charge"],
+    quality: "final",
+  },
   "prop.rubble-timber": {
     category: "props",
     path: "assets/models/props/prop-rubble-timber.glb",

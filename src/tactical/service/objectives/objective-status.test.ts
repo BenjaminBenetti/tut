@@ -13,6 +13,7 @@ import {
   unitAt,
 } from "../tactical-fixtures.test-helper";
 import {
+  decidingObjectives,
   objectiveComplete,
   objectiveFailed,
   objectiveResultFields,
@@ -99,6 +100,25 @@ describe("objectiveComplete / objectiveFailed (ADR 0013 §2.3)", () => {
 // ===========================================
 // Result rows
 // ===========================================
+
+describe("decidingObjectives (#1179)", () => {
+  it("keeps every objective not marked optional, in objective order", () => {
+    const optional: Objective = { ...SPAWNER_OBJECTIVE, optional: true };
+    const second: Objective = { ...SPAWNER_OBJECTIVE, id: "objective-2" };
+    const explicit: Objective = {
+      ...SPAWNER_OBJECTIVE,
+      id: "objective-3",
+      optional: false,
+    };
+    expect(decidingObjectives([optional, second, DEFENCE, explicit])).toEqual([
+      second,
+      DEFENCE,
+      explicit,
+    ]);
+    expect(decidingObjectives([optional])).toEqual([]);
+    expect(decidingObjectives([])).toEqual([]);
+  });
+});
 
 describe("objectiveResults", () => {
   it("writes one row per objective, in order, with a tally only where the kind keeps one", () => {

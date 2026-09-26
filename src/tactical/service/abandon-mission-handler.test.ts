@@ -124,6 +124,36 @@ describe("leaveMissionSummary (#1132)", () => {
   });
 });
 
+describe("leaveMissionSummary with optional objectives (#1179)", () => {
+  /** `fieldMission` with an optional nest beside its deciding objective. */
+  function withOptional(complete: boolean): TacticalState {
+    const mission = fieldMission({ complete });
+    return {
+      ...mission,
+      objectives: [
+        {
+          id: "objective-0",
+          kind: "destroy-spawner",
+          targetId: "spawner-0",
+          complete: false,
+          optional: true,
+        },
+        ...mission.objectives,
+      ],
+    };
+  }
+
+  it("never counts an optional objective as open, nor lets it hold a win back", () => {
+    const done = leaveMissionSummary(withOptional(true));
+    expect(done.objectivesOpen).toBe(0);
+    expect(done.outcome).toBe("won");
+
+    const open = leaveMissionSummary(withOptional(false));
+    expect(open.objectivesOpen).toBe(1);
+    expect(open.outcome).toBe("lost");
+  });
+});
+
 // ===========================================
 // Handler
 // ===========================================

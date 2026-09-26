@@ -3,6 +3,7 @@ import type { Result } from "../../core/model/result";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Mission } from "../../overworld/model/mission";
+import type { BugUnitSource } from "./bug-unit-source";
 import type { BroodSetupDeps } from "./brood-tuning";
 import type { CivilianTuning } from "./civilian";
 import type { GeneratorTuning } from "./generator";
@@ -28,6 +29,14 @@ export interface MissionSetupDeps {
   readonly spawnTuning: SpawnTuning;
   /** What a defence's generators are made of (#1175). */
   readonly generator: GeneratorTuning;
+  /**
+   * The stat blocks of the bugs a setup may place rather than hatch
+   * (ADR 0013 §2.6): Live Specimen's lurkers (#1179). The composition
+   * root passes every shipped species. Optional, since no mission type
+   * places a bug; a setup that needs a species left out refuses to
+   * start with `unknown-unit-type`.
+   */
+  readonly species?: readonly BugUnitSource[];
   /**
    * The species and tuning a hive cavern's dormant broods are placed
    * from (#1179), read by `placeCavernBroods`. Optional so every start

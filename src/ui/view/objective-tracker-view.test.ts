@@ -300,6 +300,55 @@ describe("ObjectiveTrackerView counts a deadline down (ADR 0013 §2.3)", () => {
 });
 
 // ===========================================
+// Optional objectives
+// ===========================================
+
+describe("ObjectiveTrackerView with optional objectives (#1179)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const rowOf = (id: string): HTMLElement | null =>
+    root.querySelector<HTMLElement>(`[data-objective-id="${id}"]`);
+  const summary = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('[data-field="objective-summary"]');
+
+  const OPTIONAL_NEST: DestroySpawnerObjective = {
+    ...NEST,
+    complete: true,
+    optional: true,
+  };
+
+  it("draws an optional objective's row, marked and tagged, but counts only the deciding ones", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    const open: DefendGeneratorsObjective = { ...HOLD, complete: false };
+    view.update([OPTIONAL_NEST, open], SPAWNERS);
+    expect(summary()?.textContent).toBe("0 / 1");
+    expect(summary()?.dataset.complete).toBe("false");
+    const nest = rowOf(OPTIONAL_NEST.id);
+    expect(nest?.dataset.optional).toBe("true");
+    expect(nest?.querySelector('[data-role="optional"]')?.textContent).toBe(
+      "optional",
+    );
+    expect(rowOf(open.id)?.dataset.optional).toBeUndefined();
+    expect(rowOf(open.id)?.querySelector('[data-role="optional"]')).toBeNull();
+  });
+
+  it("names the drop ship once every deciding objective is done, whatever the optional ones say", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([{ ...OPTIONAL_NEST, complete: false }, HOLD], SPAWNERS);
+    expect(summary()?.textContent).toBe("1 / 1 — board the drop ship");
+    expect(summary()?.dataset.complete).toBe("true");
+  });
+});
+
+// ===========================================
 // Sitrep deadlines
 // ===========================================
 

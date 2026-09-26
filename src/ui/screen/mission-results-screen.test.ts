@@ -715,3 +715,74 @@ describe("MissionResultsScreen on a defence (#1175)", () => {
     expect(taglineFor("lost", false)).toContain("bank is lost");
   });
 });
+
+// ===========================================
+// Live Specimen (#1179)
+// ===========================================
+
+describe("MissionResultsScreen on Live Specimen (#1179)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  /** The tagline for `result` over a campaign whose story progress is `story`. */
+  function taglineFor(
+    result: Partial<MissionResult>,
+    story: Partial<GameState["overworld"]["progress"]>,
+  ): string {
+    const state = afterMission();
+    const store = new FakeStore({
+      ...state,
+      overworld: {
+        ...state.overworld,
+        progress: { ...state.overworld.progress, ...story },
+        lastMissionResult: { ...RESULT, ...result },
+      },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
+    }).mount(root);
+    return root.querySelector('[data-field="tagline"]')?.textContent ?? "";
+  }
+
+  it("says the specimen is home and Act I is over", () => {
+    expect(
+      taglineFor(
+        {
+          outcome: "won",
+          specimenCaptured: "lurker",
+          objectives: [
+            { kind: "destroy-spawner", complete: false, failed: false },
+            { kind: "capture-specimen", complete: true, failed: false },
+          ],
+        },
+        { storyWon: ["first-skyfall", "live-specimen"] },
+      ),
+    ).toBe(
+      "The lurker is home alive, in the net. The lab has its live specimen, and Act I is over.",
+    );
+  });
+
+  it("says no specimen came home, and when the hunt is back", () => {
+    expect(
+      taglineFor(
+        {
+          outcome: "extracted",
+          objectives: [
+            { kind: "destroy-spawner", complete: true, failed: false },
+            { kind: "capture-specimen", complete: false, failed: false },
+          ],
+        },
+        { storyRetryDay: { "live-specimen": 12 } },
+      ),
+    ).toBe(
+      "No lurker came home alive. The lab is still waiting: the hunt is pinned again in 5 days.",
+    );
+  });
+});

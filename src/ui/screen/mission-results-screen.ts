@@ -18,6 +18,7 @@ import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
 import type { MissionPresentationCatalogue } from "../model/mission-presentation";
 import type { Screen, ScreenId } from "../model/screen";
+import type { StoryPresentationCatalogue } from "../model/story-presentation";
 import type { ScreenRouter } from "../model/screen-router";
 import {
   formatCredits,
@@ -25,6 +26,7 @@ import {
   formatWhole,
 } from "../service/format";
 import { debriefTaglineFor } from "../service/missions/mission-presentation";
+import { storyDebriefTaglineFor } from "../service/story/story-presentation";
 
 // ===========================================
 // Types
@@ -48,6 +50,8 @@ export interface MissionResultsScreenDeps {
   readonly rosterTuning: RosterTuning;
   /** Each type's debrief tagline (ADR 0013 §2.3); the shipped table when omitted. */
   readonly missionPresentation?: MissionPresentationCatalogue;
+  /** Each story mission's debrief tagline (ADR 0013 §2.5); the shipped table when omitted. */
+  readonly storyPresentation?: StoryPresentationCatalogue;
 }
 
 /** Banner copy per outcome. */
@@ -239,10 +243,12 @@ export class MissionResultsScreen implements Screen {
     const tagline = doc.createElement("p");
     tagline.className = "tut-dim";
     tagline.dataset.field = "tagline";
-    // A type with its own words for the outcome says them (a defence
-    // names what became of the installation, #1175); every other
-    // mission keeps the outcome's line.
+    // A story mission with its own words says them first (Live
+    // Specimen says whether the specimen came home, #1179), then a type
+    // with its own (a defence names what became of the installation,
+    // #1175); every other mission keeps the outcome's line.
     tagline.textContent =
+      storyDebriefTaglineFor(result, { state }, this.deps.storyPresentation) ??
       debriefTaglineFor(result, { state }, this.deps.missionPresentation) ??
       copy.tagline;
     // The city, not the id (#739). The player chose this mission from a

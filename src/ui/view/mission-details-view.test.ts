@@ -136,6 +136,64 @@ describe("MissionDetailsView", () => {
     expect(heading()).toBe("Briefing");
   });
 
+  it("briefs Live Specimen in its own words: the rows, the line and the title, and a plain clearance shows none of it (#1179)", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const plain = missionAt("mission-1", "cairo", 7, 3);
+    const specimen = {
+      ...missionAt("mission-2", "lagos", 7, 3),
+      storyId: "live-specimen" as const,
+      pinned: true,
+      act: "act-1" as const,
+    };
+    const state = campaignOnDay(4, [plain, specimen]);
+    const shown = (name: string): boolean =>
+      root.querySelector<HTMLElement>(`[data-field="detail-${name}"]`)
+        ?.hidden === false;
+    const term = (name: string): string =>
+      root.querySelector(`[data-field="detail-${name}"]`)
+        ?.previousElementSibling?.textContent ?? "";
+    const description = (): string =>
+      root.querySelector('[data-field="description"]')?.textContent ?? "";
+
+    view.update(state, specimen);
+    expect(
+      root.querySelector('[data-field="briefing-heading"]')?.textContent,
+    ).toBe("Briefing · Live Specimen");
+    expect(field("type")).toBe("Infestation Clearance");
+    expect([
+      [term("story-objective"), field("story-objective")],
+      [term("story-win"), field("story-win")],
+      [term("story-kit"), field("story-kit")],
+    ]).toEqual([
+      ["Objective", "Net a lurker at 50% HP or less, then bring it home"],
+      ["Win", "Act I ends"],
+      ["Kit", "Every squad carries a capture net"],
+    ]);
+    expect(description()).toContain("The lab needs a lurker alive.");
+    expect(description()).not.toBe(
+      MISSION_TYPES["infestation-clearance"].description,
+    );
+    // The story rows sit ahead of the type's, straight after the lead.
+    const fields = [
+      ...root.querySelectorAll<HTMLElement>("dd[data-field]"),
+    ].map((dd) => dd.dataset.field);
+    expect(fields.indexOf("detail-story-objective")).toBe(
+      fields.indexOf("detail-carcass") + 1,
+    );
+
+    view.update(state, plain);
+    expect(shown("story-objective")).toBe(false);
+    expect(shown("story-win")).toBe(false);
+    expect(shown("story-kit")).toBe(false);
+    expect(description()).toBe(
+      MISSION_TYPES["infestation-clearance"].description,
+    );
+  });
+
   it("hides again when the mission goes away and reports Plan deployment with the id", () => {
     const onPlanDeployment = vi.fn();
     const view = new MissionDetailsView(

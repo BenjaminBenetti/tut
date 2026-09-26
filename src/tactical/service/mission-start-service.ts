@@ -20,7 +20,7 @@ import {
   deploymentSize,
   MAX_DEPLOYED_UNITS,
 } from "../../overworld/model/deployment";
-import type { MissionId } from "../../overworld/model/mission";
+import type { Mission, MissionId } from "../../overworld/model/mission";
 import type { InfantryUpgradeDefinition } from "../../roster/model/infantry-upgrade";
 import type { Mech } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
@@ -33,6 +33,7 @@ import type {
 } from "../model/mission-setup-rule";
 import type { MissionStartOptions } from "../model/mission-start-options";
 import type { SitrepRules } from "../model/sitrep-rule";
+import type { StorySetupRules } from "../model/story-setup-rule";
 import type { TacticalError } from "../model/tactical-error";
 import type { TacticalState } from "../model/tactical-state";
 import { FIRST_TURN } from "../model/tactical-state";
@@ -50,6 +51,7 @@ import { placeGarrisonTurrets } from "./garrison-service";
 import { coordOf, facingToward, firstTile } from "./missions/map-placement";
 import { MISSION_SETUP_RULES } from "./missions/mission-setup-rules";
 import { applySitrepSetups } from "./sitreps/sitrep-service";
+import { STORY_SETUP_RULES } from "./story/story-setup-rules";
 
 // ===========================================
 // Types
@@ -77,6 +79,12 @@ export interface MissionStartDeps extends MissionSetupDeps {
    * `MISSION_SETUP_RULES` when left out; tests substitute their own.
    */
   readonly setupRules?: MissionSetupRules;
+  /**
+   * What each story mission adds on top of its type's setup (ADR 0013
+   * §2.5). The shipped `STORY_SETUP_RULES` when left out; tests
+   * substitute their own.
+   */
+  readonly storySetupRules?: StorySetupRules;
   /**
    * What map each mission type is played on (ADR 0013 §2.3). The shipped
    * `MISSION_MAP_RULES` when left out; a sim or a render stages a map
@@ -129,6 +137,8 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *   mission.bugMix?                    ──► bugMix, the species the spawns roll
  *   setupRules[mission.typeId]         ──► the type's objectives, entities, schedules
  *                                          (a clearance's spawners, a defence's generators)
+ *   storySetupRules[mission.storyId]?  ──► the story's own on top (Live Specimen's
+ *                                          capture and its lurkers)
  *   options.garrisonTurrets            ──► garrison turrets on random clear tiles (#1155)
  *   mission.sitreps?                   ──► each sitrep's setup, in SITREP_IDS order
  *                                          (smoke, fire, carcasses, a known map)
@@ -253,7 +263,12 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     vision: emptyVision(),
   };
   const rules = deps.setupRules ?? MISSION_SETUP_RULES;
-  const setUp = rules[mission.typeId].setup(base, map, mission, deps);
+  const typed = rules[mission.typeId].setup(base, map, mission, deps);
+  if (!typed.ok) {
+    return typed;
+  }
+  // A story mission's own setup on top of its type's (ADR 0013 §2.5).
+  const setUp = setUpStory(typed.value, map, mission, deps);
   if (!setUp.ok) {
     return setUp;
   }
@@ -295,6 +310,34 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     // sitrep told the squad beforehand (Local Guides) is kept.
     activeMission: { ...placedAll, vision: initialVision(placedAll, known) },
   });
+}
+
+// ===========================================
+// Story setup
+// ===========================================
+
+/**
+ * The story mission's own setup on a mission its type has set up (ADR
+ * 0013 §2.5): the `storySetupRules` entry for `mission.storyId`, or the
+ * mission unchanged when it is not a story mission or its story adds
+ * nothing (First Skyfall).
+ *
+ * ```
+ *   storyId absent, or no entry ──► state
+ *   entry                       ──► entry.setup(state, map, mission, deps)
+ * ```
+ */
+function setUpStory(
+  state: TacticalState,
+  map: TacticalMap,
+  mission: Mission,
+  deps: MissionStartDeps,
+): Result<TacticalState, TacticalError> {
+  if (mission.storyId === undefined) {
+    return ok(state);
+  }
+  const rule = (deps.storySetupRules ?? STORY_SETUP_RULES)[mission.storyId];
+  return rule === undefined ? ok(state) : rule.setup(state, map, mission, deps);
 }
 
 // ===========================================

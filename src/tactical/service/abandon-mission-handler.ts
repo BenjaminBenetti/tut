@@ -8,7 +8,10 @@ import type { UnitId } from "../model/unit";
 import { leaveBehind, standingForce } from "./left-behind-service";
 import { forceExtracted, objectivesComplete } from "./mission-end-service";
 
-import { objectiveComplete } from "./objectives/objective-status";
+import {
+  decidingObjectives,
+  objectiveComplete,
+} from "./objectives/objective-status";
 
 // ===========================================
 // Types
@@ -31,7 +34,7 @@ export interface LeftBehindUnit {
 export interface LeaveMissionSummary {
   /** Living TDF units still on the map, in `units` order. */
   readonly leftBehind: readonly LeftBehindUnit[];
-  /** Objectives not yet complete. */
+  /** Deciding objectives not yet complete; an optional one is never counted (#1179). */
   readonly objectivesOpen: number;
   /** How the mission would be recorded. */
   readonly outcome: MissionOutcome;
@@ -51,9 +54,9 @@ export interface LeaveMissionSummary {
  * ```
  *   leftBehind     = living TDF units in `units` (not in `extracted`),
  *                    generators and civilian groups aside (standingForce)
- *   objectivesOpen = objectives with complete: false
- *   outcome        = every objective complete and someone aboard ──► won
- *                    otherwise ─────────────────────────────────► lost
+ *   objectivesOpen = deciding objectives (optional ≠ true) not complete
+ *   outcome        = every deciding objective complete and someone aboard ──► won
+ *                    otherwise ──────────────────────────────────────────► lost
  * ```
  *
  * An incomplete mission that is left is failed, whoever got out: the
@@ -72,7 +75,7 @@ export function leaveMissionSummary(
     unitId: unit.id,
     sourceId: unit.sourceId,
   }));
-  const objectivesOpen = mission.objectives.filter(
+  const objectivesOpen = decidingObjectives(mission.objectives).filter(
     (objective) => !objectiveComplete(mission, objective),
   ).length;
   const outcome: MissionOutcome =

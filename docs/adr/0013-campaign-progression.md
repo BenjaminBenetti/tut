@@ -1,6 +1,6 @@
 # ADR 0013 — Campaign progression and mission-type modules
 
-- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built; §2.3 and §2.4 add `onOffered` and `hookPlacement` for Crash Site (#1179).
+- Status: Accepted (2026-09-26). Amended the same day: §2.2, §2.4 and §2.5 now describe the director and the story spine as built; §2.3 and §2.4 add `onOffered` and `hookPlacement` for Crash Site (#1179); §2.3 adds optional objectives and §2.5 the story setup and presentation tables for Live Specimen (#1179).
 - Context doc: [Campaign Arc](../design/campaign-arc.md)
 - Supersedes: nothing. It extends ADR 0003 (state, commands, data) and ADR 0011 (tech tree).
 
@@ -99,6 +99,7 @@ Each domain owns a small interface and a table keyed by `MissionTypeId`. A `Read
 - **Tactical:** `ObjectiveRules<K>` in `tactical/model/objective-rules.ts`: `kind`, `complete(o, mission)`, `failed(o, mission)`, `interaction?`, `phaseStep?`, `reachable?`, `marker?`. The table is `OBJECTIVE_RULES` in `tactical/service/objectives/objective-rules.ts`. It replaces `objectiveComplete`/`objectiveFailed` in `defence-service.ts`, `DEFAULT_OBJECTIVE_INTERACTIONS`, and the objective-kind branches in the resolver, the marker service and spawner damage.
 - **UI:** `ObjectivePresentation`: `label(o, names)`, `progress?(o, mission)`, `errorText?`. The table is `OBJECTIVE_PRESENTATION` in `ui/service/objectives/objective-presentation.ts`. It replaces the binary tracker, HUD and error-text branches.
 - **Deadlines:** an objective may carry `deadlineTurn?: number`. A generic deadline phase step fails it when the turn ends past its deadline, and the kind's `onDeadline?` rule may add consequences (a pod releasing a wave).
+- **Optional objectives** (#1179): an objective may carry `optional?: true`. `decidingObjectives` in `objective-status.ts` drops those, and `missionOutcome`, `objectivesComplete`, the leave summary and the tracker's count read only what it keeps. An optional objective still plays and still reports its row in the result. A mission whose objectives are all optional can be extracted from, never won.
 - **Results:** the `Objective` union stays closed in `tactical-state.ts`. `MissionResult.objectives?: readonly ObjectiveResult[]`, with `{ kind: string; complete; failed; done?; total? }`, is filled generically by both resolvers. Overworld consequence rules read it. Overworld never imports tactical types.
 
 **Ordering is part of determinism.** `MISSION_TYPE_IDS`, `MISSION_OFFER_RULES` iteration and every RNG draw keep an append-only order.
@@ -166,6 +167,23 @@ Each rule draws on its own fork, labelled with its id. A pinned story offer neve
 - **Won:** the id is added to `storyWon`, then `onWon` applies.
 - **Lost or extracted:** `onLost` applies. Only `won` moves the story on.
 - **Tracking** uses optional `CampaignProgress` fields, so it needs no migration (§2.9): `storyWon?: StoryMissionId[]` and `storyRetryDay?: Partial<Record<StoryMissionId, number>>`.
+
+**On the map** (#1179). A story offer keeps its type's `typeId`, so the type's `MissionSetupRule` stands up the map first. A story that needs more adds a `StorySetupRule` (`tactical/model/story-setup-rule.ts`) to `STORY_SETUP_RULES` in `tactical/service/story/story-setup-rules.ts`, one file per story mission. The table is `Partial`: a story whose type's setup is the whole of it has no entry.
+
+```
+startTacticalMission
+  MISSION_SETUP_RULES[mission.typeId].setup(base, map, mission, deps)    the type
+  STORY_SETUP_RULES[mission.storyId]?.setup(typed, map, mission, deps)   the story, when it has one
+  garrison, sitreps, vision …
+```
+
+- The story rule receives the type's result and returns `Result<TacticalState, TacticalError>`. It is pure and draws ids from `deps.ids` in order.
+- `MissionStartDeps.storySetupRules?` defaults to the shipped table; tests substitute their own.
+- `MissionSetupDeps.species?` carries the bug stat blocks a setup may place (`BugUnitSource[]`). The composition passes the shipped species; tactical never imports bugs data.
+- First Skyfall has no entry: the crash site's setup is the whole of it.
+- Live Specimen (`live-specimen-setup.ts`) marks the clearance's destroy-spawner objectives `optional` (§2.3), adds `capture-specimen` for the lurker as the one deciding objective, and stands two lurkers by the nests nearest the deploy zone, on ground infantry can walk to from deploy and off the deploy and extraction tiles. If no nest has room, it uses reachable ground at least 8 from every deploy tile, then any reachable ground off the deploy zone. With nothing reachable, it refuses with `map-recipe`. Killing every lurker does not fail the capture: a clearance's edge waves never stop, so the hunt goes on while a net is left.
+
+**In the UI** (#1179). `StoryPresentation` (`ui/model/story-presentation.ts`) and `STORY_PRESENTATION` (`ui/service/story/story-presentation.ts`) sit beside the type table. A story adds briefing rows ahead of its type's, may replace the type's description, and has its debrief tagline asked before the type's. The table is `Partial`. The title stays in `STORY_MISSION_TITLES`. A result carries no story id, so a story's tagline recognises its own result by its payload and by the story's record in `CampaignProgress`.
 
 **The spine rule** (arc §13: "the spine ends the game after the last act that exists").
 

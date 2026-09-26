@@ -84,6 +84,7 @@ import {
   createInteractHandler,
 } from "../../tactical/service/objective-service";
 import { MISSION_SETUP_RULES } from "../../tactical/service/missions/mission-setup-rules";
+import { STORY_SETUP_RULES } from "../../tactical/service/story/story-setup-rules";
 import { createObjectiveDeadlineStep } from "../../tactical/service/objectives/objective-deadline-step";
 import { objectivePhaseSteps } from "../../tactical/service/objectives/objective-rules";
 import { sitrepPhaseSteps } from "../../tactical/service/sitreps/sitrep-service";
@@ -251,6 +252,10 @@ export function composeTactical(
     broods: { species: Object.values(BUG_SPECIES), tuning: BROOD_TUNING },
     civilian: CIVILIAN_TUNING,
     setupRules: MISSION_SETUP_RULES,
+    // A story mission's own setup on top of its type's, and the bugs a
+    // setup may place: Live Specimen's lurkers (#1179).
+    storySetupRules: STORY_SETUP_RULES,
+    species: Object.values(BUG_SPECIES),
     // Every squad deployed carries what the tree has researched for the
     // infantry (campaign arc §10.3), the capture net among it (#1179),
     // read off the campaign at the start.

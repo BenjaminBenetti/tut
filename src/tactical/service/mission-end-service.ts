@@ -4,7 +4,10 @@ import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
 import { isCombatUnit, isStandingForce } from "../model/unit";
 
-import { objectiveComplete } from "./objectives/objective-status";
+import {
+  decidingObjectives,
+  objectiveComplete,
+} from "./objectives/objective-status";
 
 // ===========================================
 // Outcome
@@ -15,7 +18,7 @@ import { objectiveComplete } from "./objectives/objective-status";
  * while it is still being played:
  *
  * ```
- *   every objective complete           ──► won
+ *   every deciding objective complete  ──► won
  *   a TDF unit still standing          ──► undefined (play on)
  *   nobody standing, somebody got out  ──► extracted
  *   nobody standing, nobody got out    ──► lost
@@ -25,21 +28,23 @@ import { objectiveComplete } from "./objectives/objective-status";
  * has to get home (Executive Director, review of #1113). So the mission
  * ends only when nobody of the player's is left on the map — extracted
  * or dead — and the outcome is read from what they achieved: every
- * objective complete and someone out is **won**; someone out with an
- * objective open is **extracted**; nobody out is **lost**, whatever
- * they finished, because nobody came home to say so. A deployed turret
- * is not somebody (#1138): it cannot come home, so a turret still
- * standing after the last squad has gone keeps nothing open. Neither is
- * a civilian group (campaign arc §6.4): it is who the force came for,
- * so the force leaving or falling ends the mission with any group still
- * on the map lost, and a group that got out alone is not somebody of
- * the force coming home.
+ * deciding objective complete and someone out is **won**; someone out
+ * with a deciding objective open is **extracted**; nobody out is
+ * **lost**, whatever they finished, because nobody came home to say
+ * so. A deployed turret is not somebody (#1138): it cannot come home,
+ * so a turret still standing after the last squad has gone keeps
+ * nothing open. Neither is a civilian group (campaign arc §6.4): it is
+ * who the force came for, so the force leaving or falling ends the
+ * mission with any group still on the map lost, and a group that got
+ * out alone is not somebody of the force coming home. An objective
+ * marked `optional` never decides (#1179): Live Specimen is won once
+ * the specimen is home, nests or no nests.
  *
  * ```
- *   a TDF unit still standing ──► undefined (play on)
- *   nobody extracted          ──► lost
- *   objectives all complete   ──► won
- *   otherwise                 ──► extracted
+ *   a TDF unit still standing          ──► undefined (play on)
+ *   nobody extracted                   ──► lost
+ *   deciding objectives all complete   ──► won
+ *   otherwise                          ──► extracted
  * ```
  *
  * A pure predicate over the state, deliberately owned by neither the
@@ -62,19 +67,24 @@ export function missionOutcome(
 }
 
 /**
- * Whether every objective is done — the moment the HUD tells the player
- * to head for the drop ship. A mission with no objectives can only be
+ * Whether every deciding objective is done — the moment the HUD tells
+ * the player to head for the drop ship. Optional objectives are not
+ * asked (#1179). A mission with no deciding objective can only be
  * extracted from, never won.
  *
+ * ```
+ *   deciding = objectives with optional ≠ true
+ *   deciding non-empty ∧ every one complete
+ * ```
+ *
  * @param mission - The mission to read.
- * @returns True once every objective is complete.
+ * @returns True once every deciding objective is complete.
  */
 export function objectivesComplete(mission: TacticalState): boolean {
+  const deciding = decidingObjectives(mission.objectives);
   return (
-    mission.objectives.length > 0 &&
-    mission.objectives.every((objective) =>
-      objectiveComplete(mission, objective),
-    )
+    deciding.length > 0 &&
+    deciding.every((objective) => objectiveComplete(mission, objective))
   );
 }
 

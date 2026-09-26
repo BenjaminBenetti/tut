@@ -28,8 +28,9 @@ import {
 /**
  * When the ordinary Alpha Hunt joins the director's pool (campaign arc
  * §3: "the Broodmother and Alpha Hunt about 10 missions in" to Act II).
- * The same count opens the scripted sighting, which the ordinary hunts
- * then wait for (`sightingPassed`).
+ * The same count opens the scripted sighting, which Pod Telemetry can
+ * bring forward (`isSightingDue`), and the ordinary hunts then wait for
+ * it (`sightingPassed`).
  */
 export const ALPHA_HUNT_DEBUT: MissionDebut = {
   act: "act-2",

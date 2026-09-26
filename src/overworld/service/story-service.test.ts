@@ -223,7 +223,7 @@ describe("setCampaignFlag", () => {
 // ===========================================
 
 describe("onStoryMissionResolved", () => {
-  it("changes nothing for an offer with no story id, or a story mission not built", () => {
+  it("changes nothing for an offer with no story id", () => {
     const state = flagged([]);
     const plain = missionAt("mid", 30);
     const ctx = storyContext(storyRulesOf(LIVE_SPECIMEN));
@@ -234,15 +234,54 @@ describe("onStoryMissionResolved", () => {
       ctx,
     );
     expect(none.state).toBe(state);
-    const unbuilt = { ...plain, pinned: true, storyId: "uplink" as const };
-    const absent = onStoryMissionResolved(
+    expect(none.events).toEqual([]);
+  });
+
+  it("records and chronicles every win of a story mission with no rule (the Great Hives), and nothing else (#1179)", () => {
+    const state = { ...flagged([]), day: 48 };
+    const ctx = storyContext(storyRulesOf(LIVE_SPECIMEN));
+    const great: Mission = {
+      ...missionAt("mid", 30),
+      pinned: true,
+      storyId: "great-hive",
+      act: "act-3",
+    };
+    const first = onStoryMissionResolved(
       state,
-      unbuilt,
-      resultFor(unbuilt, "won", 0),
+      great,
+      resultFor(great, "won", 0),
       ctx,
     );
-    expect(absent.state).toBe(state);
-    expect(absent.events).toEqual([]);
+    expect(first.events).toEqual([]);
+    expect(first.state.progress.storyWon).toEqual(["great-hive"]);
+    expect(first.state.progress.flags).toEqual(state.progress.flags);
+    expect(first.state.progress.act).toBe(state.progress.act);
+    const second = onStoryMissionResolved(
+      { ...first.state, day: 52 },
+      great,
+      resultFor(great, "won", 0),
+      ctx,
+    );
+    expect(second.state.progress.storyWon).toEqual(["great-hive"]);
+    expect(
+      second.state.progress.chronicle?.storyWins.map((win) => [
+        win.storyId,
+        win.day,
+      ]),
+    ).toEqual([
+      ["great-hive", 48],
+      ["great-hive", 52],
+    ]);
+    for (const outcome of ["lost", "extracted"] as const) {
+      const lost = onStoryMissionResolved(
+        state,
+        great,
+        resultFor(great, outcome, 0),
+        ctx,
+      );
+      expect(lost.state).toBe(state);
+      expect(lost.events).toEqual([]);
+    }
   });
 
   it("records a win once and applies its flag effects in order", () => {

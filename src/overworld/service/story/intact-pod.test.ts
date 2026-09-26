@@ -239,9 +239,12 @@ describe("INTACT_POD", () => {
     });
     const { state, events } = direct(crowded);
     expect(pod(state)?.cityId).toBe("low");
+    // Pod Telemetry also brings the Broodmother sighting forward (#1179),
+    // which takes a city of its own: only the pod's withdrawal is read.
     expect(
       events
         .filter((event) => event.type === MISSION_WITHDRAWN)
+        .filter((event) => event.payload.replacedBy === pod(state)?.id)
         .map((event) => event.payload.missionId),
     ).toEqual(["mission-low"]);
 

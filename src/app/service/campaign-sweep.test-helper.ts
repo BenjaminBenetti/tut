@@ -88,7 +88,12 @@ export interface StoryTrack {
   readonly pinnedDays?: number;
   /** When it was first won, if ever. */
   readonly won?: CampaignMark;
-  /** How many times it was played and not won (an extraction counts). */
+  /**
+   * How many times it was played and not won (an extraction counts). A
+   * story mission offered more than once under one id (the three Great
+   * Hives) counts every play that was not won, before or after its first
+   * win.
+   */
   readonly losses: number;
   /** Tech points its plays brought home. */
   readonly tp: number;
@@ -164,6 +169,11 @@ export interface CampaignRecord {
    * before a tick could pin it.
    */
   readonly gateLags: Readonly<Partial<Record<StoryMissionId, number>>>;
+}
+
+/** How many times a story mission was played: its losses, and its first win. */
+export function storyPlays(track: StoryTrack): number {
+  return track.losses + (track.won === undefined ? 0 : 1);
 }
 
 /** What a sweep composes a game from: the story, the shipped one unless a test swaps it. */
@@ -510,6 +520,9 @@ export function summarise(
   }
   for (const id of STORY_MISSION_IDS) {
     add(`${id}.pinned.days`, (record) => record.stories[id].pinnedDays);
+    add(`${id}.played`, (record) =>
+      storyPlays(record.stories[id]) > 0 ? 1 : 0,
+    );
     add(`${id}.won.missions`, (record) => record.stories[id].won?.missions);
     add(`${id}.won.days`, (record) => record.stories[id].won?.days);
     add(`${id}.won.threat`, (record) => record.stories[id].won?.threat);
@@ -837,7 +850,11 @@ class CampaignTracker {
 
   /**
    * Counts a resolved mission against its outcome and its type and, for
-   * a story mission, its win or loss.
+   * a story mission, its win or loss. A play is a story win when it was
+   * won and the story recorded it (`storyWon`), so a win the story drops
+   * reads as a loss here; every other play is a loss. Both are read per
+   * play, not from `storyWon` alone: a Great Hive's three plays share one
+   * story id, so a loss after the first win is still a loss.
    */
   private resolved(
     result: MissionResult,
@@ -864,15 +881,14 @@ class CampaignTracker {
     }
     const track = this.stories[storyId];
     const paid = { ...track, tp: track.tp + result.techPointsAwarded };
-    const storyWon = (state.overworld.progress.storyWon ?? []).includes(
-      storyId,
-    );
-    this.stories[storyId] =
-      storyWon && track.won === undefined
+    const storyWon =
+      outcome === "won" &&
+      (state.overworld.progress.storyWon ?? []).includes(storyId);
+    this.stories[storyId] = !storyWon
+      ? { ...paid, losses: track.losses + 1 }
+      : track.won === undefined
         ? { ...paid, won: this.mark(state) }
-        : storyWon
-          ? paid
-          : { ...paid, losses: track.losses + 1 };
+        : paid;
   }
 
   /** Counts a researched node's cost by kind and times the Intel-funded ones. */

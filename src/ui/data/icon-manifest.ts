@@ -37,6 +37,7 @@ export const ICON_MANIFEST = {
   day: { path: "assets/ui/icons/day.svg", label: "Day" },
   deploy: { path: "assets/ui/icons/deploy.svg", label: "Deploy" },
   egg: { path: "assets/ui/icons/egg.svg", label: "Egg spawner" },
+  pod: { path: "assets/ui/icons/pod.svg", label: "Spore pod" },
   defend: { path: "assets/ui/icons/defend.svg", label: "Defend" },
   extract: { path: "assets/ui/icons/extract.svg", label: "Extract" },
   infestation: {

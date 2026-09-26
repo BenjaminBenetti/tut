@@ -113,6 +113,29 @@ describe("MissionDetailsView", () => {
     expect(field("days-left")).toBe(NO_COUNTDOWN_TEXT);
   });
 
+  it("heads a story mission's briefing with its title (arc §6.9)", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const heading = (): string =>
+      root.querySelector('[data-field="briefing-heading"]')?.textContent ?? "";
+    const drawn = missionAt("mission-1", "cairo", 5, 1);
+    view.update(campaignOnDay(4, [drawn]), drawn);
+    expect(heading()).toBe("Briefing");
+    const story = {
+      ...missionAt("mission-2", "lagos", 5, 1),
+      typeId: "crash-site" as const,
+      storyId: "first-skyfall" as const,
+      pinned: true,
+    };
+    view.update(campaignOnDay(4, [drawn, story]), story);
+    expect(heading()).toBe("Briefing · First Skyfall");
+    view.update(campaignOnDay(4, [drawn, story]), drawn);
+    expect(heading()).toBe("Briefing");
+  });
+
   it("hides again when the mission goes away and reports Plan deployment with the id", () => {
     const onPlanDeployment = vi.fn();
     const view = new MissionDetailsView(

@@ -435,7 +435,11 @@
   outline-offset: -2px;
 }
 
-/* A reported carcass takes a second line under the whole row (#1171). */
+/*
+ * A story title and a reported carcass (#1171) each take a second line
+ * under the whole row.
+ */
+.tut-missions__row .tut-missions__story,
 .tut-missions__row .tut-missions__carcass {
   grid-column: 1 / -1;
   justify-self: start;

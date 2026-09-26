@@ -4,12 +4,7 @@ import { writeFileSync } from "node:fs";
 import { manhattanDistance } from "../../core/service/grid-math";
 import { describe, expect, it } from "vitest";
 
-import {
-  INFESTATION_CLEARANCE,
-  MISSION_TYPES,
-} from "../../content/data/mission-types";
-import type { MissionType } from "../../content/model/mission-type";
-import { ok } from "../../core/model/result";
+import { MISSION_TYPES } from "../../content/data/mission-types";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
@@ -20,7 +15,6 @@ import { createBugPhaseRunner } from "../../bugs/ai/bug-phase-runner";
 import { LurkerBehaviour } from "../../bugs/ai/lurker-behaviour";
 import { SwarmerBehaviour } from "../../bugs/ai/swarmer-behaviour";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
-import type { MissionMapRules } from "../../mapgen/model/mission-map-rule";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { MISSION_MAP_RULES } from "../../mapgen/service/missions/mission-map-rules";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
@@ -49,7 +43,6 @@ import { BUGS_SPAWNED } from "../model/bugs-spawned-event";
 import { END_TURN, endTurn } from "../model/end-turn-command";
 import { EXTRACT } from "../model/extract-command";
 import { INTERACT } from "../model/interact-command";
-import type { MissionSetupRules } from "../model/mission-setup-rule";
 import { MOVE } from "../model/move-command";
 import { OVERWATCH } from "../model/overwatch-command";
 import { RELOAD } from "../model/reload-command";
@@ -70,7 +63,6 @@ import {
   nextActionAgainst,
 } from "./mission-driver.test-helper";
 import { MISSION_SETUP_RULES } from "./missions/mission-setup-rules";
-import { placeSporePod } from "./missions/spore-pod-setup";
 import { createMoveHandler } from "./move-handler";
 import type { MoveGraph } from "./movement-service";
 import { buildMoveGraph } from "./movement-service";
@@ -96,46 +88,6 @@ import {
   createOverwatchReaction,
   DEFAULT_PHASE_STEPS,
 } from "./turn-service";
-
-// ===========================================
-// Staging a crash site (#1179)
-// ===========================================
-
-/**
- * The crash site is not a mission type yet: a later package adds
- * `"crash-site"` with its offer and consequence rules. The sweep stages
- * one from the parts this package ships — the clearance's offer, the
- * crash-site archetype's map and hooks, and `placeSporePod` as its
- * setup — so the pod's clock is measured before the type exists.
- */
-const CRASH_SITE: MissionType = {
-  ...INFESTATION_CLEARANCE,
-  requiredHooks: [
-    { kind: "deploy", count: 1 },
-    { kind: "spore-pod", count: 1 },
-    { kind: "edge-spawn", count: 2 },
-    { kind: "extraction", count: 1 },
-  ],
-};
-
-/** The clearance's map rule, drawing the crater instead of a settlement. */
-const CRASH_SITE_MAP_RULES: MissionMapRules = {
-  ...MISSION_MAP_RULES,
-  "infestation-clearance": {
-    typeId: "infestation-clearance",
-    recipe: () => ({ archetype: "crash-site", extraHooks: [] }),
-  },
-};
-
-/** The clearance's setup, standing the pod up instead of the nests. */
-const CRASH_SITE_SETUP_RULES: MissionSetupRules = {
-  ...MISSION_SETUP_RULES,
-  "infestation-clearance": {
-    typeId: "infestation-clearance",
-    setup: (state, map, mission, deps) =>
-      ok(placeSporePod(state, map, mission, deps)),
-  },
-};
 
 // ===========================================
 // Harness
@@ -187,7 +139,7 @@ function rules(): TacticalHandlers {
   };
 }
 
-/** A campaign with one staged crash site, started. */
+/** A campaign with one crash site, started through the shipped rules. */
 function startedCrashSite(
   mapSeed: string,
   difficulty: number,
@@ -212,7 +164,7 @@ function startedCrashSite(
   if (!city || !region) throw new Error("fixture needs a city and a region");
   const mission: Mission = {
     id: "mission-1",
-    typeId: "infestation-clearance",
+    typeId: "crash-site",
     cityId: city.id,
     difficulty,
     mapParams: {
@@ -224,7 +176,7 @@ function startedCrashSite(
     rewards: { credits: 300, techPoints: 0 },
     createdDay: 1,
     expiresDay: 4,
-    ignorePenalty: 10,
+    ignorePenalty: 15,
   };
   const parts = new StaticPartCatalogue(STARTER_PARTS);
   const ids = new SequentialIdGenerator();
@@ -237,7 +189,7 @@ function startedCrashSite(
       mechIds: base.roster.mechs.map((m) => m.id),
     },
     {
-      missionTypes: { ...MISSION_TYPES, "infestation-clearance": CRASH_SITE },
+      missionTypes: MISSION_TYPES,
       squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
       sheetFor: (mech) => {
         const sheet = validateLoadout(
@@ -254,8 +206,8 @@ function startedCrashSite(
       generator: GENERATOR_TUNING,
       ids,
       registries: createDefaultRegistries(),
-      setupRules: CRASH_SITE_SETUP_RULES,
-      mapRules: CRASH_SITE_MAP_RULES,
+      setupRules: MISSION_SETUP_RULES,
+      mapRules: MISSION_MAP_RULES,
     },
   );
   if (!started.ok)
@@ -279,6 +231,8 @@ interface PodRun {
   /** Bugs the burst released; zero when the pod never matured. */
   readonly burst: number;
   readonly bursts: number;
+  /** Waves that walked in from the edges. */
+  readonly edgeWaves: number;
   readonly podDestroyed: boolean | undefined;
   readonly outcome: string;
   readonly turns: number;
@@ -323,7 +277,7 @@ function homewardOrFight(
 }
 
 /**
- * Plays one staged crash site: every TDF unit goes for the pod —
+ * Plays one crash site: every TDF unit goes for the pod —
  * squads to plant charges, mechs to shoot it — until it falls or
  * matures, then walks home. Invariants are checked after every turn.
  * With `idleTurns`, the force stands still that many turns first: a
@@ -451,6 +405,9 @@ function play(
       0,
     ),
     bursts: bursts.length,
+    edgeWaves: events.filter(
+      (event) => event.type === BUGS_SPAWNED && event.payload.source === "edge",
+    ).length,
     podDestroyed: final?.complete,
     outcome:
       mission.outcome ??
@@ -465,7 +422,7 @@ function play(
 // The sweep
 // ===========================================
 
-/** The board a crash site is staged on; the crater wants room round its bowl. */
+/** The board a crash site is played on; the crater wants room round its bowl. */
 const MAP_SIZE = "medium";
 
 /** Twelve crash sites across the difficulty band. */
@@ -498,7 +455,7 @@ describe("seeded spore pod sweep (#1179)", () => {
       (r) =>
         `${r.seed} d${String(r.difficulty)}: pod hp=${String(r.podHp)} dist=${String(r.podDistance)} ` +
         `${r.killTurn === undefined ? (r.matured ? "matured" : "standing") : `killed t${String(r.killTurn)}`} ` +
-        `burst=${String(r.burst)} ${r.outcome} t${String(r.turns)} tdfLost=${String(r.tdfLost)}`,
+        `burst=${String(r.burst)} edge=${String(r.edgeWaves)} ${r.outcome} t${String(r.turns)} tdfLost=${String(r.tdfLost)}`,
     )
     .join("\n");
   const lateSummary = late
@@ -545,6 +502,14 @@ describe("seeded spore pod sweep (#1179)", () => {
         SPAWN_TUNING.maxWaveSize,
       );
       expect(run.podDestroyed, lateSummary).toBe(false);
+    }
+  });
+
+  it("sends no more than the crash site's edge waves, however long it runs", () => {
+    for (const run of [...runs, ...late]) {
+      expect(run.edgeWaves, summary).toBeLessThanOrEqual(
+        SPAWN_TUNING.podEdgeWaves,
+      );
     }
   });
 

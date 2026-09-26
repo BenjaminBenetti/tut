@@ -1,4 +1,5 @@
 import type { MissionSetupRules } from "../../model/mission-setup-rule";
+import { CRASH_SITE_SETUP } from "./crash-site-setup";
 import { DEFEND_INSTALLATION_SETUP } from "./defend-installation-setup";
 import { INFESTATION_CLEARANCE_SETUP } from "./infestation-clearance-setup";
 
@@ -14,6 +15,7 @@ import { INFESTATION_CLEARANCE_SETUP } from "./infestation-clearance-setup";
  * ```
  *   infestation-clearance  ──► infestation-clearance-setup.ts   spawners + destroy-spawner
  *   defend-installation    ──► defend-installation-setup.ts     generators + defend-generators, totalWaves
+ *   crash-site             ──► crash-site-setup.ts              spore pod + destroy-pod (turn 8), totalWaves
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -24,4 +26,5 @@ import { INFESTATION_CLEARANCE_SETUP } from "./infestation-clearance-setup";
 export const MISSION_SETUP_RULES: MissionSetupRules = {
   "infestation-clearance": INFESTATION_CLEARANCE_SETUP,
   "defend-installation": DEFEND_INSTALLATION_SETUP,
+  "crash-site": CRASH_SITE_SETUP,
 };

@@ -18,6 +18,11 @@ import type {
   MissionOfferRules,
   MissionSite,
 } from "../model/mission-offer-rule";
+import { CITY_INFESTATION_CHANGED } from "../model/city-infestation-changed-event";
+import type {
+  MissionConsequenceRule,
+  MissionConsequenceRules,
+} from "../model/mission-consequence-rule";
 import { MISSION_OFFERED } from "../model/mission-offered-event";
 import type { MissionTuning } from "../model/mission-tuning";
 import type { OverworldState } from "../model/overworld-state";
@@ -36,6 +41,7 @@ import {
   progressIn,
 } from "./missions/mission-fixtures.test-helper";
 import { buildOffer } from "./missions/mission-offer-builder";
+import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
 import { MISSION_OFFER_DECORATORS } from "./missions/mission-offer-decorators";
 import { MISSION_OFFER_RULES } from "./missions/mission-offer-rules";
 import {
@@ -61,6 +67,7 @@ function deps(
     tuning: MISSION_TUNING,
     missionTypes: MISSION_TYPES,
     offerRules: MISSION_OFFER_RULES,
+    consequences: MISSION_CONSEQUENCE_RULES,
     acts: ACTS,
     decorators: [],
     pinTriggers: [],
@@ -126,13 +133,18 @@ function fakeOffer(
   };
 }
 
-/** Both mission types drawn by the board, through `fakeOffer` unless given. */
+/**
+ * Every mission type drawn by the board, through `fakeOffer` unless
+ * given. The type-draw tests weigh only clearance and defence, so the
+ * crash site's fake is never drawn there.
+ */
 function bothDrawn(
   defend: MissionOfferRule = fakeOffer("defend-installation"),
 ): MissionOfferRules {
   return {
     "infestation-clearance": fakeOffer("infestation-clearance"),
     "defend-installation": defend,
+    "crash-site": fakeOffer("crash-site"),
   };
 }
 
@@ -145,6 +157,7 @@ function firstDraws(
   const counts: Record<MissionTypeId, number> = {
     "infestation-clearance": 0,
     "defend-installation": 0,
+    "crash-site": 0,
   };
   const acts = actsWith({ boardCap: 1, typeWeights });
   for (let seed = 1; seed <= runs; seed += 1) {
@@ -247,8 +260,9 @@ describe("generateMissions — the board", () => {
       const { state, events } = offered(act);
       expect(ACTS[act].boardCap).toBe(cap);
       expect(state.missions).toHaveLength(cap);
-      expect(events.map((e) => e.type)).toEqual(
-        Array.from({ length: cap }, () => MISSION_OFFERED),
+      // One MissionOffered each; a crash site adds its landing's events.
+      expect(events.filter((e) => e.type === MISSION_OFFERED)).toHaveLength(
+        cap,
       );
     }
     // The finale draws no type yet: its story missions are pinned.
@@ -256,13 +270,16 @@ describe("generateMissions — the board", () => {
   });
 
   it("stops short of the cap when no more sites are eligible", () => {
-    // Act II needs 20: c0 qualifies, c1 does not, c2 is clean.
+    // Act II needs 20: c0 qualifies, c1 does not, c2 is clean. Only the
+    // clearance is weighed: a crash site could land anywhere watched.
     const { state } = generateMissions(
       fixtureState({
         map: boardMap([50, 15, 0]),
         progress: progressIn("act-2"),
       }),
-      deps(1),
+      deps(1, {
+        acts: actsWith({ typeWeights: { "infestation-clearance": 25 } }),
+      }),
     );
     expect(offeredCities(state)).toEqual(["c0"]);
   });
@@ -378,7 +395,11 @@ describe("generateMissions — type draw", () => {
         { "infestation-clearance": 1, "defend-installation": 3 },
         200,
       ),
-    ).toEqual({ "infestation-clearance": 200, "defend-installation": 0 });
+    ).toEqual({
+      "infestation-clearance": 200,
+      "defend-installation": 0,
+      "crash-site": 0,
+    });
   });
 
   it("renormalises over the types that have debuted (arc §3)", () => {
@@ -392,13 +413,21 @@ describe("generateMissions — type draw", () => {
         { "infestation-clearance": 1, "defend-installation": 3 },
         200,
       ),
-    ).toEqual({ "infestation-clearance": 200, "defend-installation": 0 });
+    ).toEqual({
+      "infestation-clearance": 200,
+      "defend-installation": 0,
+      "crash-site": 0,
+    });
   });
 
   it("never draws a type without a weight in the act", () => {
     expect(
       firstDraws(bothDrawn(), { "infestation-clearance": 1 }, 200),
-    ).toEqual({ "infestation-clearance": 200, "defend-installation": 0 });
+    ).toEqual({
+      "infestation-clearance": 200,
+      "defend-installation": 0,
+      "crash-site": 0,
+    });
   });
 
   it("gates a type on its debut: the act, then missions played in it", () => {
@@ -551,7 +580,7 @@ describe("generateMissions — story pins (ADR 0013 §2.4, §2.5)", () => {
     expect(state.missions[0]?.mapParams.seed).toMatch(/\|mix$/);
   });
 
-  it("draws the same board with the shipped, empty story table as with no pins", () => {
+  it("draws the same board with the shipped story table, before any pin is due, as with no pins", () => {
     const board = (pinTriggers: MissionGenerationDeps["pinTriggers"]) =>
       generateMissions(
         fixtureState({ deployables: [installation("dep-1", "east")] }),
@@ -564,6 +593,110 @@ describe("generateMissions — story pins (ADR 0013 §2.4, §2.5)", () => {
     expect(board([createStoryPinTrigger(STORY_MISSION_RULES)])).toEqual(
       board([]),
     );
+  });
+});
+
+// ===========================================
+// What an offer does (onOffered)
+// ===========================================
+
+describe("generateMissions — onOffered (arc §6.3)", () => {
+  /**
+   * The shipped consequences with an `onOffered` on every type that
+   * logs each call and bumps `threatOffset`, so a later call shows
+   * whether it saw the earlier ones.
+   */
+  function logging(calls: string[]): MissionConsequenceRules {
+    const spy = (rule: MissionConsequenceRule): MissionConsequenceRule => ({
+      ...rule,
+      onOffered: (state, mission) => {
+        calls.push(
+          `${mission.id}@${mission.cityId} on=${String(
+            state.missions.some((m) => m.id === mission.id),
+          )} seen=${String(state.threatOffset)}`,
+        );
+        return {
+          state: { ...state, threatOffset: state.threatOffset + 1 },
+          events: [
+            {
+              type: CITY_INFESTATION_CHANGED,
+              payload: { cityId: mission.cityId, from: 0, to: 0 },
+            },
+          ],
+        };
+      },
+    });
+    return {
+      "infestation-clearance": spy(
+        MISSION_CONSEQUENCE_RULES["infestation-clearance"],
+      ),
+      "defend-installation": spy(
+        MISSION_CONSEQUENCE_RULES["defend-installation"],
+      ),
+      "crash-site": spy(MISSION_CONSEQUENCE_RULES["crash-site"]),
+    };
+  }
+
+  it("asks every new offer's type, pinned, triggered and drawn, in offer order, each after the last", () => {
+    const calls: string[] = [];
+    const { state, events } = generateMissions(
+      fixtureState({ deployables: [installation("dep-1", "east")] }),
+      deps(1, {
+        tuning: ALWAYS_DEFEND,
+        consequences: logging(calls),
+        pinTriggers: [
+          createStoryPinTrigger(
+            storyRulesOf(fixtureStoryRule("live-specimen")),
+          ),
+        ],
+      }),
+    );
+    // The story pin, the triggered defence, then the one clearance the
+    // board can still place (mid; low and full are taken).
+    expect(
+      state.missions.map((m) => `${m.typeId}${m.pinned ? " pinned" : ""}`),
+    ).toEqual([
+      "infestation-clearance pinned",
+      "defend-installation",
+      "infestation-clearance",
+    ]);
+    expect(calls).toEqual(
+      state.missions.map(
+        (m, index) => `${m.id}@${m.cityId} on=true seen=${String(index)}`,
+      ),
+    );
+    expect(state.threatOffset).toBe(state.missions.length);
+    // Each offer's own events follow its MissionOffered.
+    expect(events.map((event) => event.type)).toEqual(
+      state.missions.flatMap(() => [MISSION_OFFERED, CITY_INFESTATION_CHANGED]),
+    );
+  });
+
+  it("lands a drawn crash site on the board it is offered to (arc §6.3)", () => {
+    const { state, events } = generateMissions(
+      fixtureState({ progress: progressIn("act-2") }),
+      deps(5, {
+        acts: actsWith({ boardCap: 1, typeWeights: { "crash-site": 1 } }),
+      }),
+    );
+    const [crash] = state.missions;
+    const spec = crash?.crashSite;
+    expect(crash?.typeId).toBe("crash-site");
+    expect(spec?.landingCityId).toBe(crash?.cityId);
+    const landing = getCity(state.map, spec?.landingCityId ?? "");
+    expect(landing.infestation).toBe((spec?.preLandingInfestation ?? 0) + 10);
+    expect(events[0]).toEqual({
+      type: MISSION_OFFERED,
+      payload: { mission: crash },
+    });
+    expect(events[1]).toEqual({
+      type: CITY_INFESTATION_CHANGED,
+      payload: {
+        cityId: landing.id,
+        from: spec?.preLandingInfestation,
+        to: landing.infestation,
+      },
+    });
   });
 });
 

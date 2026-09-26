@@ -37,6 +37,13 @@ const DEFENCE: Mission = {
   },
 };
 
+const CRASH: Mission = {
+  ...CLEARANCE,
+  id: "mission-3",
+  typeId: "crash-site",
+  crashSite: { landingCityId: "cairo", preLandingInfestation: 7 },
+};
+
 /**
  * One offer per type, carrying the type's payload. Keyed by the union,
  * so a new type cannot join the table without a fixture here.
@@ -44,6 +51,7 @@ const DEFENCE: Mission = {
 const OFFERS: Readonly<Record<MissionTypeId, Mission>> = {
   "infestation-clearance": CLEARANCE,
   "defend-installation": DEFENCE,
+  "crash-site": CRASH,
 };
 
 const CTX = { state: campaignOnDay(4, [CLEARANCE, DEFENCE]) };
@@ -129,6 +137,29 @@ describe("MISSION_PRESENTATION", () => {
       ),
     ).toEqual([]);
   });
+
+  it("briefs a crash site's clock, its landing by city name and its tech premium (arc §6.3)", () => {
+    const crash = MISSION_PRESENTATION["crash-site"];
+    expect(crash.icon).toBe("pod");
+    expect(crash.briefingRows(CRASH, CTX)).toEqual([
+      {
+        field: "pod",
+        label: "Spore pod",
+        value: "Matures at the end of turn 8",
+      },
+      {
+        field: "landing",
+        label: "Fresh landing",
+        value: "Cairo · +10 now · erased if the pod falls",
+      },
+      { field: "tech-bonus", label: "Tech bonus", value: "TP ×1.5" },
+    ]);
+    const { crashSite: _dropped, ...bare } = CRASH;
+    expect(crash.briefingRows(bare, CTX).map((row) => row.field)).toEqual([
+      "pod",
+      "tech-bonus",
+    ]);
+  });
 });
 
 // ===========================================
@@ -148,6 +179,7 @@ describe("briefingFieldsOf", () => {
           waves,
         ],
       }),
+      "crash-site": stub("crash-site"),
     };
     expect(briefingFieldsOf(catalogue).map((f) => f.field)).toEqual([
       "hives",
@@ -156,10 +188,13 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows", () => {
+  it("gives the shipped briefing the defence's two rows and the crash site's three", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
+      { field: "pod", label: "Spore pod" },
+      { field: "landing", label: "Fresh landing" },
+      { field: "tech-bonus", label: "Tech bonus" },
     ]);
   });
 });
@@ -181,6 +216,31 @@ describe("debriefTaglineFor", () => {
     expect(debriefTaglineFor(RESULT, CTX)).toBeUndefined();
   });
 
+  it("says whether a crash site's pod was wrecked, matured or left standing (arc §6.3)", () => {
+    const pod = (
+      podDestroyed: boolean,
+      outcome: MissionResult["outcome"],
+      failed = false,
+    ): MissionResult => ({
+      ...RESULT,
+      outcome,
+      podDestroyed,
+      objectives: [{ kind: "destroy-pod", complete: podDestroyed, failed }],
+    });
+    expect(debriefTaglineFor(pod(true, "won"), CTX)).toBe(
+      "The spore pod is wreckage and the landing at Cairo is burned out. The force is coming home with full rewards.",
+    );
+    expect(debriefTaglineFor(pod(true, "lost"), CTX)).toBe(
+      "The spore pod is wreckage and the landing at Cairo is burned out, but the force did not make it home.",
+    );
+    expect(debriefTaglineFor(pod(false, "extracted", true), CTX)).toBe(
+      "The spore pod matured and burst. The landing at Cairo takes root.",
+    );
+    expect(debriefTaglineFor(pod(false, "extracted"), CTX)).toBe(
+      "The force left the spore pod standing. The landing at Cairo takes root.",
+    );
+  });
+
   it("asks each type in id order with the context, and takes the first answer", () => {
     const first = vi.fn(() => undefined);
     const second = vi.fn(() => "second");
@@ -191,6 +251,7 @@ describe("debriefTaglineFor", () => {
       "defend-installation": stub("defend-installation", {
         debriefTagline: second,
       }),
+      "crash-site": stub("crash-site"),
     };
     expect(debriefTaglineFor(RESULT, CTX, catalogue)).toBe("second");
     expect(first).toHaveBeenCalledWith(RESULT, CTX);
@@ -206,6 +267,7 @@ describe("debriefTaglineFor", () => {
         "defend-installation": stub("defend-installation", {
           debriefTagline: skipped,
         }),
+        "crash-site": stub("crash-site"),
       }),
     ).toBe("first");
     expect(skipped).not.toHaveBeenCalled();

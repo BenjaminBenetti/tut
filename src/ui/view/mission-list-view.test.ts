@@ -180,6 +180,40 @@ describe("MissionListView", () => {
     ).toBe(NO_COUNTDOWN_TITLE);
   });
 
+  it("names a story offer on a badge under its row, and none on a drawn one (arc §6.9)", () => {
+    const view = new MissionListView(
+      { missionTypes: MISSION_TYPES },
+      { onSelectMission: vi.fn(), onShowAll: vi.fn() },
+    );
+    view.mount(root);
+    const story = {
+      ...missionAt("mission-story", "lagos", 5, 1),
+      typeId: "crash-site" as const,
+      storyId: "first-skyfall" as const,
+      pinned: true,
+    };
+    view.update(
+      campaignOnDay(4, [story, missionAt("mission-1", "cairo", 9)]),
+      NONE,
+    );
+    const badge = (row: HTMLElement | undefined) =>
+      row?.querySelector<HTMLElement>('[data-field="story"]');
+    const [drawn, pinned] = rows();
+    expect(badge(drawn)?.hidden).toBe(true);
+    expect(badge(drawn)?.textContent).toBe("");
+    expect(badge(pinned)?.hidden).toBe(false);
+    expect(badge(pinned)?.textContent).toBe("Story · First Skyfall");
+    expect(badge(pinned)?.className).toContain("tut-missions__story");
+
+    // The row is reused: once the story offer is played, a drawn offer
+    // in its place carries no badge.
+    view.update(
+      campaignOnDay(4, [{ ...story, storyId: undefined, pinned: undefined }]),
+      NONE,
+    );
+    expect(badge(rows()[0])?.hidden).toBe(true);
+  });
+
   it("highlights the selected mission and reports clicks with the city", () => {
     const onSelectMission = vi.fn();
     const view = new MissionListView(

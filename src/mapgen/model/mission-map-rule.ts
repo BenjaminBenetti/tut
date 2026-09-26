@@ -4,7 +4,8 @@ import type {
 } from "../../content/model/mission-type";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { Mission } from "../../overworld/model/mission";
-import type { MapArchetype } from "./map-recipe";
+import type { HookKind } from "./hook";
+import type { HookRequirement, MapArchetype } from "./map-recipe";
 
 // ===========================================
 // Mission map rule (ADR 0013 §2.3)
@@ -20,6 +21,12 @@ import type { MapArchetype } from "./map-recipe";
  * the adapter scales them by difficulty and completes them from
  * `HOOK_KIND_DEFAULTS` exactly as it does `requiredHooks`, and appends
  * them after the carcass so the recipe's hook order is unchanged.
+ *
+ * `hookPlacement` lets one mission move a kind's hooks nearer or farther
+ * than the kind's defaults, for every requirement of that kind: First
+ * Skyfall brings its spore pod in close to the drop zone. The adapter
+ * lays it over `HOOK_KIND_DEFAULTS[kind]` and then fits the minimum to
+ * the board as it does the default.
  */
 export interface MissionMapPlan {
   /** Which pass list builds the map (ADR 0004 §7.3). */
@@ -30,7 +37,20 @@ export interface MissionMapPlan {
   readonly site?: string;
   /** Building kind raised on the lot nearest the centre. */
   readonly landmark?: string;
+  /** Distances from deploy this mission sets for a kind, over the kind's defaults. */
+  readonly hookPlacement?: Readonly<Partial<Record<HookKind, HookPlacement>>>;
 }
+
+/**
+ * How far from the drop zone a mission wants a kind's hooks, overriding
+ * the kind's defaults field by field; see `HookRequirement`.
+ */
+export type HookPlacement = Partial<
+  Pick<
+    HookRequirement,
+    "minDistanceFromDeploy" | "maxNearestDistanceFromDeploy"
+  >
+>;
 
 /**
  * One mission type's map behaviour, in one module under
@@ -39,7 +59,7 @@ export interface MissionMapPlan {
  * recipe a save stores is a function of the mission alone.
  *
  * ```
- *   Mission + MissionType ──► rule.recipe ──► { archetype, extraHooks, site?, landmark? }
+ *   Mission + MissionType ──► rule.recipe ──► { archetype, extraHooks, site?, landmark?, hookPlacement? }
  *                                                  │
  *                  missionToMapRecipe ◄────────────┘  + requiredHooks, carcass, size, biome
  * ```

@@ -87,4 +87,10 @@ export interface SpawnTuning {
    * is still capped at `maxWaveSize`. Non-negative integer.
    */
   readonly podBurstBonus: number;
+  /**
+   * Edge waves a crash site sends before its edges fall quiet (campaign
+   * arc §6.3): the pod and its clock are the pressure, so the waves stay
+   * few. Its `edgeSpawn.totalWaves`. Non-negative integer.
+   */
+  readonly podEdgeWaves: number;
 }

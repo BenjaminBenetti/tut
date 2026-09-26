@@ -78,6 +78,42 @@ export const DEFEND_INSTALLATION: MissionType = {
 };
 
 /**
+ * A spore pod come down in open ground near a city (campaign arc §6.3):
+ * destroy it before it matures at the end of turn 8, then extract. The
+ * map is the crash-site crater, so the hooks are the pod on the crater
+ * floor, two edge spawn zones that stay two (the pod and its clock are
+ * the pressure, not the waves), a deploy zone and the extraction. No
+ * egg spawners.
+ *
+ * Numbers against the clearance: the same credits and the same tech
+ * base; the overworld's crash-site tuning pays the tech half again
+ * (arc §6.3: "high TP, a TP reward ×1.5"), frozen on the offer. A
+ * shorter expiry than the clearance, because a pod on the ground is on
+ * a clock; its ignore penalty is the landing taking root (arc §6.3:
+ * "+15 on the city"), which the consequence rule also applies to a lost
+ * crash site.
+ */
+export const CRASH_SITE: MissionType = {
+  id: "crash-site",
+  name: "Crash Site",
+  description:
+    "A spore pod has come down near a city. Reach the crater, destroy the pod before it matures at the end of turn 8, then extract.",
+  difficultyBand: { min: 1, max: 10 },
+  rewardPerDifficulty: 300,
+  techRewardBase: 8,
+  techRewardPerDifficulty: 3,
+  expiryDays: 4,
+  ignorePenalty: 15,
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "spore-pod", count: 1 },
+    { kind: "edge-spawn", count: 2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "medium",
+};
+
+/**
  * Every mission type keyed by id. Typed as a record over the closed
  * `MissionTypeId` union so a new id without a definition (or a definition
  * whose key and `id` disagree, see the data test) fails at compile time
@@ -86,4 +122,5 @@ export const DEFEND_INSTALLATION: MissionType = {
 export const MISSION_TYPES: Readonly<Record<MissionTypeId, MissionType>> = {
   "infestation-clearance": INFESTATION_CLEARANCE,
   "defend-installation": DEFEND_INSTALLATION,
+  "crash-site": CRASH_SITE,
 };

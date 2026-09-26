@@ -110,10 +110,21 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
   mission-generation ──► pin triggers (story: STORY_MISSION_RULES, pinWhen flags) ──► pinned offers, off the cap
                      ├─► MISSION_OFFER_RULES[type] (trigger) ──► offers, off the cap
                      ├─► fill to ACTS[act].boardCap: pickWeighted(type) ──► pickWeighted(site) ──► create
-                     └─► each offer ──► decorators[0..n] ──► MissionOffered
+                     └─► each offer ──► decorators[0..n] ──► MissionOffered ──► consequences[type].onOffered? (Crash Site: the landing)
   launch / expiry ──► MISSION_CONSEQUENCE_RULES[type].onResolved / onExpired ──► city infestation
   launch (storyId) ──► onStoryMissionResolved ──► onWon / onLost ──► flags, act, campaign-won / -lost
   unlockTech ──► onTechUnlocked ──► flags ──► (next tick) story pins
+  ```
+
+- **A crash site lands when it is offered** (#1179; campaign arc §6.3, §6.9). The offer rule (`overworld/service/missions/crash-site-offer.ts`, debut at Act I mission 3) draws a free city in any region with a detected city. A city below 20 infestation weighs ×4, and from Act II a region with an online sensor array weighs ×2. The type's consequence rule lands the pod in `onOffered`: `landCrashSite` adds `landingInfestation` (+10) and `witnessCity` marks the city detected. Both go through events, and the landing is recorded on the offer as `Mission.crashSite { landingCityId, preLandingInfestation }`. When the mission is played, the pod decides. A wrecked pod erases the landing: the city goes back to `min(pre, now)`. A standing pod takes root with the offer's `ignorePenalty` (+15). A won crash site sets `spore-sample` the first time, which reveals Intel I. A lapsed offer takes root too. The resolver's `infestationDelta` is not applied. The crater map rule, `CRASH_SITE_SETUP` (`placeSporePod`, then `edgeSpawn.totalWaves = podEdgeWaves`, 2) and `MISSION_PRESENTATION["crash-site"]` complete the type. The offer pays tech points ×1.5.
+
+  First Skyfall (`overworld/service/story/first-skyfall.ts`) is the scripted first crash site. It is pinned at d1 once mission 1 has been played, it never expires, and it lands like any other. Its map plan's `hookPlacement` brings the pod within 6–14 of deploy. A loss re-pins it five days later. A story offer shows its title from `ui/data/story-mission-titles.ts` as a badge under its offer row and in the briefing heading ("Briefing · First Skyfall"). See [`first-skyfall-offer.png`](first-skyfall-offer.png) and [`crash-site-briefing.png`](crash-site-briefing.png), captured by `tools/ui/capture-crash-site.mjs`.
+
+  ```
+  director ──► offer ──► MissionOffered ──► onOffered: landCrashSite ──► CityInfestationChanged +10 (+ CityDetected)
+  launch   ──► onResolved: pod wrecked  ──► landing city = min(pre, now)  (+ CampaignFlagSet spore-sample, first win)
+                           pod standing ──► landing city + 15
+  expiry   ──► onExpired ──► landing city + 15
   ```
 
 - **The spore pod is a spawner variant** (#1179): Crash Site's pod is a `Spawner` with `variant: "spore-pod"`, not an entity of its own, because spawners already take damage from shots, blasts, charges and fire through `damageSpawner`, are picked and drawn as scene entities, and are what the wreck objectives count. `SPAWNER_VARIANT_TRAITS` (`tactical/model/spawner-variant.ts`) holds what differs per variant; a pod never hatches. A spawner without `variant` is an egg spawner, so no save needs a bump. `placeSporePod` (`tactical/service/missions/spore-pod-setup.ts`) stands the pod up on the map's `spore-pod` hook with `podHp(difficulty)` and a `destroy-pod` objective whose `deadlineTurn` is `podMaturityTurn` (8); a mission type's setup calls it. The objective's `onDeadline` (`maturePod`) leaves the pod destroyed at zero hit points, `matured` with its burst pending, so no later wreck can credit a missed objective. `createPodBurstStep`, registered right after the deadline step, then releases `podBurstSize` bugs round it (`BugsSpawned { source: "pod" }`) at the start of turn 9.

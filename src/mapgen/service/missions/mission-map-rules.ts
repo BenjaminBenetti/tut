@@ -1,4 +1,5 @@
 import type { MissionMapRules } from "../../model/mission-map-rule";
+import { CRASH_SITE_MAP_RULE } from "./crash-site-map";
 import { DEFEND_INSTALLATION_MAP_RULE } from "./defend-installation-map";
 import { INFESTATION_CLEARANCE_MAP_RULE } from "./infestation-clearance-map";
 
@@ -15,9 +16,11 @@ import { INFESTATION_CLEARANCE_MAP_RULE } from "./infestation-clearance-map";
  * ```
  *   infestation-clearance ─► infestation-clearance-map.ts   settlement
  *   defend-installation   ─► defend-installation-map.ts     settlement + site + generators
+ *   crash-site            ─► crash-site-map.ts              crater; First Skyfall's pod near deploy
  * ```
  */
 export const MISSION_MAP_RULES: MissionMapRules = {
   "infestation-clearance": INFESTATION_CLEARANCE_MAP_RULE,
   "defend-installation": DEFEND_INSTALLATION_MAP_RULE,
+  "crash-site": CRASH_SITE_MAP_RULE,
 };

@@ -7,6 +7,7 @@ import type { CampaignProgress } from "../model/campaign-progress";
 import type { EarthMap } from "../model/earth-map";
 import type { IntelBonus } from "../model/intel-bonus";
 import type { Mission } from "../model/mission";
+import type { MissionConsequenceRules } from "../model/mission-consequence-rule";
 import type { MissionOfferDecorator } from "../model/mission-offer-decorator";
 import type { MissionPinTrigger } from "../model/mission-pin-trigger";
 import type {
@@ -19,7 +20,10 @@ import type {
 import { MISSION_OFFERED } from "../model/mission-offered-event";
 import type { MissionTuning } from "../model/mission-tuning";
 import type { MissionTypeCatalogue } from "../model/mission-type-catalogue";
-import type { OverworldApplied } from "../model/overworld-domain-event";
+import type {
+  OverworldApplied,
+  OverworldDomainEvent,
+} from "../model/overworld-domain-event";
 import type { OverworldState } from "../model/overworld-state";
 import { missionsInAct } from "./campaign-progress-service";
 import { findRegion } from "./earth-map-query-service";
@@ -40,6 +44,11 @@ export interface MissionGenerationDeps {
   readonly missionTypes: MissionTypeCatalogue;
   /** How each type is offered: drawn by the director or triggered (ADR 0013 §2.3). */
   readonly offerRules: MissionOfferRules;
+  /**
+   * What each type does to the overworld; the director asks
+   * `onOffered` for every offer it makes (a crash site's landing).
+   */
+  readonly consequences: MissionConsequenceRules;
   /** Board cap, difficulty band and type weights per act. */
   readonly acts: ActCatalogue;
   /** Applied to every new offer, in order (ADR 0013 §2.4). */
@@ -124,7 +133,8 @@ export function countsAgainstCap(
  *                rules clamp it (ctx.act) before deriving rewards, map size and
  *                carcass; a story offer keeps its own fixed difficulty
  *   each offer ──► decorators, in order, each on rng.fork(`decorate:${id}:${missionId}`)
- *              ──► MissionOffered
+ *              ──► on the board ──► MissionOffered
+ *              ──► consequences[type].onOffered?  (the crash-site landing) ──► its events
  * ```
  *
  * A city holds at most one offer: pin triggers and trigger rules skip
@@ -158,11 +168,20 @@ export function generateMissions(
   });
 
   let current = state;
-  const offered: Mission[] = [];
+  const events: OverworldDomainEvent[] = [];
   const offer = (mission: Mission, ctx: MissionOfferContext): void => {
     const decorated = decorate(mission, current, ctx, deps);
-    offered.push(decorated);
     current = { ...current, missions: [...current.missions, decorated] };
+    events.push({ type: MISSION_OFFERED, payload: { mission: decorated } });
+    const landed = deps.consequences[decorated.typeId].onOffered?.(
+      current,
+      decorated,
+      { tuning: deps.tuning },
+    );
+    if (landed !== undefined) {
+      current = landed.state;
+      events.push(...landed.events);
+    }
   };
 
   for (const trigger of deps.pinTriggers) {
@@ -198,16 +217,10 @@ export function generateMissions(
     count += 1;
   }
 
-  if (offered.length === 0) {
+  if (events.length === 0) {
     return { state, events: [] };
   }
-  return {
-    state: current,
-    events: offered.map((mission) => ({
-      type: MISSION_OFFERED,
-      payload: { mission },
-    })),
-  };
+  return { state: current, events };
 }
 
 // ===========================================

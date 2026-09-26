@@ -56,7 +56,10 @@ export interface TickDeps {
   readonly missionTypes: MissionTypeCatalogue;
   /** How each mission type is offered; the director runs it (ADR 0013 §2.4). */
   readonly missionOffers: MissionOfferRules;
-  /** What each mission type costs when its offer lapses (ADR 0013 §2.3). */
+  /**
+   * What each mission type does to the overworld when offered (a crash
+   * site's landing) and when its offer lapses (ADR 0013 §2.3).
+   */
   readonly missionConsequences: MissionConsequenceRules;
   /** Applied to every new offer, in order. */
   readonly offerDecorators: readonly MissionOfferDecorator[];
@@ -291,6 +294,7 @@ function missionGenerationStep<TState extends CampaignState>(
         tuning: deps.missionTuning,
         missionTypes: deps.missionTypes,
         offerRules: deps.missionOffers,
+        consequences: deps.missionConsequences,
         acts: deps.acts,
         decorators: deps.offerDecorators,
         pinTriggers,

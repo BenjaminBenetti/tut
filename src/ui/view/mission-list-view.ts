@@ -8,6 +8,7 @@ import {
 import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { iconUrl } from "../data/icon-manifest";
+import { STORY_MISSION_TITLES } from "../data/story-mission-titles";
 import type { MissionPresentationCatalogue } from "../model/mission-presentation";
 import type { SitrepPresentationCatalogue } from "../model/sitrep-presentation";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
@@ -68,8 +69,13 @@ export interface MissionListViewDeps {
  *   ┌ MISSIONS · SUB-SAHARAN AFRICA ───────────────┐
  *   │ ▮ Cairo       Infestation clearance   D3  ¢900  4 d │
  *   │   Lagos       Infestation clearance   D5  ¢1,500 2 d │
+ *   │   Accra       Crash site              D1  ¢300  —   │
+ *   │   [STORY · FIRST SKYFALL]                           │
  *   └──────────────────────────────────────────────┘
  * ```
+ *
+ * A story offer carries its title as a badge on a second line, and a
+ * reported tech carcass another.
  */
 export class MissionListView {
   // ===========================================
@@ -270,6 +276,14 @@ export class MissionListView {
             : "tut-data";
       row.appendChild(cell);
     }
+    // A story mission goes by its own name (arc §6.9): a second line
+    // under the row, shown only on a story offer.
+    const story = doc.createElement("span");
+    story.className = "tut-badge tut-badge--warn tut-missions__story";
+    story.dataset.field = "story";
+    story.title = "Story mission: pinned, it never expires";
+    story.hidden = true;
+    row.appendChild(story);
     // A carcass on the map is worth advertising (#1171): a second line
     // under the row, shown only when the offer reports one.
     const carcass = doc.createElement("span");
@@ -311,6 +325,17 @@ export class MissionListView {
       const field = cell.dataset.field ?? "";
       if (field === "sitreps") {
         this.fillSitreps(cell, mission);
+        continue;
+      }
+      if (field === "story") {
+        const text =
+          mission.storyId === undefined
+            ? ""
+            : `Story · ${STORY_MISSION_TITLES[mission.storyId]}`;
+        if (cell.textContent !== text) {
+          cell.textContent = text;
+        }
+        cell.hidden = mission.storyId === undefined;
         continue;
       }
       if (field === "carcass") {

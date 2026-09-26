@@ -2,14 +2,9 @@ import { expect, test, type Page } from "@playwright/test";
 
 import type { TacticalState } from "../src/tactical/model/tactical-state";
 import type { Unit } from "../src/tactical/model/unit";
-import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
+import { freeTileBesideTheForce } from "./free-tile.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
-
-/** The page's global object as seen from `page.evaluate`. */
-interface HookGlobal {
-  __tutTactical__?: TacticalTestHooks;
-}
 
 /** A tile on the ground plane, as the hooks name it. */
 interface Tile {
@@ -28,75 +23,6 @@ async function savedMission(page: Page): Promise<TacticalState | null> {
     };
     return envelope.state.activeMission ?? null;
   });
-}
-
-/**
- * The first free ground tile beside a living unit of the player's that
- * the scene can put a pointer on, with where to click it. Searched from
- * the saved mission rather than guessed: the deploy zone is at an edge
- * of the map and its neighbours are not all standing tiles.
- *
- * @param page - The page driving a live mission.
- * @returns The tile and its client-pixel position, or undefined.
- */
-async function freeTileBesideTheForce(
-  page: Page,
-): Promise<{ tile: Tile; at: { x: number; y: number } } | undefined> {
-  const mission = await savedMission(page);
-  if (!mission) return undefined;
-  const taken = new Set(
-    mission.units
-      .filter((unit) => unit.hp > 0)
-      .map((unit) => `${unit.pos.x},${unit.pos.y},${unit.pos.z}`),
-  );
-  const force = mission.units.filter((u) => u.team === "tdf" && u.hp > 0);
-  // A unit's model overlaps the screen centre of the tile behind it in
-  // the isometric view, so a click there picks the unit, and the rules
-  // refuse the placement as occupied. Only tiles with no living unit
-  // on any of the eight neighbours are offered, two to three tiles out
-  // from a member of the force on its own level.
-  const living = mission.units.filter((unit) => unit.hp > 0);
-  const clearOfUnits = (tile: Tile): boolean =>
-    living.every(
-      (unit) =>
-        unit.pos.y !== tile.y ||
-        Math.max(Math.abs(unit.pos.x - tile.x), Math.abs(unit.pos.z - tile.z)) >
-          1,
-    );
-  const candidates: Tile[] = [];
-  const seen = new Set<string>();
-  for (const unit of force) {
-    for (let dx = -3; dx <= 3; dx += 1) {
-      for (let dz = -3; dz <= 3; dz += 1) {
-        const tile = { x: unit.pos.x + dx, y: unit.pos.y, z: unit.pos.z + dz };
-        const key = `${tile.x},${tile.y},${tile.z}`;
-        if (seen.has(key) || taken.has(key) || !clearOfUnits(tile)) continue;
-        seen.add(key);
-        candidates.push(tile);
-      }
-    }
-  }
-  const bounds = await page.locator("#tactical-viewport canvas").boundingBox();
-  if (!bounds) return undefined;
-  for (const tile of candidates) {
-    const at = await page.evaluate(
-      (t: Tile) =>
-        (globalThis as HookGlobal).__tutTactical__?.tileScreenPosition(t),
-      tile,
-    );
-    // Clear of the rail on the left and the card on the right, where the
-    // HUD's panels take the click (#1113, #1134).
-    if (
-      at &&
-      at.x > bounds.x + bounds.width * 0.3 &&
-      at.x < bounds.x + bounds.width * 0.68 &&
-      at.y > bounds.y + 80 &&
-      at.y < bounds.y + bounds.height - 80
-    ) {
-      return { tile, at };
-    }
-  }
-  return undefined;
 }
 
 /** The unit standing on `tile` in the saved mission, if any. */

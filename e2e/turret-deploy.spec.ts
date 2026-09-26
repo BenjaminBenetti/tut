@@ -6,6 +6,7 @@ import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { openTileWheel, wheelItem } from "./action-wheel.helper";
 import { waitForBugPhasePlayed } from "./bug-phase.helper";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
+import { freeTileBesideTheForce } from "./free-tile.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
@@ -37,63 +38,6 @@ async function savedMission(page: Page): Promise<TacticalState> {
 /** The turrets in the saved mission, in `units` order. */
 function turretsIn(mission: TacticalState): Unit[] {
   return mission.units.filter((unit) => unit.kind === "turret");
-}
-
-/**
- * The first free ground tile beside the force the scene can put a
- * pointer on, with where to click it (the debug-menu spec's search,
- * #1136): two to three tiles out from a member of the force on its own
- * level, with no living unit on any of its eight neighbours so the
- * click cannot land on a model, and clear of the HUD's panels.
- */
-async function freeTileBesideTheForce(
-  page: Page,
-): Promise<{ tile: Tile; at: { x: number; y: number } } | undefined> {
-  const mission = await savedMission(page);
-  const living = mission.units.filter((unit) => unit.hp > 0);
-  const taken = new Set(
-    living.map((unit) => `${unit.pos.x},${unit.pos.y},${unit.pos.z}`),
-  );
-  const force = living.filter((u) => u.team === "tdf");
-  const clearOfUnits = (tile: Tile): boolean =>
-    living.every(
-      (unit) =>
-        unit.pos.y !== tile.y ||
-        Math.max(Math.abs(unit.pos.x - tile.x), Math.abs(unit.pos.z - tile.z)) >
-          1,
-    );
-  const candidates: Tile[] = [];
-  const seen = new Set<string>();
-  for (const unit of force) {
-    for (let dx = -3; dx <= 3; dx += 1) {
-      for (let dz = -3; dz <= 3; dz += 1) {
-        const tile = { x: unit.pos.x + dx, y: unit.pos.y, z: unit.pos.z + dz };
-        const key = `${tile.x},${tile.y},${tile.z}`;
-        if (seen.has(key) || taken.has(key) || !clearOfUnits(tile)) continue;
-        seen.add(key);
-        candidates.push(tile);
-      }
-    }
-  }
-  const bounds = await page.locator("#tactical-viewport canvas").boundingBox();
-  if (!bounds) return undefined;
-  for (const tile of candidates) {
-    const at = await page.evaluate(
-      (t: Tile) =>
-        (globalThis as HookGlobal).__tutTactical__?.tileScreenPosition(t),
-      tile,
-    );
-    if (
-      at &&
-      at.x > bounds.x + bounds.width * 0.3 &&
-      at.x < bounds.x + bounds.width * 0.68 &&
-      at.y > bounds.y + 80 &&
-      at.y < bounds.y + bounds.height - 80
-    ) {
-      return { tile, at };
-    }
-  }
-  return undefined;
 }
 
 /**

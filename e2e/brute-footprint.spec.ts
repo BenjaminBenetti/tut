@@ -4,10 +4,10 @@ import { FixtureMapBuilder } from "../src/mapgen/service/fixture-map-builder";
 import type { GameState } from "../src/save/model/game-state";
 import type { Unit } from "../src/tactical/model/unit";
 import type { UnitTemplate } from "../src/tactical/model/unit-template";
-import { initialVision } from "../src/tactical/service/vision-service";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import { stageMission } from "./mission-staging.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -93,29 +93,22 @@ test("a 2×2 brute is drawn on the corner its four tiles share", async ({
     status: [],
     passClass: "infantry",
   };
-  const { vision: _stale, ...blind } = {
-    ...mission,
-    map,
-    // The force in a line four tiles west of the brute, well inside its
-    // sight, so the brute is spotted as the save loads.
-    units: [
-      ...force.map((unit, index) => ({
-        ...unit,
-        pos: { x: 4 + index, y: 0, z: 8 },
-        facing: "e" as const,
-      })),
-      brute,
-    ],
-    templates: { ...mission.templates, [BRUTE_TEMPLATE.id]: BRUTE_TEMPLATE },
-    spawners: [],
-    objectives: [],
-    extraction: [],
-    radars: [],
-    effects: [],
-  };
   const rewritten: GameState = {
     ...envelope.state,
-    activeMission: { ...blind, vision: initialVision(blind) },
+    activeMission: stageMission(mission, {
+      map,
+      // The force in a line four tiles west of the brute, well inside its
+      // sight, so the brute is spotted as the save loads.
+      units: [
+        ...force.map((unit, index) => ({
+          ...unit,
+          pos: { x: 4 + index, y: 0, z: 8 },
+          facing: "e" as const,
+        })),
+        brute,
+      ],
+      templates: { ...mission.templates, [BRUTE_TEMPLATE.id]: BRUTE_TEMPLATE },
+    }),
   };
   await page.evaluate(
     ({ key, saved }) => {

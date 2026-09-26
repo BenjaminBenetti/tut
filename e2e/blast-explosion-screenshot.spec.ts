@@ -7,11 +7,11 @@ import "../src/tactical/model/blast-resolved-event";
 import type { TileCoord } from "../src/mapgen/model/tile-coord";
 import type { Unit } from "../src/tactical/model/unit";
 import type { UnitTemplate } from "../src/tactical/model/unit-template";
-import { initialVision } from "../src/tactical/service/vision-service";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { wheel, wheelItem } from "./action-wheel.helper";
 import { tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import { stageMission } from "./mission-staging.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -111,8 +111,7 @@ test("the missile pod's blast plays as one explosion", async ({ page }) => {
     status: [],
     passClass: "infantry",
   }));
-  const { vision: _stale, ...blind } = {
-    ...mission,
+  const staged = stageMission(mission, {
     map: new FixtureMapBuilder(32, 24, 1).fillGround().build(),
     units: [
       { ...mech, pos: MECH_POS, facing: "e" as const },
@@ -137,19 +136,14 @@ test("the missile pod's blast plays as one explosion", async ({ page }) => {
       },
       [SWARMER_TEMPLATE.id]: SWARMER_TEMPLATE,
     },
-    spawners: [],
-    objectives: [],
-    extraction: [],
-    radars: [],
-    effects: [],
-  };
+  });
   const tileId = `attack-tile:${String(IMPACT.x)},${String(IMPACT.y)},${String(IMPACT.z)}`;
 
   let landed = false;
   for (const seed of SEEDS) {
     const rewritten: GameState = {
       ...envelope.state,
-      activeMission: { ...blind, seed, vision: initialVision(blind) },
+      activeMission: { ...staged, seed },
     };
     await page.evaluate(
       ({ key, saved }) => {

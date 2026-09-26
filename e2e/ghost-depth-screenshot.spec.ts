@@ -8,7 +8,6 @@ import { FixtureMapBuilder } from "../src/mapgen/service/fixture-map-builder";
 import { TileIndex } from "../src/mapgen/service/tile-index";
 import type { GameState } from "../src/save/model/game-state";
 import type { SaveEnvelope } from "../src/save/model/save-envelope";
-import { initialVision } from "../src/tactical/service/vision-service";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import {
   assertNoAssetFallback,
@@ -17,6 +16,7 @@ import {
   watchAssetFallback,
 } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import { stageMission } from "./mission-staging.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -183,17 +183,7 @@ test("the cutaway fades only what a ray from the squad to the camera passes thro
           : OUTSIDE.other,
     facing: "s" as const,
   }));
-  const { vision: _stale, ...blind } = {
-    ...original,
-    map,
-    units: placed,
-    spawners: [],
-    objectives: [],
-    extraction: [],
-    radars: [],
-    effects: [],
-  };
-  const mission = { ...blind, vision: initialVision(blind) };
+  const mission = stageMission(original, { map, units: placed });
   await page.evaluate(({ key, value }) => localStorage.setItem(key, value), {
     key: SAVE_KEY,
     value: JSON.stringify({

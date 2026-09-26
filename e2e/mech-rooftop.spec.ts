@@ -4,10 +4,10 @@ import { FixtureMapBuilder } from "../src/mapgen/service/fixture-map-builder";
 import { MECH_BLUEPRINTS } from "../src/roster/data/mech-blueprints";
 import { STARTER_PARTS } from "../src/roster/data/parts";
 import type { GameState } from "../src/save/model/game-state";
-import { initialVision } from "../src/tactical/service/vision-service";
 import { openTileWheel, openUnitWheel, wheelItem } from "./action-wheel.helper";
 import { tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import { stageMission } from "./mission-staging.helper";
 
 const SAVE = "tut:save:autosave";
 const LANDING = { x: 14, y: 8, z: 7 };
@@ -61,8 +61,7 @@ test("a mech jumps twelve tiles onto a four-storey roof, walks and resumes there
         if (z === 9) builder.wall({ x, y, z }, "s", wall);
       }
     }
-  const positioned = {
-    ...mission,
+  const positioned = stageMission(mission, {
     map: builder.build(),
     units: [
       { ...mech, pos: { x: 2, y: 0, z: 7 }, heat: 0, ap: 2 },
@@ -83,18 +82,10 @@ test("a mech jumps twelve tiles onto a four-storey roof, walks and resumes there
         },
       },
     },
-    spawners: [],
-    objectives: [],
-    effects: [],
-    extraction: [],
-    radars: [],
-  };
+  });
   const saved = {
     ...envelope,
-    state: {
-      ...envelope.state,
-      activeMission: { ...positioned, vision: initialVision(positioned) },
-    },
+    state: { ...envelope.state, activeMission: positioned },
   };
   await page.evaluate(
     ({ key, saved }) => localStorage.setItem(key, JSON.stringify(saved)),

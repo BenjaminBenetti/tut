@@ -7,11 +7,11 @@ import { BREACHING_CHARGE } from "../src/tactical/data/equipment";
 import type { PlacedCharge } from "../src/tactical/model/equipment";
 import type { Unit } from "../src/tactical/model/unit";
 import type { UnitTemplate } from "../src/tactical/model/unit-template";
-import { initialVision } from "../src/tactical/service/vision-service";
 // Registers the detonation event in the log's union for the check below.
 import "../src/tactical/model/charge-detonated-event";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import { stageMission } from "./mission-staging.helper";
 
 /** The autosave the mission is rewritten through. */
 const SAVE_KEY = "tut:save:autosave";
@@ -107,31 +107,24 @@ test("a placed breaching charge is marked, then goes off as the next turn opens"
     // until it is due rather than assuming when that is (#1134).
     detonatesOnTurn: mission.turn + (BREACHING_CHARGE.delayTurns ?? 1),
   };
-  const { vision: _stale, ...blind } = {
-    ...mission,
-    map: new FixtureMapBuilder(32, 24, 1).fillGround().build(),
-    units: [
-      ...force.map((unit, index) => ({
-        ...unit,
-        pos: { x: 6 + index * 2, y: 0, z: 7 },
-        facing: "s" as const,
-      })),
-      ...swarmers,
-    ],
-    templates: {
-      ...mission.templates,
-      [SWARMER_TEMPLATE.id]: SWARMER_TEMPLATE,
-    },
-    spawners: [],
-    objectives: [],
-    extraction: [],
-    radars: [],
-    effects: [],
-    charges: [charge],
-  };
   const rewritten: GameState = {
     ...envelope.state,
-    activeMission: { ...blind, vision: initialVision(blind) },
+    activeMission: stageMission(mission, {
+      map: new FixtureMapBuilder(32, 24, 1).fillGround().build(),
+      units: [
+        ...force.map((unit, index) => ({
+          ...unit,
+          pos: { x: 6 + index * 2, y: 0, z: 7 },
+          facing: "s" as const,
+        })),
+        ...swarmers,
+      ],
+      templates: {
+        ...mission.templates,
+        [SWARMER_TEMPLATE.id]: SWARMER_TEMPLATE,
+      },
+      charges: [charge],
+    }),
   };
   await page.evaluate(
     ({ key, saved }) => {

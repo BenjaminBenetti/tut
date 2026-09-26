@@ -24,3 +24,19 @@ export const COASTAL_MISSION_FIXTURE: MissionMapFixture = {
     size: "small",
   },
 };
+
+/**
+ * A city clearance with both spawners some 27 tiles from the landing,
+ * a few turns' walk for the mech: seed `f2`'s first offer before the
+ * mission director (#1179) moved that offer to another city.
+ */
+export const BERLIN_CLEARANCE_FIXTURE: MissionMapFixture = {
+  cityId: "berlin",
+  mapParams: {
+    seed: "985280582",
+    infestation: 2,
+    biome: "temperate",
+    settlement: "city",
+    size: "small",
+  },
+};

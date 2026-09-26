@@ -160,11 +160,11 @@ export function wavesFor(
 /**
  * Removes every mission whose `expiresDay` has arrived (`day >= expiresDay`)
  * and adds each one's frozen `ignorePenalty` to its host city, clamped.
- * A `pinned` mission never expires here (ADR 0013 §2.2): only its own
- * rule removes it.
  * Emits a `MissionExpired` per lapsed mission, in mission order, then a
  * `CityInfestationChanged` per city whose infestation actually moved, in
- * map order. Returns the input state untouched when nothing expired.
+ * map order. Returns the input state untouched when nothing expired. A
+ * `pinned` mission never expires here (ADR 0013 §2.2); only its own rule
+ * removes it.
  *
  * ```
  *   missions ──► [expired | kept]

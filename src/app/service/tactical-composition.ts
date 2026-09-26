@@ -19,6 +19,7 @@ import { MapBehaviourRegistry } from "../../bugs/ai/behaviour-registry";
 import { createBugPhaseRunner } from "../../bugs/ai/bug-phase-runner";
 import { BruteBehaviour } from "../../bugs/ai/brute-behaviour";
 import { LurkerBehaviour } from "../../bugs/ai/lurker-behaviour";
+import { SpitterBehaviour } from "../../bugs/ai/spitter-behaviour";
 import { SwarmerBehaviour } from "../../bugs/ai/swarmer-behaviour";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
 import { BUG_SPECIES } from "../../bugs/data/species";
@@ -384,16 +385,22 @@ export function attackDepsOver(registries: MapGenRegistries): AttackDeps {
 
 /**
  * The bug behaviours that have landed, one line per species issue: the
- * lurker's `flank` (#333), the swarmer's `rush` (#332) and the brute's
- * `punish-clumps` (#334). Every species the catalogue defines now has
- * one, so nothing on the map holds still for want of a behaviour.
+ * lurker's `flank` (#333), the swarmer's `rush` (#332), the brute's
+ * `punish-clumps` (#334) and the spitter's `snipe` (#1179). Every
+ * species the catalogue defines has one, so nothing on the map holds
+ * still for want of a behaviour.
  *
  * Registering a behaviour is what makes the species act, so a merge that
  * lands a behaviour class without adding it here is a bug that no test
  * of that class can catch. `species.test.ts` covers the other direction.
  */
 export function shippedBugBehaviours(): readonly BugBehaviour[] {
-  return [new LurkerBehaviour(), new SwarmerBehaviour(), new BruteBehaviour()];
+  return [
+    new LurkerBehaviour(),
+    new SwarmerBehaviour(),
+    new BruteBehaviour(),
+    new SpitterBehaviour(),
+  ];
 }
 
 /** A mech's current stat sheet from its loadout, or undefined when it no longer validates. */

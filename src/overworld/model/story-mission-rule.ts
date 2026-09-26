@@ -2,7 +2,7 @@ import type { ActId } from "../../content/model/act-id";
 import type { CampaignFlagId } from "../../content/model/campaign-flag-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { Mission } from "./mission";
-import type { MissionOfferContext } from "./mission-offer-rule";
+import type { MissionPinContext } from "./mission-pin-trigger";
 import type { OverworldState } from "./overworld-state";
 
 // ===========================================
@@ -141,11 +141,15 @@ export interface StoryMissionRule {
    * The pinned offer on `state.day`, or `undefined` when there is no
    * site for it today (the director asks again tomorrow). The offer
    * carries `storyId: id`, `pinned: true`, its own fixed `difficulty`
-   * (never clamped into the act's band) and `act`, and sits on a city
-   * without an offer. Draws its id from `ctx.ids` and anything random
-   * from `ctx.rng`, a stream private to this story mission.
+   * (never clamped into the act's band) and `act`. It sits on a city
+   * without an offer when one of its candidates is free; otherwise on
+   * the one it likes best whose offer `ctx.displaceable` allows, which
+   * the director withdraws (`pickStoryCity`, #1179), so a story mission
+   * is pinned the day its gate opens (arc D2). Draws its id from
+   * `ctx.ids` and anything random from `ctx.rng`, a stream private to
+   * this story mission.
    */
-  create(state: OverworldState, ctx: MissionOfferContext): Mission | undefined;
+  create(state: OverworldState, ctx: MissionPinContext): Mission | undefined;
   /** What winning it does, in order, after its type's consequences. */
   readonly onWon: readonly StoryEffect[];
   /** What losing it does, after its type's consequences. */

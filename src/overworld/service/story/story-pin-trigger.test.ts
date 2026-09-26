@@ -7,13 +7,13 @@ import type { OverworldState } from "../../model/overworld-state";
 import {
   fixtureState,
   missionAt,
-  offerContext,
   progressIn,
 } from "../missions/mission-fixtures.test-helper";
 import {
   FIXTURE_STORY_DIFFICULTY,
   FIXTURE_STORY_TYPE,
   fixtureStoryRule,
+  pinContext,
   storyRulesOf,
 } from "./story-fixtures.test-helper";
 import { createStoryPinTrigger } from "./story-pin-trigger";
@@ -46,7 +46,7 @@ function pinned(
 ): readonly Mission[] {
   return createStoryPinTrigger(rules).pin(
     state,
-    offerContext(seed, ACTS["act-1"]),
+    pinContext(seed, ACTS["act-1"]),
   );
 }
 
@@ -145,7 +145,7 @@ describe("createStoryPinTrigger", () => {
     expect(specimen?.mapParams.seed).toBe(alone[0]?.mapParams.seed);
   });
 
-  it("rejects a rule whose offer is not pinned, names another story, or takes an occupied city", () => {
+  it("rejects a rule whose offer is not pinned, names another story, or takes a city whose offer cannot be withdrawn", () => {
     const state = withFlags([]);
     const broken = (patch: Partial<Mission>) =>
       storyRulesOf(
@@ -162,8 +162,40 @@ describe("createStoryPinTrigger", () => {
     expect(() => pinned(broken({ storyId: "uplink" }), state)).toThrow(
       RangeError,
     );
-    expect(() =>
-      pinned(broken({}), { ...state, missions: [missionAt("low", 30)] }),
-    ).toThrow(/already holds an offer/);
+    // A pinned offer (another story mission, a hive) and a triggered one
+    // (Defend Installation) are never taken.
+    for (const held of [
+      { ...missionAt("low", 30), pinned: true },
+      missionAt("low", 30, 10, "defend-installation"),
+    ]) {
+      expect(() => pinned(broken({}), { ...state, missions: [held] })).toThrow(
+        /cannot be withdrawn/,
+      );
+    }
+  });
+
+  it("lets a rule take a city holding an ordinary offer, and shows the next rule the board without it (#1179)", () => {
+    const seen: (readonly Mission[])[] = [];
+    const rules = storyRulesOf(
+      fixtureStoryRule("first-skyfall", {
+        create: () => ({
+          ...missionAt("low", 30),
+          id: "story-low",
+          pinned: true,
+          storyId: "first-skyfall",
+        }),
+      }),
+      fixtureStoryRule("live-specimen", {
+        pinWhen: [],
+        create: (state) => {
+          seen.push(state.missions);
+          return undefined;
+        },
+      }),
+    );
+    const ordinary = missionAt("low", 30);
+    const offers = pinned(rules, { ...withFlags([]), missions: [ordinary] });
+    expect(offers.map((offer) => offer.id)).toEqual(["story-low"]);
+    expect(seen).toEqual([[offers[0]]]);
   });
 });

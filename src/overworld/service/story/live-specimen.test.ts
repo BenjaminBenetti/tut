@@ -13,7 +13,10 @@ import type { CampaignState } from "../../model/campaign-state";
 import { HIVE_FORMED } from "../../model/hive-formed-event";
 import type { Mission } from "../../model/mission";
 import { isMissionExpired } from "../../model/mission";
+import { MISSION_EXPIRED } from "../../model/mission-expired-event";
+import { MISSION_OFFERED } from "../../model/mission-offered-event";
 import type { MissionOutcome } from "../../model/mission-result";
+import { MISSION_WITHDRAWN } from "../../model/mission-withdrawn-event";
 import type { OverworldState } from "../../model/overworld-state";
 import type { StoryMissionRules } from "../../model/story-mission-rule";
 import { STORY_RETRY_DAYS } from "../../model/story-mission-rule";
@@ -22,7 +25,6 @@ import { MISSION_CONSEQUENCE_RULES } from "../missions/mission-consequence-rules
 import {
   fixtureState,
   missionAt,
-  offerContext,
   progressIn,
   resultFor,
 } from "../missions/mission-fixtures.test-helper";
@@ -32,7 +34,11 @@ import { onStoryMissionResolved } from "../story-service";
 import { LIVE_SPECIMEN, LIVE_SPECIMEN_DIFFICULTY } from "./live-specimen";
 import { createStoryPinTrigger } from "./story-pin-trigger";
 import { STORY_MISSION_RULES } from "./story-mission-rules";
-import { fixtureStoryRule, storyRulesOf } from "./story-fixtures.test-helper";
+import {
+  fixtureStoryRule,
+  pinContext,
+  storyRulesOf,
+} from "./story-fixtures.test-helper";
 
 // ===========================================
 // Fixtures
@@ -87,7 +93,7 @@ function specimen(state: OverworldState): Mission | undefined {
 
 /** Live Specimen's offer on `state`, or a thrown error when it finds no city. */
 function offerOn(state: OverworldState): Mission {
-  const offer = LIVE_SPECIMEN.create(state, offerContext(1));
+  const offer = LIVE_SPECIMEN.create(state, pinContext(1));
   if (offer === undefined) {
     throw new Error("Live Specimen must find a city");
   }
@@ -171,7 +177,7 @@ describe("LIVE_SPECIMEN", () => {
     expect(isMissionExpired(offer, offer.expiresDay + 100)).toBe(false);
   });
 
-  it("skips a city that already holds an offer, and an undetected one", () => {
+  it("prefers a free city to a worse one holding an offer, and skips an undetected one", () => {
     const occupied = campaign(["capture-net"], 5, {
       missions: [missionAt("full", 30)],
     });
@@ -199,7 +205,7 @@ describe("LIVE_SPECIMEN", () => {
         cities: base.map.cities.map((city) => ({ ...city, detected: false })),
       },
     };
-    expect(LIVE_SPECIMEN.create(blind, offerContext(1))).toBeUndefined();
+    expect(LIVE_SPECIMEN.create(blind, pinContext(1))).toBeUndefined();
     expect(specimen(direct(blind).state)).toBeUndefined();
   });
 });
@@ -236,6 +242,81 @@ describe("Live Specimen on the board", () => {
     expect(
       later.missions.filter((mission) => mission.storyId === "live-specimen"),
     ).toEqual([specimen(once)]);
+  });
+});
+
+// ===========================================
+// On a crowded board
+// ===========================================
+
+describe("Live Specimen on a board with no free city (arc D2, #1179)", () => {
+  /** An ordinary clearance on every detected infested city. */
+  const crowded = () =>
+    campaign(["capture-net"], 5, {
+      missions: [
+        missionAt("low", 30),
+        missionAt("mid", 30),
+        missionAt("full", 30),
+      ],
+    });
+
+  it("is pinned the day the net lands, on the worst city, withdrawing its ordinary offer for nothing", () => {
+    const before = crowded();
+    const { state, events } = direct(before);
+    const offer = specimen(state);
+    expect(offer).toMatchObject({ pinned: true, cityId: "full" });
+    const ids = state.missions.map((mission) => mission.id);
+    expect(ids).not.toContain("mission-full");
+    // The other ordinary offers stay as they were.
+    expect(state.missions).toContain(before.missions[0]);
+    expect(state.missions).toContain(before.missions[1]);
+    // Withdrawn, then offered: no expiry, no penalty on the city.
+    expect(events.slice(0, 2)).toEqual([
+      {
+        type: MISSION_WITHDRAWN,
+        payload: {
+          missionId: "mission-full",
+          typeId: "infestation-clearance",
+          cityId: "full",
+          replacedBy: offer?.id,
+        },
+      },
+      { type: MISSION_OFFERED, payload: { mission: offer } },
+    ]);
+    expect(events.map((event) => event.type)).not.toContain(MISSION_EXPIRED);
+    expect(
+      events.filter((event) => event.type === MISSION_WITHDRAWN),
+    ).toHaveLength(1);
+  });
+
+  it("never withdraws a pinned or triggered offer: it takes the worst ordinary one, or waits", () => {
+    const guarded = campaign(["capture-net"], 5, {
+      missions: [
+        missionAt("low", 30),
+        missionAt("mid", 30, 10, "defend-installation"),
+        { ...missionAt("full", 30), pinned: true },
+      ],
+    });
+    const { state } = direct(guarded);
+    expect(specimen(state)?.cityId).toBe("low");
+    expect(state.missions).toContain(guarded.missions[1]);
+    expect(state.missions).toContain(guarded.missions[2]);
+
+    const locked = campaign(["capture-net"], 5, {
+      missions: [
+        { ...missionAt("low", 30), pinned: true },
+        missionAt("mid", 30, 10, "defend-installation"),
+        { ...missionAt("full", 30), pinned: true },
+      ],
+    });
+    const waited = direct(locked);
+    expect(specimen(waited.state)).toBeUndefined();
+    for (const held of locked.missions) {
+      expect(waited.state.missions).toContain(held);
+    }
+    expect(waited.events.map((event) => event.type)).not.toContain(
+      MISSION_WITHDRAWN,
+    );
   });
 });
 

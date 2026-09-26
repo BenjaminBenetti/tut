@@ -108,7 +108,7 @@ Each domain owns a small interface and a table keyed by `MissionTypeId`. A `Read
 
 The `mission-generation` tick step keeps its name and becomes the director. It runs in this order:
 
-1. Run every **pin trigger** (`MissionPinTrigger` in `overworld/model/mission-pin-trigger.ts`). Today there is one: the story's (§2.5). Pins run first, so a story mission claims its city before any other offer.
+1. Run every **pin trigger** (`MissionPinTrigger` in `overworld/model/mission-pin-trigger.ts`). Today there is one: the story's (§2.5). Pins run first, so a story mission claims its city before any other offer. A pin may land on a city that holds an ordinary offer, one that is unpinned and board-drawn (`countsAgainstCap`, handed to the trigger as `MissionPinContext.displaceable`). The director withdraws that offer and emits `MissionWithdrawn` (#1179). A withdrawal is not an expiry: no ignore penalty and no consequence rule. The fill below then refills the freed slot. A pin on a city holding a pinned or triggered offer is a programmer error.
 2. Run every `MissionTriggerRule` for event offers, such as Defend Installation.
 3. Count the offers that count against the cap: not `pinned`, and of a type with an offer rule. A triggered defence sits outside the cap too (`countsAgainstCap`).
 4. While that count is below `ACTS[act].boardCap`:
@@ -160,6 +160,16 @@ The `mission-generation` tick step keeps its name and becomes the director. It r
 - its loss rule does not hold it back: a retry waits until `storyRetryDay[id]`, and the platform waits after `platform-failed` until `last-hope`.
 
 Each rule draws on its own fork, labelled with its id. A pinned story offer never expires and ignores the cap.
+
+**Its city** (#1179). A story gate is research only (arc D2), so a board full of ordinary offers must not hold a story mission back. A rule picks its city with `pickStoryCity` (`overworld/service/story/story-city.ts`), passing its candidates and its own preference:
+
+```
+free candidates            ──► prefer(free)
+none free, some claimable  ──► prefer(claimable)   the director withdraws that ordinary offer
+none claimable             ──► undefined           asked again tomorrow
+```
+
+Another story mission, a hive, or a triggered Defend Installation is never claimable. Live Specimen uses it. First Skyfall does not need it, because its fallback is any free city on the map.
 
 **Results.**
 

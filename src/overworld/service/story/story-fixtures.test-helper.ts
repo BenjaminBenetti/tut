@@ -1,13 +1,21 @@
 import type { MissionTypeId } from "../../../content/model/mission-type-id";
 import type { StoryMissionId } from "../../../content/model/story-mission-id";
+import type { ActDefinition } from "../../model/act-definition";
 import type { City } from "../../model/city";
+import type { MissionPinContext } from "../../model/mission-pin-trigger";
 import type { OverworldState } from "../../model/overworld-state";
 import type {
   StoryMissionRule,
   StoryMissionRules,
 } from "../../model/story-mission-rule";
 import { STORY_RETRY_DAYS } from "../../model/story-mission-rule";
+import { countsAgainstCap } from "../mission-generation-service";
+import {
+  offerContext,
+  UNCLAMPED_ACT,
+} from "../missions/mission-fixtures.test-helper";
 import { citiesWithOffers } from "../missions/mission-offer-builder";
+import { MISSION_OFFER_RULES } from "../missions/mission-offer-rules";
 import { buildStoryOffer } from "./story-offer-builder";
 
 // ===========================================
@@ -69,6 +77,21 @@ export function fixtureStoryRule(
     onWon: [],
     onLost: { kind: "retry", delayDays: STORY_RETRY_DAYS },
     ...overrides,
+  };
+}
+
+/**
+ * What the shipped director hands a story rule on `seed`: the offer
+ * context and its `displaceable`, which allows ordinary offers only
+ * (`countsAgainstCap` over the shipped offer rules).
+ */
+export function pinContext(
+  seed: number,
+  act: ActDefinition = UNCLAMPED_ACT,
+): MissionPinContext {
+  return {
+    ...offerContext(seed, act),
+    displaceable: (mission) => countsAgainstCap(mission, MISSION_OFFER_RULES),
   };
 }
 

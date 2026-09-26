@@ -45,6 +45,11 @@ import { HAZARD_TUNING } from "../../tactical/data/hazard-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
+import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
+import {
+  wakingStep,
+  withBroodWakingAll,
+} from "../../tactical/service/brood-wake-service";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
@@ -242,6 +247,8 @@ export function composeTactical(
     registries,
     garrison: GARRISON_TUNING,
     generator: GENERATOR_TUNING,
+    // What a hive cavern's setup stands its dormant broods from (#1179).
+    broods: { species: Object.values(BUG_SPECIES), tuning: BROOD_TUNING },
     civilian: CIVILIAN_TUNING,
     setupRules: MISSION_SETUP_RULES,
     // Every squad deployed carries what the tree has researched for the
@@ -312,6 +319,10 @@ const DEBUG_MECHS: readonly DebugMechSource[] = [
  * beat the clock; the objective kinds' own steps (`OBJECTIVE_RULES`, a
  * defence's first) run last, after the wave they judge has landed.
  *
+ * Every action and every phase step is wrapped to wake the dormant
+ * broods it disturbs (#1179, `brood-wake-service`): a no-op, returning
+ * the rule's own result, on every mission without a sleeper.
+ *
  * `placement` is the development tools' unit placement (#1136); left
  * out, as the headless sim leaves it, the handler is registered refusing
  * so the command has one answer everywhere.
@@ -337,19 +348,24 @@ export function shippedTacticalHandlers(
     COMBAT_TUNING,
     createOverwatchReaction(COMBAT_TUNING, attackDeps),
   );
-  const actions: TacticalHandlers = {
-    [MECH_ACTION]: createMechActionHandler(movementReaction),
-    [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
-    [MOVE]: createMoveHandler(movementReaction),
-    [OVERWATCH]: overwatchHandler,
-    [RELOAD]: reloadHandler,
-    [USE_EQUIPMENT]: createUseEquipmentHandler(equipment),
-    [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
-    [HARVEST_CARCASS]: createHarvestHandler(OBJECTIVE_TUNING),
-    [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
-    [ABANDON_MISSION]: createAbandonMissionHandler(),
-    [PLACE_UNIT]: createPlaceUnitHandler(placement),
-  };
+  // Every action wakes the dormant broods it disturbs (#1179), wherever
+  // it came from: the squad, the bug phase or the Jev driver.
+  const actions: TacticalHandlers = withBroodWakingAll(
+    {
+      [MECH_ACTION]: createMechActionHandler(movementReaction),
+      [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
+      [MOVE]: createMoveHandler(movementReaction),
+      [OVERWATCH]: overwatchHandler,
+      [RELOAD]: reloadHandler,
+      [USE_EQUIPMENT]: createUseEquipmentHandler(equipment),
+      [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
+      [HARVEST_CARCASS]: createHarvestHandler(OBJECTIVE_TUNING),
+      [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
+      [ABANDON_MISSION]: createAbandonMissionHandler(),
+      [PLACE_UNIT]: createPlaceUnitHandler(placement),
+    },
+    BROOD_TUNING.wake,
+  );
   const registry = new MapBehaviourRegistry(shippedBugBehaviours());
   const speciesOf = createSpeciesLookup(BUG_SPECIES);
   // A named enemy plays its persona's fallback without Jev, in the
@@ -400,7 +416,9 @@ export function shippedTacticalHandlers(
         // Each sitrep's own step, last, on a mission that carries it:
         // City Ablaze relights its blazes every three turns.
         ...sitrepPhaseSteps(),
-      ],
+        // Each step wakes the broods it disturbs (#1179): a fire burning a
+        // sleeper, a charge going off beside a chamber.
+      ].map((step) => wakingStep(step, BROOD_TUNING.wake)),
       bugPhase,
     ),
   };

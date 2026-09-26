@@ -827,6 +827,106 @@ describe("overwatchReaction with a two-shot watch (#1138)", () => {
   });
 });
 
+// ===========================================
+// Dormant broods (#1179)
+// ===========================================
+
+describe("dormant bugs and the turn engine (#1179)", () => {
+  const T = COMBAT_TUNING;
+  const watching = { ap: 0, status: ["overwatch"] as const };
+
+  it("a dormant bug neither draws a watch's fire nor keeps a watch of its own", () => {
+    const field = openField().build();
+    const awake = missionWith(
+      field,
+      [
+        unitAt("w", "infantry", at(0, 0), watching),
+        unitAt("b", "infantry", at(3, 0), { team: "bugs" }),
+      ],
+      { phase: "bugs" },
+    );
+    // The control: the same bug awake draws the shot.
+    expect(
+      overwatchReaction(awake, "b", ctx, T, DEPS).events.some(
+        (event) => event.type === ATTACK_RESOLVED,
+      ),
+    ).toBe(true);
+    const asleep = missionWith(
+      field,
+      [
+        unitAt("w", "infantry", at(0, 0), watching),
+        unitAt("b", "infantry", at(3, 0), {
+          team: "bugs",
+          status: ["dormant"],
+        }),
+      ],
+      { phase: "bugs" },
+    );
+    expect(overwatchReaction(asleep, "b", ctx, T, DEPS).events).toEqual([]);
+    const sleepingWatch = missionWith(field, [
+      unitAt("w", "infantry", at(0, 0), {
+        team: "bugs",
+        ap: 0,
+        status: ["overwatch", "dormant"],
+      }),
+      unitAt("u", "infantry", at(3, 0)),
+    ]);
+    expect(overwatchReaction(sleepingWatch, "u", ctx, T, DEPS).events).toEqual(
+      [],
+    );
+  });
+
+  /** A bugs phase driven from outside (Jev), with `b` unfinished and asleep or not. */
+  function externalPhase(dormant: boolean): TacticalState {
+    return {
+      ...missionWith(
+        openField().build(),
+        [
+          unitAt("u", "infantry", at(0, 0)),
+          unitAt("b", "infantry", at(5, 5), {
+            team: "bugs",
+            status: dormant ? ["dormant"] : [],
+          }),
+        ],
+        { phase: "bugs" },
+      ),
+      jev: {
+        entities: { b: { enabled: true, entityPrompt: "" } },
+        commanders: { tdf: "", bugs: "" },
+        activation: {
+          turn: 1,
+          phase: "bugs",
+          finished: [],
+          externalBugs: true,
+        },
+      },
+    };
+  }
+
+  it("never holds an externally driven bug phase open for a sleeper", () => {
+    expect(handler(externalPhase(false), endTurn(), ctx).ok).toBe(false);
+    const ended = handler(externalPhase(true), endTurn(), ctx);
+    expect(ended.ok).toBe(true);
+    if (ended.ok) expect(ended.value.state.phase).toBe("player");
+  });
+
+  it("does not hand a bug phase to Jev for a Jev-enabled bug that is asleep", () => {
+    const opening = (dormant: boolean) => {
+      const mission = externalPhase(dormant);
+      const player = {
+        ...mission,
+        phase: "player" as const,
+        jev: { ...mission.jev!, activation: undefined },
+      };
+      const opened = handler(player, endTurn(), ctx);
+      if (!opened.ok) throw new Error("EndTurn was refused");
+      return opened.value.state.jev?.activation?.externalBugs;
+    };
+    expect(opening(false)).toBe(true);
+    expect(opening(true)).toBe(false);
+  });
+});
+
 describe("refreshSides with civilian groups (campaign arc §6.4)", () => {
   it("gives a freed group its actions at the player's turn, and a trapped one none", () => {
     const base = missionWith(

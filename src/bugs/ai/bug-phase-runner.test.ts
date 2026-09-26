@@ -40,7 +40,11 @@ import { LurkerBehaviour } from "./lurker-behaviour";
 import { createSpeciesLookup } from "../service/species-lookup";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import { MapBehaviourRegistry } from "./behaviour-registry";
-import { createBugPhaseRunner, livingBugIds } from "./bug-phase-runner";
+import {
+  actingBugIds,
+  createBugPhaseRunner,
+  livingBugIds,
+} from "./bug-phase-runner";
 import { UNIT_LOST } from "../../tactical/model/unit-lost-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 
@@ -404,6 +408,86 @@ describe("livingBugIds", () => {
       unitAt("b1", "infantry", at(3, 0), { team: "bugs" }),
     ]);
     expect(livingBugIds(mission)).toEqual(["b2", "b1"]);
+  });
+});
+
+// ===========================================
+// Dormant broods (#1179)
+// ===========================================
+
+/** `bugsPhase()` with `b1` asleep in a brood of its own. */
+function withSleepingB1(woke?: {
+  turn: number;
+  phase: "player" | "bugs";
+}): TacticalState {
+  const mission = bugsPhase();
+  return {
+    ...mission,
+    units: mission.units.map((u) =>
+      u.id === "b1" && woke === undefined ? { ...u, status: ["dormant"] } : u,
+    ),
+    broods: [
+      {
+        id: "brood-1",
+        wake: { centre: at(3, 0), radius: 2 },
+        memberIds: ["b1"],
+        ...(woke === undefined ? {} : { woke: { ...woke, cause: "enter" } }),
+      },
+    ],
+  };
+}
+
+describe("createBugPhaseRunner with dormant broods (#1179)", () => {
+  it("skips a dormant bug before anything is done for it: no behaviour asked, no stream forked, nothing applied", () => {
+    const asked: string[] = [];
+    const labels: string[] = [];
+    const counting: BugBehaviour = {
+      tag: "rush",
+      choose: (view, unitId, ctx) => {
+        asked.push(unitId);
+        return stepAndShoot.choose(view, unitId, ctx);
+      },
+    };
+    const applied = runner(counting)(
+      withSleepingB1(),
+      ctxWith(recordingRng(labels)),
+    );
+    expect(asked).toEqual(["b2"]);
+    expect(labels.filter((label) => label.startsWith("bug:"))).toEqual([
+      "bug:b2",
+    ]);
+    const b1 = applied.state.units.find((u) => u.id === "b1");
+    expect(b1?.pos).toEqual(at(3, 0));
+    expect(b1?.ap).toBe(2);
+  });
+
+  it("holds a brood that woke during this bug phase, and plays it in the next", () => {
+    const asked: string[] = [];
+    const counting: BugBehaviour = {
+      tag: "rush",
+      choose: (view, unitId, ctx) => {
+        asked.push(unitId);
+        return stepAndShoot.choose(view, unitId, ctx);
+      },
+    };
+    const thisPhase = withSleepingB1({ turn: 1, phase: "bugs" });
+    runner(counting)(thisPhase, ctxWith(riggedRng(true)));
+    expect(asked).toEqual(["b2"]);
+    asked.length = 0;
+    runner(counting)({ ...thisPhase, turn: 2 }, ctxWith(riggedRng(true)));
+    expect(asked).toEqual(["b1", "b2"]);
+    asked.length = 0;
+    // Woken in the player's phase: the very next bug phase plays it.
+    runner(counting)(
+      withSleepingB1({ turn: 1, phase: "player" }),
+      ctxWith(riggedRng(true)),
+    );
+    expect(asked).toEqual(["b1", "b2"]);
+  });
+
+  it("actingBugIds is livingBugIds less the resting, in units order", () => {
+    expect(actingBugIds(withSleepingB1())).toEqual(["b2"]);
+    expect(actingBugIds(bugsPhase())).toEqual(livingBugIds(bugsPhase()));
   });
 });
 

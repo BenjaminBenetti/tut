@@ -3,6 +3,7 @@ import type { Result } from "../../core/model/result";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Mission } from "../../overworld/model/mission";
+import type { BroodSetupDeps } from "./brood-tuning";
 import type { CivilianTuning } from "./civilian";
 import type { GeneratorTuning } from "./generator";
 import type { SpawnTuning } from "./spawn-tuning";
@@ -27,6 +28,13 @@ export interface MissionSetupDeps {
   readonly spawnTuning: SpawnTuning;
   /** What a defence's generators are made of (#1175). */
   readonly generator: GeneratorTuning;
+  /**
+   * The species and tuning a hive cavern's dormant broods are placed
+   * from (#1179), read by `placeCavernBroods`. Optional so every start
+   * built before broods still compiles; absent, a setup that calls it
+   * places none.
+   */
+  readonly broods?: BroodSetupDeps;
   /** What an evacuation's civilian groups are (campaign arc §6.4). */
   readonly civilian: CivilianTuning;
 }

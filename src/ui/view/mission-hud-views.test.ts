@@ -1180,6 +1180,44 @@ describe("capturing a specimen (#1179)", () => {
   });
 });
 
+describe("event vocabulary for dormant broods (#1179)", () => {
+  const woke = (label?: string) =>
+    ({
+      type: "tactical:brood-woke",
+      payload: {
+        broodId: "brood-c1",
+        cause: "enter",
+        unitIds: ["b1", "b2"],
+        ...(label === undefined ? {} : { label }),
+      },
+    }) as never;
+
+  it("says a brood stirs, and in which chamber when it knows", () => {
+    expect(describeEvent(woke("east side chamber"), NAMES)).toMatchObject({
+      text: "A brood stirs in the east side chamber",
+      icon: "warning",
+      tone: "bug",
+    });
+    expect(describeEvent(woke(), NAMES)?.text).toBe("A brood stirs");
+  });
+
+  it("puts the wake in the log, not above one bug of the brood", () => {
+    expect(actorOf(woke("core chamber"))).toBeUndefined();
+  });
+
+  it("says a lone sleeper is dormant", () => {
+    expect(
+      describeEvent(
+        {
+          type: "tactical:unit-status-changed",
+          payload: { unitId: "b1", status: ["dormant"] },
+        } as never,
+        NAMES,
+      )?.text,
+    ).toBe("Swarmer is dormant");
+  });
+});
+
 // ===========================================
 // Civilians (campaign arc §6.4)
 // ===========================================

@@ -155,6 +155,35 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
   END_TURN ──► DEFAULT steps … objectivePhaseSteps() ──► sitrepPhaseSteps(): SITREP_RULES[id].phaseStep?
   ```
 
+- **Dormant broods sleep as a status and wake as a brood** (campaign arc §7.5, #1179). A sleeping bug carries the `dormant` `UnitStatus` (`isDormant`). `TacticalState.broods?` lists each `Brood { id, wake: { centre, radius }, memberIds, label?, woke? }`. The brood is a table rather than a `Unit.broodId` because the wake zone and the `woke { turn, phase, cause }` stamp belong to the brood, not to each member.
+  - **Placement.** `placeCavernBroods(state, map, deps)` (`tactical/service/brood-placement-service.ts`) places one brood per `brood-chamber` hook.
+    - Its size is `broodSize` over `BROOD_TUNING`: by the chamber's role and the difficulty, 12 / 9 / 17 for route / side / core at difficulty 5.
+    - Its species come from the mission's `bugMix`, or else the default mix.
+    - Its tiles come from `broodPositions`, a search out from the hook tile within the radius.
+    - It draws only from the fork `dormant-broods/<hookId>`.
+    - `placeDormantBrood` puts one brood down through `placeBugsAt`.
+    - A mission type's setup calls it with its own `MissionSetupDeps`, which carry `broods`. No shipped type calls it yet, so the sweeps are unchanged.
+  - **Waking.** The composition root wraps every action handler in `withBroodWakingAll`, and every END_TURN step in `wakingStep`. After each change, `wakeBroods(before, applied, BROOD_TUNING.wake)` looks for a cause:
+    - **enter:** a squad-side footprint ends a step inside the zone;
+    - **attack:** a member is hurt by anything, or a squad-side shot, blast or fire lands in the zone;
+    - **noise:** `noiseOf` finds an explosion, a mech's gun or a gun with `armorPen ≥ 1` within `radius + noiseRadius` (6).
+
+    The zone is Euclidean on the ground plane and ignores height. The whole brood loses `dormant`, the stamp is written, and one `BroodWoke` event follows the change's own events. Waking draws no RNG. A mission with no sleepers returns the change untouched.
+  - **Acting.** `restingBugIds` is the one predicate that the bug-phase runner (`actingBugIds`), the Jev activation, the Jev driver and the EndTurn wait all read. A brood woken in the player phase acts in the next bug phase. A brood woken during a bug phase sits that phase out, so no bug can wake and act before the player has seen it stir. A sleeper has no eyes in the fog and neither takes nor triggers overwatch. It can still be seen, targeted and damaged, and the `t` cycle keeps it.
+  - **Presentation.** The log says "A brood stirs in the east side chamber" (`describeEvent`). `DormantLook` (`graphics/view/dormant-look.ts`) draws a sleeper hunched to 0.6 of its height and dimmed to 0.45, on copies of its materials. The redraw uncurls a woken bug. `phaseEvents` plays `BroodWoke` after placement, so every visible member heaves twice together. The HUD has no turn-order or enemy list; the unit card's status row reads `dormant`. See [`brood-dormant.png`](brood-dormant.png) and [`brood-woken.png`](brood-woken.png).
+  - **Cost.** `app/service/brood-phase.sim.test.ts` times one shipped EndTurn on three caverns with 50–83 bugs, under a machine load of about 50:
+    - all asleep: 5–12 ms;
+    - one brood woken (9–17 bugs acting): 0.4–2.9 s;
+    - all woken: 7–13 s.
+
+  ```
+  action / END_TURN step ──► applied ──► wakeBroods(before, applied)
+       enter   squad footprint ends a step in the zone          ─┐
+       attack  member hurt · squad shot / blast / fire in zone   ├─► −dormant, woke{turn, phase, cause} ──► BroodWoke
+       noise   blast · mech gun · heavy gun within radius + 6    ─┘
+  bug phase ──► actingBugIds = living − restingBugIds (dormant, or woke in this bug phase)
+  ```
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

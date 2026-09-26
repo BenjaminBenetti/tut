@@ -69,14 +69,16 @@ export const PASS_CLASSES = [
  * | `overwatch`  | fires at enemies that move in range, one shot a step, `overwatchShots` times (#1138) |
  * | `hidden`     | not yet revealed to the other team (lurkers)     |
  * | `suppressed` | pinned; accuracy and movement reduced this turn  |
+ * | `dormant`    | a sleeping brood bug (#1179): it neither acts, looks nor watches until its brood wakes |
  */
-export type UnitStatus = "overwatch" | "hidden" | "suppressed";
+export type UnitStatus = "overwatch" | "hidden" | "suppressed" | "dormant";
 
 /** Every `UnitStatus`, in a fixed order. */
 export const UNIT_STATUSES = [
   "overwatch",
   "hidden",
   "suppressed",
+  "dormant",
 ] as const satisfies readonly UnitStatus[];
 
 // ===========================================
@@ -209,6 +211,18 @@ export function passMaskFor(passClass: PassClass): UnitClass {
  */
 export function isAutonomous(unit: Pick<Unit, "kind">): boolean {
   return unit.kind === "turret" || unit.kind === "generator";
+}
+
+/**
+ * True for a sleeping brood bug (#1179, campaign arc §7.5): placed
+ * `dormant` in a hive cavern's chamber, it is skipped by the bug phase
+ * before any scoring, pathing or Jev call, keeps its eyes shut (it adds
+ * nothing to its side's vision) and neither fires on nor draws
+ * overwatch. It can still be seen, targeted and hurt; a hurt dormant bug
+ * wakes, and its brood with it (`brood-wake-service`).
+ */
+export function isDormant(unit: Pick<Unit, "status">): boolean {
+  return unit.status.includes("dormant");
 }
 
 /**

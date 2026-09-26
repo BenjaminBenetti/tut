@@ -589,6 +589,68 @@ describe("TacticalAnimationQueue reveal", () => {
   });
 });
 
+describe("TacticalAnimationQueue brood stir (#1179)", () => {
+  const woke = (unitIds: readonly string[]): TacticalEvent => ({
+    type: "tactical:brood-woke",
+    payload: { broodId: "brood-c1", cause: "enter", unitIds },
+  });
+
+  it("heaves every drawn member together and settles them at full size", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const first = s.objects.get("unit-1")!;
+    const second = s.objects.get("unit-2")!;
+    let done = false;
+    // A member the player cannot see has no object and is passed over.
+    queue.enqueue([woke(["unit-1", "unseen", "unit-2"])], () => {
+      done = true;
+    });
+
+    queue.update(TIMING.revealSeconds / 2);
+    expect(first.scale.y).toBeGreaterThan(1.1);
+    expect(first.scale.x).toBeLessThan(1);
+    expect(second.scale.y).toBe(first.scale.y);
+    expect(done).toBe(false);
+    queue.update(TIMING.revealSeconds * 2);
+    expect(first.scale.toArray()).toEqual([1, 1, 1]);
+    expect(second.scale.toArray()).toEqual([1, 1, 1]);
+    expect(done).toBe(true);
+  });
+
+  it("settles the brood upright when the player skips the stir", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const first = s.objects.get("unit-1")!;
+    queue.enqueue([woke(["unit-1"])], () => undefined);
+    queue.update(TIMING.revealSeconds / 2);
+    expect(first.scale.y).toBeGreaterThan(1.1);
+    queue.skip();
+    expect(first.scale.toArray()).toEqual([1, 1, 1]);
+  });
+
+  it("plays nothing for a brood the player cannot see, and still calls back", () => {
+    const queue = new TacticalAnimationQueue({
+      scene: scene(),
+      sprites,
+      timing: TIMING,
+    });
+    let done = false;
+    queue.enqueue([woke(["unseen"])], () => {
+      done = true;
+    });
+    queue.update(0.001);
+    expect(done).toBe(true);
+  });
+});
+
 describe("unit action poses", () => {
   /** A pose port wired exactly as the scene builder exposes its unit mesh. */
   function animatedScene() {

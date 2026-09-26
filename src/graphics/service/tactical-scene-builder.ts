@@ -14,6 +14,7 @@ import type {
   TechCarcassId,
 } from "../../tactical/model/tech-carcass";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { isDormant } from "../../tactical/model/unit";
 import type {
   UnitTemplate,
   UnitTemplateId,
@@ -421,6 +422,7 @@ export class TacticalSceneBuilder
       if (existing) {
         existing.setPose(unit.pos, unit.facing);
         existing.motion?.brace?.(unit.braced ? 1 : 0);
+        existing.setDormant(isDormant(unit));
         // An arrival the queue never walked (instant mode, or a batch
         // that was skipped) is on the board now, not hidden.
         existing.setHidden(false);
@@ -934,7 +936,10 @@ export class TacticalSceneBuilder
     mesh.motion?.brace?.(unit.braced ? 1 : 0);
     this.meshes.set(unit.id, mesh);
     this.modelIds.set(unit.id, template.modelId);
+    // Measured awake: a sleeper's effects anchor where its woken body
+    // will stand, so nothing jumps when its brood stirs (#1179).
     this.heights.set(unit.id, measureHeight(mesh.object));
+    mesh.setDormant(isDormant(unit));
     for (const target of mesh.pickTargets()) {
       this.targetToUnit.set(target, unit.id);
     }

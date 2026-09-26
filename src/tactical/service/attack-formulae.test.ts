@@ -65,3 +65,63 @@ describe("damageRange with resistance (campaign arc §10.2)", () => {
     expect(damageRange(spit, 6, COMBAT_TUNING, { acid: 3 })).toEqual([0, 0]);
   });
 });
+
+// ===========================================
+// Armour-piercing rounds
+// ===========================================
+
+describe("damageRange with armour-piercing rounds (campaign arc §10.2)", () => {
+  /** The plain weapon loaded with two points of piercing rounds. */
+  const AP: WeaponProfile = { ...PLAIN, pierce: 2 };
+
+  it("strips its points off the target's armour, on top of the gun's own penetration", () => {
+    // 9–15 against 4 armour is 5–11; the rounds leave 2 armour, 7–13.
+    expect(damageRange(PLAIN, 4, COMBAT_TUNING)).toEqual([5, 11]);
+    expect(damageRange(AP, 4, COMBAT_TUNING)).toEqual([7, 13]);
+    // With a pen 1 gun, 4 − 1 − 2 leaves 1 armour: 8–14.
+    expect(damageRange({ ...AP, armorPen: 1 }, 4, COMBAT_TUNING)).toEqual([
+      8, 14,
+    ]);
+  });
+
+  it("strips armour to nothing but never below it", () => {
+    // 1 armour less 2 pierce is bare skin: the band itself, not a bonus.
+    expect(damageRange(AP, 1, COMBAT_TUNING)).toEqual([9, 15]);
+    expect(damageRange(AP, 0, COMBAT_TUNING)).toEqual([9, 15]);
+    expect(damageRange(PLAIN, 0, COMBAT_TUNING)).toEqual([9, 15]);
+  });
+
+  it("comes off before the minimum-damage floor, so it cannot lift a hit the plate still stops", () => {
+    // A 4-damage gun (3–5) against 8 armour floors at 1; the rounds
+    // leave 6 armour, which still stops it. Pierce added after the
+    // floor would have made it 3.
+    const weak: WeaponProfile = { ...PLAIN, damage: 4, pierce: 2 };
+    expect(damageRange({ ...weak, pierce: 0 }, 8, COMBAT_TUNING)).toEqual([
+      1, 1,
+    ]);
+    expect(damageRange(weak, 8, COMBAT_TUNING)).toEqual([1, 1]);
+    // Against 5 the rounds leave 3, and the top of the band (5) gets
+    // two points through where the plain gun still floors.
+    expect(damageRange({ ...weak, pierce: 0 }, 5, COMBAT_TUNING)).toEqual([
+      1, 1,
+    ]);
+    expect(damageRange(weak, 5, COMBAT_TUNING)).toEqual([1, 2]);
+  });
+
+  it("does nothing with no rounds loaded, or a nonsense negative load", () => {
+    const band = damageRange(PLAIN, 4, COMBAT_TUNING);
+    expect(damageRange({ ...PLAIN, pierce: 0 }, 4, COMBAT_TUNING)).toEqual(
+      band,
+    );
+    expect(damageRange({ ...PLAIN, pierce: -3 }, 4, COMBAT_TUNING)).toEqual(
+      band,
+    );
+  });
+
+  it("works alongside resistance: pierce before the floor, resistance after", () => {
+    // 4 armour less 2 pierce: 7–13; 3 acid resistance: 4–10.
+    expect(
+      damageRange({ ...AP, tags: ["acid"] }, 4, COMBAT_TUNING, { acid: 3 }),
+    ).toEqual([4, 10]);
+  });
+});

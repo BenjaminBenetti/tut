@@ -64,9 +64,11 @@ export const PHEROMONE_ANALYSIS_COST = 180;
  *                 Last Hope (story, hidden until platform-failed)
  *   infantry      Armour I · Frag · Field Medic   Armour II · Heavy Weapons ·
  *                                                 Incendiary
- *   xenobiology   Spitter Autopsy · Hive Guard
- *                 Autopsy (each hidden until
- *                 its species' first kill)
+ *   xenobiology   Spitter · Hive Guard · Burrower ·
+ *                 Broodmother · Armoured Carapace
+ *                 Autopsy (each hidden until its
+ *                 species' first kill; the carapace
+ *                 until any armoured variant's)
  * ```
  */
 export const TECH_NODES: readonly TechNode[] = [

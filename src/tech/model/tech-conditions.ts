@@ -23,13 +23,16 @@
  * | a campaign flag      | the story set it (`progress.flags`)            | `"spore-sample"`   |
  * | `killed:<species>`   | the campaign has killed that species at least  | `"killed:spitter"` |
  * |                      | once (`progress.speciesKilled`)                |                    |
+ * | `killed:<group>`     | the campaign has killed any member of that     | `"killed:armoured- |
+ * |                      | kill group (`KILL_GROUPS`) at least once       | carapace"`         |
  *
  * The `killed:` flags are derived, never stored: the campaign's
  * first-kill record is the truth, and `killedFlag(species)` names the
- * flag an autopsy node requires (campaign arc §8, §10.2).
+ * flag an autopsy node requires (campaign arc §8, §10.2). A group's id
+ * never matches a species', so `killedFlag` names either.
  */
 export interface TechConditions {
-  /** Every campaign flag currently set, plus `killed:<species>` for each species killed. */
+  /** Every campaign flag currently set, plus `killed:<species>` for each species killed and `killed:<group>` for each kill group with a member killed. */
   readonly flags: ReadonlySet<string>;
 }
 

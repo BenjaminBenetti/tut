@@ -61,6 +61,45 @@ describe("RadarView", () => {
     expect(view.root.children).toHaveLength(0);
   });
 
+  it("draws a burrowed contact as an amber ripple, apart from the red enemy marks (campaign arc §10.2)", async () => {
+    const view = new RadarView({
+      load: () => Promise.resolve(new Group()),
+      preload: () => Promise.resolve(),
+    });
+    await view.updateRadar(
+      [],
+      [
+        { kind: "unit", pos: { x: 9, y: 0, z: 3 } },
+        { kind: "burrowed", pos: { x: 4, y: 0, z: 5 } },
+      ],
+    );
+    expect(view.counts()).toEqual({ scanners: 0, contacts: 2 });
+    const colours = (name: string): number[] => {
+      const found: number[] = [];
+      view.root.getObjectByName(name)?.traverse((object) => {
+        if (
+          object instanceof Mesh &&
+          object.material instanceof MeshBasicMaterial
+        ) {
+          expect(object.material.depthTest).toBe(false);
+          found.push(object.material.color.getHex());
+        }
+      });
+      return found;
+    };
+    // Dot, halo and the ripple's outer ring: three pieces, all amber.
+    expect(colours("radar-contact-burrowed")).toEqual([
+      0xf0a030, 0xf0a030, 0xf0a030,
+    ]);
+    expect(colours("radar-contact-unit")).toEqual([0xe0453c, 0xe0453c]);
+    expect(
+      view.root.getObjectByName("radar-contact-burrowed")?.position.x,
+    ).toBe(4.5);
+    await view.updateRadar([], []);
+    expect(view.counts()).toEqual({ scanners: 0, contacts: 0 });
+    view.dispose();
+  });
+
   it("does not resurrect a scanner when a model load finishes after disposal", async () => {
     let finish!: (object: Group) => void;
     const load = vi.fn(

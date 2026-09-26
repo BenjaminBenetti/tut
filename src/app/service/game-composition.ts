@@ -1,3 +1,4 @@
+import { KILL_GROUPS } from "../../bugs/data/kill-groups";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { TechPointTreasury } from "../../economy/service/tech-point-service";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
@@ -401,20 +402,24 @@ const SHIPPED_STORY: StoryDeps = {
   spine: STORY_SPINE,
 };
 
+/** The kill groups whose first kill reveals a group autopsy (the armoured carapace). */
+const SHIPPED_KILL_GROUPS = Object.values(KILL_GROUPS);
+
 // ===========================================
 // Helpers
 // ===========================================
 
 /**
  * The campaign's conditions for the tech tree (ADR 0013 §2.7): the
- * story's flags plus a `killed:<species>` flag per species killed
+ * story's flags plus a `killed:<species>` flag per species killed and a
+ * `killed:<group>` flag per kill group with a member killed
  * (`campaignTechConditions`). The unlock handler, the tech tree screen
  * and the mech bay are all handed this one function, so they agree on
  * which nodes are hidden. The unlock hook (`onTechUnlocked`) is what
  * turns a researched node's flag effects into flags here.
  */
 function techConditionsOf(state: GameState): TechConditions {
-  return campaignTechConditions(state.overworld.progress);
+  return campaignTechConditions(state.overworld.progress, SHIPPED_KILL_GROUPS);
 }
 
 /** The shipped content, tuning and services the day tick runs on, pinning from `story`. */

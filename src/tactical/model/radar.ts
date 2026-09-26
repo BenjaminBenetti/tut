@@ -33,10 +33,12 @@ export interface Radar {
  * Location-only intel: no species, health, or attack target is disclosed.
  * Scanners report `"unit"` contacts; the objective nests are marked
  * through the fog on their own since #1173 (`ObjectiveMarker`), so no
- * rule issues a `"structure"` contact today.
+ * rule issues a `"structure"` contact today. A mech's seismic sensor
+ * (campaign arc §10.2) reports `"burrowed"` contacts: a bug under the
+ * ground at that column (`seismicContacts`).
  */
 export interface RadarContact {
-  readonly kind: "unit" | "structure";
+  readonly kind: "unit" | "structure" | "burrowed";
   readonly pos: TileCoord;
 }
 

@@ -9,6 +9,7 @@ import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/overworld-command";
+import { KILL_GROUPS } from "../../bugs/data/kill-groups";
 import { campaignTechConditions } from "../../overworld/service/campaign-tech-conditions";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
@@ -82,7 +83,11 @@ function watcher(): {
       TECH_NODES,
       Object.values(TECH_FAMILIES),
     ),
-    conditionsOf: (state) => campaignTechConditions(state.overworld.progress),
+    conditionsOf: (state) =>
+      campaignTechConditions(
+        state.overworld.progress,
+        Object.values(KILL_GROUPS),
+      ),
     onRevealed: (nodes) => {
       reveals.push(nodes.map((node) => node.id));
     },

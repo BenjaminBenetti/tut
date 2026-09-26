@@ -11,6 +11,7 @@ import type {
   SpawnerId,
 } from "../../tactical/model/tactical-state";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
+import type { Radar, RadarContact } from "../../tactical/model/radar";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import type { MechWreck } from "../../tactical/model/mech-wreck";
@@ -55,15 +56,20 @@ class StageRecorder {
   wrecks: readonly MechWreck[] = [];
   effects: readonly TileEffect[] = [];
   markers: readonly ObjectiveMarker[] = [];
+  contacts: readonly RadarContact[] = [];
 
   /** Records the map handed to the scene (#1121). */
   applyMap(_map: TacticalMap): void {
     this.calls.push("applyMap");
   }
 
-  /** Records the radar layer update. */
-  updateRadar(): Promise<void> {
+  /** Records the radar layer update, and the contacts it was handed. */
+  updateRadar(
+    _radars: readonly Radar[],
+    contacts: readonly RadarContact[],
+  ): Promise<void> {
     this.calls.push("updateRadar");
+    this.contacts = contacts;
     return Promise.resolve();
   }
 
@@ -378,6 +384,44 @@ describe("drawPerceived", () => {
       objectives: [{ ...seen.objectives[0]!, complete: true }],
     });
     expect(done.markers).toEqual([]);
+  });
+
+  it("marks a burrower a living sensor mech feels, and none without the sensor (campaign arc §10.2)", async () => {
+    const digger = { x: 4, y: 0, z: 0 };
+    const withSensor = (range: number) => {
+      const base = missionWith(MAP, [
+        unitAt("m", "mech", { x: 0, y: 0, z: 0 }),
+        burrowerAt("d", digger),
+      ]);
+      const mech = base.templates["mech:fixture"]!;
+      return withVision({
+        state: {
+          ...base,
+          templates: {
+            ...base.templates,
+            "mech:fixture": {
+              ...mech,
+              systems: {
+                heatCapacity: 10,
+                cooling: 2,
+                idleHeat: 0,
+                movementHeat: 1,
+                ...(range > 0 ? { seismicRange: range } : {}),
+              },
+            },
+          },
+        },
+        events: [],
+      }).state;
+    };
+    const felt = new StageRecorder();
+    await drawPerceived(felt, withSensor(10));
+    expect(felt.contacts).toEqual([{ kind: "burrowed", pos: digger }]);
+    // Still no model: the sensor is a mark on the column, not a sighting.
+    expect(felt.units.map((unit) => unit.id)).not.toContain("d");
+    const deaf = new StageRecorder();
+    await drawPerceived(deaf, withSensor(0));
+    expect(deaf.contacts).toEqual([]);
   });
 
   it("ripens a spore pod in its last two turns, from the tracker's own countdown (#1179)", async () => {

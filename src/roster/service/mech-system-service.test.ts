@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   ACID_RESISTANT_PLATING,
+  ARMOUR_PIERCING_ROUNDS,
+  MATRIARCH_CHITIN,
+  SEISMIC_SENSOR,
   SPINE_PLATE_ARMOUR,
 } from "../data/autopsy-parts";
 import { STARTER_PARTS } from "../data/parts";
@@ -57,5 +60,49 @@ describe("mechSystemsOf resistances", () => {
   it("ignores a resistance of zero or less", () => {
     expect(mechSystemsOf([acidPlate(0)])).not.toHaveProperty("resist");
     expect(mechSystemsOf([acidPlate(-2)])).not.toHaveProperty("resist");
+  });
+});
+
+// ===========================================
+// Pierce and seismic range (campaign arc §10.2)
+// ===========================================
+
+describe("mechSystemsOf pierce and seismic range", () => {
+  it("carries neither on a mech with no rounds and no sensor, as before they existed", () => {
+    const systems = mechSystemsOf([part("utility-radiator")]);
+    expect(systems).not.toHaveProperty("pierce");
+    expect(systems).not.toHaveProperty("seismicRange");
+  });
+
+  it("carries the rounds' pierce and the sensor's range from the parts that give them", () => {
+    expect(mechSystemsOf([part(ARMOUR_PIERCING_ROUNDS)]).pierce).toBe(2);
+    expect(mechSystemsOf([part(SEISMIC_SENSOR)]).seismicRange).toBe(10);
+    const both = mechSystemsOf([
+      part(ARMOUR_PIERCING_ROUNDS),
+      part(SEISMIC_SENSOR),
+    ]);
+    expect(both).toMatchObject({ pierce: 2, seismicRange: 10 });
+  });
+
+  it("keeps the best of two rather than stacking them", () => {
+    const deeper = {
+      ...part(SEISMIC_SENSOR),
+      traits: { seismicRange: 14 },
+    };
+    const heavier = {
+      ...part(ARMOUR_PIERCING_ROUNDS),
+      traits: { pierce: 3 },
+    };
+    expect(mechSystemsOf([part(SEISMIC_SENSOR), deeper]).seismicRange).toBe(14);
+    expect(mechSystemsOf([part(ARMOUR_PIERCING_ROUNDS), heavier]).pierce).toBe(
+      3,
+    );
+  });
+
+  it("gives Matriarch Chitin's two resistances together", () => {
+    expect(mechSystemsOf([part(MATRIARCH_CHITIN)]).resist).toEqual({
+      acid: 2,
+      spine: 2,
+    });
   });
 });

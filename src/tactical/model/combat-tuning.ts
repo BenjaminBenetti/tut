@@ -22,7 +22,7 @@ import type { WeaponReachTuning } from "./weapon-reach-tuning";
  *               , minHitChance, maxHitChance )
  *
  *   damage  = roll in [damage × (1 − spread), damage × (1 + spread)]
- *           − max(0, armor − armorPen), never below minDamage
+ *           − max(0, armor − armorPen − pierce), never below minDamage
  *
  *   distance = round(hypot(manhattan, |Δy| × LAYER_TILES))   (#1119)
  *   reach    = range + min(maxReachBonus, storeysAbove × reachBonusPerStorey)

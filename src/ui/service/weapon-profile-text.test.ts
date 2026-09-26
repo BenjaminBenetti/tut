@@ -43,4 +43,26 @@ describe("weaponProfileText (#1132)", () => {
       }),
     ).toBe("range 6 · acc 60 · dmg 4 · pen 1 · acid");
   });
+
+  it("says what armour-piercing rounds add right after the gun's own pen (campaign arc §10.2)", () => {
+    expect(
+      weaponProfileText({
+        range: 10,
+        accuracy: 70,
+        damage: 18,
+        armorPen: 2,
+        pierce: 2,
+        demoForce: 1,
+      }),
+    ).toBe("range 10 · acc 70 · dmg 18 · pen 2 · AP +2 · demo 1");
+    expect(
+      weaponProfileText({
+        range: 10,
+        accuracy: 70,
+        damage: 18,
+        armorPen: 2,
+        pierce: 0,
+      }),
+    ).toBe("range 10 · acc 70 · dmg 18 · pen 2");
+  });
 });

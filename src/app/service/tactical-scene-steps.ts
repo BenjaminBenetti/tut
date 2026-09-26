@@ -34,6 +34,7 @@ import { LAYER_HEIGHT } from "../../graphics/data/mapgen-preview-palette";
 import type { MapExtent } from "../../graphics/service/camera-math";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import { radarContacts } from "../../tactical/service/radar-service";
+import { seismicContacts } from "../../tactical/service/seismic-sensor-service";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import { objectiveMarkers } from "../../tactical/service/objective-marker-service";
 import { urgentDeadlineTargets } from "../../ui/service/objectives/deadline-countdown";
@@ -137,6 +138,8 @@ export interface PhasedQueue {
  *     updateEffects(perceivedEffects)      fires on explored ground
  *     updateCharges(charges)               set breaching charges (#1132)
  *     updateObjectiveMarkers(objectiveMarkers)  white diamonds on fogged nests (#1173)
+ *     updateRadar(radars, radarContacts        red blips on scanned, unseen enemies
+ *       + seismicContacts)                     amber ripples on sensed burrowers (arc §10.2)
  * ```
  *
  * Two rules live here, and both are silent when broken. The scene draws
@@ -179,9 +182,11 @@ export async function drawPerceived(
       mission.templates,
     ),
     stage.updateWrecks(perceivedWrecks(mission, "tdf")),
+    // The seismic sensor's burrowed contacts ride the radar's layer:
+    // location-only intel, drawn as its own mark (campaign arc §10.2).
     stage.updateRadar(
       mission.radars.filter((radar) => radar.team === "tdf"),
-      radarContacts(mission, "tdf"),
+      [...radarContacts(mission, "tdf"), ...seismicContacts(mission, "tdf")],
     ),
   ]);
 }

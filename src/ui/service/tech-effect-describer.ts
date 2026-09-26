@@ -2,7 +2,7 @@ import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { TechEffect } from "../../tech/model/tech-effect";
 import type { TechEffectLabels } from "../model/tech-effect-labels";
-import { damageResistanceText } from "./damage-resistance-text";
+import { counterTraitText } from "./counter-trait-text";
 
 // ===========================================
 // Types
@@ -25,7 +25,8 @@ export interface TechEffectNameSources {
 /**
  * One effect of a tech node in words, for the detail panel's "Unlocks"
  * list (ADR 0013 §2.7): a part by its catalogue name, with what it
- * resists when it resists anything (campaign arc §10.2), a squad type
+ * counters when it is an autopsy counter (campaign arc §10.2: what it
+ * resists, pierces or reveals, `counterTraitText`), a squad type
  * by its name, a flag or an infantry upgrade by its label. Whatever has
  * no name falls back to its id's words, so every effect reads as plain
  * text.
@@ -33,6 +34,7 @@ export interface TechEffectNameSources {
  * ```
  *   { kind: "part", partId: "legs-sprint" }         ──► "Sprint Legs"
  *   { kind: "part", partId: "utility-acid-…" }      ──► "Acid-Resistant Plating (acid resist 3)"
+ *   { kind: "part", partId: "utility-armour-…" }    ──► "Armour-Piercing Rounds (pierces 2 armour)"
  *   { kind: "squad-type", squadTypeId: "rifle" }    ──► "Rifle Squad"
  *   { kind: "flag", flag: "capture-net" }           ──► "The capture net"  (labelled)
  *   { kind: "infantry-upgrade", upgradeId: "a-1" }  ──► "A 1"              (unlabelled)
@@ -52,10 +54,10 @@ export function describeTechEffect(
       if (!part) {
         return effect.partId;
       }
-      const resists = damageResistanceText(part.traits?.resist);
-      return resists.length === 0
+      const counters = counterTraitText(part.traits);
+      return counters.length === 0
         ? part.name
-        : `${part.name} (${resists.join(", ")})`;
+        : `${part.name} (${counters.join(", ")})`;
     }
     case "squad-type":
       return (

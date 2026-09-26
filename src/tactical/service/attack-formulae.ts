@@ -2,6 +2,7 @@ import type { CoverLevel } from "../../mapgen/model/cover";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { DamageResistances } from "../model/damage-resistance";
 import type { WeaponProfile } from "../model/weapon-profile";
+import { pierceOf } from "../model/weapon-profile";
 
 // ===========================================
 // Types
@@ -61,9 +62,16 @@ export function hitChance(
  *
  * ```
  *   band   = damage × (1 ± damageSpread)
- *   armour = max(minDamage, band − max(0, armor − armorPen))
+ *   armour = max(minDamage, band − max(0, armor − armorPen − pierce))
  *   result = max(0, armour − resistanceTo(weapon, resist))
  * ```
+ *
+ * Armour-piercing rounds (`pierce`, campaign arc §10.2) are the mirror
+ * of resistance: the attacker's, not the target's, and they come off
+ * the armour **before** the floor, like the gun's own penetration, so
+ * they can strip plate down to nothing but never below it, and a hit
+ * still scratches at least `minDamage`. A weapon with no rounds loaded
+ * gets exactly the band it always did.
  *
  * Resistance comes off after the floor on purpose: the floor says a hit
  * always scratches plain plate, and resistance is plate made for this
@@ -85,7 +93,10 @@ export function damageRange(
   resist?: DamageResistances,
 ): readonly [number, number] {
   if (weapon.damage <= 0) return [0, 0];
-  const effectiveArmor = Math.max(0, armor - weapon.armorPen);
+  const effectiveArmor = Math.max(
+    0,
+    armor - weapon.armorPen - pierceOf(weapon),
+  );
   const low = Math.round(weapon.damage * (1 - tuning.damageSpread));
   const high = Math.round(weapon.damage * (1 + tuning.damageSpread));
   const resisted = resistanceTo(weapon, resist);

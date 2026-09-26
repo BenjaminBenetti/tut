@@ -127,7 +127,8 @@ export function countsAgainstCap(
  *   0. refresh   for each offer already on the board whose type's trigger rule
  *                has a `refresh` (the Hive Assault's daily re-levelling):
  *                  rule.refresh(offer, state) ──► the offer as it stands today,
- *                                                  or withdrawn (undefined)
+ *                                                  or withdrawn (undefined),
+ *                                                  MissionWithdrawn { reason: "target-gone" }
  *   1. pins      for trigger in pinTriggers (the story spine):
  *                  trigger.pin(state, rng.fork(`pin:${id}`)) ──► pinned offers (outside the cap)
  *                  an ordinary offer on a pinned offer's city ──► withdrawn, MissionWithdrawn
@@ -163,8 +164,9 @@ export function countsAgainstCap(
  * part of the determinism contract: the same state, seed and deps always
  * offer the same missions. A refresh draws nothing, so re-pricing an
  * offer never moves a draw either. Returns the input state untouched
- * when nothing was offered, re-priced or withdrawn; a re-priced or
- * withdrawn offer raises no event, since the board reads the state.
+ * when nothing was offered, re-priced or withdrawn. A re-priced offer
+ * raises no event, since the board reads the state; a withdrawn one
+ * raises `MissionWithdrawn`, so the player is told why it vanished.
  *
  * @throws {RangeError} if `intelBonus` names a region that is not on the
  *   map or holds a value that is not a non-negative integer, or if a pin
@@ -188,8 +190,9 @@ export function generateMissions(
     hive: deps.hiveTuning,
   });
 
-  let current = refreshOffers(state, deps, contextOn);
-  const events: OverworldDomainEvent[] = [];
+  const refreshed = refreshOffers(state, deps, contextOn);
+  let current = refreshed.state;
+  const events: OverworldDomainEvent[] = [...refreshed.events];
   const offer = (mission: Mission, ctx: MissionOfferContext): void => {
     const decorated = decorate(mission, current, ctx, deps);
     current = { ...current, missions: [...current.missions, decorated] };
@@ -259,18 +262,27 @@ export function generateMissions(
 /**
  * The board with every standing offer asked its trigger rule's
  * `refresh`, in board order: a changed offer replaces the old one in
- * place, a withdrawn one is dropped, and one whose rule has no
- * `refresh` is kept as it is. Each rule is handed its own labelled
- * fork, though a refresh draws nothing. Returns `state` itself when
- * every offer came back unchanged.
+ * place, a withdrawn one is dropped and announced, and one whose rule
+ * has no `refresh` is kept as it is. Each rule is handed its own
+ * labelled fork, though a refresh draws nothing.
+ *
+ * ```
+ *   refresh(offer) = offer       ──► kept
+ *   refresh(offer) = re-priced   ──► replaced in place (no event)
+ *   refresh(offer) = undefined   ──► dropped, MissionWithdrawn { reason: "target-gone" }
+ * ```
+ *
+ * Returns `state` itself, and no events, when every offer came back
+ * unchanged.
  */
 function refreshOffers(
   state: OverworldState,
   deps: Pick<MissionGenerationDeps, "rng" | "offerRules">,
   contextOn: (rng: Rng) => MissionOfferContext,
-): OverworldState {
+): OverworldApplied<OverworldState> {
   let changed = false;
   const missions: Mission[] = [];
+  const events: OverworldDomainEvent[] = [];
   for (const mission of state.missions) {
     const rule = deps.offerRules[mission.typeId];
     if (rule.kind !== "trigger" || rule.refresh === undefined) {
@@ -284,9 +296,19 @@ function refreshOffers(
     }
     if (refreshed !== undefined) {
       missions.push(refreshed);
+      continue;
     }
+    events.push({
+      type: MISSION_WITHDRAWN,
+      payload: {
+        missionId: mission.id,
+        typeId: mission.typeId,
+        cityId: mission.cityId,
+        reason: "target-gone",
+      },
+    });
   }
-  return changed ? { ...state, missions } : state;
+  return { state: changed ? { ...state, missions } : state, events };
 }
 
 /**

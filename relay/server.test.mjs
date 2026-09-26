@@ -358,6 +358,18 @@ test("rejects non-game envelopes, extra fields and malformed tactical data witho
       },
     ],
     [
+      "replaced objective kind rules",
+      (r) => {
+        r.state.gameplay.objective_kinds["kill-broodmother"] = "Other task";
+      },
+    ],
+    [
+      "dropped status rules",
+      (r) => {
+        delete r.state.gameplay.statuses.dormant;
+      },
+    ],
+    [
       "replaced faction goal",
       (r) => {
         r.state.faction_goal = "Other task";

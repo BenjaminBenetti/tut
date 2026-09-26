@@ -13,7 +13,7 @@ import type {
   ObjectiveRow,
   ObjectiveRowContext,
 } from "../../model/objective-presentation";
-import { formatWhole } from "../format";
+import { formatWhole, keepTogether, NO_BREAK_SPACE } from "../format";
 
 // ===========================================
 // Constants
@@ -112,6 +112,15 @@ function rescueRow(
  * always, the target while it is not yet met, and the trapped and lost
  * counts only when there are any.
  *
+ * Each count is kept with its noun (`keepTogether`), and each "·" with
+ * the part before it, so a row narrowed by "in reach" beside it wraps
+ * only between parts, never inside "1 trapped":
+ *
+ * ```
+ *   1 / 4 aboard · need 2 ·
+ *   1 trapped
+ * ```
+ *
  * @param progress - The rescue's live numbers.
  * @returns The progress line under the row's label.
  */
@@ -128,5 +137,5 @@ export function rescueProgressText(progress: RescueProgress): string {
   if (progress.lost > 0) {
     parts.push(`${formatWhole(progress.lost)} lost`);
   }
-  return parts.join(" · ");
+  return parts.map(keepTogether).join(`${NO_BREAK_SPACE}· `);
 }

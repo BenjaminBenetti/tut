@@ -20,6 +20,7 @@ import { startMission } from "../../tactical/model/start-mission-command";
 import { GARRISON_TURRET_SOURCE_ID } from "../../tactical/model/turret";
 import type { Mission } from "../../overworld/model/mission";
 import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
+import type { MissionWithdrawnPayload } from "../../overworld/model/mission-withdrawn-event";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { SaveError } from "../../save/model/save-error";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
@@ -42,9 +43,11 @@ const build = (
   game: GameComposition;
   failures: SaveError[];
   revealed: string[][];
+  withdrawn: (readonly MissionWithdrawnPayload[])[];
 } => {
   const failures: SaveError[] = [];
   const revealed: string[][] = [];
+  const withdrawn: (readonly MissionWithdrawnPayload[])[] = [];
   const game = composeGame({
     storage: new MemoryKeyValueStore(),
     clock: { now: () => NOW },
@@ -55,9 +58,12 @@ const build = (
     onResearchRevealed: (nodes) => {
       revealed.push(nodes.map((node) => node.id));
     },
+    onOffersWithdrawn: (withdrawals) => {
+      withdrawn.push(withdrawals);
+    },
     ...(debug === undefined ? {} : { debug }),
   });
-  return { game, failures, revealed };
+  return { game, failures, revealed, withdrawn };
 };
 
 /** A campaign with one small clearance mission on an infested city, ready to launch. */
@@ -762,6 +768,56 @@ describe("composeGame", () => {
       .flatMap((node) => node.effects)
       .flatMap((effect) => (effect.kind === "flag" ? [effect.flag] : []));
     expect(flags.filter((flag) => !isCampaignFlagId(flag))).toEqual([]);
+  });
+
+  // ===========================================
+  // Withdrawn offers (#1179)
+  // ===========================================
+
+  it("tells the listener when the day withdraws a Hive Assault whose hive is gone, and not on a quiet day", () => {
+    const { game, withdrawn } = build();
+    const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
+    const city = fresh.overworld.map.cities.find((c) => c.infestation > 0);
+    if (!city) throw new Error("fixture needs an infested city");
+    const assault: Mission = {
+      id: "mission-hive",
+      typeId: "hive-assault",
+      cityId: city.id,
+      difficulty: 4,
+      mapParams: {
+        biome: "temperate",
+        settlement: city.scale,
+        size: "large",
+        seed: "1",
+      },
+      rewards: { credits: 300, techPoints: 0 },
+      createdDay: fresh.overworld.day,
+      expiresDay: fresh.overworld.day + 99,
+      ignorePenalty: 0,
+      pinned: true,
+      hive: { hiveId: "hive-gone", regionId: city.regionId, level: 0 },
+    };
+    game.session.start({
+      ...fresh,
+      overworld: { ...fresh.overworld, missions: [assault], hives: [] },
+    });
+
+    expect(game.session.store?.dispatch(advanceDay()).ok).toBe(true);
+    expect(game.session.store?.dispatch(advanceDay()).ok).toBe(true);
+
+    expect(withdrawn).toEqual([
+      [
+        {
+          missionId: "mission-hive",
+          typeId: "hive-assault",
+          cityId: city.id,
+          reason: "target-gone",
+        },
+      ],
+    ]);
+    expect(
+      game.session.state?.overworld.missions.map((m) => m.id),
+    ).not.toContain("mission-hive");
   });
 
   it("never ends a campaign for a clean Earth; the story's verdict ends it on the next day", () => {

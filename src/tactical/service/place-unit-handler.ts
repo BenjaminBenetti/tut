@@ -5,6 +5,7 @@ import { err, ok } from "../../core/model/result";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { snapshotMap } from "../../mapgen/service/hatch-space";
+import type { InfantryUpgradeDefinition } from "../../roster/model/infantry-upgrade";
 import type { Mech } from "../../roster/model/mech";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
@@ -27,11 +28,8 @@ import { UNIT_PLACED } from "../model/unit-placed-event";
 import type { UnitTemplate } from "../model/unit-template";
 import type { UnitTuning } from "../model/unit-tuning";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
-import {
-  footprintFits,
-  liveSpawnerKeys,
-  occupiedKeys,
-} from "./movement-service";
+import { footprintFits } from "./movement-service";
+import { placementHeldKeys } from "./placement-occupancy";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
 import { bugUnit, civilianUnit, mechUnit, squadUnit } from "./unit-factory";
 import { joinRescue } from "./missions/civilian-setup";
@@ -73,6 +71,14 @@ export interface PlaceUnitDeps {
    * unknown type.
    */
   readonly civilian?: CivilianTuning;
+  /**
+   * The campaign's infantry upgrades (campaign arc §10.3), in
+   * application order: a placed squad carries them like one that
+   * deployed, the capture net among them once it is researched (#1179).
+   * The composition root derives them from the campaign's tech on each
+   * dispatch. Absent: a placed squad carries only its type's kit.
+   */
+  readonly infantryUpgrades?: readonly InfantryUpgradeDefinition[];
 }
 
 /** Id prefixes for the roster records a placed squad or mech stands in for. */
@@ -121,8 +127,9 @@ interface PlacementSource {
  *   no tile at `tile`                ──► no-such-tile
  *   footprint off the map, impassable
  *     for the class, or split by a wall ──► tile-blocked
- *   footprint overlaps a living unit
- *     or a live spawner              ──► tile-occupied
+ *   footprint overlaps a living unit,
+ *     a buried burrower or a live
+ *     spawner (placementHeldKeys)    ──► tile-occupied
  *   otherwise ──► units + unit, templates ∪ template, UnitPlaced
  *                 (a civilian group: trapped, and joined to the rescue)
  * ```
@@ -166,11 +173,9 @@ export function createPlaceUnitHandler(
       return err({ kind: "tile-blocked", x: tile.x, y: tile.y, z: tile.z });
     }
     // The same occupancy a hatchling is held to (#1130): every tile a
-    // living unit holds, and every tile of a live spawner.
-    const taken = new Set(occupiedKeys(mission, snapshot.index));
-    for (const key of liveSpawnerKeys(mission, snapshot.index)) {
-      taken.add(key);
-    }
+    // living unit holds, every tile a burrower is under (#1179), and
+    // every tile of a live spawner.
+    const taken = placementHeldKeys(mission, snapshot.index);
     if (
       footprintTiles(tile, footprint).some((cell) =>
         taken.has(snapshot.index.keyOf(cell)),
@@ -255,7 +260,8 @@ export function placeableUnits(
 /**
  * The catalogue entry behind `kind` and `id`, ready to build, or the
  * refusal. A squad is built from a full-strength, unranked roster record
- * that exists only for the factory; a mech likewise, undamaged, from the
+ * that exists only for the factory, carrying the campaign's infantry
+ * upgrades as a deployed squad does; a mech likewise, undamaged, from the
  * named loadout. Neither joins the campaign roster: the unit's
  * `sourceId` points at a record nobody holds, so the names resolver
  * falls back to the template — the type's name — which is what the
@@ -305,7 +311,12 @@ function resolveSource(
             missionsSurvived: 0,
             xp: 0,
           };
-          return squadUnit(squad, type, placement, factoryDeps(ids));
+          return squadUnit(squad, type, placement, {
+            ...factoryDeps(ids),
+            // Kitted like a squad that deployed (#1179): armour, swaps
+            // and the items research hands out, the capture net among them.
+            infantryUpgrades: deps.infantryUpgrades ?? [],
+          });
         },
       });
     }

@@ -22,13 +22,9 @@ import type {
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
-import {
-  footprintFits,
-  liveSpawnerKeys,
-  occupiedKeys,
-} from "./movement-service";
+import { footprintFits } from "./movement-service";
+import { placementHeldKeys } from "./placement-occupancy";
 import type { PhaseStep } from "../model/phase-step";
-import { buriedKeys } from "./tunnel-service";
 import { bugUnit } from "./unit-factory";
 
 // ===========================================
@@ -530,17 +526,11 @@ function placeBugs(
   if (count <= 0 || weighted.length === 0) {
     return { state: mission, unitIds: [] };
   }
-  const taken = new Set(occupiedKeys(mission, snapshot.index));
-  // Nor is a burrower's (#1179): it holds no tile on the surface, but a
-  // hatchling dropped on top of it would leave it nowhere to come up.
-  for (const key of buriedKeys(mission, snapshot.index)) {
-    taken.add(key);
-  }
-  // A live spawner's tile is never stood on either: the room already
-  // leaves out its own, and a block must not reach across onto one.
-  for (const key of liveSpawnerKeys(mission, snapshot.index)) {
-    taken.add(key);
-  }
+  // Every living unit's tile, every buried burrower's (#1179): a
+  // hatchling dropped on top of one would leave it nowhere to come up,
+  // and every live spawner's: the room already leaves out its own, and
+  // a block must not reach across onto one.
+  const taken = placementHeldKeys(mission, snapshot.index);
   const free = candidates.filter(
     (tile) =>
       allows(tile.pass, PassMask.INFANTRY) &&

@@ -9,12 +9,8 @@ import type { Unit } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import { footprintSizeOf, footprintTiles } from "./footprint-service";
 import { coordOf, facingToward } from "./missions/map-placement";
-import {
-  footprintFits,
-  liveSpawnerKeys,
-  occupiedKeys,
-} from "./movement-service";
-import { buriedKeys } from "./tunnel-service";
+import { footprintFits } from "./movement-service";
+import { placementHeldKeys } from "./placement-occupancy";
 import { bugUnit } from "./unit-factory";
 
 // ===========================================
@@ -86,7 +82,7 @@ export function placeHiveGuards(
  *
  * A burrowed unit (#1179) holds no tile on the surface
  * (`occupiedKeys` passes over it), but its column is taken here as a
- * hatchling's is (`spawn-service`): a bug stood on top of it would leave
+ * hatchling's is (`placementHeldKeys`): a bug stood on top of it would leave
  * it nowhere to come up. A dormant brood goes through this path too
  * (`placeDormantBrood`), so no sleeper is laid over a buried burrower.
  *
@@ -161,13 +157,7 @@ function placeUpTo(
   const snapshot = snapshotMap(state.map);
   const graph = { index: snapshot.index, reachability: snapshot.reach };
   const size = footprintSizeOf(species);
-  const taken = new Set(occupiedKeys(state, snapshot.index));
-  for (const key of buriedKeys(state, snapshot.index)) {
-    taken.add(key);
-  }
-  for (const key of liveSpawnerKeys(state, snapshot.index)) {
-    taken.add(key);
-  }
+  const taken = placementHeldKeys(state, snapshot.index);
   const units: Unit[] = [...state.units];
   const templates: Record<string, UnitTemplate> = { ...state.templates };
   for (const position of positions) {

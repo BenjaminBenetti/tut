@@ -99,6 +99,8 @@ import type { AutosaveFailureListener } from "./autosave-service";
 import { AutosaveService } from "./autosave-service";
 import type { StoreObserver } from "./game-session";
 import { StoreGameSession } from "./game-session";
+import type { OfferWithdrawalListener } from "./offer-withdrawal-watcher";
+import { createOfferWithdrawalWatcher } from "./offer-withdrawal-watcher";
 import type { ResearchRevealListener } from "./research-reveal-watcher";
 import { createResearchRevealWatcher } from "./research-reveal-watcher";
 import { GameStore } from "./game-store";
@@ -125,6 +127,13 @@ export interface GameCompositionDeps {
    * §8). The bootstrap turns it into a notice; absent, nobody is told.
    */
   readonly onResearchRevealed?: ResearchRevealListener;
+  /**
+   * Told when a command takes offers off the board without their being
+   * played or ignored (#1179): an ordinary offer a story pin displaced,
+   * or a Hive Assault whose hive is gone. The bootstrap turns it into a
+   * notice; absent, nobody is told.
+   */
+  readonly onOffersWithdrawn?: OfferWithdrawalListener;
   /**
    * Test and tuning switches for this session (#78), applied to the
    * shipped tuning here and never written into a save, so they cannot
@@ -343,15 +352,21 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
           conditionsOf: techConditionsOf,
           onRevealed: deps.onResearchRevealed,
         });
+  const watchWithdrawals =
+    deps.onOffersWithdrawn === undefined
+      ? undefined
+      : createOfferWithdrawalWatcher(deps.onOffersWithdrawn);
   const session = new StoreGameSession(
     (state) => new GameStore(state, dispatcher),
     (store) => {
       const detachAutosave = autosave.attach(store);
       const detachReveals = watchReveals?.(store);
+      const detachWithdrawals = watchWithdrawals?.(store);
       const detachExtra = deps.onStore?.(store);
       return () => {
         detachAutosave();
         detachReveals?.();
+        detachWithdrawals?.();
         detachExtra?.();
       };
     },

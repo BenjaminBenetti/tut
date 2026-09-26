@@ -12,6 +12,7 @@ import type {
   ObjectiveRow,
   ObjectiveRowDetail,
 } from "../model/objective-presentation";
+import { decidingObjectives } from "../../tactical/service/objectives/objective-status";
 import type { SitrepCountdown } from "../model/sitrep-presentation";
 import { formatWhole } from "../service/format";
 import { OBJECTIVE_PRESENTATION } from "../service/objectives/objective-presentation";
@@ -60,7 +61,16 @@ const DEADLINE_CLASS = "tut-deadline";
  *   ├ ○ Destroy spawner 2 · 30 hp
  *   └ ⚠ Dust-off Window                   (a sitrep's deadline, not counted)
  *       Drop ship leaves in 5 turns
+ *
+ *   OBJECTIVES  0 / 1                      (the optional rows are not counted)
+ *   ├ ○ Destroy spawner 1 · 20 hp · OPTIONAL
+ *   └ ○ Capture a lurker
  * ```
+ *
+ * An optional objective (#1179, a story mission's host nests) gets its
+ * row, marked `data-optional` and tagged, but the summary counts only
+ * the objectives that decide the mission, so "board the drop ship"
+ * never waits on one.
  *
  * The row marked `in reach` is the one Interact would work, so a player
  * with two spawners in range can see which gets the charges (#427). A
@@ -131,7 +141,9 @@ export class ObjectiveTrackerView {
    *
    * The summary counts what the rows read (`ObjectiveRow.complete`, else
    * the stored flag), so a wreck whose parts are home reads "1 / 1"
-   * above a row reading "Recovered", not "0 / 1".
+   * above a row reading "Recovered", not "0 / 1". It counts only the
+   * objectives that decide the mission; an optional one is drawn but
+   * not counted.
    */
   update(
     objectives: readonly Objective[],
@@ -157,16 +169,24 @@ export class ObjectiveTrackerView {
       });
       return { objective, row, complete: row.complete ?? objective.complete };
     });
-    const done = drawn.filter((entry) => entry.complete).length;
+    // Only the objectives that decide the mission are counted (#1179):
+    // an optional one never holds back "board the drop ship".
+    const decidingIds = new Set(
+      decidingObjectives(objectives).map((objective) => objective.id),
+    );
+    const deciding = drawn.filter((entry) =>
+      decidingIds.has(entry.objective.id),
+    );
+    const done = deciding.filter((entry) => entry.complete).length;
     // Finishing the objectives no longer ends the mission; the force
     // has to board the drop ship. The tracker is where the player looks
     // to see what is left to do, so this is where the last step is
     // named.
-    const allDone = objectives.length > 0 && done === objectives.length;
+    const allDone = deciding.length > 0 && done === deciding.length;
     this.summary.dataset.complete = allDone ? "true" : "false";
     this.summary.textContent = allDone
-      ? `${formatWhole(done)} / ${formatWhole(objectives.length)} — board the drop ship`
-      : `${formatWhole(done)} / ${formatWhole(objectives.length)}`;
+      ? `${formatWhole(done)} / ${formatWhole(deciding.length)} — board the drop ship`
+      : `${formatWhole(done)} / ${formatWhole(deciding.length)}`;
     const doc = this.list.ownerDocument;
     this.list.replaceChildren();
     for (const { objective, row, complete } of drawn) {
@@ -202,9 +222,10 @@ export class ObjectiveTrackerView {
 /**
  * Draws one row: the objective's id and completion (`complete`, as the
  * summary counted it), the kind's `data-*`, then the glyph and the label
- * with the detail beside it (`inline`) or under it (`stacked`), and the
- * `in reach` mark last. A countdown goes under the label (and under a
- * stacked detail), which stacks an inline row's label for it.
+ * with the detail beside it (`inline`) or under it (`stacked`), the
+ * `optional` tag on an objective that does not decide the mission
+ * (#1179), and the `in reach` mark last. A countdown goes under the label
+ * (and under a stacked detail), which stacks an inline row's label for it.
  */
 function rowElement(
   doc: Document,
@@ -222,6 +243,9 @@ function rowElement(
   }
   if (inReach) {
     item.dataset.inReach = "true";
+  }
+  if (objective.optional === true) {
+    item.dataset.optional = "true";
   }
   const glyph = iconGlyph(doc, row.icon);
   const label = doc.createElement("span");
@@ -256,6 +280,13 @@ function rowElement(
     if (detail) {
       item.appendChild(detail);
     }
+  }
+  if (objective.optional === true) {
+    const optional = doc.createElement("span");
+    optional.className = "tut-mono tut-dim";
+    optional.dataset.role = "optional";
+    optional.textContent = "optional";
+    item.appendChild(optional);
   }
   if (inReach) {
     const reach = doc.createElement("span");

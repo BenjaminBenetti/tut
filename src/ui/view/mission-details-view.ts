@@ -9,6 +9,7 @@ import type {
   MissionPresentationCatalogue,
 } from "../model/mission-presentation";
 import type { SitrepPresentationCatalogue } from "../model/sitrep-presentation";
+import type { StoryPresentationCatalogue } from "../model/story-presentation";
 import {
   formatCredits,
   formatTechPoints,
@@ -19,6 +20,12 @@ import {
   MISSION_PRESENTATION,
   briefingFieldsOf,
 } from "../service/missions/mission-presentation";
+import {
+  STORY_PRESENTATION,
+  storyBriefingFieldsOf,
+  storyBriefingRowsOf,
+  storyDescriptionOf,
+} from "../service/story/story-presentation";
 import { SitrepTagsView } from "./sitrep-tags-view";
 
 // ===========================================
@@ -38,6 +45,8 @@ export interface MissionDetailsViewDeps {
   readonly presentations?: MissionPresentationCatalogue;
   /** Each sitrep's name and line (campaign arc §11); the shipped table when omitted. */
   readonly sitreps?: SitrepPresentationCatalogue;
+  /** The rows and line each story mission adds (ADR 0013 §2.5); the shipped table when omitted. */
+  readonly stories?: StoryPresentationCatalogue;
 }
 
 /** Shared fields before the type's own rows, in order. */
@@ -96,14 +105,20 @@ interface Slot {
  * the ones its type fills and the rest stay hidden, so a clearance keeps
  * the grid it always had and a defence adds its installation and waves.
  *
+ * A story mission (ADR 0013 §2.5) may add its own rows the same way,
+ * ahead of its type's, and say the line under the heading in its own
+ * words (#1179): Live Specimen tells the player what wins it, since its
+ * type's description (a clearance's) no longer does.
+ *
  * Above the grid sit the offer's sitreps, one tag row each, and only
  * when it carries any (campaign arc §11).
  *
  * ```
  *   Briefing · <story title, on a story mission>
- *   description
+ *   description (the story's, else the type's)
  *   ── sitreps (SitrepTagsView), hidden when none ──
  *   Type · City · Difficulty · Reward · Tech reward · Tech carcass
+ *   ── story rows (StoryPresentation.briefingRows) ──
  *   ── type rows (MissionPresentation.briefingRows) ──
  *   Days left · Biome · Settlement · Map size · Ignore penalty
  * ```
@@ -115,6 +130,7 @@ export class MissionDetailsView {
 
   private readonly deps: MissionDetailsViewDeps;
   private readonly presentations: MissionPresentationCatalogue;
+  private readonly stories: StoryPresentationCatalogue;
   private readonly handlers: MissionDetailsViewHandlers;
   private readonly sitrepTags: SitrepTagsView;
   private root: HTMLElement | undefined;
@@ -124,6 +140,8 @@ export class MissionDetailsView {
   private readonly values = new Map<Field, HTMLElement>();
   /** The rows mission types add, keyed by their field. */
   private readonly typeSlots = new Map<string, Slot>();
+  /** The rows story missions add, keyed by their field. */
+  private readonly storySlots = new Map<string, Slot>();
   private shown: MissionId | undefined;
   private onPlan: (() => void) | undefined;
 
@@ -142,6 +160,7 @@ export class MissionDetailsView {
   ) {
     this.deps = deps;
     this.presentations = deps.presentations ?? MISSION_PRESENTATION;
+    this.stories = deps.stories ?? STORY_PRESENTATION;
     this.sitrepTags = new SitrepTagsView(deps.sitreps);
     this.handlers = handlers;
   }
@@ -169,6 +188,9 @@ export class MissionDetailsView {
     grid.className = "tut-kv";
     for (const field of LEAD_FIELDS) {
       this.values.set(field, appendSlot(grid, field, LABELS[field]).value);
+    }
+    for (const { field, label } of storyBriefingFieldsOf(this.stories)) {
+      this.storySlots.set(field, appendSlot(grid, field, label));
     }
     for (const { field, label } of briefingFieldsOf(this.presentations)) {
       this.typeSlots.set(field, appendSlot(grid, field, label));
@@ -234,12 +256,19 @@ export class MissionDetailsView {
         element.textContent = values[field];
       }
     }
-    this.fillTypeRows(
+    fillRows(
+      this.storySlots,
+      storyBriefingRowsOf(mission, { state }, this.stories),
+    );
+    fillRows(
+      this.typeSlots,
       this.presentations[mission.typeId].briefingRows(mission, { state }),
     );
     this.sitrepTags.update(mission);
-    if (this.description.textContent !== type.description) {
-      this.description.textContent = type.description;
+    const description =
+      storyDescriptionOf(mission, this.stories) ?? type.description;
+    if (this.description.textContent !== description) {
+      this.description.textContent = description;
     }
     const heading = briefingHeading(mission);
     if (this.title && this.title.textContent !== heading) {
@@ -263,38 +292,42 @@ export class MissionDetailsView {
     this.plan = undefined;
     this.values.clear();
     this.typeSlots.clear();
+    this.storySlots.clear();
     this.shown = undefined;
     this.onPlan = undefined;
-  }
-
-  // ===========================================
-  // Private methods
-  // ===========================================
-
-  /**
-   * Shows the type rows the mission fills and hides the rest, emptied, so
-   * a clearance keeps the grid it always had (#1175).
-   */
-  private fillTypeRows(rows: readonly BriefingRow[]): void {
-    const filled = new Map(rows.map((row) => [row.field, row]));
-    for (const [field, slot] of this.typeSlots) {
-      const row = filled.get(field);
-      const value = row?.value ?? "";
-      if (slot.value.textContent !== value) {
-        slot.value.textContent = value;
-      }
-      if (row && slot.term.textContent !== row.label) {
-        slot.term.textContent = row.label;
-      }
-      slot.value.hidden = row === undefined;
-      slot.term.hidden = row === undefined;
-    }
   }
 }
 
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * Shows the slots the rows fill and hides the rest, emptied, so a
+ * clearance keeps the grid it always had (#1175) and a mission that is
+ * not a story shows no story rows (#1179).
+ *
+ * @param slots - The type's or the stories' slots, keyed by field.
+ * @param rows - The rows this mission fills.
+ */
+function fillRows(
+  slots: ReadonlyMap<string, Slot>,
+  rows: readonly BriefingRow[],
+): void {
+  const filled = new Map(rows.map((row) => [row.field, row]));
+  for (const [field, slot] of slots) {
+    const row = filled.get(field);
+    const value = row?.value ?? "";
+    if (slot.value.textContent !== value) {
+      slot.value.textContent = value;
+    }
+    if (row && slot.term.textContent !== row.label) {
+      slot.term.textContent = row.label;
+    }
+    slot.value.hidden = row === undefined;
+    slot.term.hidden = row === undefined;
+  }
+}
 
 /** "Briefing", or "Briefing · <title>" for a story mission (arc §6.9). */
 function briefingHeading(mission: Mission): string {

@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
-import { BRUTE, HIVE_GUARD } from "../../bugs/data/species";
+import { BRUTE, HIVE_GUARD, LURKER } from "../../bugs/data/species";
 import { PropKindIds } from "../../mapgen/data/props";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { Spawner, TacticalState } from "../model/tactical-state";
 import { UNIT_ID_PREFIX } from "../model/unit";
-import { placeBugsAt, placeHiveGuards } from "./placed-bug-service";
+import {
+  placeBugAtFirst,
+  placeBugsAt,
+  placeHiveGuards,
+} from "./placed-bug-service";
 import { missionWith, unitAt } from "./tactical-fixtures.test-helper";
 
 // ===========================================
@@ -173,5 +177,37 @@ describe("placeBugsAt", () => {
     });
     expect(added(state, placed).map((u) => u.pos)).toEqual([at(2, 5)]);
     expect(placed.templates["bug:brute"]?.footprint).toBe(2);
+  });
+});
+
+describe("placeBugAtFirst (#1179)", () => {
+  it("stands one bug on the first candidate that can hold it and tries no more", () => {
+    // (5,5) is the crate, (0,2) the squad, (6,6) the live spawner.
+    const state = field();
+    const ids = new SequentialIdGenerator();
+    const placed = placeBugAtFirst(
+      state,
+      LURKER,
+      [at(5, 5), at(0, 2), at(6, 6), at(3, 3), at(4, 4)],
+      { ids },
+    );
+    const bugs = added(state, placed);
+    expect(bugs.map((u) => [u.id, u.sourceId, u.pos])).toEqual([
+      [firstIds(1)[0], "lurker", at(3, 3)],
+    ]);
+    // One id drawn, for the one bug.
+    expect(ids.nextId(UNIT_ID_PREFIX)).toBe(firstIds(2)[1]);
+  });
+
+  it("returns the mission itself, drawing no id, when no candidate fits", () => {
+    const state = field();
+    const frozen = JSON.stringify(state);
+    const ids = new SequentialIdGenerator();
+    expect(placeBugAtFirst(state, LURKER, [at(5, 5), at(0, 2)], { ids })).toBe(
+      state,
+    );
+    expect(placeBugAtFirst(state, LURKER, [], { ids })).toBe(state);
+    expect(ids.nextId(UNIT_ID_PREFIX)).toBe(firstIds(1)[0]);
+    expect(JSON.stringify(state)).toBe(frozen);
   });
 });

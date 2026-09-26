@@ -56,6 +56,24 @@ export function objectiveFailed(
 }
 
 /**
+ * The objectives that decide the mission (#1179): every one not marked
+ * `optional`, in objective order. A win needs each of them complete;
+ * an optional objective (a story mission's host nests) never holds a
+ * win back.
+ *
+ * ```
+ *   objectives.filter(optional ≠ true)
+ * ```
+ *
+ * @param objectives - The mission's objectives.
+ */
+export function decidingObjectives(
+  objectives: readonly Objective[],
+): readonly Objective[] {
+  return objectives.filter((objective) => objective.optional !== true);
+}
+
+/**
  * Whether the generic services should still offer the objective to be
  * worked — the Interact handler, the reach query and the fog blips. An
  * objective is workable until it is complete, unless its kind is

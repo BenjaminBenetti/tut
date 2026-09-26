@@ -97,6 +97,54 @@ export function placeBugsAt(
   positions: readonly TileCoord[],
   deps: PlacedBugDeps,
 ): TacticalState {
+  return placeUpTo(state, species, positions, deps, positions.length);
+}
+
+/**
+ * Stands one bug of `species` on the first of `candidates` that can
+ * hold it (#1179), by the rules of `placeBugsAt`: the rest are never
+ * tried. For a bug a mission wants somewhere in an area rather than on
+ * one exact tile — Live Specimen's lurker in the ground around a nest.
+ *
+ * ```
+ *   candidates, in order ──► the first that placeBugsAt would fill ──► one bug
+ *                        └─► none fits                             ──► state itself
+ * ```
+ *
+ * Pure: never mutates `state`, draws one id from `deps` when a bug is
+ * placed and none otherwise.
+ *
+ * @param state - The mission so far.
+ * @param species - The stat block the bug is built from.
+ * @param candidates - Footprint anchors, in the order to try them.
+ * @param deps - The id generator.
+ * @returns `state` itself when no candidate could hold the bug, else a new mission with it.
+ */
+export function placeBugAtFirst(
+  state: TacticalState,
+  species: BugUnitSource,
+  candidates: readonly TileCoord[],
+  deps: PlacedBugDeps,
+): TacticalState {
+  return placeUpTo(state, species, candidates, deps, 1);
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The placement both entry points share: walks `positions` in order and
+ * stands a bug on each that can hold it, stopping once `limit` bugs are
+ * placed. See `placeBugsAt` for what "can hold it" means.
+ */
+function placeUpTo(
+  state: TacticalState,
+  species: BugUnitSource,
+  positions: readonly TileCoord[],
+  deps: PlacedBugDeps,
+  limit: number,
+): TacticalState {
   const snapshot = snapshotMap(state.map);
   const graph = { index: snapshot.index, reachability: snapshot.reach };
   const size = footprintSizeOf(species);
@@ -109,6 +157,9 @@ export function placeBugsAt(
   const units: Unit[] = [...state.units];
   const templates: Record<string, UnitTemplate> = { ...state.templates };
   for (const position of positions) {
+    if (units.length - state.units.length >= limit) {
+      break;
+    }
     if (!footprintFits(graph, position, size, PassMask.INFANTRY)) {
       continue;
     }
@@ -133,10 +184,6 @@ export function placeBugsAt(
     ? state
     : { ...state, units, templates };
 }
-
-// ===========================================
-// Helpers
-// ===========================================
 
 /**
  * The direction a placed bug starts facing: toward the nearest living

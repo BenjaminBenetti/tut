@@ -117,6 +117,10 @@ export interface Spawner {
  *   open ──► complete        its rule says done
  *     └───► failed          its rule says lost, or turn > deadlineTurn
  * ```
+ *
+ * An objective **decides** the mission unless it is marked `optional`:
+ * a win needs every deciding objective complete, and an optional one
+ * only pays what it pays (`decidingObjectives`).
  */
 export interface ObjectiveBase {
   readonly id: ObjectiveId;
@@ -129,6 +133,15 @@ export interface ObjectiveBase {
    * `onDeadline` consequences. Absent: no deadline.
    */
   readonly deadlineTurn?: number;
+  /**
+   * True for an objective that does not decide the mission (#1179): it
+   * can still be worked and still pays, but a win does not wait for it,
+   * and leaving it open does not turn a win into an extraction. A story
+   * mission's setup marks its host type's objectives so: on Live
+   * Specimen the clearance's nests are optional and the capture decides.
+   * Absent reads as false, so every objective saved before it decides.
+   */
+  readonly optional?: boolean;
 }
 
 /** Destroy one egg spawner (GDD §5.4): complete when it is wrecked. */

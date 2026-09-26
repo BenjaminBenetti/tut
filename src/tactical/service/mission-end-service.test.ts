@@ -6,6 +6,7 @@ import {
   endIfOver,
   forceExtracted,
   missionOutcome,
+  objectivesComplete,
 } from "./mission-end-service";
 import {
   openField,
@@ -179,6 +180,48 @@ describe("missionOutcome with a deployed turret (#1138)", () => {
         missionWith(map, [turret, unitAt("u", "infantry", at(0, 0))]),
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("missionOutcome with optional objectives (#1179)", () => {
+  const nest = (complete: boolean, optional: boolean): Objective => ({
+    id: "o1",
+    kind: "destroy-spawner",
+    targetId: "s1",
+    complete,
+    ...(optional ? { optional: true } : {}),
+  });
+  const specimen = (complete: boolean): Objective => ({
+    id: "o2",
+    kind: "destroy-spawner",
+    targetId: "s2",
+    complete,
+  });
+  const home = (objectives: readonly Objective[]) =>
+    missionWith(
+      openField().build(),
+      [unitAt("b", "infantry", at(7, 7), { team: "bugs" })],
+      { objectives, extracted: [unitAt("u", "infantry", at(0, 0))] },
+    );
+
+  it("is won with an optional objective still open once every deciding one is done", () => {
+    const mission = home([nest(false, true), specimen(true)]);
+    expect(missionOutcome(mission)).toBe("won");
+    expect(objectivesComplete(mission)).toBe(true);
+  });
+
+  it("is extracted with a deciding objective open, whatever the optional ones say", () => {
+    const mission = home([nest(true, true), specimen(false)]);
+    expect(missionOutcome(mission)).toBe("extracted");
+    expect(objectivesComplete(mission)).toBe(false);
+  });
+
+  it("is never won when every objective is optional: nothing decides it", () => {
+    const mission = home([nest(true, true)]);
+    expect(missionOutcome(mission)).toBe("extracted");
+    expect(objectivesComplete(mission)).toBe(false);
+    // Unmarked, the same objective decides as it always did.
+    expect(missionOutcome(home([nest(true, false)]))).toBe("won");
   });
 });
 

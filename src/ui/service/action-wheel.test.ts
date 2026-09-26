@@ -1462,7 +1462,7 @@ describe("actionWheel with civilian groups (campaign arc §6.4)", () => {
   // #1179: a squad beside a trapped group and a wreck at once. Both are
   // one tile off, so the tie goes to the objective listed first — the
   // one the Interact key works — and the other follows it on the ring.
-  it("lists one Interact per objective in reach, in the mission's order, each named, and Interact on the group's own ring", () => {
+  it("lists one Interact per objective in reach, in the mission's order, each named, and names one left alone", () => {
     const strip = {
       id: "strip",
       kind: "strip-wreck" as const,
@@ -1508,14 +1508,18 @@ describe("actionWheel with civilian groups (campaign arc §6.4)", () => {
       ["interact:rescue", false, "the civilians"],
       ["interact:strip", false, "the wreck"],
     ]);
-    // Clicking the group itself offers its rescue, even with the wreck first.
+    // Worked this turn, the wreck is out of reach, but the squad still
+    // stands beside it: the one entry left names the group it frees.
+    const worked = beside(true);
     expect(
-      ids(
-        actionWheel(
-          { kind: "unit", unitId: "c1" },
-          contextFor(beside(true), "s1"),
+      interacts({
+        ...worked,
+        objectives: worked.objectives.map((objective) =>
+          objective.kind === "strip-wreck"
+            ? { ...objective, lastWorkedTurn: worked.turn }
+            : objective,
         ),
-      ),
-    ).toContain("interact:rescue");
+      }),
+    ).toEqual([["interact:rescue", false, "the civilians"]]);
   });
 });

@@ -40,17 +40,24 @@ const STATUS_ICONS: Readonly<Record<StripStatus, IconId>> = {
 // ===========================================
 
 /**
- * Strip a lost mech's wreck (arc §6.6), with the turns worked beside
+ * Strip a lost mech's wreck (arc §6.6), with the turns worked under
  * the label; once stripped, the row names the last step, since the
  * objective is not done until the parts are aboard. The briefing says
  * whose wreck it is; every label here is built on the name "the
  * wreck", so the tracker, the log and the refusals agree.
  *
  * ```
- *   ◇ Strip the wreck                1 / 2 turns   in reach
- *   ⇧ Carry the wreck's parts out    2 / 2 turns
+ *   ◇ Strip the wreck                in reach
+ *     1 / 2 turns
+ *   ⇧ Carry the wreck's parts out
+ *     2 / 2 turns
  *   ✓ Recovered the wreck's parts
  * ```
+ *
+ * Stacked, not inline (#1179): "0 / 2 turns" and "in reach" beside the
+ * label leave it less than its longest word on the rail, and the render
+ * drew the turns over "Strip" with "the" and "wreck" on lines of their
+ * own.
  */
 export const STRIP_WRECK_PRESENTATION: ObjectivePresentation<
   "strip-wreck",
@@ -84,8 +91,8 @@ function liveReading(
 }
 
 /**
- * The row in the status's words, with the turns worked while there are
- * turns to show, and whether it reads done, so the tracker's summary
+ * The row in the status's words, with the turns worked under it while
+ * there are turns to show, and whether it reads done, so the tracker's summary
  * counts the parts home when the row says so. Without a reading it
  * falls back to the objective's own counts and flags.
  */
@@ -101,7 +108,7 @@ function wreckRow(
     icon: STATUS_ICONS[status],
     label: LABELS[status],
     data: { targetId: objective.targetId, status },
-    layout: "inline",
+    layout: "stacked",
     complete: status === "complete",
     ...(status === "open" || status === "stripped"
       ? {

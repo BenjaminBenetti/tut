@@ -1,9 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { SurfaceIds } from "../src/mapgen/data/surfaces";
 import { FixtureMapBuilder } from "../src/mapgen/service/fixture-map-builder";
+import { SWARMER } from "../src/bugs/data/species";
+import { SequentialIdGenerator } from "../src/core/service/sequential-id-generator";
 import { MECH_BLUEPRINTS } from "../src/roster/data/mech-blueprints";
 import { STARTER_PARTS } from "../src/roster/data/parts";
 import type { GameState } from "../src/save/model/game-state";
+import { bugUnit } from "../src/tactical/service/unit-factory";
 import { openTileWheel, openUnitWheel, wheelItem } from "./action-wheel.helper";
 import { tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
@@ -28,7 +31,13 @@ test("a mech jumps twelve tiles onto a four-storey roof, walks and resumes there
   const mission = envelope.state.activeMission!;
   const mech = mission.units.find((unit) => unit.kind === "mech")!;
   const scout = mission.units.find((unit) => unit.kind === "squad")!;
-  const bug = mission.units.find((unit) => unit.team === "bugs")!;
+  // The spec brings its own bug: which bugs a launched mission starts
+  // with is the director's and the bestiary's choice, not this spec's.
+  const bug = bugUnit(
+    SWARMER,
+    { pos: { x: 20, y: 0, z: 14 }, facing: "w" },
+    { ids: new SequentialIdGenerator({ counters: { unit: 90 } }) },
+  );
   const builder = new FixtureMapBuilder(22, 16, 10).fillGround();
   const floors = Array.from({ length: 4 }, (_, index) => ({
     index,
@@ -66,10 +75,11 @@ test("a mech jumps twelve tiles onto a four-storey roof, walks and resumes there
     units: [
       { ...mech, pos: { x: 2, y: 0, z: 7 }, heat: 0, ap: 2 },
       { ...scout, pos: { x: 16, y: 8, z: 8 } },
-      { ...bug, pos: { x: 20, y: 0, z: 14 } },
+      bug.unit,
     ],
     templates: {
       ...mission.templates,
+      [bug.template.id]: bug.template,
       [mech.templateId]: {
         ...mission.templates[mech.templateId],
         loadout: MECH_BLUEPRINTS[0],

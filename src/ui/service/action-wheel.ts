@@ -43,6 +43,9 @@ import type {
 } from "../../tactical/model/equipment";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "./charge-delay-text";
+import { specimenWanted } from "../../tactical/service/capture-service";
+import { droppedSpecimens } from "../../tactical/service/specimen-service";
+import { reachableObjectives } from "../../tactical/service/objective-service";
 import type {
   EquipmentCarried,
   EquipmentRules,
@@ -163,7 +166,18 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "not-a-squad": "squads only",
     "carcass-already-harvested": "already stripped",
     "carcass-out-of-reach": "out of reach",
+    "target-too-healthy": "too strong",
+    "already-carrying": "hands full",
+    "cannot-carry": "squads only",
+    "no-capture-target": "nothing to net",
+    "specimen-not-wanted": "not wanted",
   };
+
+/** The ring's word for throwing the capture net (#1179): a verb, like Heal and Repair. */
+const NET_LABEL = "Net";
+
+/** The ring's words for picking up a dropped specimen (#1179). */
+const PICK_UP_LABEL = "Pick up";
 
 /** The ring's words for a repair kit with nothing to mend; the medkit's are in `SHORT_REASONS`. */
 const NOTHING_TO_REPAIR = "nothing to repair";
@@ -195,7 +209,8 @@ const COMFORTABLE_HIT_CHANCE = 50;
  *                   └─ Attack turns to a page — weapons, then the grenade
  *                      and the charge (#1136) — when there is more than one
  *                      way to hit the tile; a lone weapon is the shot itself
- *   enemy     ──► Attack (hub: hit chance) · Overwatch · Reload
+ *   enemy     ──► Attack (hub: hit chance) · Net (a bug a capture
+ *                 objective wants, #1179) · Overwatch · Reload
  *                   └─ the same page, the grenade and the charge thrown at
  *                      the tile the enemy stands on (#1143)
  *   spawner   ──► Attack (as at an enemy, at the spawner's tile) · Interact
@@ -481,6 +496,13 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   if (carcass !== undefined) {
     items.push(harvestItem(carcass, unit, ctx));
   }
+  // A specimen lying where its carrier fell (#1179): Pick up is on the
+  // ring whenever the tile holds one a capture still wants, closed with
+  // the reason until the unit stands beside it.
+  const pickUp = pickUpItem(tile, unit, ctx);
+  if (pickUp !== undefined) {
+    items.push(pickUp);
+  }
   // The dish where a scanner may go (#1132), the turret beside it, and
   // a medkit or a repair kit where it would land (#1138): none is an
   // attack, so each keeps its own entry. A grenade or a charge is an
@@ -510,6 +532,17 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
  */
 function keepsOwnEntry(definition: Pick<EquipmentDefinition, "kind">): boolean {
   return isDeployable(definition) || definition.kind === "heal";
+}
+
+/**
+ * Whether an item is thrown over a unit rather than at a tile (#1179):
+ * the capture net, which is on a wanted bug's ring as Net and neither
+ * under Attack nor on a tile's ring.
+ */
+function isUnitTargeted(
+  definition: Pick<EquipmentDefinition, "kind">,
+): boolean {
+  return definition.kind === "net";
 }
 
 /**
@@ -830,7 +863,10 @@ function attackKitOf(
     mission.templates[unit.templateId],
     unit,
     SHIPPED_EQUIPMENT,
-  ).filter((carried) => !keepsOwnEntry(carried.definition));
+  ).filter(
+    (carried) =>
+      !keepsOwnEntry(carried.definition) && !isUnitTargeted(carried.definition),
+  );
 }
 
 /**
@@ -918,8 +954,68 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
   if (objective?.spawner.id === targetId) {
     items.push(interactItem(objective.objective.id, unit, ctx));
   }
+  items.push(...netItems(targetId, unit, ctx));
   items.push(overwatchItem(unit, ctx), reloadItem(unit, ctx));
   return hub === undefined ? { items } : { items, hub };
+}
+
+/**
+ * Net on the ring of a bug a capture objective wants alive (#1179): one
+ * entry per net the unit carries, thrown over the tile the bug stands
+ * on, open with its cost and the nets left, or closed with the rules'
+ * reason — "too strong" until the bug is worn down, "out of range"
+ * until the squad is beside it. Not on the ring of any other enemy: the
+ * net is for the specimen, and a closed Net on every swarmer would be
+ * noise.
+ *
+ * ```
+ *   Net   1 AP · 1/1                         → equipment:capture-net:x,y,z
+ *   Net   too strong                         (closed)
+ * ```
+ */
+function netItems(
+  targetId: string,
+  unit: Unit,
+  ctx: WheelContext,
+): readonly RadialMenuItem[] {
+  const bug = ctx.mission.units.find(
+    (candidate) => candidate.id === targetId && candidate.kind === "bug",
+  );
+  if (bug === undefined || !specimenWanted(ctx.mission, bug.sourceId)) {
+    return [];
+  }
+  return equipmentOf(
+    ctx.mission.templates[unit.templateId],
+    unit,
+    SHIPPED_EQUIPMENT,
+  ).flatMap((carried) => {
+    const { definition, usesLeft } = carried;
+    if (!isUnitTargeted(definition)) {
+      return [];
+    }
+    const id = itemId(
+      "equipment",
+      `${definition.id}${ID_SEPARATOR}${tileArgument(bug.pos)}`,
+    );
+    const use = validateEquipmentUse(
+      ctx.mission,
+      unit.id,
+      definition.id,
+      bug.pos,
+      equipmentRulesOf(ctx),
+      ctx.graph,
+    );
+    return [
+      use.ok
+        ? {
+            id,
+            label: NET_LABEL,
+            icon: "bug",
+            detail: `${String(definition.apCost)} AP · ${String(usesLeft)}/${String(definition.uses)}`,
+          }
+        : closed(id, NET_LABEL, "bug", use.error, ctx),
+    ];
+  });
 }
 
 /** The Attack entry of an enemy's ring, and the hub it puts at the centre when the shot is open. */
@@ -1067,9 +1163,69 @@ function interactItem(
 ): RadialMenuItem {
   const refusal = actionRefusal(ctx.mission, unit.id, "interact", ctx.deps);
   const id = itemId("interact", objectiveId);
+  const label = interactLabel(ctx.mission, objectiveId);
   return refusal === undefined
-    ? { id, label: "Interact", icon: "interact" }
-    : closed(id, "Interact", "interact", refusal, ctx);
+    ? { id, label, icon: "interact" }
+    : closed(id, label, "interact", refusal, ctx);
+}
+
+/**
+ * What working the objective is called on the ring: "Pick up" for a
+ * capture (#1179), whose only interaction is picking up a dropped
+ * specimen, and "Interact" for the rest, as it always was.
+ */
+function interactLabel(mission: TacticalState, objectiveId: string): string {
+  return mission.objectives.find((objective) => objective.id === objectiveId)
+    ?.kind === "capture-specimen"
+    ? PICK_UP_LABEL
+    : "Interact";
+}
+
+/**
+ * Pick up on the ring of a tile where a wanted specimen lies (#1179):
+ * open when the unit can reach it now, closed with the rules' reason —
+ * or "nothing in reach" — when it cannot. Undefined when nothing a
+ * capture wants lies there.
+ */
+function pickUpItem(
+  tile: TileCoord,
+  unit: Unit,
+  ctx: WheelContext,
+): RadialMenuItem | undefined {
+  const dropped = droppedSpecimens(ctx.mission).find((candidate) =>
+    sameTile(candidate.pos, tile),
+  );
+  const objective = ctx.mission.objectives.find(
+    (candidate) =>
+      candidate.kind === "capture-specimen" &&
+      !candidate.complete &&
+      dropped?.specimen.species === candidate.species,
+  );
+  if (dropped === undefined || objective === undefined) {
+    return undefined;
+  }
+  const reachable = reachableObjectives(
+    ctx.mission,
+    unit.id,
+    ctx.deps.objectiveTuning,
+  ).some(
+    (candidate) =>
+      candidate.objective.id === objective.id &&
+      sameTile(candidate.target.pos, tile),
+  );
+  if (reachable) {
+    return interactItem(objective.id, unit, ctx);
+  }
+  return closed(
+    itemId("interact", objective.id),
+    PICK_UP_LABEL,
+    "interact",
+    actionRefusal(ctx.mission, unit.id, "interact", ctx.deps) ?? {
+      kind: "no-objective-in-reach",
+      unitId: unit.id,
+    },
+    ctx,
+  );
 }
 
 /**

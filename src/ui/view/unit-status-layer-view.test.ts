@@ -96,4 +96,26 @@ describe("UnitStatusLayerView", () => {
     expect(view.isOpen).toBe(false);
     expect(root.querySelectorAll(".tut-status-chip")).toHaveLength(0);
   });
+
+  it("adds a carrying line to a squad bringing home a specimen, and drops it when its hands are empty (#1179)", () => {
+    const view = new UnitStatusLayerView();
+    view.mount(root);
+    const chip = {
+      unitId: "u1",
+      anchor: { x: 10, y: 20 },
+      name: "Alpha",
+      team: "tdf" as const,
+      hp: 20,
+      maxHp: 20,
+      charges: [],
+    };
+    view.show([{ ...chip, carrying: "live lurker" }]);
+    const line = root.querySelector<HTMLElement>(
+      '[data-field="status-carrying"]',
+    );
+    expect(line?.hidden).toBe(false);
+    expect(line?.textContent).toBe("carrying live lurker");
+    view.show([chip]);
+    expect(line?.hidden).toBe(true);
+  });
 });

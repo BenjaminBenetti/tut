@@ -1070,3 +1070,93 @@ describe("event vocabulary for the spore pod (campaign arc §6.3)", () => {
     ).toMatchObject({ text: "5 bugs burst from the spore pod", tone: "bug" });
   });
 });
+
+describe("capturing a specimen (#1179)", () => {
+  const LURKER = {
+    unitId: "unit-9",
+    species: "lurker" as const,
+    templateId: "bug:lurker",
+    movePenalty: 1,
+  };
+
+  it("shows the specimen on its carrier's card and the move it leaves, and no row for empty hands", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    view.update(
+      hudUnit("s1", "tdf", "rifle", 1, 1, { carrying: LURKER }),
+      hudTemplate("rifle", "Rifle Squad"),
+    );
+    expect(field("carrying")?.hidden).toBe(false);
+    expect(field("carrying")?.textContent).toBe("live lurker");
+    expect(field("move")?.textContent).toBe("4 (−1 carrying)");
+    view.update(
+      hudUnit("s1", "tdf", "rifle", 1, 1),
+      hudTemplate("rifle", "Rifle Squad"),
+    );
+    expect(field("carrying")?.hidden).toBe(true);
+    expect(field("move")?.textContent).toBe("5");
+  });
+
+  it("logs the catch, the drop and the pick-up, each above the squad that did it", () => {
+    const names = {
+      ...NAMES,
+      unit: (id: string) => (id === "s1" ? "Alpha" : "Bravo"),
+    };
+    expect(
+      describeEvent(
+        {
+          type: "tactical:specimen-captured",
+          payload: {
+            unitId: "s1",
+            specimen: LURKER,
+            pos: { x: 2, y: 0, z: 1 },
+          },
+        } as never,
+        names,
+      ),
+    ).toEqual({
+      text: "Alpha netted a live lurker · carrying it",
+      icon: "bug",
+      tone: "ok",
+    });
+    expect(
+      describeEvent(
+        {
+          type: "tactical:unit-died",
+          payload: { unitId: "s1", dropped: LURKER },
+        } as never,
+        names,
+      )?.text,
+    ).toBe("Alpha destroyed · dropped the lurker specimen");
+    expect(
+      describeEvent(
+        {
+          type: "tactical:specimen-picked-up",
+          payload: {
+            unitId: "s2",
+            fromUnitId: "s1",
+            specimen: LURKER,
+            pos: { x: 2, y: 0, z: 1 },
+          },
+        } as never,
+        names,
+      )?.text,
+    ).toBe("Bravo picked up the lurker specimen");
+    // The net's own use is not a second line for the same throw.
+    expect(
+      describeEvent(
+        {
+          type: "tactical:equipment-used",
+          payload: {
+            unitId: "s1",
+            equipmentId: "capture-net",
+            name: "Capture net",
+            tile: { x: 2, y: 0, z: 1 },
+            usesLeft: 0,
+          },
+        } as never,
+        names,
+      ),
+    ).toBeUndefined();
+  });
+});

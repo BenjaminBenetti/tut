@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { captureJev, jevChoicePage } from "./jev-request";
-import { EQUIPMENT, GRENADE, MEDKIT, RADAR_DISH } from "../data/equipment";
+import {
+  CAPTURE_NET,
+  EQUIPMENT,
+  GRENADE,
+  MEDKIT,
+  RADAR_DISH,
+} from "../data/equipment";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { RADAR_TUNING } from "../data/radar-tuning";
 import { TURRET_TUNING } from "../data/turret-tuning";
@@ -133,11 +139,15 @@ describe("Jev capability discovery", () => {
   it.each<Team>(["tdf", "bugs"])(
     "discovers newly named weapons and every usable item kind on %s loadouts",
     (team) => {
-      const items = Object.values(EQUIPMENT).map((item) => ({
-        ...item,
-        id: `new-${team}-${item.id}`,
-        name: `New ${item.name}`,
-      }));
+      // The capture net needs a bug an objective wants alive beside the
+      // actor, which this field has not; its own test below gives it one.
+      const items = Object.values(EQUIPMENT)
+        .filter((item) => item.kind !== "net")
+        .map((item) => ({
+          ...item,
+          id: `new-${team}-${item.id}`,
+          name: `New ${item.name}`,
+        }));
       const custom = {
         ...rules,
         equipment: { ...rules.equipment, catalogue: catalogue(items) },
@@ -291,6 +301,83 @@ describe("Jev capability discovery", () => {
       expect(remaining.reload).toHaveLength(1);
     },
   );
+
+  it("offers a Jev squad the capture net on a wanted, weakened bug beside it, and nowhere else (#1179)", () => {
+    const capture = {
+      id: "objective-capture",
+      kind: "capture-specimen" as const,
+      species: "lurker" as const,
+      complete: false,
+      failed: false,
+    };
+    const lurker = (hp: number, pos = { x: 2, y: 0, z: 1 }) => ({
+      ...unitAt("lurker-1", "infantry", pos, { team: "bugs", hp }),
+      sourceId: "lurker",
+    });
+    const scene = (bug: ReturnType<typeof lurker>, wanted = true) =>
+      fitted(
+        missionWith(
+          openField().build(),
+          [unitAt("actor", "infantry", { x: 1, y: 0, z: 1 }), bug],
+          { objectives: wanted ? [capture] : [] },
+        ),
+        { equipment: [CAPTURE_NET.id] },
+      );
+    const netChoices = (mission: TacticalState) =>
+      jevChoicePage(captureJev(mission, "actor", rules)).groups?.[
+        `equipment:${CAPTURE_NET.id}`
+      ] ?? [];
+
+    const offered = netChoices(scene(lurker(5)));
+    expect(offered).toHaveLength(1);
+    expect(offered[0]!.command).toMatchObject({
+      type: "tactical:use-equipment",
+      payload: { unitId: "actor", equipmentId: CAPTURE_NET.id },
+    });
+    expect(details(offered[0]!)).toMatchObject({ targetId: "lurker-1" });
+    // Too healthy, not beside the squad, or not wanted: nothing offered.
+    expect(netChoices(scene(lurker(6)))).toHaveLength(0);
+    expect(netChoices(scene(lurker(5, { x: 3, y: 0, z: 1 })))).toHaveLength(0);
+    expect(netChoices(scene(lurker(5), false))).toHaveLength(0);
+
+    // And it executes through the Jev handler like any other choice.
+    const mission = scene(lurker(5));
+    const enabled = {
+      ...mission,
+      jev: {
+        entities: { actor: { enabled: true, entityPrompt: "" } },
+        commanders: { tdf: "", bugs: "" },
+      },
+    };
+    const handler = createJevActHandler({
+      "tactical:use-equipment": createUseEquipmentHandler({
+        ...rules.equipment,
+        attack: fixtureAttackDeps(),
+        radar: RADAR_TUNING,
+        turret: TURRET_TUNING,
+      }),
+    });
+    const result = handler(
+      enabled,
+      {
+        type: "tactical:jev-act",
+        payload: {
+          unitId: "actor",
+          expectedSeq: enabled.commandSeq,
+          choice: offered[0]!.id,
+          command: offered[0]!.command,
+        },
+      },
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const after = result.value.state;
+    expect(after.units.some((unit) => unit.id === "lurker-1")).toBe(false);
+    expect(
+      after.units.find((unit) => unit.id === "actor")?.carrying,
+    ).toMatchObject({ unitId: "lurker-1", species: "lurker" });
+  });
 
   it("keeps a grenade target when only a large enemy's nearer footprint tile is in range", () => {
     const mission = fitted(

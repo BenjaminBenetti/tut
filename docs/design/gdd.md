@@ -98,6 +98,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
   | Incendiary Grenades | 3 | 50 | Frag Grenades | the grenade becomes an **incendiary grenade**: the frag grenade's blast, and the ground it hits burns (§6.2.3) |
 
   Armour comes off every hit after penetration, so +1 takes a swarmer's bite from 2–4 to 1–3, and +2 is the first plate a lurker's claws (penetration 1) notice; fire and a brute's cleavers (penetration 2) go through both. The detail panel names each upgrade and what it does (`Squad armour I (+1 armour on every squad)`). See [`tech-tree-infantry.png`](tech-tree-infantry.png).
+  One infantry upgrade comes from outside the family: **Intel I, Pheromone Analysis** (support spoke, 180 TP, hidden until the first Crash Site brings home a spore sample; campaign arc §4) gives every squad a **capture net** on top of its own kit, the one upgrade that adds an item rather than upgrading one, and sets the flag that pins Live Specimen.
 - **Dev builds** carry a `Free TP (+10)` button in the tree's bar that grants ten points a press, for walking the tree without playing missions; a production build has neither the button nor the command behind it (#1171).
 
 ### 5.6 Earth deployables

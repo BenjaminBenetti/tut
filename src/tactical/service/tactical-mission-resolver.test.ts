@@ -1051,6 +1051,66 @@ describe("tacticalMissionResult on a defence (#1175)", () => {
 });
 
 // ===========================================
+// Captures (#1179)
+// ===========================================
+
+describe("tacticalMissionResult on a capture (#1179)", () => {
+  const CAPTURE: Objective = {
+    id: "objective-1",
+    kind: "capture-specimen",
+    species: "lurker",
+    complete: false,
+    failed: false,
+  };
+
+  /** The mission resolved with `extracted` home and nobody left on the map. */
+  function resolve(extracted: readonly Unit[]) {
+    const tactical: TacticalState = missionWith(MAP, [], {
+      objectives: [CAPTURE],
+      extracted,
+      outcome: "won",
+    });
+    return tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(3),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+  }
+
+  it("reports the species brought home once its carrier extracted", () => {
+    const carrier: Unit = {
+      ...squadUnit("unit-1", "squad-1", SQUAD_HP),
+      carrying: {
+        unitId: "bug-9",
+        species: "lurker",
+        templateId: FIXTURE_TEMPLATES.bug,
+        movePenalty: 1,
+      },
+    };
+    const result = resolve([carrier]);
+    expect(result.specimenCaptured).toBe("lurker");
+    expect(result.objectives).toEqual([
+      {
+        kind: "capture-specimen",
+        complete: true,
+        failed: false,
+        done: 1,
+        total: 1,
+      },
+    ]);
+  });
+
+  it("carries no specimen field when the squads came home empty-handed", () => {
+    const result = resolve([squadUnit("unit-1", "squad-1", SQUAD_HP)]);
+    expect("specimenCaptured" in result).toBe(false);
+  });
+});
+
+// ===========================================
 // Objective rows
 // ===========================================
 

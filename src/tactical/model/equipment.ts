@@ -21,8 +21,10 @@ export type EquipmentId = string;
  * | `charge` | is placed on the tile and detonates `delayTurns` later   |
  * | `heal`   | mends the user's own side in a blast-shaped area (#1138)  |
  * | `turret` | puts a turret unit on the tile (`turret-service`, #1138) |
+ * | `net`    | captures a weakened bug next to the user (`capture-service`, #1179) |
  */
-export type EquipmentKind = "radar" | "blast" | "charge" | "heal" | "turret";
+export type EquipmentKind =
+  "radar" | "blast" | "charge" | "heal" | "turret" | "net";
 
 /** Every `EquipmentKind`, in a fixed order. */
 export const EQUIPMENT_KINDS = [
@@ -31,6 +33,7 @@ export const EQUIPMENT_KINDS = [
   "charge",
   "heal",
   "turret",
+  "net",
 ] as const satisfies readonly EquipmentKind[];
 
 /**
@@ -70,7 +73,8 @@ export const CHARGE_ID_PREFIX = "charge";
  *                                ├─ blast  ──► BlastResolved …   (resolveBlastAt)
  *                                ├─ charge ──► PlacedCharge ──► detonates as turn T+delay opens
  *                                ├─ heal   ──► UnitsHealed        (resolveHealAt)
- *                                └─ turret ──► a turret Unit on overwatch (#1138)
+ *                                ├─ turret ──► a turret Unit on overwatch (#1138)
+ *                                └─ net    ──► SpecimenCaptured, the bug carried (#1179)
  * ```
  */
 export interface EquipmentDefinition {
@@ -106,6 +110,26 @@ export interface EquipmentDefinition {
    * anything but a charge.
    */
   readonly delayTurns?: number;
+  /** What a capture net takes and what carrying the catch costs (#1179); present for a `net`, absent for the rest. */
+  readonly net?: NetProfile;
+}
+
+/**
+ * What a capture net does (#1179, campaign arc §6.9): thrown over a
+ * bug on a tile next to the user once that bug is worn down to
+ * `captureAtHpFraction` of its hit points or less, it takes the bug
+ * alive, and the squad then carries it home at `carryMovePenalty` fewer
+ * movement points per action.
+ *
+ * ```
+ *   capture net  captureAtHpFraction 0.5 · carryMovePenalty 1 · range 1
+ * ```
+ */
+export interface NetProfile {
+  /** Hit points, as a share of the bug's maximum, at or below which the net holds. In `(0, 1]`. */
+  readonly captureAtHpFraction: number;
+  /** Movement points per action the carrier loses while it carries the catch. Non-negative integer. */
+  readonly carryMovePenalty: number;
 }
 
 /**

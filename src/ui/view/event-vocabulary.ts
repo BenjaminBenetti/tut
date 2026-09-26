@@ -177,9 +177,25 @@ export function describeEvent(
       };
     case "tactical:unit-died":
       return {
-        text: `${nameOf(event.payload.unitId)} destroyed`,
+        // A carrier that falls drops its specimen where it stood (#1179).
+        text:
+          event.payload.dropped === undefined
+            ? `${nameOf(event.payload.unitId)} destroyed`
+            : `${nameOf(event.payload.unitId)} destroyed · dropped the ${event.payload.dropped.species} specimen`,
         icon: "warning",
         tone: "danger",
+      };
+    case "tactical:specimen-captured":
+      return {
+        text: `${nameOf(event.payload.unitId)} netted a live ${event.payload.specimen.species} · carrying it`,
+        icon: "bug",
+        tone: "ok",
+      };
+    case "tactical:specimen-picked-up":
+      return {
+        text: `${nameOf(event.payload.unitId)} picked up the ${event.payload.specimen.species} specimen`,
+        icon: "interact",
+        tone: "ok",
       };
     case "tactical:unit-abandoned":
       return {
@@ -254,8 +270,13 @@ export function describeEvent(
       // A scanner's or a turret's deployment logs itself with its
       // battery on the next line; a second line for the same act read
       // as a stutter.
+      // A net's catch logs itself on the next line (#1179), for the
+      // same reason.
       const definition = SHIPPED_EQUIPMENT.get(event.payload.equipmentId);
-      if (definition !== undefined && isDeployable(definition)) {
+      if (
+        definition !== undefined &&
+        (isDeployable(definition) || definition.kind === "net")
+      ) {
         return undefined;
       }
       return {
@@ -428,6 +449,10 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return event.payload.generatorId;
     case "tactical:charge-placed":
       return event.payload.charge.ownerId;
+    case "tactical:specimen-captured":
+    case "tactical:specimen-picked-up":
+      // Above the squad now carrying it (#1179).
+      return event.payload.unitId;
     case "tactical:units-healed":
       // Above the medic: the heal is what they did; each mended unit
       // gets its own number from the scene (#1138).

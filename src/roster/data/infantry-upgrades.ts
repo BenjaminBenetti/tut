@@ -3,6 +3,7 @@ import type {
   InfantryUpgradeId,
 } from "../model/infantry-upgrade";
 import {
+  CAPTURE_NET,
   FIELD_MEDKIT,
   FRAG_GRENADE,
   GRENADE,
@@ -26,6 +27,7 @@ import {
 //   | Frag grenades        | grenade → frag grenade (8 damage, less falloff) |
 //   | Incendiary grenades  | grenade → incendiary grenade (frag + fire)   |
 //   | Field medic training | medkit → field medkit (mends 15, not 10)     |
+//   | Capture net          | + one capture net (Intel I, not this family) |
 //
 // Armour is flat and comes off after penetration, so +1 takes a swarmer's
 // bite from 2–4 to 1–3 and +2 to 1–2, and +2 is the first plate a
@@ -33,6 +35,9 @@ import {
 // brute's cleavers (2) go straight through both. The items are in
 // `tactical/data/equipment.ts`; incendiary grenades replace the frag
 // grenade too, so the ladder holds whichever order the nodes are read.
+// The capture net (#1179) is the one upgrade that adds an item rather
+// than swapping one: Pheromone Analysis, Intel I, grants it (campaign
+// arc §4), and every squad deploys with one net for Live Specimen.
 
 /** Every infantry upgrade keyed by id. */
 export const INFANTRY_UPGRADES: Readonly<
@@ -70,5 +75,11 @@ export const INFANTRY_UPGRADES: Readonly<
     name: "Field medic training",
     summary: "the medic squad's medkit mends 15, not 10",
     equipmentSwaps: { [MEDKIT.id]: FIELD_MEDKIT.id },
+  },
+  "capture-net": {
+    id: "capture-net",
+    name: "Capture net",
+    summary: "every squad carries one net to take a weakened bug alive",
+    equipmentAdds: [CAPTURE_NET.id],
   },
 };

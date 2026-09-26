@@ -43,7 +43,10 @@ import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { PLACE_UNIT, placeUnit } from "../../tactical/model/place-unit-command";
 import { UNIT_PLACED } from "../../tactical/model/unit-placed-event";
 import { RELOAD } from "../../tactical/model/reload-command";
-import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
+import {
+  USE_EQUIPMENT,
+  useEquipment,
+} from "../../tactical/model/use-equipment-command";
 import { EXTRACT, extract } from "../../tactical/model/extract-command";
 import { HARVEST_CARCASS } from "../../tactical/model/harvest-carcass-command";
 import { INTERACT } from "../../tactical/model/interact-command";
@@ -297,6 +300,177 @@ describe("composeTactical", () => {
       // Vision was recomputed by the lift: a bug put down beside the
       // force is seen at once.
       expect(mission.vision.tdf.spotted).toContain(placed.id);
+    });
+  });
+
+  describe("squad kit from research (#1179)", () => {
+    /** The kit of every squad on a mission started from `state` with the shipped deps. */
+    function squadKits(unlocked: readonly string[]): string[][] {
+      const dispatcher = createOverworldCommandDispatcher<GameState>();
+      const tactical = composeTactical(dispatcher, CONTENT);
+      const { state: base, missionId } = campaignWithMission();
+      const state: GameState = { ...base, tech: { unlocked } };
+      const started = startTacticalMission(
+        state,
+        missionId,
+        {
+          missionId,
+          squadIds: state.roster.squads.map((s) => s.id),
+          mechIds: [],
+        },
+        tactical.missionStartDepsFor(new SequentialIdGenerator()),
+      );
+      if (!started.ok) throw new Error("fixture mission must start");
+      const mission = started.value.activeMission!;
+      return mission.units
+        .filter((unit) => unit.kind === "squad")
+        .map((unit) => [
+          ...(mission.templates[unit.templateId]?.equipment ?? []),
+        ]);
+    }
+
+    it("gives no squad a capture net before Pheromone Analysis is bought", () => {
+      const kits = squadKits(["tech.jump-jets"]);
+      expect(kits.length).toBeGreaterThan(0);
+      for (const kit of kits) {
+        expect(kit).not.toContain("capture-net");
+      }
+    });
+
+    it("gives every squad one capture net after it, behind its type's own kit", () => {
+      const before = squadKits([]);
+      const after = squadKits(["tech.pheromone-analysis"]);
+      expect(after).toEqual(before.map((kit) => [...kit, "capture-net"]));
+    });
+
+    it("hands out the net through the same infantry upgrades as the family's swaps", () => {
+      const before = squadKits([]);
+      expect(before.some((kit) => kit.includes("grenade"))).toBe(true);
+      const after = squadKits([
+        "tech.frag-grenades",
+        "tech.pheromone-analysis",
+      ]);
+      expect(after).toEqual(
+        before.map((kit) => [
+          ...kit.map((id) => (id === "grenade" ? "frag-grenade" : id)),
+          "capture-net",
+        ]),
+      );
+    });
+  });
+
+  describe("a netted bug (#1179)", () => {
+    /**
+     * A started mission with a one-hit-point swarmer beside the first
+     * squad, a capture objective wanting swarmers and a net in every
+     * squad's kit, live on the composed dispatcher.
+     */
+    function netReady() {
+      const dispatcher = createOverworldCommandDispatcher<GameState>();
+      const tactical = composeTactical(dispatcher, CONTENT);
+      const { state, missionId } = campaignWithMission();
+      const started = startTacticalMission(
+        state,
+        missionId,
+        {
+          missionId,
+          squadIds: state.roster.squads.map((s) => s.id),
+          mechIds: [],
+        },
+        tactical.missionStartDepsFor(new SequentialIdGenerator()),
+      );
+      if (!started.ok) throw new Error("fixture mission must start");
+      const mission = started.value.activeMission!;
+      const squad = mission.units.find((u) => u.kind === "squad")!;
+      const beside = [
+        { x: 1, z: 0 },
+        { x: -1, z: 0 },
+        { x: 0, z: 1 },
+        { x: 0, z: -1 },
+      ]
+        .map((d) => ({
+          x: squad.pos.x + d.x,
+          y: squad.pos.y,
+          z: squad.pos.z + d.z,
+        }))
+        .find((tile) => {
+          const near = walkableTileNear(mission, tile);
+          return near.x === tile.x && near.y === tile.y && near.z === tile.z;
+        });
+      if (beside === undefined)
+        throw new Error("no free tile beside the squad");
+      const placed = withBug(mission, SWARMER, beside, "netted-bug");
+      const netted: TacticalState = {
+        ...placed.mission,
+        units: placed.mission.units.map((u) =>
+          u.id === "netted-bug" ? { ...u, hp: 1 } : u,
+        ),
+        objectives: [
+          ...placed.mission.objectives,
+          {
+            id: "objective-capture",
+            kind: "capture-specimen",
+            species: "swarmer",
+            complete: false,
+            failed: false,
+          },
+        ],
+        templates: {
+          ...placed.mission.templates,
+          [squad.templateId]: {
+            ...placed.mission.templates[squad.templateId]!,
+            equipment: [
+              ...(placed.mission.templates[squad.templateId]?.equipment ?? []),
+              "capture-net",
+            ],
+          },
+        },
+      };
+      return {
+        store: new GameStore(
+          { ...started.value, activeMission: netted },
+          dispatcher,
+        ),
+        squad,
+        beside,
+      };
+    }
+
+    /** Whatever the bugs' phase logged that names the netted bug. */
+    function bugPhaseMentions(
+      store: ReturnType<typeof netReady>["store"],
+    ): string[] {
+      const before = store.getState().activeMission!.log.length;
+      const ended = store.dispatch(endTurn());
+      expect(ended.ok).toBe(true);
+      return store
+        .getState()
+        .activeMission!.log.slice(before)
+        .filter((event) => JSON.stringify(event.payload).includes("netted-bug"))
+        .map((event) => event.type);
+    }
+
+    it("acts in the bugs' phase while it is loose: the fixture exhibits the case", () => {
+      const { store } = netReady();
+      expect(bugPhaseMentions(store)).not.toEqual([]);
+    });
+
+    it("stops acting once netted: it is off the map and the bugs' phase never names it", () => {
+      const { store, squad, beside } = netReady();
+      const thrown = store.dispatch(
+        useEquipment(squad.id, "capture-net", beside),
+      );
+      if (!thrown.ok) throw new Error(thrown.error.code);
+      const mission = store.getState().activeMission!;
+      expect(mission.units.some((u) => u.id === "netted-bug")).toBe(false);
+      expect(
+        mission.units.find((u) => u.id === squad.id)?.carrying,
+      ).toMatchObject({
+        unitId: "netted-bug",
+        species: "swarmer",
+      });
+      expect(mission.vision.tdf.spotted).not.toContain("netted-bug");
+      expect(bugPhaseMentions(store)).toEqual([]);
     });
   });
 

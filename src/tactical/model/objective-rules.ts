@@ -82,7 +82,7 @@ export interface ObjectiveTally {
  * own adds its optional field to `MissionResult` and names it here.
  */
 export type ObjectiveResultFields = Partial<
-  Pick<MissionResult, "defence" | "podDestroyed">
+  Pick<MissionResult, "defence" | "podDestroyed" | "specimenCaptured">
 >;
 
 // ===========================================

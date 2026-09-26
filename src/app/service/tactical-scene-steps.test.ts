@@ -12,6 +12,7 @@ import type {
 } from "../../tactical/model/tactical-state";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
+import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import type { Unit, UnitId } from "../../tactical/model/unit";
@@ -45,6 +46,7 @@ class StageRecorder {
   spawners: readonly Spawner[] = [];
   ripe: ReadonlySet<SpawnerId> | undefined;
   carcasses: readonly TechCarcass[] = [];
+  specimens: readonly DroppedSpecimen[] = [];
   effects: readonly TileEffect[] = [];
   markers: readonly ObjectiveMarker[] = [];
 
@@ -107,6 +109,16 @@ class StageRecorder {
   updateCarcasses(carcasses: readonly TechCarcass[]): Promise<void> {
     this.calls.push("updateCarcasses");
     this.carcasses = carcasses;
+    return Promise.resolve();
+  }
+
+  /** Records the dropped specimens the scene was asked to draw (#1179). */
+  updateSpecimens(
+    specimens: readonly DroppedSpecimen[],
+    _templates: UnitTemplateLookup,
+  ): Promise<void> {
+    this.calls.push("updateSpecimens");
+    this.specimens = specimens;
     return Promise.resolve();
   }
 }
@@ -223,6 +235,7 @@ describe("drawPerceived", () => {
       "update",
       "updateSpawners",
       "updateCarcasses",
+      "updateSpecimens",
       "updateRadar",
     ]);
   });
@@ -259,6 +272,30 @@ describe("drawPerceived", () => {
     await drawPerceived(lit, seen);
     expect(lit.carcasses.map((c) => c.id)).toContain("near");
     expect(lit.carcasses.map((c) => c.id)).not.toContain("dark");
+  });
+
+  it("draws the specimen a fallen carrier dropped, and not the one a living squad still holds (#1179)", async () => {
+    const lurker = {
+      unitId: "lurker-1",
+      species: "lurker",
+      templateId: "bug:lurker",
+      movePenalty: 1,
+    } as const;
+    const base = missionWith(MAP, [
+      { ...unitAt("s1", "infantry", { x: 0, y: 0, z: 0 }), carrying: lurker },
+      {
+        ...unitAt("s2", "infantry", { x: 1, y: 0, z: 1 }, { hp: 0 }),
+        carrying: lurker,
+      },
+    ]);
+    // Ground nobody has explored withholds it, like a carcass.
+    const unseen = new StageRecorder();
+    await drawPerceived(unseen, base);
+    expect(unseen.specimens).toEqual([]);
+    const stage = new StageRecorder();
+    await drawPerceived(stage, withVision({ state: base, events: [] }).state);
+    expect(stage.specimens.map((s) => s.carrierId)).toEqual(["s2"]);
+    expect(stage.specimens[0]?.pos).toEqual({ x: 1, y: 0, z: 1 });
   });
 
   it("marks the open objective in the fog and withholds its model until explored (#1173)", async () => {

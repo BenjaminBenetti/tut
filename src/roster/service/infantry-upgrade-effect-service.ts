@@ -49,20 +49,24 @@ export function infantryArmorBonus(
 }
 
 /**
- * A squad's kit with the upgrades' swaps applied, in upgrade order, so a
- * later rung replaces what an earlier one handed out: frag grenades turn
- * the grenade into a frag grenade, and incendiary grenades then turn
- * that into an incendiary one. An item no upgrade names is carried as
- * it was, and the kit keeps its order and length.
+ * A squad's kit with the upgrades applied in upgrade order, each one
+ * swapping what the kit holds and then adding its own items, so a later
+ * rung replaces what an earlier one handed out: frag grenades turn the
+ * grenade into a frag grenade, and incendiary grenades then turn that
+ * into an incendiary one. An item no upgrade names is carried as it was,
+ * and the swaps keep the kit's order and length; an added item follows
+ * the kit and is carried once, even when the kit already holds it. The
+ * result is always a new list; `equipment` is never touched.
  *
  * ```
  *   [grenade, medkit]
  *     frag-grenades         ──► [frag-grenade, medkit]
  *     incendiary-grenades   ──► [incendiary-grenade, medkit]
  *     field-medic-training  ──► [incendiary-grenade, field-medkit]
+ *     capture-net           ──► [incendiary-grenade, field-medkit, capture-net]
  * ```
  *
- * @param equipment - The squad type's kit.
+ * @param equipment - The squad type's kit; empty for a type carrying none.
  * @param upgrades - The active upgrades, in application order.
  * @returns The kit the squad carries into the mission.
  */
@@ -70,10 +74,17 @@ export function upgradedEquipment(
   equipment: readonly EquipmentId[],
   upgrades: readonly InfantryUpgradeDefinition[],
 ): readonly EquipmentId[] {
-  return equipment.map((item) =>
-    upgrades.reduce(
-      (carried, upgrade) => upgrade.equipmentSwaps?.[carried] ?? carried,
-      item,
-    ),
+  return upgrades.reduce<readonly EquipmentId[]>(
+    (kit, upgrade) => {
+      const swapped = kit.map((item) => upgrade.equipmentSwaps?.[item] ?? item);
+      const carried = [...swapped];
+      for (const item of upgrade.equipmentAdds ?? []) {
+        if (!carried.includes(item)) {
+          carried.push(item);
+        }
+      }
+      return carried;
+    },
+    [...equipment],
   );
 }

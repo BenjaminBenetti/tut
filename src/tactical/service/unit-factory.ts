@@ -11,6 +11,7 @@ import { rankBonuses, rankIndexOf } from "../../roster/service/rank-service";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType } from "../../roster/model/squad-type";
 import type { BugUnitSource } from "../model/bug-unit-source";
+import type { EquipmentId } from "../model/equipment";
 import type { GeneratorTuning } from "../model/generator";
 import { GENERATOR_SOURCE_ID } from "../model/generator";
 import type { TurretTuning } from "../model/turret";
@@ -76,10 +77,18 @@ export function templateIdFor(
  * `maxHp = maxStrength × hpPerSoldier`, and the unit starts at
  * `strength × hpPerSoldier`, so a depleted squad enters hurt. The
  * campaign's infantry upgrades (campaign arc §10.3) add their armour to
- * the profile and swap the items the type carries (a grenade for a frag
- * grenade, say). The squad's rank (#1130) is folded in last, over
- * everything the type decided. Pure: reads only its arguments and draws
- * one id.
+ * the profile, swap the items the type carries (a grenade for a frag
+ * grenade, say) and hand out items of their own after the type's kit
+ * (the capture net, #1179), each once. The squad's rank (#1130) is
+ * folded in last, over everything the type decided. With no upgrades
+ * the template is exactly what it was before them. Pure: reads only its
+ * arguments and draws one id.
+ *
+ * @param squad - The roster squad.
+ * @param squadType - Its type.
+ * @param placement - Where it stands and faces.
+ * @param deps - The id generator, the unit tuning and the campaign's upgrades.
+ * @returns The unit and its template.
  */
 export function squadUnit(
   squad: Squad,
@@ -95,6 +104,7 @@ export function squadUnit(
     squad.maxStrength,
     upgrades,
   );
+  const equipment = squadEquipment(squadType, upgrades);
   const template: UnitTemplate = {
     id: templateIdFor("squad", squad.id),
     name: squadType.name,
@@ -107,11 +117,10 @@ export function squadUnit(
     passClass: "infantry",
     modelId: infantry.modelIdByType[squadType.id] ?? infantry.fallbackModelId,
     // The type's kit rides on the template (#1132), upgraded by the
-    // campaign's research (§10.3); uses are counted on the unit as it
-    // draws on them, full until it does.
-    ...(squadType.equipment === undefined
-      ? {}
-      : { equipment: [...upgradedEquipment(squadType.equipment, upgrades)] }),
+    // campaign's research (§10.3, and the capture net after it, #1179);
+    // uses are counted on the unit as it draws on them, full until it
+    // does.
+    ...(equipment === undefined ? {} : { equipment }),
   };
   return build(
     "squad",
@@ -412,6 +421,27 @@ function withRankBonuses(
     })),
     rank: { name: rank.name, index },
   };
+}
+
+/**
+ * A squad's kit: its type's equipment with the campaign's upgrades
+ * applied (`upgradedEquipment`: swaps, then added items). Undefined when
+ * the type carries nothing and no upgrade adds anything, so such a squad
+ * gets a template with no `equipment` field, as before upgrades.
+ *
+ * @param squadType - The squad's type.
+ * @param upgrades - The active upgrades, in application order.
+ * @returns The kit, or undefined for none.
+ */
+function squadEquipment(
+  squadType: SquadType,
+  upgrades: readonly InfantryUpgradeDefinition[],
+): EquipmentId[] | undefined {
+  const equipment = upgradedEquipment(squadType.equipment ?? [], upgrades);
+  if (squadType.equipment === undefined && equipment.length === 0) {
+    return undefined;
+  }
+  return [...equipment];
 }
 
 /** Clamps `value` into `[min, max]`. */

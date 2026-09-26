@@ -7,6 +7,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { mechCanOccupyRoof } from "./mech-rooftop-service";
 import { ReachabilityService } from "../../mapgen/service/reachability-service";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { carryMovePenaltyOf } from "../model/carried-specimen";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { passMaskFor } from "../model/unit";
@@ -207,7 +208,7 @@ export function moveBudget(mission: TacticalState, unit: Unit): number {
           ),
         )
       : unit.ap;
-  return Math.max(0, actions) * moveOf(mission, unit);
+  return Math.max(0, actions) * movePerAction(mission, unit);
 }
 
 /**
@@ -222,7 +223,7 @@ export function apCostOf(
   if (movementPoints <= 0) {
     return 0;
   }
-  const move = moveOf(mission, unit);
+  const move = movePerAction(mission, unit);
   return move <= 0
     ? Number.POSITIVE_INFINITY
     : Math.ceil(movementPoints / move);
@@ -389,9 +390,24 @@ function findUnit(mission: TacticalState, unitId: UnitId): Unit | undefined {
   return mission.units.find((unit) => unit.id === unitId);
 }
 
-/** Movement points per action from the template; `0` when the template is missing. */
-function moveOf(mission: TacticalState, unit: Unit): number {
-  return mission.templates[unit.templateId]?.move ?? 0;
+/**
+ * Movement points per action (#1179): the template's `move`, less what
+ * a carried specimen costs, never below zero; `0` when the template is
+ * missing. The one reading `moveBudget` and `apCostOf` share, so a
+ * carrier's slower walk is the same in the preview, the rules and the
+ * card.
+ *
+ * ```
+ *   rifle squad move 5, carrying a lurker (penalty 1) ──► 4 per action
+ * ```
+ *
+ * @param mission - The mission, for the unit's template.
+ * @param unit - The unit.
+ * @returns Movement points per action.
+ */
+export function movePerAction(mission: TacticalState, unit: Unit): number {
+  const move = mission.templates[unit.templateId]?.move ?? 0;
+  return Math.max(0, move - carryMovePenaltyOf(unit));
 }
 
 /**

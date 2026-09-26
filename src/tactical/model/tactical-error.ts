@@ -136,6 +136,25 @@ export type TacticalError =
       readonly distance: number;
       readonly range: number;
     }
+  // The capture net and the specimens it takes (#1179): a net needs a
+  // spotted bug next to the squad that a capture objective wants and
+  // that is worn down far enough; a specimen needs free hands to carry.
+  | {
+      readonly kind: "no-capture-target";
+      readonly x: number;
+      readonly y: number;
+      readonly z: number;
+    }
+  | { readonly kind: "specimen-not-wanted"; readonly targetId: string }
+  | {
+      readonly kind: "target-too-healthy";
+      readonly targetId: string;
+      readonly hp: number;
+      /** The most hit points the net still holds at. */
+      readonly threshold: number;
+    }
+  | { readonly kind: "already-carrying"; readonly unitId: string }
+  | { readonly kind: "cannot-carry"; readonly unitId: string }
   | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
   | { readonly kind: "not-extractable"; readonly unitId: string }
   | { readonly kind: "mission-not-over"; readonly missionId: string }
@@ -267,6 +286,16 @@ export function describeTacticalError(error: TacticalError): string {
       return `Tech carcass "${error.carcassId}" has already been stripped`;
     case "carcass-out-of-reach":
       return `Tech carcass is ${String(error.distance)} tiles away; harvesting reaches ${String(error.range)}`;
+    case "no-capture-target":
+      return `There is no bug to net at (${String(error.x)}, ${String(error.y)}, ${String(error.z)})`;
+    case "specimen-not-wanted":
+      return `Nobody asked for "${error.targetId}" alive`;
+    case "target-too-healthy":
+      return `"${error.targetId}" has ${String(error.hp)} hit points; the net holds at ${String(error.threshold)} or less`;
+    case "already-carrying":
+      return `Unit "${error.unitId}" is already carrying a specimen`;
+    case "cannot-carry":
+      return `Unit "${error.unitId}" cannot carry a specimen; only an infantry squad can`;
     case "not-in-extraction-zone":
       return `Unit "${error.unitId}" is not standing in the extraction zone`;
     case "not-extractable":
@@ -355,6 +384,11 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "unknown-carcass": true,
   "carcass-already-harvested": true,
   "carcass-out-of-reach": true,
+  "no-capture-target": true,
+  "specimen-not-wanted": true,
+  "target-too-healthy": true,
+  "already-carrying": true,
+  "cannot-carry": true,
   "not-in-extraction-zone": true,
   "not-extractable": true,
   "mission-not-over": true,

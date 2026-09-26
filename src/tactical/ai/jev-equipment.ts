@@ -19,6 +19,7 @@ const EQUIPMENT_TARGETS = {
   heal: { target: "tile", preview: "heal" },
   radar: { target: "tile", preview: "none" },
   turret: { target: "tile", preview: "none" },
+  net: { target: "hostile", preview: "none" },
 } as const satisfies Readonly<
   Record<
     EquipmentKind,
@@ -28,6 +29,18 @@ const EQUIPMENT_TARGETS = {
     }
   >
 >;
+
+/** What choosing an item is for, by what it targets. */
+const TARGET_PURPOSES = {
+  hostile:
+    "Use this explosive against a visible enemy unit or nest; choose the entity next. The blast is centered on a tile occupied by that entity.",
+  tile: "Use this specific item with the effect described in capability; choose its target tile next.",
+} as const;
+
+/** Kinds whose purpose is not what their target says (#1179): a net is thrown at an enemy but is no explosive. */
+const KIND_PURPOSES: Readonly<Partial<Record<EquipmentKind, string>>> = {
+  net: "Throw this capture net over an adjacent, weakened enemy bug an objective wants alive; choose the entity next. It takes the bug alive for the actor to carry home.",
+};
 
 /** Discover all carried items without faction or item-ID lists; shared rules decide legal targets. */
 export function jevEquipmentCandidates(context: JevActionContext): void {
@@ -129,9 +142,7 @@ export function jevEquipmentCandidates(context: JevActionContext): void {
           id: `equipment:${definition.id}`,
           name: `Use ${definition.name}`,
           purpose:
-            policy.target === "hostile"
-              ? "Use this explosive against a visible enemy unit or nest; choose the entity next. The blast is centered on a tile occupied by that entity."
-              : "Use this specific item with the effect described in capability; choose its target tile next.",
+            KIND_PURPOSES[definition.kind] ?? TARGET_PURPOSES[policy.target],
           capability: {
             ...definition,
             ap_cost: definition.apCost,

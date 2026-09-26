@@ -61,6 +61,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
   it("collects each kind's own phase step in table order, and only those", () => {
     expect(objectivePhaseSteps()).toEqual([
       DEFEND_GENERATORS_OBJECTIVE.phaseStep,
+      OBJECTIVE_RULES["capture-specimen"].phaseStep,
     ]);
     const extra = (): never => {
       throw new Error("not run");
@@ -70,6 +71,10 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
         ...OBJECTIVE_RULES,
         "destroy-spawner": { ...DESTROY_SPAWNER_OBJECTIVE, phaseStep: extra },
       }),
-    ).toEqual([extra, DEFEND_GENERATORS_OBJECTIVE.phaseStep]);
+    ).toEqual([
+      extra,
+      DEFEND_GENERATORS_OBJECTIVE.phaseStep,
+      OBJECTIVE_RULES["capture-specimen"].phaseStep,
+    ]);
   });
 });

@@ -149,7 +149,7 @@ const systems = object(
 const equipmentFields = {
   id: identifier,
   name: label,
-  kind: oneOf("radar", "blast", "charge", "heal", "turret"),
+  kind: oneOf("radar", "blast", "charge", "heal", "turret", "net"),
   uses: count,
   apCost: stat,
   range: stat,
@@ -163,6 +163,7 @@ const equipmentOptions = {
     radius: stat,
   }),
   delayTurns: count,
+  net: object({ captureAtHpFraction: number(0, 1), carryMovePenalty: stat }),
 };
 const equipment = object(equipmentFields, equipmentOptions);
 
@@ -205,6 +206,7 @@ const resourceOptions = {
   moved_this_turn: bool,
   ablative_spent: count,
   overwatch_shots: count,
+  carrying: identifier,
 };
 const actor = object(
   {

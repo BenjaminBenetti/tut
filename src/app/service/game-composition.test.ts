@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { isCampaignFlagId } from "../../content/model/campaign-flag-id";
+import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { UNKNOWN_COMMAND } from "../../overworld/model/command-dispatcher";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/overworld-command";
 import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
 import type { Deployment } from "../../overworld/model/deployment";
 import { launchMission } from "../../overworld/model/launch-mission-command";
+import { unlockTech } from "../../overworld/model/unlock-tech-command";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { finishMission } from "../../tactical/model/finish-mission-command";
 import { extract } from "../../tactical/model/extract-command";
@@ -18,6 +20,7 @@ import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { SaveError } from "../../save/model/save-error";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
+import { isTechNodeHidden } from "../../tech/service/tech-status-service";
 import type { GameComposition } from "./game-composition";
 import { composeGame } from "./game-composition";
 
@@ -404,6 +407,53 @@ describe("composeGame", () => {
       "killed:spitter",
       "spore-sample",
     ]);
+  });
+
+  it("reveals Pheromone Analysis with the spore sample, and buying it sets capture-net and arms every squad with a net (#1179)", () => {
+    const { game } = build();
+    const PHEROMONE = "tech.pheromone-analysis";
+    const node = game.content.tech.getNode(PHEROMONE);
+    if (node === undefined) throw new Error("the tree ships Intel I");
+    const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
+    const rich = {
+      ...fresh,
+      economy: { ...fresh.economy, techPoints: node.cost },
+    };
+    const sampled = {
+      ...rich,
+      overworld: {
+        ...rich.overworld,
+        progress: {
+          ...rich.overworld.progress,
+          flags: ["spore-sample" as const],
+        },
+      },
+    };
+
+    // Hidden, and refused, while the spore sample is missing.
+    expect(isTechNodeHidden(node, game.techConditionsOf(rich))).toBe(true);
+    game.session.start(rich);
+    const refused = game.session.store?.dispatch(unlockTech(PHEROMONE));
+    expect(refused?.ok === false && refused.error.code).toBe("tech-hidden");
+
+    // Shown, and bought, once it is in hand.
+    expect(isTechNodeHidden(node, game.techConditionsOf(sampled))).toBe(false);
+    game.session.start(sampled);
+    const bought = game.session.store?.dispatch(unlockTech(PHEROMONE));
+    expect(bought?.ok).toBe(true);
+    const after = game.session.state;
+    if (!after) throw new Error("no campaign");
+    expect(after.tech.unlocked).toContain(PHEROMONE);
+    expect(after.overworld.progress.flags).toContain("capture-net");
+
+    // The net reaches squads through the one infantry-upgrade path.
+    const upgradesOf = (state: typeof after) =>
+      game.tactical
+        .missionStartDepsFor(new SequentialIdGenerator())
+        .infantryUpgradesFor?.(state)
+        .map((upgrade) => upgrade.id);
+    expect(upgradesOf(sampled)).toEqual([]);
+    expect(upgradesOf(after)).toEqual(["capture-net"]);
   });
 
   it("ships a tree whose every flag effect is a campaign flag the story records", () => {

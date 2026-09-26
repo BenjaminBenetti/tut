@@ -94,6 +94,11 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "unknown-carcass", carcassId: ID },
   { kind: "carcass-already-harvested", carcassId: ID },
   { kind: "carcass-out-of-reach", carcassId: ID, distance: 3, range: 1 },
+  { kind: "no-capture-target", x: 1, y: 0, z: 2 },
+  { kind: "specimen-not-wanted", targetId: ID },
+  { kind: "target-too-healthy", targetId: ID, hp: 6, threshold: 5 },
+  { kind: "already-carrying", unitId: ID },
+  { kind: "cannot-carry", unitId: ID },
 ];
 
 describe("describeRefusal", () => {
@@ -358,6 +363,7 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
         name: (_objective, ordinal) => `holdout #${ordinal}`,
       },
       "destroy-pod": OBJECTIVE_PRESENTATION["destroy-pod"],
+      "capture-specimen": OBJECTIVE_PRESENTATION["capture-specimen"],
     };
     const names = namesFor(
       {

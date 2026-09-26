@@ -1,7 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import { STARTER_PARTS } from "../src/roster/data/parts";
 import type { GameState } from "../src/save/model/game-state";
 import type { TacticalState } from "../src/tactical/model/tactical-state";
 import { TECH_NODES } from "../src/tech/data/tech-tree";
+import { NO_TECH_CONDITIONS } from "../src/tech/model/tech-conditions";
+import { isTechNodeHidden } from "../src/tech/service/tech-status-service";
+import { formatWhole } from "../src/ui/service/format";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { openTileWheel, openUnitWheel, wheelItem } from "./action-wheel.helper";
 import { tacticalModelsReady } from "./capture-frame.helper";
@@ -10,7 +14,19 @@ import { settleForShot } from "./mission-capture.helper";
 const SAVE_KEY = "tut:save:autosave";
 
 /**
- * Buys the whole tech tree (#1171): every blueprint but the starter's
+ * The nodes a fresh campaign can see (#1179): a hidden node (an Intel
+ * project, an autopsy, Last Hope) waits on a campaign flag no amount of
+ * TP buys, so "the whole tree" is the shown part of it.
+ */
+const SHOWN_NODES = TECH_NODES.filter(
+  (node) => !isTechNodeHidden(node, NO_TECH_CONDITIONS),
+);
+
+/** Exactly what every shown node costs together, so the pool always covers it. */
+const SHOWN_COST = SHOWN_NODES.reduce((sum, node) => sum + node.cost, 0);
+
+/**
+ * Buys every shown node of the tech tree (#1171): every blueprint but the starter's
  * fits tier 2 and 3 parts, which the tree gates, so the bay would call
  * them all "Not buildable". Grants a pool through the autosave, resumes,
  * and unlocks Jump Jets first — the part the Jump Scout stands on —
@@ -23,7 +39,7 @@ async function researchEverything(page: Page): Promise<void> {
   );
   const funded: GameState = {
     ...envelope.state,
-    economy: { ...envelope.state.economy, techPoints: 1000 },
+    economy: { ...envelope.state.economy, techPoints: SHOWN_COST },
   };
   await page.evaluate(
     ({ key, saved }) => {
@@ -36,7 +52,7 @@ async function researchEverything(page: Page): Promise<void> {
   await page.locator('#top-bar [data-action="tech-tree"]').click();
   await expect(
     page.locator('#tech-tree-bar [data-field="techPoints"]'),
-  ).toHaveText("1,000 TP");
+  ).toHaveText(`${formatWhole(SHOWN_COST)} TP`);
   // The web is three: a node is selected through the dev hook rather
   // than by finding its pedestal on screen, and Unlock lives in the
   // detail panel (#1171).
@@ -59,7 +75,7 @@ async function researchEverything(page: Page): Promise<void> {
     await buy(nodeId);
   }
   await expect(page.locator('[data-node][data-status="unlocked"]')).toHaveCount(
-    TECH_NODES.length,
+    SHOWN_NODES.length,
   );
   await page.locator('#tech-tree-bar [data-action="overworld"]').click();
 }
@@ -92,7 +108,10 @@ test("all six blueprints assemble; a purchased Jump Scout deploys, jumps and ven
   await researchEverything(page);
   await page.locator('#top-bar [data-action="roster"]').click();
   await page.locator('[data-action="mech-bay"]').click();
-  await expect(page.locator("#part-palette [data-part-id]")).toHaveCount(48);
+  // The bay lists every catalogue part (#1145), autopsy counters included.
+  await expect(page.locator("#part-palette [data-part-id]")).toHaveCount(
+    STARTER_PARTS.length,
+  );
   const blueprints = page.getByLabel("Example mech blueprints");
   for (const name of [
     "Jump Scout",

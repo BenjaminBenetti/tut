@@ -309,7 +309,8 @@ interface Placed {
 
 /**
  * Builds every deployed unit and stands it on a free deploy-zone tile its
- * class can use. Mechs retain first claim; squads follow. ADR 0004 I6
+ * class can use. Every squad carries the campaign's infantry upgrades,
+ * the capture net among them (#1179). Mechs retain first claim; squads follow. ADR 0004 I6
  * guarantees at least MAX_DEPLOYED_UNITS distinct tiles per class per zone,
  * sufficient for every legal class mix even when the usable sets overlap.
  * Zones and their tiles are walked in map order; a tile is used once.

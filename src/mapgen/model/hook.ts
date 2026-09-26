@@ -54,6 +54,14 @@ export const HookKinds = {
    */
   WRECK: "wreck",
   /**
+   * A tunnel mouth the swarm is digging toward the next city (arc §6.7):
+   * three a Tunnel Sabotage map, each a 2×2 square on open, level ground
+   * that infantry and mechs can reach, spread apart across the map. A
+   * squad sets a charge on it; burrowers come up through it while it is
+   * open. Meta `{ footprint }`, the square's side.
+   */
+  TUNNEL_MOUTH: "tunnel-mouth",
+  /**
    * The spore platform's docking ring (#1179): exactly one, a level 5×5
    * pad on the hull's flank, the iris the finale's first stage is fought
    * over. Meta `{ footprint }`.

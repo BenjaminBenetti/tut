@@ -4,6 +4,7 @@ import {
 } from "../../tactical/model/equipment";
 import { SPAWNER_VARIANT_TRAITS } from "../../tactical/model/spawner-variant";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { TUNNEL_TUNING } from "../../tactical/data/tunnel-tuning";
 import { chargeDelayText } from "../service/charge-delay-text";
 import type { BugsSpawnedEvent } from "../../tactical/model/bugs-spawned-event";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -312,6 +313,22 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:tunnel-charge-set":
+      // A charge on a tunnel mouth (arc §6.7): the fuse is the mission's,
+      // not the kit's, so the delay is the tunnel tuning's.
+      return {
+        text: `${nameOf(event.payload.unitId)} set a charge on a tunnel mouth · blows ${chargeDelayText(
+          TUNNEL_TUNING.fuseTurns,
+        )}`,
+        icon: "warning",
+        tone: "accent",
+      };
+    case "tactical:tunnel-sealed":
+      return {
+        text: `Tunnel mouth sealed · ${formatWhole(event.payload.sealed)} / ${formatWhole(event.payload.total)}`,
+        icon: "check",
+        tone: "ok",
+      };
     case "tactical:units-healed": {
       // One line for the whole area, as a blast gets (#1138): who was
       // mended and by how much, "repaired" when the kit mends metal.
@@ -361,9 +378,9 @@ export function describeEvent(
       return undefined;
     case "tactical:bugs-spawned":
       return {
-        text: `${waveLabel(event.payload.wave, event.payload.totalWaves)}${formatWhole(event.payload.unitIds.length)} bugs ${
-          SPAWN_VERBS[event.payload.source]
-        }`,
+        text: `${waveLabel(event.payload.wave, event.payload.totalWaves)}${formatWhole(event.payload.unitIds.length)} ${
+          event.payload.unitIds.length === 1 ? "bug" : "bugs"
+        } ${SPAWN_VERBS[event.payload.source]}`,
         icon: "egg",
         tone: "bug",
       };
@@ -525,6 +542,9 @@ const SPAWN_VERBS: Readonly<
   spawner: "hatched",
   edge: "arrived at the edge",
   pod: "burst from the spore pod",
+  // A burrower comes up a tunnel mouth under the ground (campaign arc
+  // §6.7): the mouth is public, the bug is not yet seen.
+  tunnel: "stirred below a tunnel mouth",
 };
 
 /** The glyph for a status change, defaulting to the overwatch eye. */
@@ -586,6 +606,9 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return event.payload.unitId;
     case "tactical:charge-placed":
       return event.payload.charge.ownerId;
+    case "tactical:tunnel-charge-set":
+      // Above the squad at the mouth: setting the charge is what it did.
+      return event.payload.unitId;
     case "tactical:specimen-captured":
     case "tactical:specimen-picked-up":
       // Above the squad now carrying it (#1179).
@@ -620,6 +643,7 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:radar-burned-out":
     case "tactical:turret-burned-out":
     case "tactical:charge-detonated":
+    case "tactical:tunnel-sealed":
       return undefined;
     case "tactical:unit-moved":
     case "tactical:unit-tunnelled":

@@ -55,6 +55,12 @@ import { GREAT_HIVE_TUNING } from "./great-hive-tuning";
  *   at d4–6 and 5 from d7, pays 100 credits for each one brought home,
  *   and a saved city lifts the stipend by half for ten days; a lost or
  *   ignored one cuts it by a tenth for ten days.
+ * - A tunnel sabotage (arc §6.7) takes its difficulty and map size like
+ *   a clearance: it is the same city at the same level. It is offered
+ *   once a city at the spread threshold is at most 2 days from its next
+ *   spread, so with the 5-day spread cooldown it is on the board for the
+ *   last two days of each cycle, and never for a spread already under
+ *   way. A win holds the city's spread for 10 days, two whole cycles.
  */
 export const MISSION_TUNING: MissionTuning = {
   difficulty: {
@@ -92,6 +98,12 @@ export const MISSION_TUNING: MissionTuning = {
       infestationWeight: 0.7,
       threatWeight: 0.3,
       mediumFromDifficulty: 3,
+      largeFromDifficulty: 8,
+    },
+    "tunnel-sabotage": {
+      infestationWeight: 0.7,
+      threatWeight: 0.3,
+      mediumFromDifficulty: 4,
       largeFromDifficulty: 8,
     },
   },
@@ -145,5 +157,9 @@ export const MISSION_TUNING: MissionTuning = {
     creditsPerGroup: 100,
     savedStipend: { factor: 1.5, days: 10 },
     lostStipend: { factor: 0.9, days: 10 },
+  },
+  tunnelSabotage: {
+    spreadWindowDays: 2,
+    holdDays: 10,
   },
 };

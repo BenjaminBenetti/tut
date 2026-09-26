@@ -161,6 +161,10 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   // Something of ours that was lost: scorched gunmetal orange, the burnt
   // edge of TDF amber, apart from the generator's clean amber (arc §6.6).
   [HookKinds.WRECK]: 0xc2643a,
+  // A hole the swarm dug: `bug-flesh` russet, the colour between the
+  // throat's ribs, darker than the carcass's bone and apart from the
+  // wreck's scorched orange, so three mouths read as the bugs' (arc §6.7).
+  [HookKinds.TUNNEL_MOUTH]: 0x73452e,
   // The spore platform (#1179): the docking ring's iris and the core seed
   // glow `bug-bio-magenta` like the hive's heart; the hatch to stage 2 is
   // spore violet; the Sovereign's dais is `bug-horn` #DDC39B, the crown

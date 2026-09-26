@@ -16,6 +16,7 @@ import type { PlacedCharge } from "./equipment";
 import type { MechWreck, MechWreckId } from "./mech-wreck";
 import type { Radar } from "./radar";
 import type { TechCarcass } from "./tech-carcass";
+import type { TunnelMouth, TunnelMouthId } from "./tunnel-mouth";
 import type { SpawnerVariant } from "./spawner-variant";
 
 // ===========================================
@@ -299,12 +300,25 @@ export interface StripWreckObjective extends ObjectiveBase {
 }
 
 /**
+ * Seal the tunnel mouths (campaign arc §6.7): set a charge on each, and
+ * survive the fuse. The mouths keep their own state on
+ * `TacticalState.tunnelMouths`; this names which of them it asks for.
+ * Complete once every one is sealed; the force then extracts.
+ */
+export interface SealTunnelsObjective extends ObjectiveBase {
+  readonly kind: "seal-tunnels";
+  /** The mouths to seal, in hook order. */
+  readonly mouthIds: readonly TunnelMouthId[];
+}
+
+/**
  * What the player must achieve: wreck a spawner, hold the generators
  * (#1175), wreck a spore pod before it matures, bring a specimen home,
- * get the civilians out, strip a lost mech's wreck, or bring down a hive
- * core and extract (#1179, campaign arc §6.3, §6.4, §6.5, §6.6, §6.9).
- * Closed: a new kind adds its interface here and its rules to
- * `OBJECTIVE_RULES`, which the compiler then insists on (ADR 0013 §2.3).
+ * get the civilians out, strip a lost mech's wreck, bring down a hive
+ * core and extract, or seal the tunnel mouths (#1179, campaign arc
+ * §6.3, §6.4, §6.5, §6.6, §6.7, §6.9). Closed: a new kind adds its
+ * interface here and its rules to `OBJECTIVE_RULES`, which the compiler
+ * then insists on (ADR 0013 §2.3).
  */
 export type Objective =
   | DestroySpawnerObjective
@@ -313,7 +327,8 @@ export type Objective =
   | CaptureSpecimenObjective
   | RescueCiviliansObjective
   | StripWreckObjective
-  | DestroyHiveCoreObjective;
+  | DestroyHiveCoreObjective
+  | SealTunnelsObjective;
 
 /**
  * Swarm Tide's hold on the edge waves (campaign arc §11): each wave is
@@ -433,6 +448,7 @@ export const NO_VISION: SideVision = {
  *   ├── broods?[]             dormant bugs that wake together, a cavern's chambers (#1179)
  *   ├── carcasses[]           tech carcasses on the map, stripped or not (#1171)
  *   ├── wrecks[]?             lost mechs lying on the map (arc §6.6)
+ *   ├── tunnelMouths[]?       holes burrowers come up through (arc §6.7)
  *   ├── effects[]             fires burning on tiles, each with a clock (#1121)
  *   ├── charges[]             breaching charges waiting to go off (#1132)
  *   ├── edgeSpawn             when the next edge wave arrives
@@ -516,6 +532,12 @@ export interface TacticalState {
    * before them: read it as empty.
    */
   readonly wrecks?: readonly MechWreck[];
+  /**
+   * Tunnel mouths on the map (arc §6.7), open, charged or sealed, in
+   * hook order. Absent on every mission but a tunnel sabotage, and on
+   * every mission saved before them: read it as empty.
+   */
+  readonly tunnelMouths?: readonly TunnelMouth[];
   /**
    * Tile effects burning on the map (#1121), in the order they were lit.
    * Each acts at the start of every phase against the side whose phase

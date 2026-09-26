@@ -16,6 +16,9 @@
  * (campaign arc §6.4) is civilians trapped in an infested city, to be
  * freed and walked to the drop ship. `hive-assault` (campaign arc §6.5)
  * is one pinned offer per hive, fought in a hive cavern.
+ * `tunnel-sabotage` (arc §6.7) is a city about to spread: seal the
+ * three tunnel mouths it is digging toward its neighbour, and its
+ * spread holds for 10 days.
  */
 export type MissionTypeId =
   | "infestation-clearance"
@@ -23,7 +26,8 @@ export type MissionTypeId =
   | "crash-site"
   | "wreck-recovery"
   | "evacuation"
-  | "hive-assault";
+  | "hive-assault"
+  | "tunnel-sabotage";
 
 /**
  * Every mission type id, in a fixed order. The order is the order the
@@ -37,4 +41,5 @@ export const MISSION_TYPE_IDS: readonly MissionTypeId[] = [
   "wreck-recovery",
   "evacuation",
   "hive-assault",
+  "tunnel-sabotage",
 ];

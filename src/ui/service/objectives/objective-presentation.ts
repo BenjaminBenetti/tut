@@ -13,6 +13,7 @@ import { DESTROY_HIVE_CORE_PRESENTATION } from "./destroy-hive-core-presentation
 import { DESTROY_POD_PRESENTATION } from "./destroy-pod-presentation";
 import { DESTROY_SPAWNER_PRESENTATION } from "./destroy-spawner-presentation";
 import { RESCUE_CIVILIANS_PRESENTATION } from "./rescue-civilians-presentation";
+import { SEAL_TUNNELS_PRESENTATION } from "./seal-tunnels-presentation";
 import { STRIP_WRECK_PRESENTATION } from "./strip-wreck-presentation";
 
 // ===========================================
@@ -33,6 +34,7 @@ import { STRIP_WRECK_PRESENTATION } from "./strip-wreck-presentation";
  *   rescue-civilians   ──► rescue-civilians-presentation.ts
  *   strip-wreck        ──► strip-wreck-presentation.ts
  *   destroy-hive-core  ──► destroy-hive-core-presentation.ts
+ *   seal-tunnels       ──► seal-tunnels-presentation.ts
  * ```
  */
 export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
@@ -43,6 +45,7 @@ export const OBJECTIVE_PRESENTATION: ObjectivePresentationCatalogue = {
   "rescue-civilians": RESCUE_CIVILIANS_PRESENTATION,
   "strip-wreck": STRIP_WRECK_PRESENTATION,
   "destroy-hive-core": DESTROY_HIVE_CORE_PRESENTATION,
+  "seal-tunnels": SEAL_TUNNELS_PRESENTATION,
 } satisfies { readonly [K in ObjectiveKind]: { readonly kind: K } };
 
 // ===========================================

@@ -89,6 +89,34 @@ export interface MissionTuning {
   readonly hiveAssault: HiveAssaultTuning;
   /** How the three Great Hives are revealed, offered and scaled (arc §6.9). */
   readonly greatHive: GreatHiveTuning;
+  /** When a city about to spread is offered a tunnel sabotage, and what a win holds (arc §6.7). */
+  readonly tunnelSabotage: TunnelSabotageTuning;
+}
+
+// ===========================================
+// Tunnel sabotage
+// ===========================================
+
+/**
+ * The Tunnel Sabotage's two campaign rules (arc §6.7). The threshold is
+ * not here: a city is eligible at the infestation tuning's
+ * `spreadThreshold`, the level at which it spreads at all.
+ *
+ * ```
+ *   eligible  detected city, no offer, at spreadThreshold,
+ *             next spread due within spreadWindowDays days
+ *   won       the city's spread cooldown ──► holdDays
+ * ```
+ */
+export interface TunnelSabotageTuning {
+  /**
+   * How many days ahead of a city's next spread the offer may open, at
+   * least 1. The offer lasts until the spread is due, so this is also
+   * the longest it stays on the board.
+   */
+  readonly spreadWindowDays: number;
+  /** Spread cooldown a win leaves on the city, in days; at least 1. */
+  readonly holdDays: number;
 }
 
 // ===========================================

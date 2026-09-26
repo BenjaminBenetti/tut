@@ -2,6 +2,7 @@ import type { BugSpeciesId } from "../../content/model/bug-species-id";
 import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
+import { TUNNEL_MOUTH_COUNT } from "../../mapgen/service/missions/tunnel-sabotage-map";
 import type { Mission } from "../../overworld/model/mission";
 import type {
   MissionOutcome,
@@ -98,6 +99,7 @@ export type ModelledStoryResults = Readonly<
  *   evacuation             civiliansRescued / civiliansTotal and the rescue objective row:
  *                          won all groups, extracted one short of half, lost none
  *   hive-assault           hiveCoreDestroyed = won; its placed Hive Guard killed on a win
+ *   tunnel-sabotage        tunnelsSealed / tunnelsTotal: won all three, extracted one, lost none
  * ```
  *
  * "Extracted" is modelled as pulling out before the objective was done,
@@ -141,6 +143,12 @@ export const MODELLED_RESULTS: ModelledResultBuilders = {
   "hive-assault": (mission, outcome, ctx) => ({
     ...baseModelledResult(mission, outcome, ctx, HIVE_ASSAULT_PLACED),
     hiveCoreDestroyed: outcome === "won",
+  }),
+  "tunnel-sabotage": (mission, outcome, ctx) => ({
+    ...baseModelledResult(mission, outcome, ctx),
+    tunnelsSealed:
+      outcome === "won" ? TUNNEL_MOUTH_COUNT : outcome === "extracted" ? 1 : 0,
+    tunnelsTotal: TUNNEL_MOUTH_COUNT,
   }),
 };
 

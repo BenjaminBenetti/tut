@@ -376,6 +376,8 @@ export function describeRefusal(
       return `${capitalise(names.objective(error.objectiveId))} has already been worked this turn`;
     case "wreck-stripped":
       return `${capitalise(names.objective(error.objectiveId))} is stripped; carry the parts to the drop ship`;
+    case "tunnels-charged":
+      return "A charge is already burning on every open tunnel mouth";
     case "unknown-carcass":
       return "There is no tech carcass there";
     case "carcass-already-harvested":

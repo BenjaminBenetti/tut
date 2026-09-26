@@ -84,6 +84,8 @@ import { GREAT_HIVE_SETUP_TUNING } from "../../tactical/data/great-hive-setup-tu
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
+import { TUNNEL_TUNING } from "../../tactical/data/tunnel-tuning";
+import { createTunnelSurfacingStep } from "../../tactical/service/tunnel-mouth-surfacing-service";
 import { createTurretStep } from "../../tactical/service/turret-service";
 import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
@@ -468,6 +470,12 @@ export function shippedTacticalHandlers(
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),
+        // The open tunnel mouths' burrowers (campaign arc §6.7), with the
+        // hatch and the wave: bugs that arrive as the bug phase opens.
+        createTunnelSurfacingStep({
+          species: BUG_SPECIES.burrower,
+          tuning: TUNNEL_TUNING,
+        }),
         // The Broodmother's rules (#1179, arc §6.8), after the hatch so a
         // clutch starts on a full clock: a fleeing one on the edge leaves
         // first, then each one left lays on her turn. Before the

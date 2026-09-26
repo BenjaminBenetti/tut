@@ -10,6 +10,7 @@ import { SporePodPlacer } from "./spore-pod-placer";
 import { HiveCorePlacer } from "./hive-core-placer";
 import { PlatformPadPlacer } from "./platform-pad-placer";
 import { TechCarcassPlacer } from "./tech-carcass-placer";
+import { TunnelMouthPlacer } from "./tunnel-mouth-placer";
 import { WreckPlacer } from "./wreck-placer";
 
 // ===========================================
@@ -32,6 +33,7 @@ export const DEFAULT_HOOK_PLACERS: readonly HookPlacer[] = [
   new HiveCorePlacer(),
   new CivilianPlacer(),
   new WreckPlacer(),
+  new TunnelMouthPlacer(),
   new PlatformPadPlacer(HookKinds.DOCKING_RING, 5),
   new PlatformPadPlacer(HookKinds.PLATFORM_EXIT, 4),
   new PlatformPadPlacer(HookKinds.PLATFORM_CORE, 6),

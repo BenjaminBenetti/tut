@@ -542,6 +542,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       document.body.dataset.tacticalWrecks = String(
         attached.builder.wreckIds().length,
       );
+      document.body.dataset.tacticalTunnelMouths = String(
+        attached.builder.tunnelMouthIds().length,
+      );
       document.body.dataset.tacticalEffects = String(
         attached.builder.effectIds().length,
       );

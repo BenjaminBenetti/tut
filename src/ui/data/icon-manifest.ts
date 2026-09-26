@@ -41,6 +41,7 @@ export const ICON_MANIFEST = {
   evacuate: { path: "assets/ui/icons/evacuate.svg", label: "Evacuation" },
   defend: { path: "assets/ui/icons/defend.svg", label: "Defend" },
   extract: { path: "assets/ui/icons/extract.svg", label: "Extract" },
+  tunnel: { path: "assets/ui/icons/tunnel.svg", label: "Tunnel sabotage" },
   infestation: {
     path: "assets/ui/icons/infestation.svg",
     label: "Infestation",

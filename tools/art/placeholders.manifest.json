@@ -5528,5 +5528,37 @@
     "quality": "final",
     "triangles": 12424,
     "bytes": 384576
+  },
+  {
+    "id": "prop.tunnel-mouth",
+    "category": "props",
+    "path": "assets/models/props/prop-tunnel-mouth.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 0.3,
+    "sockets": [
+      "socket_charge"
+    ],
+    "quality": "final",
+    "triangles": 2996,
+    "bytes": 253352
+  },
+  {
+    "id": "prop.tunnel-mouth-sealed",
+    "category": "props",
+    "path": "assets/models/props/prop-tunnel-mouth-sealed.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 0.27,
+    "sockets": [
+      "socket_charge"
+    ],
+    "quality": "final",
+    "triangles": 1124,
+    "bytes": 104248
   }
 ]

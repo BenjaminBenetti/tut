@@ -15,6 +15,7 @@ import type { Radar, RadarContact } from "../../tactical/model/radar";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import type { MechWreck } from "../../tactical/model/mech-wreck";
+import type { TunnelMouth } from "../../tactical/model/tunnel-mouth";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
@@ -54,6 +55,7 @@ class StageRecorder {
   carcasses: readonly TechCarcass[] = [];
   specimens: readonly DroppedSpecimen[] = [];
   wrecks: readonly MechWreck[] = [];
+  mouths: readonly TunnelMouth[] = [];
   effects: readonly TileEffect[] = [];
   markers: readonly ObjectiveMarker[] = [];
   contacts: readonly RadarContact[] = [];
@@ -138,6 +140,13 @@ class StageRecorder {
   updateWrecks(wrecks: readonly MechWreck[]): Promise<void> {
     this.calls.push("updateWrecks");
     this.wrecks = wrecks;
+    return Promise.resolve();
+  }
+
+  /** Records the tunnel mouths the scene was asked to draw (arc §6.7). */
+  updateTunnelMouths(mouths: readonly TunnelMouth[]): Promise<void> {
+    this.calls.push("updateTunnelMouths");
+    this.mouths = mouths;
     return Promise.resolve();
   }
 }
@@ -256,6 +265,7 @@ describe("drawPerceived", () => {
       "updateCarcasses",
       "updateSpecimens",
       "updateWrecks",
+      "updateTunnelMouths",
       "updateRadar",
     ]);
   });
@@ -342,6 +352,36 @@ describe("drawPerceived", () => {
     await drawPerceived(lit, seen);
     expect(lit.wrecks.map((w) => w.id)).toContain("near");
     expect(lit.wrecks.map((w) => w.id)).not.toContain("dark");
+  });
+
+  it("draws only the tunnel mouths the player has explored a tile of, sealed or not (arc §6.7)", async () => {
+    /** A 2 × 2 mouth with its corner at (x, z), its charge tile the corner. */
+    const mouthAt = (
+      id: string,
+      x: number,
+      z: number,
+      sealedOnTurn?: number,
+    ): TunnelMouth => ({
+      id,
+      pos: { x, y: 0, z },
+      tiles: [z, z + 1].flatMap((tz) =>
+        [x, x + 1].map((tx) => ({ x: tx, y: 0, z: tz })),
+      ),
+      ...(sealedOnTurn === undefined ? {} : { sealedOnTurn }),
+    });
+    const base = {
+      ...missionWith(MAP, [unitAt("s1", "infantry", { x: 0, y: 0, z: 0 })]),
+      tunnelMouths: [mouthAt("near", 1, 1, 3), mouthAt("dark", 6, 6)],
+    };
+    // Nobody has looked yet: an empty explored set hides both.
+    const stage = new StageRecorder();
+    await drawPerceived(stage, base);
+    expect(stage.mouths).toEqual([]);
+    const seen = withVision({ state: base, events: [] }).state;
+    const lit = new StageRecorder();
+    await drawPerceived(lit, seen);
+    expect(lit.mouths.map((m) => m.id)).toEqual(["near"]);
+    expect(lit.mouths[0]?.sealedOnTurn).toBe(3);
   });
 
   it("marks the open objective in the fog and withholds its model until explored (#1173)", async () => {

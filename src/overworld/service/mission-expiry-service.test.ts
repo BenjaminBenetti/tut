@@ -136,6 +136,7 @@ describe("expireMissions", () => {
       "wreck-recovery": spy(MISSION_CONSEQUENCE_RULES["wreck-recovery"]),
       evacuation: spy(MISSION_CONSEQUENCE_RULES.evacuation),
       "hive-assault": spy(MISSION_CONSEQUENCE_RULES["hive-assault"]),
+      "tunnel-sabotage": spy(MISSION_CONSEQUENCE_RULES["tunnel-sabotage"]),
     };
     const state = fixtureState({
       day: 5,

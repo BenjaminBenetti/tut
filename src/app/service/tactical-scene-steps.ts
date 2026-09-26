@@ -15,6 +15,7 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { TechCarcass } from "../../tactical/model/tech-carcass";
 import type { MechWreck } from "../../tactical/model/mech-wreck";
+import type { TunnelMouth } from "../../tactical/model/tunnel-mouth";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import { perceivedEffects } from "../../tactical/service/tile-effect-service";
@@ -28,6 +29,7 @@ import {
   perceivedCarcasses,
   perceivedSpawners,
   perceivedUnits,
+  perceivedTunnelMouths,
   perceivedWrecks,
 } from "../../tactical/service/vision-service";
 import { LAYER_HEIGHT } from "../../graphics/data/mapgen-preview-palette";
@@ -73,6 +75,8 @@ export interface PerceivedStage {
   ): Promise<void>;
   /** Lays the mech wrecks that should be on the board (arc §6.6). */
   updateWrecks(wrecks: readonly MechWreck[]): Promise<void>;
+  /** Sets the tunnel mouths that should be on the board, open or sealed (arc §6.7). */
+  updateTunnelMouths(mouths: readonly TunnelMouth[]): Promise<void>;
   /** Draws the fires on ground this side knows (#1121). */
   updateEffects(effects: readonly TileEffect[]): void;
   /** Draws the breaching charges set and waiting (#1132). */
@@ -135,6 +139,7 @@ export interface PhasedQueue {
  *     updateCarcasses(perceivedCarcasses)  explored carcasses only (#1171)
  *     updateSpecimens(perceivedSpecimens)  dropped specimens, explored (#1179)
  *     updateWrecks(perceivedWrecks)        wrecks with an explored tile (arc §6.6)
+ *     updateTunnelMouths(perceivedTunnelMouths)  mouths with an explored tile (arc §6.7)
  *     updateEffects(perceivedEffects)      fires on explored ground
  *     updateCharges(charges)               set breaching charges (#1132)
  *     updateObjectiveMarkers(objectiveMarkers)  white diamonds on fogged nests (#1173)
@@ -182,6 +187,7 @@ export async function drawPerceived(
       mission.templates,
     ),
     stage.updateWrecks(perceivedWrecks(mission, "tdf")),
+    stage.updateTunnelMouths(perceivedTunnelMouths(mission, "tdf")),
     // The seismic sensor's burrowed contacts ride the radar's layer:
     // location-only intel, drawn as its own mark (campaign arc §10.2).
     stage.updateRadar(

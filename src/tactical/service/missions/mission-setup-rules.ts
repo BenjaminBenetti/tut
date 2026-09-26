@@ -6,6 +6,7 @@ import { placeCavernBroods } from "../brood-placement-service";
 import { withGreatHiveSetup } from "./great-hive-setup";
 import { HIVE_ASSAULT_SETUP } from "./hive-assault-setup";
 import { INFESTATION_CLEARANCE_SETUP } from "./infestation-clearance-setup";
+import { TUNNEL_SABOTAGE_SETUP } from "./tunnel-sabotage-setup";
 import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
 
 // ===========================================
@@ -24,6 +25,7 @@ import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
  *   wreck-recovery         ──► wreck-recovery-setup.ts          spawners (no objective) + wreck + strip-wreck
  *   evacuation             ──► evacuation-setup.ts              nests (no objective) + civilians + rescue-civilians
  *   hive-assault           ──► hive-assault-setup.ts            core + destroy-hive-core, nests, guards, broods
+ *   tunnel-sabotage        ──► tunnel-sabotage-setup.ts         tunnel mouths + seal-tunnels
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
@@ -38,4 +40,5 @@ export const MISSION_SETUP_RULES: MissionSetupRules = {
   "wreck-recovery": WRECK_RECOVERY_SETUP,
   evacuation: EVACUATION_SETUP,
   "hive-assault": withGreatHiveSetup(HIVE_ASSAULT_SETUP, placeCavernBroods),
+  "tunnel-sabotage": TUNNEL_SABOTAGE_SETUP,
 };

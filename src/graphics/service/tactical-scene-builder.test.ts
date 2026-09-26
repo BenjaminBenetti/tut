@@ -32,6 +32,12 @@ import type { DroppedSpecimen } from "../../tactical/service/specimen-service";
 import { SPECIMEN_NET_NAME } from "../view/specimen-view";
 import type { MechWreck } from "../../tactical/model/mech-wreck";
 import { WRECK_NAME_PREFIX } from "../view/wreck-view";
+import type { TunnelMouth } from "../../tactical/model/tunnel-mouth";
+import {
+  TUNNEL_MOUTH_MODEL_ID,
+  TUNNEL_MOUTH_NAME_PREFIX,
+  TUNNEL_MOUTH_SEALED_MODEL_ID,
+} from "../view/tunnel-mouth-view";
 import { DORMANT_POSE } from "../view/dormant-look";
 import {
   CARCASS_MODEL_ID,
@@ -549,6 +555,40 @@ describe("TacticalSceneBuilder wrecks", () => {
     await builder.updateWrecks([WRECK]);
     builder.dispose();
     expect(builder.wreckIds()).toEqual([]);
+  });
+});
+
+// ===========================================
+// Tunnel mouths (arc §6.7)
+// ===========================================
+
+describe("TacticalSceneBuilder tunnel mouths", () => {
+  /** A mouth over the 2 × 2 with its corner at (1, 1), its charge tile the corner. */
+  const MOUTH: TunnelMouth = {
+    id: "tunnel-1",
+    pos: { x: 1, y: 0, z: 1 },
+    tiles: [1, 2].flatMap((z) => [1, 2].map((x) => ({ x, y: 0, z }))),
+  };
+
+  it("sets the open mouth on its 2 × 2, swaps in the sealed model once blown, and leaves it out of the pick", async () => {
+    const { builder, models } = build();
+    await builder.updateTunnelMouths([MOUTH]);
+    expect(builder.tunnelMouthIds()).toEqual(["tunnel-1"]);
+    expect(models.loads).toContain(TUNNEL_MOUTH_MODEL_ID);
+    const mouth = builder.root.getObjectByName(
+      `${TUNNEL_MOUTH_NAME_PREFIX}tunnel-1`,
+    );
+    expect(mouth?.position.x).toBe(2);
+    expect(mouth?.position.z).toBe(2);
+    expect(builder.pickUnit(ndcOf(1.5, 1.5), topDownCamera())).toBeUndefined();
+
+    await builder.updateTunnelMouths([
+      { ...MOUTH, chargeId: "tunnel-1-charge", sealedOnTurn: 4 },
+    ]);
+    expect(models.loads).toContain(TUNNEL_MOUTH_SEALED_MODEL_ID);
+    expect(builder.tunnelMouthIds()).toEqual(["tunnel-1"]);
+    builder.dispose();
+    expect(builder.tunnelMouthIds()).toEqual([]);
   });
 });
 

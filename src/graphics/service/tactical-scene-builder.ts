@@ -46,7 +46,12 @@ import type { SpecimenPlacement } from "../view/specimen-view";
 import { SpecimenView } from "../view/specimen-view";
 import { TurretView } from "../view/turret-view";
 import { WreckView } from "../view/wreck-view";
+import { TunnelMouthView } from "../view/tunnel-mouth-view";
 import type { MechWreck, MechWreckId } from "../../tactical/model/mech-wreck";
+import type {
+  TunnelMouth,
+  TunnelMouthId,
+} from "../../tactical/model/tunnel-mouth";
 import { MechAssembler } from "./mech-assembler";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { ObjectiveMarker } from "../../tactical/model/objective-marker";
@@ -156,6 +161,11 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *     ├─ gone              ──► removed
  *     └─ new               ──► WreckView: the loadout's mech, laid down and darkened, not pickable
  *
+ *   updateTunnelMouths(mouths)                                   (arc §6.7)
+ *     ├─ gone              ──► removed
+ *     ├─ sealed since      ──► TunnelMouthView: the sealed model swapped in
+ *     └─ new               ──► TunnelMouthView: the open or sealed model, not pickable
+ *
  *   pickUnit(ndc)    ──► raycast the unit meshes    ──► nearest hit's unit
  *   pickSpawner(ndc) ──► raycast the spawner meshes ──► nearest hit's spawner
  * ```
@@ -207,6 +217,8 @@ export class TacticalSceneBuilder
   private readonly specimenView: SpecimenView;
   /** Lost mechs lying on a wreck recovery's map (arc §6.6); still, so never ticked. */
   private readonly wreckView: WreckView;
+  /** The tunnel mouths of a tunnel sabotage (arc §6.7); still, so never ticked. */
+  private readonly tunnelMouthView: TunnelMouthView;
   /** What was last asked for, kept so a change of storey can redraw it through the cut (#1134). */
   private lastCharges: readonly PlacedCharge[] = [];
   private lastRadars: readonly Radar[] = [];
@@ -265,6 +277,7 @@ export class TacticalSceneBuilder
     this.models = options.models;
     this.radarView = new RadarView(options.models);
     this.specimenView = new SpecimenView(options.models);
+    this.tunnelMouthView = new TunnelMouthView(options.models);
     this.turretView = new TurretView(options.models, (unitId) =>
       this.unitObject(unitId),
     );
@@ -300,6 +313,7 @@ export class TacticalSceneBuilder
       this.carcassesGroup,
       this.specimenView.root,
       this.wreckView.root,
+      this.tunnelMouthView.root,
       this.effects.root,
       this.charges.root,
       this.unitsGroup,
@@ -503,6 +517,11 @@ export class TacticalSceneBuilder
     return this.wreckView.wreckIds();
   }
 
+  /** Ids of the tunnel mouths currently drawn or loading, in insertion order (arc §6.7). */
+  tunnelMouthIds(): readonly TunnelMouthId[] {
+    return this.tunnelMouthView.ids();
+  }
+
   /** A carcass's base in world space, or undefined while it is loading or gone. */
   carcassWorldPosition(carcassId: TechCarcassId): Vec3 | undefined {
     return this.carcassMeshes.get(carcassId)?.worldPosition();
@@ -680,6 +699,19 @@ export class TacticalSceneBuilder
     await this.wreckView.updateWrecks(wrecks);
   }
 
+  /**
+   * Brings the drawn tunnel mouths in step with `mouths` (arc §6.7): each
+   * is set on its 2 × 2 as the open model, swapped for the sealed one
+   * once its charge blows; one gone from the list is removed. Resolves
+   * when every load has finished. Mouths are not pickable: the squad's
+   * wheel finds the charge, not the model.
+   *
+   * @param mouths - The mouths the player may see.
+   */
+  async updateTunnelMouths(mouths: readonly TunnelMouth[]): Promise<void> {
+    await this.tunnelMouthView.updateTunnelMouths(mouths);
+  }
+
   /** Shows friendly scanners and location-only radar contacts through the fog. */
   async updateRadar(
     radars: readonly Radar[],
@@ -746,6 +778,7 @@ export class TacticalSceneBuilder
     this.wantedCarcasses.clear();
     this.specimenView.dispose();
     this.wreckView.dispose();
+    this.tunnelMouthView.dispose();
     this.effects.dispose();
     this.charges.dispose();
     this.mapView.dispose();

@@ -1,3 +1,4 @@
+import { INFESTATION_TUNING } from "../../data/infestation-tuning";
 import type { MissionOfferRules } from "../../model/mission-offer-rule";
 import { CRASH_SITE_OFFER } from "./crash-site-offer";
 import { DEFEND_INSTALLATION_TRIGGER } from "./defend-installation-trigger";
@@ -5,6 +6,7 @@ import { EVACUATION_OFFER } from "./evacuation-offer";
 import { withGreatHiveRefresh } from "./great-hive-offer-refresh";
 import { HIVE_ASSAULT_TRIGGER } from "./hive-assault-trigger";
 import { INFESTATION_CLEARANCE_OFFER } from "./infestation-clearance-offer";
+import { createTunnelSabotageOffer } from "./tunnel-sabotage-offer";
 import { WRECK_RECOVERY_TRIGGER } from "./wreck-recovery-trigger";
 
 // ===========================================
@@ -26,13 +28,17 @@ import { WRECK_RECOVERY_TRIGGER } from "./wreck-recovery-trigger";
  *                                                                population, from Act I mission 3
  *   hive-assault           ──► hive-assault-trigger.ts           trigger: pinned, one per hive; re-levelled daily
  *                              great-hive-offer-refresh.ts       Great Hive offers kept out of the re-levelling
+ *   tunnel-sabotage        ──► tunnel-sabotage-offer.ts          offer: detected city ≥ 60 whose spread
+ *                                                                is due within 2 days, from Act II
+ *                                                                mission 5
  * ```
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
  * `MISSION_TYPES` without an entry fails to compile. The composition
  * root passes it to the tick; tests substitute their own. The director
  * visits entries in `MISSION_TYPE_IDS` order, which is part of the
- * determinism contract.
+ * determinism contract. The tunnel sabotage reads the spread threshold,
+ * so its entry is built over the shipped infestation tuning.
  */
 export const MISSION_OFFER_RULES: MissionOfferRules = {
   "infestation-clearance": INFESTATION_CLEARANCE_OFFER,
@@ -41,4 +47,5 @@ export const MISSION_OFFER_RULES: MissionOfferRules = {
   "wreck-recovery": WRECK_RECOVERY_TRIGGER,
   evacuation: EVACUATION_OFFER,
   "hive-assault": withGreatHiveRefresh(HIVE_ASSAULT_TRIGGER),
+  "tunnel-sabotage": createTunnelSabotageOffer(INFESTATION_TUNING),
 };

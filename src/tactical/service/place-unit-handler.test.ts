@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { BUG_SPECIES } from "../../bugs/data/species";
+import { INFANTRY_UPGRADES } from "../../roster/data/infantry-upgrades";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { ROCKET_SQUAD, SQUAD_TYPES } from "../../roster/data/squad-types";
@@ -127,6 +128,36 @@ describe("createPlaceUnitHandler (#1136)", () => {
     expect(template?.name).toBe("Rocket Squad");
     expect(template?.equipment).toEqual(ROCKET_SQUAD.equipment);
     expect(placed?.ap).toBe(template?.maxAp);
+  });
+
+  it("kits a placed squad with the campaign's infantry upgrades, the capture net among them (#1179)", () => {
+    const mission = field();
+    const command = placeUnit(mission.missionId, "squad", "rocket", {
+      x: 2,
+      y: 0,
+      z: 2,
+    });
+    const kitOf = (deps: PlaceUnitDeps) => {
+      const result = createPlaceUnitHandler(deps)(mission, command, ctx());
+      if (!result.ok)
+        throw new Error(`placement refused: ${result.error.kind}`);
+      const placed = result.value.state.units.at(-1)!;
+      return result.value.state.templates[placed.templateId];
+    };
+    const upgraded = kitOf({
+      ...depsWith(true),
+      infantryUpgrades: [
+        INFANTRY_UPGRADES["squad-armour-1"],
+        INFANTRY_UPGRADES["capture-net"],
+      ],
+    });
+    const plain = kitOf(depsWith(true));
+    expect(plain?.equipment).toEqual(ROCKET_SQUAD.equipment);
+    expect(upgraded?.equipment).toEqual([
+      ...(ROCKET_SQUAD.equipment ?? []),
+      "capture-net",
+    ]);
+    expect(upgraded?.armor).toBe((plain?.armor ?? 0) + 1);
   });
 
   it("places the starter mech, undamaged, wearing the starter loadout", () => {
@@ -258,6 +289,41 @@ describe("createPlaceUnitHandler (#1136)", () => {
       ok: false,
       error: { kind: "tile-occupied", x: 5, y: 0, z: 5 },
     });
+  });
+
+  it("refuses a tile a buried burrower is under, for a bug and a squad alike (#1179)", () => {
+    const mission = missionWith(openField().build(), [
+      unitAt(
+        "burrower",
+        "infantry",
+        { x: 3, y: 0, z: 3 },
+        { team: "bugs", status: ["burrowed"] },
+      ),
+    ]);
+    for (const [kind, id] of [
+      ["bug", "swarmer"],
+      ["squad", "rifle"],
+    ] as const) {
+      expect(
+        handler(
+          mission,
+          placeUnit(mission.missionId, kind, id, { x: 3, y: 0, z: 3 }),
+          ctx(),
+        ),
+        kind,
+      ).toEqual({
+        ok: false,
+        error: { kind: "tile-occupied", x: 3, y: 0, z: 3 },
+      });
+    }
+    // The tile beside it is free: only the burrower's column is held.
+    expect(
+      handler(
+        mission,
+        placeUnit(mission.missionId, "bug", "swarmer", { x: 4, y: 0, z: 3 }),
+        ctx(),
+      ).ok,
+    ).toBe(true);
   });
 
   it("refuses a brute whose block would overlap a unit standing beside the anchor", () => {

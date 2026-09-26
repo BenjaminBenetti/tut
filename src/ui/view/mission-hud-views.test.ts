@@ -1513,8 +1513,12 @@ describe("civilian groups in the HUD (campaign arc §6.4)", () => {
     ]);
   const row = (): HTMLElement | null =>
     root.querySelector<HTMLElement>('[data-objective-id="objective-r"]');
+  // As the player reads it: the counts keep their nouns with no-break
+  // spaces, which rescue-civilians-presentation.test.ts pins.
   const detail = (): string =>
-    row()?.querySelector('[data-role="rescue-progress"]')?.textContent ?? "";
+    (
+      row()?.querySelector('[data-role="rescue-progress"]')?.textContent ?? ""
+    ).replaceAll("\u00a0", " ");
   const civilian = (overrides: Partial<Unit> = {}): Unit =>
     hudUnit("c1", "tdf", "civilian:civilians", 2, 2, {
       kind: "civilian",

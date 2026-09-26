@@ -37,6 +37,26 @@ export function formatPopulation(people: number): string {
   return String(rounded);
 }
 
+// ===========================================
+// Line breaking
+// ===========================================
+
+/** U+00A0: a space a wrapping line never breaks at. */
+export const NO_BREAK_SPACE = "\u00a0";
+
+/**
+ * `text` with every space made a no-break space, so a short phrase
+ * such as a count and its noun ("1 trapped", "1 / 4 aboard") stays on
+ * one line when the line it sits in wraps.
+ */
+export function keepTogether(text: string): string {
+  return text.replaceAll(" ", NO_BREAK_SPACE);
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
 /** One decimal place, dropped when it is zero: `9.7`, `37`. */
 function trimDecimal(value: number): string {
   const fixed = value.toFixed(1);

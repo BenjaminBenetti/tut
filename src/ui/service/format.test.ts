@@ -5,6 +5,8 @@ import {
   formatTechPoints,
   formatPopulation,
   formatWhole,
+  keepTogether,
+  NO_BREAK_SPACE,
 } from "./format";
 
 describe("format", () => {
@@ -12,6 +14,12 @@ describe("format", () => {
     expect(formatCredits(5000)).toBe("¢5,000");
     expect(formatCredits(0)).toBe("¢0");
     expect(formatCredits(1234567.6)).toBe("¢1,234,568");
+  });
+
+  it("keeps a short phrase on one line with no-break spaces", () => {
+    expect(keepTogether("1 trapped")).toBe(`1${NO_BREAK_SPACE}trapped`);
+    expect(keepTogether("1 / 4 aboard")).not.toContain(" ");
+    expect(keepTogether("lost")).toBe("lost");
   });
 
   it("rounds gauges to whole numbers", () => {

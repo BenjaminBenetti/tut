@@ -57,6 +57,7 @@ import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
 import {
   wakingStep,
+  withBroodWaking,
   withBroodWakingAll,
 } from "../../tactical/service/brood-wake-service";
 import { ATTACK } from "../../tactical/model/attack-command";
@@ -75,7 +76,10 @@ import { INTERACT } from "../../tactical/model/interact-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { PLACE_UNIT } from "../../tactical/model/place-unit-command";
-import type { PlaceableUnit } from "../../tactical/model/place-unit-command";
+import type {
+  PlaceableUnit,
+  PlaceUnitCommand,
+} from "../../tactical/model/place-unit-command";
 import { RELOAD } from "../../tactical/model/reload-command";
 import type { AttackDeps } from "../../tactical/service/combat-service";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
@@ -129,7 +133,10 @@ import {
 } from "../../tactical/service/spawn-service";
 import { registryStructureCatalogue } from "../../tactical/service/structure-catalogue";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
-import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
+import {
+  liftTacticalHandler,
+  registerTacticalCommands,
+} from "../../tactical/service/tactical-command-handlers";
 import {
   createBurnStep,
   createHazardReaction,
@@ -142,6 +149,10 @@ import {
   DEFAULT_PHASE_STEPS,
 } from "../../tactical/service/turn-service";
 import type { MapGenRegistries } from "../../mapgen/model/registries";
+import type { CommandHandler } from "../../overworld/model/command-handler";
+import type { TacticalHandler } from "../../tactical/model/tactical-handler";
+import type { InfantryUpgradeDefinition } from "../../roster/model/infantry-upgrade";
+import type { MissionCampaignState } from "../../tactical/model/mission-campaign-state";
 import { infantryUpgradesFor } from "../../tech/service/infantry-upgrade-service";
 import type { GameContent } from "./game-composition";
 
@@ -224,9 +235,15 @@ export interface TacticalComposition {
  * ```
  *   composeGame ──► composeTactical(content, handlers)
  *                     ├── registerTacticalCommands(dispatcher, handlers)
+ *                     │     (shipped: PlaceUnit apart, built per dispatch
+ *                     │      from the campaign's research)
  *                     ├── missionStartDepsFor(ids) ──► startTacticalMission(...)
  *                     └── resolverFor(() => store.getState().activeMission)
  * ```
+ *
+ * The squads a mission deploys and the squads the debug place tool puts
+ * down carry the same infantry upgrades (campaign arc §10.3), from one
+ * derivation over the campaign's tech (#1179).
  */
 export function composeTactical(
   dispatcher: CommandDispatcher<GameState>,
@@ -257,8 +274,28 @@ export function composeTactical(
     // A trapped group to stage a rescue with (campaign arc §6.4).
     civilian: CIVILIAN_TUNING,
   };
-  handlers ??= shippedTacticalHandlers(registries, placement);
-  registerTacticalCommands(dispatcher, handlers);
+  // What research has given every squad (campaign arc §10.3), the
+  // capture net among it (#1179): one derivation for the squads a mission
+  // deploys and the ones the debug place tool puts down.
+  const infantryUpgradesOf = (
+    state: MissionCampaignState,
+  ): readonly InfantryUpgradeDefinition[] =>
+    infantryUpgradesFor(content.tech, content.infantryUpgrades, state.tech);
+  if (handlers === undefined) {
+    handlers = shippedTacticalHandlers(registries, placement);
+    // The shipped placement has no campaign to read the research off, so
+    // the dispatcher gets one built from the campaign on each dispatch.
+    registerTacticalCommands(dispatcher, {
+      ...handlers,
+      [PLACE_UNIT]: undefined,
+    });
+    dispatcher.register(
+      PLACE_UNIT,
+      campaignPlacementHandler<GameState>(placement, infantryUpgradesOf),
+    );
+  } else {
+    registerTacticalCommands(dispatcher, handlers);
+  }
   const missionStartDepsFor = (ids: IdGenerator): MissionStartDeps => ({
     missionTypes: content.missionTypes,
     squadTypes: content.squadTypes,
@@ -287,8 +324,7 @@ export function composeTactical(
     // Every squad deployed carries what the tree has researched for the
     // infantry (campaign arc §10.3), the capture net among it (#1179),
     // read off the campaign at the start.
-    infantryUpgradesFor: (state) =>
-      infantryUpgradesFor(content.tech, content.infantryUpgrades, state.tech),
+    infantryUpgradesFor: infantryUpgradesOf,
   });
   return {
     handlers,
@@ -510,6 +546,44 @@ export function shippedTacticalHandlers(
       ].map((step) => wakingStep(step, BROOD_TUNING.wake)),
       bugPhase,
     ),
+  };
+}
+
+/**
+ * The development tools' `PlaceUnit` on the campaign dispatcher, built
+ * from the campaign on each dispatch (#1179): a placed squad carries the
+ * infantry upgrades the campaign has researched, the capture net among
+ * them, as a squad that deployed does. The rule itself is the shipped
+ * one — the placement deps, waking the broods it disturbs like every
+ * other action — lifted over `activeMission` the same way.
+ *
+ * ```
+ *   (state, PlaceUnit, ctx)
+ *        └──► createPlaceUnitHandler({ ...placement, infantryUpgrades: upgradesOf(state) })
+ *               └──► withBroodWaking ──► liftTacticalHandler ──► (state, command, ctx)
+ * ```
+ *
+ * @param placement - The placement deps: the switch and the catalogues.
+ * @param upgradesOf - The infantry upgrades the campaign has researched.
+ * @returns The campaign-level handler to register for `PlaceUnit`.
+ */
+function campaignPlacementHandler<TState extends MissionCampaignState>(
+  placement: PlaceUnitDeps,
+  upgradesOf: (state: TState) => readonly InfantryUpgradeDefinition[],
+): CommandHandler<TState, PlaceUnitCommand> {
+  return (state, command, ctx) => {
+    const rule = createPlaceUnitHandler({
+      ...placement,
+      infantryUpgrades: upgradesOf(state),
+    });
+    // The decorator passes the command through untouched, so widening
+    // the rule to the union and back is safe, as in `withBroodWakingAll`.
+    const waking = withBroodWaking(rule as TacticalHandler, BROOD_TUNING.wake);
+    return liftTacticalHandler<TState, typeof PLACE_UNIT>(waking)(
+      state,
+      command,
+      ctx,
+    );
   };
 }
 

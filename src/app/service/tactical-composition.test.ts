@@ -277,13 +277,18 @@ describe("composeTactical", () => {
   });
 
   describe("development tools (#1136)", () => {
-    /** A live mission on the composed dispatcher, with the whole starter force placed. */
-    function liveMission(devTools: boolean) {
+    /**
+     * A live mission on the composed dispatcher, with the whole starter
+     * force placed, on a campaign that has researched `unlocked`.
+     */
+    function liveMission(devTools: boolean, unlocked: readonly string[] = []) {
       const dispatcher = createOverworldCommandDispatcher<GameState>();
       const tactical = composeTactical(dispatcher, CONTENT, undefined, {
         devTools,
       });
-      const { state, missionId } = campaignWithMission();
+      const { state: base, missionId } = campaignWithMission();
+      const state: GameState =
+        unlocked.length === 0 ? base : { ...base, tech: { unlocked } };
       const started = startTacticalMission(
         state,
         missionId,
@@ -350,6 +355,36 @@ describe("composeTactical", () => {
       // Vision was recomputed by the lift: a bug put down beside the
       // force is seen at once.
       expect(mission.vision.tdf.spotted).toContain(placed.id);
+    });
+
+    it("in a dev build kits a placed squad with the campaign's research, the capture net once it is bought (#1179)", () => {
+      /** The kit of a rifle squad the tools put down on a campaign that researched `unlocked`. */
+      function placedKit(unlocked: readonly string[]): readonly string[] {
+        const { store, missionId, beside } = liveMission(true, unlocked);
+        const outcome = store.dispatch(
+          placeUnit(missionId, "squad", "rifle", beside),
+        );
+        if (!outcome.ok)
+          throw new Error(`placing failed: ${outcome.error.code}`);
+        const mission = store.getState().activeMission!;
+        const placed = mission.units.at(-1)!;
+        expect(placed).toMatchObject({ kind: "squad", team: "tdf" });
+        return mission.templates[placed.templateId]?.equipment ?? [];
+      }
+      const plain = placedKit([]);
+      expect(plain).not.toContain("capture-net");
+      // Pheromone Analysis hands every squad a net (campaign arc §4); the
+      // frag grenades swap the rifle squad's grenade, as on deployment.
+      expect(placedKit(["tech.pheromone-analysis"])).toEqual([
+        ...plain,
+        "capture-net",
+      ]);
+      expect(
+        placedKit(["tech.frag-grenades", "tech.pheromone-analysis"]),
+      ).toEqual([
+        ...plain.map((id) => (id === "grenade" ? "frag-grenade" : id)),
+        "capture-net",
+      ]);
     });
 
     it("in a dev build places a trapped civilian group that the mission's rescue tracks (campaign arc §6.4)", () => {

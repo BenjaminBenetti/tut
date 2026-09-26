@@ -634,6 +634,29 @@ describe("generateMissions — Hive Assault (arc §6.5)", () => {
     expect(state.missions.map((m) => m.typeId)).not.toContain("hive-assault");
   });
 
+  it("announces the withdrawn assault, with its reason, before anything is offered", () => {
+    const first = generateMissions(
+      fixtureState({ hives: [EAST_HIVE] }),
+      deps(1),
+    ).state;
+    const offer = first.missions.find((m) => m.typeId === "hive-assault");
+
+    const { events } = generateMissions({ ...first, hives: [] }, deps(2));
+
+    expect(events.filter((e) => e.type === MISSION_WITHDRAWN)).toEqual([
+      {
+        type: MISSION_WITHDRAWN,
+        payload: {
+          missionId: offer?.id,
+          typeId: "hive-assault",
+          cityId: offer?.cityId,
+          reason: "target-gone",
+        },
+      },
+    ]);
+    expect(events[0]?.type).toBe(MISSION_WITHDRAWN);
+  });
+
   it("draws the same board with no hive as it did before the type existed", () => {
     const board = (offerRules: MissionOfferRules) =>
       generateMissions(fixtureState(), deps(3, { offerRules }));

@@ -44,7 +44,7 @@ const rules = {
 function fixture(): TacticalState {
   const state = missionWith(walledField(), [
     unitAt("self", "infantry", { x: 1, y: 0, z: 5 }),
-    unitAt("hidden", "infantry", { x: 6, y: 0, z: 5 }, { team: "bugs" }),
+    unitAt("unseen-bug", "infantry", { x: 6, y: 0, z: 5 }, { team: "bugs" }),
   ]);
   return withVision({ state, events: [] }).state;
 }
@@ -321,20 +321,20 @@ describe("Jev observation", () => {
   });
   it("does not change when unseen enemies, cover, schedules or logs change", () => {
     const state = fixture();
-    expect(state.vision.tdf.spotted).not.toContain("hidden");
+    expect(state.vision.tdf.spotted).not.toContain("unseen-bug");
     const index = new TileIndex(state.map);
     const unseen = state.map.tiles.find(
       (tile) => !state.vision.tdf.visible.includes(index.keyOf(tile)),
     )!;
     const before = captureJev(state, "self", rules, undefined, {
       self: "Alpha",
-      hidden: "Secret enemy name",
+      "unseen-bug": "Secret enemy name",
       undeployed: "Undeployed squad name",
     });
     const changed = {
       ...state,
       units: state.units.map((unit) =>
-        unit.id === "hidden"
+        unit.id === "unseen-bug"
           ? { ...unit, hp: 1, pos: { x: 7, y: 0, z: 7 } }
           : unit,
       ),
@@ -342,7 +342,7 @@ describe("Jev observation", () => {
       charges: [
         {
           id: "unseen-charge",
-          ownerId: "hidden",
+          ownerId: "unseen-bug",
           equipmentId: "breaching-charge",
           tile: unseen,
           detonatesOnTurn: 3,
@@ -366,13 +366,13 @@ describe("Jev observation", () => {
     expect(
       captureJev(changed, "self", rules, undefined, {
         self: "Alpha",
-        hidden: "Changed secret enemy name",
+        "unseen-bug": "Changed secret enemy name",
       }),
     ).toEqual(before);
     expect(before.state.actor).toMatchObject({ name: "Alpha" });
     expect(JSON.stringify(before.state)).not.toContain("enemy name");
     expect(JSON.stringify(before.state)).not.toContain("Undeployed");
-    expect(JSON.stringify(before.state)).not.toContain('"hidden"');
+    expect(JSON.stringify(before.state)).not.toContain('"unseen-bug"');
     expect(before.state).not.toHaveProperty("seed");
     expect(before.state).not.toHaveProperty("log");
   });

@@ -61,6 +61,7 @@ import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import { TechTreeScreen } from "../../ui/screen/tech-tree-screen";
 import { TECH_EFFECT_LABELS } from "../../ui/data/tech-effect-labels";
+import { offerWithdrawnNotice } from "../../ui/service/offer-withdrawn-text";
 import { researchRevealedNotice } from "../../ui/service/research-notice-text";
 import { DomTechGraphHost } from "./tech-graph-host";
 import { NoticeBarView } from "../../ui/view/notice-bar-view";
@@ -153,6 +154,19 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     // mission results screen the reveal lands on.
     onResearchRevealed: (nodes) => {
       notices.notify({ tone: "info", message: researchRevealedNotice(nodes) });
+    },
+    // An offer a story pin displaced, or a Hive Assault whose hive is
+    // gone (#1179), is announced rather than left to vanish. The notice
+    // bar outlives the results screen whose Continue ticks the day.
+    onOffersWithdrawn: (withdrawals, state) => {
+      notices.notify({
+        tone: "info",
+        message: offerWithdrawnNotice(
+          withdrawals,
+          state.overworld,
+          game.content.missionTypes,
+        ),
+      });
     },
     ...(debug === undefined ? {} : { debug }),
     // The development tools (#1136) exist in dev builds only; this is

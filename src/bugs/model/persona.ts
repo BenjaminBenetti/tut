@@ -34,7 +34,8 @@ export type PersonaFallback = BehaviourTag | typeof SPECIES_FALLBACK;
  *                      ├── displayName ─────────► unit card, event log, Jev `name`
  *                      ├── entityPrompt ────────► configureJev(unit, { entityPrompt })   (app policy)
  *                      ├── commanderPrompt ─────► the bugs' commander prompt, unless one is set
- *                      └── fallback ────────────► behaviour without Jev (bug phase, failed calls)
+ *                      ├── fallback ────────────► behaviour without Jev (bug phase, failed calls)
+ *                      └── flees ───────────────► Jev is offered the map edge exit, once hurt
  * ```
  *
  * The prompts may only ask for what Jev can observe: faction-shared
@@ -61,6 +62,13 @@ export interface PersonaDefinition {
   readonly commanderPrompt: string;
   /** The deterministic behaviour it plays without Jev. */
   readonly fallback: PersonaFallback;
+  /**
+   * True when the persona runs for a map edge once hurt (the
+   * Broodmother, arc §6.8), so Jev is offered the map edge exit once it
+   * is hurt enough to run (`JevMovementRules.canFlee`). Absent on every
+   * persona that holds its ground.
+   */
+  readonly flees?: boolean;
 }
 
 // ===========================================

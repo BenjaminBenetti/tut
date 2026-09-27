@@ -4,6 +4,7 @@ import type { JevCandidate, JevActionCommand } from "../model/jev-control";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { overwatch } from "../model/overwatch-command";
+import { isMelee } from "../model/weapon-profile";
 import { reload } from "../model/reload-command";
 import { extract } from "../model/extract-command";
 import { interact } from "../model/interact-command";
@@ -89,15 +90,25 @@ export function jevCandidates(
               harvestCarcass(actor.id, carcassId),
               { rng: new Mulberry32Rng(0), ids: new SequentialIdGenerator() },
             ).ok,
+          rules.movement?.leashOf(actor),
         ),
       ),
     "tactical:attack": () => jevAttackCandidates(context),
-    "tactical:overwatch": () =>
+    "tactical:overwatch": () => {
+      // A watch shoots at range; an actor with only claws and jaws gets
+      // nothing from it but a lost turn (#1179, bug 6b).
+      if (
+        (view.templates[actor.templateId]?.weapons ?? []).every((weapon) =>
+          isMelee(weapon.profile),
+        )
+      )
+        return;
       context.add("overwatch", overwatch(actor.id), {
         ap_cost: 1,
         ends_activation: true,
         effect: "React to enemy movement until the next faction turn",
-      }),
+      });
+    },
     "tactical:reload": () => {
       if (actor.ap >= RELOAD_AP_COST && reloadPools(view, actor).ok)
         context.add("reload", reload(actor.id), { ap_cost: RELOAD_AP_COST });

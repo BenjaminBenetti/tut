@@ -114,6 +114,9 @@ const profile = object(
     demoForce: stat,
     endsTurn: bool,
     overwatchShots: count,
+    tags: list(identifier, 16),
+    // Armour points a ballistic hit strips on top of `armorPen` (#1179).
+    pierce: stat,
     heat: stat,
     energy: bool,
     indirect: bool,
@@ -144,6 +147,11 @@ const systems = object(
     coolantUses: count,
     designationAccuracy: stat,
     equipment: list(identifier, 128),
+    // Campaign autopsy traits (#1179): points each tagged hit loses, keyed
+    // by damage tag; armour-piercing rounds; the seismic sensor's reach.
+    resist: dictionary(stat, 16),
+    pierce: stat,
+    seismicRange: stat,
   },
 );
 const equipmentFields = {
@@ -194,11 +202,19 @@ const identityFields = {
   position: coordinate,
   facing: oneOf("n", "e", "s", "w"),
   hp: stat,
-  // Every UnitStatus: a Jev bug observes its own side whole, a sleeping
-  // brood (`dormant`) and a burrower under the ground (`burrowed`) among
-  // them (#1179). The contract test walks UNIT_STATUSES against this.
+  // Every JevStatus: each UnitStatus, since a Jev bug observes its own
+  // side whole, a sleeping brood (`dormant`) and a burrower under the
+  // ground (`burrowed`) among them, and a Broodmother's `fleeing` (#1179).
+  // The contract test walks JEV_STATUSES against this.
   status: list(
-    oneOf("overwatch", "hidden", "suppressed", "dormant", "burrowed"),
+    oneOf(
+      "overwatch",
+      "hidden",
+      "suppressed",
+      "dormant",
+      "burrowed",
+      "fleeing",
+    ),
     16,
   ),
 };
@@ -332,7 +348,11 @@ const stateShape = object(
       }),
     ),
   },
-  { selected_movement: selectedMovement },
+  {
+    selected_movement: selectedMovement,
+    // Sent only to an actor able to flee (#1179): where it leaves the map.
+    map_edge_exit: list(coordinate, 1, 1),
+  },
 );
 
 // ===========================================
@@ -470,6 +490,7 @@ function movementIds(state) {
     "move_west",
     "move_away_from_enemies",
     ...(state.extraction.length ? ["move_to_extraction"] : []),
+    ...(state.map_edge_exit?.length ? ["move_to_map_edge"] : []),
     ...state.entities.map((entity) => `move_to_entity:${entity.id}`),
     ...state.objectives.map((objective) => `move_to_objective:${objective.id}`),
     ...state.visible_carcasses.map(

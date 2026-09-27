@@ -861,6 +861,51 @@ describe("Jev control", () => {
     expect(store.getState()).toBe(before);
     controller.dispose();
   });
+  it("runs a fleeing actor's map edge exit whole, asking no distance question (#1179)", async () => {
+    const transport = {
+      configured: true,
+      ask: vi.fn((request: JevRequest) =>
+        Promise.resolve(
+          reply(
+            request,
+            Object.hasOwn(request.questions.action!.criteria, "move")
+              ? "move"
+              : "move_to_map_edge",
+          ),
+        ),
+      ),
+    };
+    const mission = withVision({
+      state: missionWith(openField().build(), [
+        { ...unitAt("self", "infantry", { x: 3, y: 0, z: 3 }), fleeing: true },
+        unitAt("bug", "infantry", { x: 7, y: 0, z: 7 }, { team: "bugs" }),
+      ]),
+      events: [],
+    }).state;
+    const { store, controller } = setup(transport, {
+      ...campaignOnDay(1, []),
+      activeMission: mission,
+    });
+    const snapshot = controller.capture("self");
+    const exit = (snapshot.state.map_edge_exit as readonly unknown[])[0];
+    expect(exit).toBeDefined();
+    const before = store.getState();
+    await controller.evaluate(snapshot);
+    await controller.step(controller.history[0]!.id);
+    expect(transport.ask).toHaveBeenCalledTimes(2);
+    expect(
+      controller.history[0]!.exchanges.map((entry) => entry.stage),
+    ).toEqual(["action-type", "movement-target"]);
+    const candidate = controller.history[0]!.candidate!;
+    expect(controller.history[0]!.status).toBe("evaluated");
+    if (candidate.command?.type !== "tactical:move")
+      throw new Error("Expected a move");
+    // Three steps: the whole of one AP, which here reaches the edge.
+    expect(candidate.command.payload.path).toHaveLength(3);
+    expect(candidate.command.payload.path.at(-1)).toEqual(exit);
+    expect(store.getState()).toBe(before);
+    controller.dispose();
+  });
   it("retains a failed distance request and never exposes an unscored move for execution", async () => {
     const transport = {
       configured: true,

@@ -122,6 +122,12 @@ export interface JevMovement {
   readonly targetName?: string;
   readonly targetPosition?: TileCoord;
   readonly routeKind: "known-route";
+  /**
+   * Run the whole one-AP route without a distance question (#1179): the
+   * map edge exit, where a partial move only delays a flight the actor
+   * has already chosen. Absent on every other intent.
+   */
+  readonly fullRoute?: boolean;
   readonly stops: readonly {
     readonly steps: number;
     readonly cost: number;

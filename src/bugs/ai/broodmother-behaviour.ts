@@ -6,11 +6,11 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import type { WeaponReachTuning } from "../../tactical/model/weapon-reach-tuning";
 import { unitFootprintSize } from "../../tactical/service/footprint-service";
-import { touchesMapEdge } from "../../tactical/service/map-edge-service";
-import type {
-  MoveGraph,
-  TileKey,
-} from "../../tactical/service/movement-service";
+import {
+  edgeExits,
+  touchesMapEdge,
+} from "../../tactical/service/map-edge-service";
+import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
   buildMoveGraph,
   moveBudget,
@@ -230,12 +230,7 @@ export class BroodmotherBehaviour implements BugBehaviour {
       { ...unit, ap: FLIGHT_SEARCH_AP },
       graph,
     );
-    const exits: { key: TileKey; cost: number }[] = [];
-    for (const [key, tile] of search.tiles) {
-      if (touchesMapEdge(mission.map, tile, size)) {
-        exits.push({ key, cost: search.costs.get(key) ?? 0 });
-      }
-    }
+    const exits = edgeExits(mission.map, search, size);
     const exit = bestBy(exits, (e) => -e.cost, ctx.rng);
     if (exit === undefined) {
       return this.bite(mission, unit, ctx);

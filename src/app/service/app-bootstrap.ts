@@ -5,6 +5,7 @@ import { KeyValueJevPreference } from "../repository/jev-preference-repository";
 import { PERSONAS } from "../../bugs/data/personas";
 import { BUG_SPECIES } from "../../bugs/data/species";
 import { createPersonaLookup } from "../../bugs/service/persona-lookup";
+import { createNamedEnemyMovementRules } from "../../bugs/service/named-enemy-movement-rules";
 import { createSpeciesLookup } from "../../bugs/service/species-lookup";
 import { JevClient } from "./jev-client";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
@@ -342,6 +343,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
                     catalogue: SHIPPED_EQUIPMENT,
                     combat: COMBAT_TUNING,
                   },
+                  // A persona's movement character: who may run for
+                  // the map edge (#1179).
+                  movement: createNamedEnemyMovementRules(personaOf),
                 })
               : undefined,
             // Named enemies go to Jev by default (ADR 0013 §2.8). The

@@ -8,6 +8,7 @@ import { RADAR_TUNING } from "../../data/radar-tuning";
 import { TUNNEL_TUNING } from "../../data/tunnel-tuning";
 import { TURRET_TUNING } from "../../data/turret-tuning";
 import { CHARGE_DETONATED } from "../../model/charge-detonated-event";
+import { OBJECTIVE_UPDATED } from "../../model/objective-updated-event";
 import { endTurn } from "../../model/end-turn-command";
 import { interact } from "../../model/interact-command";
 import type { TacticalOutcome } from "../../model/tactical-handler";
@@ -46,6 +47,7 @@ import {
 import {
   createSealTunnelsObjective,
   createSetTunnelCharge,
+  SEAL_TUNNELS_STEP,
   sealBlownMouths,
   sealProgress,
   tunnelChargeId,
@@ -169,7 +171,7 @@ function refusal(outcome: TacticalOutcome): string {
 describe("seal-tunnels in the tables (arc §6.7)", () => {
   it("is the rule for seal-tunnels, on the shipped 3-turn fuse and the breaching charge", () => {
     expect(OBJECTIVE_RULES["seal-tunnels"].kind).toBe("seal-tunnels");
-    expect(OBJECTIVE_RULES["seal-tunnels"].phaseStep).toBe(sealBlownMouths);
+    expect(OBJECTIVE_RULES["seal-tunnels"].phaseStep).toBe(SEAL_TUNNELS_STEP);
     expect(TUNNEL_TUNING.fuseTurns).toBe(3);
     expect(TUNNEL_TUNING.chargeEquipmentId).toBe(BREACHING_CHARGE.id);
   });
@@ -380,6 +382,68 @@ describe("sealBlownMouths", () => {
     const quiet = mission(undefined, sealed("tunnel-1"));
     expect(sealBlownMouths(quiet, CTX)).toEqual({ state: quiet, events: [] });
     expect(sealBlownMouths(quiet, CTX).state).toBe(quiet);
+  });
+});
+
+describe("SEAL_TUNNELS_STEP (#1179)", () => {
+  /** The objective of the mission. */
+  function seal(state: TacticalState): SealTunnelsObjective {
+    const objective = state.objectives[0];
+    if (objective?.kind !== "seal-tunnels") {
+      throw new Error("fixture lost its seal objective");
+    }
+    return objective;
+  }
+
+  it("caves in the last mouth and records the completion in the same phase start", () => {
+    const lastBlowing: TacticalState = {
+      ...mission(undefined, [
+        ...sealed("tunnel-1", "tunnel-2").slice(0, 2),
+        { ...mouthAt("tunnel-3", 5, 1), chargeId: "tunnel-3-charge" },
+      ]),
+      turn: 6,
+    };
+    const applied = SEAL_TUNNELS_STEP(lastBlowing, CTX);
+    expect(seal(applied.state)).toMatchObject({
+      complete: true,
+      failed: false,
+    });
+    expect(applied.events).toEqual([
+      {
+        type: TUNNEL_SEALED,
+        payload: {
+          mouthId: "tunnel-3",
+          objectiveId: OBJECTIVE.id,
+          chargeId: "tunnel-3-charge",
+          sealed: 3,
+          total: 3,
+        },
+      },
+      {
+        type: OBJECTIVE_UPDATED,
+        payload: { objectiveId: OBJECTIVE.id, complete: true, failed: false },
+      },
+    ]);
+    expect(SEAL_TUNNELS_STEP(applied.state, CTX)).toEqual({
+      state: applied.state,
+      events: [],
+    });
+  });
+
+  it("records the failure once no squad or mech stands, and leaves an open seal alone", () => {
+    const open = mission();
+    expect(SEAL_TUNNELS_STEP(open, CTX).state).toBe(open);
+    const applied = SEAL_TUNNELS_STEP(mission([]), CTX);
+    expect(seal(applied.state)).toMatchObject({
+      complete: false,
+      failed: true,
+    });
+    expect(applied.events).toEqual([
+      {
+        type: OBJECTIVE_UPDATED,
+        payload: { objectiveId: OBJECTIVE.id, complete: false, failed: true },
+      },
+    ]);
   });
 });
 

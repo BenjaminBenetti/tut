@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { jevMovementCandidates } from "./jev-movement";
 import { jevDestinations } from "./jev-destinations";
-import { scaleJevMovement, jevDistancePage } from "./jev-distance";
+import {
+  scaleJevMovement,
+  jevDistancePage,
+  jevFullMovement,
+} from "./jev-distance";
 import { captureJev, jevChoicePage } from "./jev-request";
 import {
   missionWith,
@@ -224,6 +228,109 @@ describe("Jev movement intent planning", () => {
       {},
     ))
       execute(large, scaleJevMovement(move, 2));
+  });
+  it("runs a fleeing actor's map edge exit whole, with no distance question (#1179)", () => {
+    // In the middle of a 12 × 12 field the nearest edge is five tiles
+    // off, more than one AP, so the full one-AP stretch is a prefix.
+    const mission = revealed(
+      missionWith(
+        new FixtureMapBuilder(12, 12, 6).fillGround().build(),
+        [
+          {
+            ...unitAt(
+              "runner",
+              "infantry",
+              { x: 6, y: 0, z: 6 },
+              {
+                team: "bugs",
+              },
+            ),
+            fleeing: true,
+          },
+        ],
+        { phase: "bugs" },
+      ),
+    );
+    const runner = mission.units[0]!;
+    const candidates = jevMovementCandidates(
+      mission,
+      runner,
+      jevDestinations(mission, mission, runner),
+      {},
+    );
+    const exit = candidates.find((c) => c.id === "move_to_map_edge")!;
+    expect(
+      candidates.filter((c) => c.movement?.fullRoute).map((c) => c.id),
+    ).toEqual(["move_to_map_edge"]);
+    const full = jevFullMovement(exit);
+    const path = (candidate: JevCandidate) =>
+      candidate.command?.type === "tactical:move"
+        ? candidate.command.payload.path
+        : [];
+    expect(path(full)).toHaveLength(exit.movement!.stops.at(-1)!.steps);
+    expect(path(full)).toEqual(path(exit));
+    expect(path(full)).toEqual(path(scaleJevMovement(exit, 4)));
+    // The mean of W7's distance answers, 2.23 of 4, cut it short.
+    expect(path(scaleJevMovement(exit, 2.23)).length).toBeLessThan(
+      path(full).length,
+    );
+    expect(JSON.parse(full.description)).toMatchObject({
+      full_route: true,
+      distance_fraction: 1,
+    });
+    execute(mission, full);
+    // Every other move still needs its distance answer.
+    const north = candidates.find((c) => c.id === "move_north")!;
+    expect(() => jevFullMovement(north)).toThrow(/distance answer/);
+  });
+  it("ends every move inside an injected leash, and never further out from beyond it (#1179)", () => {
+    const core = { x: 4, y: 0, z: 8 };
+    const gap = (pos: { x: number; z: number }) =>
+      Math.abs(pos.x - core.x) + Math.abs(pos.z - core.z);
+    /** Each offered move's end, for a keeper at (x, 8) and a squad east. */
+    const endsFrom = (x: number, leash?: { radius: number }) => {
+      const mission = revealed(
+        missionWith(
+          new FixtureMapBuilder(16, 16, 6).fillGround().build(),
+          [
+            unitAt("keeper", "infantry", { x, y: 0, z: 8 }, { team: "bugs" }),
+            unitAt("squad", "infantry", { x: 15, y: 0, z: 8 }),
+          ],
+          { phase: "bugs" },
+        ),
+      );
+      const keeper = mission.units[0]!;
+      return Object.fromEntries(
+        jevMovementCandidates(
+          mission,
+          keeper,
+          jevDestinations(mission, mission, keeper),
+          {},
+          () => false,
+          leash && { core, radius: leash.radius },
+        ).flatMap((candidate) =>
+          candidate.command?.type === "tactical:move"
+            ? [[candidate.id, candidate.command.payload.path.at(-1)!]]
+            : [],
+        ),
+      );
+    };
+    const widest = (ends: Record<string, { x: number; z: number }>) =>
+      Math.max(...Object.values(ends).map(gap));
+    // Unleashed, a keeper two tiles out walks well past three.
+    expect(widest(endsFrom(6))).toBeGreaterThan(3);
+    const inside = endsFrom(6, { radius: 3 });
+    expect(Object.keys(inside).length).toBeGreaterThan(1);
+    expect(widest(inside)).toBe(3);
+    // North within the diamond is (5, 6), two tiles of progress; the
+    // unleashed endpoint (6, 5) would be cut back to (6, 7), one.
+    expect(inside.move_north).toEqual({ x: 5, y: 0, z: 6 });
+    // Eight out with a leash of 3, one AP of three cannot get back
+    // inside: it may still close, never widen.
+    const outside = endsFrom(12, { radius: 3 });
+    expect(Object.keys(outside).length).toBeGreaterThan(0);
+    expect(widest(outside)).toBeLessThanOrEqual(8);
+    expect(outside.move_west).toEqual({ x: 9, y: 0, z: 8 });
   });
   it.each([
     ["tdf", 0, 4],

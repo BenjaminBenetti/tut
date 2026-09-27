@@ -11,6 +11,7 @@ import { equipmentOf } from "../service/equipment-service";
 import { chargesLeft } from "../service/combat-service";
 import { spawnerFootprintTiles } from "../service/footprint-service";
 import { movePerAction } from "../service/movement-service";
+import type { JevStatus } from "../model/jev-status";
 
 /** Build a physically filtered rules input. Never hand Jev the raw mission or its event log. */
 export function jevPerception(
@@ -45,6 +46,8 @@ export function jevPerception(
             maxAp: unit.maxAp,
             passClass: unit.passClass,
             status: unit.status.filter((status) => status !== "hidden"),
+            // Public: the unit card and the log both show it (#1179).
+            ...(unit.fleeing === true ? { fleeing: true } : {}),
             ...(unit.designatedBy === actor.team
               ? {
                   designatedBy: unit.designatedBy,
@@ -159,6 +162,10 @@ export function jevState(
     gameplay: JEV_PROTOCOL.gameplay,
     faction_goal: JEV_PROTOCOL.factionGoals[actor.team],
     extraction: destinations.extraction,
+    // Only an actor that can flee is told where it leaves the map (#1179).
+    ...(destinations.map_edge_exit.length
+      ? { map_edge_exit: destinations.map_edge_exit }
+      : {}),
     last_seen: destinations.last_seen,
     radar_contacts: destinations.radar_contacts,
     friendly_radars: view.radars,
@@ -194,9 +201,7 @@ function describeUnit(
     footprint: template?.footprint ?? 1,
     weapons: template?.weapons,
     equipment: template?.equipment,
-    status: friendly
-      ? unit.status
-      : unit.status.filter((status) => status !== "hidden"),
+    status: jevStatusesOf(unit, friendly),
     ...(friendly
       ? {
           ap: unit.ap,
@@ -229,4 +234,24 @@ function describeUnit(
         }
       : {}),
   };
+}
+
+/**
+ * The statuses Jev reads on a unit: its `Unit.status`, less an enemy's
+ * concealment, plus `fleeing` once it has turned to escape (#1179).
+ *
+ * @param unit - The unit described.
+ * @param friendly - Whether it is on the actor's side.
+ * @returns Its wire statuses, `UnitStatus`es first.
+ */
+function jevStatusesOf(
+  unit: Pick<Unit, "status" | "fleeing">,
+  friendly: boolean,
+): readonly JevStatus[] {
+  return [
+    ...(friendly
+      ? unit.status
+      : unit.status.filter((status) => status !== "hidden")),
+    ...(unit.fleeing === true ? (["fleeing"] as const) : []),
+  ];
 }

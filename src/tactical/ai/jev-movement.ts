@@ -1,6 +1,7 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { JevCandidate, JevMovement } from "../model/jev-control";
+import type { JevLeash } from "../model/jev-movement-rules";
 import type { TacticalState } from "../model/tactical-state";
 import { passMaskFor, type Unit } from "../model/unit";
 import { move } from "../model/move-command";
@@ -35,6 +36,7 @@ export function jevMovementCandidates(
   destinations: JevDestinationSources,
   names: Readonly<Record<string, string>>,
   canHarvestFrom: JevHarvestArrival = () => false,
+  leash?: JevLeash,
 ): readonly JevCandidate[] {
   if (actor.kind === "turret" || actor.ap <= 0 || actor.hp <= 0) return [];
   const budget = moveBudget(navigation, { ...actor, ap: 1 });
@@ -48,6 +50,8 @@ export function jevMovementCandidates(
   );
   const origin = graph.index.keyOf(actor.pos);
   const candidates: JevCandidate[] = [];
+  const size = unitFootprintSize(navigation, actor);
+  const leashed = leashCheck(leash, actor.pos, size);
   /** Store legal prefixes locally while offering Jev only an intent and identity. */
   const add = (
     id: string,
@@ -61,8 +65,9 @@ export function jevMovementCandidates(
     const path = route.filter(
       (pos) => search.costs.get(graph.index.keyOf(pos))! <= budget,
     );
+    // A leashed actor stops only inside its leash (#1179, bug 6c).
     const stops = path.flatMap((pos, index) =>
-      fitsIntent(pos)
+      fitsIntent(pos) && leashed(pos)
         ? [
             {
               steps: index + 1,
@@ -82,7 +87,6 @@ export function jevMovementCandidates(
       movement: { ...intent, stops },
     });
   };
-  const size = unitFootprintSize(navigation, actor);
   const providers = {
     entities: () => {
       for (const target of destinations.entities) {
@@ -243,10 +247,33 @@ export function jevMovementCandidates(
         );
       }
     },
+    map_edge_exit: () => {
+      // The exit tile is an anchor of this same search (jevMapEdgeExit).
+      for (const exit of destinations.map_edge_exit) {
+        const key = graph.index.keyOf(exit);
+        add(
+          "move_to_map_edge",
+          "Run for the map edge exit, the edge tile reached by the cheapest route, using the whole one-AP stretch of it. A fleeing unit leaves the map alive once its footprint touches any edge tile.",
+          search.costs.has(key) ? key : undefined,
+          {
+            intent: "approach_map_edge",
+            targetId: "map_edge",
+            targetName: "Map edge exit",
+            targetPosition: exit,
+            routeKind: "known-route",
+            // A flight runs flat out: no distance question (bug 4).
+            fullRoute: true,
+          },
+        );
+      }
+    },
   } satisfies Readonly<Record<keyof JevDestinationSources, () => void>>;
   for (const provide of Object.values(providers)) provide();
   const reachable = [...search.costs]
-    .filter(([, cost]) => cost > 0 && cost <= budget)
+    .filter(
+      ([key, cost]) =>
+        cost > 0 && cost <= budget && leashed(search.tiles.get(key)!),
+    )
     .map(([key]) => key);
   for (const [direction, dx, dz] of [
     ["north", 0, -1],
@@ -315,6 +342,40 @@ export function jevMovementCandidates(
     );
   }
   return candidates;
+}
+
+// ===========================================
+// Leash
+// ===========================================
+
+/**
+ * Where a leashed actor may end a move (#1179): within `radius` of its
+ * core by the Sovereign fallback's measure, the ground-plane Manhattan
+ * distance from the nearest tile of its block. One already outside it
+ * (placed or pushed there) may still move, but never further out.
+ *
+ * ```
+ *   no leash            ──► anywhere
+ *   gap(pos) ≤ max(radius, gap(where it stands)) ──► allowed
+ * ```
+ *
+ * @param leash - The actor's leash, if any.
+ * @param from - Where the actor stands.
+ * @param size - Its tiles per side.
+ * @returns A test for a move's end tile.
+ */
+function leashCheck(
+  leash: JevLeash | undefined,
+  from: TileCoord,
+  size: number,
+): (pos: TileCoord) => boolean {
+  if (leash === undefined) return () => true;
+  /** Ground tiles from the nearest tile of the block at `anchor` to the core. */
+  const gap = (anchor: TileCoord): number =>
+    Math.max(0, anchor.x - leash.core.x, leash.core.x - (anchor.x + size - 1)) +
+    Math.max(0, anchor.z - leash.core.z, leash.core.z - (anchor.z + size - 1));
+  const reach = Math.max(leash.radius, gap(from));
+  return (pos) => gap(pos) <= reach;
 }
 
 // ===========================================

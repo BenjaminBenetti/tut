@@ -11,6 +11,7 @@ import { TEAM_FOR_PHASE } from "../../tactical/model/tactical-state";
 import { captureJev, jevChoicePage } from "../../tactical/ai/jev-request";
 import {
   jevDistancePage,
+  jevFullMovement,
   scaleJevMovement,
 } from "../../tactical/ai/jev-distance";
 import type { JevActionRules } from "../../tactical/ai/jev-actions";
@@ -470,6 +471,12 @@ export class JevController implements JevInspector {
           Object.hasOwn(page.request.questions.action!.criteria, entry.id),
       );
       if (!candidate) throw new Error("Unknown Jev action");
+      // The map edge exit runs whole; every other move asks how far (#1179).
+      if (candidate.movement?.fullRoute === true)
+        return this.update(id, {
+          status: "evaluated",
+          candidate: jevFullMovement(candidate),
+        });
       if (candidate.movement)
         return this.update(id, {
           status: "ready",

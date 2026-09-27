@@ -14,7 +14,10 @@ import type {
 import type { Unit } from "../../model/unit";
 import { isInfantrySquad } from "../../model/unit";
 import { WRECK_WORKED } from "../../model/wreck-worked-event";
+import type { PhaseStep } from "../../model/phase-step";
 import { nearestFootprintTile } from "./footprint-tile";
+import { createObjectiveFlagMirror } from "./objective-flag-mirror";
+import type { LiveObjectiveRule } from "./objective-flag-mirror";
 
 // ===========================================
 // Progress
@@ -180,6 +183,35 @@ export const workWreck: ObjectiveInteraction = (
 };
 
 // ===========================================
+// Live rule and phase step
+// ===========================================
+
+/**
+ * Strip-wreck's own live rule, read from the mission by `stripStatus`:
+ * the rules' `complete` and `failed`, and what its phase step records.
+ */
+const STRIP_WRECK_LIVE: LiveObjectiveRule<"strip-wreck"> = {
+  kind: "strip-wreck",
+  /** Done once the parts are loose and a squad that worked it has boarded. */
+  complete(objective, mission) {
+    return stripStatus(objective, mission) === "complete";
+  },
+  /** Lost with the mission, or with every squad that could still finish it. */
+  failed(objective, mission) {
+    return stripStatus(objective, mission) === "failed";
+  },
+};
+
+/**
+ * Records the live status on every strip's `complete` and `failed`
+ * flags at each phase start, and announces a change through
+ * `ObjectiveUpdated` (#1179), so Jev's objective list, the log and the
+ * fog blips see a strip end as the rules do.
+ */
+export const STRIP_WRECK_STEP: PhaseStep =
+  createObjectiveFlagMirror(STRIP_WRECK_LIVE);
+
+// ===========================================
 // Rules
 // ===========================================
 
@@ -194,6 +226,7 @@ export const workWreck: ObjectiveInteraction = (
  *   failed         the mission was lost; or nobody is left who could finish:
  *                    not stripped and no squad standing, or
  *                    stripped and no worker standing or aboard
+ *   phaseStep      STRIP_WRECK_STEP: flags mirrored, ObjectiveUpdated
  *   interaction    workWreck
  *   reachable      the wreck's tile nearest the unit, for a squad, while
  *                  it is not stripped and not yet worked this turn
@@ -204,15 +237,8 @@ export const workWreck: ObjectiveInteraction = (
  * ```
  */
 export const STRIP_WRECK_OBJECTIVE: ObjectiveRules<"strip-wreck"> = {
-  kind: "strip-wreck",
-  /** Done once the parts are loose and a squad that worked it has boarded. */
-  complete(objective, mission) {
-    return stripStatus(objective, mission) === "complete";
-  },
-  /** Lost with the mission, or with every squad that could still finish it. */
-  failed(objective, mission) {
-    return stripStatus(objective, mission) === "failed";
-  },
+  ...STRIP_WRECK_LIVE,
+  phaseStep: STRIP_WRECK_STEP,
   interaction: workWreck,
   /** The wreck tile nearest the unit, when that unit could work it now. */
   reachable(objective, mission, unit) {

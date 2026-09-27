@@ -22,6 +22,7 @@ import { COMBAT_TUNING } from "../../src/tactical/data/combat-tuning.ts";
 import { GENERATOR_TUNING } from "../../src/tactical/data/generator-tuning.ts";
 import { generatorUnit } from "../../src/tactical/service/unit-factory.ts";
 import { UNIT_KINDS, UNIT_STATUSES } from "../../src/tactical/model/unit.ts";
+import { JEV_STATUSES } from "../../src/tactical/model/jev-status.ts";
 import { SequentialIdGenerator } from "../../src/core/service/sequential-id-generator.ts";
 import { OBJECTIVE_TUNING } from "../../src/tactical/data/objective-tuning.ts";
 import {
@@ -30,6 +31,11 @@ import {
 } from "../../src/tactical/service/objective-service.ts";
 import { createHarvestHandler } from "../../src/tactical/service/harvest-service.ts";
 import { FixtureMapBuilder } from "../../src/mapgen/service/fixture-map-builder.ts";
+import {
+  FULL_EQUIPMENT,
+  FULL_MECH_SYSTEMS,
+  FULL_WEAPON_PROFILE,
+} from "../../src/tactical/ai/jev-full-profiles.test-helper.ts";
 
 /** Real observations and legal choices with renamed loadouts, every item kind and rich shared intel. */
 function scenario(team, passClass = "infantry") {
@@ -83,23 +89,10 @@ function scenario(team, passClass = "infantry") {
         [template.id]: {
           ...template,
           equipment: items.map((item) => item.id),
+          // Every field the game's types define (#1179): a new optional
+          // field fails tsc in the helper, then this contract.
           systems: {
-            heatCapacity: 100,
-            cooling: 2,
-            idleHeat: 0,
-            movementHeat: 1,
-            jumpRange: 4,
-            jumpHeight: 4,
-            jumpHeat: 1,
-            allTerrain: true,
-            braceAccuracy: 5,
-            stationaryAccuracy: 5,
-            energyHeatFactor: 0.5,
-            ablativeHits: 2,
-            ablativeAbsorption: 1,
-            coolantUses: 2,
-            designationAccuracy: 5,
-            sightBonus: 1,
+            ...FULL_MECH_SYSTEMS,
             equipment: items.map((item) => item.id),
           },
           weapons: [
@@ -108,20 +101,8 @@ function scenario(team, passClass = "infantry") {
               name: "New weapon",
               charges: 3,
               profile: {
+                ...FULL_WEAPON_PROFILE,
                 ...template.weapons[0].profile,
-                aoe: { radius: 2, falloff: 0.4 },
-                aoeEffect: { kind: "smoke", chance: 1, falloff: 0.1 },
-                heat: 1,
-                energy: true,
-                indirect: true,
-                guided: true,
-                requiresBrace: true,
-                minRange: 0,
-                beam: false,
-                cooldown: 1,
-                endsTurn: false,
-                overwatchShots: 2,
-                demoForce: 1,
               },
             },
           ],
@@ -224,8 +205,9 @@ function requestsFor(state, rules) {
         visit(jevChoicePage(snapshot, group));
   };
   visit(jevChoicePage(snapshot));
+  // As the controller does: the map edge exit runs whole, unasked (#1179).
   for (const candidate of snapshot.candidates.filter(
-    (candidate) => candidate.movement,
+    (candidate) => candidate.movement && !candidate.movement.fullRoute,
   ))
     visit(jevDistancePage(snapshot, candidate));
   return pages;
@@ -270,6 +252,94 @@ describe("Relay compatibility with actual game requests", () => {
       expect(validGameRequest(request)).toBe(true);
     },
   );
+
+  it("accepts a fleeing actor, a fleeing ally and a fleeing enemy (#1179)", () => {
+    const bugs = scenario("bugs");
+    const fleeing = {
+      ...bugs.state,
+      units: bugs.state.units.map((unit) =>
+        unit.id === "actor" || unit.id === "ally"
+          ? { ...unit, fleeing: true }
+          : unit,
+      ),
+    };
+    const pages = requestsFor(fleeing, bugs.rules);
+    const state = pages[0].request.state;
+    expect(state.actor.status).toContain("fleeing");
+    expect(
+      state.entities.find((entity) => entity.id === "ally")?.status,
+    ).toContain("fleeing");
+    for (const { stage, request } of pages)
+      expect(validGameRequest(request), stage).toBe(true);
+
+    const tdf = scenario("tdf");
+    const seen = {
+      ...tdf.state,
+      units: tdf.state.units.map((unit) =>
+        unit.id === "enemy" ? { ...unit, fleeing: true } : unit,
+      ),
+    };
+    const request = requestsFor(seen, tdf.rules)[0].request;
+    expect(
+      request.state.entities.find((entity) => entity.id === "enemy")?.status,
+    ).toEqual(["fleeing"]);
+    expect(validGameRequest(request)).toBe(true);
+  });
+
+  it("accepts a fleeing actor's map edge exit on every stage, and refuses a forged one (#1179)", () => {
+    const { state, rules } = scenario("bugs");
+    const fleeing = {
+      ...state,
+      units: state.units.map((unit) =>
+        unit.id === "actor" ? { ...unit, fleeing: true } : unit,
+      ),
+    };
+    const pages = requestsFor(fleeing, rules);
+    const first = pages[0].request;
+    expect(first.state.map_edge_exit).toHaveLength(1);
+    const target = pages.find(
+      ({ request }) =>
+        request.questions.action?.criteria["move_to_map_edge"] !== undefined,
+    );
+    expect(target?.stage).toBe("movement-target");
+    // It runs whole, so no distance question is ever sent for it.
+    expect(
+      pages.some(
+        ({ request }) =>
+          request.state.selected_movement?.intent === "approach_map_edge",
+      ),
+    ).toBe(false);
+    expect(pages.some(({ stage }) => stage === "movement-distance")).toBe(true);
+    for (const { stage, request } of pages)
+      expect(validGameRequest(request), stage).toBe(true);
+
+    // The exit move needs the exit in the state, and one exit only.
+    const unsourced = structuredClone(target.request);
+    delete unsourced.state.map_edge_exit;
+    expect(validGameRequest(unsourced)).toBe(false);
+    const doubled = structuredClone(first);
+    doubled.state.map_edge_exit = [
+      ...doubled.state.map_edge_exit,
+      ...doubled.state.map_edge_exit,
+    ];
+    expect(validGameRequest(doubled)).toBe(false);
+    // Not offered to an actor that cannot flee.
+    expect(requestsFor(state, rules)[0].request.state).not.toHaveProperty(
+      "map_edge_exit",
+    );
+  });
+
+  it("names every status Jev can report in the relay's shape (#1179)", () => {
+    // UNIT_STATUSES are walked on an ally above; the flag statuses ride
+    // on their own fields, so each is checked by name here.
+    const { state, rules } = scenario("bugs");
+    const request = requestsFor(state, rules)[0].request;
+    for (const status of JEV_STATUSES) {
+      const probe = structuredClone(request);
+      probe.state.actor.status = [status];
+      expect(validGameRequest(probe), status).toBe(true);
+    }
+  });
 
   it.each(["tdf", "bugs"])(
     "accepts defence objectives and generator targets for %s",
@@ -402,6 +472,58 @@ describe("Relay compatibility with actual game requests", () => {
         ).toBe(true);
     },
   );
+
+  it("accepts every optional field the game's weapon, systems and equipment types define (#1179)", () => {
+    // Armour-Piercing Rounds put `pierce` on a mech's ballistic weapons
+    // and the relay refused it live. The helper's objects are
+    // `Required<…>` of the game's own types, so this covers the next
+    // new field as well.
+    const { state, rules } = scenario("tdf", "mech");
+    const template = state.templates[state.units[0].templateId];
+    const mission = {
+      ...state,
+      templates: {
+        ...state.templates,
+        [template.id]: {
+          ...template,
+          equipment: [...template.equipment, FULL_EQUIPMENT.id],
+        },
+      },
+    };
+    const catalogue = [
+      ...rules.equipment.catalogue.ids.map((id) =>
+        rules.equipment.catalogue.get(id),
+      ),
+      FULL_EQUIPMENT,
+    ];
+    const pages = requestsFor(mission, {
+      ...rules,
+      equipment: {
+        ...rules.equipment,
+        catalogue: {
+          ids: catalogue.map((item) => item.id),
+          get: (id) => catalogue.find((item) => item.id === id),
+        },
+      },
+    });
+    const actor = pages[0].request.state.actor;
+    expect(Object.keys(actor.weapons[0].profile).sort()).toEqual(
+      Object.keys(FULL_WEAPON_PROFILE).sort(),
+    );
+    expect(Object.keys(actor.systems).sort()).toEqual(
+      Object.keys(FULL_MECH_SYSTEMS).sort(),
+    );
+    expect(
+      Object.keys(
+        pages[0].request.state.equipment_definitions[FULL_EQUIPMENT.id],
+      ).sort(),
+    ).toEqual(Object.keys(FULL_EQUIPMENT).sort());
+    for (const page of pages)
+      expect(
+        validGameRequest(page.request),
+        `${page.stage}: ${JSON.stringify(page.request.questions).slice(0, 200)}`,
+      ).toBe(true);
+  });
 
   it("accepts extraction, uncertain intel and a 100-entity observation without reopening arbitrary JSON", () => {
     const { rules } = scenario("tdf");

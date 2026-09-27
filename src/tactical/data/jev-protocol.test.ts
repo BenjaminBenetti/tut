@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { UNIT_STATUSES } from "../model/unit";
+import { JEV_STATUSES } from "../model/jev-status";
 import { OBJECTIVE_RULES } from "../service/objectives/objective-rules";
 import JEV_PROTOCOL from "./jev-protocol.json";
 
@@ -25,8 +25,9 @@ describe("jev-protocol.json", () => {
     );
   });
 
-  it("describes every unit status, in the model's order, and no other", () => {
-    expect(Object.keys(gameplay.statuses)).toEqual([...UNIT_STATUSES]);
+  it("describes every status Jev reads, in the model's order, and no other", () => {
+    // Every UnitStatus, then the flag statuses such as `fleeing`.
+    expect(Object.keys(gameplay.statuses)).toEqual([...JEV_STATUSES]);
   });
 
   it("gives every kind and status a description of its own", () => {

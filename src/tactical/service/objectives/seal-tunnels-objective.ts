@@ -21,6 +21,8 @@ import type { TunnelTuning } from "../../model/tunnel-tuning";
 import type { Unit } from "../../model/unit";
 import { isCombatUnit, isStandingForce } from "../../model/unit";
 import { nearestFootprintTile } from "./footprint-tile";
+import { createObjectiveFlagMirror } from "./objective-flag-mirror";
+import type { LiveObjectiveRule } from "./objective-flag-mirror";
 
 // ===========================================
 // Types
@@ -283,6 +285,49 @@ export const sealBlownMouths: PhaseStep = (mission) => {
   return { state, events };
 };
 
+/**
+ * Seal-tunnels' own live rule, read from the mouths: the rules'
+ * `complete` and `failed`, and what `SEAL_TUNNELS_STEP` records.
+ */
+const SEAL_TUNNELS_LIVE: LiveObjectiveRule<"seal-tunnels"> = {
+  kind: "seal-tunnels",
+  /** Done once every named mouth has caved in. */
+  complete(objective, mission) {
+    return allSealed(objective, mission);
+  },
+  /** Lost with the mission, or with every squad and mech that could still finish it. */
+  failed(objective, mission) {
+    return (
+      !allSealed(objective, mission) &&
+      (mission.outcome === "lost" || !mission.units.some(isStandingForce))
+    );
+  },
+};
+
+/** Records `SEAL_TUNNELS_LIVE` on the flags; see `createObjectiveFlagMirror`. */
+const mirrorSealFlags: PhaseStep = createObjectiveFlagMirror(SEAL_TUNNELS_LIVE);
+
+/**
+ * The kind's phase step (#1179): caves in the blown mouths, then
+ * records the live status on every seal-tunnels objective's `complete`
+ * and `failed` flags, announced through `ObjectiveUpdated`, so the
+ * last mouth caving in completes the objective in the same phase start
+ * and Jev's objective list, the log and the tracker's failed row see it.
+ *
+ * ```
+ *   mission ──► sealBlownMouths ──► mirrorSealFlags ──► mission'
+ *               TunnelSealed…        ObjectiveUpdated?
+ * ```
+ */
+export const SEAL_TUNNELS_STEP: PhaseStep = (mission, ctx) => {
+  const sealed = sealBlownMouths(mission, ctx);
+  const mirrored = mirrorSealFlags(sealed.state, ctx);
+  return {
+    state: mirrored.state,
+    events: [...sealed.events, ...mirrored.events],
+  };
+};
+
 // ===========================================
 // Rules
 // ===========================================
@@ -297,7 +342,8 @@ export const sealBlownMouths: PhaseStep = (mission) => {
  *   failed         not complete, and the mission was lost or no squad
  *                  or mech is left standing to set or outlast a charge
  *   interaction    createSetTunnelCharge(tuning)
- *   phaseStep      sealBlownMouths
+ *   phaseStep      SEAL_TUNNELS_STEP: sealBlownMouths, then the flags
+ *                  mirrored with ObjectiveUpdated
  *   reachable      the open, uncharged mouth nearest the unit (its tile
  *                  nearest the unit), for a squad or a mech
  *   markers        every mouth not yet sealed
@@ -317,20 +363,9 @@ export function createSealTunnelsObjective(
   tuning: SealTunnelsTuning,
 ): ObjectiveRules<"seal-tunnels"> {
   return {
-    kind: "seal-tunnels",
-    /** Done once every named mouth has caved in. */
-    complete(objective, mission) {
-      return allSealed(objective, mission);
-    },
-    /** Lost with the mission, or with every squad and mech that could still finish it. */
-    failed(objective, mission) {
-      return (
-        !allSealed(objective, mission) &&
-        (mission.outcome === "lost" || !mission.units.some(isStandingForce))
-      );
-    },
+    ...SEAL_TUNNELS_LIVE,
     interaction: createSetTunnelCharge(tuning),
-    phaseStep: sealBlownMouths,
+    phaseStep: SEAL_TUNNELS_STEP,
     /** The open, uncharged mouth nearest the unit, when that unit could set a charge. */
     reachable(objective, mission, unit) {
       if (unit !== undefined && !isCombatUnit(unit)) {

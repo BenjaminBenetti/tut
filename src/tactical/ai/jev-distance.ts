@@ -50,12 +50,49 @@ export function scaleJevMovement(
 ): JevCandidate {
   if (!Number.isFinite(score) || score < 0 || score > 4)
     throw new Error("Invalid Jev movement distance score");
+  return stopAlong(candidate, score / 4, score);
+}
+
+/**
+ * The whole one-AP route of a movement that asks no distance question
+ * (`JevMovement.fullRoute`, #1179): the map edge exit. The model's
+ * distance answers are nearly always "full" or "minimal", and their
+ * probability-weighted mean lands near "half", so a fleeing actor asked
+ * the question ran about 55 % of its movement (bug 4).
+ *
+ * ```
+ *   move_to_map_edge ──► jevFullMovement ──► the full one-AP path
+ *   any other move   ──► jevDistancePage ──► score ──► scaleJevMovement
+ * ```
+ *
+ * @param candidate - A movement candidate marked `fullRoute`.
+ * @returns It with its full one-AP path and a description of the stop.
+ */
+export function jevFullMovement(candidate: JevCandidate): JevCandidate {
+  if (candidate.movement?.fullRoute !== true)
+    throw new Error("Selected movement needs a distance answer");
+  return stopAlong(candidate, 1);
+}
+
+/**
+ * Cut a movement candidate's route at the first legal stop whose terrain
+ * cost reaches `fraction` of the full one-AP cost, and describe it.
+ *
+ * @param candidate - The movement candidate.
+ * @param fraction - Share of the route's cost to cover, 0 to 1.
+ * @param score - The distance answer it came from; absent for a full route.
+ * @returns The candidate with its cut path and a description.
+ */
+function stopAlong(
+  candidate: JevCandidate,
+  fraction: number,
+  score?: number,
+): JevCandidate {
   const movement = candidate.movement;
   const command = candidate.command;
   if (!movement || command?.type !== "tactical:move" || !movement.stops.length)
     throw new Error("Selected movement has no legal route");
   const full = movement.stops.at(-1)!;
-  const fraction = score / 4;
   const stop =
     movement.stops.find((item) => item.cost >= full.cost * fraction) ?? full;
   const path = command.payload.path.slice(0, stop.steps);
@@ -66,14 +103,17 @@ export function scaleJevMovement(
       intent: movement.intent,
       target_id: movement.targetId,
       target_name: movement.targetName,
-      score,
+      ...(score === undefined ? { full_route: true } : { score }),
       distance_fraction: fraction,
       available_distance: full.cost,
       movement_points: stop.cost,
       path_steps: path.length,
       destination: path.at(-1),
       ap_cost: 1,
-      rounding: "up to next legal stopping point",
+      rounding:
+        score === undefined
+          ? "none: the full route, with no distance question"
+          : "up to next legal stopping point",
     }),
   };
 }

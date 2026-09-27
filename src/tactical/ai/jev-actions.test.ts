@@ -136,6 +136,38 @@ describe("Jev capability discovery", () => {
     );
     expect(build.unit.charges).toMatchObject({ acid: 2 });
   });
+  it("offers overwatch only to an actor with a weapon that reaches beyond contact (#1179)", () => {
+    // The Broodmother's bite is range 1: a watch would never fire.
+    const base = missionWith(
+      openField().build(),
+      [
+        unitAt("self", "infantry", { x: 1, y: 0, z: 1 }, { team: "bugs" }),
+        unitAt("enemy", "infantry", { x: 5, y: 0, z: 1 }),
+      ],
+      { phase: "bugs" },
+    );
+    const weapon = base.templates[base.units[0]!.templateId]!.weapons[0]!;
+    const bite = {
+      ...weapon,
+      id: "bite",
+      name: "Bite",
+      profile: { ...weapon.profile, range: 1 },
+    };
+    const spit = {
+      ...weapon,
+      id: "spit",
+      name: "Spit",
+      profile: { ...weapon.profile, range: 2 },
+    };
+    const offers = (weapons: UnitTemplate["weapons"]) =>
+      captureJev(fitted(base, { weapons }), "self", rules).candidates.some(
+        (candidate) => candidate.category === "overwatch",
+      );
+    expect(offers([bite])).toBe(false);
+    expect(offers([bite, { ...bite, id: "claw", name: "Claw" }])).toBe(false);
+    expect(offers([bite, spit])).toBe(true);
+    expect(offers([spit])).toBe(true);
+  });
   it.each<Team>(["tdf", "bugs"])(
     "discovers newly named weapons and every usable item kind on %s loadouts",
     (team) => {

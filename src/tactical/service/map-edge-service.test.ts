@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { leaveByMapEdge, touchesMapEdge } from "./map-edge-service";
+import { edgeExits, leaveByMapEdge, touchesMapEdge } from "./map-edge-service";
+import { buildMoveGraph, searchMoves } from "./movement-service";
 import {
   missionWith,
   openField,
@@ -30,6 +31,60 @@ describe("touchesMapEdge (#1179)", () => {
 
   it("ignores levels: a rooftop on the ring is the edge too", () => {
     expect(touchesMapEdge(MAP, { x: 0, y: 4, z: 4 }, 1)).toBe(true);
+  });
+});
+
+describe("edgeExits (#1179)", () => {
+  it("lists every reached anchor whose block touches the edge, with its cost, in search order", () => {
+    const mission = missionWith(openField().build(), [
+      unitAt("runner", "infantry", { x: 3, y: 0, z: 3 }),
+    ]);
+    const runner = mission.units[0]!;
+    const search = searchMoves(
+      mission,
+      { ...runner, ap: 100 },
+      buildMoveGraph(mission.map),
+    );
+    const exits = edgeExits(mission.map, search, 1);
+    const reached = [...search.tiles].filter(([, tile]) =>
+      touchesMapEdge(mission.map, tile, 1),
+    );
+    // The 8×8 field's ring is 28 tiles, all reachable in the open.
+    expect(exits).toHaveLength(28);
+    expect(exits.map((exit) => exit.key)).toEqual(reached.map(([key]) => key));
+    for (const exit of exits)
+      expect(exit.cost).toBe(search.costs.get(exit.key));
+    // From (3, 3) the nearest ring tiles are three steps away.
+    expect(Math.min(...exits.map((exit) => exit.cost))).toBe(3);
+  });
+
+  it("finds none when the search reaches no edge, and counts a block's far tiles", () => {
+    // Ground tiles moved onto MAP's 10 × 8 grid; only x and z matter.
+    const ground = openField().build().tiles[0]!;
+    const tile = (x: number, z: number) => ({ ...ground, x, y: 0, z });
+    const search = {
+      tiles: new Map([
+        [1, tile(4, 3)],
+        [2, tile(6, 3)],
+      ]),
+      costs: new Map([
+        [1, 0],
+        [2, 2],
+      ]),
+    };
+    expect(edgeExits(MAP, search, 1)).toEqual([]);
+    // A 3×3 anchored at x = 7 would cover x 9, the east edge; at 6, not.
+    expect(edgeExits(MAP, search, 3)).toEqual([]);
+    expect(
+      edgeExits(
+        MAP,
+        {
+          tiles: new Map([...search.tiles, [3, tile(7, 3)]]),
+          costs: new Map([...search.costs, [3, 3]]),
+        },
+        3,
+      ),
+    ).toEqual([{ key: 3, cost: 3 }]);
   });
 });
 

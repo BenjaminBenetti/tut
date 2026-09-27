@@ -586,6 +586,31 @@ describe("Jev observation", () => {
     };
     expect(captureJev(changed, "self", rules)).toEqual(before);
   });
+  it("reports a fleeing unit's flight as a status, on itself and to the other side (#1179)", () => {
+    const base = missionWith(openField().build(), [
+      {
+        ...unitAt("mother", "infantry", { x: 2, y: 0, z: 2 }, { team: "bugs" }),
+        status: ["hidden" as const],
+        fleeing: true,
+      },
+      unitAt("squad", "infantry", { x: 4, y: 0, z: 2 }),
+    ]);
+    const state = withVision({
+      state: { ...base, phase: "bugs" },
+      events: [],
+    }).state;
+    expect(captureJev(state, "mother", rules).state.actor).toMatchObject({
+      status: ["hidden", "fleeing"],
+    });
+    const seen = captureJev({ ...state, phase: "player" }, "squad", rules);
+    const entities = seen.state.entities as readonly {
+      readonly id: string;
+      readonly status: readonly string[];
+    }[];
+    expect(entities.find((unit) => unit.id === "mother")?.status).toEqual([
+      "fleeing",
+    ]);
+  });
   it("keeps all actions reachable through bounded Choice pages", () => {
     const snapshot = captureJev(fixture(), "self", rules);
     const candidates: JevCandidate[] = Array.from(

@@ -3,6 +3,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalState } from "../model/tactical-state";
 import type { UnitId } from "../model/unit";
 import { footprintTiles } from "./footprint-service";
+import type { MoveSearch, TileKey } from "./movement-service";
 
 // ===========================================
 // Map edge
@@ -42,6 +43,47 @@ export function touchesMapEdge(
       tile.x === map.width - 1 ||
       tile.z === map.depth - 1,
   );
+}
+
+/** An anchor a unit can reach whose footprint touches the map edge. */
+export interface EdgeExit {
+  /** The anchor tile's key in the search. */
+  readonly key: TileKey;
+  /** Terrain-weighted movement points to reach it. */
+  readonly cost: number;
+}
+
+/**
+ * Every anchor a search reaches from which a footprint of `size` would
+ * touch the map edge (#1179): where a fleeing unit can leave. They come
+ * in the search's own order, so a caller that breaks ties by the order
+ * it meets them (the Broodmother's fallback, `bestBy`) stays
+ * deterministic, and the flight's RNG draws are unchanged.
+ *
+ * ```
+ *   search ──► every reached anchor ──► touchesMapEdge? ──► { key, cost }[]
+ *   the fallback takes the cheapest (ties by RNG); Jev's edge exit takes
+ *   the cheapest (ties by key)
+ * ```
+ *
+ * @param map - The map, for its width and depth.
+ * @param search - A movement search from the unit, over as much of the
+ *   map as the caller wants considered.
+ * @param size - The unit's tiles per side.
+ * @returns The reachable exits, in search order; empty when none.
+ */
+export function edgeExits(
+  map: Pick<TacticalMap, "width" | "depth">,
+  search: Pick<MoveSearch, "tiles" | "costs">,
+  size: number,
+): readonly EdgeExit[] {
+  const exits: EdgeExit[] = [];
+  for (const [key, tile] of search.tiles) {
+    if (touchesMapEdge(map, tile, size)) {
+      exits.push({ key, cost: search.costs.get(key) ?? 0 });
+    }
+  }
+  return exits;
 }
 
 /**

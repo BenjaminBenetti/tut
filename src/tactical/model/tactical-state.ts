@@ -292,8 +292,9 @@ export interface RescueCiviliansObjective extends ObjectiveBase {
  *   mission lost, or nobody left to finish ──► failed
  * ```
  *
- * `complete` is read live from the mission by the kind's rule; the
- * stored flag stays false, as a defence's does between phase ends.
+ * `complete` and `failed` mirror the kind's live rule as of the last
+ * phase step (#1179), for the log, the fog blips and Jev; the live
+ * answer is the rule's.
  */
 export interface StripWreckObjective extends ObjectiveBase {
   readonly kind: "strip-wreck";
@@ -314,6 +315,8 @@ export interface StripWreckObjective extends ObjectiveBase {
  * survive the fuse. The mouths keep their own state on
  * `TacticalState.tunnelMouths`; this names which of them it asks for.
  * Complete once every one is sealed; the force then extracts.
+ * `complete` and `failed` mirror the kind's live rule as of the last
+ * phase step (#1179); the live answer is the rule's.
  */
 export interface SealTunnelsObjective extends ObjectiveBase {
   readonly kind: "seal-tunnels";

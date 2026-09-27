@@ -7,7 +7,8 @@ import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
 import { KILL_BROODMOTHER_STEP } from "./kill-broodmother-objective";
 import { RECOVER_POD_OBJECTIVE } from "./recover-pod-objective";
 import { RESCUE_CIVILIANS_OBJECTIVE } from "./rescue-civilians-objective";
-import { sealBlownMouths } from "./seal-tunnels-objective";
+import { SEAL_TUNNELS_STEP } from "./seal-tunnels-objective";
+import { STRIP_WRECK_STEP } from "./strip-wreck-objective";
 import {
   OBJECTIVE_RULES,
   objectivePhaseSteps,
@@ -67,7 +68,8 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       DEFEND_GENERATORS_OBJECTIVE.phaseStep,
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
-      sealBlownMouths,
+      STRIP_WRECK_STEP,
+      SEAL_TUNNELS_STEP,
       RECOVER_POD_OBJECTIVE.phaseStep,
       KILL_BROODMOTHER_STEP,
     ]);
@@ -84,7 +86,8 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       DEFEND_GENERATORS_OBJECTIVE.phaseStep,
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
-      sealBlownMouths,
+      STRIP_WRECK_STEP,
+      SEAL_TUNNELS_STEP,
       RECOVER_POD_OBJECTIVE.phaseStep,
       KILL_BROODMOTHER_STEP,
     ]);

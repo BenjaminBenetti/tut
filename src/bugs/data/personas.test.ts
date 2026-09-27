@@ -83,6 +83,15 @@ describe("persona data", () => {
     }
   });
 
+  it("lets only the Broodmother flee, and names the exit Jev offers her in her orders (#1179)", () => {
+    expect(
+      Object.values(PERSONAS)
+        .filter((persona) => persona.flees === true)
+        .map((persona) => persona.id),
+    ).toEqual(["broodmother"]);
+    expect(BROODMOTHER.entityPrompt.toLowerCase()).toContain("map edge exit");
+  });
+
   it("plays the Sovereign on her own behaviour without Jev, and asks Jev for the same plan (#1179, arc §9)", () => {
     // Headless, or with Jev switched off, she holds the core's ground
     // and falls back onto it at two fifths of her health; Jev's orders

@@ -7,6 +7,7 @@ import { extract } from "../../model/extract-command";
 import { interact } from "../../model/interact-command";
 import type { MechWreck } from "../../model/mech-wreck";
 import { MISSION_ENDED } from "../../model/mission-ended-event";
+import { OBJECTIVE_UPDATED } from "../../model/objective-updated-event";
 import type { TacticalOutcome } from "../../model/tactical-handler";
 import type {
   RescueCiviliansObjective,
@@ -39,6 +40,7 @@ import {
 } from "./objective-status";
 import {
   STRIP_WRECK_OBJECTIVE,
+  STRIP_WRECK_STEP,
   stripProgress,
   workWreck,
 } from "./strip-wreck-objective";
@@ -420,7 +422,7 @@ describe("strip-wreck completion", () => {
     ).state;
     expect(objectiveComplete(aboard, strip(aboard))).toBe(true);
     expect(stripProgress(strip(aboard), aboard).status).toBe("complete");
-    // The stored flag never moves; the rule reads the mission.
+    // The rule reads the mission now; the flag follows at the next phase start.
     expect(strip(aboard).complete).toBe(false);
   });
 
@@ -498,6 +500,59 @@ describe("strip-wreck failure", () => {
     };
     expect(objectiveFailed(stripped, strip(stripped))).toBe(false);
     expect(objectiveFailed(carriersDown, strip(carriersDown))).toBe(true);
+  });
+});
+
+// ===========================================
+// The phase step
+// ===========================================
+
+describe("STRIP_WRECK_STEP (#1179)", () => {
+  it("is the kind's phase step", () => {
+    expect(OBJECTIVE_RULES["strip-wreck"].phaseStep).toBe(STRIP_WRECK_STEP);
+  });
+
+  it("records the completion on the flags at the next phase start, once", () => {
+    const aboard = accepted(
+      extractWith(onExtraction(strippedBySquad(), "s"), extract("s"), CTX),
+    ).state;
+    const applied = STRIP_WRECK_STEP(aboard, CTX);
+    expect(strip(applied.state)).toMatchObject({
+      complete: true,
+      failed: false,
+    });
+    expect(applied.events).toEqual([
+      {
+        type: OBJECTIVE_UPDATED,
+        payload: { objectiveId: OBJECTIVE.id, complete: true, failed: false },
+      },
+    ]);
+    expect(STRIP_WRECK_STEP(applied.state, CTX)).toEqual({
+      state: applied.state,
+      events: [],
+    });
+  });
+
+  it("records the failure once the carriers are down, and leaves an open strip alone", () => {
+    const stripped = strippedBySquad();
+    expect(STRIP_WRECK_STEP(stripped, CTX).state).toBe(stripped);
+    const carriersDown: TacticalState = {
+      ...stripped,
+      units: stripped.units.map((unit) =>
+        unit.id === "s" ? { ...unit, hp: 0 } : unit,
+      ),
+    };
+    const applied = STRIP_WRECK_STEP(carriersDown, CTX);
+    expect(strip(applied.state)).toMatchObject({
+      complete: false,
+      failed: true,
+    });
+    expect(applied.events).toEqual([
+      {
+        type: OBJECTIVE_UPDATED,
+        payload: { objectiveId: OBJECTIVE.id, complete: false, failed: true },
+      },
+    ]);
   });
 });
 

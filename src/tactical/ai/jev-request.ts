@@ -34,7 +34,7 @@ export function captureJev(
     actor.hp > 0 &&
     actor.ap > 0 &&
     mission.phase === PHASE_FOR_TEAM[actor.team];
-  const destinations = jevDestinations(mission, view, actor);
+  const destinations = jevDestinations(mission, view, actor, rules.movement);
   const state = jevState(
     mission,
     view,

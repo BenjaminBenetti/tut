@@ -3,10 +3,15 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import type { TacticalState } from "../model/tactical-state";
+import type { JevMovementRules } from "../model/jev-movement-rules";
+import type { Unit } from "../model/unit";
 import { SHIPPED_EQUIPMENT } from "../repository/equipment-catalogue";
 import { createHarvestHandler } from "../service/harvest-service";
 import { createMoveHandler } from "../service/move-handler";
 import { createExtractHandler } from "../service/objective-service";
+import { edgeExits } from "../service/map-edge-service";
+import { buildMoveGraph, searchMoves } from "../service/movement-service";
+import { withVision } from "../service/vision-service";
 import {
   ctxWith,
   missionWith,
@@ -16,7 +21,10 @@ import {
   unitAt,
 } from "../service/tactical-fixtures.test-helper";
 import { DEFEND_GENERATORS_OBJECTIVE } from "../service/objectives/defend-generators-objective";
-import { OBJECTIVE_RULES } from "../service/objectives/objective-rules";
+import {
+  OBJECTIVE_RULES,
+  objectivePhaseSteps,
+} from "../service/objectives/objective-rules";
 import {
   jevDestinations,
   jevObjectives,
@@ -94,7 +102,16 @@ function fixture(): TacticalState {
 
 describe("Jev destination coverage", () => {
   it("offers a reachable movement choice for every known destination source", () => {
-    const mission = fixture();
+    // Off the edge and fleeing, so the way out is a destination too (#1179).
+    const base = fixture();
+    const mission: TacticalState = {
+      ...base,
+      units: base.units.map((unit) =>
+        unit.id === "self"
+          ? { ...unit, pos: { x: 1, y: 0, z: 1 }, fleeing: true }
+          : unit,
+      ),
+    };
     const sources = jevDestinations(
       mission,
       jevPerception(mission, mission.units[0]!),
@@ -108,6 +125,7 @@ describe("Jev destination coverage", () => {
       visible_carcasses: "move_to_carcass:tech",
       radar_contacts: "investigate_radar:7:0:7",
       last_seen: "investigate_last_seen:historical",
+      map_edge_exit: "move_to_map_edge",
     } satisfies Record<keyof JevDestinationSources, string>;
     const snapshot = captureJev(mission, "self", rules);
     const choices = jevChoicePage(
@@ -129,6 +147,99 @@ describe("Jev destination coverage", () => {
         key,
       ).toBe(true);
     }
+  });
+
+  it("offers the map edge exit only to an actor able to flee, off the edge, as its cheapest way out (#1179)", () => {
+    // A lone bug in the open 8 × 8 field at (2, 5): the west edge is two
+    // steps off, the south edge two, the north five and the east five.
+    const lone = (patch: Partial<Unit>): TacticalState => {
+      const base = missionWith(
+        openField().build(),
+        [
+          {
+            ...unitAt(
+              "runner",
+              "infantry",
+              { x: 2, y: 0, z: 5 },
+              {
+                team: "bugs",
+              },
+            ),
+            ...patch,
+          },
+        ],
+        { phase: "bugs" },
+      );
+      return withVision({ state: base, events: [] }).state;
+    };
+    const exitOf = (mission: TacticalState, movement?: JevMovementRules) => {
+      const actor = mission.units[0]!;
+      return jevDestinations(
+        mission,
+        jevPerception(mission, actor),
+        actor,
+        movement,
+      ).map_edge_exit;
+    };
+    const anyone: JevMovementRules = {
+      canFlee: () => true,
+      leashOf: () => undefined,
+    };
+    const nobody: JevMovementRules = {
+      canFlee: () => false,
+      leashOf: () => undefined,
+    };
+
+    expect(exitOf(lone({}))).toEqual([]);
+    expect(exitOf(lone({}), nobody)).toEqual([]);
+    const fleeing = lone({ fleeing: true });
+    const exit = exitOf(fleeing);
+    expect(exitOf(lone({}), anyone)).toEqual(exit);
+    expect(exitOf(fleeing, nobody)).toEqual(exit);
+    // The cheapest anchor on the ring, as the fallback's flight takes it;
+    // the two two-step exits tie and the lower tile key wins.
+    const runner = fleeing.units[0]!;
+    const graph = buildMoveGraph(fleeing.map);
+    const search = searchMoves(
+      fleeing,
+      { ...runner, ap: Number.MAX_SAFE_INTEGER },
+      graph,
+    );
+    const cheapestCost = Math.min(
+      ...edgeExits(fleeing.map, search, 1).map((e) => e.cost),
+    );
+    const cheapest = edgeExits(fleeing.map, search, 1)
+      .filter((e) => e.cost === cheapestCost)
+      .map((e) => e.key)
+      .sort((a, b) => a - b);
+    expect(cheapestCost).toBe(2);
+    expect(cheapest).toHaveLength(2);
+    expect(exit).toHaveLength(1);
+    expect(graph.index.keyOf(exit[0]!)).toBe(cheapest[0]);
+
+    // Offered as a move whose route heads for it, and told to Jev.
+    const snapshot = captureJev(fleeing, "runner", rules);
+    const move = snapshot.candidates.find(
+      (candidate) => candidate.id === "move_to_map_edge",
+    )!;
+    expect(move.movement).toMatchObject({
+      intent: "approach_map_edge",
+      targetPosition: exit[0],
+    });
+    if (move.command?.type !== "tactical:move")
+      throw new Error("Expected movement");
+    expect(move.command.payload.path.at(-1)).toEqual(exit[0]);
+    expect(snapshot.state.map_edge_exit).toEqual(exit);
+    const idle = captureJev(lone({}), "runner", rules);
+    expect(idle.state).not.toHaveProperty("map_edge_exit");
+    expect(
+      idle.candidates.some((candidate) => candidate.id === "move_to_map_edge"),
+    ).toBe(false);
+
+    // Already on the edge: the flight step takes her off, nothing to offer.
+    expect(exitOf(lone({ fleeing: true, pos: { x: 0, y: 0, z: 5 } }))).toEqual(
+      [],
+    );
   });
 
   it("reaches harvesting range, offers Harvest, and removes the destination once stripped", () => {
@@ -427,6 +538,86 @@ describe("jevObjectives (ADR 0013 §2.3)", () => {
       id: "objective-1",
       failed: true,
     });
+  });
+
+  it("reports a strip's and a seal's real state once the shipped phase steps have run (#1179)", () => {
+    /** A stripped wreck and one sealed mouth; `extracted` holds who is aboard. */
+    function workedOut(
+      units: readonly Unit[],
+      extracted: readonly Unit[],
+      done: boolean,
+    ): TacticalState {
+      const mouth = { x: 6, y: 0, z: 6 };
+      return {
+        ...missionWith(openField().build(), units, {
+          objectives: [
+            {
+              id: "strip",
+              kind: "strip-wreck",
+              targetId: "wreck-1",
+              turnsNeeded: 2,
+              turnsWorked: done ? 2 : 0,
+              workedBy: done ? ["s"] : [],
+              complete: false,
+            },
+            {
+              id: "seal",
+              kind: "seal-tunnels",
+              mouthIds: ["tunnel-1"],
+              complete: false,
+            },
+          ],
+        }),
+        extracted,
+        tunnelMouths: [
+          {
+            id: "tunnel-1",
+            pos: mouth,
+            tiles: [mouth],
+            ...(done ? { chargeId: "tunnel-1-charge", sealedOnTurn: 1 } : {}),
+          },
+        ],
+      };
+    }
+    /** The mission after one phase start's objective steps, as EndTurn runs them. */
+    function stepped(mission: TacticalState): TacticalState {
+      const ctx = ctxWith(riggedRng(true));
+      return objectivePhaseSteps().reduce(
+        (state, step) => step(state, ctx).state,
+        mission,
+      );
+    }
+    /** Each objective's complete and failed, as Jev reads them. */
+    function flags(
+      mission: TacticalState,
+    ): readonly { id: string; complete: boolean; failed?: boolean }[] {
+      return jevObjectives(mission).map(({ id, complete, failed }) => ({
+        id,
+        complete,
+        ...(failed === undefined ? {} : { failed }),
+      }));
+    }
+    const squad = unitAt("s", "infantry", { x: 0, y: 0, z: 0 });
+    const won = workedOut([], [squad], true);
+    expect(flags(won)).toEqual([
+      { id: "strip", complete: false },
+      { id: "seal", complete: false },
+    ]);
+    expect(flags(stepped(won))).toEqual([
+      { id: "strip", complete: true, failed: false },
+      { id: "seal", complete: true, failed: false },
+    ]);
+    // Nobody left who could work the wreck or set a charge.
+    const lost = workedOut([{ ...squad, hp: 0 }], [], false);
+    expect(flags(stepped(lost))).toEqual([
+      { id: "strip", complete: false, failed: true },
+      { id: "seal", complete: false, failed: true },
+    ]);
+    // Still being worked: both stay open.
+    expect(flags(stepped(workedOut([squad], [], false)))).toEqual([
+      { id: "strip", complete: false },
+      { id: "seal", complete: false },
+    ]);
   });
 
   it("uses a substituted destination rule", () => {

@@ -1,5 +1,6 @@
 import type { CombatTuning } from "../model/combat-tuning";
 import type { JevActionCommand, JevActionType } from "../model/jev-control";
+import type { JevMovementRules } from "../model/jev-movement-rules";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import type { EquipmentRules } from "../service/equipment-service";
@@ -11,6 +12,8 @@ export interface JevActionRules {
   readonly combat: CombatTuning;
   readonly equipment: EquipmentRules;
   readonly handlers: TacticalHandlers;
+  /** A named enemy's movement character (#1179): who may run for the edge. */
+  readonly movement?: JevMovementRules;
 }
 
 /** Faction-filtered state shared by action providers, with no hidden units to target or preview. */

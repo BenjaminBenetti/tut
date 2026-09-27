@@ -1,0 +1,86 @@
+import { describe, expect, it } from "vitest";
+
+import { ATTACK } from "../../model/attack-command";
+import { MOVE } from "../../model/move-command";
+import { unitAt } from "../tactical-fixtures.test-helper";
+import { createNewPlayerPolicy } from "./new-player-policy.test-helper";
+import type { UnitOrder } from "./objective-strategy.test-helper";
+import {
+  FIXTURE_PLAYER_RULES,
+  lookingMission,
+} from "./player-fixtures.test-helper";
+import type { ForcePlan } from "./player-policy.test-helper";
+import { observe } from "./player-view.test-helper";
+
+const NEW = createNewPlayerPolicy(FIXTURE_PLAYER_RULES);
+
+/** One job for the whole force: the far corner. */
+const PLAN: ForcePlan = {
+  jobs: [{ order: { kind: "destroy", goals: [{ x: 7, y: 0, z: 7 }] } }],
+  couriers: new Set(),
+  settled: false,
+};
+
+describe("the new player", () => {
+  it("shoots the nearest bug even when a farther one would die", () => {
+    const mission = lookingMission([
+      unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 }),
+      unitAt("near", "infantry", { x: 3, y: 0, z: 1 }, { team: "bugs" }),
+      unitAt("weak", "infantry", { x: 5, y: 0, z: 1 }, { team: "bugs", hp: 2 }),
+    ]);
+    const view = observe(mission);
+    const order: UnitOrder = { kind: "hunt", goals: [{ x: 3, y: 0, z: 1 }] };
+    const command = NEW.next(view.own[0]!, order, view);
+    expect(command?.type).toBe(ATTACK);
+    expect(command?.payload).toMatchObject({
+      attackerId: "alpha",
+      targetId: "near",
+    });
+  });
+
+  it("never goes on overwatch: holding its ground, it does nothing", () => {
+    const mission = lookingMission([
+      unitAt("alpha", "infantry", { x: 3, y: 0, z: 3 }),
+    ]);
+    const view = observe(mission);
+    const order: UnitOrder = {
+      kind: "guard",
+      goals: [{ x: 3, y: 0, z: 3 }],
+      holdRadius: 3,
+    };
+    expect(NEW.next(view.own[0]!, order, view)).toBeUndefined();
+  });
+
+  it("walks one action toward its goal when nothing is in sight", () => {
+    const mission = lookingMission([
+      unitAt("alpha", "infantry", { x: 0, y: 0, z: 0 }),
+    ]);
+    const view = observe(mission);
+    const order: UnitOrder = { kind: "destroy", goals: [{ x: 7, y: 0, z: 7 }] };
+    const command = NEW.next(view.own[0]!, order, view);
+    expect(command?.type).toBe(MOVE);
+    const path = (
+      command?.payload as { path: readonly { x: number; z: number }[] }
+    ).path;
+    const last = path[path.length - 1]!;
+    expect(last.x + last.z).toBe(3);
+  });
+
+  it("keeps a badly hurt unit on the job", () => {
+    const mission = lookingMission([
+      unitAt("alpha", "infantry", { x: 2, y: 0, z: 2 }),
+      unitAt("bravo", "infantry", { x: 2, y: 0, z: 3 }),
+      unitAt("hurt", "infantry", { x: 3, y: 0, z: 2 }, { hp: 3 }),
+    ]);
+    const orders = NEW.assign(observe(mission), PLAN);
+    expect(orders.get("hurt")?.kind).toBe("destroy");
+  });
+
+  it("acts in roster order", () => {
+    const mission = lookingMission([
+      unitAt("alpha", "infantry", { x: 2, y: 0, z: 2 }),
+      unitAt("iron", "mech", { x: 4, y: 0, z: 4 }),
+    ]);
+    expect(NEW.actingOrder(observe(mission))).toEqual(["alpha", "iron"]);
+  });
+});

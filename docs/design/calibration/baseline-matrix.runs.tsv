@@ -1,0 +1,393 @@
+cell	seed	player	luck	difficulty	outcome	abandoned	turns	units_lost	mechs_lost	deployed	bug_phase_ms	shots	hits	commands	refused	wall_s
+story:great-hive/act-3	0	new	new	8	lost	cap	61	8	3	8	5734	212	163	335	0	355.7
+story:great-hive/act-3	0	expert	expert	8	lost	cap	61	6	2	8	5287	185	147	299	0	346.9
+story:great-hive/act-3	1	new	new	8	lost	cap	61	8	3	8	6587	237	171	427	0	421.6
+story:great-hive/act-3	1	expert	expert	8	lost	cap	61	7	3	8	7021	202	159	327	0	456.6
+story:great-hive/act-3	2	new	new	8	lost	cap	61	8	3	8	6233	245	186	355	0	396.4
+story:great-hive/act-3	2	expert	expert	8	lost	cap	61	8	3	8	4303	194	145	313	0	359.8
+story:great-hive/act-3	3	new	new	8	lost	cap	61	8	3	8	6094	192	147	318	0	360.4
+story:great-hive/act-3	3	expert	expert	8	lost	cap	61	7	3	8	4457	167	127	261	0	322.4
+story:great-hive/act-3	4	new	new	8	lost	cap	61	8	3	8	5721	233	173	371	0	346.8
+story:great-hive/act-3	4	expert	expert	8	lost	cap	61	7	3	8	5504	155	128	245	0	440.2
+story:great-hive/act-3	5	new	new	8	lost	cap	61	8	3	8	6195	231	163	386	0	406.5
+story:great-hive/act-3	5	expert	expert	8	lost	cap	61	5	3	8	5110	182	149	278	0	385.1
+story:great-hive/act-3	6	new	new	8	lost	cap	61	8	3	8	4743	209	167	324	0	302.7
+story:great-hive/act-3	6	expert	expert	8	lost	cap	61	7	3	8	5679	178	143	289	0	384.0
+story:great-hive/act-3	7	new	new	8	lost	cap	61	8	3	8	5256	217	162	429	0	322.8
+story:great-hive/act-3	7	expert	expert	8	lost	cap	61	5	3	8	6688	192	154	342	0	455.9
+hive-assault/act-3	0	new	new	5	lost	cap	61	8	3	8	2316	239	180	397	0	157.5
+hive-assault/act-3	0	expert	expert	5	won		41	3	0	8	3021	108	83	251	0	155.5
+hive-assault/act-3	1	new	new	6	lost	cap	61	8	3	8	3038	225	174	334	0	210.0
+hive-assault/act-3	1	expert	expert	6	won		29	4	0	8	3494	82	68	225	0	122.0
+hive-assault/act-3	2	new	new	7	lost	cap	61	8	3	8	3510	249	191	355	0	283.8
+hive-assault/act-3	2	expert	expert	7	won		40	4	0	8	4869	95	80	218	0	217.1
+hive-assault/act-3	3	new	new	8	lost	cap	61	8	3	8	3005	242	171	406	0	191.4
+hive-assault/act-3	3	expert	expert	8	won	stall	43	3	1	8	3123	107	81	254	0	157.6
+hive-assault/act-3	4	new	new	9	lost	cap	61	8	3	8	4824	244	191	357	0	309.9
+hive-assault/act-3	4	expert	expert	9	lost	cap	61	3	2	8	3980	148	122	227	0	276.7
+hive-assault/act-3	5	new	new	5	lost	cap	61	8	3	8	4024	213	158	343	0	289.0
+hive-assault/act-3	5	expert	expert	5	lost	cap	61	8	3	8	3413	167	142	253	0	248.4
+hive-assault/act-3	6	new	new	6	lost	cap	61	8	3	8	3355	214	173	342	0	229.9
+hive-assault/act-3	6	expert	expert	6	won		37	3	0	8	2561	64	49	166	0	146.2
+hive-assault/act-3	7	new	new	7	lost	cap	61	8	3	8	3368	218	172	353	0	213.3
+hive-assault/act-3	7	expert	expert	7	lost	cap	61	5	2	8	3677	183	138	267	0	253.7
+hive-assault/act-2	0	new	new	3	lost		21	5	1	5	1491	59	39	114	0	34.6
+hive-assault/act-2	0	expert	expert	3	lost		15	5	1	5	1228	16	11	49	0	26.1
+hive-assault/act-2	1	new	new	4	lost		24	5	1	5	1938	74	48	130	0	47.0
+hive-assault/act-2	1	expert	expert	4	lost		19	5	1	5	2159	17	17	49	0	37.1
+hive-assault/act-2	2	new	new	5	lost		18	5	1	5	1821	38	31	73	0	34.2
+hive-assault/act-2	2	expert	expert	5	extracted		17	4	1	5	1756	22	14	50	0	32.9
+hive-assault/act-2	3	new	new	6	lost		46	5	1	5	1980	58	50	112	0	96.8
+hive-assault/act-2	3	expert	expert	6	extracted		17	4	0	5	1191	20	12	63	0	23.0
+hive-assault/act-2	4	new	new	7	lost		23	5	1	5	1691	40	31	68	0	48.3
+hive-assault/act-2	4	expert	expert	7	extracted		13	4	1	5	1384	17	10	46	0	21.6
+hive-assault/act-2	5	new	new	3	lost		24	5	1	5	1681	76	56	119	0	44.0
+hive-assault/act-2	5	expert	expert	3	extracted		22	4	1	5	2367	37	24	77	0	47.2
+hive-assault/act-2	6	new	new	4	lost		40	5	1	5	2574	71	53	125	0	97.4
+hive-assault/act-2	6	expert	expert	4	lost		25	5	1	5	1991	31	20	70	0	50.6
+hive-assault/act-2	7	new	new	5	lost		32	5	1	5	2665	52	39	98	0	81.0
+hive-assault/act-2	7	expert	expert	5	lost		17	5	1	5	1682	17	9	46	0	27.2
+evacuation/act-3	0	new	new	5	won	stall	29	2	1	8	730	53	43	332	0	36.4
+evacuation/act-3	0	expert	expert	5	won		14	1	0	8	744	11	10	132	0	17.7
+evacuation/act-3	1	new	new	6	lost	stall	34	8	3	8	855	115	90	388	0	41.1
+evacuation/act-3	1	expert	expert	6	won		18	1	0	8	539	34	28	209	0	17.5
+evacuation/act-3	2	new	new	7	extracted		22	3	0	8	658	69	50	396	0	29.1
+evacuation/act-3	2	expert	expert	7	extracted		23	4	0	8	1079	43	32	256	0	32.8
+evacuation/act-3	3	new	new	8	won	stall	45	6	3	8	5745	141	111	564	0	273.7
+evacuation/act-3	3	expert	expert	8	extracted		21	4	0	8	3600	35	25	209	0	85.7
+evacuation/act-3	4	new	new	9	lost	stall	27	8	3	8	3402	95	79	500	0	113.1
+evacuation/act-3	4	expert	expert	9	extracted		32	4	0	8	3305	73	57	399	0	149.9
+evacuation/act-3	5	new	new	5	lost	stall	26	8	3	8	1243	108	82	370	0	44.1
+evacuation/act-3	5	expert	expert	5	won		21	1	0	8	1226	34	25	251	0	35.8
+evacuation/act-3	6	new	new	6	lost	stall	25	8	3	8	1162	77	65	312	0	39.7
+evacuation/act-3	6	expert	expert	6	lost	cap	61	7	3	8	1152	218	175	537	0	93.6
+evacuation/act-3	7	new	new	7	lost	stall	28	8	3	8	1530	108	89	367	0	59.4
+evacuation/act-3	7	expert	expert	7	extracted		19	5	0	8	1399	45	32	221	0	37.8
+tunnel-sabotage/act-3	0	new	new	5	won		6	0	0	8	50	0	0	118	0	8.4
+tunnel-sabotage/act-3	0	expert	expert	5	won		8	0	0	8	327	1	1	96	0	10.5
+tunnel-sabotage/act-3	1	new	new	6	won	stall	19	2	1	8	780	16	13	155	0	23.2
+tunnel-sabotage/act-3	1	expert	expert	6	won		7	0	0	8	277	1	1	84	0	10.3
+tunnel-sabotage/act-3	2	new	new	7	won		12	0	0	8	570	16	12	197	0	15.3
+tunnel-sabotage/act-3	2	expert	expert	7	won		11	0	0	8	571	6	4	114	0	12.5
+tunnel-sabotage/act-3	3	new	new	8	won		11	0	0	8	996	13	9	191	0	29.3
+tunnel-sabotage/act-3	3	expert	expert	8	won		11	0	0	8	1214	6	5	112	0	28.9
+tunnel-sabotage/act-3	4	new	new	9	won		9	1	0	8	769	2	2	132	0	18.0
+tunnel-sabotage/act-3	4	expert	expert	9	won		11	0	0	8	1423	12	9	117	0	26.0
+tunnel-sabotage/act-3	5	new	new	5	won	stall	20	3	2	8	1048	40	28	151	0	24.8
+tunnel-sabotage/act-3	5	expert	expert	5	won		9	1	0	8	491	2	2	102	0	15.4
+tunnel-sabotage/act-3	6	new	new	6	won		7	0	0	8	160	0	0	128	0	9.9
+tunnel-sabotage/act-3	6	expert	expert	6	won		7	0	0	8	235	0	0	88	0	10.7
+tunnel-sabotage/act-3	7	new	new	7	won	stall	25	2	1	8	606	51	36	250	0	23.7
+tunnel-sabotage/act-3	7	expert	expert	7	won		17	4	0	8	909	23	16	139	0	19.2
+story:launch-window/finale	0	new	new	8	lost	cap	61	8	3	8	75	69	51	360	0	55.4
+story:launch-window/finale	0	expert	expert	8	lost	cap	61	8	3	8	266	46	41	819	0	143.9
+story:launch-window/finale	1	new	new	8	won		43	2	0	8	308	95	71	441	0	59.3
+story:launch-window/finale	1	expert	expert	8	won		27	1	0	8	759	59	45	295	0	39.1
+story:launch-window/finale	2	new	new	8	won		38	0	0	8	440	73	59	469	0	62.7
+story:launch-window/finale	2	expert	expert	8	won		60	0	0	8	22	46	34	693	0	117.4
+story:launch-window/finale	3	new	new	8	won		60	1	0	8	176	77	59	613	0	83.3
+story:launch-window/finale	3	expert	expert	8	won		35	0	0	8	497	61	45	377	0	48.5
+story:launch-window/finale	4	new	new	8	won		36	0	0	8	831	88	67	467	0	64.3
+story:launch-window/finale	4	expert	expert	8	won		33	0	0	8	524	68	50	390	0	55.1
+story:launch-window/finale	5	new	new	8	lost	cap	61	8	3	8	76	68	52	676	0	87.7
+story:launch-window/finale	5	expert	expert	8	won		54	1	0	8	105	58	46	567	0	89.5
+story:launch-window/finale	6	new	new	8	won		51	0	0	8	153	47	39	639	0	78.4
+story:launch-window/finale	6	expert	expert	8	lost	cap	61	8	3	8	129	65	47	857	0	140.8
+story:launch-window/finale	7	new	new	8	lost	cap	61	8	3	8	68	75	49	953	0	112.6
+story:launch-window/finale	7	expert	expert	8	lost	cap	61	8	3	8	109	26	24	818	0	154.8
+story:live-specimen/act-1	0	new	new	3	won		5	0	0	5	62	8	6	47	0	1.0
+story:live-specimen/act-1	0	expert	expert	3	lost		18	5	1	5	390	67	46	126	0	9.4
+story:live-specimen/act-1	0	expert	new	3	extracted		22	4	1	5	353	91	69	167	0	11.2
+story:live-specimen/act-1	1	new	new	3	lost	stall	25	5	1	5	971	55	39	113	0	22.8
+story:live-specimen/act-1	1	expert	expert	3	won		6	0	0	5	94	8	4	41	0	1.7
+story:live-specimen/act-1	1	expert	new	3	won		5	0	0	5	81	10	4	42	0	1.3
+story:live-specimen/act-1	2	new	new	3	won		5	0	0	5	47	6	4	42	0	1.2
+story:live-specimen/act-1	2	expert	expert	3	extracted		24	4	1	5	488	74	60	144	0	15.1
+story:live-specimen/act-1	2	expert	new	3	extracted		18	3	0	5	424	49	41	126	0	10.6
+story:live-specimen/act-1	3	new	new	3	won		4	0	0	5	36	5	4	36	0	0.8
+story:live-specimen/act-1	3	expert	expert	3	won	stall	17	1	1	5	319	21	19	58	0	6.2
+story:live-specimen/act-1	3	expert	new	3	won		10	0	0	5	63	25	19	78	0	2.0
+story:live-specimen/act-1	4	new	new	3	won	stall	19	3	1	5	485	55	41	121	0	11.2
+story:live-specimen/act-1	4	expert	expert	3	extracted		22	4	1	5	539	69	48	133	0	14.6
+story:live-specimen/act-1	4	expert	new	3	won		13	1	0	5	344	29	21	87	0	6.0
+story:live-specimen/act-1	5	new	new	3	lost	stall	30	5	1	5	602	77	64	125	0	19.2
+story:live-specimen/act-1	5	expert	expert	3	won		5	0	0	5	56	8	5	32	0	1.0
+story:live-specimen/act-1	5	expert	new	3	won		5	0	0	5	49	10	5	35	0	1.1
+story:live-specimen/act-1	6	new	new	3	lost		24	5	1	5	461	59	49	109	0	12.6
+story:live-specimen/act-1	6	expert	expert	3	won		14	2	0	5	199	46	29	118	0	5.9
+story:live-specimen/act-1	6	expert	new	3	won		6	0	0	5	67	8	3	42	0	1.6
+story:live-specimen/act-1	7	new	new	3	extracted		12	4	0	5	135	39	31	97	0	3.8
+story:live-specimen/act-1	7	expert	expert	3	won		12	1	0	5	304	24	14	65	0	4.4
+story:live-specimen/act-1	7	expert	new	3	won		10	3	0	5	215	24	15	69	0	3.8
+evacuation/act-2	0	new	new	3	won	stall	26	4	1	5	707	56	44	174	0	22.4
+evacuation/act-2	0	expert	expert	3	won		27	4	1	5	1109	23	17	140	0	35.9
+evacuation/act-2	1	new	new	4	won		25	3	1	5	1569	32	23	167	0	37.9
+evacuation/act-2	1	expert	expert	4	won		15	3	0	5	800	7	5	96	0	15.3
+evacuation/act-2	2	new	new	5	lost		24	5	1	5	825	43	31	178	0	23.1
+evacuation/act-2	2	expert	expert	5	lost	stall	30	5	1	5	1095	30	28	125	0	33.6
+evacuation/act-2	3	new	new	6	lost		20	5	1	5	585	56	30	127	0	14.4
+evacuation/act-2	3	expert	expert	6	lost		29	5	1	5	947	70	49	154	0	33.1
+evacuation/act-2	4	new	new	7	lost		22	5	1	5	1188	43	36	182	0	32.5
+evacuation/act-2	4	expert	expert	7	extracted		21	4	0	5	1254	31	19	154	0	34.5
+evacuation/act-2	5	new	new	3	lost	stall	24	5	1	5	1220	41	33	169	0	29.7
+evacuation/act-2	5	expert	expert	3	extracted		19	4	0	5	728	37	28	136	0	17.2
+evacuation/act-2	6	new	new	4	won	stall	29	3	1	5	1396	40	33	212	0	51.7
+evacuation/act-2	6	expert	expert	4	lost		29	5	1	5	1926	19	16	158	0	58.5
+evacuation/act-2	7	new	new	5	won	stall	27	4	1	5	1121	62	42	207	0	32.4
+evacuation/act-2	7	expert	expert	5	won		16	0	0	5	657	7	3	122	0	15.2
+defend-installation/act-3	0	new	new	5	won		24	0	0	8	181	36	29	310	0	16.5
+defend-installation/act-3	0	expert	expert	5	won		36	0	0	8	4	50	35	448	0	39.9
+defend-installation/act-3	1	new	new	6	won		46	1	0	8	86	56	44	587	0	28.6
+defend-installation/act-3	1	expert	expert	6	won		43	0	0	8	15	45	38	568	0	42.3
+defend-installation/act-3	2	new	new	7	lost	cap	61	8	3	8	25	73	57	207	0	21.7
+defend-installation/act-3	2	expert	expert	7	won		26	0	0	8	352	63	44	305	0	19.7
+defend-installation/act-3	3	new	new	8	won		34	0	0	8	370	49	40	396	0	45.2
+defend-installation/act-3	3	expert	expert	8	won		43	0	0	8	186	48	42	572	0	86.7
+defend-installation/act-3	4	new	new	9	won		51	1	0	8	279	74	59	644	0	70.4
+defend-installation/act-3	4	expert	expert	9	won		59	0	0	8	7	97	73	770	0	106.1
+defend-installation/act-3	5	new	new	5	won		23	0	0	8	359	57	42	277	0	18.4
+defend-installation/act-3	5	expert	expert	5	won		23	0	0	8	226	29	26	270	0	20.8
+defend-installation/act-3	6	new	new	6	won		24	0	0	8	282	49	41	301	0	19.8
+defend-installation/act-3	6	expert	expert	6	lost	cap	61	8	3	8	30	57	42	815	0	66.4
+defend-installation/act-3	7	new	new	7	won		24	0	0	8	254	49	42	336	0	16.3
+defend-installation/act-3	7	expert	expert	7	won		29	3	0	8	155	36	30	265	0	12.1
+defend-installation/act-2	0	new	new	3	lost	cap	61	5	1	5	4	41	29	141	0	12.8
+defend-installation/act-2	0	expert	expert	3	lost	cap	61	3	1	5	70	51	32	353	0	32.7
+defend-installation/act-2	1	new	new	4	won		58	2	0	5	27	90	60	410	0	18.1
+defend-installation/act-2	1	expert	expert	4	won	cap	61	1	1	5	50	74	58	450	0	25.2
+defend-installation/act-2	2	new	new	5	lost	cap	61	5	1	5	7	57	45	112	0	11.3
+defend-installation/act-2	2	expert	expert	5	won		29	2	0	5	177	67	48	164	0	10.0
+defend-installation/act-2	3	new	new	6	lost	cap	61	5	1	5	74	56	40	155	0	16.8
+defend-installation/act-2	3	expert	expert	6	won		32	2	0	5	355	54	46	197	0	18.0
+defend-installation/act-2	4	new	new	7	won		32	3	0	5	338	75	52	207	0	18.2
+defend-installation/act-2	4	expert	expert	7	extracted		30	3	0	5	428	43	25	146	0	19.1
+defend-installation/act-2	5	new	new	3	won		48	1	0	5	3	46	31	311	0	15.3
+defend-installation/act-2	5	expert	expert	3	won		37	1	0	5	75	32	25	172	0	13.3
+defend-installation/act-2	6	new	new	4	lost	cap	61	5	1	5	12	46	38	128	0	18.5
+defend-installation/act-2	6	expert	expert	4	extracted		20	4	0	5	493	39	29	109	0	14.8
+defend-installation/act-2	7	new	new	5	won		32	4	0	5	179	48	39	115	0	12.6
+defend-installation/act-2	7	expert	expert	5	won		25	2	0	5	307	46	37	158	0	12.5
+story:uplink/act-3	0	new	new	6	won		34	0	0	8	87	53	41	365	0	24.2
+story:uplink/act-3	0	expert	expert	6	won		35	0	0	8	68	53	32	433	0	35.1
+story:uplink/act-3	1	new	new	6	won		21	1	0	8	248	46	30	185	0	14.3
+story:uplink/act-3	1	expert	expert	6	won		25	2	0	8	204	49	36	246	0	18.8
+story:uplink/act-3	2	new	new	6	won		34	2	0	8	163	46	34	332	0	24.0
+story:uplink/act-3	2	expert	expert	6	won		27	0	0	8	135	55	41	317	0	25.9
+story:uplink/act-3	3	new	new	6	won		31	1	0	8	221	57	33	347	0	23.8
+story:uplink/act-3	3	expert	expert	6	won		37	0	0	8	84	50	35	419	0	29.2
+story:uplink/act-3	4	new	new	6	won		27	0	0	8	169	45	35	282	0	19.0
+story:uplink/act-3	4	expert	expert	6	won		26	0	0	8	168	46	35	299	0	20.2
+story:uplink/act-3	5	new	new	6	won		20	0	0	8	274	36	24	199	0	14.5
+story:uplink/act-3	5	expert	expert	6	won		19	1	0	8	194	33	21	181	0	13.1
+story:uplink/act-3	6	new	new	6	won		26	2	0	8	162	54	42	258	0	19.1
+story:uplink/act-3	6	expert	expert	6	won		23	0	0	8	228	52	43	240	0	16.6
+story:uplink/act-3	7	new	new	6	lost	cap	61	8	3	8	4	62	44	313	0	26.0
+story:uplink/act-3	7	expert	expert	6	won		34	0	0	8	48	33	27	383	0	32.6
+infestation-clearance/act-3	0	new	new	5	won	stall	26	5	1	8	869	56	44	238	0	28.4
+infestation-clearance/act-3	0	expert	expert	5	won		14	0	0	8	508	3	3	118	0	14.1
+infestation-clearance/act-3	1	new	new	6	won		18	1	0	8	608	49	39	290	0	19.4
+infestation-clearance/act-3	1	expert	expert	6	won		15	0	0	8	646	32	24	147	0	13.4
+infestation-clearance/act-3	2	new	new	7	won	stall	35	3	1	8	506	78	60	316	0	28.0
+infestation-clearance/act-3	2	expert	expert	7	won	stall	33	1	1	8	621	84	56	267	0	28.9
+infestation-clearance/act-3	3	new	new	8	won	stall	36	6	2	8	1496	92	67	433	0	81.8
+infestation-clearance/act-3	3	expert	expert	8	won		17	0	0	8	979	15	13	185	0	32.3
+infestation-clearance/act-3	4	new	new	9	lost	cap	61	8	3	8	4189	200	165	350	0	263.7
+infestation-clearance/act-3	4	expert	expert	9	lost	cap	61	7	3	8	5308	168	138	309	0	336.8
+infestation-clearance/act-3	5	new	new	5	won	stall	20	1	1	8	638	15	12	141	0	14.8
+infestation-clearance/act-3	5	expert	expert	5	won		7	0	0	8	106	2	1	55	0	3.1
+infestation-clearance/act-3	6	new	new	6	won	stall	30	2	2	8	1265	62	52	289	0	45.7
+infestation-clearance/act-3	6	expert	expert	6	won		17	1	0	8	929	20	17	142	0	22.6
+infestation-clearance/act-3	7	new	new	7	won	stall	36	3	1	8	648	94	67	364	0	32.8
+infestation-clearance/act-3	7	expert	expert	7	won		16	0	0	8	453	32	23	181	0	13.6
+infestation-clearance/act-1	0	new	new	1	won	stall	36	1	1	5	212	81	61	209	0	10.0
+infestation-clearance/act-1	0	expert	expert	1	won		12	0	0	5	66	8	8	56	0	2.0
+infestation-clearance/act-1	1	new	new	2	won	stall	31	1	1	5	152	62	49	170	0	6.5
+infestation-clearance/act-1	1	expert	expert	2	won		12	0	0	5	49	12	12	78	0	2.0
+infestation-clearance/act-1	2	new	new	3	won	stall	17	2	1	5	346	17	11	78	0	6.9
+infestation-clearance/act-1	2	expert	expert	3	won		7	0	0	5	56	3	2	38	0	1.5
+infestation-clearance/act-1	3	new	new	4	won	stall	20	1	1	5	661	16	10	78	0	14.4
+infestation-clearance/act-1	3	expert	expert	4	won		6	0	0	5	24	1	1	32	0	2.1
+infestation-clearance/act-1	4	new	new	1	won		12	0	0	5	66	10	7	90	0	1.9
+infestation-clearance/act-1	4	expert	expert	1	won		8	0	0	5	48	2	0	47	0	1.2
+infestation-clearance/act-1	5	new	new	2	won	stall	21	1	1	5	146	18	16	81	0	4.6
+infestation-clearance/act-1	5	expert	expert	2	won		11	0	0	5	92	16	7	74	0	2.1
+infestation-clearance/act-1	6	new	new	3	lost		23	5	1	5	249	50	42	117	0	8.4
+infestation-clearance/act-1	6	expert	expert	3	won	stall	24	1	1	5	245	42	35	102	0	6.9
+infestation-clearance/act-1	7	new	new	4	lost	stall	18	5	1	5	841	41	28	148	0	17.3
+infestation-clearance/act-1	7	expert	expert	4	won		15	2	0	5	835	16	9	78	0	14.4
+infestation-clearance/act-2	0	new	new	3	won		10	1	0	5	80	6	4	68	0	2.1
+infestation-clearance/act-2	0	expert	expert	3	won		9	0	0	5	120	2	2	50	0	2.2
+infestation-clearance/act-2	1	new	new	4	won		9	0	0	5	276	8	5	84	0	4.1
+infestation-clearance/act-2	1	expert	expert	4	won		10	0	0	5	420	14	8	61	0	5.0
+infestation-clearance/act-2	2	new	new	5	lost		28	5	1	5	1066	49	39	127	0	33.0
+infestation-clearance/act-2	2	expert	expert	5	extracted		20	4	1	5	913	56	42	110	0	20.1
+infestation-clearance/act-2	3	new	new	6	lost		28	5	1	5	1346	41	31	167	0	41.4
+infestation-clearance/act-2	3	expert	expert	6	lost		31	5	1	5	1277	41	30	141	0	40.1
+infestation-clearance/act-2	4	new	new	7	lost		20	5	1	5	1441	37	27	102	0	32.0
+infestation-clearance/act-2	4	expert	expert	7	extracted		24	4	1	5	1680	51	37	123	0	41.0
+infestation-clearance/act-2	5	new	new	3	won	stall	17	1	1	5	295	11	7	68	0	5.5
+infestation-clearance/act-2	5	expert	expert	3	won		11	0	0	5	251	14	9	72	0	3.8
+infestation-clearance/act-2	6	new	new	4	won		28	2	1	5	1206	39	32	155	0	38.2
+infestation-clearance/act-2	6	expert	expert	4	won		22	1	1	5	925	14	12	92	0	23.0
+infestation-clearance/act-2	7	new	new	5	lost		21	5	1	5	930	40	26	107	0	20.3
+infestation-clearance/act-2	7	expert	expert	5	won		31	3	1	5	1080	73	60	241	0	41.1
+crash-site/act-1	0	new	new	1	won		5	0	0	5	4	0	0	49	0	0.7
+crash-site/act-1	0	expert	expert	1	won		5	0	0	5	5	2	2	27	0	0.5
+crash-site/act-1	1	new	new	2	won		17	1	0	5	42	16	11	93	0	1.9
+crash-site/act-1	1	expert	expert	2	won		8	0	0	5	57	1	1	41	0	1.1
+crash-site/act-1	2	new	new	3	won		9	1	0	5	70	5	2	68	0	1.5
+crash-site/act-1	2	expert	expert	3	won		5	0	0	5	6	2	2	27	0	0.7
+crash-site/act-1	3	new	new	4	lost	stall	16	5	1	5	182	25	18	105	0	5.1
+crash-site/act-1	3	expert	expert	4	won		15	0	0	5	108	11	10	58	0	4.1
+crash-site/act-1	4	new	new	1	won		12	0	0	5	42	9	6	95	0	1.8
+crash-site/act-1	4	expert	expert	1	won		7	0	0	5	28	6	4	41	0	0.9
+crash-site/act-1	5	new	new	2	won		14	0	0	5	9	15	12	94	0	1.6
+crash-site/act-1	5	expert	expert	2	won		6	0	0	5	8	6	5	36	0	0.7
+crash-site/act-1	6	new	new	3	won		6	0	0	5	10	0	0	49	0	0.9
+crash-site/act-1	6	expert	expert	3	won		7	0	0	5	43	4	4	35	0	0.8
+crash-site/act-1	7	new	new	4	won		17	1	0	5	258	24	18	160	0	7.2
+crash-site/act-1	7	expert	expert	4	won		12	1	0	5	205	9	7	63	0	4.7
+crash-site/act-2	0	new	new	3	won		11	1	0	5	51	10	8	90	0	2.1
+crash-site/act-2	0	expert	expert	3	won		7	0	0	5	57	6	5	40	0	1.2
+crash-site/act-2	1	new	new	4	won		15	1	0	5	109	18	13	124	0	5.2
+crash-site/act-2	1	expert	expert	4	won		11	0	0	5	258	0	0	58	0	4.4
+crash-site/act-2	2	new	new	5	won		16	1	0	5	158	28	24	128	0	6.0
+crash-site/act-2	2	expert	expert	5	won		13	2	0	5	259	19	11	70	0	4.8
+crash-site/act-2	3	new	new	6	lost	stall	17	5	1	5	219	34	25	119	0	5.6
+crash-site/act-2	3	expert	expert	6	won		9	0	0	5	113	3	3	45	0	2.7
+crash-site/act-2	4	new	new	7	extracted		25	2	0	5	94	37	27	166	0	7.2
+crash-site/act-2	4	expert	expert	7	lost	stall	29	1	1	5	166	22	12	87	0	8.8
+crash-site/act-2	5	new	new	3	won		11	1	0	5	33	11	10	85	0	1.4
+crash-site/act-2	5	expert	expert	3	won		10	1	0	5	66	17	12	59	0	1.4
+crash-site/act-2	6	new	new	4	won		15	2	0	5	153	17	16	135	0	5.5
+crash-site/act-2	6	expert	expert	4	won		14	1	0	5	310	2	1	74	0	6.3
+crash-site/act-2	7	new	new	5	won		16	2	0	5	137	14	11	110	0	4.9
+crash-site/act-2	7	expert	expert	5	won		12	1	0	5	138	12	9	50	0	3.3
+crash-site/act-3	0	new	new	5	won		12	0	0	8	184	8	8	130	0	5.5
+crash-site/act-3	0	expert	expert	5	won		7	0	0	8	105	7	3	63	0	3.6
+crash-site/act-3	1	new	new	6	won		12	1	0	8	92	12	7	205	0	6.5
+crash-site/act-3	1	expert	expert	6	won		10	1	0	8	179	3	2	88	0	5.2
+crash-site/act-3	2	new	new	7	won		15	0	0	8	155	10	7	136	0	5.8
+crash-site/act-3	2	expert	expert	7	won		4	0	0	8	3	2	2	31	0	1.5
+crash-site/act-3	3	new	new	8	won		11	1	0	8	181	3	3	169	0	5.5
+crash-site/act-3	3	expert	expert	8	won		6	0	0	8	25	2	2	48	0	1.8
+crash-site/act-3	4	new	new	9	won		19	0	0	8	18	13	9	238	0	8.7
+crash-site/act-3	4	expert	expert	9	won		13	0	0	8	190	4	4	99	0	5.4
+crash-site/act-3	5	new	new	5	won		8	0	0	8	86	0	0	147	0	4.6
+crash-site/act-3	5	expert	expert	5	won		4	0	0	8	4	2	2	40	0	1.9
+crash-site/act-3	6	new	new	6	won		12	0	0	8	70	19	17	192	0	6.4
+crash-site/act-3	6	expert	expert	6	won		9	0	0	8	101	12	5	72	0	3.7
+crash-site/act-3	7	new	new	7	won		6	0	0	8	20	0	0	110	0	3.2
+crash-site/act-3	7	expert	expert	7	won		6	0	0	8	18	3	2	60	0	2.7
+evacuation/act-1	0	new	new	1	won		25	1	1	5	131	40	33	151	0	6.2
+evacuation/act-1	0	expert	expert	1	won		15	1	0	5	102	17	11	99	0	3.7
+evacuation/act-1	1	new	new	2	won	stall	21	4	1	5	255	38	27	132	0	8.2
+evacuation/act-1	1	expert	expert	2	won		15	1	0	5	121	13	11	102	0	4.8
+evacuation/act-1	2	new	new	3	lost		23	5	1	5	1249	67	55	215	0	36.5
+evacuation/act-1	2	expert	expert	3	extracted		16	4	0	5	853	43	24	106	0	17.9
+evacuation/act-1	3	new	new	4	lost		27	5	1	5	1152	54	39	187	0	35.7
+evacuation/act-1	3	expert	expert	4	extracted		25	4	0	5	1174	30	21	161	0	40.6
+evacuation/act-1	4	new	new	1	won	stall	28	1	1	5	264	47	30	184	0	11.6
+evacuation/act-1	4	expert	expert	1	won		22	1	0	5	168	36	23	163	0	8.0
+evacuation/act-1	5	new	new	2	won		19	2	0	5	176	38	25	172	0	6.1
+evacuation/act-1	5	expert	expert	2	won		14	0	0	5	113	7	6	93	0	3.5
+evacuation/act-1	6	new	new	3	lost	stall	26	5	1	5	1130	75	49	222	0	35.6
+evacuation/act-1	6	expert	expert	3	won		30	1	0	5	1019	36	21	175	0	39.1
+evacuation/act-1	7	new	new	4	lost	stall	22	5	1	5	965	46	37	153	0	22.4
+evacuation/act-1	7	expert	expert	4	lost		39	5	1	5	1378	45	34	171	0	65.2
+defend-installation/act-1	0	new	new	1	won		19	0	0	5	9	17	15	136	0	3.0
+defend-installation/act-1	0	expert	expert	1	won		18	0	0	5	10	19	16	116	0	2.3
+defend-installation/act-1	1	new	new	2	won		27	0	0	5	45	50	34	185	0	5.0
+defend-installation/act-1	1	expert	expert	2	won		23	0	0	5	52	53	35	159	0	3.0
+defend-installation/act-1	2	new	new	3	won		31	0	0	5	119	38	31	274	0	14.2
+defend-installation/act-1	2	expert	expert	3	won		35	0	0	5	47	40	26	246	0	13.6
+defend-installation/act-1	3	new	new	4	won		48	3	0	5	81	77	53	257	0	18.7
+defend-installation/act-1	3	expert	expert	4	won		50	2	0	5	48	64	45	173	0	16.5
+defend-installation/act-1	4	new	new	1	won		18	0	0	5	63	26	17	120	0	3.1
+defend-installation/act-1	4	expert	expert	1	won		16	0	0	5	14	16	11	103	0	2.3
+defend-installation/act-1	5	new	new	2	won		21	0	0	5	81	45	31	128	0	3.1
+defend-installation/act-1	5	expert	expert	2	won		21	0	0	5	27	47	30	148	0	2.6
+defend-installation/act-1	6	new	new	3	won		31	2	0	5	272	66	42	162	0	14.6
+defend-installation/act-1	6	expert	expert	3	won		25	3	0	5	202	43	30	149	0	12.9
+defend-installation/act-1	7	new	new	4	won		52	1	0	5	135	89	52	352	0	23.8
+defend-installation/act-1	7	expert	expert	4	won		55	0	0	5	89	66	45	416	0	33.8
+tunnel-sabotage/act-2	0	new	new	3	won		7	2	0	5	64	7	5	60	0	1.5
+tunnel-sabotage/act-2	0	expert	expert	3	won	stall	21	3	1	5	362	22	20	70	0	7.7
+tunnel-sabotage/act-2	1	new	new	4	won		17	4	0	5	802	25	20	101	0	15.1
+tunnel-sabotage/act-2	1	expert	expert	4	won		13	0	0	5	718	18	14	77	0	11.3
+tunnel-sabotage/act-2	2	new	new	5	lost		21	5	1	5	1070	39	33	110	0	22.1
+tunnel-sabotage/act-2	2	expert	expert	5	extracted		22	3	1	5	1038	33	25	85	0	25.2
+tunnel-sabotage/act-2	3	new	new	6	lost	stall	22	5	1	5	1141	30	19	104	0	23.3
+tunnel-sabotage/act-2	3	expert	expert	6	won	stall	22	4	1	5	880	25	18	78	0	19.5
+tunnel-sabotage/act-2	4	new	new	7	won	stall	22	3	1	5	1073	34	32	113	0	24.9
+tunnel-sabotage/act-2	4	expert	expert	7	won		18	2	0	5	1024	17	12	81	0	19.0
+tunnel-sabotage/act-2	5	new	new	3	lost	stall	18	5	1	5	243	28	17	86	0	5.2
+tunnel-sabotage/act-2	5	expert	expert	3	won		10	2	0	5	175	15	11	58	0	2.4
+tunnel-sabotage/act-2	6	new	new	4	won		13	3	0	5	458	22	18	88	0	7.9
+tunnel-sabotage/act-2	6	expert	expert	4	won		9	1	0	5	337	17	8	58	0	4.6
+tunnel-sabotage/act-2	7	new	new	5	lost		27	5	1	5	775	43	33	108	0	22.8
+tunnel-sabotage/act-2	7	expert	expert	5	lost	stall	21	5	1	5	722	28	23	76	0	16.9
+wreck-recovery/act-2	0	new	new	3	won		6	0	0	5	7	0	0	42	0	0.8
+wreck-recovery/act-2	0	expert	expert	3	won		6	0	0	5	7	0	0	34	0	0.8
+wreck-recovery/act-2	1	new	new	4	won		5	0	0	5	7	0	0	41	0	0.9
+wreck-recovery/act-2	1	expert	expert	4	won	stall	18	1	1	5	316	11	9	53	0	6.0
+wreck-recovery/act-2	2	new	new	5	won		4	0	0	5	3	0	0	39	0	1.5
+wreck-recovery/act-2	2	expert	expert	5	won		6	0	0	5	18	0	0	37	0	2.4
+wreck-recovery/act-2	3	new	new	6	lost	stall	17	5	1	5	661	30	21	128	0	17.3
+wreck-recovery/act-2	3	expert	expert	6	extracted		13	1	0	5	405	7	4	74	0	9.1
+wreck-recovery/act-2	4	new	new	7	won	stall	20	1	1	5	1160	13	11	88	0	21.8
+wreck-recovery/act-2	4	expert	expert	7	won		12	1	0	5	494	20	13	76	0	8.7
+wreck-recovery/act-2	5	new	new	3	won		5	0	0	5	6	0	0	40	0	0.8
+wreck-recovery/act-2	5	expert	expert	3	won		6	0	0	5	11	0	0	35	0	1.1
+wreck-recovery/act-2	6	new	new	4	won		6	0	0	5	14	0	0	44	0	1.1
+wreck-recovery/act-2	6	expert	expert	4	won		7	0	0	5	64	1	1	42	0	1.4
+wreck-recovery/act-2	7	new	new	5	won		9	0	0	5	351	4	3	74	0	5.2
+wreck-recovery/act-2	7	expert	expert	5	won		10	0	0	5	410	4	3	56	0	6.8
+wreck-recovery/act-3	0	new	new	5	won		7	0	0	8	140	0	0	107	0	4.7
+wreck-recovery/act-3	0	expert	expert	5	won		8	0	0	8	230	5	5	87	0	4.7
+wreck-recovery/act-3	1	new	new	6	won		5	0	0	8	14	0	0	74	0	3.4
+wreck-recovery/act-3	1	expert	expert	6	won		6	0	0	8	16	1	1	66	0	3.6
+wreck-recovery/act-3	2	new	new	7	won		6	0	0	8	26	2	2	66	0	4.1
+wreck-recovery/act-3	2	expert	expert	7	won		6	0	0	8	24	2	2	62	0	4.1
+wreck-recovery/act-3	3	new	new	8	won	stall	22	2	2	8	1038	47	37	156	0	24.3
+wreck-recovery/act-3	3	expert	expert	8	won		9	1	0	8	376	4	2	80	0	8.1
+wreck-recovery/act-3	4	new	new	9	won	stall	21	2	2	8	1614	39	30	174	0	38.7
+wreck-recovery/act-3	4	expert	expert	9	won		10	0	0	8	1040	3	2	97	0	19.6
+wreck-recovery/act-3	5	new	new	5	won		5	0	0	8	13	0	0	79	0	3.4
+wreck-recovery/act-3	5	expert	expert	5	won		8	0	0	8	243	4	4	82	0	5.7
+wreck-recovery/act-3	6	new	new	6	won		7	0	0	8	137	1	1	83	0	3.6
+wreck-recovery/act-3	6	expert	expert	6	won		6	0	0	8	21	0	0	61	0	3.1
+wreck-recovery/act-3	7	new	new	7	won		7	0	0	8	104	1	1	98	0	4.0
+wreck-recovery/act-3	7	expert	expert	7	won		6	0	0	8	28	1	1	61	0	3.3
+story:first-skyfall/act-1	0	new	new	1	won		4	0	0	5	1	0	0	34	0	0.4
+story:first-skyfall/act-1	0	expert	expert	1	won		4	0	0	5	1	1	1	26	0	0.4
+story:first-skyfall/act-1	1	new	new	1	won		5	0	0	5	6	0	0	41	0	0.6
+story:first-skyfall/act-1	1	expert	expert	1	won		4	0	0	5	2	9	6	25	0	0.4
+story:first-skyfall/act-1	2	new	new	1	won		9	0	0	5	48	7	4	75	0	1.3
+story:first-skyfall/act-1	2	expert	expert	1	won		8	0	0	5	46	17	14	53	0	1.0
+story:first-skyfall/act-1	3	new	new	1	won		4	0	0	5	1	0	0	36	0	0.5
+story:first-skyfall/act-1	3	expert	expert	1	won		4	0	0	5	2	6	4	23	0	0.4
+story:first-skyfall/act-1	4	new	new	1	won		5	0	0	5	6	0	0	38	0	0.6
+story:first-skyfall/act-1	4	expert	expert	1	won		5	0	0	5	6	1	0	30	0	0.6
+story:first-skyfall/act-1	5	new	new	1	won		5	0	0	5	6	0	0	46	0	0.8
+story:first-skyfall/act-1	5	expert	expert	1	won		5	0	0	5	4	6	4	25	0	0.5
+story:first-skyfall/act-1	6	new	new	1	won		5	0	0	5	4	0	0	38	0	0.5
+story:first-skyfall/act-1	6	expert	expert	1	won		6	0	0	5	6	7	5	28	0	0.4
+story:first-skyfall/act-1	7	new	new	1	won		15	1	0	5	18	13	6	89	0	1.3
+story:first-skyfall/act-1	7	expert	expert	1	won		14	1	0	5	16	8	5	48	0	1.1
+story:intact-pod/act-2	0	new	new	6	won		21	0	0	5	28	15	14	120	0	4.4
+story:intact-pod/act-2	0	expert	expert	6	won		13	0	0	5	197	18	11	81	0	4.1
+story:intact-pod/act-2	1	new	new	6	won		16	0	0	5	151	21	17	98	0	4.2
+story:intact-pod/act-2	1	expert	expert	6	won		11	0	0	5	268	14	13	68	0	4.1
+story:intact-pod/act-2	2	new	new	6	won	stall	25	2	1	5	234	20	13	138	0	9.0
+story:intact-pod/act-2	2	expert	expert	6	won		14	0	0	5	355	9	5	81	0	5.7
+story:intact-pod/act-2	3	new	new	6	won		17	0	0	5	62	28	20	98	0	3.3
+story:intact-pod/act-2	3	expert	expert	6	won		11	0	0	5	127	13	6	65	0	2.5
+story:intact-pod/act-2	4	new	new	6	won		21	0	0	5	52	27	22	134	0	5.3
+story:intact-pod/act-2	4	expert	expert	6	won		14	1	0	5	247	5	3	75	0	4.7
+story:intact-pod/act-2	5	new	new	6	won		20	1	0	5	156	25	18	105	0	5.4
+story:intact-pod/act-2	5	expert	expert	6	won		12	0	0	5	363	13	7	71	0	4.7
+story:intact-pod/act-2	6	new	new	6	won		19	3	0	5	157	27	18	130	0	5.7
+story:intact-pod/act-2	6	expert	expert	6	won		15	0	0	5	243	2	1	81	0	4.5
+story:intact-pod/act-2	7	new	new	6	lost	stall	18	5	1	5	94	36	26	81	0	3.8
+story:intact-pod/act-2	7	expert	expert	6	won		12	1	0	5	182	14	12	67	0	3.6

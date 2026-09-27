@@ -176,6 +176,16 @@ export function storyPlays(track: StoryTrack): number {
   return track.losses + (track.won === undefined ? 0 : 1);
 }
 
+/**
+ * Watches a campaign as `playCampaign` plays it: called once a day, after
+ * the day's research and before its mission, with the missions played so
+ * far. It reads the state; it never changes the campaign.
+ */
+export type CampaignObserver = (
+  state: GameState,
+  missionsPlayed: number,
+) => void;
+
 /** What a sweep composes a game from: the story, the shipped one unless a test swaps it. */
 export interface SweepGameOptions {
   readonly story?: StoryDeps;
@@ -283,7 +293,8 @@ export function endlessStory(): StoryDeps {
  * Commands go straight to `game.dispatcher`, no session or autosave, so
  * nothing but the simulation runs. A refused command is a harness bug
  * and throws. `rules` are the story rules `game` was composed with, for
- * timing their gates.
+ * timing their gates. `observe`, if given, sees each day's state once
+ * its research is done (the calibration forces are read this way).
  */
 export function playCampaign(
   game: GameComposition,
@@ -291,6 +302,7 @@ export function playCampaign(
   seed: number,
   tuning: Pick<CampaignSweepTuning, "dayCap">,
   rules: StoryMissionRules = STORY_MISSION_RULES,
+  observe?: CampaignObserver,
 ): CampaignRecord {
   const tracker = new CampaignTracker(game, player, seed, rules);
   const ctx = resultContextFor(player, SWEEP_RESULTS);
@@ -307,6 +319,7 @@ export function playCampaign(
       (current, command) => tracker.tryApply(current, command),
     );
     state = research(game, player, state, tracker);
+    observe?.(state, tracker.missionsPlayed);
     if (playsOn(player, state.overworld.day, tracker.startDay)) {
       const offer = chooseOffer(state.overworld.missions, ctx);
       if (offer !== undefined) {
@@ -686,6 +699,11 @@ class CampaignTracker {
   // ===========================================
   // Public
   // ===========================================
+
+  /** Missions resolved so far. */
+  get missionsPlayed(): number {
+    return this.missions;
+  }
 
   /** Notes the fresh campaign: its first day, act, pool and threat. */
   start(state: GameState): void {

@@ -18,9 +18,10 @@ import type { CellSummary } from "./calibration-matrix.test-helper";
 
 /**
  * Seeds a cell's expert may win fewer than its new player and still
- * pass. At 8 seeds one seed is binomial noise: a cell both players win
- * half the time has a standard deviation of √(8 × ½ × ½) ≈ 1.4 wins,
- * so either player can land a seed ahead on the dice alone.
+ * pass. One seed is binomial noise: a cell both players win half the
+ * time has a standard deviation of √(8 × ½ × ½) ≈ 1.4 wins at 8 seeds
+ * and √(16 × ½ × ½) = 2 at the default 16, so either player can land a
+ * seed ahead on the dice alone.
  */
 export const PIN_SEED_ALLOWANCE = 1;
 

@@ -42,6 +42,14 @@ export const HookKinds = {
    */
   BROOD_CHAMBER: "brood-chamber",
   /**
+   * A Great Hive's forward extraction point (#1179 C3a round 3): one
+   * square zone the size of the landing zone, on the route past halfway
+   * from the drop ship to the core, where a second drop ship takes the
+   * force aboard. Its tiles join the mission's extraction tiles. Meta
+   * `{ chamberId }`, the route chamber it lies in.
+   */
+  FORWARD_EXTRACTION: "forward-extraction",
+  /**
    * A civilian group trapped in a building (campaign arc §6.4): one
    * point hook per group on an interior floor tile, at most one group a
    * building, each with an infantry route from deploy to its door.

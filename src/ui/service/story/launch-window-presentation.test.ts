@@ -48,6 +48,7 @@ describe("Launch Window's briefing (#1179)", () => {
       "story-landing",
       "great-hive-target",
       "great-hive-objective",
+      "great-hive-extraction",
       "great-hive-liberates",
       "great-hive-beacons",
       "great-hive-win",

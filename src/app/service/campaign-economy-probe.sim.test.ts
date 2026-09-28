@@ -1,9 +1,10 @@
 /// <reference types="node" />
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
 import { ACT_IDS } from "../../content/model/act-id";
+import { PLAYER_IDS } from "./calibration-run.test-helper";
 import type { SeedEconomy } from "./campaign-economy-probe.test-helper";
 import {
   ECONOMY_PROBE_SEEDS,
@@ -29,6 +30,13 @@ import {
   summaryRows,
   toTsv,
 } from "./campaign-sweep.test-helper";
+import type { MatrixDraw } from "./matrix-losses.test-helper";
+import {
+  MATRIX_PLAYER_OF,
+  MatrixLossTable,
+  matrixPlayer,
+  readMatrixRuns,
+} from "./matrix-losses.test-helper";
 import type { ModelledPlayer } from "./modelled-player.test-helper";
 import { CAMPAIGN_SWEEP_TUNING } from "./modelled-player.test-helper";
 import type { SpendingRules } from "./realistic-spender.test-helper";
@@ -58,6 +66,21 @@ import { OPT_IN_PLAYERS } from "./realistic-spender.test-helper";
  *                                     on seeds 1–60, and whether each would hold
  * ```
  *
+ * With a calibration matrix's runs, it also plays the realistic spender
+ * on each tactical player's losses (`matrix-losses.test-helper.ts`),
+ * and writes the loss table it drew from and how the campaign's
+ * missions mapped onto it. A new matrix is a new table: point this at
+ * the new `runs.tsv` and run it again.
+ *
+ * ```
+ *   SIM_MATRIX_RUNS=/tmp/matrix.runs.tsv SIM_ECONOMY_OUT=/tmp/economy ...
+ *
+ *   /tmp/economy.losses.tsv           per tactical player, cell and outcome: runs, mean
+ *                                     squads and mechs lost, the share abandoned
+ *   /tmp/economy.routes.tsv           per matrix player, act, cell, route and pool: the
+ *                                     missions of seeds 1–60 that drew from it
+ * ```
+ *
  * Each band's point is the force probe's (act midpoints, the finale's
  * arrival), so the Average player's point banks are the banks the
  * calibration forces were filled from. It reports; it pins nothing.
@@ -65,10 +88,40 @@ import { OPT_IN_PLAYERS } from "./realistic-spender.test-helper";
  */
 const OUT = process.env.SIM_ECONOMY_OUT;
 
+/** A calibration matrix's `runs.tsv`, whose losses the matrix players take. */
+const MATRIX_RUNS = process.env.SIM_MATRIX_RUNS;
+
+/** Each tactical player's loss table, when the probe has a matrix. */
+const TABLES: readonly MatrixLossTable[] =
+  MATRIX_RUNS === undefined
+    ? []
+    : ((): MatrixLossTable[] => {
+        const runs = readMatrixRuns(readFileSync(MATRIX_RUNS, "utf8"));
+        return PLAYER_IDS.map((id) => MatrixLossTable.of(runs, id));
+      })();
+
+/** Every matrix draw, by player, act, cell, route and pool. */
+const ROUTES = new Map<string, number>();
+
+/** The matrix players, each counting its draws into `ROUTES`. */
+const MATRIX_PLAYERS = TABLES.map((table) =>
+  matrixPlayer(table, (draw: MatrixDraw, mission) => {
+    const key = [
+      MATRIX_PLAYER_OF[table.player],
+      mission.act ?? "",
+      draw.cell,
+      draw.route,
+      draw.pool,
+    ].join("\t");
+    ROUTES.set(key, (ROUTES.get(key) ?? 0) + 1);
+  }),
+);
+
 /**
  * The players the probe accounts, each under its own id: the Average
  * player, which spends as the sweep does, and the opt-in players, which
- * spend like a player (`realistic-spender.test-helper.ts`).
+ * spend like a player (`realistic-spender.test-helper.ts`), the matrix
+ * players among them when the probe has a matrix.
  */
 const PLAYERS: readonly {
   readonly player: ModelledPlayer;
@@ -77,6 +130,7 @@ const PLAYERS: readonly {
   { player: CAMPAIGN_SWEEP_TUNING.players.average },
   OPT_IN_PLAYERS.spender,
   OPT_IN_PLAYERS.realistic,
+  ...MATRIX_PLAYERS,
 ];
 
 /** The campaign sweep's seeds, which its pins are read on. */
@@ -166,6 +220,44 @@ describe.skipIf(OUT === undefined)("the campaign economy probe", () => {
         ),
       ),
     );
+    if (TABLES.length > 0) {
+      writeFileSync(
+        `${out}.losses.tsv`,
+        toTsv(
+          [
+            "player",
+            "cell",
+            "outcome",
+            "runs",
+            "squads_lost_mean",
+            "mechs_lost_mean",
+            "abandoned_share",
+          ],
+          TABLES.flatMap((table) =>
+            table
+              .rows()
+              .map((row) => [
+                table.player,
+                row.cell,
+                row.outcome,
+                String(row.runs),
+                row.squadsLost.toFixed(2),
+                row.mechsLost.toFixed(2),
+                row.abandoned.toFixed(2),
+              ]),
+          ),
+        ),
+      );
+      writeFileSync(
+        `${out}.routes.tsv`,
+        toTsv(
+          ["player", "act", "cell", "route", "pool", "missions"],
+          [...ROUTES.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, count]) => [...key.split("\t"), String(count)]),
+        ),
+      );
+    }
     for (const [, economies] of played) {
       expect(economies).toHaveLength(ECONOMY_PROBE_SEEDS.length);
     }

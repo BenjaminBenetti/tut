@@ -38,7 +38,8 @@ import type { HiveAssaultSetupTuning } from "../model/hive-assault-setup-tuning"
  *     new player    Act II 16 → 12 of 16, Act III 15 → 11 of 16
  *   ```
  *
- *   The Great Hive keeps the slow nests (`great-hive-setup-tuning.ts`).
+ *   The Great Hive's nests have their own pace, three bugs every 6 at
+ *   d8 (`great-hive-setup-tuning.ts`).
  * - The burrows send no edge waves. One wave cost Act II half its wins.
  */
 export const HIVE_ASSAULT_SETUP_TUNING: HiveAssaultSetupTuning = {

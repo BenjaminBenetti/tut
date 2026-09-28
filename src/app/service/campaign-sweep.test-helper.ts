@@ -305,7 +305,9 @@ export function endlessStory(): StoryDeps {
  *               BuildMech (a lost mech, from the first saved template), when affordable
  *     research  nextResearch → UnlockTech, until the player waits
  *     play      on a play day, chooseOffer → LaunchMission (resolver, settle,
- *               consequences, story), with every squad and mech
+ *               consequences, story), with every squad and mech; a roster
+ *               with nobody on it plays nothing (an opt-in player that
+ *               loses units can be left with none until it can hire)
  *     advance   AdvanceDay (upkeep … director … threat, outcome)
  * ```
  *
@@ -369,10 +371,16 @@ export function playCampaignToEnd(
     observe?.(state, tracker.missionsPlayed);
     if (playsOn(player, state.overworld.day, tracker.startDay)) {
       const offer = chooseOffer(state.overworld.missions, ctx);
-      if (offer !== undefined) {
+      const deployment =
+        offer === undefined ? undefined : deploymentFor(offer, state.roster);
+      if (
+        offer !== undefined &&
+        deployment !== undefined &&
+        deployment.squadIds.length + deployment.mechIds.length > 0
+      ) {
         state = tracker.apply(
           state,
-          launchMission(offer.id, deploymentFor(offer, state.roster)),
+          launchMission(offer.id, deployment),
           offer,
         );
       }

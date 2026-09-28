@@ -71,6 +71,7 @@ describe("the arc's targets", () => {
     expect(EXPERT_TARGET_ALLOWANCE).toBe(1);
     expect(TARGETED_CELLS).toEqual([
       "hive-assault",
+      "story:great-hive",
       "infestation-clearance/act-2",
       "crash-site/act-3",
       "evacuation/act-1",

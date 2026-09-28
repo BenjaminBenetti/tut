@@ -43,7 +43,7 @@ const TURN_CAP = 40;
 
 /**
  * Stands every squad and mech on a free tile within three of the core
- * with a clear sight line to it. The march down the 184-deep cavern is
+ * with a clear sight line to it. The march down the cavern is
  * the win-rate sim's business (`great-hive.sim.test.ts`); the guards stay
  * where the setup put them, so the fight at the core is the shipped one.
  */

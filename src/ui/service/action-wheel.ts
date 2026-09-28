@@ -5,6 +5,7 @@ import type {
 import { validateMechAction } from "../../tactical/service/mech-action-service";
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { onForwardExtraction } from "../../mapgen/service/extraction-zones";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
@@ -1301,12 +1302,19 @@ function sameTile(a: TileCoord, b: TileCoord): boolean {
   return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
-/** Board the drop ship — what Extract is to the player (#1112). */
+/**
+ * Board the drop ship — what Extract is to the player (#1112). Open, it
+ * names the ship the unit stands by: a Great Hive's forward point
+ * (#1179) or the drop ship it landed in.
+ */
 function boardItem(unit: Unit, ctx: WheelContext): RadialMenuItem {
   const refusal = actionRefusal(ctx.mission, unit.id, "extract", ctx.deps);
   const id = itemId("extract", "");
+  const detail = onForwardExtraction(ctx.mission.map.hooks, unit.pos)
+    ? "forward point"
+    : "drop ship";
   return refusal === undefined
-    ? { id, label: "Board", icon: "extract", detail: "drop ship" }
+    ? { id, label: "Board", icon: "extract", detail }
     : closed(id, "Board", "extract", refusal, ctx);
 }
 

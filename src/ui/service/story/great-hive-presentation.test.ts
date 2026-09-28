@@ -112,7 +112,7 @@ describe("the Great Hive briefing (#1179)", () => {
     );
   });
 
-  it("names the target, the objective, the continent it frees and the beacon tally", () => {
+  it("names the target, the objective, where to extract, the continent it frees and the beacon tally", () => {
     const state = campaign([EUROPE, { ...ASIA, destroyedDay: 205 }, OCEANIA]);
 
     expect(storyBriefingRowsOf(ASSAULT, { state }, STORY_PRESENTATION)).toEqual(
@@ -126,6 +126,11 @@ describe("the Great Hive briefing (#1179)", () => {
           field: "great-hive-objective",
           label: "Objective",
           value: "Destroy the core; the beacon falls with it",
+        },
+        {
+          field: "great-hive-extraction",
+          label: "Extraction",
+          value: "The forward point, past halfway in, or the landing zone",
         },
         {
           field: "great-hive-liberates",
@@ -162,6 +167,7 @@ describe("the Great Hive briefing (#1179)", () => {
     ).toEqual([
       "Great Hive: Europe · level 1",
       "Destroy the core; the beacon falls with it",
+      "The forward point, past halfway in, or the landing zone",
       "Europe, 1 region: cities −35, growth paused 6 days",
       "Great Hives destroyed: 0 / 3",
       "All three: the launch window opens",

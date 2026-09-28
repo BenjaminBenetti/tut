@@ -14,6 +14,7 @@ import {
   summariseEconomy,
 } from "./campaign-economy-probe.test-helper";
 import { CAMPAIGN_SWEEP_TUNING } from "./modelled-player.test-helper";
+import { OPT_IN_PLAYERS } from "./realistic-spender.test-helper";
 
 // ===========================================
 // Fixtures
@@ -21,6 +22,14 @@ import { CAMPAIGN_SWEEP_TUNING } from "./modelled-player.test-helper";
 
 /** The Average player's economy on seeds 1 and 2, played once for every test. */
 const ECONOMIES = probeEconomy(CAMPAIGN_SWEEP_TUNING.players.average, [1, 2]);
+
+/** The spender's economy on seed 1: it fills its force to the cap. */
+const SPENDER = (() => {
+  const { player, spending } = OPT_IN_PLAYERS.spender;
+  const [economy] = probeEconomy(player, [1], { spending });
+  if (economy === undefined) throw new Error("seed 1 was played");
+  return economy;
+})();
 
 // ===========================================
 // The probe
@@ -84,6 +93,43 @@ describe("the campaign economy probe (#1179)", () => {
       expect(missions).toBe(economy.record.missions);
       expect(days).toBe(economy.record.days);
     }
+  });
+
+  it("counts the force each act fields: the Average's four squads and a mech every day of the campaign, never full and never grounded", () => {
+    for (const economy of ECONOMIES) {
+      const days = ACT_IDS.reduce(
+        (sum, band) => sum + economy.bands[band].force.days,
+        0,
+      );
+      expect(days, `seed ${economy.seed}`).toBe(economy.record.days);
+    }
+    const economy = ECONOMIES[0];
+    if (economy === undefined) throw new Error("seed 1 was played");
+    for (const band of ACT_IDS) {
+      const force = economy.bands[band].force;
+      expect(force.days, band).toBeGreaterThan(0);
+      expect(force.unitDays, band).toBe(5 * force.days);
+      expect(force.fullDays, band).toBe(0);
+      expect(force.groundedDays, band).toBe(0);
+    }
+  });
+
+  it("counts the days a force is at the deployment cap: the spender's, every day of Act II and most of Act I, and writes each count in its column", () => {
+    const force = SPENDER.bands["act-2"].force;
+    expect(force.days).toBeGreaterThan(0);
+    expect(force.fullDays).toBe(force.days);
+    expect(force.unitDays).toBe(8 * force.days);
+    const act1 = SPENDER.bands["act-1"].force;
+    expect(act1.fullDays).toBeGreaterThan(0);
+    expect(act1.fullDays).toBeLessThan(act1.days);
+    const header = economyBandsHeader();
+    const row = economyBandRow("spender", SPENDER, "act-1");
+    const cell = (column: string): string | undefined =>
+      row[header.indexOf(column)];
+    expect(cell("act_force_days")).toBe(String(act1.days));
+    expect(cell("act_unit_days")).toBe(String(act1.unitDays));
+    expect(cell("act_full_days")).toBe(String(act1.fullDays));
+    expect(cell("act_grounded_days")).toBe("0");
   });
 
   it("writes one row per seed and band, in the header's order, and summarises every band and the campaign", () => {

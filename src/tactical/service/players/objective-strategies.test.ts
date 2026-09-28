@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { STOREY_LAYERS } from "../../../core/model/elevation";
+import { HookKinds } from "../../../mapgen/model/hook";
 import { PassMask } from "../../../mapgen/model/pass-mask";
 import { FixtureMapBuilder } from "../../../mapgen/service/fixture-map-builder";
 import type { DefendGeneratorsObjective } from "../../model/tactical-state";
@@ -229,6 +230,39 @@ describe("the hive-core strategy while the core is unseen (#1179 C3a)", () => {
     expect(back).toHaveLength(16);
     expect(nearestInBack).toBeGreaterThanOrEqual(farthestLeftOut);
     expect(back.map(far)).toEqual([...back.map(far)].sort((a, b) => b - a));
+  });
+
+  it("measures the back from the landing zone, not from a forward extraction point (#1179 C3a round 3)", () => {
+    const plain = field();
+    const map = plain.mission.map;
+    // A second place to board near the far end, as a Great Hive marks one.
+    const forwardTiles = map.tiles
+      .filter(
+        (tile) => tile.y === 0 && tile.x >= 26 && tile.z >= 6 && tile.z <= 9,
+      )
+      .map(({ x, y, z }) => ({ x, y, z }));
+    const forward = {
+      id: "hook-forward",
+      kind: HookKinds.FORWARD_EXTRACTION,
+      tiles: forwardTiles,
+      requiredPass: PassMask.ALL,
+    };
+    const withPoint: PlayerView = {
+      ...plain,
+      mission: {
+        ...plain.mission,
+        map: {
+          ...map,
+          hooks: {
+            ...map.hooks,
+            objectives: [...map.hooks.objectives, forward],
+          },
+        },
+        extraction: [...plain.mission.extraction, ...forwardTiles],
+      },
+    };
+    expect(forwardTiles).toHaveLength(16);
+    expect(backOfMap(withPoint)).toEqual(backOfMap(plain));
   });
 
   it("heads for the back it has not seen, urgently", () => {

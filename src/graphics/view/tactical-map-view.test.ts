@@ -654,6 +654,44 @@ describe("TacticalMapView.loadModels", () => {
       false,
     );
   });
+
+  it("marks a forward extraction point in a mission, where it lies flat like the landing zone (#1179)", () => {
+    const map = new FixtureMapBuilder(6, 6, 1)
+      .fillGround()
+      .objective(HookKinds.EGG_SPAWNER, [{ x: 1, y: 0, z: 1 }])
+      .objective(HookKinds.FORWARD_EXTRACTION, [{ x: 4, y: 0, z: 4 }])
+      .build();
+    const mission = new TacticalMapView(map, undefined, {
+      objectiveMarkers: false,
+    });
+    const hookMesh = (
+      view: TacticalMapView,
+      kind: string,
+    ): InstancedMesh | undefined => {
+      let found: InstancedMesh | undefined;
+      view.root.traverse((object) => {
+        if (object.name.startsWith(`hooks:hook:${kind}:`)) {
+          found = object as InstancedMesh;
+        }
+      });
+      return found;
+    };
+    const forward = hookMesh(mission, HookKinds.FORWARD_EXTRACTION);
+    expect(forward).toBeDefined();
+    expect(hookMesh(mission, HookKinds.EGG_SPAWNER)).toBeUndefined();
+    // No objective slab lift: it lies on its shelf by the landing zone's,
+    // under the spawner's slab.
+    const marked = new TacticalMapView(map);
+    const forwardY = new Vector3().setFromMatrixPosition(
+      readInstance(forward, 0),
+    ).y;
+    const spawnerY = new Vector3().setFromMatrixPosition(
+      readInstance(hookMesh(marked, HookKinds.EGG_SPAWNER), 0),
+    ).y;
+    expect(forwardY).toBeLessThan(spawnerY);
+    mission.dispose();
+    marked.dispose();
+  });
   it("preloads the distinct ids and instances rather than cloning per cell", async () => {
     const map = fixture().build();
     const view = new TacticalMapView(map);

@@ -59,6 +59,7 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
  *
  * ```
  *   hive-assault                  both Hive Assault cells (#1179 C3a, round 2)
+ *   story:great-hive              the Great Hive (#1179 C3a, round 3)
  *   infestation-clearance/act-2   (#1179 C2b-1-field)
  *   crash-site/act-3              (#1179 C2b-1-field)
  *   evacuation/act-1…3            the three Evacuation cells (#1179 C2b-1-field)
@@ -79,6 +80,7 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
  */
 export const TARGETED_CELLS: readonly string[] = [
   "hive-assault",
+  "story:great-hive",
   "infestation-clearance/act-2",
   "crash-site/act-3",
   "evacuation/act-1",

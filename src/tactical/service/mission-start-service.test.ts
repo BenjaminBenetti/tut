@@ -46,6 +46,7 @@ import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission, tileAdmits } from "./mission-start-service";
 import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 import { MISSION_SETUP_RULES } from "./missions/mission-setup-rules";
+import { jevDestinations } from "../ai/jev-destinations";
 
 // ===========================================
 // Fixtures
@@ -305,6 +306,49 @@ describe("startTacticalMission", () => {
       }
     },
   );
+
+  it("boards from the landing zone and a forward extraction point both, Jev's requests included (#1179)", () => {
+    const source = capacityFixture(MAX_DEPLOYED_UNITS);
+    const forward = [
+      { x: 6, y: 0, z: 0 },
+      { x: 7, y: 0, z: 0 },
+    ];
+    const map: TacticalMap = {
+      ...source,
+      hooks: {
+        ...source.hooks,
+        objectives: [
+          ...source.hooks.objectives,
+          {
+            id: "hook-forward",
+            kind: HookKinds.FORWARD_EXTRACTION,
+            tiles: forward,
+            requiredPass: PassMask.ALL,
+          },
+        ],
+      },
+    };
+    const { state, mission, deployment } = capacityCampaign(1);
+    const generate = vi
+      .spyOn(mapGeneration, "generateTacticalMap")
+      .mockReturnValue(map);
+    try {
+      const tactical = unwrap(
+        startTacticalMission(state, mission.id, deployment, deps()),
+      ).activeMission!;
+      // The landing zone's tiles first, then the forward point's.
+      expect(tactical.extraction).toEqual([
+        ...source.hooks.extraction.tiles,
+        ...forward,
+      ]);
+      const actor = tactical.units[0]!;
+      expect(jevDestinations(tactical, tactical, actor).extraction).toEqual(
+        tactical.extraction,
+      );
+    } finally {
+      generate.mockRestore();
+    }
+  });
 
   it("stores a tactical state on the campaign with the mission's map and clock at the first player turn", () => {
     const { state, mission, deployment } = campaign();

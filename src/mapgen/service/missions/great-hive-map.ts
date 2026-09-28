@@ -19,12 +19,12 @@ import { createHiveAssaultMapRule } from "./hive-assault-map";
 /**
  * The Great Hive's map (campaign arc §6.9): the Hive Assault's plan on
  * the Great Hive's own board, hooks and nests, built by the
- * `great-hive-cavern` pass list (more and larger chambers, a bigger core
- * chamber, one more burrow).
+ * `great-hive-cavern` pass list (more chambers, a bigger core chamber,
+ * one more burrow, a forward extraction point).
  *
  * ```
  *   archetype  "great-hive-cavern"
- *   size       72 × 184
+ *   size       72 × 152
  *   hooks      Great Hive cavern hooks, egg-spawner count =
  *              hiveNestCount(mission.hive.level, GREAT_HIVE_NEST_TUNING)
  * ```

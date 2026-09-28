@@ -39,12 +39,13 @@ import type {
 } from "./campaign-sweep.test-helper";
 import type { GameContent } from "./game-composition";
 import type {
+  FixedOptInPlayerId,
   ModelledPlayer,
-  OptInPlayerId,
 } from "./modelled-player.test-helper";
 import {
   AUTO_RESOLVE_CASUALTIES,
   CAMPAIGN_SWEEP_TUNING,
+  scaledLosses,
 } from "./modelled-player.test-helper";
 
 // ===========================================
@@ -189,31 +190,32 @@ const AVERAGE = CAMPAIGN_SWEEP_TUNING.players.average;
  * `realistic` against `spender` is what replacing a real mission's
  * losses costs on top.
  */
-export const OPT_IN_PLAYERS: Readonly<Record<OptInPlayerId, OptInPlayer>> = {
-  spender: {
-    player: {
-      id: "spender",
-      outcomes: AVERAGE.outcomes,
-      cadence: AVERAGE.cadence,
-      intelShare: AVERAGE.intelShare,
-      harvests: AVERAGE.harvests,
-      mechLoss: AVERAGE.mechLoss,
+export const OPT_IN_PLAYERS: Readonly<Record<FixedOptInPlayerId, OptInPlayer>> =
+  {
+    spender: {
+      player: {
+        id: "spender",
+        outcomes: AVERAGE.outcomes,
+        cadence: AVERAGE.cadence,
+        intelShare: AVERAGE.intelShare,
+        harvests: AVERAGE.harvests,
+        mechLoss: AVERAGE.mechLoss,
+      },
+      spending: REALISTIC_SPENDING,
     },
-    spending: REALISTIC_SPENDING,
-  },
-  realistic: {
-    player: {
-      id: "realistic",
-      outcomes: AVERAGE.outcomes,
-      cadence: AVERAGE.cadence,
-      intelShare: AVERAGE.intelShare,
-      harvests: AVERAGE.harvests,
-      mechLoss: AVERAGE.mechLoss,
-      casualties: AUTO_RESOLVE_CASUALTIES,
+    realistic: {
+      player: {
+        id: "realistic",
+        outcomes: AVERAGE.outcomes,
+        cadence: AVERAGE.cadence,
+        intelShare: AVERAGE.intelShare,
+        harvests: AVERAGE.harvests,
+        mechLoss: AVERAGE.mechLoss,
+        losses: scaledLosses(AUTO_RESOLVE_CASUALTIES),
+      },
+      spending: REALISTIC_SPENDING,
     },
-    spending: REALISTIC_SPENDING,
-  },
-};
+  };
 
 // ===========================================
 // The spender

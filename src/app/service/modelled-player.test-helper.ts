@@ -43,10 +43,18 @@ export const MODELLED_PLAYER_IDS: readonly ModelledPlayerId[] = [
  * research with a player's spending, outside the committed sweep, so no
  * sweep pin reads them.
  *
- *   spender     spends like a player; loses only what the Average loses
- *   realistic   spends like a player; loses units on the auto-resolver's scale
+ *   spender         spends like a player; loses only what the Average loses
+ *   realistic       spends like a player; loses units on the auto-resolver's scale
+ *   matrix-new      spends like a player; loses what the calibration matrix's
+ *   matrix-expert   new or expert tactical player lost (matrix-losses.test-helper.ts)
  */
-export type OptInPlayerId = "spender" | "realistic";
+export type OptInPlayerId = FixedOptInPlayerId | MatrixPlayerId;
+
+/** The opt-in players whose losses are fixed in code. */
+export type FixedOptInPlayerId = "spender" | "realistic";
+
+/** The opt-in players whose losses are read off a calibration matrix's runs when they play. */
+export type MatrixPlayerId = "matrix-new" | "matrix-expert";
 
 /**
  * The losses a modelled player's missions cost its roster, on the
@@ -65,6 +73,32 @@ export type RolledCasualties = Pick<
   MissionResult,
   "squadCasualties" | "squadsWiped" | "mechDamage" | "mechsDestroyed"
 >;
+
+/**
+ * Where a modelled player's roster losses come from (#1179, C7): one
+ * mission's, drawn after its outcome from the mission's own stream, and
+ * reported as the roster fields of its result, so the launch handler
+ * applies them through the roster casualty path a played result takes.
+ */
+export interface LossModel {
+  /**
+   * The losses of `mission`, which ended `outcome`.
+   *
+   * @param outcome - How the mission ended (the modelled draw).
+   * @param mission - The mission, for its type, story and act.
+   * @param deployment - Who went.
+   * @param state - The roster at launch.
+   * @param rng - The mission's stream, after the outcome's draw.
+   * @returns The roster fields of the result.
+   */
+  roll(
+    outcome: MissionOutcome,
+    mission: Mission,
+    deployment: Deployment,
+    state: Pick<MissionResolutionState, "squads" | "mechs">,
+    rng: Rng,
+  ): RolledCasualties;
+}
 
 /**
  * How a modelled player's missions end. `lost` is whatever `won` and
@@ -103,16 +137,16 @@ export interface ModelledPlayer {
    * The share of its lost missions that destroy the first mech it
    * deployed, so Wreck Recovery (arc §6.6) is offered. A lost mech is
    * rebuilt from the first saved template once the credits cover it.
-   * Ignored when `casualties` is set.
+   * Ignored when `losses` is set.
    */
   readonly mechLoss: number;
   /**
-   * The losses its missions cost the roster, every deployed unit's, on
-   * this scale; when absent, no soldier falls, no mech is damaged, and
-   * `mechLoss` alone destroys a mech. Only the opt-in `realistic` player
-   * sets it.
+   * The losses its missions cost the roster, every deployed unit's;
+   * when absent, no soldier falls, no mech is damaged, and `mechLoss`
+   * alone destroys a mech. Only the opt-in players that lose units set
+   * it (`scaledLosses`, `matrixLosses`).
    */
-  readonly casualties?: CasualtyScale;
+  readonly losses?: LossModel;
   /**
    * The installation it builds once, in the most infested region, on
    * the campaign's first day, so the Defend Installation trigger (arc
@@ -260,7 +294,7 @@ export const CAMPAIGN_SWEEP_TUNING: CampaignSweepTuning = {
  *   u < won+extracted  ──► extracted
  *   otherwise          ──► lost
  *        └──► modelledResult(mission, outcome, ctx)
- *   casualties set:        rollCasualties(outcome) ──► every deployed unit's losses
+ *   losses set:            losses.roll(outcome) ──► every deployed unit's losses
  *   otherwise, lost, a mech deployed:
  *                          v = rng.next() < mechLoss ──► the first mech destroyed
  * ```
@@ -293,11 +327,11 @@ export class ModelledMissionResolver implements MissionResolver {
   ): MissionResult {
     const outcome = rollOutcome(this.player.outcomes, rng.next());
     const result = modelledResult(mission, outcome, this.results);
-    const scale = this.player.casualties;
-    if (scale !== undefined) {
+    const losses = this.player.losses;
+    if (losses !== undefined) {
       return {
         ...result,
-        ...rollCasualties(outcome, deployment, state, scale, rng),
+        ...losses.roll(outcome, mission, deployment, state, rng),
       };
     }
     const mechId = deployment.mechIds[0];
@@ -356,7 +390,7 @@ export function rollCasualties(
 ): RolledCasualties {
   const squadCasualties: SquadCasualties[] = [];
   const squadsWiped: string[] = [];
-  for (const squad of deployed(deployment.squadIds, state.squads)) {
+  for (const squad of deployedUnits(deployment.squadIds, state.squads)) {
     let losses = 0;
     for (let soldier = 0; soldier < squad.strength; soldier++) {
       if (rng.chance(scale.casualtyChance[outcome])) losses++;
@@ -367,7 +401,7 @@ export function rollCasualties(
   }
   const mechDamage: MechDamageReport[] = [];
   const mechsDestroyed: string[] = [];
-  for (const mech of deployed(deployment.mechIds, state.mechs)) {
+  for (const mech of deployedUnits(deployment.mechIds, state.mechs)) {
     const remaining = MECH_MAX_DAMAGE - mech.damage;
     const range = scale.mechDamage[outcome];
     const damage = Math.min(
@@ -381,6 +415,20 @@ export function rollCasualties(
     if (damage >= remaining) mechsDestroyed.push(mech.id);
   }
   return { squadCasualties, squadsWiped, mechDamage, mechsDestroyed };
+}
+
+/**
+ * The loss model that rolls every deployed unit's losses on `scale`
+ * (`rollCasualties`), whatever the mission.
+ *
+ * @param scale - The chances and damage per outcome.
+ * @returns The loss model.
+ */
+export function scaledLosses(scale: CasualtyScale): LossModel {
+  return {
+    roll: (outcome, _mission, deployment, state, rng) =>
+      rollCasualties(outcome, deployment, state, scale, rng),
+  };
 }
 
 /** The results context a player's resolver pays on: the shared scale and its harvest habit. */
@@ -524,8 +572,16 @@ export function isIntelFunded(node: TechNode): boolean {
 // Helpers
 // ===========================================
 
-/** The units `ids` names, in deployment order; an id not on the roster is a harness bug. */
-function deployed<T extends { readonly id: string }>(
+/**
+ * The units `ids` names, in deployment order; an id not on the roster
+ * is a harness bug.
+ *
+ * @param ids - The deployment's squad or mech ids.
+ * @param roster - The roster's squads or mechs at launch.
+ * @returns The deployed units.
+ * @throws {Error} if an id is not on the roster.
+ */
+export function deployedUnits<T extends { readonly id: string }>(
   ids: readonly string[],
   roster: readonly T[],
 ): T[] {

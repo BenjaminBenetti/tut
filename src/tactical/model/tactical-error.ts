@@ -365,9 +365,9 @@ export function describeTacticalError(error: TacticalError): string {
     case "cannot-carry":
       return `Unit "${error.unitId}" cannot carry a specimen; only an infantry squad can`;
     case "not-in-extraction-zone":
-      return `Unit "${error.unitId}" is not standing in the extraction zone`;
+      return `Unit "${error.unitId}" is not standing in an extraction zone`;
     case "not-extractable":
-      return `Unit "${error.unitId}" cannot leave through the extraction zone`;
+      return `Unit "${error.unitId}" cannot leave through an extraction zone`;
     case "mission-not-over":
       return `Mission "${error.missionId}" is still being fought`;
     case "stage-pending":

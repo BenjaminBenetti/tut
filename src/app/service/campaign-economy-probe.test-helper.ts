@@ -1,6 +1,7 @@
 import type { ActId } from "../../content/model/act-id";
 import { ACT_IDS } from "../../content/model/act-id";
 import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
+import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 import type { MissionResult } from "../../overworld/model/mission-result";
 import type { GameState } from "../../save/model/game-state";
 import type { BandAccounts, MoneyAccount } from "./campaign-ledger.test-helper";
@@ -48,7 +49,9 @@ import {
 // player's banks are the ones the calibration forces were filled from):
 //
 //   seed ──► playCampaignToEnd(player), observed every day after research
-//        ──► every day: the bank, the roster, the installations and their upkeep
+//        ──► every day: the bank, the roster, the installations and their upkeep;
+//            per act, the units fielded summed over its days, and its days at the
+//            cap and with nobody on the roster
 //        ──► every new lastMissionResult: soldiers lost, squads wiped, mechs lost,
 //            in the band of the day it was played
 //        ──► the last state's ledger ──► accountLedger ──► one account per act band
@@ -72,6 +75,21 @@ export interface EconomyDay extends CampaignDay {
   readonly upkeepPerDay: number;
 }
 
+/**
+ * The force one band's days fielded: each day's roster, read once its
+ * spending is done and before its mission.
+ */
+export interface BandForce {
+  /** Days read in the act. */
+  readonly days: number;
+  /** Units on the roster, summed over those days. */
+  readonly unitDays: number;
+  /** Days with the deployment cap on the roster. */
+  readonly fullDays: number;
+  /** Days with nobody on the roster, on which the player plays nothing. */
+  readonly groundedDays: number;
+}
+
 /** What one band's missions cost the roster. */
 export interface BandLosses {
   readonly soldiersLost: number;
@@ -91,6 +109,7 @@ export interface BandEconomy {
   /** Days spent in the act; 0 for an act never reached. */
   readonly days: number;
   readonly losses: BandLosses;
+  readonly force: BandForce;
 }
 
 /** One seed's campaign and its economy. */
@@ -266,6 +285,10 @@ export const ACT_METRICS = [
   "soldiers_lost",
   "squads_wiped",
   "mechs_lost",
+  "force_days",
+  "unit_days",
+  "full_days",
+  "grounded_days",
   "income",
   "spending",
   "net",
@@ -418,9 +441,21 @@ function bandsOf(
           : (next?.missions ?? record.missions) - began.missions,
       days: began === undefined ? 0 : (next?.days ?? record.days) - began.days,
       losses,
+      force: forceOf(days.filter((day) => day.act === band)),
     };
   });
   return bands;
+}
+
+/** The force `days` fielded (`BandForce`). */
+function forceOf(days: readonly EconomyDay[]): BandForce {
+  const units = days.map((day) => day.squads + day.mechs);
+  return {
+    days: days.length,
+    unitDays: units.reduce((sum, count) => sum + count, 0),
+    fullDays: units.filter((count) => count >= MAX_DEPLOYED_UNITS).length,
+    groundedDays: units.filter((count) => count === 0).length,
+  };
 }
 
 /** One point metric of a day. */
@@ -456,6 +491,14 @@ function actMetric(
       return band.losses.squadsWiped;
     case "mechs_lost":
       return band.losses.mechsLost;
+    case "force_days":
+      return band.force.days;
+    case "unit_days":
+      return band.force.unitDays;
+    case "full_days":
+      return band.force.fullDays;
+    case "grounded_days":
+      return band.force.groundedDays;
     case "income":
       return totalOf(band.account, INCOME_LINES);
     case "spending":

@@ -6,6 +6,27 @@ Hive winnable at the arc's rates. At the matrix's round-2 baseline
 `hive-assault/act-2` and none of the Great Hive (see `README.md`, "Why
 the hive cells sat at 0%").
 
+**Round 3** built two of the shape options Ben chose from: a forward
+extraction point past halfway down the Great Hive, and a shorter Great
+Hive cavern (72 × 152). It then paid the new player's extra wins back
+with bigger, rarer nest hatches. All of it applies only to the Great
+Hive. See "Round 3: a forward extraction point and a shorter Great
+Hive".
+
+**Round 3** on the Great Hive, before (int/w1 `b9e67201`, as round 2)
+and after (`9b5c2bc6`):
+
+| Seeds | New player, before | New player, after | Expert, before | Expert, after |
+| --- | --- | --- | --- | --- |
+| the matrix's 16 | 8 (3 clean, 5 at the cap); 13 runs at the cap | 5 (2 clean, 1 at the cap, 2 stall); 12 runs at the cap | 16, median 42 | 15 (11 clean, 4 stall), median 33.5 |
+| 128, in the probe | 55 (31 clean, 24 at the cap); 97 runs at the cap | 62 (39 clean, 18 at the cap, 5 stall); 77 runs at the cap | 127, median 44 | 126, median 29 |
+
+The first unit now boards a median of 7 turns after the core falls,
+against 18. With this cell the new player's Act III band on
+`b9e67201` is 112/160 (70.0%), against 115 (71.9%) today and a ceiling
+of 116. The matrix's 16 seeds read the cell 3 wins lower than today;
+over 128 seeds it wins 0.85 more a cell.
+
 **This package's round 2** re-measured the cells at 16 seeds on C2c's
 filled forces (eight units, three of them mechs) and quickened the hive
 nests from difficulty 6. The Great Hive was left alone (see "Round 2:
@@ -294,7 +315,8 @@ Ben accepted the first three on 2026-09-28, and campaign arc §6.5 and
   chamber". It now wakes on entering the heart of the chamber, 35% of
   the radius, or when shot or shelled nearby.
 - **"50+ bugs" in a hive.** An Act II hive now sleeps 12–52 bugs, an
-  Act III hive 19–88 and the Great Hive 52–68. Arc §7.5's figure is
+  Act III hive 19–88 and the Great Hive 44–60 (52–68 before round 3's
+  shorter cavern). Arc §7.5's figure is
   reached only at about d8–9. Round 2 left the broods alone; its
   quicker nests add 13–86 bugs over a mission from d6 (see "Round 2").
 - **No edge waves in a hive.** In round 1 hive nests hatched one bug
@@ -305,6 +327,15 @@ Ben accepted the first three on 2026-09-28, and campaign arc §6.5 and
 - **Shared player code.** The hive-core strategy's search and walk-home
   changes affect the new player too. The mission sweep's non-hive rows
   are unchanged.
+- **The nests are optional.** Arc §6.5 asked for the chamber spawners to
+  be destroyed. The shipped objective is the core alone, and no
+  objective counts the nests. Round 3 made §6.5 say so.
+- **The Great Hive's forward extraction point and 72 × 152 cavern** are
+  Ben's choice from the shape options (2026-09-28, round 3). Arc §6.5,
+  §6.9 and §7.5 and `great-hives.md` state them.
+- **The Great Hive's nests hatch three bugs every 6 turns at d8**
+  (round 3b), where they kept the slow pace in round 2. Arc §6.5 and
+  `great-hives.md` state it.
 
 ## Round 2: the filled forces
 
@@ -512,7 +543,449 @@ Hive's opt-out, shifting the step boundary, feeding the nests
 difficulty 0, dropping the fallback, or emptying `TARGETED_CELLS`. All
 8 went red and were restored.
 
-## Shape options (not built)
+## Round 3: a forward extraction point and a shorter Great Hive
+
+Round 2 left the Great Hive at 8/16 for the new player, 3 of them
+clean. The time went on the walk: the core fell on turns 35–53, and
+getting a unit home took 16–21 more turns. On 2026-09-28 Ben picked from
+the shape options: "make the walk home shorter. Or perhaps a forward
+extraction point!" Option 2, the forward point, was built first. It
+left four wins at the cap, so option 4, a shorter cavern, was added.
+Both changes apply to the Great Hive only; an ordinary Hive Assault is
+unchanged.
+
+Round 3b followed: the full matrix on `b9e67201` left Act III one
+run under its ceiling, and the shorter walk had made the Great Hive
+easy. Its nests now hatch three bugs every 6 turns at d8, and the
+forward point sits at three-eighths of the walk from the core. See
+"Round 3b: paying the wins back".
+
+### Base and runs
+
+- **Base:** int/w1 `ba451704`, which is round 2 plus the field, story
+  and economy packages.
+- **Forces and seeds:** as in round 2, with 16 seeds; round 3b also
+  compared shapes on 64 and 128.
+- **Probe:** each run was measured with a probe that played the matrix's
+  two players on the Great Hive cell. It records, for every unit that
+  boarded, the turn it boarded and which zone it used.
+- **Predictions:** each prediction was written to disk before its run.
+- **Final numbers:** "The final matrix" below; the probe runs are how
+  the shape was chosen.
+
+B0, the base, had the Great Hive exactly as in round 2:
+
+- new player: 8/16, of which 3 clean and 5 at the cap;
+- expert: 16/16 clean, median 42 turns.
+
+### When the point is usable, and why
+
+**The point is usable from the start of the mission.** Units board
+there exactly as they do at the landing zone. Why:
+
+- **The player can read the rule.** It is a fixed set of tiles on the
+  map. There is no switch that flips when the core falls, so nothing
+  hidden changes and the screen never has to explain a state change.
+- **The core fight is untouched.** The point sits on the route the
+  force must walk in any case, past halfway in. Boarding there early
+  only takes a unit home. The mission is won only when the core is
+  down and a combat unit is aboard.
+- **It needs no new state.** The mission's extraction tiles are the
+  landing zone's followed by the forward point's
+  (`extractionZoneTiles`). Nothing was added to `TacticalState`, and
+  `GAME_STATE_SCHEMA_VERSION` is unchanged.
+- **Everything that boards or plans a way home already reads that one
+  list:** the Board action, the objective check, both modelled players
+  (their walk home targets the nearest extraction tile), and Jev's
+  requests. The last keep the extraction zone, as Ben asked, and now
+  carry both zones.
+
+### Placement
+
+`ForwardExtractionPass` runs after the brood chambers and before
+connectivity, and only when the tuning has `forwardExtraction`. Only
+the Great Hive's tuning has it.
+
+- **What it marks:** one `forward-extraction` hook, a 4 × 4 level
+  square in a route chamber.
+- **Distances:** a mech's walk on the draft, frozen once.
+- **Score:** |steps to the core − `coreShare` × the landing zone's
+  steps to the core| + any detour off the way between them + 20 if the
+  square reaches into the chamber's heart. `coreShare` is 0.375; it
+  was 0.5 until round 3b. The heart here is 45% of the
+  chamber's radius, at least 4 tiles.
+- **Allowed squares:** prop-free open ground, off every other hook's
+  tiles, and more than 4 columns from a nest.
+- **No random draws.** The rest of the cavern is byte-for-byte the same
+  with or without the point, and a test checks this.
+
+The first version walked only the level ground at the spine's height,
+and treated the heart as a hard limit. It put no point on seeds 1
+and 12, whose route chambers all have radius 7–8 and no room outside
+the heart. On the others it landed 38–148 steps from the core.
+
+The mech's walk and the soft heart fixed both:
+
+- every seed gets a point;
+- on the 72 × 184 cavern the point is 80–137 steps from the core, a
+  share of 0.39–0.64 of the whole walk (median 0.49);
+- as shipped (72 × 152, share 0.375, 64 seeds) it is 31–85 steps from
+  the core, 0.19–0.53 of the walk (median 0.37).
+
+An early draft also let the square cover props and removed them. That
+never happened: `isOpenGround` already refuses a column a prop stands
+on. That code was removed, and no placement changed.
+
+### Runs
+
+| Run | Change | Predicted | New player (clean + cap) | New player, clean turns | Expert, median turns | Expert units lost |
+| --- | --- | --- | --- | --- | --- | --- |
+| B0 | base (72 × 184) | – | 8 (3 + 5) | 55–58 | 16/16, 42 | 4.31 |
+| F1 | forward point at half the walk | 14 (13 + 1); expert 32 | 15 (11 + 4), 1 lost at the cap | 44–59, median 54 | 16/16, 36 (31–43) | 4.25 |
+| F2 | F1 and a 72 × 152 cavern | 15 (14 + 1), clean about 45; expert 31 | **16 (15 + 1)** | 41–60, median 50 | **16/16 (15 + 1 stall), 30 (24–40)** | 3.50 |
+
+**F1.**
+
+- **New player:**
+  - wins: 2 fewer clean than predicted and 3 more at the cap;
+  - walk home: about 8 steps a turn, not the predicted 10–11;
+  - cap wins: each had one unit still 3–48 steps out on turn 61;
+  - seed 1: its core fell on turn 52, and nobody reached a drop ship.
+- **Expert:** 4 turns slower than predicted.
+
+**The shorter cavern (option 4).**
+
+The forward point alone left four wins at the cap. Cutting depth alone
+did not fit: at 152 deep, the planner ran a route of 9–11 chambers off
+the board ("Column (35, 155) is outside 72×152"). At 160 deep it cut the
+walk by only 12%.
+
+The chamber count had to come down with the depth. Four cavern variants
+were measured on the map over 24 seeds:
+
+| Variant | Depth | Chambers (route) | Landing zone to core (mech steps) | Forward point to core | Sleeping at d8 |
+| --- | --- | --- | --- | --- | --- |
+| round 2 (16 seeds) | 184 | 9–11 (≥ 6) | 189–232 | 80–137 | 52–68 |
+| V3 | 160 | 8–10 (≥ 6) | 157–228 | 67–116 | 50–66 |
+| **V4 (shipped)** | **152** | **8–9 (≥ 5)** | **130–202** | **65–109** | **44–60** |
+| V5 | 144 | 8–9 (≥ 5) | 120–183 | 41–100 | 44–60 |
+
+V4 shipped:
+
+- **Size:** 72 × 152, 10,944 columns, still 19% more than an ordinary
+  cavern. It is larger on both axes and has more chambers (8–9 against
+  5–8).
+- **Core:** at least 90 from the landing zone (was 110).
+- **Fit:** a route of 7 chambers at the minimum radii needs 110 of the
+  124 tiles, so it always fits.
+- **Why not V5:** it would make the Great Hive as deep as an ordinary
+  cavern.
+
+**F2.**
+
+- **New player:** one more win than predicted. Its clean wins were 5
+  turns slower, because the core fell on turn 36.5, not 33.
+- **Expert:** as predicted.
+
+F2 made the Great Hive easy. The new player won 16/16, 15 clean; the
+expert won 16/16 in a median of 31 turns (15 clean and 1 stall win:
+seed 4, whose fourth unit got no nearer home for ten turns after three
+had boarded).
+
+### Round 3b: paying the wins back
+
+The full matrix on int/w1 `b9e67201` put the new player's Act III band
+at 115/160 (71.9%), one run under the ceiling of 116 (65% + 7.5 points
+at 160 runs). F2's Great Hive, 8 wins more than today's 8/16, would put
+the band at 123. Ben asked for a shorter walk home, not an easier
+mission, so round 3b set out to:
+
+- keep the new player's Great Hive wins near today's (at most one more
+  a cell);
+- turn cap wins into clean wins;
+- cut the turn counts: the expert's median, and the new player's runs
+  at the cap.
+
+The levers were the Great Hive's own: nest pace, core brood, core HP,
+guards, and where the forward point sits.
+
+**A defect in the modelled players, found and fixed** (`4b1e6787`).
+With the point at 0.3 of the walk, the expert got 7–10 turns *slower*,
+and N4's three expert losses first saw the core on turns 53–58. The hive strategy
+searches `backOfMap`, "the walkable ground farthest from the drop
+ship", for an unseen core. It measured from every extraction tile, the
+forward point included. With the point near the core, the ground
+farthest from both zones is a side tunnel. It now measures from the
+landing zone alone. At share 0.5 no run on seeds 0–15 changed; every
+number below is with the fix.
+
+**Every new-player loss is a run at the cap.** The force is never wiped
+out: a loss is the core still standing on turn 61, or nobody aboard.
+So a cell at 8/16 has at least 8 runs at the cap, whatever the lever.
+
+#### Levers on the matrix's 16 seeds
+
+"Pace" is one nest's hatch at d8: bugs per hatch / turns between
+hatches. The share is the forward point's walk to the core as a share
+of the landing zone's. New player: wins (clean + cap + stall).
+
+| Run | Change from F2 | New player | Runs at the cap | Expert, won median |
+| --- | --- | --- | --- | --- |
+| F2 | pace 1 / 11, share 0.5 | 16 (15 + 1 + 0) | 1 | 16/16, 31 |
+| H1 | core brood × 1.5 | 16 (16 + 0 + 0) | 0 | 16/16, 31.5 |
+| H2 | core HP 250 | 16 (14 + 2 + 0) | 2 | 16/16, 33 |
+| B1–B3 | route broods 9, 10, 12 | 15, 16, 14 | 1–3 | 16/16, 30.5–32 |
+| H3 | pace 2 / 4 (the ordinary d7+) | 7 (1 + 6 + 0) | 15 | 16/16, 41.5 |
+| N1 | pace 1 / 6 | 15 (15 + 0 + 0) | 1 | 15/16 |
+| N2 = G1 | pace 1 / 4 | 13 (9 + 4 + 0) | 7 | 16/16, 32 |
+| G2 | pace 1 / 3, share 0.3 | 14 (10 + 2 + 2) | 4 | 16/16, 32 |
+| G3 | pace 1 / 3 | 10 (7 + 2 + 1) | 8 | 16/16, 38 |
+| G5, G9 | G3, core HP 200, 250 | 10 (6 + 4), 9 (3 + 6) | 10, 13 | 16/16 |
+| G7 | G3, 4 more guards | 7 (2 + 3 + 2) | 12 | 16/16 |
+| G8 | pace 2 / 5 | 7 (5 + 1 + 1) | 10 | 16/16, 37.5 |
+| G10 | pace 2 / 6 | 8 (7 + 0 + 1) | 8 | 16/16, 35.5 |
+
+The brood and the core HP are not levers here: bigger broods kill more
+units but the new player still reaches the core, and core HP and guards
+cut wins only by pushing the rest to the cap. The nest pace and the
+share are the levers.
+
+G10 looked like the answer: wins as today, 7 of them clean, no cap
+win. On seeds 16–31 it won 14/16. Today's Great Hive (B0, rebuilt in
+this tree) won 5/16 there, against 8/16 on the matrix's seeds. Sixteen
+seeds swing this cell by ±3 wins, so from here the shapes were compared
+on 64 seeds, and the last ones on 128.
+
+#### 64 seeds
+
+| Run | Pace, share | Predicted wins | New player of 64 | Runs at the cap | Expert, won median |
+| --- | --- | --- | --- | --- | --- |
+| B0r | today (72 × 184, no point, 1 / 11) | 26 | 28 (15 + 13 + 0) | 49 | 63/64, 44 |
+| G3 | 1 / 3, 0.5 | 44 | 46 (31 + 12 + 3) | 30 | 64/64, 35.5 |
+| G10 | 2 / 6, 0.5 | 44 | 50 (39 + 6 + 5) | 20 | 64/64, 32 |
+| G8 | 2 / 5, 0.5 | 32 | 41 (29 + 10 + 2) | 33 | 64/64, 34 |
+| G12 | 2 / 5, 0.45 | 36 | 44 (30 + 10 + 4) | 30 | 64/64, 32 |
+| G11 | 2 / 5, 0.4 | 40 | 50 (38 + 9 + 3) | 23 | 64/64, 30 |
+| H3 | 2 / 4, 0.5 | 28 | 27 (12 + 14 + 1) | 51 | 63/64, 36 |
+| K1 | 2 / 4, 0.4 | 31 | 32 (12 + 18 + 2) | 50 | 63/64, 33 |
+| K2 | 2 / 4, 0.35 | 33 | 34 (17 + 14 + 3) | 44 | 63/64, 33 |
+| G4 | 2 / 4, 0.3 | 34 | 36 (20 + 11 + 5) | 39 | 63/64, 30 |
+| L4 | 2 / 4, 0.25 | 39 | 39 (19 + 14 + 6) | 39 | 63/64, 30 |
+| K3–K5 | 2 / 3, 0.3–0.4 | 22–28 | 9, 6, 5 | 62 | 62–63/64 |
+| L1, L2 | 3 / 5, 0.3, 0.4 | 22, 18 | 22 (9 + 11 + 2), 16 | 53, 57 | 64/64, 29–33.5 |
+| L3 | 3 / 6, 0.3 | 34 | 37 (31 + 5 + 1) | 30 | 64/64, 27 |
+| M5 | 3 / 6, 0.35 | 35 | 33 (25 + 6 + 2) | 35 | 63/64, 28 |
+| M1 | 3 / 6, 0.4 | 32 | 29 (17 + 10 + 2) | 43 | 64/64, 30 |
+| M2 | 3 / 6, 0.5 | 28 | 24 (10 + 11 + 3) | 50 | 64/64, 33.5 |
+| M4 | 4 / 8, 0.4 | 32 | 32 (18 + 9 + 5) | 39 | 64/64, 31 |
+| M3 | 4 / 8, 0.3 | 37 | 43 (33 + 7 + 3) | 27 | 64/64, 29 |
+
+What the grid shows:
+
+- **Today's rate at a steady pace brings back today's cap.** H3 wins as
+  many as today, and as many of them at the cap.
+- **A nearer point makes wins clean, and adds wins.** At 2 / 4, going
+  from 0.5 to 0.3 adds 9 wins and 8 clean ones.
+- **Two bugs every 3 turns is a cliff:** 5–9 wins of 64 against 27–39
+  at 2 / 4. The prediction was 22–28.
+- **Bigger, rarer clutches keep the wins clean.** L3 hatches as many
+  bugs a turn as G4 (0.5), three every 6 against two every 4. It wins
+  as often (37 against 36), 31 of them clean against 20, with 30 runs
+  at the cap against 39. G10 against G3 showed the same. The lulls
+  between hatches let the force move; a steady trickle pins it.
+
+#### 128 seeds, and the choice
+
+| Run | Pace, share | Predicted | New player of 128 | Runs at the cap | Won median | Expert of 128, won median |
+| --- | --- | --- | --- | --- | --- | --- |
+| B0r | today | – | 55 (31 + 24 + 0) | 97 | 60 | 127, 44 |
+| M1 | 3 / 6, 0.4 | – | 55 (33 + 18 + 4) | 82 | 57 | 128, 30 |
+| **M6** | **3 / 6, 0.375** | **60 (39 clean)** | **62 (39 + 18 + 5)** | **77** | **56.5** | **126, 29** |
+| M5 | 3 / 6, 0.35 | – | 66 (45 + 16 + 5) | 71 | 56 | 126, 28 |
+| L3 | 3 / 6, 0.3 | – | 72 (58 + 11 + 3) | 60 | 53 | 127, 27 |
+
+Per 16 seeds that is 6.9 for today, 6.9 for M1, 7.75 for M6, 8.25 for
+M5 and 9.0 for L3.
+
+**M6 shipped** (`70e5726a`, `9b5c2bc6`): each Great Hive nest hatches
+three bugs every 6 turns at d8 (one bug more than a clearance nest and
+three bug phases longer between hatches, at every difficulty), and the
+forward point sits three-eighths of the walk from the core. It is the
+shape nearest the aim:
+
+- **Wins:** 0.85 a cell above today, inside the limit of one. M5 is
+  1.4 above; M1 is level but adds only 2 clean wins.
+- **Clean wins:** 39 against 31.
+- **Wins at the cap:** 18 against 24.
+- **Runs at the cap:** 77 against 97.
+- **The walk home:** the first unit boards a median of 7 turns after
+  the core falls, against 18 today. That is Ben's shorter walk. The
+  fight is now where the new player spends its time: its core falls on
+  turn 45 against 42.5.
+- **Expert:** a median of 29 turns against 44.
+
+The new player's remaining losses are the nest pressure's. On seed 11
+the core fell on turn 45, and the force then spent nine turns 13–16
+steps from the point, fighting what the nests hatched, and was still
+1–8 steps out on turn 61.
+
+### Clean wins, cap wins and the expert
+
+On the matrix's own 16 seeds (the gate, `9b5c2bc6`), which read the
+same as the probe:
+
+| Player | Wins | Clean | At the cap | Stall | Runs at the cap | Won median (all runs) |
+| --- | --- | --- | --- | --- | --- | --- |
+| New, today (`b9e67201`) | 8 | 3 | 5 | 0 | 13 | 61 (61) |
+| New, round 3 | 5 | 2 | 1 | 2 | 12 | 58 (61) |
+| Expert, today | 16 | 16 | 0 | 0 | 0 | 42 (42) |
+| Expert, round 3 | 15 | 11 | 0 | 4 | 1 | 33 (33.5) |
+
+**On these seeds the cell reads 3 wins lower, not higher.** Over 128
+seeds M6 wins 0.85 more a cell than today. The matrix's seeds 0–15 are
+today's kind half (8/16, against 5/16 on seeds 16–31 and 55/128 in
+all), and M6's unkind one (5/16 against 62/128). A shape tuned to read
+8 here would be tuned to these seeds: G4 and G10 read 8 and win 36 and
+50 of 64.
+
+**The expert's loss, seed 6:** it first saw the core on turn 46 and
+brought it down on 57, with nobody home by 61. Seeds 6, 27 and 28 are
+found late in several shapes on the 72 × 152 cavern (seed 28 in G0,
+before any nest change), and never on round 2's 72 × 184 (64 seeds).
+The likely cause, not checked on the map: on those seeds the ground
+farthest from the landing zone is not the core chamber, so the search
+goes there first. The
+expert's stall wins (4 here, 24 of 128) are runs where some units
+boarded and the rest made no way home for ten turns; they count as won
+by round 2's rule. They grow with the nest pace: 1 of 16 on the slow
+nests, 6 at one bug every 3.
+
+### Both players take the nearer point
+
+The probe recorded where every unit boarded:
+
+| Run | New player, forward / landing | Expert, forward / landing |
+| --- | --- | --- |
+| F1 | 48 / 0 | 59 / 1 |
+| F2 | 52 / 0 | 70 / 2 |
+| M6 (128 seeds) | 162 / 0 | 461 / 16 |
+
+The expert's landing-zone boardings were hurt units it sent home early
+in the mission, before they had passed the forward point. From where
+they stood, the landing zone was nearer. Both players go to the nearest
+extraction tile, so no change to the players was needed.
+
+### The Act III band
+
+The new player's Act III band on `b9e67201`, with this Great Hive cell
+in place of today's:
+
+- the other nine cells, from the coordinator's full matrix: infestation
+  clearance 11, crash site 11, evacuation 11, hive assault 11, Alpha
+  Hunt 13, Uplink 10, defend 10, tunnel 16, wreck 14: 107;
+- the Great Hive: 5 (today 8);
+- **band: 112/160 = 70.0%**, against 65 ± 7.5 (ceiling 116). Today's is
+  115/160 = 71.9%.
+
+Over 128 seeds the Great Hive's share would be about 7.75 a cell, which
+puts the band near 115, where it is today.
+
+### The final matrix
+
+Gate on `9b5c2bc6` (base `ba451704`, 16 seeds, 11 cells). The other
+cells are this branch's, not `b9e67201`'s.
+
+| Cell | New player | Expert |
+| --- | --- | --- |
+| `infestation-clearance/act-3` | 11 | 14 |
+| `crash-site/act-3` | 11 | 14 |
+| `evacuation/act-3` | 11 | 15 |
+| `defend-installation/act-3` | 14 | 16 |
+| `tunnel-sabotage/act-3` | 16 | 16 |
+| `wreck-recovery/act-3` | 16 | 15 |
+| `hive-assault/act-3` | 11 | 16 |
+| `story:uplink/act-3` | 16 | 16 |
+| **`story:great-hive/act-3`** | **5** (2 clean, 1 cap, 2 stall; 12 at the cap) | **15** (11 clean, 4 stall), median 33.5 |
+| `alpha-hunt/act-3` | 13 | 15 |
+| `hive-assault/act-2` | 12 | 16 |
+
+Every cell but the Great Hive reads as in round 3's first gate
+(`58cd0efb`). Band on this branch: Act III 124/160 (77.5%), Act II
+12/16.
+
+### What the player sees
+
+Renders from the dev server on port 4252 at `9b5c2bc6`, with a Great
+Hive offer from the campaign fixture (d8, 72 × 152, forward point in
+chamber 2, 16 tiles; landing zone 32 tiles):
+
+- `docs/design/great-hive-forward-briefing.png`: the briefing's
+  description names the second drop ship, and the **Extraction** row
+  reads "The forward point, past halfway in, or the landing zone".
+- `docs/design/great-hive-forward-point.png`: the force on the forward
+  point with the core fallen. The tracker reads "1 / 1 — board at the
+  forward point or the landing zone".
+- `docs/design/great-hive-forward-board.png`: the wheel on a squad
+  standing on the point. Board reads "forward point".
+- `docs/design/great-hive-both-zones.png`: the whole cavern. The
+  landing zone and its drop ship are at the top right, the forward
+  point in the middle.
+
+**What is drawn:**
+
+- **Colour:** the point is the landing zone's sky blue, drawn flat like
+  the landing zone, even in missions that withhold objective markers.
+- **Error text:** errors now say "an extraction zone".
+- **No second drop ship:** no model stands on the forward point. The
+  blue tiles, the briefing row and the tracker carry it.
+
+### Pins (round 3)
+
+| Test | What it pins |
+| --- | --- |
+| `forward-extraction-pass.test.ts` | On gh-1, gh-2 and gh-17: one level 4 × 4 zone in a route chamber, outside the heart, with no prop or other hook on it, clear of the nests, within 0.2 of `coreShare` of the mech's walk from the core. gh-17's best square otherwise lies on a nest's hatching ground. The point moves with `coreShare` (0.7 lies farther from the core than 0.2). The pass draws nothing: the tiles, props and other hooks are the same without it. |
+| `extraction-zones.test.ts` | Landing tiles first, then each forward point's; `onForwardExtraction`. |
+| `great-hive-map.test.ts` / `hive-assault-map.test.ts` | One forward point, the landing zone's size, on a Great Hive; none on an ordinary hive. |
+| `mission-start-service.test.ts` | `mission.extraction` is the union, and Jev's extraction request equals it. |
+| `garrison-service.test.ts` | The garrison keeps off the point. |
+| `tactical-map-view.test.ts` | The point is drawn where objective markers are withheld, flat, below an objective slab. |
+| `action-wheel.test.ts` | Board reads "forward point" on it. |
+| `boarding-track.test.ts`, `objective-tracker-view.test.ts`, `tactical-screen.test.ts` | The tracker ends on the two places to board on a map with a point, and on "board the drop ship" without one. |
+| `great-hive-presentation.test.ts`, `launch-window-presentation.test.ts` | The Extraction row and its slot. |
+| `great-hive-setup.test.ts` | A d8 Great Hive's nests hatch three bugs every 6 bug phases; an ordinary hive's two every 4. |
+| `objective-strategies.test.ts` | The back of the cavern is measured from the landing zone: a forward point near the far end leaves it where it was. |
+| `calibration-targets.test.ts` | `TARGETED_CELLS` includes `story:great-hive`. |
+
+Each was sabotaged, and each test went red and was then restored:
+
+- the point marked as an objective, so it was hidden;
+- the pass removed from the pipeline;
+- the landing zone alone in mission start;
+- the garrison filter removed;
+- Board always reading "drop ship";
+- the screen or `boardingTrackOf` dropping the closing step;
+- the Great Hive removed from `TARGETED_CELLS`;
+- the Extraction row removed;
+- the nest clearance, the heart penalty or the prop check ignored;
+- the target fixed at half the walk, or at the core;
+- the zone order reversed;
+- a forward point added to the ordinary hive's tuning;
+- the Great Hive's nests back on the slow pace, or at two bugs every 6;
+- `backOfMap` measured from every extraction tile.
+
+Three sabotages first stayed green:
+
+- **The nest check, twice:** gh-1 and gh-2 never put a square near a
+  nest, so gh-9 was added. At the new share gh-9's square no longer
+  sits near one either; a scan of gh-1 to gh-40 found five that do,
+  and gh-17 replaced it (gh-8's point lands at 0.63 of the walk, too
+  far out for the share check).
+- **The prop removal:** this showed the removal was dead code, and it
+  was deleted.
+
+## Shape options
+
+Round 2 listed these; round 3 built options 2 and 4 for the Great Hive.
 
 1. **Extract at the core.** A second extraction point in the core
    chamber would remove the walk home: 7–24 turns for the expert
@@ -521,12 +994,14 @@ difficulty 0, dropping the fallback, or emptying `TARGETED_CELLS`. All
    Expect the new player's Great Hive to go from 9/12, 7 of them at the
    cap, to 12/12 inside the cap, and every hive to get easier. The
    brood sizes would then need raising again.
-2. **A second drop point** partway down the cavern. This keeps the walk
-   home but halves it; a middle ground between today and option 1.
+2. **A second drop point** partway down the cavern (built in round 3,
+   on the Great Hive, three-eighths of the walk from the core). This
+   keeps the walk home but shortens it; a middle ground between today
+   and option 1.
 3. **Split the Great Hive into two missions:** the approach, then the
    core. Each half fits the cap. The walk is 189–232 steps against an
    ordinary hive's 120–165.
-4. **A shorter Great Hive cavern.** 72 × 184 is sized for chamber count
+4. **A shorter Great Hive cavern** (built in round 3: 72 × 152). 72 × 184 is sized for chamber count
    (`great-hives.md`). A cavern about 150 steps long would bring the
    new player inside the cap without touching the broods.
 5. **Act-scaled hive pressure.** Brood size or nest pace by act band,

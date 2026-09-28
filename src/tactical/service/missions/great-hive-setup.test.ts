@@ -248,7 +248,7 @@ describe("a Great Hive against an ordinary hive at the same level and seed", () 
   );
 
   it(
-    "keeps the slow nests at d8, where an ordinary hive's have quickened (#1179 C3a round 2)",
+    "hatches three bugs every 6 bug phases at d8, where an ordinary hive's hatch two every 4 (#1179 C3a round 3)",
     () => {
       const pace = (great: boolean) => {
         const mission = assault(0, great);
@@ -263,9 +263,11 @@ describe("a Great Hive against an ordinary hive at the same level and seed", () 
 
       expect(great.length).toBeGreaterThan(0);
       expect(ordinary.length).toBeGreaterThan(0);
-      // One bug every 11 bug phases against two every 4.
+      // Three bugs every 6 bug phases against two every 4.
+      expect(interval).toBe(3);
+      expect(SPAWN_TUNING.hatchCount).toBe(2);
       expect(new Set(great.map((row) => JSON.stringify(row)))).toEqual(
-        new Set([JSON.stringify([-1, interval + 8, interval + 8])]),
+        new Set([JSON.stringify([1, interval + 3, interval + 3])]),
       );
       expect(new Set(ordinary.map((row) => JSON.stringify(row)))).toEqual(
         new Set([JSON.stringify([undefined, interval + 1, interval + 1])]),

@@ -2,6 +2,7 @@ import { manhattanDistance } from "../../../core/service/grid-math";
 import { PassMask, allows } from "../../../mapgen/model/pass-mask";
 import type { Tile } from "../../../mapgen/model/tile";
 import type { TileCoord } from "../../../mapgen/model/tile-coord";
+import { onForwardExtraction } from "../../../mapgen/service/extraction-zones";
 import type { EquipmentCatalogue } from "../../model/equipment";
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
 import type { Unit } from "../../model/unit";
@@ -24,7 +25,7 @@ import type { PlayerView } from "./player-view.test-helper";
 // footprint of a charge about to blow, drawn on the ground by the HUD.
 //
 //   frontier     unexplored tiles next to explored ground
-//   backOfMap    the walkable ground farthest from the drop ship
+//   backOfMap    the walkable ground farthest from where the force landed
 //   lastContacts where the bugs out of sight now were last seen
 //   lastSighted  those of them still out of sight: the live leads
 //   sweep        walkable ground out of sight now, nearest first
@@ -78,7 +79,10 @@ const BACKS = new WeakMap<TacticalMap, readonly TileCoord[]>();
  * first: on a hive cavern that is where the burrows leave the core
  * chamber, not a side tunnel's dead end that happens to come first in
  * the map's tile order (#1179 C3a: on two Great Hive seeds of eight
- * both players searched the wrong tunnel to the cap).
+ * both players searched the wrong tunnel to the cap). Measured from the
+ * landing zone alone: a Great Hive's forward extraction point past
+ * halfway is somewhere to board, not where the force set down, and measured
+ * from both the back is whatever lies farthest from the pair of them.
  */
 export function backOfMap(view: PlayerView): readonly TileCoord[] {
   const cached = BACKS.get(view.mission.map);
@@ -87,7 +91,7 @@ export function backOfMap(view: PlayerView): readonly TileCoord[] {
   }
   const field = distanceField(
     view.graph,
-    view.mission.extraction,
+    landingTiles(view),
     PassMask.INFANTRY,
   );
   let farthest = 0;
@@ -108,6 +112,17 @@ export function backOfMap(view: PlayerView): readonly TileCoord[] {
     .map((entry) => entry.tile);
   BACKS.set(view.mission.map, back);
   return back;
+}
+
+/**
+ * The extraction tiles where the force landed: the mission's, less any
+ * forward extraction point's (#1179 C3a round 3). On a map with no
+ * forward point, all of them.
+ */
+function landingTiles(view: PlayerView): readonly TileCoord[] {
+  return view.mission.extraction.filter(
+    (tile) => !onForwardExtraction(view.mission.map.hooks, tile),
+  );
 }
 
 /**

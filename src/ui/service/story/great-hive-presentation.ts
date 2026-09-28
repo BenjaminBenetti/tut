@@ -49,6 +49,10 @@ const OBJECTIVE: BriefingField = {
   field: "great-hive-objective",
   label: "Objective",
 };
+const EXTRACTION: BriefingField = {
+  field: "great-hive-extraction",
+  label: "Extraction",
+};
 const LIBERATES: BriefingField = {
   field: "great-hive-liberates",
   label: "Liberates",
@@ -66,14 +70,15 @@ const WIN: BriefingField = { field: "great-hive-win", label: "Win" };
 /**
  * A Great Hive assault (campaign arc §6.9, #1179): one of the Spore
  * Platform's three beacons, an oversized Hive Assault. The briefing
- * names the continent and counts the beacons; the debrief says whether
- * this one fell and what is left.
+ * names the continent, the forward extraction point and the beacon
+ * count; the debrief says whether this one fell and what is left.
  *
  * ```
  *   Briefing · Great Hive
  *   Uplink traced the platform's beacons to three Great Hives. …
  *   Target      Great Hive: Europe
  *   Objective   Destroy the core; the beacon falls with it
+ *   Extraction  The forward point, past halfway in, or the landing zone
  *   Liberates   Europe, 4 regions: cities −20, growth paused 10 days
  *   Beacons     Great Hives destroyed: 1 / 3
  *   Win         All three: the launch window opens
@@ -87,8 +92,8 @@ export function createGreatHivePresentation(
   return {
     storyId: "great-hive",
     description:
-      "Uplink traced the Spore Platform's beacons to three Great Hives. Each is a hive cavern grown past anything seen: a longer march, more chambers asleep along it, a packed guard and a core that takes several turns to break. Destroy the core and get the force home.",
-    briefingFields: [TARGET, OBJECTIVE, LIBERATES, BEACONS, WIN],
+      "Uplink traced the Spore Platform's beacons to three Great Hives. Each is a hive cavern grown past anything seen: a longer march, more chambers asleep along it, a packed guard and a core that takes several turns to break. Destroy the core and get the force home: a second drop ship holds at a forward point past halfway in, so the walk out is shorter than the march.",
+    briefingFields: [TARGET, OBJECTIVE, EXTRACTION, LIBERATES, BEACONS, WIN],
     briefingRows: (mission, ctx) => greatHiveRows(mission, ctx, tuning),
     debriefTagline: (result, ctx) => greatHiveTagline(result, ctx, tuning),
   };
@@ -118,7 +123,7 @@ export function greatHiveTargetText(hive: GreatHive): string {
 // Helpers
 // ===========================================
 
-/** The five rows; none when the offer names no Great Hive the campaign knows. */
+/** The six rows; none when the offer names no Great Hive the campaign knows. */
 function greatHiveRows(
   mission: Mission,
   ctx: MissionPresentationContext,
@@ -135,6 +140,10 @@ function greatHiveRows(
   return [
     { ...TARGET, value: greatHiveTargetText(hive) },
     { ...OBJECTIVE, value: "Destroy the core; the beacon falls with it" },
+    {
+      ...EXTRACTION,
+      value: "The forward point, past halfway in, or the landing zone",
+    },
     {
       ...LIBERATES,
       value: `${hive.name}, ${regionCount(hive)}: cities −${formatWhole(tuning.hive.liberationCut)}, growth paused ${formatWhole(tuning.hive.liberationGrowthPauseDays)} days`,

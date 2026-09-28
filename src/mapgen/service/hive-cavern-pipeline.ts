@@ -2,6 +2,7 @@ import { HIVE_CAVERN_TUNING } from "../data/hive-cavern-tuning";
 import { BroodChamberPass } from "../generator/cavern/brood-chamber-pass";
 import { CavernDressingPass } from "../generator/cavern/cavern-dressing-pass";
 import { CavernPass } from "../generator/cavern/cavern-pass";
+import { ForwardExtractionPass } from "../generator/cavern/forward-extraction-pass";
 import { ConnectivityPass } from "../generator/connectivity-pass";
 import { DropshipSitePass } from "../generator/dropship-site-pass";
 import { HookPass } from "../generator/hook-pass";
@@ -25,12 +26,16 @@ import { isBroodFloor } from "./cavern-queries";
  *
  * ```
  *   terrain ─► cavern ─► dropship-sites (mouth edge only) ─► cavern-dressing
- *     ─► slopes ─► ramps ─► hooks (eggs in chambers) ─► brood-chambers ─► connectivity
+ *     ─► slopes ─► ramps ─► hooks (eggs in chambers) ─► brood-chambers
+ *     ─► [forward-extraction] ─► connectivity
  * ```
  *
  * The terrain pass only lends the mouth its biome's ground; the cavern
  * pass replaces its heightmap. The drop ship lands on the north edge
  * (low `z`), where the cavern pass leaves a flat pad behind the lip.
+ * A tuning with a `forwardExtraction` (the Great Hive's) also marks a
+ * forward extraction point on the route; the pass draws nothing, so the
+ * rest of the cavern is the same with or without it.
  */
 export function createHiveCavernPasses(
   tuning: HiveCavernTuning = HIVE_CAVERN_TUNING,
@@ -44,6 +49,9 @@ export function createHiveCavernPasses(
     new RampPass(),
     new HookPass([new EggSpawnerPlacer(isBroodFloor)]),
     new BroodChamberPass(),
+    ...(tuning.forwardExtraction === undefined
+      ? []
+      : [new ForwardExtractionPass(tuning.forwardExtraction)]),
     new ConnectivityPass(),
   ];
 }

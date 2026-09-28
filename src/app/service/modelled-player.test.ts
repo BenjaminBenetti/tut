@@ -27,6 +27,7 @@ import {
   resultContextFor,
   rollCasualties,
   rollOutcome,
+  scaledLosses,
 } from "./modelled-player.test-helper";
 
 // ===========================================
@@ -313,7 +314,7 @@ describe("rollCasualties (#1179)", () => {
   it("is what the resolver reports for a player with a scale, after the outcome's draw", () => {
     const average = CAMPAIGN_SWEEP_TUNING.players.average;
     const offer = realOffers()[0]!;
-    const player = { ...average, casualties: flat(1, 0) };
+    const player = { ...average, losses: scaledLosses(flat(1, 0)) };
     const resolved = new ModelledMissionResolver(
       player,
       resultContextFor(player, SWEEP_RESULTS),

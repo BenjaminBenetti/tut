@@ -1629,16 +1629,17 @@ export class TacticalMapView implements Disposable, TilePicker {
       // The marker was map geometry, built here from the generator's
       // hooks and skipped by the fog, so a green slab advertised every
       // egg spawner through the mist from turn one. The mapgen preview
-      // still wants it; a mission does not.
-      if (!this.objectiveMarkers && isObjective(hook, this.map)) {
+      // still wants it; a mission does not. A forward extraction point
+      // (#1179) sits in the objectives group but is somewhere to board,
+      // which the briefing names: it is drawn as the landing zone is.
+      const objective = isObjectiveMarker(hook, this.map);
+      if (!this.objectiveMarkers && objective) {
         continue;
       }
       for (const coord of hook.tiles) {
         const colour = HOOK_COLOURS[hook.kind] ?? FALLBACK_HOOK_COLOUR;
         const lift =
-          MARKER_LIFT +
-          (isObjective(hook, this.map) ? SLAB_HEIGHT : 0) +
-          shelfOf(hook.kind);
+          MARKER_LIFT + (objective ? SLAB_HEIGHT : 0) + shelfOf(hook.kind);
         const matrix = boxMatrix(
           coord.x + 0.5,
           tileTop(coord.y) + lift,
@@ -2018,6 +2019,8 @@ function levelOf(object: Object3D): number | undefined {
  * ```
  *   egg-spawner  the mission objective
  *   extraction   somewhere the player must return to and cannot infer
+ *   forward-     a Great Hive's second place to board (#1179); it never
+ *   extraction   shares a tile with another hook, so its rank is moot
  *   deploy       where the squad already stands, which its units show
  *   edge-spawn   where bugs arrive; useful, never urgent
  * ```
@@ -2034,6 +2037,7 @@ function levelOf(object: Object3D): number | undefined {
 const HOOK_MARKER_PRIORITY: readonly HookKind[] = [
   HookKinds.EGG_SPAWNER,
   HookKinds.EXTRACTION,
+  HookKinds.FORWARD_EXTRACTION,
   HookKinds.DEPLOY,
   HookKinds.EDGE_SPAWN,
 ];
@@ -2053,7 +2057,14 @@ function shelfOf(kind: HookKind): number {
   return (HOOK_MARKER_PRIORITY.length - rank) * HOOK_SHELF_STEP;
 }
 
-/** True when the hook belongs to the objectives group. */
-function isObjective(hook: Hook, map: TacticalMap): boolean {
-  return map.hooks.objectives.includes(hook);
+/**
+ * True when the hook marks an objective, which a mission withholds until
+ * it is seen: one in the objectives group other than a forward
+ * extraction point, a place to board the player is told of (#1179).
+ */
+function isObjectiveMarker(hook: Hook, map: TacticalMap): boolean {
+  return (
+    hook.kind !== HookKinds.FORWARD_EXTRACTION &&
+    map.hooks.objectives.includes(hook)
+  );
 }

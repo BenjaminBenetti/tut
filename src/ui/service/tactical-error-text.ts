@@ -366,9 +366,9 @@ export function describeRefusal(
       // cannot fall through to the developer wording below.
       return `${names.unit(error.unitId)} has no objective within reach`;
     case "not-in-extraction-zone":
-      return `${names.unit(error.unitId)} is not standing in the extraction zone`;
+      return `${names.unit(error.unitId)} is not standing in an extraction zone`;
     case "not-extractable":
-      return `${names.unit(error.unitId)} cannot leave through the extraction zone`;
+      return `${names.unit(error.unitId)} cannot leave through an extraction zone`;
     case "takes-no-orders":
       // A deployed turret (#1138): it fires by rule, and the player
       // clicked it to read its battery, not to command it.

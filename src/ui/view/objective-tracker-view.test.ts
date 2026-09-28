@@ -20,6 +20,7 @@ import {
   objectiveProgress,
 } from "../service/objectives/objective-presentation";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
+import { FORWARD_CLOSING_STEP } from "../service/boarding-track";
 
 // ===========================================
 // Fixtures
@@ -647,6 +648,19 @@ describe("ObjectiveTrackerView lists a linked mission's stages (#1179)", () => {
     view.update([{ ...NEST, complete: true }], SPAWNERS);
     expect(summary()).toBe("1 / 1 — board the drop ship");
     expect(stageRows()).toEqual([]);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="stage-list"]')?.hidden,
+    ).toBe(true);
+  });
+
+  it("names a Great Hive's two places to board, with no stage list (#1179)", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.setStages({ rows: [], closingStep: FORWARD_CLOSING_STEP });
+    view.update([{ ...NEST, complete: true }], SPAWNERS);
+    expect(
+      root.querySelector('[data-field="objective-summary"]')?.textContent,
+    ).toBe("1 / 1 — board at the forward point or the landing zone");
     expect(
       root.querySelector<HTMLElement>('[data-role="stage-list"]')?.hidden,
     ).toBe(true);

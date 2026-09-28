@@ -100,8 +100,9 @@ export function placeGarrisonTurrets(
  * infantry-walkable tile the squad can reach from its deploy zone —
  * so no battery sits on an island nothing can get to — that is not in
  * the deploy zone or within `deployClearance` of it, not a live
- * spawner's or within `spawnerClearance` of one, not an edge-spawn or
- * extraction hook tile, and not held by a unit. Exported so a test can
+ * spawner's or within `spawnerClearance` of one, not an edge-spawn,
+ * extraction or forward-extraction hook tile (#1179), and not held by a
+ * unit. Exported so a test can
  * check the rule apart from the draw.
  *
  * @param mission - The mission the turrets would join.
@@ -125,7 +126,9 @@ export function garrisonCandidates(
       ...mission.map.hooks.edgeSpawns,
       mission.map.hooks.extraction,
       ...mission.map.hooks.objectives.filter(
-        (hook) => hook.kind === HookKinds.EGG_SPAWNER,
+        (hook) =>
+          hook.kind === HookKinds.EGG_SPAWNER ||
+          hook.kind === HookKinds.FORWARD_EXTRACTION,
       ),
     ]
       .flatMap((hook) => hook.tiles)

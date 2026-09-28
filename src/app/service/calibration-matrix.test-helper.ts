@@ -14,16 +14,31 @@ import { describe, expect, it } from "vitest";
 import type { ForceBand } from "./calibration-forces.test-helper";
 import {
   CALIBRATION_CELLS,
-  CALIBRATION_TARGETS,
+  parseCellFilters,
+  selectCells,
 } from "./calibration-cells.test-helper";
 import type {
   PlayerId,
   RunResult,
   RunSpec,
 } from "./calibration-run.test-helper";
-import type { CellPin } from "./calibration-pins.test-helper";
+import type { BandPin, CellPin } from "./calibration-pins.test-helper";
 import { bandPins, cellPins, pinNotes } from "./calibration-pins.test-helper";
 import { PLAYER_IDS, playRun } from "./calibration-run.test-helper";
+import type {
+  ExpertTargetPin,
+  NewPlayerBandPin,
+} from "./calibration-targets.test-helper";
+import {
+  EXPERT_CELL_TARGET,
+  expertTargetPins,
+  NEW_PLAYER_BAND_TARGETS,
+  newPlayerBandPins,
+  TARGETED_CELLS,
+  targetedBandPins,
+  targetedExpertPins,
+  targetNotes,
+} from "./calibration-targets.test-helper";
 
 // ===========================================
 // The calibration matrix (#1179, campaign arc §12)
@@ -44,10 +59,22 @@ import { PLAYER_IDS, playRun } from "./calibration-run.test-helper";
 //
 // A matrix run's scratch sits in `SIM_MATRIX_OUT.parts/<token>/`; the
 // token is the vitest process every shard is forked from, so a later
-// run never reads an earlier one's claims.
+// run never reads an earlier one's claims. `SIM_MATRIX_CELLS` narrows
+// the queue to the cells it names (see `selectCells`); the shards share
+// the narrowed queue the same way.
 
-/** Seeds per cell and player. */
-export const MATRIX_SEEDS = Number(process.env.SIM_MATRIX_SEEDS ?? "8");
+/**
+ * Seeds per cell and player. 16 by default: 784 runs, which took 738 s
+ * on 8 workers for the committed baseline and 996 s for the one before
+ * it under heavier load (8 seeds took 356 s on weaker forces), inside
+ * the half hour a full run is allowed (the README's "Seeds").
+ */
+export const MATRIX_SEEDS = Number(process.env.SIM_MATRIX_SEEDS ?? "16");
+
+/** The cells a run plays (`SIM_MATRIX_CELLS`); none named plays every cell. */
+export const MATRIX_CELL_FILTERS = parseCellFilters(
+  process.env.SIM_MATRIX_CELLS,
+);
 
 /**
  * The cell whose expert also plays on the new player's dice: in the
@@ -56,20 +83,30 @@ export const MATRIX_SEEDS = Number(process.env.SIM_MATRIX_SEEDS ?? "8");
  */
 export const GAP_CELL_ID = "story:live-specimen/act-1";
 
-/** Cells queued first: the ones whose runs take longest (pilot, 2026-09-26). */
+/**
+ * Cells queued first, longest mean run first, so the last runs to finish
+ * are short ones (the round-2 baseline at 8bf21fba, 8 seeds, 2026-09-26):
+ *
+ * ```
+ *   launch-window 31 s   great-hive 29 s   hive-assault/act-3 17 s
+ *   defend/act-3 17 s    uplink 12 s       clearance/act-3 9 s
+ *   evacuation/act-3 9 s tunnel/act-3 7 s  defend/act-2 5 s
+ *   defend/act-1 4 s     evacuation/act-2 4 s   clearance/act-2 4 s
+ * ```
+ */
 const HEAVY_FIRST: readonly string[] = [
+  "story:launch-window/finale",
   "story:great-hive/act-3",
   "hive-assault/act-3",
-  "hive-assault/act-2",
-  "evacuation/act-3",
-  "tunnel-sabotage/act-3",
-  "story:launch-window/finale",
-  "story:live-specimen/act-1",
-  "evacuation/act-2",
   "defend-installation/act-3",
-  "defend-installation/act-2",
   "story:uplink/act-3",
   "infestation-clearance/act-3",
+  "evacuation/act-3",
+  "tunnel-sabotage/act-3",
+  "defend-installation/act-2",
+  "defend-installation/act-1",
+  "evacuation/act-2",
+  "infestation-clearance/act-2",
 ];
 
 /** One queued run: what to play and where its result goes. */
@@ -78,12 +115,17 @@ export interface MatrixRun extends RunSpec {
   readonly index: number;
 }
 
-/** Every run of the matrix, heaviest cells first, then cell order, seed, player. */
-export function matrixRuns(seeds: number = MATRIX_SEEDS): readonly MatrixRun[] {
-  const order = CALIBRATION_CELLS.map((cell, cellIndex) => ({
-    cell,
-    cellIndex,
-  })).sort(
+/**
+ * Every run of the cells `filters` select (all of them when none),
+ * heaviest cells first, then cell order, seed, player. A run keeps its
+ * cell's index in `CALIBRATION_CELLS`, so a filtered run plays exactly
+ * the mission, force and dice the full matrix plays for that cell.
+ */
+export function matrixRuns(
+  seeds: number = MATRIX_SEEDS,
+  filters: readonly string[] = MATRIX_CELL_FILTERS,
+): readonly MatrixRun[] {
+  const order = [...selectCells(filters)].sort(
     (a, b) =>
       weight(a.cell.id) - weight(b.cell.id) || a.cellIndex - b.cellIndex,
   );
@@ -172,7 +214,13 @@ const SHARD_TIMEOUT_MS = 6 * 3_600_000;
  * the TSVs and holds the structural pins:
  *
  *   every run ends with an outcome (the turn cap abandons the rest)
- *   in every cell the expert wins at least as often as the new player
+ *   the expert wins at least as often as the new player, per band, and
+ *   per cell with the one-seed allowance
+ *
+ * Then the arc's targets (`calibration-targets.test-helper`), skipped
+ * while `TARGETED_CELLS` is empty: the expert's in every targeted cell,
+ * the new player's in every band whose cells are all targeted. Only the
+ * shard that merged has rows to assert; the others pass them by.
  *
  * Runs only when `SIM_MATRIX_OUT` is set: the matrix is a measurement
  * that takes most of an hour, not part of the everyday sim suite.
@@ -181,6 +229,8 @@ export function defineMatrixShard(shard: string): void {
   describe.skipIf(OUT === undefined)(
     `the calibration matrix, shard ${shard}`,
     () => {
+      /** The matrix's rows, once this shard has merged them. */
+      let merged: readonly CellSummary[] | undefined;
       it(
         "plays its share of the runs; the last shard in pins the matrix",
         () => {
@@ -194,12 +244,19 @@ export function defineMatrixShard(shard: string): void {
           const results = collectResults(runs, scratch);
           if (results === undefined) return;
           const rows = summarise(results);
+          merged = rows;
           const cells = cellPins(rows);
           const bands = bandPins(rows);
-          writeFileSync(out, matrixTsv(rows, cells));
+          const targets = expertTargetPins(rows);
+          const standing = newPlayerBandPins(rows);
+          writeFileSync(out, matrixTsv(rows, cells, targets));
           writeFileSync(runsPath(out), runsTsv(results));
+          writeFileSync(bandsPath(out), bandsTsv(standing, bands, targets));
           for (const note of pinNotes(cells, bands)) {
             console.log(`calibration pin ${note}`);
+          }
+          for (const note of targetNotes(standing, targets)) {
+            console.log(`calibration target ${note}`);
           }
           for (const result of results) {
             expect(["won", "extracted", "lost"]).toContain(result.outcome);
@@ -212,6 +269,28 @@ export function defineMatrixShard(shard: string): void {
           }
         },
         SHARD_TIMEOUT_MS,
+      );
+      it.skipIf(TARGETED_CELLS.length === 0)(
+        `the expert wins at least ${String(EXPERT_CELL_TARGET)}% in every targeted cell`,
+        () => {
+          for (const pin of targetedExpertPins(merged ?? [])) {
+            expect(
+              pin.verdict,
+              `${pin.cell}: ${String(pin.won)}/${String(pin.runs)}, needs ${String(pin.needed)}`,
+            ).not.toBe("short");
+          }
+        },
+      );
+      it.skipIf(TARGETED_CELLS.length === 0)(
+        "the new player hits its band's target in every targeted band",
+        () => {
+          for (const pin of targetedBandPins(merged ?? [])) {
+            expect(
+              pin.verdict,
+              `${pin.band}: ${pin.winRate.toFixed(1)}% against ${String(pin.target)} ± ${pin.tolerance.toFixed(1)}`,
+            ).toBe("on");
+          }
+        },
       );
     },
   );
@@ -237,8 +316,10 @@ export interface CellSummary {
   readonly stalled: number;
   /** Wins over runs, percent. */
   readonly winRate: number;
-  /** The band's expert target, percent. */
-  readonly target: number;
+  /** The new player's target for the band, percent: met on the band's pooled wins, not the cell's. */
+  readonly newBandTarget: number;
+  /** The expert's target in every cell, percent. */
+  readonly expertTarget: number;
   readonly unitsLost: number;
   readonly mechsLost: number;
   readonly turns: number;
@@ -279,7 +360,8 @@ export function summarise(
         capped: mine.filter((r) => r.abandoned === "cap").length,
         stalled: mine.filter((r) => r.abandoned === "stall").length,
         winRate: (100 * count("won")) / mine.length,
-        target: CALIBRATION_TARGETS[cell.band],
+        newBandTarget: NEW_PLAYER_BAND_TARGETS[cell.band],
+        expertTarget: EXPERT_CELL_TARGET,
         unitsLost: mean(mine.map((r) => r.unitsLost)),
         mechsLost: mean(mine.map((r) => r.mechsLost)),
         turns: medianOf(mine.map((r) => r.turns)),
@@ -293,13 +375,16 @@ export function summarise(
 }
 
 /**
- * The matrix as a TSV: one row per cell × player (× luck). The expert's
- * own row carries its cell's pin verdict (`pins`); the others leave it
- * empty.
+ * The matrix as a TSV: one row per cell × player (× luck). Every row
+ * names both targets: the new player's band target, met on the band's
+ * pooled wins, and the expert's cell target. The expert's own row
+ * carries its cell's expert-over-new verdict (`pins`) and its target
+ * verdict (`targets`); the others leave them empty.
  */
 export function matrixTsv(
   rows: readonly CellSummary[],
   pins: readonly CellPin[] = [],
+  targets: readonly ExpertTargetPin[] = [],
 ): string {
   const header = [
     "cell",
@@ -313,7 +398,8 @@ export function matrixTsv(
     "capped",
     "stalled",
     "win_pct",
-    "target_pct",
+    "new_band_target_pct",
+    "expert_cell_target_pct",
     "units_lost_mean",
     "mechs_lost_mean",
     "turns_median",
@@ -321,6 +407,7 @@ export function matrixTsv(
     "hit_pct",
     "wall_s",
     "pin",
+    "expert_target",
   ];
   const lines = rows.map((row) =>
     [
@@ -335,15 +422,19 @@ export function matrixTsv(
       row.capped,
       row.stalled,
       row.winRate.toFixed(0),
-      row.target,
+      row.newBandTarget,
+      row.expertTarget,
       row.unitsLost.toFixed(2),
       row.mechsLost.toFixed(2),
       row.turns,
       row.bugPhaseMs.toFixed(0),
       row.hitRate.toFixed(0),
       row.wallSeconds.toFixed(0),
-      row.player === "expert" && row.luck === "expert"
+      ownExpert(row)
         ? (pins.find((pin) => pin.cell === row.cell)?.verdict ?? "")
+        : "",
+      ownExpert(row)
+        ? (targets.find((pin) => pin.cell === row.cell)?.verdict ?? "")
         : "",
     ].join("\t"),
   );
@@ -353,6 +444,62 @@ export function matrixTsv(
 /** Where the per-run TSV goes beside the matrix at `out`: `x.tsv` → `x.runs.tsv`. */
 export function runsPath(out: string): string {
   return `${out.replace(/\.tsv$/, "")}.runs.tsv`;
+}
+
+/** Where the per-band TSV goes beside the matrix at `out`: `x.tsv` → `x.bands.tsv`. */
+export function bandsPath(out: string): string {
+  return `${out.replace(/\.tsv$/, "")}.bands.tsv`;
+}
+
+/**
+ * One row per band: the new player's pooled wins against its band
+ * target and tolerance, and the expert's pooled wins, how many of its
+ * cells met their target, and whether it beat the new player over the
+ * band (the structural band pin).
+ */
+export function bandsTsv(
+  standing: readonly NewPlayerBandPin[],
+  bands: readonly BandPin[],
+  targets: readonly ExpertTargetPin[],
+): string {
+  const header = [
+    "band",
+    "new_won",
+    "new_runs",
+    "new_win_pct",
+    "new_target_pct",
+    "new_tolerance_pct",
+    "new_target",
+    "expert_won",
+    "expert_runs",
+    "expert_win_pct",
+    "expert_cells_met",
+    "expert_cells",
+    "expert_over_new",
+  ];
+  const lines = standing.map((pin) => {
+    const band = bands.find((b) => b.band === pin.band);
+    const cells = targets.filter((t) => t.band === pin.band);
+    const expertRuns = band?.expertRuns ?? 0;
+    return [
+      pin.band,
+      pin.won,
+      pin.runs,
+      pin.winRate.toFixed(1),
+      pin.target,
+      pin.tolerance.toFixed(1),
+      pin.verdict,
+      band?.expertWon ?? 0,
+      expertRuns,
+      expertRuns === 0
+        ? "0.0"
+        : ((100 * (band?.expertWon ?? 0)) / expertRuns).toFixed(1),
+      cells.filter((t) => t.verdict === "met").length,
+      cells.length,
+      band === undefined ? "" : band.holds ? "holds" : "fail",
+    ].join("\t");
+  });
+  return [header.join("\t"), ...lines].join("\n") + "\n";
 }
 
 /** Every run as a TSV row, for the evidence behind a cell. */
@@ -403,6 +550,11 @@ export function runsTsv(results: readonly RunResult[]): string {
 // ===========================================
 // Private
 // ===========================================
+
+/** Whether `row` is the expert playing on its own dice: the row the pins and targets are read from. */
+function ownExpert(row: CellSummary): boolean {
+  return row.player === "expert" && row.luck === "expert";
+}
 
 /** Queue weight of a cell: its place in `HEAVY_FIRST`, or after them all. */
 function weight(cellId: string): number {

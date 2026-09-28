@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 import { loadoutPartIds } from "../../roster/model/mech-loadout";
 import { partIdsOf } from "../../tech/model/tech-effect";
+import { createSquadTypeAvailability } from "../../tech/service/squad-type-availability-service";
+import { fillDeployment, fillMarket } from "./calibration-fill.test-helper";
+import { costOf } from "./calibration-force-probe.test-helper";
 import type { ForceBand } from "./calibration-forces.test-helper";
 import {
   CALIBRATION_FORCES,
@@ -54,24 +57,65 @@ describe("the calibration forces", () => {
     }
   });
 
-  it("deploy within the cap, the Act III force filling it", () => {
+  it("fill the deployment to the cap in every band", () => {
     for (const band of BANDS) {
       const state = withForce(game, created, CALIBRATION_FORCES[band]);
       const sent = everyone(state, "m");
       const size = sent.squadIds.length + sent.mechIds.length;
-      expect(size, band).toBeLessThanOrEqual(MAX_DEPLOYED_UNITS);
-      if (band === "act-3") expect(size).toBe(MAX_DEPLOYED_UNITS);
+      expect(size, band).toBe(MAX_DEPLOYED_UNITS);
+    }
+  });
+
+  it("buy their reinforcements from the band's bank by the fill rule", () => {
+    const starters = created.roster.squads.length + created.roster.mechs.length;
+    for (const band of BANDS) {
+      const force = CALIBRATION_FORCES[band];
+      const availability = createSquadTypeAvailability(game.content.tech, {
+        unlocked: force.tech,
+      });
+      const market = fillMarket(
+        game.content.squadTypes,
+        availability,
+        costOf(force.loadout, game.content),
+      );
+      const fill = fillDeployment(
+        force.bank.before,
+        MAX_DEPLOYED_UNITS - starters,
+        market,
+      );
+      const { squads, mechs } = force.reinforcements;
+      expect(
+        squads.map((squad) => squad.typeId),
+        band,
+      ).toEqual(fill.squads);
+      expect(mechs.length, band).toBe(fill.mechs);
+      for (const mech of mechs)
+        expect(mech.loadout, band).toEqual(force.loadout);
+      expect(force.bank.after, band).toBe(fill.bankAfter);
+      for (const credits of [force.bank.before, force.bank.after]) {
+        expect(force.basis, band).toContain(credits.toLocaleString("en-US"));
+      }
     }
   });
 
   it("put the band's ranks, refit and research on the campaign", () => {
     const force = CALIBRATION_FORCES["act-2"];
     const state = withForce(game, created, force, ["tech.frag-grenades"]);
-    expect(
-      state.roster.squads.every((squad) => squad.xp === force.squadXp),
-    ).toBe(true);
+    const starters = created.roster.squads.length;
+    expect(state.roster.squads.map((squad) => squad.xp)).toEqual([
+      ...created.roster.squads.map(() => force.squadXp),
+      ...force.reinforcements.squads.map(() => force.reinforcementXp),
+    ]);
+    expect(state.roster.squads.slice(starters).map((s) => s.typeId)).toEqual(
+      force.reinforcements.squads.map((squad) => squad.typeId),
+    );
+    expect(state.roster.mechs.map((mech) => mech.xp)).toEqual([
+      force.mechXp,
+      ...force.reinforcements.mechs.map(() => force.reinforcementXp),
+    ]);
     expect(state.roster.mechs.map((mech) => mech.loadout)).toEqual([
       force.loadout,
+      ...force.reinforcements.mechs.map((mech) => mech.loadout),
     ]);
     expect(state.tech.unlocked).toEqual([...force.tech, "tech.frag-grenades"]);
   });

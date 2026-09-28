@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { CALIBRATION_CELLS } from "./calibration-cells.test-helper";
 import {
+  bandsPath,
+  bandsTsv,
   collectResults,
   GAP_CELL_ID,
   matrixRuns,
@@ -16,7 +18,11 @@ import {
   runsPath,
   summarise,
 } from "./calibration-matrix.test-helper";
-import { cellPins } from "./calibration-pins.test-helper";
+import { bandPins, cellPins } from "./calibration-pins.test-helper";
+import {
+  expertTargetPins,
+  newPlayerBandPins,
+} from "./calibration-targets.test-helper";
 import type { RunResult, RunSpec } from "./calibration-run.test-helper";
 import { cellAt } from "./calibration-run.test-helper";
 
@@ -67,7 +73,7 @@ describe("the calibration matrix", () => {
       GAP_CELL_ID,
       GAP_CELL_ID,
     ]);
-    expect(cellAt(runs[0]!.cellIndex).id).toBe("story:great-hive/act-3");
+    expect(cellAt(runs[0]!.cellIndex).id).toBe("story:launch-window/finale");
   });
 
   it("shares one queue among shards, each run played once, and collects them all", () => {
@@ -90,14 +96,75 @@ describe("the calibration matrix", () => {
     expect(collectResults(runs, scratch)).toHaveLength(runs.length);
   });
 
-  it("writes the runs beside the matrix", () => {
+  it("queues only the cells a filter selects, each run the one the full matrix plays", () => {
+    const full = matrixRuns(2, []);
+    const filtered = matrixRuns(2, ["hive-assault", GAP_CELL_ID]);
+    const cells = new Set(filtered.map((run) => cellAt(run.cellIndex).id));
+    expect([...cells].sort()).toEqual([
+      "hive-assault/act-2",
+      "hive-assault/act-3",
+      GAP_CELL_ID,
+    ]);
+    const fullOf = new Set(full.map(keyOf));
+    expect(filtered.every((run) => fullOf.has(keyOf(run)))).toBe(true);
+    expect(filtered).toHaveLength(3 * 2 * 2 + 2);
+    expect(filtered.map((run) => run.index)).toEqual(
+      filtered.map((_, index) => index),
+    );
+    expect(
+      matrixRuns(2, ["hive-assault"]).some((run) => run.luck !== run.player),
+    ).toBe(false);
+  });
+
+  it("shares a filtered queue among more shards than it has runs", () => {
+    const dir = mkdtempSync(join(tmpdir(), "matrix-"));
+    dirs.push(dir);
+    const runs = matrixRuns(1, ["story:uplink"]);
+    const scratch = matrixScratch(join(dir, "out.tsv"), "token");
+    const shares = [0, 1, 2, 3].map(() => playShare(runs, scratch, fakeRun));
+    expect(shares).toEqual([2, 0, 0, 0]);
+    const results = collectResults(runs, scratch);
+    expect(results?.map((result) => result.cell)).toEqual([
+      "story:uplink/act-3",
+      "story:uplink/act-3",
+    ]);
+    expect(summarise(results ?? []).map((row) => row.player)).toEqual([
+      "new",
+      "expert",
+    ]);
+  });
+
+  it("writes the runs and the bands beside the matrix", () => {
     expect(runsPath("docs/baseline-matrix.tsv")).toBe(
       "docs/baseline-matrix.runs.tsv",
     );
     expect(runsPath("out")).toBe("out.runs.tsv");
+    expect(bandsPath("docs/baseline-matrix.tsv")).toBe(
+      "docs/baseline-matrix.bands.tsv",
+    );
   });
 
-  it("summarises each cell's players with win rates against the band's target", () => {
+  it("tabulates each band: the new player against its target, the expert's cells and its lead", () => {
+    const rows = summarise(matrixRuns(4).map(fakeRun));
+    const tsv = bandsTsv(
+      newPlayerBandPins(rows),
+      bandPins(rows),
+      expertTargetPins(rows),
+    ).split("\n");
+    const header = tsv[0]?.split("\t") ?? [];
+    const act1 = tsv.find((line) => line.startsWith("act-1\t"))?.split("\t");
+    const field = (name: string): string | undefined =>
+      act1?.[header.indexOf(name)];
+    expect(field("new_won")).toBe("0");
+    expect(field("new_target_pct")).toBe("90");
+    expect(field("new_target")).toBe("low");
+    expect(field("expert_cells")).toBe("6");
+    expect(field("expert_cells_met")).toBe("0");
+    expect(field("expert_over_new")).toBe("holds");
+    expect(tsv).toHaveLength(4 + 2);
+  });
+
+  it("summarises each cell's players with win rates beside both players' targets", () => {
     const results = matrixRuns(4).map(fakeRun);
     const rows = summarise(results);
     const expert = rows.find(
@@ -108,15 +175,33 @@ describe("the calibration matrix", () => {
       won: 3,
       lost: 1,
       winRate: 75,
-      target: 90,
+      newBandTarget: 90,
+      expertTarget: 90,
     });
+    expect(
+      rows.find((row) => row.cell === "crash-site/act-3")?.newBandTarget,
+    ).toBe(65);
     expect(expert?.hitRate).toBe(60);
-    const tsv = matrixTsv(rows, cellPins(rows)).split("\n");
+    const tsv = matrixTsv(rows, cellPins(rows), expertTargetPins(rows)).split(
+      "\n",
+    );
+    const header = tsv[0]?.split("\t") ?? [];
+    const column = (line: string | undefined, name: string): string =>
+      line?.split("\t")[header.indexOf(name)] ?? "missing";
     const expertLine = tsv.find((line) =>
       line.startsWith("crash-site/act-1\tact-1\texpert\texpert"),
     );
-    expect(expertLine?.split("\t").at(-1)).toBe("clear");
-    expect(tsv[0]?.split("\t")).toContain("win_pct");
+    const newLine = tsv.find((line) =>
+      line.startsWith("crash-site/act-3\tact-3\tnew\tnew"),
+    );
+    expect(column(expertLine, "pin")).toBe("clear");
+    expect(column(expertLine, "expert_target")).toBe("allowance");
+    expect(column(expertLine, "new_band_target_pct")).toBe("90");
+    expect(column(expertLine, "expert_cell_target_pct")).toBe("90");
+    expect(column(newLine, "new_band_target_pct")).toBe("65");
+    expect(column(newLine, "expert_target")).toBe("");
+    expect(header).toContain("win_pct");
+    expect(header).not.toContain("target_pct");
     expect(tsv).toHaveLength(rows.length + 2);
   });
 });

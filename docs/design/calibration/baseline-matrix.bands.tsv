@@ -1,0 +1,5 @@
+band	new_won	new_runs	new_win_pct	new_target_pct	new_tolerance_pct	new_target	expert_won	expert_runs	expert_win_pct	expert_cells_met	expert_cells	expert_over_new
+act-1	84	96	87.5	90	6.1	on	87	96	90.6	4	6	holds
+act-2	97	128	75.8	75	7.7	on	104	128	81.3	6	8	holds
+act-3	96	144	66.7	65	7.9	on	105	144	72.9	5	9	holds
+finale	9	16	56.3	55	24.9	on	10	16	62.5	0	1	holds

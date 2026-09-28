@@ -47,14 +47,6 @@ import { CALIBRATION_FORCES } from "./calibration-forces.test-helper";
 //                     ──► city        cities[(i × 7 + cell) mod |cities|], infestation ≈ d × 10
 //                     ──► offer       the type's recipe, story rule or trigger shape
 
-/** The expert win-rate target per act band (campaign arc §12), asserted in a skipped test until tuning lands. */
-export const CALIBRATION_TARGETS: Readonly<Record<ForceBand, number>> = {
-  "act-1": 90,
-  "act-2": 75,
-  "act-3": 65,
-  finale: 55,
-};
-
 /** What an offer recipe is handed. */
 export interface OfferInput {
   readonly state: OverworldState;
@@ -70,7 +62,7 @@ export interface CalibrationCell {
   readonly id: string;
   /** The mission type, or `story:<id>` for a story mission. */
   readonly mission: string;
-  /** Whose force deploys and whose target applies. */
+  /** Whose force deploys, and whose band target the new player's wins count towards. */
   readonly band: ForceBand;
   /** The act the offer is made in: its bug mix and band. */
   readonly act: ActId;
@@ -344,6 +336,64 @@ export const CALIBRATION_CELLS: readonly CalibrationCell[] = [
   ),
   storyCell("launch-window", "finale", "act-3", 8, story("launch-window")),
 ];
+
+// ===========================================
+// Selecting cells
+// ===========================================
+//
+// `SIM_MATRIX_CELLS` names the cells a matrix run plays, so a tuning
+// package can replay only its own: a comma-separated list of cell ids
+// or prefixes of them. A cell is selected when any entry is a prefix of
+// its id; no entries selects every cell.
+//
+//   hive-assault                     hive-assault/act-2, hive-assault/act-3
+//   story:great-hive/act-3           that cell only
+//   evacuation/act-2,story:uplink    those two
+//   story:                           every story cell
+
+/** A cell of the matrix with its place in `CALIBRATION_CELLS`, which its runs are keyed by. */
+export interface SelectedCell {
+  readonly cell: CalibrationCell;
+  readonly cellIndex: number;
+}
+
+/** The entries of a `SIM_MATRIX_CELLS` value: split on commas, trimmed, blanks dropped; none when unset. */
+export function parseCellFilters(raw: string | undefined): readonly string[] {
+  if (raw === undefined) return [];
+  return raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+/** Whether `filters` select the cell `cellId`: no filters select everything, else any entry that prefixes it. */
+export function cellMatches(
+  filters: readonly string[],
+  cellId: string,
+): boolean {
+  return (
+    filters.length === 0 || filters.some((entry) => cellId.startsWith(entry))
+  );
+}
+
+/**
+ * The cells `filters` select, in `CALIBRATION_CELLS` order, each with
+ * its index there. An entry that selects no cell is a typo, not an
+ * empty run, and throws.
+ */
+export function selectCells(
+  filters: readonly string[],
+  cells: readonly CalibrationCell[] = CALIBRATION_CELLS,
+): readonly SelectedCell[] {
+  for (const entry of filters) {
+    if (!cells.some((cell) => cell.id.startsWith(entry))) {
+      throw new Error(`SIM_MATRIX_CELLS entry "${entry}" selects no cell`);
+    }
+  }
+  return cells
+    .map((cell, cellIndex) => ({ cell, cellIndex }))
+    .filter(({ cell }) => cellMatches(filters, cell.id));
+}
 
 // ===========================================
 // Offer context

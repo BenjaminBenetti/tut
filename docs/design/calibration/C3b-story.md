@@ -7,14 +7,16 @@ cell. Phase 1 (`0bd1a397`) modelled the players for Alpha Hunt and the
 Spore Platform and added their cells. Phase 2 tuned Intact Pod, Alpha
 Hunt and the Spore Platform. Phase 3 tuned Live Specimen with two
 approved player decisions, and tried an expert-only chase for Alpha
-Hunt that is not shipped.
+Hunt that is not shipped. Phase 4 tried an expert-only volley on the
+Broodmother, also not shipped. Phase 5 made the Alpha Hunt easier, on
+the owner's decision: the wounded Broodmother limps.
 
 | Cell | New before | New after | Band target | Expert before | Expert after | `expert_target` |
 | --- | --- | --- | --- | --- | --- | --- |
 | `story:live-specimen/act-1` | 6/16 (38%) | 13/16 (81%) | 90 | 15/16 | 16/16 | met |
 | `story:intact-pod/act-2` | 16/16 (100%) | 11/16 (69%) | 75 | 16/16 | 16/16 | met |
-| `alpha-hunt/act-2` | 9/16 (56%) | 12/16 (75%) | 75 | 14/16 | 15/16 | allowance → met |
-| `alpha-hunt/act-3` | 12/16 (75%) | 13/16 (81%) | 65 | 15/16 | 15/16 | met |
+| `alpha-hunt/act-2` | 9/16 (56%) | 14/16 (88%) | 75 | 14/16 | 16/16 | allowance → met |
+| `alpha-hunt/act-3` | 12/16 (75%) | 13/16 (81%) | 65 | 15/16 | 16/16 | met |
 | `story:spore-platform/finale` | 2/16 (13%) | 10/16 (63%) | 55 | 16/16 | 16/16 | met |
 
 The Live Specimen row's "before" is the phase 2 head. Its decision-gap
@@ -22,9 +24,11 @@ row (the expert on the new player's dice) read 14/16 before and reads
 16/16 after.
 
 All five cells are in `TARGETED_CELLS`. Live Specimen joined in phase
-3 (see "Live Specimen"). **One cell is still short: the Alpha Hunt Act II
-expert, at 25/32 (78%) over 32 seeds.** It reads `met` on the matrix's
-16 seeds (see "Alpha Hunt").
+3 (see "Live Specimen"). The Alpha Hunt rows are phase 5's. Over 32
+seeds the expert now wins 29/32 (91%) Act II hunts and 30/32 (94%) Act
+III ones, from 25/32 and 28/32, so no cell is short any more (see
+"Alpha Hunt"). The new player's Act II band now reads just above its
+tolerance on the matrix's own count (see "Band effect").
 
 ## Base and cells
 
@@ -51,6 +55,10 @@ expert, at 25/32 (78%) over 32 seeds.** It reads `met` on the matrix's
   expert-only Alpha Hunt chase. The net's range and carry penalty (the
   Jev net text) and Live Specimen's difficulty (its tech reward) stayed
   frozen.
+- **Phase 5 base:** `ba451704`, int/w1 with phase 3 and the field and
+  economy packages. The owner asked for an easier Alpha Hunt. Its own
+  tuning was open; the players, the species rows and the half-health
+  threshold stayed frozen.
 
 ## Intact Pod
 
@@ -220,6 +228,113 @@ full health to dead, or at least near it, in one turn. Then the first
 wound is not the one that sends her running from 30 tiles out. That is
 a different expert decision from the one approved, so it is left to the
 owner.
+
+### Phase 4: an expert volley, not shipped
+
+**Approved:** the recommendation above, for the expert only. It holds
+fire on her until the guns still to act this turn expect to deal her
+current hit points, and it closes in out of her sight meanwhile. It
+fires at once if she is hurt, fleeing or biting one of ours. Once it
+opens fire, it keeps firing until she is dead. **The aim was ≥ 29/32 in
+both expert cells.**
+
+Expert wins over 32 seeds (Act II / Act III), each run predicted first:
+
+| Run | Act II | Act III | Predicted |
+| --- | --- | --- | --- |
+| phase 3 head | 25 | 28 | — |
+| volley, margin 1.0 | 27 | 30 | 28 / 29 |
+| + no overwatch in her reach | 27 | 30 | 29 / 30 |
+| margin 0.75 | 25 | 30 | 29 / 29 |
+| 64 firing tiles previewed (16 before) | 27 | 30 | 28 / 30 |
+| overwatch barred only for guns that could send her to half | 23 | 30 | 28 / 30 |
+
+Once the volley opened, it worked: in the best variant, 27 of the 29
+opened volleys killed her. The problem was opening it. From the ring
+just out of her sight (10 tiles), each mech expects about 13 damage on
+her and each squad 0–4, so three mechs expect about 42 against 46–54
+Act II hit points. In three runs the volley never opened. The force
+held for 40 turns and lost 7–8 units to her hatchlings. **Nothing was
+shipped;** the owner chose to make the hunt easier instead (phase 5).
+
+### Phase 5: wounded, she limps
+
+**Decision (the owner, 2026-09-28):** "make alpha hunt easier": tune the
+mission, not the expert, until the expert meets its target. Every
+player decision is as phase 3 left it.
+
+**Cause, from phases 3 and 4.** The Act II expert's 7 lost hunts over
+32 seeds were all escapes. There were two kinds:
+- **Far flights** (seeds 4, 18, 19 and 26): she was wounded to half 26–30
+  tiles from the edge and ran 10 tiles a turn, which a force paced to
+  shoot does not match.
+- **Near-edge flights** (seeds 17, 29 and 31): she turned 0–2 tiles
+  from the edge.
+
+The far flights are the ones a mission lever can reach.
+
+**Levers.**
+- **Her pace once she runs.** Her move is the species row's, shared
+  tuning, so it is not touched. The lever is a new mission-only override
+  in her own tuning, `BROODMOTHER_TUNING.fleeingActions`. As each of her
+  phases opens, the flight step cuts a fleeing Broodmother's action
+  points to that number, after the refresh. So the Jev driver and the
+  fallback behaviour both run on the same budget, and her walk while
+  she is whole is unchanged. Only Alpha Hunt fields her (the Broodmother
+  Sighting is an Alpha Hunt).
+- **A turn on the edge** (measured, not shipped). With this, she leaves
+  only as her own phase opens, and only if she was already fleeing when
+  it opened, so the squad always gets one turn at her on the edge.
+- **Her hit points** again, with the limp.
+
+The flight threshold stays at half health, as the story and the Jev
+text have it.
+
+Wins over 32 seeds, each run predicted first (`phase5-predictions.md`
+in the package's scratch):
+
+| Run | Act II new | Act II expert | Act III new | Act III expert | Predicted expert |
+| --- | --- | --- | --- | --- | --- |
+| base (int/w1 `ba451704`) | 23 | 25 | 23 | 28 | 25 / 28 |
+| **limp, 1 action (shipped)** | **26** | **29** | **25** | **30** | 28 / 30 |
+| limp + a turn on the edge | 28 | 32 | 25 | 31 | 31 / 31 |
+| limp + `hpBase` 46 | 25 | 29 | 26 | 29 | 29 / 29 |
+
+The base is phase 3's head merged with the field and economy packages;
+its Alpha Hunt runs are identical to phase 3's, run for run.
+
+Fled / escaped / killed over 32 seeds, base → head:
+
+| Cell, player | Base | Head |
+| --- | --- | --- |
+| Act II new | 18 / 7 / 24 | 18 / 4 / 27 |
+| Act II expert | 17 / 7 / 25 | 17 / 3 / 29 |
+| Act III new | 15 / 5 / 25 | 15 / 3 / 27 |
+| Act III expert | 16 / 3 / 28 | 16 / 1 / 30 |
+
+She still turns to flee as often; she gets away less often.
+- **Every far flight in both expert cells is now a kill** (Act II seeds
+  4, 18, 19 and 26; Act III seeds 9 and 23).
+- **The expert's remaining losses** are the near-edge flights (Act II
+  17, 29 and 31; Act III 31) and one Act III hunt that ran to the cap
+  (seed 17).
+
+A turn on the edge would catch the near-edge flights too (32/32 and
+31/32), but it also lifts the new player's Act II rate to 28/32. It
+changes what "before she reaches the map edge" means, and the limp
+alone meets the aim. So it is left as the reserve lever. More hit points
+did not separate the players: the new player's Act II rate on seeds
+0–15 stayed 14/16, and the Act III expert lost a hunt.
+
+**Shipped:**
+- `BroodmotherTuning.fleeingActions`, set to 1 in `BROODMOTHER_TUNING`.
+  Once she runs, she has one action a phase: 5 tiles a turn, not 10.
+- `broodmotherFlight` applies it as her own phase opens. It runs after
+  the refresh in the shipped `EndTurn`.
+- The lair clearance's doc now counts two player turns, not one, between
+  a first-phase flight from 12 tiles in and her escape.
+- No briefing, tracker or Jev text states her pace, so no text changes.
+  The briefing still reads "flees at half health".
 
 ## Spore Platform
 
@@ -417,6 +532,25 @@ packages land:
 
 The coordinator's full run decides.
 
+**Phase 5, measured.** Every Act II and Act III cell was played at 16
+seeds on the phase 5 head, so these are the other cells' current
+numbers, not the baseline's. The tolerance is the matrix's own: two
+binomial standard deviations at the band's run count.
+
+| Band | Other cells (new) | Alpha Hunt (new) | Pooled, head | Pooled, base | Target | Reads |
+| --- | --- | --- | --- | --- | --- | --- |
+| Act II | 105/128 | 14/16 (base 12) | 119/144 = 82.6% | 117/144 = 81.3% | 75 ± 7.2 | high by one run (base on) |
+| Act III | 114/144 | 13/16 (base 13) | 127/160 = 79.4% | 127/160 = 79.4% | 65 ± 7.5 | high (base too) |
+
+- **Act II.** The other cells are infestation clearance 12, crash site
+  14, evacuation 11, defence 15, tunnel sabotage 16, wreck recovery 14,
+  hive assault 12 and Intact Pod 11, each out of 16. The limp adds two
+  new-player wins on seeds 0–15, and 118/144 would be on. Against the
+  ± 7.7 of the committed 128-run band, 82.6% is inside.
+- **Act III.** The band is high with or without this phase: tunnel
+  sabotage, wreck recovery and Uplink are 16/16, and defence is 14/16.
+  The limp moves no Act III new-player run on seeds 0–15.
+
 ## The command
 
 ```
@@ -456,6 +590,24 @@ pin was sabotage-checked (made red by changing the number):
 - `broodmother-service.test.ts`: her hit points;
 - `spore-platform-setup.test.ts` and `spore-platform-start.test.ts`:
   the nests and guards.
+
+In phase 5, the 16-seed run passed 24 of 24, every expert row `met`.
+- **The other cells did not move.** Their 112 runs match the phase 5
+  base (`ba451704`) run for run, as they match phase 3's.
+- **The mission, pod, defence, campaign and Spore Platform sweeps match
+  the base byte for byte,** apart from their wall-clock and load lines.
+- **The 32-seed Alpha Hunt check passes 24 of 24:** Act II new 26/32 and
+  expert 29/32 (`met`); Act III new 25/32 and expert 30/32 (`met`). It
+  matches the probe for all 128 runs.
+
+The limp is pinned in `broodmother-flight-step.test.ts`, and
+`tactical-composition.test.ts` pins it on the shipped `EndTurn`. Each of
+these sabotages turned a test red:
+- `fleeingActions` 1 → 2;
+- no limp at all;
+- a limp in the player's phase too;
+- a limp of 1 hard-coded instead of read from the tuning;
+- the flight step moved before the refresh.
 
 Phase 3's player rules and its lurker count are pinned the same way.
 Each of these sabotages turned its test red:

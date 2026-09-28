@@ -20,6 +20,14 @@ import type { BroodmotherTuning } from "../model/broodmother-tuning";
  *   spawner, so it hatches on the spawn tuning's clock: a squad that
  *   ignores her fights more of her brood every few turns.
  * - **Half health and she runs** (arc §6.8), and does not come back.
+ * - **Wounded, she limps.** Once she runs she has one action a phase,
+ *   so 5 tiles a turn, not 10. Calibrated on the filled forces
+ *   (`docs/design/calibration/C3b-story.md`, phase 5): at her full
+ *   pace a Broodmother wounded to half in the middle of the map outran
+ *   the careful player's force to the edge in 4 of the 7 Act II hunts
+ *   it lost; limping, she is caught in every one of them, and the
+ *   careful player wins 29 of 32 Act II hunts and 30 of 32 Act III
+ *   ones (25 and 28 before).
  * - **Out of reach first.** A tile inside one visible enemy's weapon
  *   reach costs 10, more than the 4 of clearance (`marginCap` ×
  *   `marginWeight`) any tile can earn, so she leaves reach whenever a
@@ -40,6 +48,7 @@ export const BROODMOTHER_TUNING: BroodmotherTuning = {
   scarHpBonus: 0.25,
   clutchInterval: 3,
   fleeAtHpFraction: 0.5,
+  fleeingActions: 1,
   threatWeight: 10,
   marginWeight: 1,
   marginCap: 4,

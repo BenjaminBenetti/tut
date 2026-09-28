@@ -79,7 +79,9 @@ interface Threat {
  * turns (`createClutchStep`) — and she keeps herself out of the
  * squad's guns while they hatch; at half health she runs for the
  * nearest map edge, and a rule takes her off the map when she reaches
- * it (`createBroodmotherFlightStep`).
+ * it (`createBroodmotherFlightStep`). The same rule leaves her one
+ * action a phase once she runs, so she limps: her budget is whatever
+ * it left her.
  *
  * ```
  *   fleeing (marked, or hp ≤ half)?

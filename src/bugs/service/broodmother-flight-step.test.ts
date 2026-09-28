@@ -11,7 +11,7 @@ import {
   broodmotherFlight,
   createBroodmotherFlightStep,
 } from "./broodmother-flight-step";
-import { broodmotherEscaped } from "./broodmother-service";
+import { broodmotherEscaped, broodmotherHp } from "./broodmother-service";
 import { fieldMap, motherMission } from "./broodmother.test-helper";
 
 // ===========================================
@@ -21,7 +21,7 @@ import { fieldMap, motherMission } from "./broodmother.test-helper";
 const SQUAD = unitAt("squad", "infantry", { x: 11, y: 0, z: 11 });
 
 /** Her max hit points at difficulty 1 with no scars. */
-const MAX_HP = 60;
+const MAX_HP = broodmotherHp(1, 0);
 
 /** A 12×12 field with the Broodmother anchored at `anchor` on `hp`. */
 function motherAt(
@@ -114,7 +114,8 @@ describe("broodmotherFlight (#1179, campaign arc §6.8)", () => {
   });
 
   it("reads the threshold from its tuning", () => {
-    const { mission } = motherAt({ x: 4, z: 4 }, 40);
+    // Above the shipped half, under three quarters.
+    const { mission } = motherAt({ x: 4, z: 4 }, Math.floor(MAX_HP * 0.6));
     const tuning = { ...BROODMOTHER_TUNING, fleeAtHpFraction: 0.75 };
     const step = createBroodmotherFlightStep(tuning);
     const applied = step(mission, {

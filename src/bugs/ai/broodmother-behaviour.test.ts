@@ -17,6 +17,7 @@ import {
 } from "../../tactical/service/weapon-reach-service";
 import { unitAt } from "../../tactical/service/tactical-fixtures.test-helper";
 import { BROODMOTHER_TUNING } from "../data/broodmother-tuning";
+import { broodmotherHp } from "../service/broodmother-service";
 import {
   fieldMap,
   motherMission,
@@ -32,6 +33,9 @@ import { footprintDistance } from "./utility";
 
 /** The fixture squad's carbine: five tiles, and it sees eight. */
 const SQUAD_REACH = 5;
+
+/** Half her difficulty-1 hit points: where she turns to run. */
+const HALF_HP = Math.floor(broodmotherHp(1, 0) / 2);
 
 const behaviour = new BroodmotherBehaviour();
 
@@ -177,7 +181,7 @@ describe("BroodmotherBehaviour: fleeing (#1179, campaign arc §6.8)", () => {
       fieldMap(30, 30).build(),
       [squad],
       { x: 12, y: 0, z: 14 },
-      { hp: 30 },
+      { hp: HALF_HP },
     );
     const commands = choose(mission, mother.id);
     expect(commands.map((c) => c.type)).toEqual([MOVE]);
@@ -191,7 +195,7 @@ describe("BroodmotherBehaviour: fleeing (#1179, campaign arc §6.8)", () => {
       fieldMap(30, 30).build(),
       [squad],
       { x: 12, y: 0, z: 14 },
-      { hp: 31 },
+      { hp: HALF_HP + 1 },
     );
     expect(choose(mission, mother.id)).toEqual([]);
   });

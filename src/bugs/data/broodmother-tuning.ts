@@ -8,10 +8,14 @@ import type { BroodmotherTuning } from "../model/broodmother-tuning";
  * Shipped numbers (#1179), sized against the rest of the bestiary and
  * the arc's Alpha Hunt (§6.8):
  *
- * - **A boss's hit points.** 60 at difficulty 1, 2 more a step, so 78 at
- *   difficulty 10: two and a half brutes, which is a squad's focused
- *   fire for a few turns. A scar adds a quarter of that (arc §6.8,
- *   "+25 % HP"), so she comes back from each escape harder to finish.
+ * - **A boss's hit points.** 42 at difficulty 1, 2 more a step, so 60 at
+ *   difficulty 10: a brute and a half at Act II's d3–7 (46 to 54). A
+ *   scar adds a quarter of that (arc §6.8, "+25 % HP"), so she comes
+ *   back from each escape harder to finish. Calibrated on the filled
+ *   Act II and III forces (`docs/design/calibration/C3b-story.md`):
+ *   at 60 a new player killed her in half the Act II hunts, most of the
+ *   rest running out of time as she made the edge; at 42 it is about
+ *   three in four, and Act III's hunt stays near its 65 %.
  * - **A clutch every 3 turns** (arc §6.8). A clutch is an ordinary egg
  *   spawner, so it hatches on the spawn tuning's clock: a squad that
  *   ignores her fights more of her brood every few turns.
@@ -31,7 +35,7 @@ import type { BroodmotherTuning } from "../model/broodmother-tuning";
  *   has to come to her, and near enough that her hatchlings find it.
  */
 export const BROODMOTHER_TUNING: BroodmotherTuning = {
-  hpBase: 60,
+  hpBase: 42,
   hpPerDifficulty: 2,
   scarHpBonus: 0.25,
   clutchInterval: 3,

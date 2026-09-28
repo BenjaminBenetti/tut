@@ -71,7 +71,7 @@ describe("Intact Pod's briefing (#1179)", () => {
       {
         field: "story-objective",
         label: "Objective",
-        value: "Keep the pod alive until the recovery drop at turn 8",
+        value: "Keep the pod alive until the recovery drop at turn 10",
       },
       { field: "story-win", label: "Win", value: "Act II ends" },
       {
@@ -86,7 +86,7 @@ describe("Intact Pod's briefing (#1179)", () => {
       },
     ]);
     expect(storyDescriptionOf(POD_OFFER, STORY_PRESENTATION)).toBe(
-      "Pod Telemetry tracked a spore pod down in one piece. Hold the crater until the drop ship lifts it at the end of turn 8: the swarm will go for the pod, and it cannot move.",
+      "Pod Telemetry tracked a spore pod down in one piece. Hold the crater until the drop ship lifts it at the end of turn 10: the swarm will go for the pod, and it cannot move.",
     );
   });
 

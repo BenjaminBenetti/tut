@@ -62,7 +62,14 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
  *   infestation-clearance/act-2   (#1179 C2b-1-field)
  *   crash-site/act-3              (#1179 C2b-1-field)
  *   evacuation/act-1…3            the three Evacuation cells (#1179 C2b-1-field)
+ *   story:live-specimen/act-1     Live Specimen (#1179 C3b, phase 3)
+ *   story:intact-pod/act-2        Intact Pod (#1179 C3b)
+ *   alpha-hunt                    both Alpha Hunt cells (#1179 C3b)
+ *   story:spore-platform/finale   the Spore Platform (#1179 C3b)
  * ```
+ *
+ * C2b-1's cells are tuned in `docs/design/calibration/C2b-1-field.md`,
+ * C3b's in `docs/design/calibration/C3b-story.md`.
  */
 export const TARGETED_CELLS: readonly string[] = [
   "hive-assault",
@@ -71,6 +78,10 @@ export const TARGETED_CELLS: readonly string[] = [
   "evacuation/act-1",
   "evacuation/act-2",
   "evacuation/act-3",
+  "story:live-specimen/act-1",
+  "story:intact-pod/act-2",
+  "alpha-hunt",
+  "story:spore-platform/finale",
 ];
 
 // ===========================================

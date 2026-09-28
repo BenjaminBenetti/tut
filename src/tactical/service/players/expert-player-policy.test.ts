@@ -7,8 +7,15 @@ import { FixtureMapBuilder } from "../../../mapgen/service/fixture-map-builder";
 import { ATTACK } from "../../model/attack-command";
 import { MOVE } from "../../model/move-command";
 import { OVERWATCH } from "../../model/overwatch-command";
+import { USE_EQUIPMENT } from "../../model/use-equipment-command";
+import { GRENADE } from "../../data/equipment";
 import { hasLineOfSight } from "../sight-service";
-import { openField, unitAt } from "../tactical-fixtures.test-helper";
+import {
+  FIXTURE_TEMPLATES,
+  openField,
+  unitAt,
+  walledField,
+} from "../tactical-fixtures.test-helper";
 import { createExpertPlayerPolicy } from "./expert-player-policy.test-helper";
 import type { UnitOrder } from "./objective-strategy.test-helper";
 import {
@@ -24,6 +31,8 @@ const EXPERT = createExpertPlayerPolicy(FIXTURE_PLAYER_RULES);
 const PLAN: ForcePlan = {
   jobs: [{ order: { kind: "destroy", goals: [{ x: 7, y: 0, z: 7 }] } }],
   couriers: new Set(),
+  walkers: new Set(),
+  spared: new Set(),
   settled: false,
 };
 
@@ -79,6 +88,154 @@ describe("the expert player", () => {
     expect(focused?.payload).toMatchObject({ targetId: "core" });
   });
 
+  it("fires on a focused bug before the bugs it cannot kill", () => {
+    // The Broodmother: named by the order, shot wherever she stands in
+    // sight, though a nearer bug offers the better shot.
+    const mission = lookingMission([
+      unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 }),
+      unitAt("runner", "infantry", { x: 1, y: 0, z: 3 }, { team: "bugs" }),
+      unitAt("mother", "infantry", { x: 5, y: 0, z: 2 }, { team: "bugs" }),
+    ]);
+    const view = observe(mission);
+    const order: UnitOrder = {
+      kind: "hunt",
+      goals: [{ x: 5, y: 0, z: 2 }],
+      targetId: "mother",
+    };
+    expect(EXPERT.next(view.own[0]!, order, view)?.payload).toMatchObject({
+      targetId: "runner",
+    });
+    const focused = EXPERT.next(view.own[0]!, { ...order, focus: true }, view);
+    expect(focused?.type).toBe(ATTACK);
+    expect(focused?.payload).toMatchObject({ targetId: "mother" });
+  });
+
+  describe("hunting a specimen", () => {
+    /** Hold the ground it stands on, wanting a lurker alive. */
+    const HOLD: UnitOrder = {
+      kind: "guard",
+      goals: [{ x: 0, y: 0, z: 3 }],
+      holdRadius: 3,
+      capture: "lurker",
+    };
+
+    it("neither shoots nor watches the worn-down specimen in sight it could finish", () => {
+      // Three tiles off, in the rifle's reach; the fixture rifle hits for
+      // up to 4, so a shot or a reaction could kill it at 4 hit points.
+      const worn = observe(
+        lookingMission([
+          unitAt("alpha", "infantry", { x: 0, y: 0, z: 3 }),
+          unitAt(
+            "lurker",
+            "infantry",
+            { x: 3, y: 0, z: 3 },
+            {
+              team: "bugs",
+              hp: 4,
+            },
+          ),
+        ]),
+      );
+      expect(worn.enemies.map((enemy) => enemy.id)).toEqual(["lurker"]);
+      expect(EXPERT.next(worn.own[0]!, HOLD, worn)).toBeUndefined();
+      const { capture: _free, ...unwanted } = HOLD;
+      expect(EXPERT.next(worn.own[0]!, unwanted, worn)?.type).toBe(ATTACK);
+    });
+
+    it("holds a shot that could kill a bug its order spares, whatever the job", () => {
+      // No capture order: an escort on its way, the lurker spared by the
+      // plan. At 4 hit points the fixture rifle could kill it.
+      const worn = observe(
+        lookingMission([
+          unitAt("alpha", "infantry", { x: 0, y: 0, z: 3 }),
+          unitAt(
+            "lurker",
+            "infantry",
+            { x: 3, y: 0, z: 3 },
+            {
+              team: "bugs",
+              hp: 4,
+            },
+          ),
+        ]),
+      );
+      const escort: UnitOrder = {
+        kind: "escort",
+        goals: [{ x: 0, y: 0, z: 3 }],
+        holdRadius: 3,
+      };
+      expect(EXPERT.next(worn.own[0]!, escort, worn)?.type).toBe(ATTACK);
+      const spared = EXPERT.next(
+        worn.own[0]!,
+        { ...escort, spare: ["lurker"] },
+        worn,
+      );
+      expect(spared?.type).not.toBe(ATTACK);
+      expect(spared?.type).not.toBe(OVERWATCH);
+    });
+
+    it("throws no grenade whose blast would catch a bug its order spares", () => {
+      // Two bugs side by side, one of them the spared lurker: the blast
+      // that would take both is held.
+      const mission = lookingMission([
+        unitAt("alpha", "infantry", { x: 0, y: 0, z: 3 }),
+        unitAt("lurker", "infantry", { x: 3, y: 0, z: 3 }, { team: "bugs" }),
+        unitAt("runner", "infantry", { x: 3, y: 0, z: 4 }, { team: "bugs" }),
+      ]);
+      const squad = mission.templates[FIXTURE_TEMPLATES.infantry];
+      if (squad === undefined) throw new Error("fixture squad template");
+      const armed = observe({
+        ...mission,
+        templates: {
+          ...mission.templates,
+          [FIXTURE_TEMPLATES.infantry]: { ...squad, equipment: [GRENADE.id] },
+        },
+      });
+      const escort: UnitOrder = {
+        kind: "escort",
+        goals: [{ x: 0, y: 0, z: 3 }],
+        holdRadius: 3,
+      };
+      expect(EXPERT.next(armed.own[0]!, escort, armed)?.type).toBe(
+        USE_EQUIPMENT,
+      );
+      const spared = EXPERT.next(
+        armed.own[0]!,
+        { ...escort, spare: ["lurker"] },
+        armed,
+      );
+      expect(spared?.type).not.toBe(USE_EQUIPMENT);
+    });
+
+    it("keeps off overwatch with none in sight when its reaction could kill a fresh one", () => {
+      // Behind the wall, out of sight: judged at the species' full hit points.
+      const hunter = unitAt("alpha", "infantry", { x: 0, y: 0, z: 3 });
+      const hidden = unitAt(
+        "lurker",
+        "infantry",
+        { x: 7, y: 0, z: 7 },
+        {
+          team: "bugs",
+        },
+      );
+      const hardy = observe(
+        lookingMission([hunter, hidden], {}, walledField()),
+      );
+      expect(hardy.enemies).toEqual([]);
+      expect(EXPERT.next(hardy.own[0]!, HOLD, hardy)?.type).toBe(OVERWATCH);
+      const frail = observe(
+        lookingMission(
+          [hunter, { ...hidden, hp: 4, maxHp: 4 }],
+          {},
+          walledField(),
+        ),
+      );
+      expect(EXPERT.next(frail.own[0]!, HOLD, frail)).toBeUndefined();
+      const { capture: _unused, ...unwanted } = HOLD;
+      expect(EXPERT.next(frail.own[0]!, unwanted, frail)?.type).toBe(OVERWATCH);
+    });
+  });
+
   it("goes on overwatch when it holds its ground with nothing in sight", () => {
     const mission = lookingMission([
       unitAt("alpha", "infantry", { x: 3, y: 0, z: 3 }),
@@ -118,6 +275,8 @@ describe("the expert player", () => {
     const done: ForcePlan = {
       jobs: [],
       couriers: new Set(["courier"]),
+      walkers: new Set(),
+      spared: new Set(),
       settled: true,
     };
     const orders = EXPERT.assign(observe(mission), done);
@@ -144,6 +303,8 @@ describe("the expert player", () => {
     const home = EXPERT.assign(observe(mission), {
       ...done,
       couriers: new Set(),
+      walkers: new Set(),
+      spared: new Set(),
     });
     expect(home.get("alpha")?.kind).toBe("extract");
   });
@@ -167,6 +328,8 @@ describe("the expert player", () => {
     const done: ForcePlan = {
       jobs: [],
       couriers: new Set(["courier"]),
+      walkers: new Set(),
+      spared: new Set(),
       settled: true,
     };
     const orders = EXPERT.assign(observe(mission), done);
@@ -185,6 +348,8 @@ describe("the expert player", () => {
     const done: ForcePlan = {
       jobs: [],
       couriers: new Set(["courier"]),
+      walkers: new Set(),
+      spared: new Set(),
       settled: true,
     };
     const courier = { x: 1, y: 0, z: 1 };

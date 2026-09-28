@@ -9,6 +9,7 @@ import type { TacticalCommand } from "../../model/tactical-command";
 import type { Unit, UnitId } from "../../model/unit";
 import { isCombatUnit, passMaskFor } from "../../model/unit";
 import { useEquipment } from "../../model/use-equipment-command";
+import { damageRange } from "../attack-formulae";
 import { attackEndsTurn } from "../combat-service";
 import { validateMechAction } from "../mech-action-service";
 import { hasLineOfSight } from "../sight-service";
@@ -73,7 +74,8 @@ import type { PlayerView } from "./player-view.test-helper";
 //   unit ──► extract? ──► objective action? ──► net? ──► heal? ──► grenade?
 //        ──► focused target, bar a likely kill? ──► kill shot / best shot
 //        ──► reload? ──► the nest in sight? ──► jump?
-//        ──► move to cover toward the goal ──► overwatch
+//        ──► move to cover toward the goal ──► overwatch, bar a gun
+//            whose reaction could kill the specimen it hunts
 //
 // Bugs asleep in a hive's chambers are neither contact nor targets: the
 // expert walks round them where the cavern allows, keeps its loud guns
@@ -191,7 +193,7 @@ export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
           retreatStep(unit, order, view, rules, seen) ??
           jumpToward(unit, order, view, seen, 1) ??
           shoot(bestShot(unit, order, view, rules, seen)) ??
-          watch(unit, view, rules)
+          watch(unit, order, view, rules)
         );
       }
       const action =
@@ -241,7 +243,7 @@ export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
         advance(unit, order, view, rules, seen);
       if (step !== undefined) return step;
       if (shot !== undefined) return shoot(shot);
-      return watch(unit, view, rules);
+      return watch(unit, order, view, rules);
     },
   };
 }
@@ -479,11 +481,12 @@ function nearest(
 // ===========================================
 
 /**
- * A shot at the order's target spawner (a nest, a pod, a hive core)
- * from where the unit stands, while the target stands and the unit is
- * more than two steps off it (closer, it plants charges instead). A
- * brood sleeping round the target does not stop it: the target is the
- * point, as its ground is in `sleeperGround`.
+ * A shot at the order's target from where the unit stands: a named bug
+ * in sight (the Broodmother) wherever it is, or a spawner (a nest, a
+ * pod, a hive core) while it stands and the unit is more than two steps
+ * off it (closer, it plants charges instead). A brood sleeping round
+ * the target does not stop it: the target is the point, as its ground
+ * is in `sleeperGround`.
  */
 function targetShot(
   unit: Unit,
@@ -492,6 +495,10 @@ function targetShot(
   rules: PlayerRules,
 ): ShotOption | undefined {
   if (order.targetId === undefined) return undefined;
+  const named = view.enemies.find((enemy) => enemy.id === order.targetId);
+  if (named !== undefined) {
+    return shotAtTarget(view, unit, named.id, named.hp, rules);
+  }
   const spawner = view.mission.spawners.find(
     (candidate) => candidate.id === order.targetId && !candidate.destroyed,
   );
@@ -505,8 +512,9 @@ function targetShot(
  * The shot to take: the likeliest kill when one is likely enough, the
  * one at the lowest effective hit points first on a tie; otherwise the
  * most expected damage. Never one that reaches our own, never one that
- * could kill a bug the order wants alive, and never one that would wake
- * a brood asleep in `seen` (a loud gun in earshot, a target among them).
+ * could kill a bug the order wants alive (its capture species, or one
+ * it spares), and never one that would wake a brood asleep in `seen` (a
+ * loud gun in earshot, a target among them).
  */
 function bestShot(
   unit: Unit,
@@ -515,14 +523,15 @@ function bestShot(
   rules: PlayerRules,
   seen: PlayerView,
 ): ShotOption | undefined {
-  const wanted = new Set(
-    view.enemies
+  const wanted = new Set([
+    ...(order.spare ?? []),
+    ...view.enemies
       .filter(
         (enemy) =>
           order.capture !== undefined && enemy.sourceId === order.capture,
       )
       .map((enemy) => enemy.id),
-  );
+  ]);
   const at = new Map(view.enemies.map((enemy) => [enemy.id, enemy.pos]));
   const options = shotOptions(view, unit, rules).filter(
     (option) =>
@@ -566,28 +575,83 @@ function shoot(shot: ShotOption | undefined): TacticalCommand | undefined {
 
 /**
  * Overwatch with what is left when there is nothing to shoot: a unit
- * that could fire and has an action watches rather than idles.
+ * that could fire and has an action watches rather than idles, unless
+ * its reaction could kill the bug the order wants alive.
  */
 function watch(
   unit: Unit,
+  order: UnitOrder,
   view: PlayerView,
   rules: PlayerRules,
 ): TacticalCommand | undefined {
-  return unit.ap >= 1 && canFire(view, unit, rules)
+  return unit.ap >= 1 &&
+    canFire(view, unit, rules) &&
+    !reactionMayKillWanted(unit, order, view, rules)
     ? overwatch(unit.id)
     : undefined;
 }
 
-/** Whether a grenade on `tile` would catch a bug the order wants alive. */
+/**
+ * Whether a reaction shot from `unit` could finish a bug the order wants
+ * alive. A watcher cannot pick what walks into its fire, so while it
+ * hunts a specimen the careful player keeps a gun off overwatch when the
+ * gun a reaction fires (the first) hits hard enough to kill the wanted
+ * bug in sight at the fewest hit points, or, with none in sight, a fresh
+ * one of the species (the codex's figure). A bug the order spares is
+ * wanted alive whatever the order's own job.
+ *
+ * ```
+ *   no capture order, none spared             ──► false
+ *   wanted bugs in sight ──► any within the band's top ──► true
+ *   none in sight, capture order ──► a fresh one within it ──► true
+ * ```
+ */
+function reactionMayKillWanted(
+  unit: Unit,
+  order: UnitOrder,
+  view: PlayerView,
+  rules: PlayerRules,
+): boolean {
+  const species = order.capture;
+  const spare = new Set(order.spare ?? []);
+  const weapon = view.mission.templates[unit.templateId]?.weapons[0];
+  if ((species === undefined && spare.size === 0) || weapon === undefined) {
+    return false;
+  }
+  const kills = (bug: Unit, hp: number): boolean => {
+    const plate = view.mission.templates[bug.templateId];
+    return (
+      plate !== undefined &&
+      damageRange(weapon.profile, plate.armor, rules.combat, plate.resist)[1] >=
+        hp
+    );
+  };
+  const inSight = view.enemies.filter(
+    (enemy) =>
+      spare.has(enemy.id) ||
+      (species !== undefined && enemy.sourceId === species),
+  );
+  if (inSight.length > 0) {
+    return inSight.some((bug) => kills(bug, bug.hp));
+  }
+  if (species === undefined) return false;
+  const codex = view.mission.units.find((bug) => bug.sourceId === species);
+  return codex !== undefined && kills(codex, codex.maxHp);
+}
+
+/** Whether a grenade on `tile` would catch a bug the order wants alive: its capture species, or one it spares. */
 function wantedInBlast(
   order: UnitOrder,
   view: PlayerView,
   tile: { x: number; z: number },
 ): boolean {
-  if (order.capture === undefined) return false;
+  if (order.capture === undefined && (order.spare ?? []).length === 0) {
+    return false;
+  }
   return view.enemies.some(
     (enemy) =>
-      enemy.sourceId === order.capture &&
+      ((order.capture !== undefined && enemy.sourceId === order.capture) ||
+        order.spare?.includes(enemy.id) === true) &&
       Math.abs(enemy.pos.x - tile.x) + Math.abs(enemy.pos.z - tile.z) <= 3,
   );
 }

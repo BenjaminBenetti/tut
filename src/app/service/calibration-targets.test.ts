@@ -76,6 +76,10 @@ describe("the arc's targets", () => {
       "evacuation/act-1",
       "evacuation/act-2",
       "evacuation/act-3",
+      "story:live-specimen/act-1",
+      "story:intact-pod/act-2",
+      "alpha-hunt",
+      "story:spore-platform/finale",
     ]);
   });
 

@@ -315,6 +315,30 @@ describe("the core chamber (stage 2 of 2)", () => {
     expect(setUp.value.bugMix).toEqual(OFFER.bugMix);
   });
 
+  it("stands nests on the first wallNests wall pods and guards on the first guards posts, in hook order", () => {
+    const map = coreMap();
+    const rule = createSporePlatformSetup({
+      ...PLATFORM_ASSAULT_TUNING,
+      wallNests: 0,
+      guards: 1,
+    });
+    const setUp = rule.setup(coreBase(map), map, OFFER, setupDeps());
+    expect(setUp.ok).toBe(true);
+    if (!setUp.ok) return;
+    // The core alone: the one wall pod stays dormant.
+    expect(setUp.value.spawners.map((spawner) => spawner.variant)).toEqual([
+      "platform-core",
+    ]);
+    // The first post manned, the second empty.
+    const guards = setUp.value.units.filter((unit) => unit.team === "bugs");
+    expect(guards.map((unit) => unit.pos)).toEqual([at(0, 6)]);
+  });
+
+  it("ships two wall nests and three guards (C3b calibration)", () => {
+    expect(PLATFORM_ASSAULT_TUNING.wallNests).toBe(2);
+    expect(PLATFORM_ASSAULT_TUNING.guards).toBe(3);
+  });
+
   it("stands the boss on the dais guarding the core, at the offer's difficulty, and blends her escort into the waves", () => {
     const { boss, place } = spyBoss();
     const map = coreMap();

@@ -105,8 +105,10 @@ export function setUpHull(
  *                          tuning.coreHp centred on the pad's
  *                          middle tile (coreSquare)                  id: spawner-*
  *                      ──► destroy-platform-core { coreHp }          id: objective-*
- *   wall pods (egg-spawner hooks) ──► nests, no objective            ids: spawner-*
- *   guard posts ──► one Hive Guard on each post's first tile          ids: unit-*
+ *   wall pods (egg-spawner hooks), the first tuning.wallNests
+ *               ──► nests, no objective                               ids: spawner-*
+ *   guard posts, the first tuning.guards
+ *               ──► one Hive Guard on each post's first tile          ids: unit-*
  *   sovereign-dais ──► deps.coreBoss.place(anchor, { core: pad's middle }) id: unit-*
  *   bugMix ──► withEscortShare(offer's mix, boss's escort, tuning.escortShare)
  *   extraction [], endsOnObjectives
@@ -122,7 +124,7 @@ export function setUpHull(
  * @param map - The core chamber's map.
  * @param mission - The offer, at stage 1.
  * @param deps - Ids, the spawn tuning, the species and the boss.
- * @param tuning - The core's hit points and the escort share.
+ * @param tuning - The core's hit points, the escort share, the nests and the guards.
  */
 export function setUpCore(
   state: TacticalState,
@@ -172,10 +174,17 @@ export function setUpCore(
     extraction: [],
     endsOnObjectives: true,
   };
-  const nests = standEggSpawners(withCore, map, mission, deps);
+  const nests = standEggSpawners(
+    withCore,
+    withFirstHooks(map, HookKinds.EGG_SPAWNER, tuning.wallNests),
+    mission,
+    deps,
+  );
   const guarded = placeHiveGuards(
     nests,
-    hooksOf(map, HookKinds.GUARD_POST).map((hook) => coordOf(firstTile(hook))),
+    hooksOf(map, HookKinds.GUARD_POST)
+      .slice(0, tuning.guards)
+      .map((hook) => coordOf(firstTile(hook))),
     { ids: deps.ids, guard },
   );
   return ok(standBoss(guarded, map, mission, deps, corePos, tuning));
@@ -198,7 +207,7 @@ export function setUpCore(
  *   garrisoned    false: the region's batteries do not reach orbit
  * ```
  *
- * @param tuning - The core's hit points and the escort share.
+ * @param tuning - The core's hit points, the escort share, the nests and the guards.
  * @returns The rule.
  */
 export function createSporePlatformSetup(
@@ -237,6 +246,23 @@ function hookOf(map: TacticalMap, kind: HookKind): Hook | undefined {
 /** Every objective hook of `kind`, in hook order. */
 function hooksOf(map: TacticalMap, kind: HookKind): readonly Hook[] {
   return map.hooks.objectives.filter((hook) => hook.kind === kind);
+}
+
+/**
+ * `map` with only the first `count` objective hooks of `kind`, in hook
+ * order, and every other hook as it was: the wall pods the core
+ * chamber stands as nests. The tiles are shared, not copied.
+ */
+function withFirstHooks(
+  map: TacticalMap,
+  kind: HookKind,
+  count: number,
+): TacticalMap {
+  const kept = new Set(hooksOf(map, kind).slice(0, count));
+  const objectives = map.hooks.objectives.filter(
+    (hook) => hook.kind !== kind || kept.has(hook),
+  );
+  return { ...map, hooks: { ...map.hooks, objectives } };
 }
 
 /**

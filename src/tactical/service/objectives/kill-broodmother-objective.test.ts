@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { broodmotherFlight } from "../../../bugs/service/broodmother-flight-step";
+import { broodmotherHp } from "../../../bugs/service/broodmother-service";
 import {
   fieldMap,
   motherMission,
@@ -35,6 +36,12 @@ const SQUAD: Unit = unitAt("squad-1", "infantry", { x: 1, y: 0, z: 1 });
 
 /** A step context; the hunt's step draws nothing. */
 const CTX = { rng: new Mulberry32Rng(1), ids: new SequentialIdGenerator() };
+
+/** Her hit points at difficulty 1, unscarred: the fixture's Broodmother. */
+const MAX_HP = broodmotherHp(1, 0);
+
+/** Half her hit points: low enough to send her running. */
+const HALF_HP = Math.floor(MAX_HP / 2);
 
 /**
  * A 16×16 field with the squad and the Broodmother at `anchor` on `hp`,
@@ -113,7 +120,7 @@ describe("huntStatus (#1179, campaign arc §6.8)", () => {
   it("fails once she has escaped off the map edge", () => {
     // Half health on the east edge of the 16-wide field: her block
     // (x 13–15) touches it, so the flight step takes her off it.
-    const { mission, mother, objective } = hunt({ x: 13, z: 7 }, 30);
+    const { mission, mother, objective } = hunt({ x: 13, z: 7 }, HALF_HP);
     const fled = broodmotherFlight(mission).state;
     expect(fled.escaped?.map((unit) => unit.id)).toEqual([mother.id]);
     expect(huntStatus(objective, fled)).toBe("failed");
@@ -149,7 +156,9 @@ describe("huntStatus (#1179, campaign arc §6.8)", () => {
     const dead = withHp(mission, mother.id, 0);
     expect(objectiveComplete(dead, objective!)).toBe(true);
     expect(objectiveFailed(dead, objective!)).toBe(false);
-    const fled = broodmotherFlight(hunt({ x: 13, z: 7 }, 30).mission).state;
+    const fled = broodmotherFlight(
+      hunt({ x: 13, z: 7 }, HALF_HP).mission,
+    ).state;
     expect(objectiveFailed(fled, fled.objectives[0]!)).toBe(true);
     expect(objectiveComplete(fled, fled.objectives[0]!)).toBe(false);
   });
@@ -184,7 +193,7 @@ describe("KILL_BROODMOTHER_STEP", () => {
   });
 
   it("fails the hunt in the same phase opening the flight step lets her go", () => {
-    const { mission } = hunt({ x: 13, z: 7 }, 30);
+    const { mission } = hunt({ x: 13, z: 7 }, HALF_HP);
     const fled = broodmotherFlight(mission).state;
     const stepped = KILL_BROODMOTHER_STEP(fled, CTX);
     expect(only(stepped.state)).toMatchObject({
@@ -269,12 +278,12 @@ describe("KILL_BROODMOTHER_OBJECTIVE", () => {
         attackerId: SQUAD.id,
         targetId: mother.id,
         hit: true,
-        damage: 30,
-        targetHp: 30,
+        damage: MAX_HP - HALF_HP,
+        targetHp: HALF_HP,
         weaponRange: 5,
       },
     } as const;
-    const { mission: edge } = hunt({ x: 13, z: 7 }, 30);
+    const { mission: edge } = hunt({ x: 13, z: 7 }, HALF_HP);
     const fled = broodmotherFlight({ ...edge, log: [shot] }).state;
     expect(objectiveResultFields(fled)).toEqual({
       broodmotherKilled: false,

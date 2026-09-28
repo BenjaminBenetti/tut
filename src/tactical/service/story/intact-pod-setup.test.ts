@@ -111,8 +111,13 @@ function setUpOk(map?: TacticalMap): TacticalState {
 describe("createIntactPodSetup (campaign arc §6.9, #1179)", () => {
   it("is Intact Pod's entry in the shipped story table, over the shipped tuning", () => {
     expect(STORY_SETUP_RULES["intact-pod"]?.storyId).toBe("intact-pod");
-    expect(INTACT_POD_TUNING.recoveryTurn).toBe(8);
-    expect(INTACT_POD_TUNING.extraWaves).toBe(1);
+    // Calibrated on the filled Act II force (C3b-story.md).
+    expect(INTACT_POD_TUNING.recoveryTurn).toBe(10);
+    expect(INTACT_POD_TUNING.extraWaves).toBe(2);
+    expect(INTACT_POD_TUNING.waveSurge).toEqual({
+      sizeScale: 1.5,
+      spillRadius: 2,
+    });
     // The shipped rule and a fresh one over the shipped tuning agree.
     const map = crater();
     const { typed } = setUp(map);
@@ -145,7 +150,7 @@ describe("createIntactPodSetup (campaign arc §6.9, #1179)", () => {
         targetId: pod.id,
         complete: false,
         failed: false,
-        deadlineTurn: 8,
+        deadlineTurn: 10,
         huntedAt: POD_TILE,
       },
     ]);
@@ -193,14 +198,27 @@ describe("createIntactPodSetup (campaign arc §6.9, #1179)", () => {
     expect(mission.templates["generator:generator"]).toBeUndefined();
   });
 
-  it("lets the edges send one wave past the crash site's two before the drop", () => {
+  it("lets the edges send two waves past the crash site's two before the drop, every one surging", () => {
     const { typed } = setUp();
     expect(typed.edgeSpawn.totalWaves).toBe(SPAWN_TUNING.podEdgeWaves);
+    expect(typed.edgeSpawn.surge).toBeUndefined();
     expect(setUpOk().edgeSpawn).toEqual({
       ...typed.edgeSpawn,
       totalWaves: SPAWN_TUNING.podEdgeWaves + INTACT_POD_TUNING.extraWaves,
+      surge: INTACT_POD_TUNING.waveSurge,
     });
-    expect(setUpOk().edgeSpawn.totalWaves).toBe(3);
+    expect(setUpOk().edgeSpawn.totalWaves).toBe(4);
+  });
+
+  it("surges the waves by the tuning it is given", () => {
+    const { typed } = setUp();
+    const surge = { sizeScale: 2, spillRadius: 3 };
+    const applied = createIntactPodSetup({
+      ...INTACT_POD_TUNING,
+      waveSurge: surge,
+    }).setup(typed, crater(), INTACT_POD, deps());
+    if (!applied.ok) throw new Error(applied.error.kind);
+    expect(applied.value.edgeSpawn.surge).toEqual(surge);
   });
 
   it("reads the crash site's waves off the tuning when the setup left them unset", () => {
@@ -213,7 +231,7 @@ describe("createIntactPodSetup (campaign arc §6.9, #1179)", () => {
       deps(),
     );
     if (!applied.ok) throw new Error(applied.error.kind);
-    expect(applied.value.edgeSpawn.totalWaves).toBe(3);
+    expect(applied.value.edgeSpawn.totalWaves).toBe(4);
   });
 
   it("refuses a crater with no spore pod to recover", () => {

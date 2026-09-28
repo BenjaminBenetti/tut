@@ -57,7 +57,7 @@ function pod(hp = 65): Unit {
   };
 }
 
-/** Keep the pod alive until the drop as turn 8 ends. */
+/** Keep the pod alive until the drop as the recovery turn ends. */
 const RECOVERY: RecoverPodObjective = {
   id: "objective-1",
   kind: "recover-pod",

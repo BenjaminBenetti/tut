@@ -11,6 +11,7 @@ import type { Rng } from "../../core/model/rng";
 import { ACTS } from "../../overworld/data/acts";
 import { HIVE_TUNING } from "../../overworld/data/hive-tuning";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
+import { NEMESIS_LORE } from "../../overworld/data/nemesis-lore";
 import type { City } from "../../overworld/model/city";
 import type { Mission } from "../../overworld/model/mission";
 import type { MissionOfferContext } from "../../overworld/model/mission-offer-rule";
@@ -21,6 +22,10 @@ import {
   landedCity,
 } from "../../overworld/service/missions/crash-site-landing";
 import { wavesFor } from "../../overworld/service/missions/defend-installation-trigger";
+import {
+  freshQuarry,
+  quarryStream,
+} from "../../overworld/service/missions/alpha-hunt-quarry";
 import { asEvacuationOffer } from "../../overworld/service/missions/evacuation-offer";
 import { buildOfferAtDifficulty } from "../../overworld/service/missions/mission-offer-builder";
 import { buildStoryOffer } from "../../overworld/service/story/story-offer-builder";
@@ -221,6 +226,35 @@ function wreckRecovery(band: ForceBand) {
   };
 }
 
+/**
+ * An Alpha Hunt the way the offer rule builds one: a fresh Broodmother
+ * named from the lore on the offer's own stream. With `returns`, every
+ * odd seed is instead a nemesis back from one escape (arc §6.8: +25%
+ * HP), which is what an Act III hunt often meets; her +1 difficulty is
+ * left to the cell's band, so the seed's difficulty stays the one the
+ * run reports.
+ *
+ * ```
+ *   returns ∧ seed odd ──► scars 1, level 1
+ *   otherwise          ──► scars 0 (a first meeting)
+ * ```
+ */
+function alphaHunt(returns: boolean) {
+  return (input: OfferInput): Mission => {
+    const offer = ordinary("alpha-hunt")(input);
+    const fresh = freshQuarry(
+      input.state,
+      quarryStream(input.ctx.rng, offer),
+      NEMESIS_LORE,
+    );
+    const back = returns && input.seedIndex % 2 === 1;
+    return {
+      ...offer,
+      alphaHunt: back ? { ...fresh, scars: 1, level: 1 } : fresh,
+    };
+  };
+}
+
 /** A story mission from its own rule, at the state the rule reads. */
 function story(storyId: StoryMissionId) {
   return (input: OfferInput): Mission => {
@@ -335,6 +369,13 @@ export const CALIBRATION_CELLS: readonly CalibrationCell[] = [
     greatHive,
   ),
   storyCell("launch-window", "finale", "act-3", 8, story("launch-window")),
+  // Appended, not placed by type: a cell's city and dice are keyed by its
+  // index, so the cells above keep theirs. The Broodmother Sighting is
+  // an Alpha Hunt at a fixed d5 on a fresh Broodmother, inside the Act II
+  // band, so `alpha-hunt/act-2` stands for it (C3b).
+  typeCell("alpha-hunt", "act-2", alphaHunt(false)),
+  typeCell("alpha-hunt", "act-3", alphaHunt(true)),
+  storyCell("spore-platform", "finale", "finale", 10, story("spore-platform")),
 ];
 
 // ===========================================

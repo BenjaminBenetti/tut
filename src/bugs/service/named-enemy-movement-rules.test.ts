@@ -18,6 +18,7 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { JevCandidate } from "../../tactical/model/jev-control";
 import { createNamedEnemyMovementRules } from "./named-enemy-movement-rules";
 import { createPersonaLookup } from "./persona-lookup";
+import { broodmotherHp } from "./broodmother-service";
 
 // ===========================================
 // Fixtures
@@ -80,7 +81,7 @@ describe("createNamedEnemyMovementRules (#1179)", () => {
       fieldMap(30, 30).build(),
       [squad],
       { x: 12, y: 0, z: 14 },
-      { hp: 30 },
+      { hp: Math.floor(broodmotherHp(1, 0) / 2) },
     );
     const fallback = new BroodmotherBehaviour().choose(
       bugView(hurt.mission),

@@ -50,7 +50,6 @@ import type { ModelledResultContext } from "./modelled-mission-results.test-help
 import type {
   CampaignSweepTuning,
   ModelledPlayer,
-  ModelledPlayerId,
 } from "./modelled-player.test-helper";
 import {
   chooseOffer,
@@ -120,7 +119,7 @@ export interface TypeTrack {
  * §12). Days are counted from the campaign's first day.
  */
 export interface CampaignRecord {
-  readonly player: ModelledPlayerId;
+  readonly player: ModelledPlayer["id"];
   readonly seed: number;
   readonly end: CampaignEnd;
   /** What ended it (`threat` or `story`); absent while open. */
@@ -185,6 +184,26 @@ export type CampaignObserver = (
   state: GameState,
   missionsPlayed: number,
 ) => void;
+
+/**
+ * Spends a modelled player's credits on one day, before its research,
+ * and returns the state after. `commands` dispatch through the
+ * campaign's tracker, so every purchase is recorded like any command.
+ */
+export type CreditSpender = (
+  state: GameState,
+  commands: SpendingCommands,
+) => GameState;
+
+/** How a `CreditSpender` buys, and what it may read of the campaign's start. */
+export interface SpendingCommands {
+  /** Dispatches a purchase the spender has checked; a refusal is a harness bug and throws. */
+  readonly apply: (state: GameState, command: OverworldCommand) => GameState;
+  /** Dispatches a purchase the game may refuse (the credits do not cover it): `undefined` then. */
+  readonly attempt: TryCommand;
+  /** The campaign's first state, as created. */
+  readonly first: GameState;
+}
 
 /** What a sweep composes a game from: the story, the shipped one unless a test swaps it. */
 export interface SweepGameOptions {
@@ -304,20 +323,48 @@ export function playCampaign(
   rules: StoryMissionRules = STORY_MISSION_RULES,
   observe?: CampaignObserver,
 ): CampaignRecord {
+  return playCampaignToEnd(game, player, seed, tuning, rules, observe).record;
+}
+
+/** A played campaign: its record, and the states it began and ended in. */
+export interface PlayedCampaign {
+  readonly record: CampaignRecord;
+  /** The campaign's first state, as created, before its first day's spending. */
+  readonly first: GameState;
+  /** The campaign's last state: its whole ledger, roster and installations. */
+  readonly state: GameState;
+}
+
+/**
+ * `playCampaign`, returning the campaign's last state beside its record,
+ * for a probe that reads what the record does not keep (the ledger, the
+ * graveyard). With the default `spend` it plays exactly what
+ * `playCampaign` plays; an opt-in player's spender replaces the spend
+ * step and nothing else.
+ */
+export function playCampaignToEnd(
+  game: GameComposition,
+  player: ModelledPlayer,
+  seed: number,
+  tuning: Pick<CampaignSweepTuning, "dayCap">,
+  rules: StoryMissionRules = STORY_MISSION_RULES,
+  observe?: CampaignObserver,
+  spend: CreditSpender = sweepSpender(player),
+): PlayedCampaign {
   const tracker = new CampaignTracker(game, player, seed, rules);
   const ctx = resultContextFor(player, SWEEP_RESULTS);
   let state = game.createCampaign({ seed, createdAt: SWEEP_NOW });
   tracker.start(state);
+  const commands: SpendingCommands = {
+    apply: (current, command) => tracker.apply(current, command),
+    attempt: (current, command) => tracker.tryApply(current, command),
+    first: state,
+  };
   while (
     state.overworld.outcome === undefined &&
     state.overworld.day - tracker.startDay < tuning.dayCap
   ) {
-    state = spendCredits(
-      player,
-      state,
-      tracker.startMechs,
-      (current, command) => tracker.tryApply(current, command),
-    );
+    state = spend(state, commands);
     state = research(game, player, state, tracker);
     observe?.(state, tracker.missionsPlayed);
     if (playsOn(player, state.overworld.day, tracker.startDay)) {
@@ -332,7 +379,7 @@ export function playCampaign(
     }
     state = tracker.apply(state, advanceDay());
   }
-  return tracker.finish(state);
+  return { record: tracker.finish(state), first: commands.first, state };
 }
 
 // ===========================================
@@ -647,8 +694,6 @@ class CampaignTracker {
   // ===========================================
 
   startDay = 0;
-  /** Mechs the roster fielded on the first day: what a lost mech is rebuilt up to. */
-  startMechs = 0;
   private startPool = 0;
   private missions = 0;
   private won = 0;
@@ -708,7 +753,6 @@ class CampaignTracker {
   /** Notes the fresh campaign: its first day, act, pool and threat. */
   start(state: GameState): void {
     this.startDay = state.overworld.day;
-    this.startMechs = state.roster.mechs.length;
     this.startPool = state.economy.techPoints;
     this.peakThreat = state.overworld.threat;
     this.acts[state.overworld.progress.act] = this.mark(state);
@@ -1055,6 +1099,23 @@ export function spendCredits(
     current = built;
   }
   return current;
+}
+
+/**
+ * The sweep's spender: `spendCredits` for `player`, rebuilding lost
+ * mechs up to the mechs the campaign started with.
+ *
+ * @param player - The modelled player whose installation it builds.
+ * @returns The spender every sweep player uses.
+ */
+export function sweepSpender(player: ModelledPlayer): CreditSpender {
+  return (state, commands) =>
+    spendCredits(
+      player,
+      state,
+      commands.first.roster.mechs.length,
+      commands.attempt,
+    );
 }
 
 /** The region with the highest mean infestation, map order on a tie. */

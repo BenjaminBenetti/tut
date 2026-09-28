@@ -53,7 +53,7 @@ const REPLACED_CRASH_SITE_FIELDS: readonly string[] = ["pod", "landing"];
  * ```
  *   Briefing · Intact Pod
  *   Pod Telemetry tracked a spore pod down in one piece. …
- *   Objective       Keep the pod alive until the recovery drop at turn 8
+ *   Objective       Keep the pod alive until the recovery drop at turn 10
  *   Win             Act II ends
  *   Lost            The pod is lost; telemetry finds another in 5 days
  *   Fresh landing   Cairo · +10 now · erased once the pod is recovered

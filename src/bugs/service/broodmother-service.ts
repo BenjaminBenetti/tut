@@ -25,7 +25,7 @@ export const BROODMOTHER_SPECIES_ID: BugSpeciesId = "broodmother";
  *   round( (hpBase + hpPerDifficulty·max(0, difficulty − 1))
  *          · (1 + scarHpBonus·max(0, scars)) )
  *
- *   shipped:  d1 → 60   d5 → 68   d10 → 78      one scar: d5 → 85
+ *   shipped:  d1 → 42   d5 → 50   d10 → 60      one scar: d5 → 63
  * ```
  *
  * @param difficulty - The mission's difficulty, 1 or more.

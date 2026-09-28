@@ -12,10 +12,10 @@ import {
 import { fieldMap, motherMission } from "./broodmother.test-helper";
 
 describe("broodmotherHp (#1179, campaign arc §6.8)", () => {
-  it("is a boss's 60 at difficulty 1 and climbs 2 a step to 78 at difficulty 10", () => {
-    expect(broodmotherHp(1, 0)).toBe(60);
-    expect(broodmotherHp(5, 0)).toBe(68);
-    expect(broodmotherHp(10, 0)).toBe(78);
+  it("is a boss's 42 at difficulty 1 and climbs 2 a step to 60 at difficulty 10", () => {
+    expect(broodmotherHp(1, 0)).toBe(42);
+    expect(broodmotherHp(5, 0)).toBe(50);
+    expect(broodmotherHp(10, 0)).toBe(60);
     for (let difficulty = 1; difficulty < 10; difficulty++) {
       expect(broodmotherHp(difficulty + 1, 0)).toBeGreaterThan(
         broodmotherHp(difficulty, 0),
@@ -24,10 +24,10 @@ describe("broodmotherHp (#1179, campaign arc §6.8)", () => {
   });
 
   it("adds a quarter of her unscarred hit points for every scar, one per earlier escape", () => {
-    expect(broodmotherHp(5, 1)).toBe(85);
-    expect(broodmotherHp(5, 2)).toBe(102);
-    expect(broodmotherHp(1, 1)).toBe(75);
-    expect(broodmotherHp(10, 1)).toBe(Math.round(78 * 1.25));
+    expect(broodmotherHp(5, 1)).toBe(63);
+    expect(broodmotherHp(5, 2)).toBe(75);
+    expect(broodmotherHp(1, 1)).toBe(53);
+    expect(broodmotherHp(10, 1)).toBe(Math.round(60 * 1.25));
   });
 
   it("is the species' own hit points at difficulty 1 with no scars", () => {
@@ -35,8 +35,8 @@ describe("broodmotherHp (#1179, campaign arc §6.8)", () => {
   });
 
   it("reads nonsense inputs as the floor, never as less than her base", () => {
-    expect(broodmotherHp(0, 0)).toBe(60);
-    expect(broodmotherHp(1, -2)).toBe(60);
+    expect(broodmotherHp(0, 0)).toBe(42);
+    expect(broodmotherHp(1, -2)).toBe(42);
   });
 
   it("scales by whatever tuning it is given", () => {

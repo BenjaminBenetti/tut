@@ -3,10 +3,7 @@ import { describe, expect, it } from "vitest";
 import { STOREY_LAYERS } from "../../../core/model/elevation";
 import { PassMask } from "../../../mapgen/model/pass-mask";
 import { FixtureMapBuilder } from "../../../mapgen/service/fixture-map-builder";
-import type {
-  DefendGeneratorsObjective,
-  Objective,
-} from "../../model/tactical-state";
+import type { DefendGeneratorsObjective } from "../../model/tactical-state";
 import type { Unit } from "../../model/unit";
 import { OBJECTIVE_RULES } from "../objectives/objective-rules";
 import { unitAt, walledField } from "../tactical-fixtures.test-helper";
@@ -14,8 +11,6 @@ import {
   COVERED_OBJECTIVE_KINDS,
   DEFEND_GENERATORS_STRATEGY,
   DESTROY_HIVE_CORE_STRATEGY,
-  killEverythingStub,
-  STUBBED_OBJECTIVE_KINDS,
 } from "./objective-strategies.test-helper";
 import { lookingMission } from "./player-fixtures.test-helper";
 import { backOfMap } from "./player-goals.test-helper";
@@ -23,50 +18,11 @@ import { distanceField } from "./player-navigation.test-helper";
 import type { PlayerView } from "./player-view.test-helper";
 import { observe } from "./player-view.test-helper";
 
-/** An objective the stub stands in for; its kind is irrelevant to the stub. */
-const OBJECTIVE: Objective = {
-  id: "o1",
-  kind: "destroy-spawner",
-  targetId: "s1",
-  complete: false,
-};
-
 describe("the objective strategies", () => {
   it("cover every objective kind the rules define", () => {
     expect([...COVERED_OBJECTIVE_KINDS].sort()).toEqual(
       Object.keys(OBJECTIVE_RULES).sort(),
     );
-  });
-
-  it("stub the kinds this build lacks rather than covering them", () => {
-    for (const kind of STUBBED_OBJECTIVE_KINDS) {
-      expect(COVERED_OBJECTIVE_KINDS).not.toContain(kind);
-    }
-  });
-});
-
-describe("the kill-everything stub", () => {
-  const stub = killEverythingStub();
-
-  it("hunts what it can see", () => {
-    const view = observe(
-      lookingMission([
-        unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 }),
-        unitAt("bug", "infantry", { x: 4, y: 0, z: 4 }, { team: "bugs" }),
-      ]),
-    );
-    expect(stub.settled(OBJECTIVE, view)).toBe(false);
-    expect(stub.jobs(OBJECTIVE, view)).toEqual([
-      { order: { kind: "hunt", goals: [{ x: 4, y: 0, z: 4 }] } },
-    ]);
-  });
-
-  it("is settled once nothing is seen, remembered or left unexplored", () => {
-    const view = observe(
-      lookingMission([unitAt("alpha", "infantry", { x: 3, y: 0, z: 3 })]),
-    );
-    expect(stub.settled(OBJECTIVE, view)).toBe(true);
-    expect(stub.jobs(OBJECTIVE, view)).toEqual([]);
   });
 });
 

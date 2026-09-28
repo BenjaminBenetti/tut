@@ -927,6 +927,7 @@ describe("ObjectiveTrackerView on a defence (#1175)", () => {
     wave: 3,
     totalWaves: 5,
     bugsLeft: 4,
+    holdTurnsLeft: undefined,
     status: "open",
     ...overrides,
   });

@@ -52,6 +52,32 @@ describe("raiseTide", () => {
     expect(raiseTide(early, TUNING).edgeSpawn.nextTurn).toBe(1);
   });
 
+  it("keeps the larger of a defence's surge and the tide's, each on its own (#1179)", () => {
+    const larger = fieldMission(["swarm-tide"], {
+      edgeSpawn: {
+        nextTurn: 3,
+        wave: 0,
+        totalWaves: 5,
+        surge: { sizeScale: 2, spillRadius: 1 },
+      },
+    });
+    expect(raiseTide(larger, TUNING).edgeSpawn.surge).toEqual({
+      sizeScale: 2,
+      spillRadius: 2,
+    });
+    const smaller = fieldMission(["swarm-tide"], {
+      edgeSpawn: {
+        nextTurn: 3,
+        wave: 0,
+        surge: { sizeScale: 1.25, spillRadius: 3 },
+      },
+    });
+    expect(raiseTide(smaller, TUNING).edgeSpawn.surge).toEqual({
+      sizeScale: 1.5,
+      spillRadius: 3,
+    });
+  });
+
   it("changes nothing but the schedule, and never mutates the mission", () => {
     const mission = fieldMission(["swarm-tide"]);
     const before = structuredClone(mission);

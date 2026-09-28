@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import type { ObjectiveRulesTable } from "../../model/objective-rules";
 import type { Objective } from "../../model/tactical-state";
-import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./destroy-spawner-objective";
 import { KILL_BROODMOTHER_STEP } from "./kill-broodmother-objective";
 import { RECOVER_POD_OBJECTIVE } from "./recover-pod-objective";
@@ -60,12 +59,15 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       failed: false,
     };
     expect(objectiveRulesFor(spawner)).toBe(DESTROY_SPAWNER_OBJECTIVE);
-    expect(objectiveRulesFor(defence)).toBe(DEFEND_GENERATORS_OBJECTIVE);
+    expect(objectiveRulesFor(defence)).toBe(
+      OBJECTIVE_RULES["defend-generators"],
+    );
+    expect(objectiveRulesFor(defence).kind).toBe("defend-generators");
   });
 
   it("collects each kind's own phase step in table order, and only those", () => {
     expect(objectivePhaseSteps()).toEqual([
-      DEFEND_GENERATORS_OBJECTIVE.phaseStep,
+      OBJECTIVE_RULES["defend-generators"].phaseStep,
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
       STRIP_WRECK_STEP,
@@ -83,7 +85,7 @@ describe("OBJECTIVE_RULES (ADR 0013 §2.3)", () => {
       }),
     ).toEqual([
       extra,
-      DEFEND_GENERATORS_OBJECTIVE.phaseStep,
+      OBJECTIVE_RULES["defend-generators"].phaseStep,
       OBJECTIVE_RULES["capture-specimen"].phaseStep,
       RESCUE_CIVILIANS_OBJECTIVE.phaseStep,
       STRIP_WRECK_STEP,

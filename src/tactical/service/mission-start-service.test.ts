@@ -34,6 +34,7 @@ import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
+import { WAVE_PRESSURE_TUNING } from "../data/wave-pressure-tuning";
 import { err, ok } from "../../core/model/result";
 import type { MissionSetupRule } from "../model/mission-setup-rule";
 import type { TacticalState } from "../model/tactical-state";
@@ -749,6 +750,10 @@ describe("startTacticalMission on a defence (#1175)", () => {
     ]);
     expect(tactical.spawners).toEqual([]);
     expect(tactical.edgeSpawn.totalWaves).toBe(5);
+    // Every counted wave lands larger than the shared size (#1179).
+    expect(tactical.edgeSpawn.surge).toEqual(
+      WAVE_PRESSURE_TUNING.defence.surge,
+    );
     // The installation itself stands on the map: a building of the
     // installation's kind, so the player defends something they built.
     expect(tactical.map.recipe.params.site).toBe("repellent-dispersal");
@@ -761,6 +766,7 @@ describe("startTacticalMission on a defence (#1175)", () => {
     ).activeMission;
     if (!tactical) throw new Error("no mission");
     expect(tactical.edgeSpawn.totalWaves).toBeUndefined();
+    expect(tactical.edgeSpawn.surge).toBeUndefined();
     expect(tactical.units.some((unit) => unit.kind === "generator")).toBe(
       false,
     );

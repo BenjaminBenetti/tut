@@ -39,7 +39,7 @@ const UPLINK_DEFENCE: StoryDefence = {
  * ```
  *   Briefing · Uplink
  *   The Spore Platform steers by beacons no one has found. …
- *   Objective   Hold the tracking array through 5 waves
+ *   Objective   Hold the tracking array through 6 waves
  *   Win         The platform's beacons are revealed
  * ```
  *

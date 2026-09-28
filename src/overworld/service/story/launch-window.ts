@@ -29,12 +29,16 @@ export const LAUNCH_WINDOW_DIFFICULTY = 8;
 export const LAUNCH_WINDOW_SITE: StoryInstallationId = "launch-site";
 
 /**
- * Waves Launch Window's edges send: 7, what a director-rolled defence
- * sends for a region at mean infestation 80, one short of the cap. The
- * pad runs on the dispersal plant's four generators, the most of any
- * compound, so the longer siege is holdable.
+ * Waves Launch Window's edges send: 8, what a director-rolled defence
+ * sends at the cap. The pad runs on the dispersal plant's four
+ * generators, the most of any compound, so the longest siege is
+ * holdable.
+ *
+ * Eight since #1179: at seven, with the defence's surged waves, the new
+ * player won 12 of 16 on the calibration matrix against the finale's
+ * 55% (about 9); at eight it wins 10, the expert all 16.
  */
-export const LAUNCH_WINDOW_WAVES = 7;
+export const LAUNCH_WINDOW_WAVES = 8;
 
 /**
  * Days a lost Launch Window slips before it is pinned again (arc §4: "a
@@ -67,7 +71,7 @@ export const LAUNCH_WINDOW_PIN_FLAGS: readonly CampaignFlagId[] = [
  *            both set; never expires, outside the cap
  *            city: storyDefenceCity, the quietest detected city: a free
  *            one, or else an ordinary offer's, which is withdrawn
- *            offer: defend-installation at d8, the launch site, 7 waves
+ *            offer: defend-installation at d8, the launch site, 8 waves
  *   won      the spine ends Act III: into the finale if it exists, and
  *            while the Spore Platform is unbuilt that is campaign victory
  *   lost     the launch slips: pinned again 5 days on; never a defeat

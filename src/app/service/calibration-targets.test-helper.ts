@@ -66,10 +66,16 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
  *   story:intact-pod/act-2        Intact Pod (#1179 C3b)
  *   alpha-hunt                    both Alpha Hunt cells (#1179 C3b)
  *   story:spore-platform/finale   the Spore Platform (#1179 C3b)
+ *   defend-installation/act-1…3   the three defences (#1179 C2b-2)
+ *   story:uplink/act-3            Uplink (#1179 C2b-2)
+ *   story:launch-window/finale    Launch Window (#1179 C2b-2)
+ *   tunnel-sabotage/act-2         act 2 only: act 3's new player wins every seed (#1179 C2b-2)
+ *   wreck-recovery/act-2, act-3   both Wreck Recovery cells (#1179 C2b-2)
  * ```
  *
- * C2b-1's cells are tuned in `docs/design/calibration/C2b-1-field.md`,
- * C3b's in `docs/design/calibration/C3b-story.md`.
+ * Each package's cells are tuned in its own page under
+ * `docs/design/calibration/`: `C2b-1-field.md`, `C2b-2-defence.md`,
+ * `C3a-hives.md` and `C3b-story.md`.
  */
 export const TARGETED_CELLS: readonly string[] = [
   "hive-assault",
@@ -82,6 +88,14 @@ export const TARGETED_CELLS: readonly string[] = [
   "story:intact-pod/act-2",
   "alpha-hunt",
   "story:spore-platform/finale",
+  "defend-installation/act-1",
+  "defend-installation/act-2",
+  "defend-installation/act-3",
+  "story:uplink/act-3",
+  "story:launch-window/finale",
+  "tunnel-sabotage/act-2",
+  "wreck-recovery/act-2",
+  "wreck-recovery/act-3",
 ];
 
 // ===========================================

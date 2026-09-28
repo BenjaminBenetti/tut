@@ -35,11 +35,15 @@ export const UPLINK_SITE: StoryInstallationId = "tracking-array";
  * Waves Uplink's edges send (arc §6.9: "defend a tracking array through
  * its counted waves"). A defence rolled by the director sends 3 plus
  * one per 20 points of its region's mean infestation (5 at the trigger's
- * floor of 40, 8 at most); Uplink takes the floor's 5. The array runs on
- * the sensor array's two generators, the fewest of any compound, so the
- * waves stay short of what a late-game defence sends.
+ * floor of 40, 8 at most). The array runs on the sensor array's two
+ * generators, the fewest of any compound, so the waves stay short of
+ * what a late-game defence sends.
+ *
+ * Six (#1179): at five the new player won 14 of 16 on the calibration
+ * matrix against act 3's 65% (about 10); at seven the expert lost its
+ * generators in 7 of 16. At six the new player wins 10, the expert 15.
  */
-export const UPLINK_WAVES = 5;
+export const UPLINK_WAVES = 6;
 
 /**
  * Set when Uplink is won (arc §4, §6.9): the beacon tracking data is in.
@@ -61,7 +65,7 @@ export const UPLINK_WON_FLAG: CampaignFlagId = "uplink-won";
  *            act is the whole trigger; never expires, outside the cap
  *            city: storyDefenceCity, the quietest detected city: a free
  *            one, or else an ordinary offer's, which is withdrawn
- *            offer: defend-installation at d6, the tracking array, 5 waves
+ *            offer: defend-installation at d6, the tracking array, 6 waves
  *   map      the defend rule raises the array's compound (the sensor array's yard)
  *   setup    the defend setup stands its generators and the defend objective
  *   won      the defend consequence on the host city; the story sets uplink-won,

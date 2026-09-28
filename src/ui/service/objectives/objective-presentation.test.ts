@@ -207,6 +207,47 @@ describe("objectiveProgress", () => {
       },
     });
   });
+
+  it("counts the hold down under the row once the last wave is in (#1179)", () => {
+    const defence = OBJECTIVE_PRESENTATION["defend-generators"];
+    const holding = { ...DEFENCE_OBJECTIVE, holdUntilTurn: 9 };
+    const rowOn = (turn: number) => {
+      const mission = {
+        ...MISSION,
+        turn,
+        objectives: [holding],
+        edgeSpawn: { nextTurn: 5, wave: 3, totalWaves: 3 },
+      } as TacticalState;
+      return defence.row(holding, {
+        ordinal: 1,
+        spawners: [],
+        progress: defenceProgress(mission, holding),
+      });
+    };
+    expect(rowOn(6)).toMatchObject({
+      label: "Defend the sensor array",
+      detail: { text: "1 / 2 generators · wave 3 / 3 · 1 bug left" },
+      countdowns: [
+        {
+          text: "Hold ends in 3 turns",
+          turnsLeft: 3,
+          urgent: false,
+          role: "hold",
+        },
+      ],
+    });
+    expect(rowOn(8).countdowns).toEqual([
+      {
+        text: "Hold ends at the end of this turn",
+        turnsLeft: 1,
+        urgent: true,
+        role: "hold",
+      },
+    ]);
+    // The hold is up: held, with no countdown left to show.
+    expect(rowOn(9)).toMatchObject({ label: "Held the sensor array" });
+    expect(rowOn(9).countdowns).toBeUndefined();
+  });
 });
 
 // ===========================================

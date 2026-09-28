@@ -80,7 +80,25 @@ describe("the arc's targets", () => {
       "story:intact-pod/act-2",
       "alpha-hunt",
       "story:spore-platform/finale",
+      "defend-installation/act-1",
+      "defend-installation/act-2",
+      "defend-installation/act-3",
+      "story:uplink/act-3",
+      "story:launch-window/finale",
+      "tunnel-sabotage/act-2",
+      "wreck-recovery/act-2",
+      "wreck-recovery/act-3",
     ]);
+  });
+
+  it("target only cells the matrix plays", () => {
+    const ids = CALIBRATION_CELLS.map((cell) => cell.id);
+    for (const entry of TARGETED_CELLS) {
+      expect([entry, ids.some((id) => id.startsWith(entry))]).toEqual([
+        entry,
+        true,
+      ]);
+    }
   });
 
   it("ask the expert for ⌈90%⌉ of its runs, in whole numbers", () => {

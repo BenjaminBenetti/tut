@@ -122,6 +122,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 
 - **Objective:** hold at least one generator through every counted wave.
 - **Changes:** from Act II, burrowers can surface inside the perimeter. Uplink and Launch Window are built on this mission.
+- **Waves (#1179):** every counted wave lands 75% larger than a field mission's, rounded up, and may stand up to 2 steps outside its edge zone. The generators have 60 hit points. Uplink sends 6 waves and Launch Window 8.
 
 ### 6.3 Crash Site (Act I, from M2)
 
@@ -157,6 +158,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 - **Trigger:** a mech destroyed on a lost or abandoned mission. The offer is pinned, gives one attempt, and expires in 3 days.
 - **Pays:** that mech's parts, back in the inventory. The chassis and the pilot's rank stay lost.
 - **Reuses:** the tech carcass harvest (interact over turns).
+- **Waves (#1179):** the crash draws the swarm. The first edge wave comes a turn sooner (turn 2), and every wave lands three times larger, rounded up, standing up to 3 steps outside its edge zone.
 
 ### 6.7 Tunnel Sabotage (Act II, about 5 missions in)
 
@@ -165,6 +167,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 - **Pays:** that spread is cancelled, and the city cannot spread for 10 days.
 - **Ignored or lost:** the spread happens as normal.
 - **Reuses:** the breaching charge and demolition. **New:** tunnel-mouth map hooks.
+- **Waves (#1179):** every edge wave lands three times larger, rounded up, standing up to 3 steps outside its edge zone. The charges cannot be pulled once set, so the fight is on the way home.
 
 ### 6.8 Alpha Hunt (Act II, about 10 missions in)
 
@@ -298,7 +301,7 @@ The #1171 pacing test changes from "the tree is finished at mission 25" to "the 
 
 - **Eligibility:** a sitrep can name the map hooks it needs (`requiredHooks` on its definition). It is offered only on a mission type that places at least one of each. Hardened Clutches needs egg spawners, so a Defend Installation never gets it. Swarm Tide needs edge waves and Dust-off Window needs extraction; both shipped types have them.
 - **Hardened Clutches (M16):** every standing egg spawner has its hit points multiplied by 1.5, rounded up (20 becomes 30). "One extra hatch" is read as **one more bug per hatch** (2 becomes 3), not a second hatch event, so the hatch clock and its draws are unchanged. Spore pods are not touched.
-- **Swarm Tide (M16):** every edge wave is multiplied by 1.5, rounded up (2 becomes 3, 8 becomes 12). The first wave comes one turn sooner (turn 2 instead of 3), so every later wave does too, and a defence keeps its wave count. An edge zone is only four to six tiles, so the extra bugs may stand up to 2 steps outside it.
+- **Swarm Tide (M16):** every edge wave is multiplied by 1.5, rounded up (2 becomes 3, 8 becomes 12). The first wave comes one turn sooner (turn 2 instead of 3), so every later wave does too, and a defence keeps its wave count. An edge zone is only four to six tiles, so the extra bugs may stand up to 2 steps outside it. On a type whose waves already surge (Defend Installation, Tunnel Sabotage and Wreck Recovery, #1179), the larger size scale and the larger spill of the two hold.
 - **Dust-off Window (M20):** the drop ship waits through turn 8 + ⌈(width + depth) / 12⌉: turn 16 on a small map, 20 on a medium one and 24 on a large one. A defence cannot be won before its last wave, so there the ship also waits at least 12 turns after that wave. A five-wave defence at a 4-turn interval has its last wave on turn 19, so the ship waits through turn 31. When the ship's last turn ends, every unit still on the map is lost, exactly as if the mission had been abandoned, and the mission ends on whoever boarded. The objective tracker and the turn banner count the turns down. See [`sitrep-dustoff-hud.png`](sitrep-dustoff-hud.png) and [`sitreps-act2-briefing.png`](sitreps-act2-briefing.png).
 - **Act III:** each of the two slots can hold any sitrep the offer can host, so Dust-off Window and Swarm Tide can come together.
 

@@ -1,7 +1,7 @@
 import type { SitrepRule } from "../../model/sitrep-rule";
 import type { SwarmTideTuning } from "../../model/sitrep-tuning";
 import type { TacticalState } from "../../model/tactical-state";
-import { FIRST_TURN } from "../../model/tactical-state";
+import { pressEdgeWaves } from "../edge-wave-pressure-service";
 
 // ===========================================
 // Swarm Tide
@@ -17,6 +17,8 @@ import { FIRST_TURN } from "../../model/tactical-state";
  *   edgeSpawn.surge    ──► { sizeScale, spillRadius }
  *                           every wave ⌈size × 1.5⌉ (2 → 3, 8 → 12),
  *                           standing up to 2 steps past its zone
+ *                           a surge the type set already (#1179)
+ *                             ──► the larger of each, never less
  * ```
  *
  * The spill is what makes the extra bugs arrive: an edge zone is four
@@ -40,8 +42,11 @@ export function swarmTideSitrep(tuning: SwarmTideTuning): SitrepRule {
 }
 
 /**
- * Brings the first wave forward and sets the surge on the schedule.
- * Exported for tests that check the rule apart from the table.
+ * Brings the first wave forward and sets the surge on the schedule
+ * (`pressEdgeWaves`). A type whose setup presses its waves already
+ * (#1179) keeps the larger size scale and the larger spill of the two,
+ * so the tide never makes a mission's waves smaller. Exported for tests
+ * that check the rule apart from the table.
  *
  * @param state - The mission after its type's setup, the garrison and any earlier sitrep.
  * @param tuning - The size scale, the turns sooner and the spill.
@@ -51,15 +56,8 @@ export function raiseTide(
   state: TacticalState,
   tuning: SwarmTideTuning,
 ): TacticalState {
-  return {
-    ...state,
-    edgeSpawn: {
-      ...state.edgeSpawn,
-      nextTurn: Math.max(
-        FIRST_TURN,
-        state.edgeSpawn.nextTurn - tuning.turnsSooner,
-      ),
-      surge: { sizeScale: tuning.sizeScale, spillRadius: tuning.spillRadius },
-    },
-  };
+  return pressEdgeWaves(state, {
+    surge: { sizeScale: tuning.sizeScale, spillRadius: tuning.spillRadius },
+    turnsSooner: tuning.turnsSooner,
+  });
 }

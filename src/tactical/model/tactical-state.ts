@@ -224,9 +224,9 @@ export interface DestroyHiveCoreObjective extends ObjectiveBase {
  * always the service's.
  *
  * ```
- *   no generator standing            ──► failed
- *   every wave landed, no bug alive  ──► complete
- *   otherwise                        ──► open
+ *   no generator standing                                  ──► failed
+ *   every wave landed, and no bug alive or the hold is up  ──► complete
+ *   otherwise                                              ──► open
  * ```
  */
 export interface DefendGeneratorsObjective extends ObjectiveBase {
@@ -240,6 +240,15 @@ export interface DefendGeneratorsObjective extends ObjectiveBase {
   readonly targetIds: readonly UnitId[];
   /** Always written for a defence, which starts open. */
   readonly failed: boolean;
+  /**
+   * The turn the hold runs out (#1179): written by the defence step as
+   * the last counted wave lands, that turn plus the tuning's
+   * `holdTurns`. From this turn on the defence reads held with bugs
+   * still on the map. Absent until the last wave is in; optional, so a
+   * mission saved before it existed loads unchanged and gets it at its
+   * next phase start.
+   */
+  readonly holdUntilTurn?: number;
 }
 
 /**

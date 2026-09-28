@@ -9,12 +9,14 @@ import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
+import { WAVE_PRESSURE_TUNING } from "../../data/wave-pressure-tuning";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
 import {
   missionWith,
   openField,
   unitAt,
 } from "../tactical-fixtures.test-helper";
+import { pressEdgeWaves } from "../edge-wave-pressure-service";
 import { MISSION_SETUP_RULES } from "./mission-setup-rules";
 import { TUNNEL_SABOTAGE_SETUP } from "./tunnel-sabotage-setup";
 
@@ -82,8 +84,23 @@ function setupDeps(): MissionSetupDeps {
 // ===========================================
 
 describe("TUNNEL_SABOTAGE_SETUP (arc §6.7)", () => {
-  it("is the table's setup for the tunnel sabotage type", () => {
-    expect(MISSION_SETUP_RULES["tunnel-sabotage"]).toBe(TUNNEL_SABOTAGE_SETUP);
+  it("is the table's setup for the tunnel sabotage type, its edge waves pressed (#1179)", () => {
+    const map = fixtureMap();
+    const base = missionWith(map, [unitAt("u", "infantry", at(0, 0))]);
+    const own = TUNNEL_SABOTAGE_SETUP.setup(base, map, OFFER, setupDeps());
+    const table = MISSION_SETUP_RULES["tunnel-sabotage"].setup(
+      base,
+      map,
+      OFFER,
+      setupDeps(),
+    );
+    if (!own.ok || !table.ok) throw new Error("setup refused");
+    expect(table.value).toEqual(
+      pressEdgeWaves(own.value, WAVE_PRESSURE_TUNING.tunnel),
+    );
+    expect(table.value.edgeSpawn.surge).toEqual(
+      WAVE_PRESSURE_TUNING.tunnel.surge,
+    );
   });
 
   it("opens a mouth on every tunnel-mouth hook and names all three in one seal-tunnels objective", () => {

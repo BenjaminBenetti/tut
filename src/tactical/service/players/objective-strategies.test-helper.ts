@@ -168,8 +168,12 @@ export const DESTROY_HIVE_CORE_STRATEGY: ObjectiveStrategy<"destroy-hive-core"> 
 
 /**
  * Hold the generators through every wave: the force stands round the
- * running generators; once the tracker says every wave has landed and
- * nothing is in sight, it goes after the last bugs where they were seen.
+ * running generators. Once the last wave is in, the tracker counts the
+ * hold down (#1179), and the defence is held when it runs out whether or
+ * not a bug is left, so the force stays on the generators until then: a
+ * search would only leave them to the bugs still about. A defence with
+ * no hold running and the tracker still counting bugs is the one case
+ * where the force goes after the last bugs where they were seen.
  */
 export const DEFEND_GENERATORS_STRATEGY: ObjectiveStrategy<"defend-generators"> =
   {
@@ -178,10 +182,11 @@ export const DEFEND_GENERATORS_STRATEGY: ObjectiveStrategy<"defend-generators"> 
       return closed(objective, view.mission);
     },
     /**
-     * Guard the generators, the ones under attack first; after the last
-     * wave, with no generator under attack and the tracker still counting
-     * bugs, go and find them: what is in sight, the last contact, the
-     * unexplored ground, then whatever is out of sight.
+     * Guard the generators, the ones under attack first. After the last
+     * wave, with no hold counting down (#1179), no generator under attack
+     * and the tracker still counting bugs, go and find them: what is in
+     * sight, the last contact, the unexplored ground, then whatever is
+     * out of sight.
      */
     jobs(objective, view) {
       const generators = view.mission.units.filter(
@@ -197,7 +202,13 @@ export const DEFEND_GENERATORS_STRATEGY: ObjectiveStrategy<"defend-generators"> 
             manhattanDistance(enemy.pos, generator.pos) <= THREAT_RADIUS,
         ),
       );
-      if (lastWave && threatened.length === 0 && progress.bugsLeft > 0) {
+      const holding = (progress.holdTurnsLeft ?? 0) > 0;
+      if (
+        lastWave &&
+        !holding &&
+        threatened.length === 0 &&
+        progress.bugsLeft > 0
+      ) {
         const goals = straggler(
           view,
           generators.map((unit) => unit.pos),

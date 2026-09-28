@@ -123,6 +123,37 @@ describe("the defence strategy", () => {
     expect(job?.order.goals[0]).toMatchObject({ x: 4, y: 0, z: 2 });
   });
 
+  it("stays on the generators while the hold counts down, stragglers or not (#1179)", () => {
+    const holding = { ...defence, holdUntilTurn: 9 };
+    const mission = (turn: number) =>
+      lookingMission(
+        [
+          unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 }),
+          generator("gen-w", 1),
+          generator("gen-e", 2),
+          unitAt("bug", "infantry", { x: 7, y: 0, z: 0 }, { team: "bugs" }),
+        ],
+        {
+          turn,
+          objectives: [holding],
+          edgeSpawn: { nextTurn: 9, wave: 3, totalWaves: 3 },
+        },
+      );
+    const during = observe(mission(6));
+    expect(during.enemies.map((enemy) => enemy.id)).toEqual(["bug"]);
+    expect(
+      DEFEND_GENERATORS_STRATEGY.jobs(holding, during).map(
+        (job) => job.order.kind,
+      ),
+    ).toEqual(["guard"]);
+    // The same field with no hold running: the search is on.
+    expect(
+      DEFEND_GENERATORS_STRATEGY.jobs(defence, observe(mission(6))).map(
+        (job) => job.order.kind,
+      ),
+    ).toEqual(["hunt"]);
+  });
+
   it("hunts a straggler it can see that threatens no generator", () => {
     const view = observe(
       lookingMission(

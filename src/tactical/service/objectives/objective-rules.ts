@@ -1,3 +1,4 @@
+import { DEFENCE_TUNING } from "../../data/defence-tuning";
 import { TUNNEL_TUNING } from "../../data/tunnel-tuning";
 import type {
   ObjectiveKind,
@@ -9,7 +10,7 @@ import type { Objective } from "../../model/tactical-state";
 import { SHIPPED_EQUIPMENT } from "../../repository/equipment-catalogue";
 import { BOARD_CORE_OBJECTIVE } from "./board-core-objective";
 import { createCaptureSpecimenObjective } from "./capture-specimen-objective";
-import { DEFEND_GENERATORS_OBJECTIVE } from "./defend-generators-objective";
+import { createDefendGeneratorsObjective } from "./defend-generators-objective";
 import { DESTROY_HIVE_CORE_OBJECTIVE } from "./destroy-hive-core-objective";
 import { DESTROY_PLATFORM_CORE_OBJECTIVE } from "./destroy-platform-core-objective";
 import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
@@ -33,7 +34,9 @@ import { STRIP_WRECK_OBJECTIVE } from "./strip-wreck-objective";
  *
  * ```
  *   destroy-spawner    ──► destroy-spawner-objective.ts
- *   defend-generators  ──► defend-generators-objective.ts
+ *   defend-generators  ──► defend-generators-objective.ts (with the
+ *                          shipped defence tuning: the hold after the
+ *                          last wave)
  *   destroy-pod        ──► destroy-pod-objective.ts
  *   capture-specimen   ──► capture-specimen-objective.ts (with the shipped
  *                          equipment, to tell a net from the rest)
@@ -55,7 +58,7 @@ import { STRIP_WRECK_OBJECTIVE } from "./strip-wreck-objective";
  */
 export const OBJECTIVE_RULES: ObjectiveRulesTable = {
   "destroy-spawner": DESTROY_SPAWNER_OBJECTIVE,
-  "defend-generators": DEFEND_GENERATORS_OBJECTIVE,
+  "defend-generators": createDefendGeneratorsObjective(DEFENCE_TUNING),
   "destroy-pod": DESTROY_POD_OBJECTIVE,
   "capture-specimen": createCaptureSpecimenObjective(SHIPPED_EQUIPMENT),
   "rescue-civilians": RESCUE_CIVILIANS_OBJECTIVE,

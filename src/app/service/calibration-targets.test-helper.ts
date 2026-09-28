@@ -58,10 +58,20 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
  * every cell of the band is listed.
  *
  * ```
- *   hive-assault   both Hive Assault cells (#1179 C3a, round 2)
+ *   hive-assault                  both Hive Assault cells (#1179 C3a, round 2)
+ *   infestation-clearance/act-2   (#1179 C2b-1-field)
+ *   crash-site/act-3              (#1179 C2b-1-field)
+ *   evacuation/act-1…3            the three Evacuation cells (#1179 C2b-1-field)
  * ```
  */
-export const TARGETED_CELLS: readonly string[] = ["hive-assault"];
+export const TARGETED_CELLS: readonly string[] = [
+  "hive-assault",
+  "infestation-clearance/act-2",
+  "crash-site/act-3",
+  "evacuation/act-1",
+  "evacuation/act-2",
+  "evacuation/act-3",
+];
 
 // ===========================================
 // Types

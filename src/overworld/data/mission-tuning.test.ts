@@ -53,6 +53,13 @@ describe("mission tuning", () => {
     expect(MISSION_TUNING.alphaHunt.growthPauseDays).toBe(5);
   });
 
+  it("keeps an evacuation off a large map until d10, which no act's band draws for it (C2b-1-field)", () => {
+    // Evacuation calibration (#1179): on 96×96 boards (d8–d9) the far
+    // groups sat 60–140 steps out and died on the walk home.
+    expect(MISSION_TUNING.difficulty.evacuation.mediumFromDifficulty).toBe(3);
+    expect(MISSION_TUNING.difficulty.evacuation.largeFromDifficulty).toBe(10);
+  });
+
   it("orders map size thresholds inside the difficulty range", () => {
     const { min, max } = MISSION_DIFFICULTY_RANGE;
     for (const rule of Object.values(MISSION_TUNING.difficulty)) {

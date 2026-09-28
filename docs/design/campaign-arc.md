@@ -125,7 +125,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 
 ### 6.3 Crash Site (Act I, from M2)
 
-- **Objective:** a spore pod came down in open ground. Destroy the pod before it matures at the **end of turn 8**. Maturing releases a large wave and fails the objective. Then extract.
+- **Objective:** a spore pod came down in open ground. Destroy the pod before it matures at the **end of turn 8**, or the **end of turn 5** from difficulty 5: a harder landing ripens sooner ([C2b-1-field](calibration/C2b-1-field.md)). Maturing releases a large wave and fails the objective. Then extract.
 - **Map:** the crater / crash-site archetype (the #662 prototype): open ground, a scorched crater and scattered debris cover.
 - **Eligible:** a region with at least one detected city. Every crash site starts a fresh landing (a new infestation seed of 10) at a city in that region. From Act II, regions with a sensor array are weighted ×2.
 - **Scripted first one:** **First Skyfall**, the second mission of every campaign (d1).

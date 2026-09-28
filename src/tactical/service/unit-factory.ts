@@ -349,7 +349,7 @@ export function generatorUnit(
 /**
  * Builds a civilian group from its tuning (campaign arc §6.4), for an
  * evacuation's start and the debug menu. Every group shares one template
- * (`"civilian:civilians"`): no weapon, a squad's pace, `organic`, so a
+ * (`"civilian:civilians"`): no weapon, its tuning's pace, `organic`, so a
  * medkit mends it. A group starts **trapped** — no action points, and
  * `trapped` set — until a squad or mech frees it with Interact; pass
  * `trapped: false` for one already walking. Pure: reads only its

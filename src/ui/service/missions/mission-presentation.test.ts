@@ -232,6 +232,16 @@ describe("MISSION_PRESENTATION", () => {
       "tech-bonus",
     ]);
   });
+
+  it("briefs a harder landing's earlier clock, the one its mission keeps (C2b-1-field)", () => {
+    const crash = MISSION_PRESENTATION["crash-site"];
+    const podRow = (difficulty: number) =>
+      crash
+        .briefingRows({ ...CRASH, difficulty }, CTX)
+        .find((row) => row.field === "pod")?.value;
+    expect(podRow(4)).toBe("Matures at the end of turn 8");
+    expect(podRow(5)).toBe("Matures at the end of turn 5");
+  });
 });
 
 describe("SPORE_PLATFORM_PRESENTATION (arc §6.9)", () => {

@@ -69,7 +69,14 @@ describe("the arc's targets", () => {
     });
     expect(EXPERT_CELL_TARGET).toBe(90);
     expect(EXPERT_TARGET_ALLOWANCE).toBe(1);
-    expect(TARGETED_CELLS).toEqual(["hive-assault"]);
+    expect(TARGETED_CELLS).toEqual([
+      "hive-assault",
+      "infestation-clearance/act-2",
+      "crash-site/act-3",
+      "evacuation/act-1",
+      "evacuation/act-2",
+      "evacuation/act-3",
+    ]);
   });
 
   it("ask the expert for ⌈90%⌉ of its runs, in whole numbers", () => {

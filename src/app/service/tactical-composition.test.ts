@@ -59,6 +59,7 @@ import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { BLAST_RESOLVED } from "../../tactical/model/blast-resolved-event";
 import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
 import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
+import { CRASH_SITE_SETUP_TUNING } from "../../tactical/data/crash-site-setup-tuning";
 import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
 import { BROODMOTHER_ESCAPED } from "../../tactical/model/broodmother-escaped-event";
 import { BROODMOTHER_FLEEING } from "../../tactical/model/broodmother-fleeing-event";
@@ -802,6 +803,14 @@ describe("composeTactical", () => {
     const deps = tactical.missionStartDepsFor(new SequentialIdGenerator());
     expect(deps.broods?.tuning).toBe(BROOD_TUNING);
     expect(deps.broods?.species).toEqual(Object.values(BUG_SPECIES));
+  });
+
+  it("mission-start deps carry the crash site's own pod clock (#1179, C2b-1-field)", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    expect(
+      tactical.missionStartDepsFor(new SequentialIdGenerator()).crashSite,
+    ).toBe(CRASH_SITE_SETUP_TUNING);
   });
 
   it("mission-start deps carry the shipped mission setup rules", () => {

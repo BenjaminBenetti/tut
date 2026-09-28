@@ -88,6 +88,7 @@ import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
 import { GREAT_HIVE_SETUP_TUNING } from "../../tactical/data/great-hive-setup-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
+import { CRASH_SITE_SETUP_TUNING } from "../../tactical/data/crash-site-setup-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
 import { TUNNEL_TUNING } from "../../tactical/data/tunnel-tuning";
 import { createTunnelSurfacingStep } from "../../tactical/service/tunnel-mouth-surfacing-service";
@@ -312,6 +313,8 @@ export function composeTactical(
     hiveGuard: BUG_SPECIES["hive-guard"],
     hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
     greatHive: GREAT_HIVE_SETUP_TUNING,
+    // A harder landing's pod ripens sooner (#1179, C2b-1-field).
+    crashSite: CRASH_SITE_SETUP_TUNING,
     setupRules: MISSION_SETUP_RULES,
     // A story mission's own setup on top of its type's, and the bugs a
     // setup may place: Live Specimen's lurkers (#1179).

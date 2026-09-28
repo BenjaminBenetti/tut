@@ -2,7 +2,9 @@ import type { Mission } from "../../../overworld/model/mission";
 import type { MissionResult } from "../../../overworld/model/mission-result";
 import { MISSION_TUNING } from "../../../overworld/data/mission-tuning";
 import { findCity } from "../../../overworld/service/earth-map-query-service";
+import { CRASH_SITE_SETUP_TUNING } from "../../../tactical/data/crash-site-setup-tuning";
 import { SPAWN_TUNING } from "../../../tactical/data/spawn-tuning";
+import { crashPodMaturityTurn } from "../../../tactical/service/missions/crash-site-setup";
 import type {
   BriefingField,
   BriefingRow,
@@ -34,13 +36,14 @@ const TECH_BONUS: BriefingField = { field: "tech-bonus", label: "Tech bonus" };
  * and a debrief that says whether the pod was wrecked or matured.
  *
  * ```
- *   Spore pod       Matures at the end of turn 8
+ *   Spore pod       Matures at the end of turn 8   (5 from d5)
  *   Fresh landing   Cairo · +10 now · erased if the pod falls
  *   Tech bonus      TP ×1.5
  * ```
  *
- * The numbers are the shipped tuning's (`SPAWN_TUNING.podMaturityTurn`,
- * `MISSION_TUNING.crashSite`), the same the rules read.
+ * The numbers are the shipped tuning's (`crashPodMaturityTurn` over
+ * `SPAWN_TUNING` and `CRASH_SITE_SETUP_TUNING`, `MISSION_TUNING.crashSite`),
+ * the same the rules read.
  */
 export const CRASH_SITE_PRESENTATION: MissionPresentation = {
   typeId: "crash-site",
@@ -67,7 +70,13 @@ function crashSiteRows(
   const rows: BriefingRow[] = [
     {
       ...POD,
-      value: `Matures at the end of turn ${formatWhole(SPAWN_TUNING.podMaturityTurn)}`,
+      value: `Matures at the end of turn ${formatWhole(
+        crashPodMaturityTurn(
+          mission.difficulty,
+          SPAWN_TUNING,
+          CRASH_SITE_SETUP_TUNING,
+        ),
+      )}`,
     },
   ];
   const spec = mission.crashSite;

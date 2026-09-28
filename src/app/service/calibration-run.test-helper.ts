@@ -16,6 +16,7 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import { isCombatUnit } from "../../tactical/model/unit";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { EXPERT_OBJECTIVE_STRATEGIES } from "../../tactical/service/players/expert-objective-strategies.test-helper";
 import { createExpertPlayerPolicy } from "../../tactical/service/players/expert-player-policy.test-helper";
 import { createNewPlayerPolicy } from "../../tactical/service/players/new-player-policy.test-helper";
 import { OBJECTIVE_STRATEGIES } from "../../tactical/service/players/objective-strategies.test-helper";
@@ -74,15 +75,22 @@ export type PlayerId = "new" | "expert";
 /** Every player id, in report order. */
 export const PLAYER_IDS: readonly PlayerId[] = ["new", "expert"];
 
-/** The modelled player called `id`. */
+/**
+ * The modelled player called `id`: its policy, and the strategies it
+ * reads the objectives with — the shared table for the new player, the
+ * expert's own (the shared one with its rescue laid over it) for the
+ * expert.
+ */
 export function playerFor(id: PlayerId): TacticalPlayer {
-  return {
-    policy:
-      id === "new"
-        ? createNewPlayerPolicy(CALIBRATION_RULES)
-        : createExpertPlayerPolicy(CALIBRATION_RULES),
-    strategies: OBJECTIVE_STRATEGIES,
-  };
+  return id === "new"
+    ? {
+        policy: createNewPlayerPolicy(CALIBRATION_RULES),
+        strategies: OBJECTIVE_STRATEGIES,
+      }
+    : {
+        policy: createExpertPlayerPolicy(CALIBRATION_RULES),
+        strategies: EXPERT_OBJECTIVE_STRATEGIES,
+      };
 }
 
 /** Turns a mission gets before the force abandons it. */

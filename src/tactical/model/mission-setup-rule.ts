@@ -8,6 +8,7 @@ import type { BroodSetupDeps } from "./brood-tuning";
 import type { BugUnitSource } from "./bug-unit-source";
 import type { CivilianTuning } from "./civilian";
 import type { CoreBoss } from "./core-boss";
+import type { CrashSiteSetupTuning } from "./crash-site-setup-tuning";
 import type { GeneratorTuning } from "./generator";
 import type { GreatHiveSetupTuning } from "./great-hive-setup-tuning";
 import type { HiveAssaultSetupTuning } from "./hive-assault-setup-tuning";
@@ -58,6 +59,13 @@ export interface MissionSetupDeps {
   readonly hiveGuard: BugUnitSource;
   /** What a Hive Assault stands in the cavern, by hive level (#1179). */
   readonly hiveAssault: HiveAssaultSetupTuning;
+  /**
+   * A crash site's own pod clock (campaign arc §6.3, #1179): the pod
+   * ripens sooner on a harder landing. Optional so every start built
+   * before it still compiles; absent, every pod ripens at the shared
+   * `spawnTuning.podMaturityTurn`.
+   */
+  readonly crashSite?: CrashSiteSetupTuning;
   /**
    * What a Great Hive assault stands in its cavern instead (campaign arc
    * §6.9): a tougher core, more guards, thinner broods. Optional so every

@@ -147,6 +147,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 - **Map:** a very large mech-passable cavern (§7.5).
 - **Formation:** a region whose mean infestation stays at ≥ 60 for 7 days forms a hive. The first hive is scripted when Act II opens, in the worst region. The offer is pinned and never expires, but the hive **gains a difficulty step every 7 days**.
 - **Engine:** a region with a hive grows faster (`hiveSpreadMultiplier`).
+- **Pressure:** the burrows send **no edge waves**. The pressure is the sleeping broods (§7.5), the core's Hive Guard and the chamber nests, which quicken with difficulty: one bug every 12 bug phases up to d5, one every 4 at d6, and two every 4 from d7. The Great Hives keep the slow pace at every difficulty. (Changed in #1179 calibration: one edge wave cost Act II half its wins, so the hive has none; the nests' pace by difficulty is round 2's, measured in `docs/design/calibration/C3a-hives.md`.)
 - **Pays:** the region is liberated. The hive is gone, its cities drop 20, and growth pauses for 10 days. Large TP. The first win recovers the **hive core sample** (§4).
 - **Reuses:** spawners, the Hive Guard, the #447/#760 hive sketch.
 
@@ -199,7 +200,7 @@ New archetypes, each passing the ADR 0004 invariants and the property tests:
 ### 7.5 Hive caverns (D4)
 
 - **Large:** bigger than any current preset, with a long footprint. Chambers are linked by tunnels **at least two tiles wide**, so mechs fit everywhere on the main route.
-- **Full of bugs, mostly dormant:** each chamber holds a dormant brood that wakes when a player unit enters the chamber, attacks into it, or makes noise nearby. Only woken bugs act in the bug phase, so the cavern can hold 50+ bugs while about 10–15 act each turn.
+- **Full of bugs, mostly dormant:** each chamber holds a dormant brood in its **heart**, the middle 35% of its radius (at least 3 tiles). The brood wakes when a player unit enters the heart, attacks into it, or makes noise nearby, so a careful force can walk the chamber's rim past it. The broods grow with difficulty: an ordinary cavern sleeps 12–15 bugs at d3–4, 19–43 at d5–6, 34–52 at d7–8 and 69–88 at d9, and a Great Hive 52–68 at d8, so a cavern holds **50+ only at about d8–9**. Only woken bugs act in the bug phase: about 2–7 in a mean turn up to d5, and 12–29 from d7, where the nests quicken (§6.5). (Changed in #1179 calibration: a brood woke on a unit entering the chamber, and every cavern was to hold 50+; measured in `docs/design/calibration/C3a-hives.md`.)
 - **Hive core:** a large destructible objective in the deepest chamber, guarded by Hive Guard.
 - **Performance:** the map must render within the SwiftShader budget. Keep per-fragment work bounded and check the bug phase's length.
 

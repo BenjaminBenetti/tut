@@ -11,7 +11,10 @@ import type { TileCoord } from "../../../mapgen/model/tile-coord";
 import { snapshotMap } from "../../../mapgen/service/hatch-space";
 import type { Mission } from "../../../overworld/model/mission";
 import { placeCavernBroods } from "../brood-placement-service";
-import type { HiveAssaultSetupTuning } from "../../model/hive-assault-setup-tuning";
+import type {
+  HiveAssaultSetupTuning,
+  NestPace,
+} from "../../model/hive-assault-setup-tuning";
 import type {
   MissionSetupDeps,
   MissionSetupRule,
@@ -107,6 +110,38 @@ export function hiveGuardCount(
     tuning.baseGuards + Math.max(0, level) * tuning.guardsPerLevel,
   );
   return Math.min(tuning.maxGuards, Math.max(tuning.minGuards, raw));
+}
+
+// ===========================================
+// Nest pace by difficulty
+// ===========================================
+
+/**
+ * The chamber nests' pace at `difficulty`: the last step of
+ * `nestPaceByDifficulty` at or below it, else the tuning's own bonus and
+ * delay (absent reads as 0). Steps are read in the order given, so a
+ * step listed after a higher one is never reached.
+ *
+ * ```
+ *   shipped   d ≤ 5 ──► -1 / +8      d 6 ──► -1 / +0      d ≥ 7 ──► 0 / +1
+ *   a nest    1 bug every 12         1 bug every 4        2 bugs every 4
+ *             (bonus / delay over the spawn tuning's 2 bugs every 4
+ *              bug phases at d2–6, every 3 from d7)
+ * ```
+ */
+export function nestPaceAt(
+  difficulty: number,
+  tuning: HiveAssaultSetupTuning,
+): NestPace {
+  let pace: NestPace = {
+    hatchBonus: tuning.nestHatchBonus ?? 0,
+    hatchDelay: tuning.nestHatchDelay ?? 0,
+  };
+  for (const step of tuning.nestPaceByDifficulty ?? []) {
+    if (step.fromDifficulty > difficulty) break;
+    pace = { hatchBonus: step.hatchBonus, hatchDelay: step.hatchDelay };
+  }
+  return pace;
 }
 
 // ===========================================
@@ -222,9 +257,12 @@ function placeHiveCore(
 }
 
 /**
- * Stands an egg spawner on every nest hook of the cavern, hatching as a
- * clearance's nests do, but with no objective of its own: optional
- * pressure, each worth `nestBounty` tech points when wrecked.
+ * Stands an egg spawner on every nest hook of the cavern, with no
+ * objective of its own: optional pressure, each worth `nestBounty` tech
+ * points when wrecked. At the offer's difficulty (`nestPaceAt`) it
+ * hatches the pace's bonus more bugs than a clearance's nest (fewer when
+ * negative), and waits the pace's delay more bug phases before each
+ * hatch, the first included.
  *
  * @param state - The mission so far.
  * @param map - The cavern whose egg-spawner hooks the nests stand on.
@@ -238,13 +276,24 @@ function placeHiveNests(
   difficulty: number,
   deps: MissionSetupDeps,
 ): TacticalState {
-  const bounty = deps.hiveAssault.nestBounty;
+  const { nestBounty } = deps.hiveAssault;
+  const { hatchBonus, hatchDelay } = nestPaceAt(difficulty, deps.hiveAssault);
   const nests = eggSpawnersFrom(
     map,
     deps.ids,
     deps.spawnTuning,
     difficulty,
-  ).map((nest): Spawner => (bounty > 0 ? { ...nest, bounty } : nest));
+  ).map((nest): Spawner => ({
+    ...nest,
+    ...(nestBounty > 0 ? { bounty: nestBounty } : {}),
+    ...(hatchBonus === 0 ? {} : { hatchBonus }),
+    ...(hatchDelay === 0
+      ? {}
+      : {
+          timer: nest.timer + hatchDelay,
+          hatchInterval: nest.timer + hatchDelay,
+        }),
+  }));
   return { ...state, spawners: [...state.spawners, ...nests] };
 }
 
@@ -258,6 +307,7 @@ function placeHiveNests(
  *   the core         ──► destroy-hive-core               ids: objective-*
  *   hiveGuardPositions(map)[0 .. hiveGuardCount(level)]
  *                    ──► Hive Guards (placeHiveGuards)   ids: unit-*
+ *   edgeWaves        ──► the edge schedule's totalWaves (quietBurrows)
  *   placeBroods      ──► whatever sleeps in the brood chambers
  * ```
  *
@@ -305,7 +355,26 @@ export function setUpHiveAssault(
     ).slice(0, wanted),
     { ids: deps.ids, guard: deps.hiveGuard },
   );
-  return ok(placeBroods(guarded, map, deps));
+  return ok(placeBroods(quietBurrows(guarded, deps), map, deps));
+}
+
+/**
+ * The mission with its edge schedule capped at the tuning's `edgeWaves`
+ * (the burrows fall quiet after that many), or as it was when the tuning
+ * sets none.
+ *
+ * @param state - The mission so far.
+ * @param deps - The Hive Assault tuning.
+ * @returns The mission with its edge schedule capped.
+ */
+function quietBurrows(
+  state: TacticalState,
+  deps: MissionSetupDeps,
+): TacticalState {
+  const waves = deps.hiveAssault.edgeWaves;
+  return waves === undefined
+    ? state
+    : { ...state, edgeSpawn: { ...state.edgeSpawn, totalWaves: waves } };
 }
 
 // ===========================================

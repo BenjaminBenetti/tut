@@ -73,8 +73,12 @@ const BACKS = new WeakMap<TacticalMap, readonly TileCoord[]>();
 
 /**
  * The walkable ground farthest (in steps) from the drop ship: where a
- * briefing's "at the back of the cavern" sends a player. The tiles
- * within a tenth of the farthest distance, at most 16.
+ * briefing's "at the back of the cavern" sends a player. The 16 tiles
+ * farthest of those within a tenth of the farthest distance, farthest
+ * first: on a hive cavern that is where the burrows leave the core
+ * chamber, not a side tunnel's dead end that happens to come first in
+ * the map's tile order (#1179 C3a: on two Great Hive seeds of eight
+ * both players searched the wrong tunnel to the cap).
  */
 export function backOfMap(view: PlayerView): readonly TileCoord[] {
   const cached = BACKS.get(view.mission.map);
@@ -91,14 +95,17 @@ export function backOfMap(view: PlayerView): readonly TileCoord[] {
     farthest = Math.max(farthest, distance);
   }
   const floor = Math.floor(farthest * 0.9);
-  const back: TileCoord[] = [];
+  const far: { tile: TileCoord; distance: number }[] = [];
   for (const tile of view.mission.map.tiles) {
     const distance = field.get(view.graph.index.keyOf(tile));
     if (distance !== undefined && distance >= floor) {
-      back.push({ x: tile.x, y: tile.y, z: tile.z });
-      if (back.length >= 16) break;
+      far.push({ tile: { x: tile.x, y: tile.y, z: tile.z }, distance });
     }
   }
+  const back = far
+    .sort((a, b) => b.distance - a.distance)
+    .slice(0, 16)
+    .map((entry) => entry.tile);
   BACKS.set(view.mission.map, back);
   return back;
 }

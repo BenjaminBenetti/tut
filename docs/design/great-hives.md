@@ -97,9 +97,9 @@ hive's level is the only thing that climbs, and only on a lost assault.
 | Brood chambers | 5–7 | **8–11** | |
 | Core distance (tiles) | 115–118 | **149–156** | |
 | Nests | 2–3 | 3–5 | +0.5 |
-| Core HP | 60 | **200** | +20 |
+| Core HP | 60 | **150** (200 before C3a) | +20 |
 | Guards | 2 | **6** (packed ring) | +1, max 8 |
-| Brood size (route/side/core) | 13 / 10 / 18 | 8 / 6 / 12 | |
+| Brood size (route/side/core) | 11 / 8 / 11 (13 / 10 / 18 before C3a) | 8 / 6 / 8 (8 / 6 / 12 before C3a) | |
 | Mix | the act's | Act III, armoured variants included | |
 | Reward | 46 TP | **69 TP** (×1.5; ×2.5 before the campaign retune) | |
 

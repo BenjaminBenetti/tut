@@ -35,7 +35,7 @@ import { shippedTacticalHandlers } from "./tactical-composition";
 
 /**
  * What a sleeping cavern costs a turn. On real hive caverns carrying
- * `placeCavernBroods` at difficulty 5 (50+ bugs), one shipped EndTurn
+ * `placeCavernBroods` at difficulty 10 (50+ bugs), one shipped EndTurn
  * — burn, spawns, sitreps, the whole bug phase — is timed three ways:
  *
  * ```
@@ -53,8 +53,13 @@ import { shippedTacticalHandlers } from "./tactical-composition";
 /** Real cavern seeds; each is generated once. */
 const SEEDS = ["brood-1", "brood-2", "brood-3"] as const;
 
-/** Enough bugs to be a hive (the arc's "50+"). */
-const DIFFICULTY = 5;
+/**
+ * Enough bugs to be a hive (the arc's "50+"): the top of the
+ * hive-assault band. Since C3a (#1179) a brood grows from 3 bugs with
+ * difficulty, so an Act II hive sleeps 12–45 and only the late bands
+ * reach 50+ (d10 raises 56–97 on these seeds).
+ */
+const DIFFICULTY = 10;
 
 /** Timed EndTurns per case; the median is reported. */
 const REPEATS = Number(process.env.SIM_BROOD_REPEATS ?? "3");

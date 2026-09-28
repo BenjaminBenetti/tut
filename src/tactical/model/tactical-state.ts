@@ -118,6 +118,13 @@ export interface Spawner {
    * Absent reads as 0, as every spawner saved before it does.
    */
   readonly hatchBonus?: number;
+  /**
+   * Bug phases between its hatches when it keeps its own pace rather
+   * than the spawn tuning's for the mission's difficulty: a hive's
+   * chamber nests hatch slower than a clearance's (#1179). Absent reads
+   * as the tuning's, as every spawner saved before it does.
+   */
+  readonly hatchInterval?: number;
 }
 
 /**

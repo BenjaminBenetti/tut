@@ -114,26 +114,41 @@ export const DESTROY_POD_STRATEGY: ObjectiveStrategy<"destroy-pod"> = {
 /**
  * Bring down the hive core: its blip waits until the core is seen, so
  * until then the force heads for the back of the cavern, where the
- * briefing says it sits. At full pace, even in contact, and with the
- * core in its sights a unit fires on the core before the bugs: the
- * waves, the nests and the broods only add bugs the longer it takes,
- * and the cavern is a long walk there and back.
+ * briefing says it sits, and once it has seen the back with no core in
+ * it, for the unexplored ground nearest the back. At full pace, even in
+ * contact, and with the core in its sights a unit fires on the core
+ * before the bugs: the waves, the nests and the broods only add bugs
+ * the longer it takes, and the cavern is a long walk there and back:
+ * longer home than the driver's stall patience, so a unit getting
+ * nearer home is progress.
+ *
+ * ```
+ *   core seen ──► wreck it
+ *   else      ──► back of the cavern, the tiles not yet explored
+ *             ──► all explored: the frontier nearest the back
+ * ```
  */
 export const DESTROY_HIVE_CORE_STRATEGY: ObjectiveStrategy<"destroy-hive-core"> =
   {
+    longWalkHome: true,
     /** Done, as far as the fight goes, the moment the core falls; then home. */
     settled(objective, view) {
       return objective.complete || objectiveFailed(view.mission, objective);
     },
-    /** To the core once seen, fire on it first; the back of the map before; urgent. */
+    /** To the core once seen, fire on it first; the unseen back of the map before; urgent. */
     jobs(objective, view) {
       const jobs = wreckJobs(objective, view, true, true);
       if (jobs.length > 0) {
         return jobs;
       }
-      return [
-        { order: { kind: "explore", goals: backOfMap(view), urgent: true } },
-      ];
+      const back = backOfMap(view);
+      const unseen = back.filter(
+        (tile) => !view.explored.has(view.graph.index.keyOf(tile)),
+      );
+      const goals = unseen.length > 0 ? unseen : frontier(view, back);
+      return goals.length === 0
+        ? []
+        : [{ order: { kind: "explore", goals, urgent: true } }];
     },
   };
 

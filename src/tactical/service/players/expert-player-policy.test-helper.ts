@@ -28,6 +28,7 @@ import {
   awakeView,
   berthField,
   crossesGround,
+  crossesUnseen,
   isLoudShot,
   sleeperGround,
   wakesSleepers,
@@ -75,8 +76,10 @@ import type { PlayerView } from "./player-view.test-helper";
 //        ──► move to cover toward the goal ──► overwatch
 //
 // Bugs asleep in a hive's chambers are neither contact nor targets: the
-// expert walks round them where the cavern allows and keeps its loud
-// guns quiet near them (`brood-berth.test-helper.ts`).
+// expert walks round them where the cavern allows, keeps its loud guns
+// quiet near them, remembers where it saw them, and in a cavern where
+// broods sleep walks no further than the ground it has seen
+// (`brood-berth.test-helper.ts`).
 
 /** Hit points, as a share of the maximum, at or under which a unit is pulled out. */
 const RETREAT_HP_SHARE = 0.35;
@@ -626,7 +629,9 @@ function fresh(unit: Unit): boolean {
  * where it stands only steps to another. Inside the order's hold radius
  * it only shifts to a better tile nearby. A unit out looking,
  * with nothing in sight and its goal near, walks to where it could see
- * the goal rather than at it (`lookingField`).
+ * the goal rather than at it (`lookingField`). In a cavern where broods
+ * sleep, no walk crosses ground the side has not seen (`crossesUnseen`):
+ * a step blind into a chamber can end inside a wake zone.
  */
 function advance(
   unit: Unit,
@@ -657,6 +662,7 @@ function advance(
       holding ? option.distance <= hold : option.distance < reach.here,
     )
     .filter((option) => !crossesGround(unit, reach, option, ground, view.graph))
+    .filter((option) => !crossesUnseen(unit, reach, option, seen))
     .map((option) => ({
       option,
       score: groundScore(view, option, reach, hold),

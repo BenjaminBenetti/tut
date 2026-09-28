@@ -490,10 +490,12 @@ Round 2 of #1179 fixed the weaknesses the first baseline showed:
   get round it, such as in a corridor, leads the way home instead of
   blocking it.
 - **Hive caverns.** Dormant bugs are neither contact nor targets. The
-  expert walks round a sleeping brood where the cavern allows, and keeps
-  loud guns quiet near one. It walks the cavern at full pace, even in
+  expert remembers where it saw sleepers, reads each brood's round off
+  them, walks round it where the cavern allows, and keeps loud guns
+  quiet near one. In a cavern where broods sleep it walks no further
+  than ground it has seen. It walks the cavern at full pace, even in
   contact, and fires on the core before any bug it cannot kill
-  (`brood-berth.test-helper.ts`).
+  (`brood-berth.test-helper.ts`, C3a in `C3a-hives.md`).
 
 ## Known limits
 
@@ -505,7 +507,11 @@ Round 2 of #1179 fixed the weaknesses the first baseline showed:
   can outlast the search. On Launch Window both players share that
   search, so the cell barely tells them apart.
 
-## Why the hive cells sit at 0%
+## Why the hive cells sat at 0%
+
+C3a calibrated the hives after this baseline: see `C3a-hives.md` for
+the diagnosis, the levers and the cells now. The section below is the
+round-2 record.
 
 Hive Assault act-2 and the Great Hive are on the campaign spine, and
 both players win neither. The expert was given the hive habits above,

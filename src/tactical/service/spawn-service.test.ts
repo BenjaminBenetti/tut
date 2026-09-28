@@ -20,6 +20,7 @@ import {
   createHatchStep,
   edgeWave,
   hatch,
+  hatchInterval,
   surgedSize,
   surgeRoom,
   waveInterval,
@@ -752,6 +753,33 @@ describe("a spawner's hatch bonus (Hardened Clutches)", () => {
         T.hatchCount,
       );
     }
+  });
+});
+
+describe("a spawner's own pace (a hive's chamber nests, #1179 C3a)", () => {
+  it("resets to its own interval after a hatch, and to the tuning's without one", () => {
+    const mission = (overrides: Partial<Spawner>): TacticalState =>
+      missionWith(openField().build(), [], {
+        phase: "bugs",
+        difficulty: 4,
+        spawners: [spawnerAt("ripe", at(4, 4), 1, overrides)],
+      });
+    const own = hatch(mission({ hatchInterval: 12 }), ctxFor(1), DEPS).state;
+    const plain = hatch(mission({}), ctxFor(1), DEPS).state;
+    expect(bugsOf(own)).toHaveLength(T.hatchCount);
+    expect(own.spawners[0]?.timer).toBe(12);
+    expect(plain.spawners[0]?.timer).toBe(hatchInterval(4, T));
+    expect(hatchInterval(4, T)).not.toBe(12);
+  });
+
+  it("releases one fewer than hatchCount with a bonus of −1", () => {
+    const thin = missionWith(openField().build(), [], {
+      phase: "bugs",
+      spawners: [spawnerAt("ripe", at(4, 4), 1, { hatchBonus: -1 })],
+    });
+    expect(bugsOf(hatch(thin, ctxFor(3), DEPS).state)).toHaveLength(
+      T.hatchCount - 1,
+    );
   });
 });
 

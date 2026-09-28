@@ -90,6 +90,13 @@ export interface ObjectiveStrategy<K extends ObjectiveKind = ObjectiveKind> {
    * whatever else is going on. Absent: nobody does.
    */
   couriers?(objective: ObjectiveOfKind<K>, view: PlayerView): readonly UnitId[];
+  /**
+   * True when the walk home, once the objective is settled, is longer
+   * than the driver's stall patience (a hive's cavern): a turn in which
+   * a unit got nearer the drop ship then counts as getting somewhere.
+   * Absent: only a unit getting out does.
+   */
+  readonly longWalkHome?: boolean;
 }
 
 /**

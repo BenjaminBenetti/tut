@@ -6,7 +6,21 @@ import type { NoiseTuning } from "./noise";
 // Wake tuning
 // ===========================================
 
-/** How far a sleeping brood hears (#1179, campaign arc §7.5). */
+/**
+ * How far a sleeping brood reaches and hears (#1179, campaign arc §7.5).
+ * The wake zone is the round in the middle of its chamber, not the whole
+ * chamber, so the rim is ground a careful force can walk past it on:
+ *
+ * ```
+ *   zone radius = max(minZoneRadius, round(chamber radius × zoneShare))
+ *
+ *        · · · · · · · ·          ·  the chamber (hook meta.radius)
+ *      · · · z z z z · · ·        z  the wake zone, where the brood sleeps
+ *      · · z z z z z z · ·
+ *      · · · z z z z · · ·
+ *        · · · · · · · ·
+ * ```
+ */
 export interface BroodWakeTuning extends NoiseTuning {
   /**
    * Tiles beyond the wake zone's edge from which a loud action wakes the
@@ -14,6 +28,13 @@ export interface BroodWakeTuning extends NoiseTuning {
    * `radius + noiseRadius` (Euclidean, ground plane). Non-negative.
    */
   readonly noiseRadius: number;
+  /**
+   * The share of its chamber's radius a brood's wake zone reaches, and
+   * its sleepers lie within. In `(0, 1]`.
+   */
+  readonly zoneShare: number;
+  /** The least wake-zone radius, in tiles, however small the chamber. Positive. */
+  readonly minZoneRadius: number;
 }
 
 // ===========================================
@@ -33,7 +54,10 @@ export interface BroodWakeTuning extends NoiseTuning {
  * ```
  */
 export interface BroodTuning {
-  /** Bugs in a route chamber's brood at difficulty 0. Non-negative. */
+  /**
+   * Bugs in a route chamber's brood at difficulty 0, before the floor:
+   * negative for a brood that grows from `minSize` only at some difficulty.
+   */
   readonly baseSize: number;
   /** Extra bugs per point of mission difficulty. Non-negative. */
   readonly sizePerDifficulty: number;

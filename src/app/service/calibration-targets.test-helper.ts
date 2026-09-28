@@ -51,13 +51,17 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
 
 /**
  * The cells whose targets are asserted, as `SIM_MATRIX_CELLS` filters
- * (a cell id, or a prefix of one). Empty at the baseline: the targets
- * are measured and reported, not asserted. A tuning package adds its
- * own cells' filters when its tuning lands, which unskips the expert's
- * assertion on them; a band's new-player assertion runs once every cell
- * of the band is listed.
+ * (a cell id, or a prefix of one). Empty at the baseline, where the
+ * targets were measured and reported, not asserted. A tuning package
+ * adds its own cells' filters when its tuning lands, which unskips the
+ * expert's assertion on them; a band's new-player assertion runs once
+ * every cell of the band is listed.
+ *
+ * ```
+ *   hive-assault   both Hive Assault cells (#1179 C3a, round 2)
+ * ```
  */
-export const TARGETED_CELLS: readonly string[] = [];
+export const TARGETED_CELLS: readonly string[] = ["hive-assault"];
 
 // ===========================================
 // Types

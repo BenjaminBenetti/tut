@@ -4,6 +4,12 @@ import { endTurn } from "../../model/end-turn-command";
 import type { TacticalCommand } from "../../model/tactical-command";
 import type { TacticalState } from "../../model/tactical-state";
 import type { UnitId } from "../../model/unit";
+import type { HomeBests } from "./home-progress.test-helper";
+import {
+  homeProgress,
+  NO_HOME_PROGRESS,
+  walksFarHome,
+} from "./home-progress.test-helper";
 import type { ObjectiveStrategies } from "./objective-strategy.test-helper";
 import type { PlayerPolicy } from "./player-policy.test-helper";
 import { planForce } from "./player-policy.test-helper";
@@ -27,6 +33,7 @@ import { observe } from "./player-view.test-helper";
 //   └────────┴── applied  ──► mission'
 //   every unit done ──► EndTurn ──► next turn … outcome, or
 //   the cap, or STALL_TURNS settled with nobody getting out ──► AbandonMission
+//   (nor, where the strategy says the walk home is long, getting nearer)
 
 /** A modelled player: how it plays, and how it reads each objective. */
 export interface TacticalPlayer {
@@ -77,6 +84,8 @@ export const PHASE_LIMITS: PhaseLimits = { perUnit: 12, perPhase: 200 };
  * Turns the force waits, once every deciding objective is settled, for
  * anyone else to get out before it gives up on the rest and abandons:
  * a unit boxed in on its way home is left behind, as a player would.
+ * Where a strategy says the walk home is long, a unit getting nearer
+ * home restarts the wait too.
  */
 export const STALL_TURNS = 10;
 
@@ -139,7 +148,8 @@ export function playPlayerPhase(
  * Plays the mission to its end: player phase, EndTurn, and again, until
  * it has an outcome. The force abandons it at `turnCap` turns, or once
  * the objectives are settled and nobody has got out for `STALL_TURNS`
- * turns, so every run ends with a result.
+ * turns (nor, on a long walk home, got nearer), so every run ends with
+ * a result.
  */
 export function playMission(
   mission: TacticalState,
@@ -153,6 +163,7 @@ export function playMission(
   const first = mission.turn;
   let waiting = 0;
   let out = mission.extracted.length;
+  let bests: HomeBests = NO_HOME_PROGRESS.bests;
   while (current.outcome === undefined) {
     const reason: AbandonReason | undefined =
       current.turn - first >= turnCap
@@ -186,8 +197,17 @@ export function playMission(
       throw new Error(`end turn refused: ${ended.error}`);
     }
     current = ended.value;
-    const settled = planForce(observe(current), player.strategies).settled;
-    waiting = settled && current.extracted.length === out ? waiting + 1 : 0;
+    const view = observe(current);
+    const settled = planForce(view, player.strategies).settled;
+    const walk =
+      settled && walksFarHome(view, player.strategies)
+        ? homeProgress(view, bests)
+        : NO_HOME_PROGRESS;
+    bests = walk.bests;
+    waiting =
+      settled && current.extracted.length === out && !walk.nearer
+        ? waiting + 1
+        : 0;
     out = current.extracted.length;
   }
   return {

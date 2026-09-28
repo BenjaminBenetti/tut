@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { STOREY_LAYERS } from "../../../core/model/elevation";
+import { PassMask } from "../../../mapgen/model/pass-mask";
+import { FixtureMapBuilder } from "../../../mapgen/service/fixture-map-builder";
 import type {
   DefendGeneratorsObjective,
   Objective,
@@ -10,10 +13,14 @@ import { unitAt, walledField } from "../tactical-fixtures.test-helper";
 import {
   COVERED_OBJECTIVE_KINDS,
   DEFEND_GENERATORS_STRATEGY,
+  DESTROY_HIVE_CORE_STRATEGY,
   killEverythingStub,
   STUBBED_OBJECTIVE_KINDS,
 } from "./objective-strategies.test-helper";
 import { lookingMission } from "./player-fixtures.test-helper";
+import { backOfMap } from "./player-goals.test-helper";
+import { distanceField } from "./player-navigation.test-helper";
+import type { PlayerView } from "./player-view.test-helper";
 import { observe } from "./player-view.test-helper";
 
 /** An objective the stub stands in for; its kind is irrelevant to the stub. */
@@ -176,5 +183,112 @@ describe("the defence strategy", () => {
     expect(DEFEND_GENERATORS_STRATEGY.jobs(defence, view)).toEqual([
       { order: { kind: "hunt", goals: [{ x: 7, y: 0, z: 0 }] } },
     ]);
+  });
+});
+
+describe("the hive-core strategy while the core is unseen (#1179 C3a)", () => {
+  const core = {
+    id: "o1",
+    kind: "destroy-hive-core",
+    targetId: "core",
+    complete: false,
+  } as const;
+
+  /** A 30×16 floor, the drop ship at the origin, the squad beside it, no core in sight. */
+  function field(explored?: (view: PlayerView) => Set<number>): PlayerView {
+    const map = new FixtureMapBuilder(30, 16, 3 * STOREY_LAYERS)
+      .fillGround()
+      .build();
+    const view = observe(
+      lookingMission(
+        [unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 })],
+        {
+          objectives: [core],
+        },
+        map,
+      ),
+    );
+    return {
+      ...view,
+      places: new Map(),
+      ...(explored === undefined ? {} : { explored: explored(view) }),
+    };
+  }
+
+  /** The explore order's goals of the strategy's one job, else none. */
+  function goals(view: PlayerView) {
+    const jobs = DESTROY_HIVE_CORE_STRATEGY.jobs(core, view);
+    expect(jobs.length).toBeLessThanOrEqual(1);
+    return jobs[0]?.order.goals ?? [];
+  }
+
+  it("takes the back of the cavern as the tiles farthest from the drop ship, farthest first", () => {
+    const view = field();
+    const steps = distanceField(
+      view.graph,
+      view.mission.extraction,
+      PassMask.INFANTRY,
+    );
+    const far = (tile: { x: number; y: number; z: number }): number =>
+      steps.get(view.graph.index.keyOf(tile)) ?? -1;
+    const back = backOfMap(view);
+    const inBack = new Set(back.map((tile) => view.graph.index.keyOf(tile)));
+    const nearestInBack = Math.min(...back.map(far));
+    const farthestLeftOut = Math.max(
+      ...view.mission.map.tiles
+        .filter((tile) => !inBack.has(view.graph.index.keyOf(tile)))
+        .map(far),
+    );
+    expect(back).toHaveLength(16);
+    expect(nearestInBack).toBeGreaterThanOrEqual(farthestLeftOut);
+    expect(back.map(far)).toEqual([...back.map(far)].sort((a, b) => b - a));
+  });
+
+  it("heads for the back it has not seen, urgently", () => {
+    const view = field();
+    const jobs = DESTROY_HIVE_CORE_STRATEGY.jobs(core, view);
+    expect(jobs).toEqual([
+      { order: { kind: "explore", goals: backOfMap(view), urgent: true } },
+    ]);
+  });
+
+  it("with the back seen and no core in it, searches the frontier nearest the back", () => {
+    const view = field((plain) => {
+      const seen = new Set(plain.explored);
+      for (const tile of backOfMap(plain)) {
+        seen.add(plain.graph.index.keyOf(tile));
+      }
+      return seen;
+    });
+    const search = goals(view);
+    const back = backOfMap(view);
+    expect(search.length).toBeGreaterThan(0);
+    for (const tile of search) {
+      expect(view.explored.has(view.graph.index.keyOf(tile))).toBe(false);
+    }
+    // Nearest the back first: the first goal borders the back's ground.
+    const first = search[0];
+    expect(
+      first !== undefined &&
+        back.some(
+          (tile) =>
+            Math.max(Math.abs(tile.x - first.x), Math.abs(tile.z - first.z)) <=
+            1,
+        ),
+    ).toBe(true);
+  });
+
+  it("gives no job with nothing left to explore", () => {
+    const view = field(
+      (plain) =>
+        new Set(
+          plain.mission.map.tiles.map((tile) => plain.graph.index.keyOf(tile)),
+        ),
+    );
+    expect(DESTROY_HIVE_CORE_STRATEGY.jobs(core, view)).toEqual([]);
+  });
+
+  it("walks a long way home, so getting nearer the drop ship is progress", () => {
+    expect(DESTROY_HIVE_CORE_STRATEGY.longWalkHome).toBe(true);
   });
 });

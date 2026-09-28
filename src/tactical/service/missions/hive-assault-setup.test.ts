@@ -24,6 +24,7 @@ import { DEFAULT_HATCH_RADIUS } from "../../model/tactical-state";
 import { isDormant } from "../../model/unit";
 import { placeCavernBroods } from "../brood-placement-service";
 import { spawnerFootprintTiles } from "../footprint-service";
+import { hatchInterval } from "../spawn-service";
 import { missionWith, unitAt } from "../tactical-fixtures.test-helper";
 import { templateIdFor } from "../unit-factory";
 import {
@@ -32,6 +33,7 @@ import {
   hiveCoreHp,
   hiveGuardCount,
   hiveGuardPositions,
+  nestPaceAt,
   NO_BROODS,
   setUpHiveAssault,
 } from "./hive-assault-setup";
@@ -80,12 +82,13 @@ function cavernFloor(extraNest?: TileCoord): TacticalMap {
   ).build();
 }
 
-/** A Hive Assault offer against a hive of `level`. */
+/** A Hive Assault offer at `difficulty` (4 by default) against a hive of `level`. */
 function offer(
   level: number | undefined,
+  difficulty = 4,
 ): Pick<Mission, "difficulty" | "hive"> {
   return {
-    difficulty: 4,
+    difficulty,
     ...(level === undefined
       ? {}
       : { hive: { hiveId: "hive-1", regionId: "east", level } }),
@@ -109,9 +112,21 @@ function landed(map: TacticalMap): TacticalState {
   return missionWith(map, [unitAt("squad", "infantry", at(0, 0))]);
 }
 
-/** Runs the shipped setup on `map` for a hive of `level`; throws on a refusal. */
-function setUp(map: TacticalMap, level: number | undefined): TacticalState {
-  const placed = setUpHiveAssault(landed(map), map, offer(level), deps());
+/**
+ * Runs the shipped setup on `map` for a hive of `level` at `difficulty`
+ * (4 by default); throws on a refusal.
+ */
+function setUp(
+  map: TacticalMap,
+  level: number | undefined,
+  difficulty?: number,
+): TacticalState {
+  const placed = setUpHiveAssault(
+    landed(map),
+    map,
+    offer(level, difficulty),
+    deps(),
+  );
   if (!placed.ok) {
     throw new Error(`setup refused: ${JSON.stringify(placed.error)}`);
   }
@@ -187,6 +202,59 @@ describe("hive scaling", () => {
 // ===========================================
 // Guard positions
 // ===========================================
+
+describe("nestPaceAt", () => {
+  it("ships one bug every 12 up to difficulty 5, one every 4 at 6 and two every 4 from 7 (#1179 C3a round 2)", () => {
+    expect(
+      [3, 4, 5, 6, 7, 8, 9, 10].map((difficulty) =>
+        nestPaceAt(difficulty, HIVE_ASSAULT_SETUP_TUNING),
+      ),
+    ).toEqual([
+      { hatchBonus: -1, hatchDelay: 8 },
+      { hatchBonus: -1, hatchDelay: 8 },
+      { hatchBonus: -1, hatchDelay: 8 },
+      { hatchBonus: -1, hatchDelay: 0 },
+      { hatchBonus: 0, hatchDelay: 1 },
+      { hatchBonus: 0, hatchDelay: 1 },
+      { hatchBonus: 0, hatchDelay: 1 },
+      { hatchBonus: 0, hatchDelay: 1 },
+    ]);
+  });
+
+  it("takes the last step at or below the difficulty, else the tuning's own pace", () => {
+    const tuning = {
+      ...HIVE_ASSAULT_SETUP_TUNING,
+      nestHatchBonus: 3,
+      nestHatchDelay: 5,
+      nestPaceByDifficulty: [
+        { fromDifficulty: 4, hatchBonus: 1, hatchDelay: 2 },
+        { fromDifficulty: 6, hatchBonus: -2, hatchDelay: 0 },
+      ],
+    };
+
+    expect(
+      [3, 4, 5, 6, 9].map((difficulty) => nestPaceAt(difficulty, tuning)),
+    ).toEqual([
+      { hatchBonus: 3, hatchDelay: 5 },
+      { hatchBonus: 1, hatchDelay: 2 },
+      { hatchBonus: 1, hatchDelay: 2 },
+      { hatchBonus: -2, hatchDelay: 0 },
+      { hatchBonus: -2, hatchDelay: 0 },
+    ]);
+  });
+
+  it("reads no steps as the tuning's own pace, and an absent pace as a clearance's nest", () => {
+    const own = { ...HIVE_ASSAULT_SETUP_TUNING, nestPaceByDifficulty: [] };
+    const none = {
+      ...own,
+      nestHatchBonus: undefined,
+      nestHatchDelay: undefined,
+    };
+
+    expect(nestPaceAt(9, own)).toEqual({ hatchBonus: -1, hatchDelay: 8 });
+    expect(nestPaceAt(9, none)).toEqual({ hatchBonus: 0, hatchDelay: 0 });
+  });
+});
 
 describe("hiveGuardPositions", () => {
   it("rings the pad two tiles out, nearest the drop ship first, spread apart", () => {
@@ -279,6 +347,66 @@ describe("setUpHiveAssault", () => {
     expect(state.objectives.map((objective) => objective.kind)).toEqual([
       "destroy-hive-core",
     ]);
+  });
+
+  it("paces the nests at one bug every hatch interval plus eight below difficulty 6, and quiets the burrows (#1179 C3a)", () => {
+    const state = setUp(cavernFloor(), 0);
+    const nests = state.spawners.slice(1);
+    const pace = hatchInterval(offer(0).difficulty, SPAWN_TUNING) + 8;
+
+    expect(
+      nests.map((nest) => [nest.hatchBonus, nest.timer, nest.hatchInterval]),
+    ).toEqual([
+      [-1, pace, pace],
+      [-1, pace, pace],
+    ]);
+    expect(SPAWN_TUNING.hatchCount + (nests[0]?.hatchBonus ?? 0)).toBe(1);
+    expect(state.edgeSpawn.totalWaves).toBe(0);
+  });
+
+  it("quickens the nests from difficulty 6: one bug every 4 bug phases, then two every 4 from 7 (#1179 C3a round 2)", () => {
+    const nestsAt = (difficulty: number) =>
+      setUp(cavernFloor(), 0, difficulty)
+        .spawners.slice(1)
+        .map((nest) => [nest.hatchBonus, nest.timer, nest.hatchInterval]);
+    const interval = (difficulty: number): number =>
+      hatchInterval(difficulty, SPAWN_TUNING);
+    const twice = <T>(row: T): T[] => [row, row];
+
+    expect(nestsAt(5)).toEqual(twice([-1, interval(5) + 8, interval(5) + 8]));
+    expect(nestsAt(6)).toEqual(twice([-1, interval(6), undefined]));
+    expect(nestsAt(7)).toEqual(
+      twice([undefined, interval(7) + 1, interval(7) + 1]),
+    );
+    expect(nestsAt(9)).toEqual(
+      twice([undefined, interval(9) + 1, interval(9) + 1]),
+    );
+    // In bug phases and bugs: 1 every 12, 1 every 4, 2 every 4.
+    expect([interval(5) + 8, interval(6), interval(7) + 1]).toEqual([12, 4, 4]);
+    expect(SPAWN_TUNING.hatchCount).toBe(2);
+  });
+
+  it("leaves the nests at a clearance's pace and the waves endless when the tuning sets none of it", () => {
+    const tuning = {
+      ...HIVE_ASSAULT_SETUP_TUNING,
+      nestHatchBonus: undefined,
+      nestHatchDelay: undefined,
+      nestPaceByDifficulty: undefined,
+      edgeWaves: undefined,
+    };
+    const map = cavernFloor();
+    const before = landed(map);
+    const placed = setUpHiveAssault(before, map, offer(0, 9), {
+      ...deps(),
+      hiveAssault: tuning,
+    });
+    if (!placed.ok) throw new Error("setup refused");
+    const nest = placed.value.spawners[1];
+
+    expect(nest?.hatchBonus).toBeUndefined();
+    expect(nest?.hatchInterval).toBeUndefined();
+    expect(nest?.timer).toBe(hatchInterval(9, SPAWN_TUNING));
+    expect(placed.value.edgeSpawn).toEqual(before.edgeSpawn);
   });
 
   it("stands the level's number of guards on the best guard tiles", () => {
@@ -429,7 +557,7 @@ describe("setUpHiveAssault on generated hive caverns", () => {
       broods: { species: Object.values(BUG_SPECIES), tuning: BROOD_TUNING },
     };
 
-    const bare = setUp(map, 3);
+    const bare = setUp(map, 3, mission.difficulty);
     const placed = createHiveAssaultSetup(placeCavernBroods).setup(
       landed(map),
       map,

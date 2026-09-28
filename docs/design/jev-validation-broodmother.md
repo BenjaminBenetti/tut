@@ -93,7 +93,7 @@ Jev 1 on the same seed made the same choices on turns 1–3, with scores within 
 
 - **The audit.** For all 151 requests, including the Sovereign's and the alpha's, the probe read the saved mission at the moment of the request and checked three things. Every hostile in the request was in the swarm's spotted set. Its position matched the true one. No unspotted TDF unit's id appeared anywhere outside `last_seen`. **There were no violations.** Before first contact, her requests held no hostiles.
 - **What she is told that a player might not expect:**
-  - **The TDF extraction zone, from turn 1**, as `move_to_extraction` ("contest it"). On Alpha Hunt that zone is where the TDF force deployed, so the swarm knows where the TDF landed before any contact. This is by ADR 0012's design, and she never chose it. Worth a design look.
+  - **The TDF extraction zone, from turn 1**, as `move_to_extraction` ("contest it"). On Alpha Hunt that zone is where the TDF force deployed, so the swarm knows where the TDF landed before any contact. This is by ADR 0012's design, and she never chose it. Ben kept it (2026-09-28): the request stays simpler and the bugs attack sooner.
   - **`last_seen`**: the swarm's own memory of where it saw TDF units. It is offered only as a place to investigate, never as a target. Fair.
 - **What she is not told:**
   - **Map bounds.** This is the flight gap above.
@@ -161,7 +161,7 @@ As found by the first review. Where each one stands now is in the [re-check](#re
 2. **Open: the relay also refuses `pierce`.** A mech fitted with Armour-Piercing Rounds, from the armoured carapace autopsy, gets `pierce` on its ballistic weapons (`mech-combat-profile.ts`). The same recorded request with `pierce: 2` on the mech's weapon is refused. Once that part is fitted, every Jev request that includes the mech will fall back. It was not seen live, because the starting roster has no autopsy parts.
 3. **Open, design: no way to the map edge for a fleeing persona.** Offer an edge-exit destination computed the way the fallback's flight is, the cheapest edge anchor by path. Otherwise send the map bounds. Until then the persona asks for something the observation cannot support.
 4. **Open, tuning: distance scores keep her at about 55 % of her movement** (mean 2.23 of 4 over 31 moves). Either calibrate the scale for retreat and flight intents, or let flight take the full route.
-5. **Open, design check:** the bugs' requests carry the TDF extraction zone from turn 1 (see [Fog](#fog)).
+5. **Decided, kept:** the bugs' requests carry the TDF extraction zone from turn 1 (see [Fog](#fog)). Ben, 2026-09-28: keep it. It keeps the request simpler, and the bugs attack sooner.
 6. **Open, minor:** `actor.status` has no `fleeing`. She spent one activation on overwatch with a range-1 bite (seed 11, turn 3). The Sovereign charged away from her core on first sight.
 
 Not bugs, for whoever re-runs this: in headless SwiftShader the scene trails the store by minutes when bug phases resolve at once, so frames need a wait for the models to reach their tiles. The event log only *looks* stuck in such a frame.
@@ -175,7 +175,7 @@ W8 (`fix/1179-jev-followups`) fixed bugs 2, 3, 4 and 6, and then played the Broo
 | 1, 2: the relay refuses profile fields | Fixed. The relay now accepts `pierce` on a weapon, and `resist`, `pierce` and `seismicRange` on mech systems. A contract test builds its request from the game's types with every optional field set, so a new field fails a test before it can fail a live call |
 | 3: no way to the edge | Fixed. A fleeing actor is offered `move_to_map_edge`. It is the fallback flight's own exit (`edgeExits`: the cheapest edge anchor by path), and it is sent as `map_edge_exit`. It is offered from the decision she is hurt enough to run, and never to a healthy Broodmother (see run A) |
 | 4: short moves | Fixed for flight. The exit move takes its whole one-AP route, with no distance question. Other moves are still scored (ADR 0012, experimental) |
-| 5: extraction zone in the bugs' requests | Unchanged: this is Ben's call |
+| 5: extraction zone in the bugs' requests | Kept by design. Ben's decision, 2026-09-28 |
 | 6: `fleeing`, melee overwatch, the Sovereign's leash | Fixed. `actor.status` carries `fleeing`. Overwatch is offered only to an actor with a weapon of range above 1. The Sovereign is offered no move that ends beyond 8 tiles of her core, or 2 once she retreats, which are her fallback's radii |
 
 ### Runs
@@ -220,7 +220,6 @@ W8 (`fix/1179-jev-followups`) fixed bugs 2, 3, 4 and 6, and then played the Broo
 
 ### Still open
 
-- **Bug 5**, the extraction zone in the bugs' requests. She never chose it in these runs either.
 - **The distance scale** for moves other than flight.
 - **One seed.** Run B is one escape on one map.
 
@@ -229,6 +228,7 @@ W8 (`fix/1179-jev-followups`) fixed bugs 2, 3, 4 and 6, and then played the Broo
 **Ready** for Act II to depend on Jev for the Broodmother, once the hosted relay is redeployed. The first review said "ready with caveats". The re-check changes it for these reasons:
 
 - **Her flight now does what §6.8 and her persona ask.** She takes the fallback's own exit at the full one-AP stretch, and she escaped where the first review's Jev run did not. The "should" conditions of the first review (bugs 3 and 4) are met for flight.
-- **Must: redeploy the hosted relay from W8.** Its request shape and its copy of the protocol text changed (`pierce` and the other profile fields, `map_edge_exit`, `move_to_map_edge`, the `fleeing` status). The relay checks the gameplay text against its own copy, so a game built from W8 against the old relay has every request refused, and Jev silently falls back.
+- **Must, before the next production release: redeploy the hosted relay from W8.** Local play runs its own relay (`run.sh`), so this blocks only production. Its request shape and its copy of the protocol text changed (`pierce` and the other profile fields, `map_edge_exit`, `move_to_map_edge`, the `fleeing` status). The relay checks the gameplay text against its own copy, so a game built from W8 against the old relay has every request refused, and Jev silently falls back.
 - **Holds as is:** fair vision (no leak in 232 audited requests over both reviews), reliability (no failures in 80 calls after W8), latency (relay median 141 ms), and a clean fallback on every failure.
-- **Not blocking:** bug 5 is Ben's call. The distance scale for other moves stays experimental, as ADR 0012 says.
+- **Decided:** bug 5, the extraction zone, stays in the bugs' requests (Ben, 2026-09-28).
+- **Not blocking:** the distance scale for other moves stays experimental, as ADR 0012 says.

@@ -208,7 +208,7 @@ export function resolveMapModels(
     ],
     props: [
       ...resolveProps(map, index),
-      ...resolveDropshipModels(map),
+      ...resolveDropshipModels(map, index),
       ...resolveStreetDetails(map, index),
       ...resolveStreetSurfaces(map, index),
       ...resolveInfestationDetails(map, index),

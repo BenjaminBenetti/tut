@@ -936,8 +936,170 @@ chamber 2, 16 tiles; landing zone 32 tiles):
 - **Colour:** the point is the landing zone's sky blue, drawn flat like
   the landing zone, even in missions that withhold objective markers.
 - **Error text:** errors now say "an extraction zone".
-- **No second drop ship:** no model stands on the forward point. The
-  blue tiles, the briefing row and the tracker carry it.
+- **Second drop ship:** in round 3 no model stood on the forward
+  point, and the blue tiles, the briefing row and the tracker carried
+  it. Round 3c draws the ship ("The forward drop ship (round 3c)"
+  below), and the two renders above were re-rendered with it.
+
+### The forward drop ship (round 3c)
+
+The briefing says "a second drop ship holds at a forward point", and
+the tracker says "board at the forward point", but the board showed
+only blue tiles. Round 3c draws that ship. It is drawn only: it blocks
+no tile, and it changes nothing in `mission.extraction`, the sim or
+`src/tactical`. The mission and pod sweeps are byte-identical to
+`df0ab1d9`.
+
+- **Placement** (`resolveForwardDropships`): the landing zone's model
+  and layout. `dropshipClearanceFor` is the inverse of
+  `dropshipBoardingTiles`. The ramp's foot is on the point, or no more
+  than 3 columns from it.
+- **Where it may sit:** never in rock, on the point, or on a nest or
+  the heart. The ramp's foot is never higher than the skids, and never
+  on a prop or another hook's tile.
+- **Height:** it lands where the floor under the hull is bare.
+  Otherwise it holds just above the highest thing under it: a
+  one-layer step, a slope, or a prop at its `sightHeight`. That is at
+  most a storey (2 layers).
+- **Choice:** the lowest berth wins, then the nearest ramp, then the
+  most open floor in its clearance.
+- **Fiction:** the cavern has no roof, so a ship standing in a chamber
+  needs no shaft.
+
+**Seeds** (alpine, gh-1 to gh-40; temperate lays out the same):
+
+- 36 of 40 caverns get a ship: 13 landed, 17 a layer up, 6 a storey
+  up.
+- Four get none:
+  - on gh-8, gh-32 and gh-37 every berth low and near enough covers
+    the heart;
+  - on gh-40 it covers a nest.
+
+  Their blue tiles still mark the point.
+- Two looser rules were measured and not taken:
+  - a ramp up to 6 columns off berths gh-8, gh-37 and gh-40;
+  - gh-32 needs the ship two storeys up, or over the heart.
+
+**Renders**, from the dev server on port 4252. The ship was checked
+from all four yaws on four seeds; none clips rock:
+
+| Seed | Point | Ship |
+| --- | --- | --- |
+| campaign fixture | chamber 2 | landed, ramp on the point |
+| gh-38 | a passage 5 columns wide | held a layer up on the bank |
+| gh-4 | a passage 6 columns wide | held a layer up |
+| gh-12 | the smallest chamber (radius 7) | held a storey up over two props |
+
+`great-hive-forward-point.png` and `great-hive-both-zones.png` were
+re-rendered and show both ships.
+
+**Framing** is left alone: `tactical-framing` frames only the landing
+site.
+
+**Nothing hides under the hull.** The hull blocks nothing, so a squad
+or a bug can stand under it. It now takes the wall cutaway, the same
+one walls and rooftop props take: `tdf.dropship` is in
+`GHOSTED_MODEL_PREFIXES`. The hull screen-doors down to 17.5 % on the
+rays from each drawn unit under it or behind it. What is below the
+unit's feet + 0.3 stays solid. The tiles and the sim are untouched.
+
+```
+  camera ──► ╭──────────╮ hull   ◄── screen-doors on the rays to the
+             │   ◉      │ unit       unit under it or behind it
+  ───────────┴──────────┴──── floor ◄── solid
+```
+
+- **Who it opens for:** the subjects are the unit objects the scene
+  draws, as for walls, so TDF units and the bugs the player can see
+  open it, and a bug hidden by fog does not (ADR 0006).
+- **Slots:** the cutaway has 8 slots (`MAX_GHOSTS`). A Great Hive
+  often shows more units than that: gh-38 below has 13. While the
+  units fit, the order is unchanged, so no slot changes hands. When
+  there are more units than slots, `ghostTargets` puts the units whose
+  footprint overlaps a drawn hull first (`isUnderDrawnDropship`). A
+  unit behind the hull, not under it, still competes for the rest in
+  draw order, as it does behind a wall. More than 8 units under hulls
+  at once would leave some out.
+- **The landing ship:** its hull tiles are blocked by mapgen, so
+  nothing stands under it. `draft-freezer.ts` `materialise` gives a
+  dropship hull tile pass NONE. Validator I2 (`map-validator`) holds
+  `blocksLos` to the hull, and I6 (`dropship-site-validator`) holds
+  pass NONE and `blocksLos` on the hull, with the boarding tiles open.
+  A unit could still stand behind it. Both ships are one model and
+  one batch, so the landing ship now takes the cutaway too.
+
+**Board on the hull.** A click on the forward hull offers Board, as
+one on the landing ship does. `isDropshipTile` now also reads the
+drawn hulls (`isUnderDrawnDropship`). That is the scene's own list,
+worked out once per map in `resolveDrawnDropships`, so the hull the
+player clicks is the hull they see.
+
+- **Lifted hulls:** a hull held above a bank hangs on its ship's level
+  group, where some of its columns have no tile. A hit there now picks
+  the column's top tile (`TacticalMapView.hullColumnTop`).
+- **Boarding is unchanged:** the unit still has to stand on an
+  extraction tile. From anywhere else, Board is on the wheel, closed,
+  reading "not on the ramp", as it is for the landing ship.
+- **Standing under the hull:** a unit standing under the hull is on
+  the ship, so its own wheel offers Board, closed.
+
+**Renders**, gh-38, from port 4252. Before is a `git archive` of
+`5ad9af04`; after is this branch. Alpha and Bravo (TDF) and a spitter
+and an armoured swarmer are under the hull. Delta and two armoured
+swarmers are beside it. Charlie is on the point. 13 units are drawn.
+
+- `great-hive-forward-hull-before.png`: the hull is solid, and the four
+  units under it are hidden. Only Alpha's selection ring shows through.
+  A second run with every status chip up (Shift) checked which figure
+  is which, before and after.
+- `great-hive-forward-hull-after.png`: the hull screen-doors, and all
+  four show through it.
+- `great-hive-forward-hull-board.png`: Charlie selected on the point.
+  A real left click on the hull's body (screen point fitted from four
+  tiles' screen positions) opens the wheel with Board, open, reading
+  "forward point". The same click at `5ad9af04` picks the same tile,
+  (32, 2, 77), and the wheel has no Board.
+
+Alpha stands on the floor with a one-layer bank in front of it, so from
+this yaw the bank hides its legs. Terrain never takes the cutaway.
+
+**Pins:**
+
+| Test | What it pins |
+| --- | --- |
+| `forward-dropship-resolver.test.ts` | Covers eight cases: no point, no ship; open floor, landed with the ramp on the point and the hull off it; the vision tile is the point's first, and the owned tiles are the point's plus the hull's; rock on one side turns the ship to the open side; a passage the point's width with banks a layer up, a layer up; walled in rock, none; a nest where it would land moves it; props it cannot avoid, a storey up with the ramp on bare floor; a ramp that would land on a prop, none. On gh-2, gh-38 and gh-12 the lifts are 0, 1 and 2, and no hull column is above the skids or on a hook. |
+| `drawn-dropship-resolver.test.ts` | The landing ship on its generated site, first; a missing boarding zone skipped; then each forward point's. |
+| `dropship-model-resolver.test.ts` | The forward model sits at `tileTop(level + lift)` and carries the point's and the hull's tiles. |
+| `dropship-site-layout.test.ts` | `dropshipClearanceFor` inverts `dropshipBoardingTiles` for every facing. |
+| `ghost-cutaway-eligibility.test.ts` | `tdf.dropship` takes the cutaway. |
+| `drawn-dropship-resolver.test.ts` | A map's ships are worked out once, and a copy of the map is worked out afresh. `isUnderDrawnDropship` covers every column under either ship and none past its edges, and none on a map that draws no ship. |
+| `tactical-scene-builder.test.ts` | With more drawn units than `MAX_GHOSTS`, the units under the hull go first. That includes a 2×2 whose anchor is beside the hull but whose footprint reaches under it. The rest stay in draw order. With 8 or fewer, the order is exactly the draw order. |
+| `tactical-map-view.test.ts` | A hit on a hull drawn on level 0, over ground on level 1, picks that ground tile. Off the hull, picking is unchanged. |
+| `action-availability.test.ts` | `isDropshipTile` is every column under a forward point's drawn ship, the point's tiles as before, and nothing past the hull. |
+| `tactical-hud-view.test.ts` | Board is on the wheel at a forward hull tile: closed with "not on the ramp" for a unit off the point, and it sends nothing. Open for a unit on the point, and a click sends `EXTRACT`. |
+
+**Sabotage:** each of these was broken in turn, each turned a test
+red, and each was then restored:
+
+- the rock cap;
+- the hook check;
+- the lift;
+- the hull's owned tiles;
+- the model's lift;
+- the model's owned tiles;
+- the ship order;
+- the missing-zone skip;
+- `tdf.dropship` in the cutaway prefixes;
+- the memo;
+- the under-hull order (both always-on and never-on);
+- the unit footprint in that order;
+- the hull-column pick;
+- the drawn hulls in `isDropshipTile`, which turned both the service
+  test and the HUD test red.
+
+The ramp-on-prop rule first stayed green: berths near props lose on
+open floor anyway. The corridor case was added for it, and it went
+red.
 
 ### Pins (round 3)
 

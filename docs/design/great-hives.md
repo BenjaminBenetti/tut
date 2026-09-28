@@ -169,6 +169,47 @@ unit home.
 
 The garrison keeps off it, as it keeps off the nests.
 
+**A second drop ship stands beside it.** The briefing says one holds
+there, so the board draws it (`resolveForwardDropships`,
+`graphics/service/forward-dropship-resolver.ts`). It is scenery only:
+it blocks no tile, and `mission.extraction` and the rest of the
+mission state are unchanged. It is the landing zone's model and
+layout (`dropshipClearanceFor`): a 5 × 7 hull whose ramp comes down
+on the point, or no more than 3 columns from it.
+
+```
+  rock rock rock rock rock
+  rock ┌─────┐ rock rock          hull: never in rock, on the point,
+  ···· │ hull│ ········            a nest or the heart
+  ···· └──┬──┘ ········
+  ···· ┌──┴─┐  ········            ramp: its foot on the point
+  ···· │ pt │  ········            (gap 0), or up to 3 columns off
+  ···· └────┘  ········
+```
+
+The ship lands where the floor under the hull is bare. Otherwise it
+holds just above the highest thing under it (a one-layer step, a
+slope, a prop), at most a storey up. The lowest berth wins, then the
+nearest ramp, then the most open floor around it. The cavern has no
+roof, so a ship in a chamber needs no shaft.
+
+It blocks nothing, so a squad or a bug can stand under it. Its hull
+takes the wall cutaway: it screen-doors on the rays to any unit the
+player can see under it or behind it, as a wall does
+(`GHOSTED_MODEL_PREFIXES`). When more units are drawn than the
+cutaway has slots, the units under a hull go first. A click on the
+hull offers Board, as a click on the landing ship does
+(`isDropshipTile` reads `isUnderDrawnDropship`). Boarding still needs
+the unit on the point. The landing ship's hull tiles are blocked by
+mapgen, so nothing stands under it, but it takes the same cutaway for
+units behind it.
+
+On gh-1 to gh-40, 36 caverns get a ship: 13 landed, 17 a layer up and
+6 a storey up. Four get none. On gh-8, gh-32 and gh-37 every berth
+that low and that near would cover the heart, and on gh-40 a nest. On
+those four the blue tiles still mark the point. The measurements are
+in `docs/design/calibration/C3a-hives.md`, "The forward drop ship".
+
 **Brood density is lower than an ordinary cavern's.** The cavern has
 more chambers, so the Great Hive broods are smaller (base 4, maximum
 12). That keeps the living count after a mass wake at 62–78, and the
@@ -230,17 +271,27 @@ Renders from port 4238:
   standing
 - `great-hive-briefing.png`
 
-Renders from port 4252 (C3a round 3, re-rendered at `9b5c2bc6` for round 3b):
+Renders from port 4252 (C3a round 3, re-rendered at `9b5c2bc6` for round 3b;
+the forward point and both zones again for round 3c, with the forward
+drop ship):
 
 - `great-hive-forward-briefing.png`: the briefing with its Extraction
   row
-- `great-hive-forward-point.png`: the force on the forward point, the
-  core fallen, and the tracker naming both places to board
+- `great-hive-forward-point.png`: the force on the forward point, its
+  drop ship landed beside it with the ramp on the point, the core
+  fallen, and the tracker naming both places to board
 - `great-hive-forward-board.png`: the wheel's Board reads "forward
   point"
 - `great-hive-both-zones.png`: the whole cavern, with the landing zone
-  by the drop ship at the top right and the forward point in the
-  middle
+  by its drop ship at the top right and the forward point by the
+  second drop ship in the middle
+- `great-hive-forward-hull-before.png` and
+  `great-hive-forward-hull-after.png` (gh-38): two squads and two bugs
+  under the forward hull, with a squad and two bugs beside it. Before,
+  the hull hides the four under it; after, it screen-doors around them
+- `great-hive-forward-hull-board.png` (gh-38): a click on the forward
+  hull with a squad on the point, and Board, open, reading "forward
+  point"
 
 **Art:** the core is `bug.hive-core`, reused. A beacon variant of the
 core model was not cheap enough to build here. The beacon reads on the

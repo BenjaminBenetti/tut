@@ -20,6 +20,8 @@ import type { ModelAssetId } from "../../content/data/model-ids";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { Building } from "../../mapgen/model/building";
 import { HookKinds } from "../../mapgen/model/hook";
+import { PassMask } from "../../mapgen/model/pass-mask";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { tileTop } from "../view/tactical-map-view";
 import type { Spawner } from "../../tactical/model/tactical-state";
@@ -39,6 +41,8 @@ import {
   TUNNEL_MOUTH_SEALED_MODEL_ID,
 } from "../view/tunnel-mouth-view";
 import { DORMANT_POSE } from "../view/dormant-look";
+import { resolveDrawnDropships } from "./drawn-dropship-resolver";
+import { MAX_GHOSTS } from "./ghost-cutaway";
 import {
   CARCASS_MODEL_ID,
   SPAWNER_MODEL_ID,
@@ -158,6 +162,30 @@ function build(): { builder: TacticalSceneBuilder; models: FakeModelLoader } {
   const map = new FixtureMapBuilder(6, 6, 1).fillGround().build();
   const models = new FakeModelLoader();
   return { builder: new TacticalSceneBuilder({ map, models }), models };
+}
+
+/**
+ * A 30 × 30 field with a Great Hive's forward point in its middle, whose
+ * drop ship the scene draws beside it (#1179), and that ship's hull.
+ */
+function buildWithForwardShip(): {
+  builder: TacticalSceneBuilder;
+  hull: { x: number; z: number; w: number; d: number };
+} {
+  const point: TileCoord[] = Array.from({ length: 16 }, (_, i) => ({
+    x: 13 + (i % 4),
+    y: 0,
+    z: 13 + Math.floor(i / 4),
+  }));
+  const map = new FixtureMapBuilder(30, 30, 4)
+    .fillGround()
+    .objective(HookKinds.FORWARD_EXTRACTION, point, PassMask.ALL)
+    .build();
+  const [ship] = resolveDrawnDropships(map);
+  return {
+    builder: new TacticalSceneBuilder({ map, models: new FakeModelLoader() }),
+    hull: ship!.footprint,
+  };
 }
 
 /** A top-down orthographic camera over the whole fixture map. */
@@ -333,6 +361,49 @@ describe("TacticalSceneBuilder", () => {
       "unit:b1",
     ]);
     expect(builder.pickUnit(ndcOf(5.5, 5.5), topDownCamera())).toBe("b1");
+  });
+
+  it("gives the cutaway's slots to the units under a drop ship's hull first when they run out (#1179)", async () => {
+    const { builder, hull } = buildWithForwardShip();
+    // Eight units in a row far from the ship, then one beside the hull,
+    // one under it, and a 2×2 whose anchor is beside it but whose
+    // footprint reaches under it.
+    const row = Array.from({ length: MAX_GHOSTS }, (_, i) =>
+      unit(
+        `r${String(i)}`,
+        i % 2 === 0 ? "squad:squad-1" : "bug:swarmer",
+        i,
+        1,
+      ),
+    );
+    const beside = unit("beside", "squad:squad-1", hull.x - 1, hull.z + 1);
+    const under = unit("under", "bug:swarmer", hull.x + 2, hull.z + 3);
+    const reaching = unit("reaching", "bug:brute", hull.x - 1, hull.z + 4);
+    await builder.update([...row, beside, under, reaching], TEMPLATES);
+    const drawn = builder.root
+      .getObjectByName("units")!
+      .children.map((object) => object.name);
+    const covered = ["unit:under", "unit:reaching"];
+    const names = builder.ghostTargets().map((s) => s.object.name);
+    expect(names.slice(0, 2).sort()).toEqual([...covered].sort());
+    // Everyone else keeps the order they were drawn in.
+    expect(names).toEqual([
+      ...drawn.filter((name) => covered.includes(name)),
+      ...drawn.filter((name) => !covered.includes(name)),
+    ]);
+  });
+
+  it("leaves the cutaway's order alone while every unit has a slot, so none changes hands", async () => {
+    const { builder, hull } = buildWithForwardShip();
+    const row = Array.from({ length: MAX_GHOSTS - 1 }, (_, i) =>
+      unit(`r${String(i)}`, "squad:squad-1", i, 1),
+    );
+    const under = unit("under", "bug:swarmer", hull.x + 2, hull.z + 3);
+    await builder.update([...row, under], TEMPLATES);
+    const drawn = builder.root
+      .getObjectByName("units")!
+      .children.map((object) => object.name);
+    expect(builder.ghostTargets().map((s) => s.object.name)).toEqual(drawn);
   });
 
   it("the redraw after a batch shows an arrival the queue never walked", async () => {

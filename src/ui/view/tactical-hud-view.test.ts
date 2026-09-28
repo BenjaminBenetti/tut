@@ -14,7 +14,14 @@ import { useEquipment } from "../../tactical/model/use-equipment-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import { SPAWNER_NAME } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
-import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
+import {
+  FORWARD_POINT_TILES,
+  forwardPointMission,
+  hudMission,
+  hudTemplate,
+  hudUnit,
+} from "./mission-hud.test-helper";
+import { resolveDrawnDropships } from "../../graphics/service/drawn-dropship-resolver";
 import { TacticalHudView } from "./tactical-hud-view";
 import { withVision } from "../../tactical/service/vision-service";
 import { withCivilian } from "../../tactical/service/tactical-fixtures.test-helper";
@@ -2447,6 +2454,43 @@ describe("TacticalHudView", () => {
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "select-tile", tile: { x: 7, y: 0, z: 4 } });
     expect(item("extract")).not.toBeNull();
+  });
+
+  it("offers Board on a forward point's drawn hull too, open only to a unit on the point (#1179)", () => {
+    const { hud, commands } = setup();
+    const mission = forwardPointMission();
+    const hull = resolveDrawnDropships(mission.map)[0]!.footprint;
+    // Under the hull, away from the ramp: not a boarding tile.
+    const underHull = { x: hull.x + 2, y: 0, z: hull.z + 3 };
+    expect(
+      FORWARD_POINT_TILES.some(
+        (tile) => tile.x === underHull.x && tile.z === underHull.z,
+      ),
+    ).toBe(false);
+
+    // s1 stands at (1,0,1), far from the point: the hull offers boarding,
+    // closed, with the reason on it.
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: underHull });
+    expect(item("extract")).not.toBeNull();
+    expect(item("extract")?.disabled).toBe(true);
+    expect(item("extract")?.textContent).toContain("not on the ramp");
+    hud.handleIntent({ kind: "action", action: "extract" });
+    expect(commands).toEqual([]);
+
+    // On the point, the same click on the hull boards.
+    const onPoint = FORWARD_POINT_TILES[0]!;
+    hud.update({
+      ...mission,
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, pos: onPoint } : unit,
+      ),
+    });
+    hud.handleIntent({ kind: "select-tile", tile: underHull });
+    expect(item("extract")?.disabled).toBe(false);
+    item("extract")?.click();
+    expect(commands).toEqual([{ type: EXTRACT, payload: { unitId: "s1" } }]);
   });
 
   it("offers Board to a unit that has spent its turn, since walking out is free", () => {

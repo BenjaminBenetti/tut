@@ -317,6 +317,53 @@ describe("TacticalMapView.pickTile", () => {
     view.dispose();
   });
 
+  it("picks the ground under a drop ship's hull that stands on another level (#1179)", () => {
+    // A ship drawn on level 0 whose footprint's ground is on level 1, as
+    // a forward point's ship held clear of a bank is: the hull hangs on
+    // level 0's group, where those columns have no tile.
+    const built = new FixtureMapBuilder(8, 10, 3)
+      .fillGround(1)
+      .deploy([{ x: 7, y: 1, z: 9 }])
+      .build();
+    const map: TacticalMap = {
+      ...built,
+      dropships: [
+        {
+          deployZoneId: built.hooks.deployZones[0]!.id,
+          footprint: { x: 1, z: 1, w: 5, d: 7 },
+          clearance: { x: 0, z: 0, w: 7, d: 9 },
+          facing: "n",
+          level: 0,
+        },
+      ],
+    };
+    const view = new TacticalMapView(map);
+    const camera = new OrthographicCamera(0, 8, 0, -10, 0.1, 100);
+    camera.position.set(0, 20, 0);
+    camera.up.set(0, 0, -1);
+    camera.lookAt(new Vector3(0, 0, 0));
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld(true);
+    // On the hull: the ground under it, on its own level.
+    expect(view.pickTile(ndcOf(camera, 3.5, 4.5), camera)).toEqual({
+      x: 3,
+      y: 1,
+      z: 4,
+    });
+    expect(view.pickTile(ndcOf(camera, 1.5, 7.5), camera)).toEqual({
+      x: 1,
+      y: 1,
+      z: 7,
+    });
+    // Off it, the ground as ever.
+    expect(view.pickTile(ndcOf(camera, 6.5, 4.5), camera)).toEqual({
+      x: 6,
+      y: 1,
+      z: 4,
+    });
+    view.dispose();
+  });
+
   it("ignores retired geometry inside a visible level group", () => {
     const view = new TacticalMapView(fixture().build());
     const retired = new Mesh(

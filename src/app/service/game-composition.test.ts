@@ -215,6 +215,52 @@ describe("composeGame", () => {
     expect(after?.economy.credits).toBe(credits + 17);
   });
 
+  it("pays the shipped salvage for a mech destroyed on a held field: half its price, on its own ledger line (GDD §5.7, #1179)", () => {
+    const game = composeGame({
+      storage: new MemoryKeyValueStore(),
+      clock: { now: () => NOW },
+      newSeed: () => 7,
+      onAutosaveFailure: () => undefined,
+      resolver: {
+        resolve: (mission, deployment) => ({
+          missionId: mission.id,
+          cityId: mission.cityId,
+          outcome: "won",
+          squadCasualties: [],
+          squadsWiped: [],
+          mechsDestroyed: deployment.mechIds,
+          mechDamage: deployment.mechIds.map((mechId) => ({
+            mechId,
+            damage: 100,
+          })),
+          creditsAwarded: 300,
+          techPointsAwarded: 0,
+          infestationDelta: 0,
+        }),
+      },
+    });
+    const { mission, deployment } = campaignWithMission(game);
+    const before = game.session.state;
+    const mech = before?.roster.mechs[0];
+    if (before === undefined || mech === undefined)
+      throw new Error("fixture needs the starter mech");
+    // The starter Skirmisher is ¢2,850 new; half of it comes back.
+    expect(mech.loadout).toEqual(STARTER_LOADOUT);
+
+    const result = game.session.store?.dispatch(
+      launchMission(mission.id, { ...deployment, mechIds: [mech.id] }),
+    );
+    expect(result?.ok).toBe(true);
+    const after = game.session.state;
+    expect(after?.economy.credits).toBe(before.economy.credits + 300 + 1425);
+    expect(after?.economy.ledger.slice(-2)).toMatchObject([
+      { kind: "reward", amount: 300, ref: mission.id },
+      { kind: "salvage", amount: 1425, ref: mission.id },
+    ]);
+    expect(after?.overworld.lastMissionResult?.salvageCredits).toBe(1425);
+    expect(after?.roster.mechs).toEqual([]);
+  });
+
   it("starts a tactical mission and autosaves it, leaving the offer standing", () => {
     const { game } = build();
     const { mission, deployment } = campaignWithMission(game);

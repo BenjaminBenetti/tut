@@ -46,6 +46,8 @@ describe("moneyLineOf", () => {
     const cases: [Transaction, string][] = [
       [entry("reward", 900, "mission-3"), "reward"],
       [entry("reward", 2400, "mission-9"), "story-reward"],
+      // Salvage is its own income, on a story mission as on any other.
+      [entry("salvage", 1425, "mission-9"), "salvage"],
       [entry("stipend", 480, "earth"), "stipend"],
       [entry("event", 1200, "event-2"), "event-income"],
       [entry("event", -300, "event-3"), "event-cost"],
@@ -86,6 +88,7 @@ describe("accountLedger", () => {
     const ledger = [
       entry("stipend", 500, "earth", 1),
       entry("reward", 900, "mission-3", 2),
+      entry("salvage", 1425, "mission-3", 2),
       entry("upkeep", -50, "deployable-1", 2),
       entry("stipend", 400, "earth", 5),
       entry("reward", 2400, "mission-9", 6),
@@ -97,6 +100,7 @@ describe("accountLedger", () => {
     expect(accounts["act-1"]).toMatchObject({
       stipend: 500,
       reward: 900,
+      salvage: 1425,
       upkeep: 50,
       "story-reward": 0,
     });
@@ -106,7 +110,7 @@ describe("accountLedger", () => {
       reward: 0,
     });
     expect(accounts["act-3"].stipend).toBe(0);
-    expect(totalOf(accounts["act-1"], INCOME_LINES)).toBe(1400);
+    expect(totalOf(accounts["act-1"], INCOME_LINES)).toBe(2825);
     expect(totalOf(accounts["act-1"], SPENDING_LINES)).toBe(50);
   });
 

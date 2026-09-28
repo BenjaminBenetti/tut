@@ -2,6 +2,7 @@ import type { Mech, MechId } from "../../roster/model/mech";
 import { loadoutPartIds } from "../../roster/model/mech-loadout";
 import type { Mission } from "../model/mission";
 import type { MissionResult } from "../model/mission-result";
+import { heldTheField } from "../model/mission-result";
 import type { WreckRecoveryTuning } from "../model/mission-tuning";
 import type { OverworldState } from "../model/overworld-state";
 import type { WreckRecoverySpec } from "../model/wreck-recovery-spec";
@@ -21,7 +22,8 @@ import type { WreckRecoverySpec } from "../model/wreck-recovery-spec";
  *   stale records (day ≥ lostDay + offerWindowDays) ──► dropped
  *   outcome lost, mechsDestroyed ≠ [] ──► one spec per destroyed mech the roster knows,
  *                                         unless that mech already has a record
- *   won or extracted                 ──► nothing new: the force held the field
+ *   won or extracted                 ──► nothing new: the force held the field,
+ *                                         and the mech was salvaged for credits instead
  * ```
  *
  * A lost mission is a lost or abandoned one: leaving the field without
@@ -45,18 +47,15 @@ export function recordWrecks(
   const kept = (state.wrecks ?? []).filter(
     (wreck) => !isWreckStale(wreck, state.day, tuning),
   );
-  const fresh =
-    result.outcome === "lost"
-      ? wrecksLost(
-          result.mechsDestroyed,
-          mechs,
-          mission,
-          state.day,
-          tuning.stripTurns,
-        ).filter(
-          (wreck) => !kept.some((other) => other.mechId === wreck.mechId),
-        )
-      : [];
+  const fresh = heldTheField(result.outcome)
+    ? []
+    : wrecksLost(
+        result.mechsDestroyed,
+        mechs,
+        mission,
+        state.day,
+        tuning.stripTurns,
+      ).filter((wreck) => !kept.some((other) => other.mechId === wreck.mechId));
   const before = state.wrecks ?? [];
   if (fresh.length === 0 && kept.length === before.length) {
     return state;

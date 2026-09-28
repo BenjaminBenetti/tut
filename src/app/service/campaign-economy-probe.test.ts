@@ -109,6 +109,7 @@ describe("the campaign economy probe (#1179)", () => {
       const force = economy.bands[band].force;
       expect(force.days, band).toBeGreaterThan(0);
       expect(force.unitDays, band).toBe(5 * force.days);
+      expect(force.mechDays, band).toBe(force.days);
       expect(force.fullDays, band).toBe(0);
       expect(force.groundedDays, band).toBe(0);
     }
@@ -119,6 +120,7 @@ describe("the campaign economy probe (#1179)", () => {
     expect(force.days).toBeGreaterThan(0);
     expect(force.fullDays).toBe(force.days);
     expect(force.unitDays).toBe(8 * force.days);
+    expect(force.mechDays).toBe(3 * force.days);
     const act1 = SPENDER.bands["act-1"].force;
     expect(act1.fullDays).toBeGreaterThan(0);
     expect(act1.fullDays).toBeLessThan(act1.days);
@@ -128,6 +130,7 @@ describe("the campaign economy probe (#1179)", () => {
       row[header.indexOf(column)];
     expect(cell("act_force_days")).toBe(String(act1.days));
     expect(cell("act_unit_days")).toBe(String(act1.unitDays));
+    expect(cell("act_mech_days")).toBe(String(act1.mechDays));
     expect(cell("act_full_days")).toBe(String(act1.fullDays));
     expect(cell("act_grounded_days")).toBe("0");
   });

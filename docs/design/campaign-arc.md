@@ -34,7 +34,7 @@ Mission numbers are targets for an average player. Acts are gated by research, s
 | D3 | Cap the offer board? | **Yes.** At most 3, 4 and 5 open offers in Acts I, II and III. Story and hive offers are pinned on top and do not count against the cap. |
 | D4 | Hive caverns | **Very large caverns that mechs can enter, full of bugs.** Most bugs sleep in chambers and wake on contact or noise (§7.5). |
 | D5 | First-attempt win-rate targets for an average new player | **90% in Act I, 75% in Act II, 65% in Act III, 55% for the finale.** An experienced player must find every act easy (≥ 90%). |
-| D6 | Wreck Recovery | **Keep it.** It pays parts only, gives one attempt, and expires after three days. The chassis and the pilot's rank stay lost. |
+| D6 | Wreck Recovery | **Keep it.** It pays parts only, gives one attempt, and expires after three days. The chassis and the pilot's rank stay lost. It covers a mech lost on a lost or abandoned mission only: one destroyed where the force held the field (won or extracted) is **salvaged** for half its price in credits instead (#1179, GDD §5.7), so no mech pays twice. |
 | D7 | Platform assault fails | **Every city gains +30 infestation** (capped at 100), and a hidden tech node, **Last Hope**, appears. Researching it re-offers the platform assault. A second failure ends the campaign in defeat. The average player reaches the finale at **threat 40–55** so the +30 leaves room to research Last Hope. |
 | D8 | Infantry tech | **Yes.** Infantry get their own research branch. |
 | F1 | Act I mix | **A third each:** Infestation Clearance, Crash Site, Evacuation. Defend Installation sits on top, offered when an installation the player built is threatened. |
@@ -157,6 +157,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 - **Objective:** a mech went down. Reach the wreck, have an infantry squad strip it over **two turns**, then extract.
 - **Trigger:** a mech destroyed on a lost or abandoned mission. The offer is pinned, gives one attempt, and expires in 3 days.
 - **Pays:** that mech's parts, back in the inventory. The chassis and the pilot's rank stay lost.
+- **Salvage is the other half (#1179):** a mech destroyed on a mission the force held (won or extracted) leaves no wreck. It is paid back at half its price in credits as the mission resolves (GDD §5.7). One rule, `heldTheField`, decides which a lost mech gets.
 - **Reuses:** the tech carcass harvest (interact over turns).
 - **Waves (#1179):** the crash draws the swarm. The first edge wave comes a turn sooner (turn 2), and every wave lands three times larger, rounded up, standing up to 3 steps outside its edge zone.
 
@@ -316,6 +317,8 @@ The #1171 pacing test changes from "the tree is finished at mission 25" to "the 
 | Strong | 95% won; mostly Intel | Finale reached, and the campaign won |
 | Story-only | 70% won; researches only Intel | Finale not before about mission 30 |
 | Idle | Plays nothing | Defeat, as today |
+
+**Economy probe (#1179):** `src/app/service/campaign-economy-probe.sim.test.ts` plays the Average, the modelled spenders and, over a calibration matrix's runs (`docs/design/calibration/baseline-matrix.runs.tsv`), the matrix's new and expert players, and reports each act's bank, income by ledger line (salvage included) and the units and mechs fielded. With salvage at 0.5 the matrix players' Act III bank is 3.3k (new) and 4.2k (expert) at the median, against 2.8k and 3.7k without; the Average loses mechs only on lost missions, so it gets no salvage and its pins do not move. Salvage does not keep three mechs fielded in Act III at any share up to a full refund: squad re-hire and the Act III refit's price are what bind.
 
 **Tactical calibration (#734):** the mission sweep gets two modelled players:
 

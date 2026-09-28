@@ -13,6 +13,7 @@ describe("TransactionKind", () => {
       "purchase",
       "sale",
       "reward",
+      "salvage",
       "stipend",
       "upkeep",
       "repair",

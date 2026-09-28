@@ -19,6 +19,7 @@ import type { CampaignMark } from "./campaign-sweep.test-helper";
 //   kind           ref                      line
 //   reward         a story mission's id     story-reward
 //   reward         any other mission        reward
+//   salvage        the mission              salvage (mechs lost on a held field)
 //   stipend        earth                    stipend (a bank's bonus is folded in)
 //   event          +                        event-income
 //   event          −                        event-cost
@@ -40,6 +41,7 @@ import type { CampaignMark } from "./campaign-sweep.test-helper";
 export const INCOME_LINES = [
   "reward",
   "story-reward",
+  "salvage",
   "stipend",
   "event-income",
   "sale",
@@ -140,6 +142,8 @@ export function moneyLineOf(
   switch (entry.kind) {
     case "reward":
       return storyMissions.has(entry.ref) ? "story-reward" : "reward";
+    case "salvage":
+      return "salvage";
     case "stipend":
       return "stipend";
     case "sale":

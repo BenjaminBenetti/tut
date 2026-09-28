@@ -30,6 +30,8 @@ import type { NemesisLore } from "../model/nemesis-lore";
 import type { OverworldState } from "../model/overworld-state";
 import { recordMission } from "./campaign-progress-service";
 import { findCity } from "./earth-map-query-service";
+import type { MechSalvageDeps } from "./mech-salvage-service";
+import { mechSalvageOf } from "./mech-salvage-service";
 import { recordAlphaOutcome } from "./nemesis-service";
 import type { StoryDeps } from "./story-service";
 import { onStoryMissionResolved } from "./story-service";
@@ -69,6 +71,11 @@ export interface LaunchMissionDeps {
    * arc §11); `NEMESIS_LORE` at the composition root.
    */
   readonly nemesisLore: Pick<NemesisLore, "scars">;
+  /**
+   * Prices a destroyed mech and says how much of it salvage pays back
+   * when the force held the field (GDD §5.7, #1179).
+   */
+  readonly salvage: MechSalvageDeps;
 }
 
 /** What a valid launch resolved to: the mission and its host city. */
@@ -202,10 +209,13 @@ export function validateLaunch(
  *   result = resolver.resolve(mission, deployment, { squads, mechs, city }, fork)
  *        │   consequences[mission.typeId].settle? ──► its credits and delta laid over
  *        │                                           (an evacuation's per-group credits)
+ *        │   mechSalvageOf(result, roster mechs at launch) ──► salvageCredits laid over,
+ *        │                                           when the field was held (GDD §5.7)
  *   1. MissionResolved { result }
  *   2. roster  ── applyCasualties ──► losses, damage, wipes, graveyard, xp   (roster events)
  *              ── stockParts(partsAwarded) ──► recovered parts (arc §6.6)  (PartsStocked)
  *   3. economy ── earn(creditsAwarded, "reward", mission.id)                 (CreditsChanged)
+ *              ── earn(salvageCredits, "salvage", mission.id)                (CreditsChanged)
  *   4. mission removed from the offers; lastMissionResult := result
  *   5. progress ── recordMission(outcome, speciesKilled): missionsPlayed,
  *                 missionsWon on a win, first kills (ADR 0013 §2.1)
@@ -222,6 +232,11 @@ export function validateLaunch(
  *                 rule's onWon (flags, the next act, victory), a loss its   ActAdvanced, HiveFormed,
  *                 onLost (retry delay, D7) (ADR 0013 §2.5)                  CityInfestationChanged)
  * ```
+ *
+ * Salvage and the wrecks are one rule seen from both ends: a mech
+ * destroyed on a held field (won or extracted) is paid back in credits,
+ * one destroyed on a lost field is recorded as a wreck for Wreck
+ * Recovery, and `heldTheField` decides both, so no mech pays twice.
  *
  * This is the single place the campaign counts missions: every resolved
  * mission, won, extracted or lost, passes through here exactly once. The
@@ -257,10 +272,20 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
       { squads: state.roster.squads, mechs: state.roster.mechs, city },
       ctx.rng.fork(`mission:${mission.id}`),
     );
-    const result: MissionResult =
+    const settledResult: MissionResult =
       rule.settle === undefined
         ? resolved
         : { ...resolved, ...rule.settle(mission, resolved, consequenceCtx) };
+    // Valued against the roster as it stood at launch, like the wrecks.
+    const salvage = mechSalvageOf(
+      settledResult,
+      state.roster.mechs,
+      deps.salvage,
+    );
+    const result: MissionResult =
+      salvage.credits > 0
+        ? { ...settledResult, salvageCredits: salvage.credits }
+        : settledResult;
     const events: CampaignEvent[] = [
       { type: MISSION_RESOLVED, payload: { result } },
     ];
@@ -286,6 +311,13 @@ export function createLaunchMissionHandler<TState extends CampaignState>(
         .earn(economy, result.creditsAwarded, "reward", mission.id, day);
       economy = paid.state;
       events.push(...paid.events);
+    }
+    if (salvage.credits > 0) {
+      const salvaged = deps
+        .transactionsFor(ctx.ids)
+        .earn(economy, salvage.credits, "salvage", mission.id, day);
+      economy = salvaged.state;
+      events.push(...salvaged.events);
     }
     if (result.techPointsAwarded > 0) {
       const earned = deps.techPoints.earn(

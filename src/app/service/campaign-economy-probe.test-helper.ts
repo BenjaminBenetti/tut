@@ -50,8 +50,8 @@ import {
 //
 //   seed ──► playCampaignToEnd(player), observed every day after research
 //        ──► every day: the bank, the roster, the installations and their upkeep;
-//            per act, the units fielded summed over its days, and its days at the
-//            cap and with nobody on the roster
+//            per act, the units and the mechs fielded summed over its days, and
+//            its days at the cap and with nobody on the roster
 //        ──► every new lastMissionResult: soldiers lost, squads wiped, mechs lost,
 //            in the band of the day it was played
 //        ──► the last state's ledger ──► accountLedger ──► one account per act band
@@ -84,6 +84,8 @@ export interface BandForce {
   readonly days: number;
   /** Units on the roster, summed over those days. */
   readonly unitDays: number;
+  /** Mechs on the roster, summed over those days. */
+  readonly mechDays: number;
   /** Days with the deployment cap on the roster. */
   readonly fullDays: number;
   /** Days with nobody on the roster, on which the player plays nothing. */
@@ -287,6 +289,7 @@ export const ACT_METRICS = [
   "mechs_lost",
   "force_days",
   "unit_days",
+  "mech_days",
   "full_days",
   "grounded_days",
   "income",
@@ -453,6 +456,7 @@ function forceOf(days: readonly EconomyDay[]): BandForce {
   return {
     days: days.length,
     unitDays: units.reduce((sum, count) => sum + count, 0),
+    mechDays: days.reduce((sum, day) => sum + day.mechs, 0),
     fullDays: units.filter((count) => count >= MAX_DEPLOYED_UNITS).length,
     groundedDays: units.filter((count) => count === 0).length,
   };
@@ -495,6 +499,8 @@ function actMetric(
       return band.force.days;
     case "unit_days":
       return band.force.unitDays;
+    case "mech_days":
+      return band.force.mechDays;
     case "full_days":
       return band.force.fullDays;
     case "grounded_days":

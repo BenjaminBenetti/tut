@@ -37,6 +37,23 @@ export function isMissionOutcome(value: string): value is MissionOutcome {
   return (MISSION_OUTCOMES as readonly string[]).includes(value);
 }
 
+/**
+ * Whether the force held the field at the end: every outcome but `lost`.
+ * What happens to a mech destroyed there turns on it, and on nothing
+ * else, so each destroyed mech is paid for exactly once (arc §6.6,
+ * GDD §5.7):
+ *
+ * ```
+ *   won, extracted ──► held    ──► salvage: a share of its price in credits
+ *   lost           ──► not held ──► a wreck, which Wreck Recovery may strip for its parts
+ * ```
+ *
+ * @param outcome - How the mission ended.
+ */
+export function heldTheField(outcome: MissionOutcome): boolean {
+  return outcome !== "lost";
+}
+
 // ===========================================
 // Per-unit reports
 // ===========================================
@@ -78,6 +95,7 @@ export interface MechDamageReport {
  *                 ├─ squadCasualties / squadsWiped ──► roster (#64)
  *                 ├─ mechDamage / mechsDestroyed ────► roster (#64)
  *                 ├─ creditsAwarded ─────────────────► economy (#53)
+ *                 ├─ salvageCredits? ────────────────► economy, set by the launch handler (#1179)
  *                 ├─ techPointsAwarded ──────────────► economy (#1171)
  *                 ├─ infestationDelta ───────────────► host city
  *                 ├─ outcome, speciesKilled? ────────► campaign progress
@@ -117,6 +135,14 @@ export interface MissionResult {
   readonly mechDamage: readonly MechDamageReport[];
   /** Whole credits paid out, `>= 0`; usually `rewards.credits` on a win and `0` on a loss. */
   readonly creditsAwarded: number;
+  /**
+   * Whole credits paid back for the mechs destroyed on a field the force
+   * held (GDD §5.7, #1179), apart from `creditsAwarded`: a share of each
+   * mech's price. The launch handler sets it from the salvage rule; a
+   * resolver never does. Absent when none was paid, which a lost
+   * mission's is: its wrecks are Wreck Recovery's (arc §6.6).
+   */
+  readonly salvageCredits?: number;
   /**
    * Whole tech points paid out, `>= 0` (#1171): the outcome's share of
    * `rewards.techPoints` plus whatever was harvested on the map.

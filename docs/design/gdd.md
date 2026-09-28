@@ -82,6 +82,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 ### 5.5 Economy
 - One currency: **credits**. Everything costs credits: squads, mech chassis, parts, upgrades, deployables, repairs.
 - Income: mission rewards, a per-tick stipend scaled by how much of Earth is unfested, event outcomes, and a flat bonus per online **bank** (§5.6) folded into the stipend: a level 1 bank pays for itself in about ten days, and the bank ladder is the player's engine for out-growing upkeep.
+- **Salvage** (#1179): a mech destroyed on a mission the force held (won or extracted) pays back **half its price** the moment the mission resolves (§5.7). It is income of its own, on the ledger's `salvage` line rather than folded into the mission's reward, and the debrief lists it under the credits. It is there to keep mechs affordable after a costly win in Acts II and III; it does not refund a lost mission, whose wrecks are Wreck Recovery's.
 
 #### 5.5.1 Tech points
 - A second resource, **tech points** (`TP`), shown beside credits in the top bar (#1171). They are not money: nothing is priced in both, and there is no stipend.
@@ -122,6 +123,14 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - **The Heavy Weapons Squad** is researched, not hired from the start (campaign arc §10.3): a crew-served heavy machine gun, two bursts a turn out to ten tiles with a point of penetration, ¢900 to hire. Until the tree's Heavy Weapons Infantry node is unlocked the hire picker lists it disabled with what to research (`Heavy Weapons Squad · ¢900 · research Heavy Weapons Infantry`) and the hire is refused. It wears the rifle squad's model for now.
 - **Infantry research** (§5.5.1) is listed above the squad table on the roster screen (`Infantry research: Squad armour I · Frag grenades`, each naming what it does when rested on), or `none yet` before the first rung. See [`roster-infantry.png`](roster-infantry.png).
 - **Mechs**: one roster entry = one mech. Built from a **chassis** plus **legs**, **arms**, one **arm weapon**, one **back weapon**, and **utility slots**. Parts have stats (armor, mobility, heat, power, accuracy, etc.) and may be upgraded. Mechs that are destroyed in a mission are **gone**, parts included.
+- **What a destroyed mech leaves** (#1179) turns on one question, whether the force held the field, so each lost mech is paid for exactly once:
+
+  | mission ends | the destroyed mech | paid |
+  |---|---|---|
+  | won or extracted | hauled off the field and sold: **salvage** | half its price in credits, at once: chassis, parts and upgrades as the mech bay prices a new build, whatever the stock saved when it was built, rounded down per mech |
+  | lost (a wipe, or leaving with the objectives open) | left where it fell: a **wreck** | nothing now; a pinned **Wreck Recovery** offer can bring its parts home, never its chassis or the pilot's rank (campaign arc §6.6) |
+
+  The share is `MECH_SALVAGE_TUNING.fraction` (0.5); more than 0.6 is a design call. The debrief shows it under the credits (`Salvage +¢1,425 for 1 destroyed mech`, the starter Skirmisher at ¢2,850). Auto-resolve pays it by the same rule: it reports the outcome and the destroyed mechs as the tactical layer does, and both go through the one launch handler. See [`debrief-salvage.png`](debrief-salvage.png), a mission extracted after its mech was destroyed.
 - **Six chassis each lead a different axis** (#1130, #1168): **Vanguard** on price, **Courser** on speed, **Bulwark** on armour, **Atlas** on payload and utility slots, **Surveyor** on sight, and **Crucible** on sustained cooling. The data tests protect those specialities. See the [mech roster and progression guide](mech-roster.md) for all 48 parts and the future research families.
 - Both persist across missions with damage, kills, and experience where applicable.
 - **A new campaign fields two rifle squads, a radio squad, a rocket squad and one mech** (Executive Director, 2026-09-13, #1132): the rifles hold the line, the radio finds the nests, and the rocket squad cracks them, so the first mission can be played with every tool the design assumes.

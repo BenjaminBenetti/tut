@@ -69,6 +69,8 @@ import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { LoadoutMechRater } from "../../roster/service/loadout-mech-rater";
+import { LoadoutMechPricing } from "../../roster/service/loadout-mech-pricing";
+import { MECH_SALVAGE_TUNING } from "../../roster/data/mech-salvage-tuning";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { INFANTRY_UPGRADES } from "../../roster/data/infantry-upgrades";
@@ -399,6 +401,14 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     hiveTuning: tickDeps.hiveTuning,
     story,
     nemesisLore: NEMESIS_LORE,
+    salvage: {
+      pricing: new LoadoutMechPricing(
+        content.parts,
+        content.rating,
+        content.upgrades,
+      ),
+      tuning: MECH_SALVAGE_TUNING,
+    },
   });
   dispatcher.register(LAUNCH_MISSION, launch);
   registerStartMission(dispatcher, {

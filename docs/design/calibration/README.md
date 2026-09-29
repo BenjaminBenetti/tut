@@ -586,13 +586,17 @@ ran all 8.
 
 ## The committed baseline
 
-The final rebaseline of #1179, measured on 2026-09-28 at 16 seeds on
-commit `df0ab1d9`, with every tuning package in: C2b-1 (field), C2b-2
-(defences, tunnels, wrecks), C3a (hives, rounds 2 and 3) and C3b
-(story, phases 3 and 5). The run took 382 s on 8 workers. **Every pin
-holds and every targeted assertion passes**, so the run exits 0.
-`TARGETED_CELLS` lists every cell except `tunnel-sabotage/act-3` (see
-"Still off target").
+The final rebaseline of #1179, measured on 2026-09-29 at 16 seeds on
+commit `30f0a2f3`, with every tuning package in: C2b-1 (field), C2b-2
+(defences, wrecks, and tunnels with the defended charge and its Act III
+press), C3a (hives, rounds 2 and 3) and C3b (story, phases 3 and 5).
+The run took 284 s on 8 workers. **Every pin holds and every targeted
+assertion passes**, so the run exits 0. `TARGETED_CELLS` lists every
+cell.
+
+Against the previous rebaseline (`df0ab1d9`, see "Earlier baselines")
+only the two Tunnel Sabotage cells moved; every other run is
+byte-identical apart from its timings.
 
 "Was" is the pre-tuning baseline (`09d4e63a`, see "Earlier baselines").
 Alpha Hunt and the Spore Platform joined the matrix after it.
@@ -611,8 +615,8 @@ Alpha Hunt and the Spore Platform joined the matrix after it.
 | `defend-installation/act-1` | 90% | 16/16 (100%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
 | `defend-installation/act-2` | 75% | 12/16 (75%) | 15/16 | 16/16 (100%) | 16/16 | met | clear |
 | `defend-installation/act-3` | 65% | 10/16 (62%) | 14/16 | 15/16 (94%) | 16/16 | met | clear |
-| `tunnel-sabotage/act-2` | 75% | 11/16 (69%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
-| `tunnel-sabotage/act-3` | 65% | 16/16 (100%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
+| `tunnel-sabotage/act-2` | 75% | 13/16 (81%) | 16/16 | 15/16 (94%) | 16/16 | met | clear |
+| `tunnel-sabotage/act-3` | 65% | 11/16 (69%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
 | `wreck-recovery/act-2` | 75% | 11/16 (69%) | 14/16 | 15/16 (94%) | 16/16 | met | clear |
 | `wreck-recovery/act-3` | 65% | 14/16 (88%) | 16/16 | 14/16 (88%) | 15/16 | allowance | clear |
 | `hive-assault/act-2` | 75% | 12/16 (75%) | 0/16 | 16/16 (100%) | 2/16 | met | clear |
@@ -635,8 +639,8 @@ Per band, wins over runs (`baseline-matrix.bands.tsv`):
 | Band | New target | New | New verdict | Expert | Expert cells met | Expert over new |
 | --- | --- | --- | --- | --- | --- | --- |
 | act-1 | 90% ± 6.1 | 91/96 (94.8%) | on | 96/96 (100.0%) | 6 of 6 | holds |
-| act-2 | 75% ± 7.2 | 108/144 (75.0%) | on | 142/144 (98.6%) | 9 of 9 | holds |
-| act-3 | 65% ± 7.5 | 112/160 (70.0%) | on | 150/160 (93.8%) | 7 of 10 | holds |
+| act-2 | 75% ± 7.2 | 110/144 (76.4%) | on | 141/144 (97.9%) | 9 of 9 | holds |
+| act-3 | 65% ± 7.5 | 107/160 (66.9%) | on | 150/160 (93.8%) | 7 of 10 | holds |
 | finale | 55% ± 17.6 | 20/32 (62.5%) | on | 32/32 (100.0%) | 2 of 2 | holds |
 
 Every band reads `on` for the new player, and the expert meets its
@@ -652,7 +656,6 @@ the band's target. The furthest:
 | Cell | New | Band target | Why it stands |
 | --- | --- | --- | --- |
 | `story:great-hive/act-3` | 5/16 (31%) | 65% | These 16 seeds sit low. Over 128 seeds the new player wins 62 (48%); see C3a-hives.md, "Round 3b". |
-| `tunnel-sabotage/act-3` | 16/16 (100%) | 65% | The bugs cannot pull a set charge, so wave pressure cannot reach it. Left out of `TARGETED_CELLS`; a new mechanic is Ben's call (C2b-2-defence.md). |
 | `wreck-recovery/act-3` | 14/16 (88%) | 65% | Both players sit at the edge; the expert is at its allowance. |
 | `alpha-hunt/act-3` | 13/16 (81%) | 65% | The limp (C3b phase 5) is set by the Act II expert. |
 
@@ -662,10 +665,22 @@ Wins are calibrated; the cost of winning is not. Mean units lost a run,
 of 8 deployed (new / expert): hives 3.9–5.3 / 3.8–3.9, the Great Hive
 7.3 / 4.6, defences 1.4–5.6 / 0.5–2.4, Evacuation 2.9–5.4 / 1.5–1.7,
 crash sites 0.2–0.4 / 0.1–0.2. The economy model (C7) reads these per
-run from `baseline-matrix.runs.tsv`; its phase 2 found that replacing
-them costs more than a campaign's income (see the #1179 PR).
+run from `baseline-matrix.runs.tsv`. Its phase 2 found that replacing
+them costs more than a campaign's income. Phase 3 added mech salvage
+(half a destroyed mech's price back on a held field), which does not
+change that: re-hiring squads and the Act III refit are what bind (see
+the #1179 PR).
 
 ### Earlier baselines
+
+**The first final rebaseline** (16 seeds, `df0ab1d9`) is in git at the
+feature commit `6af6d477`:
+`git show 6af6d477:docs/design/calibration/baseline-matrix.tsv`. It
+predates the defended tunnel charge: `tunnel-sabotage/act-2` read 11/16
+new and 16/16 expert, and `tunnel-sabotage/act-3` 16/16 for both, left
+out of `TARGETED_CELLS` because the bugs could not pull a set charge.
+Per band, the new player's rate was Act I 94.8%, Act II 75.0%, Act III
+70.0% and the finale 62.5%.
 
 **The pre-tuning baseline** (16 seeds, `09d4e63a`, the filled forces) is
 in git at `df0ab1d9`:

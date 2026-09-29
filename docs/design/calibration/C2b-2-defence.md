@@ -27,7 +27,7 @@ records its results is set out in [the README](README.md#how-tuning-packages-rec
 | `GENERATOR_TUNING.maxHp` | 40 | 60 | Under the surge, the expert lost act-3 defences and Uplink with its force nearly whole: a surged wave wrecked a 40 hp generator in one bug phase. |
 | `UPLINK_WAVES` | 5 | 6 | At 5 the new player won 14/16. At 7 the expert lost its generators in 7 runs out of 16. |
 | `LAUNCH_WINDOW_WAVES` | 7 | 8 | At 7 the new player won 12/16 against a target of about 9. |
-| `WAVE_PRESSURE_TUNING.tunnel` | (none) | surge 3, spill 3; removed in round 2 (§6) | The charges went in by turn 2 and could not be pulled, so the fight was on the way home. Once a bite pulls a burning charge, the fight is at the mouths and the surge took act 2 first. |
+| `WAVE_PRESSURE_TUNING.tunnel` | (none) | surge 3, spill 3; removed in round 2 (§6); back in round 3 as `tunnels` for Act III alone: first wave 2 turns sooner, surge 1.1, spill 1 (§7) | The charges went in by turn 2 and could not be pulled, so the fight was on the way home. Once a bite pulls a burning charge, the fight is at the mouths and the surge took act 2 first. Act III's force still sealed every mouth before a bug reached one. |
 | `WAVE_PRESSURE_TUNING.wreck` | (none) | surge 3, spill 3, first wave a turn sooner | Half the new player's wins were home by turn 7, before the first wave (turn 3) had reached the wreck. |
 | Swarm Tide on a pressed type | overwrote the surge | keeps the larger scale and spill | Without this, Swarm Tide would make a defence easier. |
 
@@ -254,7 +254,8 @@ charge at all. The only press that reached that window, the first
 wave two turns sooner, brought act 3 to 25–27/32 and left the act-2
 expert at 24–25/32, under its pin. A lever for Act III alone (its
 tunnel waves sooner) would need the wave pressure keyed by act as well
-as type, which it is not; that is a decision for Ben.
+as type, which it is not; that is a decision for Ben. (Round 3, §7,
+made it as a tuning call and keyed the press by act.)
 
 
 **Renders** (`tools/ui/capture-tunnel-sabotage.mjs`): the briefing
@@ -262,3 +263,109 @@ with its Guard row (`../tunnel-sabotage-briefing.png`), a charge
 burning with its fuse on the tracker (`../tunnel-sabotage-mission.png`),
 and the next turn after a swarmer bit it, the log's pull line and the
 tracker's "charge pulled" (`../tunnel-sabotage-pulled.png`).
+
+## 7. Round 3: Act III's tunnels pressed
+
+The coordinator's tuning call (2026-09-29), not a new rule: press
+Tunnel Sabotage in Act III only, so its new player drops into band,
+and leave Act II exactly as it was. Base `fb8c27f4` (int/w1), 32
+seeds a cell, `SIM_MATRIX_CELLS=tunnel-sabotage`.
+
+**The mechanism: an optional act on a pressure row.** A row of
+`WAVE_PRESSURE_TUNING` may carry `onlyInAct`. `withWavePressure` then
+presses only the offers made in that act and hands every other offer
+of the type back as its own setup left it. The rows for the defence
+and the wreck carry no act and press every mission, as before.
+
+```
+MISSION_SETUP_RULES["tunnel-sabotage"] = withWavePressure(TUNNEL_SABOTAGE_SETUP, WAVE_PRESSURE_TUNING.tunnels)
+  setup ──► the type's setup ──► pressesOffer(tunnels, offer)?
+                                   offer.act = "act-3"            ──► pressEdgeWaves
+                                   "act-2", another act, or none ──► as the type set it up
+```
+
+**The key: the act the offer was made in, not its difficulty.**
+Difficulty was the first choice (the hive nest curve keys on it), but
+it cannot separate the acts. §3 of the arc puts Act II at d3–7 and
+Act III at d5–9, and a tunnel's difficulty follows its city's
+infestation, so tunnels come at the top of each act's range. The
+offer carries its act: `buildOfferAtDifficulty` stamps
+`Mission.act` from `state.progress.act` when the offer is made, and it
+is frozen after that. The matrix's cells set `progress.act` to the
+cell's act, so their offers carry it too. An offer saved before acts
+carries none and is not pressed.
+
+The campaign sweep's Tunnel Sabotage offers (60 seeds a player, the
+modelled resolver; a probe, not committed), by the act the offer was
+made in:
+
+| Player | Act | Offered | Played |
+| --- | --- | --- | --- |
+| Average | II | d5 12, d6 100, d7 68 | d5 6, d6 32, d7 26 |
+| Average | III | d5 3, d6 78, d7 102, d8 99, d9 55 | d6 8, d7 14, d8 8, d9 9 |
+| Strong | II | d5 5, d6 7, d7 1 | d5 1, d6 2 |
+| Strong | III | d5 13, d6 16, d7 4, d8 2 | d6 1, d7 1 |
+
+The Average player plays Act II's tunnels at d5–7 and Act III's at
+d6–9. The only difficulty threshold that leaves every Act II tunnel
+unpressed is d ≥ 8. That threshold presses 17 of the 39 Act III
+tunnels the Average player plays, and none of the Strong player's.
+
+On the matrix's Act III cell (d5–9, 7/7/6/6/6 seeds), a d ≥ 8 key
+with the shipped press would give 26/32 for the new player and 31/32
+for the expert. That is estimated from the base's unpressed d5–7 runs
+plus the pressed d8–9 runs of the same seeds, and it puts the new
+player on the band's top edge. The act key presses the whole cell
+evenly: new-player wins by difficulty are d5 4/7, d6 5/7, d7 4/6,
+d8 4/6 and d9 3/6.
+
+**The press.** It is measured in turns and size, as the round-2 trace
+suggested: Act III's squads seal every mouth by turn 3–4, so only a
+wave that lands before then reaches the charges. Every run below
+presses Act III only, and Act II's rows were byte-identical to the
+base in each one. The table gives wins for the new player, then for
+the expert, with the mean units lost in brackets and the number of
+capped runs.
+
+| Run | First wave | Surge | Spill | New | Expert |
+| --- | --- | --- | --- | --- | --- |
+| base | turn 3 | none | none | 31/32 (2.31) | 32/32 (0.25) |
+| a1 | turn 1 | 1.5 | 2 | 16/32 (5.69, 13 capped) | 26/32 (1.25) |
+| a2 | turn 1 | 1.25 | 2 | 20/32 (5.16, 11 capped) | 27/32 (1.13) |
+| a3 | turn 1 | 1.1 | 2 | 20/32 (5.06, 10 capped) | 28/32 (0.91) |
+| a4 | turn 2 | 1.1 | 2 | 27/32 (3.66) | 31/32 (0.56) |
+| a5 | turn 2 | 1.25 | 2 | 28/32 (3.84) | 31/32 (0.47) |
+| a6 | turn 2 | 1.5 | 2 | 24/32 (4.81) | 28/32 (0.88) |
+| a7 | turn 2 | 1.35 | 2 | 26/32 (4.09) | 30/32 (0.78) |
+| **a8 (shipped)** | **turn 1** | **1.1** | **1** | **20/32 (5.09, 10 capped)** | **30/32 (0.81)** |
+
+At d5 and up, the shared waves are already 7–8 bugs every 2 turns,
+so a surge of 1.1 is one bug more a wave, rounded up. What matters is
+the turn the first wave lands. With it on turn 2, the new player
+stayed at 26–28/32 unless the expert lost its pin as well (a6). With
+it on turn 1 and two steps of spill, the expert fell to 26–28/32
+(a1–a3). One step of spill is what kept the expert's pin (a8 against
+a3). a7 met both targets too, but it left the new player on the
+band's top edge (26/32); a8 puts it mid-band.
+
+**Cells, 32 seeds.** Before is `fb8c27f4`. The ranges are the ±2σ
+band for one cell at 32 seeds.
+
+| Cell | Player | Before | Mean lost | After | Mean lost | Range | Verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| tunnel-sabotage/act-2 | new | 27/32 | 3.78 | 27/32 | 3.78 | 20–28 (75%) | in band, unmoved |
+| tunnel-sabotage/act-2 | expert | 31/32 | 0.63 | 31/32 | 0.63 | ≥ 29 | met, unmoved |
+| tunnel-sabotage/act-3 | new | 31/32 | 2.31 | **20/32** | 5.09 | 16–26 (65%) | **in band** |
+| tunnel-sabotage/act-3 | expert | 32/32 | 0.25 | 30/32 | 0.81 | ≥ 29 | met |
+
+The Act II rows of `runs.tsv` are byte-identical to the base's in
+every deterministic column: all but `bug_phase_ms` and `wall_s`,
+which are timings. At 16 seeds, the full matrix's runs are
+byte-identical in those columns in every cell except
+`tunnel-sabotage/act-3`. The mission, pod, defence and campaign
+sweeps are byte-identical to `fb8c27f4`'s. The campaign sweep plays
+its missions through the modelled resolver, so a tactical press does
+not reach it.
+
+The briefing states no wave timing, so its text is unchanged.
+

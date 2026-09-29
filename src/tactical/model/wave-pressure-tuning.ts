@@ -1,3 +1,4 @@
+import type { ActId } from "../../content/model/act-id";
 import type { EdgeWaveSurge } from "./tactical-state";
 
 // ===========================================
@@ -19,12 +20,31 @@ import type { EdgeWaveSurge } from "./tactical-state";
  *
  * The same surge Swarm Tide sets; the tide on top keeps the larger of
  * each of its size scale and spill, never less.
+ *
+ * A row may narrow itself to one act's offers (`onlyInAct`), so the
+ * pressure varies within a type without a table per act: the type's
+ * offers made in that act are pressed, and its others play the shared
+ * schedule as if the type had no row. A row without it presses every
+ * mission of its type, as the defence's and the wreck's do.
+ *
+ * ```
+ *   onlyInAct absent            ──► every mission of the type pressed
+ *   onlyInAct = offer's act     ──► pressed
+ *   onlyInAct ≠ offer's act, or
+ *   the offer carries no act    ──► the shared schedule, untouched
+ * ```
  */
 export interface EdgeWavePressure {
   /** The size scale (above 1) and the spill every edge wave of the type lands with. */
   readonly surge: EdgeWaveSurge;
   /** Turns sooner than the shared first-wave turn the first wave lands. Zero or more. */
   readonly turnsSooner: number;
+  /**
+   * The act whose offers alone the press lands on (#1179), matched
+   * against the act the offer was made in (`Mission.act`, frozen at
+   * offer). Absent, the press lands on every mission of the type.
+   */
+  readonly onlyInAct?: ActId;
 }
 
 /**
@@ -39,4 +59,6 @@ export interface WavePressureTuning {
   readonly defence: EdgeWavePressure;
   /** Wreck Recovery. */
   readonly wreck: EdgeWavePressure;
+  /** Tunnel Sabotage: its Act III offers only (`onlyInAct`). */
+  readonly tunnels: EdgeWavePressure;
 }

@@ -392,7 +392,7 @@ describe("ObjectiveTrackerView with optional objectives (#1179)", () => {
 // A row's own countdowns
 // ===========================================
 
-describe("ObjectiveTrackerView draws a row's own countdowns (arc §6.7)", () => {
+describe("ObjectiveTrackerView draws a row's own countdowns and lines (arc §6.7)", () => {
   let root: HTMLElement;
 
   beforeEach(() => {
@@ -426,7 +426,7 @@ describe("ObjectiveTrackerView draws a row's own countdowns (arc §6.7)", () => 
     detonatesOnTurn,
   });
 
-  it("puts a fuse line per burning charge under the label, the count beside it", () => {
+  it("puts a line per mouth under the label, in mouth order, each fuse counting down, the count beside it", () => {
     const mission = {
       turn: 5,
       objectives: [SEAL],
@@ -444,23 +444,62 @@ describe("ObjectiveTrackerView draws a row's own countdowns (arc §6.7)", () => 
     const row = root.querySelector<HTMLElement>(
       `[data-objective-id="${SEAL.id}"]`,
     );
-    const fuses = [
-      ...(row?.querySelectorAll<HTMLElement>('[data-role="fuse"]') ?? []),
+    const lines = [
+      ...(row?.querySelectorAll<HTMLElement>("[data-mouth-state]") ?? []),
     ];
-    expect(fuses.map((line) => line.textContent)).toEqual([
+    expect(lines.map((line) => line.textContent)).toEqual([
+      "Tunnel 1 sealed",
       "Tunnel 2 blows at the end of this turn",
       "Tunnel 3 blows in 3 turns",
     ]);
-    expect(fuses.map((line) => line.dataset.urgent)).toEqual(["true", "false"]);
+    expect(lines.map((line) => line.dataset.role)).toEqual([
+      "mouth",
+      "fuse",
+      "fuse",
+    ]);
+    expect(lines.map((line) => line.className)).toEqual([
+      "tut-mono tut-dim",
+      "tut-mono tut-deadline",
+      "tut-mono tut-deadline",
+    ]);
+    expect(lines.map((line) => line.dataset.urgent)).toEqual([
+      undefined,
+      "true",
+      "false",
+    ]);
     // Under the label in the stacked column; the count stays beside it.
-    expect(fuses[0]?.parentElement?.className).toBe("tut-hud__defence");
-    expect(fuses[0]?.previousElementSibling?.textContent).toBe(
+    expect(lines[0]?.parentElement?.className).toBe("tut-hud__defence");
+    expect(lines[0]?.previousElementSibling?.textContent).toBe(
       "Tunnels sealed",
     );
     expect(
       row?.querySelector('[data-role="tunnels-sealed"]')?.textContent,
     ).toBe("1 / 3");
     expect(row?.querySelector('[data-role="deadline"]')).toBeNull();
+  });
+
+  it("draws a mouth whose charge a bug pulled in the alert tone (Ben's rule, 2026-09-28)", () => {
+    const { chargeId: _pulled, ...open } = mouth("tunnel-2", 12);
+    const mission = {
+      turn: 5,
+      objectives: [SEAL],
+      tunnelMouths: [
+        mouth("tunnel-1", 0, 4),
+        { ...open, chargesPulled: 1 },
+        mouth("tunnel-3", 24),
+      ],
+      charges: [charge("tunnel-3", 24, 8)],
+    } as unknown as TacticalState;
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    view.update([SEAL], [], undefined, objectiveProgress(mission));
+
+    const pulled = root.querySelector<HTMLElement>(
+      '[data-mouth-state="pulled"]',
+    );
+    expect(pulled?.textContent).toBe("Tunnel 2 charge pulled");
+    expect(pulled?.className).toBe("tut-mono tut-objective-alert");
+    expect(pulled?.dataset.urgent).toBeUndefined();
   });
 
   it("sets a row's countdowns after its deadline, one line each, in a stacked row too", () => {

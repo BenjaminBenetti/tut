@@ -70,7 +70,7 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
  *   defend-installation/act-1…3   the three defences (#1179 C2b-2)
  *   story:uplink/act-3            Uplink (#1179 C2b-2)
  *   story:launch-window/finale    Launch Window (#1179 C2b-2)
- *   tunnel-sabotage/act-2         act 2 only: act 3's new player wins every seed (#1179 C2b-2)
+ *   tunnel-sabotage/act-2, act-3  both Tunnel Sabotage cells, the charge pullable (#1179 C2b-2)
  *   wreck-recovery/act-2, act-3   both Wreck Recovery cells (#1179 C2b-2)
  * ```
  *
@@ -96,6 +96,7 @@ export const TARGETED_CELLS: readonly string[] = [
   "story:uplink/act-3",
   "story:launch-window/finale",
   "tunnel-sabotage/act-2",
+  "tunnel-sabotage/act-3",
   "wreck-recovery/act-2",
   "wreck-recovery/act-3",
 ];

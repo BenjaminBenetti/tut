@@ -348,7 +348,7 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three, the sabotage's five, the hunt's four and the platform's two", () => {
+  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three, the sabotage's six, the hunt's four and the platform's two", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
@@ -367,6 +367,7 @@ describe("briefingFieldsOf", () => {
       { field: "tech-multiplier", label: "Tech multiplier" },
       { field: "tunnels", label: "Tunnels" },
       { field: "fuse", label: "Fuse" },
+      { field: "guard", label: "Guard" },
       { field: "spread", label: "Spread due" },
       { field: "if-won", label: "Win" },
       { field: "if-ignored", label: "Ignored" },

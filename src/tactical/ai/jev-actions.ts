@@ -19,6 +19,7 @@ import { buildMoveGraph } from "../service/movement-service";
 import { validateMechAction } from "../service/mech-action-service";
 import { reloadPools, RELOAD_AP_COST } from "../service/reload-handler";
 import { applyTacticalCommand } from "../service/tactical-command-handlers";
+import { burningTunnelCharges } from "../service/tunnel-charge-service";
 import type { JevActionContext, JevActionRules } from "./jev-action-context";
 import { jevAttackCandidates } from "./jev-combat";
 import { jevEquipmentCandidates } from "./jev-equipment";
@@ -51,6 +52,8 @@ export function jevCandidates(
         ? view.spawners.filter((nest) => !nest.destroyed)
         : []),
     ],
+    // A bug may pull a burning tunnel charge (Ben's rule, 2026-09-28).
+    charges: actor.team === "bugs" ? burningTunnelCharges(view) : [],
     /** Keep each command paired with the exact facts sent to Jev. */
     add(category, command, details, actionType): void {
       candidates.push({

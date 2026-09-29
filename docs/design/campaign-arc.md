@@ -163,12 +163,13 @@ Each new type pays something the others do not, so choosing between offers is a 
 
 ### 6.7 Tunnel Sabotage (Act II, about 5 missions in)
 
-- **Objective:** the bugs are tunnelling toward the next city. Set charges on **three tunnel mouths** (Interact), survive the fuse (**3 turns**), then extract. Burrowers come up through any mouth still open.
+- **Objective:** the bugs are tunnelling toward the next city. Set charges on **three tunnel mouths** (Interact), hold each through its fuse (**3 turns**), then extract. Burrowers come up through any mouth still open.
+- **Defending the charge (Ben, 2026-09-28):** while a charge burns, one melee attack by a bug pulls it (`meleeHitsToDisarm: 1`). The charge never goes off, the mouth is open and uncharged again, and burrowers use it; a squad or mech sets a new charge with Interact, on a full fuse. A bug cannot pull a charge in the bug phase it surfaced, only from its next, so a burrower that comes up beside a charge gives the force one turn to kill it. The bugs go for a burning charge before anything else whenever a bite reaches it this turn, as they go for a generator (§6.3). The tracker shows each mouth as open, burning (turns left), pulled or sealed, and the log names the bug that pulled one.
 - **Eligible:** a city at ≥ 60 whose spread cooldown is nearly over. This makes overworld spread visible and stoppable.
 - **Pays:** that spread is cancelled, and the city cannot spread for 10 days.
 - **Ignored or lost:** the spread happens as normal.
 - **Reuses:** the breaching charge and demolition. **New:** tunnel-mouth map hooks.
-- **Waves (#1179):** every edge wave lands three times larger, rounded up, standing up to 3 steps outside its edge zone. The charges cannot be pulled once set, so the fight is on the way home.
+- **Waves (#1179):** the shared edge waves. Before the charges could be pulled, every wave landed three times larger and the fight was on the way home; now the fight is at the mouths while the fuses burn, and the surge took Act II first. Measured in `docs/design/calibration/C2b-2-defence.md`: the new player wins 27/32 in Act II and 31/32 in Act III, the expert 31/32 and 32/32.
 
 ### 6.8 Alpha Hunt (Act II, about 10 missions in)
 

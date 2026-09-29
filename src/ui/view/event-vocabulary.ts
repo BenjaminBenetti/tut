@@ -5,6 +5,7 @@ import {
 import { SPAWNER_VARIANT_TRAITS } from "../../tactical/model/spawner-variant";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { TUNNEL_TUNING } from "../../tactical/data/tunnel-tuning";
+import { isTunnelChargeId } from "../../tactical/service/objectives/seal-tunnels-objective";
 import { chargeDelayText } from "../service/charge-delay-text";
 import type { BugsSpawnedEvent } from "../../tactical/model/bugs-spawned-event";
 import type { MissionStageState } from "../../tactical/model/mission-stage";
@@ -96,6 +97,16 @@ export function describeEvent(
       // for 12" -- the consequence still speaks, in its own words.
       return undefined;
     case "tactical:attack-resolved":
+      // A bite that pulled a tunnel charge says so in the
+      // `tunnel-charge-disarmed` line after it; "hit the charge for 1"
+      // before that would count hits the player never sees.
+      if (
+        event.payload.hit &&
+        event.payload.targetHp <= 0 &&
+        isTunnelChargeId(event.payload.targetId)
+      ) {
+        return undefined;
+      }
       return event.payload.hit
         ? {
             text: `${nameOf(event.payload.attackerId)} hit ${names.target(
@@ -329,6 +340,16 @@ export function describeEvent(
         )}`,
         icon: "warning",
         tone: "accent",
+      };
+    case "tactical:tunnel-charge-disarmed":
+      // Ben's rule (2026-09-28): the charge is gone, the mouth open, and
+      // someone has to set another, so it reads as a loss.
+      return {
+        text: `${nameOf(event.payload.unitId)} pulled ${names.target(
+          event.payload.chargeId,
+        )} · the mouth is open again`,
+        icon: "warning",
+        tone: "danger",
       };
     case "tactical:tunnel-sealed":
       return {
@@ -645,6 +666,9 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return event.payload.charge.ownerId;
     case "tactical:tunnel-charge-set":
       // Above the squad at the mouth: setting the charge is what it did.
+      return event.payload.unitId;
+    case "tactical:tunnel-charge-disarmed":
+      // Above the bug that pulled it, where it happened.
       return event.payload.unitId;
     case "tactical:specimen-captured":
     case "tactical:specimen-picked-up":

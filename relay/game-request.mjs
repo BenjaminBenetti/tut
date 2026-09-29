@@ -352,6 +352,18 @@ const stateShape = object(
     selected_movement: selectedMovement,
     // Sent only to an actor able to flee (#1179): where it leaves the map.
     map_edge_exit: list(coordinate, 1, 1),
+    // Sent only while a charge burns on a tunnel mouth (campaign arc §6.7).
+    tunnel_charges: list(
+      object({
+        id: identifier,
+        mouth_id: identifier,
+        position: coordinate,
+        detonates_on_turn: count,
+        hits_to_pull: count,
+      }),
+      16,
+      1,
+    ),
   },
 );
 

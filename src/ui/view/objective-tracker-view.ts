@@ -11,6 +11,7 @@ import type {
   ObjectiveProgressReadings,
   ObjectiveRow,
   ObjectiveRowDetail,
+  ObjectiveRowLine,
 } from "../model/objective-presentation";
 import { decidingObjectives } from "../../tactical/service/objectives/objective-status";
 import type { SitrepCountdown } from "../model/sitrep-presentation";
@@ -32,6 +33,13 @@ const STACK_CLASS = "tut-hud__defence";
 
 /** Class of a deadline countdown line; `data-urgent="true"` makes it pulse. */
 const DEADLINE_CLASS = "tut-deadline";
+
+/** Class of a row line each tone draws with, after `tut-mono`. */
+const LINE_CLASSES: Readonly<Record<ObjectiveRowLine["tone"], string>> = {
+  timer: DEADLINE_CLASS,
+  alert: "tut-objective-alert",
+  quiet: "tut-dim",
+};
 
 /** What the summary names once every deciding objective is done. */
 const DEFAULT_CLOSING_STEP = "board the drop ship";
@@ -79,7 +87,9 @@ const STAGE_ICONS = {
  *
  *   OBJECTIVES  0 / 1
  *   └ ◇ Tunnels sealed · 1 / 3
- *       Tunnel 2 blows in 2 turns          (a row's own countdown: data-role="fuse")
+ *       Tunnel 1 sealed                    (a row's own lines: data-role="mouth")
+ *       Tunnel 2 blows in 2 turns          (a timer line: data-role="fuse")
+ *       Tunnel 3 charge pulled             (an alert line)
  *
  *   OBJECTIVES  1 / 1 — on to the core     (a linked mission, #1179)
  *   │ ▸ The hull                           current   } the stages, above
@@ -103,8 +113,9 @@ const STAGE_ICONS = {
  * the HUD takes, since the objective record only mirrors them at phase
  * ends. An objective with a deadline gets its countdown under its label,
  * whatever its kind, from the countdowns the HUD takes, and a kind may
- * add countdowns of its own on its row (each tunnel charge's fuse, arc
- * §6.7), under the deadline. A sitrep with a
+ * add countdowns of its own on its row (a defence's hold) under the
+ * deadline, and lines of its own under those (each tunnel mouth's state,
+ * a fuse among them, arc §6.7). A sitrep with a
  * deadline (Dust-off Window, campaign arc §11) gets a row of its own
  * after the objectives, `data-sitrep-id`, with its countdown under its
  * name; it is not an objective, so the summary does not count it.
@@ -303,8 +314,9 @@ export class ObjectiveTrackerView {
  * `optional` tag on an objective that does not decide the mission
  * (#1179), and the `in reach` mark last. A countdown goes under the label
  * (and under a stacked detail), which stacks an inline row's label for it;
- * the row's own countdowns (a tunnel charge's fuse, arc §6.7) follow the
- * deadline, one line each.
+ * the row's own countdowns (a defence's hold) follow the deadline, and
+ * its own lines (each tunnel mouth, arc §6.7) follow those, one line
+ * each.
  */
 function rowElement(
   doc: Document,
@@ -335,6 +347,7 @@ function rowElement(
     ...(row.countdowns ?? []).map((timer) =>
       countdownElement(doc, timer, timer.role),
     ),
+    ...(row.lines ?? []).map((line) => lineElement(doc, line)),
   ];
   if (row.layout === "stacked") {
     // The label over its detail, not beside it: "2 / 3 generators ·
@@ -416,6 +429,25 @@ function countdownElement(
   span.dataset.role = role;
   span.dataset.urgent = countdown.urgent ? "true" : "false";
   span.textContent = countdown.text;
+  return span;
+}
+
+/**
+ * A row's own line as a monospace span in its tone's class, with its
+ * role and `data-*`; a timer line says whether it pulses, as a
+ * countdown does.
+ */
+function lineElement(doc: Document, line: ObjectiveRowLine): HTMLElement {
+  const span = doc.createElement("span");
+  span.className = `tut-mono ${LINE_CLASSES[line.tone]}`;
+  span.dataset.role = line.role;
+  if (line.tone === "timer") {
+    span.dataset.urgent = line.urgent === true ? "true" : "false";
+  }
+  for (const [key, value] of Object.entries(line.data ?? {})) {
+    span.dataset[key] = value;
+  }
+  span.textContent = line.text;
   return span;
 }
 

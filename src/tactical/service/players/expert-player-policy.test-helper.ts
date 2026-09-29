@@ -71,8 +71,11 @@ import type { PlayerView } from "./player-view.test-helper";
 //   force ──► collapsing? all home ──► settled? escort the couriers home
 //         ──► hurt home ──► crewed jobs ──► the main job, together
 //
-//   unit ──► extract? ──► objective action? ──► net? ──► heal? ──► grenade?
-//        ──► focused target, bar a likely kill? ──► kill shot / best shot
+//   unit ──► extract? ──► a priority bug in the sights, before the
+//            order's objective action? ──► objective action? ──► net?
+//        ──► heal? ──► grenade?
+//        ──► focused target, bar a likely kill? ──► kill shot / best shot,
+//            at the order's first priority bug in the sights, if any
 //        ──► reload? ──► the nest in sight? ──► jump?
 //        ──► move to cover toward the goal ──► overwatch, bar a gun
 //            whose reaction could kill the specimen it hunts
@@ -196,6 +199,8 @@ export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
           watch(unit, order, view, rules)
         );
       }
+      const clearing = clearFirst(unit, order, view, rules, seen);
+      if (clearing !== undefined) return shoot(clearing);
       const action =
         interactNow(unit, order, view, rules) ??
         netNow(unit, order, view, rules);
@@ -511,10 +516,12 @@ function targetShot(
 /**
  * The shot to take: the likeliest kill when one is likely enough, the
  * one at the lowest effective hit points first on a tie; otherwise the
- * most expected damage. Never one that reaches our own, never one that
- * could kill a bug the order wants alive (its capture species, or one
- * it spares), and never one that would wake a brood asleep in `seen` (a
- * loud gun in earshot, a target among them).
+ * most expected damage. At the first of the order's priority bugs it
+ * has a shot at, when there is one, with whichever weapon that rule
+ * picks. Never one that reaches our own, never one that could kill a
+ * bug the order wants alive (its capture species, or one it spares),
+ * and never one that would wake a brood asleep in `seen` (a loud gun in
+ * earshot, a target among them).
  */
 function bestShot(
   unit: Unit,
@@ -547,9 +554,16 @@ function bestShot(
         isLoudShot(view, unit, option.weaponId),
       ),
   );
+  const first = (order.priority ?? []).find((id) =>
+    options.some((option) => option.targetId === id),
+  );
+  const pool =
+    first === undefined
+      ? options
+      : options.filter((option) => option.targetId === first);
   let kill: ShotOption | undefined;
   let most: ShotOption | undefined;
-  for (const option of options) {
+  for (const option of pool) {
     if (
       option.killChance >= KILL_SHOT_CHANCE &&
       (kill === undefined ||
@@ -564,6 +578,29 @@ function bestShot(
     }
   }
   return kill ?? most;
+}
+
+/**
+ * The shot at the first of the order's priority bugs in the unit's
+ * sights, taken before the order's objective action: a tunnel charge
+ * set under a bug that pulls it in the coming bug phase is an action
+ * thrown away, so the bugs in reach of the mouth go first. Undefined
+ * for an order with no objective action or no priority bugs, or when
+ * none of them is in the sights; then the objective comes first.
+ */
+function clearFirst(
+  unit: Unit,
+  order: UnitOrder,
+  view: PlayerView,
+  rules: PlayerRules,
+  seen: PlayerView,
+): ShotOption | undefined {
+  const priority = order.priority ?? [];
+  if (order.interact === undefined || priority.length === 0) return undefined;
+  const shot = bestShot(unit, order, view, rules, seen);
+  return shot !== undefined && priority.includes(shot.targetId)
+    ? shot
+    : undefined;
 }
 
 /** The Attack command for a shot, when there is one. */

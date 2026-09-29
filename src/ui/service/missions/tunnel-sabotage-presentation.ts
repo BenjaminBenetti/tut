@@ -22,6 +22,9 @@ const TUNNELS: BriefingField = { field: "tunnels", label: "Tunnels" };
 /** How long a charge burns before it seals its mouth. */
 const FUSE: BriefingField = { field: "fuse", label: "Fuse" };
 
+/** What undoes a charge while it burns (Ben's rule, 2026-09-28). */
+const GUARD: BriefingField = { field: "guard", label: "Guard" };
+
 /** When the city spreads if nobody stops it. */
 const SPREAD: BriefingField = { field: "spread", label: "Spread due" };
 
@@ -37,13 +40,15 @@ const IF_IGNORED: BriefingField = { field: "if-ignored", label: "Ignored" };
 
 /**
  * Tunnel sabotage (arc §6.7): the tunnel glyph in the list, and a
- * briefing that says what to do, how long a charge burns, when the city
- * spreads, and what a win or a pass means for it. The debrief says how
- * many mouths were sealed and whether the spread is held.
+ * briefing that says what to do, how long a charge burns and that a
+ * bug's bite pulls it meanwhile, when the city spreads, and what a win
+ * or a pass means for it. The debrief says how many mouths were sealed
+ * and whether the spread is held.
  *
  * ```
  *   Tunnels      Seal 3 tunnel mouths, then extract
  *   Fuse         Charges burn for 3 turns
+ *   Guard        Hold each mouth: a bug's bite pulls a burning charge
  *   Spread due   In 2 days
  *   Win          Cairo cannot spread for 10 days
  *   Ignored      Cairo spreads
@@ -56,7 +61,7 @@ const IF_IGNORED: BriefingField = { field: "if-ignored", label: "Ignored" };
 export const TUNNEL_SABOTAGE_PRESENTATION: MissionPresentation = {
   typeId: "tunnel-sabotage",
   icon: "tunnel",
-  briefingFields: [TUNNELS, FUSE, SPREAD, IF_WON, IF_IGNORED],
+  briefingFields: [TUNNELS, FUSE, GUARD, SPREAD, IF_WON, IF_IGNORED],
   briefingRows: tunnelRows,
   debriefTagline: tunnelTagline,
 };
@@ -66,7 +71,7 @@ export const TUNNEL_SABOTAGE_PRESENTATION: MissionPresentation = {
 // ===========================================
 
 /**
- * The task and the fuse on every tunnel sabotage; the spread's day and
+ * The task, the fuse and the guard on every tunnel sabotage; the spread's day and
  * what a win or a pass does to the city when the offer records the
  * spread it races (every offer made since the type exists does).
  */
@@ -83,6 +88,7 @@ function tunnelRows(
       ...FUSE,
       value: `Charges burn for ${formatWhole(TUNNEL_TUNING.fuseTurns)} turns`,
     },
+    { ...GUARD, value: "Hold each mouth: a bug's bite pulls a burning charge" },
   ];
   const spec = mission.tunnelSabotage;
   if (spec === undefined) {

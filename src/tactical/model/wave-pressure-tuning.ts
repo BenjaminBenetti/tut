@@ -37,8 +37,6 @@ export interface EdgeWavePressure {
 export interface WavePressureTuning {
   /** Defend Installation, and the story defences on it (Uplink, Launch Window). */
   readonly defence: EdgeWavePressure;
-  /** Tunnel Sabotage. */
-  readonly tunnel: EdgeWavePressure;
   /** Wreck Recovery. */
   readonly wreck: EdgeWavePressure;
 }

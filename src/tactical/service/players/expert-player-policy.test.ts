@@ -5,6 +5,7 @@ import { PassMask } from "../../../mapgen/model/pass-mask";
 import type { TileCoord } from "../../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../../mapgen/service/fixture-map-builder";
 import { ATTACK } from "../../model/attack-command";
+import { INTERACT } from "../../model/interact-command";
 import { MOVE } from "../../model/move-command";
 import { OVERWATCH } from "../../model/overwatch-command";
 import { USE_EQUIPMENT } from "../../model/use-equipment-command";
@@ -21,6 +22,7 @@ import type { UnitOrder } from "./objective-strategy.test-helper";
 import {
   FIXTURE_PLAYER_RULES,
   lookingMission,
+  tunnelMission,
 } from "./player-fixtures.test-helper";
 import type { ForcePlan } from "./player-policy.test-helper";
 import { observe } from "./player-view.test-helper";
@@ -108,6 +110,56 @@ describe("the expert player", () => {
     const focused = EXPERT.next(view.own[0]!, { ...order, focus: true }, view);
     expect(focused?.type).toBe(ATTACK);
     expect(focused?.payload).toMatchObject({ targetId: "mother" });
+  });
+
+  it("fires on the first bug the order puts first before a likelier kill", () => {
+    // A tunnel job's charge threats: the bug that could bite the charge
+    // goes first, though another offers the kill.
+    const mission = lookingMission([
+      unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 }),
+      unitAt("near", "infantry", { x: 3, y: 0, z: 1 }, { team: "bugs" }),
+      unitAt("weak", "infantry", { x: 5, y: 0, z: 1 }, { team: "bugs", hp: 2 }),
+    ]);
+    const view = observe(mission);
+    const order: UnitOrder = {
+      kind: "guard",
+      goals: [{ x: 1, y: 0, z: 1 }],
+      holdRadius: 0,
+    };
+    expect(EXPERT.next(view.own[0]!, order, view)?.payload).toMatchObject({
+      targetId: "weak",
+    });
+    const first = EXPERT.next(
+      view.own[0]!,
+      { ...order, priority: ["gone", "near", "weak"] },
+      view,
+    );
+    expect(first?.type).toBe(ATTACK);
+    expect(first?.payload).toMatchObject({ targetId: "near" });
+  });
+
+  it("shoots a bug that could bite the mouth before setting its charge, and sets it with none in its sights", () => {
+    const mission = tunnelMission(
+      [
+        unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 }),
+        unitAt("near", "infantry", { x: 4, y: 0, z: 1 }, { team: "bugs" }),
+      ],
+      [{ id: "tunnel-1", pos: { x: 1, y: 0, z: 2 }, state: "open" }],
+    );
+    const view = observe(mission);
+    const order: UnitOrder = {
+      kind: "work",
+      goals: [{ x: 1, y: 0, z: 2 }],
+      interact: "seal",
+    };
+    expect(EXPERT.next(view.own[0]!, order, view)?.type).toBe(INTERACT);
+    const clearing = EXPERT.next(
+      view.own[0]!,
+      { ...order, priority: ["near"] },
+      view,
+    );
+    expect(clearing?.type).toBe(ATTACK);
+    expect(clearing?.payload).toMatchObject({ targetId: "near" });
   });
 
   describe("hunting a specimen", () => {

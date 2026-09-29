@@ -1,9 +1,12 @@
 /* global document, requestAnimationFrame, window */
 /**
  * Captures the tunnel sabotage (#1179, arc §6.7): its briefing on the
- * overworld board (`docs/design/tunnel-sabotage-briefing.png`), and the
- * mission with one mouth sealed and a charge burning on another
- * (`docs/design/tunnel-sabotage-mission.png`).
+ * overworld board (`docs/design/tunnel-sabotage-briefing.png`), the
+ * mission with one mouth sealed and a charge burning on another, its
+ * fuse counting on the tracker (`docs/design/tunnel-sabotage-mission.png`),
+ * and the next turn, a bug having pulled that charge: the log's line and
+ * the mouth open on the tracker (`docs/design/tunnel-sabotage-pulled.png`,
+ * Ben's rule of 2026-09-28).
  *
  * The campaign is staged in Node through the shipped composition root
  * (`composeGame` + `AdvanceDay`): five missions into Act II, with the
@@ -15,17 +18,20 @@
  * wheel; the force waits out the fuse at the drop ship over three real
  * end turns, and a second squad then does the same at the next mouth
  * while a third stands between the two, where the camera looks from.
+ * Last, a swarmer is stood beside the burning charge and the turn ends:
+ * in the bug phase it bites the charge where it stands, and the frame is
+ * taken as the next player phase opens.
  *
  * ```
- *   vite --port 4232 --strictPort &
- *   CAPTURE_BASE_URL=http://localhost:4232 node tools/ui/capture-tunnel-sabotage.mjs
+ *   vite --port 4255 --strictPort &
+ *   CAPTURE_BASE_URL=http://localhost:4255 node tools/ui/capture-tunnel-sabotage.mjs
  * ```
  */
 import { chromium, expect } from "@playwright/test";
 import assert from "node:assert/strict";
 import { createServer } from "vite";
 
-const baseUrl = process.env.CAPTURE_BASE_URL ?? "http://localhost:4232";
+const baseUrl = process.env.CAPTURE_BASE_URL ?? "http://localhost:4255";
 const SEED = 7;
 const NOW = "2026-09-26T00:00:00.000Z";
 const SAVE_KEY = "tut:save:autosave";
@@ -53,11 +59,15 @@ try {
     { MemoryKeyValueStore },
     { advanceDay },
     { INFESTATION_TUNING },
+    { pullCharge },
+    { COMBAT_TUNING },
   ] = await Promise.all([
     loader.ssrLoadModule("/src/app/service/game-composition.ts"),
     loader.ssrLoadModule("/src/save/repository/memory-key-value-store.ts"),
     loader.ssrLoadModule("/src/overworld/model/advance-day-command.ts"),
     loader.ssrLoadModule("/src/overworld/data/infestation-tuning.ts"),
+    loader.ssrLoadModule("/src/bugs/ai/charge-first-behaviour.ts"),
+    loader.ssrLoadModule("/src/tactical/data/combat-tuning.ts"),
   ]);
 
   /** A Node-side game holding `state`, advanced until `until` holds. */
@@ -283,6 +293,9 @@ try {
   );
   await expect(details.locator('[data-field="detail-fuse"]')).toHaveText(
     "Charges burn for 3 turns",
+  );
+  await expect(details.locator('[data-field="detail-guard"]')).toHaveText(
+    "Hold each mouth: a bug's bite pulls a burning charge",
   );
   await settle();
   await page.mouse.move(0, 0);
@@ -544,7 +557,122 @@ try {
     .locator(`[data-objective-id="${objective.id}"]`)
     .first()
     .textContent();
-  const final = (await readSave()).state.activeMission;
+
+  // ===========================================
+  // 7. A swarmer beside the charge pulls it
+  // ===========================================
+
+  // Stood where the game's own charge-first rule (`pullCharge`) bites
+  // without a step, up since before this turn, so nothing refuses its
+  // bite (`charge-just-surfaced`) and it need not walk into anyone's
+  // fire: the bug phase has it bite where it stands.
+  const burning = await readSave();
+  const burningMission = burning.state.activeMission;
+  const burningMouth = burningMission.tunnelMouths.find(
+    (m) => m.id === second.id,
+  );
+  assert.ok(burningMouth.chargeId, "the second mouth's charge is burning");
+  const standing = new Set(
+    burningMission.units.filter((u) => u.hp > 0).map((u) => key(u.pos)),
+  );
+  const swarmer = burningMission.templates["bug:swarmer"];
+  assert.ok(swarmer, "the mission carries the swarmer's template");
+  const biterAt = (pos) => ({
+    id: "unit-capture-biter",
+    kind: "bug",
+    team: "bugs",
+    // A bug's source is its species, which is how the bug phase finds
+    // the behaviour it plays.
+    sourceId: swarmer.id.replace(/^bug:/, ""),
+    templateId: swarmer.id,
+    pos: { x: pos.x, y: pos.y, z: pos.z },
+    facing: "n",
+    hp: swarmer.maxHp,
+    maxHp: swarmer.maxHp,
+    ap: swarmer.maxAp,
+    maxAp: swarmer.maxAp,
+    status: [],
+    passClass: "infantry",
+  });
+  const withBiter = (pos) => ({
+    ...burningMission,
+    units: [...burningMission.units, biterAt(pos)],
+  });
+  // Asked as the bug phase will ask it: an attack out of phase is refused.
+  const bitesInPlace = (pos) => {
+    const board = { ...withBiter(pos), phase: "bugs" };
+    const commands = pullCharge(board, "unit-capture-biter", {
+      combat: COMBAT_TUNING,
+    });
+    return commands?.length === 1;
+  };
+  const biteFrom = [...tiles.values()]
+    .filter(
+      (tile) =>
+        (tile.pass & INFANTRY) !== 0 &&
+        manhattan(tile, second.pos) <= 2 &&
+        !props.has(key(tile)) &&
+        !mouthTiles.has(key(tile)) &&
+        !standing.has(key(tile)),
+    )
+    .sort(
+      (a, b) =>
+        manhattan(a, second.pos) - manhattan(b, second.pos) ||
+        manhattan(b, middle) - manhattan(a, middle),
+    )
+    .find(bitesInPlace);
+  assert.ok(biteFrom, "no free tile the charge can be bitten from");
+  const biter = biterAt(biteFrom);
+  await resume(
+    {
+      ...burning,
+      state: {
+        ...burning.state,
+        activeMission: {
+          ...burningMission,
+          units: [...burningMission.units, biter],
+        },
+      },
+    },
+    "tactical",
+  );
+  await tacticalReady();
+  await endTurn();
+  const pulledMission = (await readSave()).state.activeMission;
+  const pulledMouth = pulledMission.tunnelMouths.find(
+    (m) => m.id === second.id,
+  );
+  const after = pulledMission.units.find((u) => u.id === biter.id);
+  console.log(
+    JSON.stringify({
+      biteFrom: biter.pos,
+      chargeTile: second.pos,
+      biterAfter: after && { pos: after.pos, hp: after.hp, ap: after.ap },
+    }),
+  );
+  assert.equal(pulledMouth.chargeId, undefined, "the charge was pulled");
+  assert.equal(pulledMouth.chargesPulled, 1);
+  const pullLine = await page
+    .locator('[data-role="event-log-list"] [data-text]')
+    .evaluateAll((rows) =>
+      rows
+        .map((row) => row.dataset.text)
+        .filter((text) => text.includes("pulled the charge")),
+    );
+  assert.equal(pullLine.length, 1, "the log says who pulled it");
+  await centreOn(watcher.id);
+  await page.keyboard.press("Escape");
+  await page.mouse.move(720, 24);
+  await settle();
+  await page.screenshot({
+    path: "docs/design/tunnel-sabotage-pulled.png",
+    animations: "disabled",
+  });
+  console.log("captured docs/design/tunnel-sabotage-pulled.png");
+  const pulledTracker = await page
+    .locator(`[data-objective-id="${objective.id}"]`)
+    .first()
+    .textContent();
   console.log(
     JSON.stringify({
       day: offered.overworld.day,
@@ -555,11 +683,13 @@ try {
       sealed: first.id,
       charged: second.id,
       gap: manhattan(first.pos, second.pos),
-      turn: final.turn,
+      turn: pulledMission.turn,
       drawn: await page.evaluate(
         () => document.body.dataset.tacticalTunnelMouths,
       ),
       tracker,
+      pullLine,
+      pulledTracker,
     }),
   );
   assert.deepEqual(errors, []);

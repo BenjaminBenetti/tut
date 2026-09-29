@@ -44,6 +44,12 @@ export interface UnitOrder {
   readonly interact?: ObjectiveId;
   /** A spawner, or a named bug (the Broodmother), the order may shoot at while it is in sight. */
   readonly targetId?: string;
+  /**
+   * Bugs in sight the order shoots before any other, in this order: the
+   * first a unit has a shot at is its target. They can reach what the
+   * force holds (a burning tunnel charge) this bug phase.
+   */
+  readonly priority?: readonly UnitId[];
   /** Units of ours the order keeps close to. */
   readonly protect?: readonly UnitId[];
   /** Field steps from the goals within which the unit holds instead of closing further. */

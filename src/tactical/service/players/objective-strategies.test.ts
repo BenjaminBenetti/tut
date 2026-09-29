@@ -12,8 +12,13 @@ import {
   COVERED_OBJECTIVE_KINDS,
   DEFEND_GENERATORS_STRATEGY,
   DESTROY_HIVE_CORE_STRATEGY,
+  SEAL_TUNNELS_STRATEGY,
 } from "./objective-strategies.test-helper";
-import { lookingMission } from "./player-fixtures.test-helper";
+import {
+  lookingMission,
+  sealObjective,
+  tunnelMission,
+} from "./player-fixtures.test-helper";
 import { backOfMap } from "./player-goals.test-helper";
 import { distanceField } from "./player-navigation.test-helper";
 import type { PlayerView } from "./player-view.test-helper";
@@ -24,6 +29,36 @@ describe("the objective strategies", () => {
     expect([...COVERED_OBJECTIVE_KINDS].sort()).toEqual(
       Object.keys(OBJECTIVE_RULES).sort(),
     );
+  });
+});
+
+describe("the new player's tunnels (arc §6.7, Ben's rule of 2026-09-28)", () => {
+  it("sets a charge and moves on, and comes back to a mouth whose charge it sees pulled", () => {
+    const at = (x: number, z: number) => ({ x, y: 0, z });
+    const squad = [unitAt("alpha", "infantry", at(0, 0))];
+    const mouths = (tunnel2: "burning" | "pulled") =>
+      tunnelMission(squad, [
+        { id: "tunnel-1", pos: at(6, 1), state: "open" },
+        tunnel2 === "burning"
+          ? { id: "tunnel-2", pos: at(1, 6), state: "burning", goesOffOn: 5 }
+          : { id: "tunnel-2", pos: at(1, 6), state: "pulled" },
+        { id: "tunnel-3", pos: at(6, 6), state: "sealed" },
+      ]);
+    const work = (x: number, z: number) => ({
+      order: { kind: "work", goals: [at(x, z)], interact: "seal" },
+    });
+    // Burning: no job there; the force is off to the open mouth.
+    const set = mouths("burning");
+    const objective = sealObjective(set.tunnelMouths ?? []);
+    expect(SEAL_TUNNELS_STRATEGY.jobs(objective, observe(set))).toEqual([
+      work(6, 1),
+    ]);
+    // Pulled: the tracker says so, and the mouth is a job again.
+    const pulled = mouths("pulled");
+    expect(SEAL_TUNNELS_STRATEGY.jobs(objective, observe(pulled))).toEqual([
+      work(6, 1),
+      work(1, 6),
+    ]);
   });
 });
 

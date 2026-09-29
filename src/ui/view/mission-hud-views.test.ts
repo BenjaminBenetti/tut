@@ -1752,6 +1752,48 @@ describe("event vocabulary for tunnel sabotage (arc §6.7)", () => {
     expect(actorOf(SEALED)).toBeUndefined();
   });
 
+  it("logs a pulled charge over the bug in the danger tone, and drops the bite that pulled it", () => {
+    const bug = {
+      ...NAMES,
+      unit: () => "Swarmer",
+      target: (id: string) =>
+        id === "tunnel-1-charge-2" ? "the charge on tunnel 1" : "Rifle Squad",
+    };
+    const pulled = {
+      type: "tactical:tunnel-charge-disarmed" as const,
+      payload: {
+        unitId: "unit-9",
+        mouthId: "tunnel-1",
+        objectiveId: "objective-1",
+        chargeId: "tunnel-1-charge-2",
+        pulled: 2,
+      },
+    };
+    expect(describeEvent(pulled, bug)).toEqual({
+      text: "Swarmer pulled the charge on tunnel 1 · the mouth is open again",
+      icon: "warning",
+      tone: "danger",
+    });
+    expect(actorOf(pulled)).toBe("unit-9");
+    const bite = (targetId: string, targetHp: number) => ({
+      type: "tactical:attack-resolved" as const,
+      payload: {
+        attackerId: "unit-9",
+        targetId,
+        hit: true,
+        damage: 1,
+        targetHp,
+        weaponRange: 1,
+      },
+    });
+    // The pull is one line, not a hit and a pull.
+    expect(describeEvent(bite("tunnel-1-charge-2", 0), bug)).toBeUndefined();
+    // A bite on a squad still reads, down to 0 hit points.
+    expect(describeEvent(bite("unit-2", 0), bug)?.text).toBe(
+      "Swarmer hit Rifle Squad for 1",
+    );
+  });
+
   it("counts one burrower up a mouth as one bug", () => {
     expect(
       describeEvent(

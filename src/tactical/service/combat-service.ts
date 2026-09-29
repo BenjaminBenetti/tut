@@ -68,6 +68,7 @@ import { endIfOver } from "./mission-end-service";
 import { coverAgainst, elevationBonus } from "./sight-service";
 import { damageSpawner } from "./spawner-damage-service";
 import { ignite } from "./tile-effect-service";
+import { strikeTunnelCharge } from "./tunnel-charge-service";
 
 export type { AttackTerrain } from "./attack-formulae";
 export { damageRange, hitChance, resistanceTo } from "./attack-formulae";
@@ -220,16 +221,17 @@ const SIDE_PROBES: readonly { x: number; z: number }[] = [
 
 /**
  * Why this target cannot be shot at because it is already down, or
- * undefined while it still stands. Units die and spawners are destroyed,
- * so the rejection names the right thing for the HUD to phrase.
+ * undefined while it still stands. Units die; spawners are destroyed,
+ * and so is a tunnel charge with no hits left, so the rejection names
+ * the right thing for the HUD to phrase.
  */
 function targetDown(target: AttackTarget): TacticalError | undefined {
   if (target.hp > 0) {
     return undefined;
   }
-  return target.kind === "spawner"
-    ? { kind: "target-destroyed", targetId: target.id }
-    : { kind: "unit-dead", unitId: target.id };
+  return target.kind === "unit"
+    ? { kind: "unit-dead", unitId: target.id }
+    : { kind: "target-destroyed", targetId: target.id };
 }
 
 /** Attacker and target, both resolved and both still standing. */
@@ -385,6 +387,22 @@ export function validateAttack(
  * and the pair's `target.pos` is that struck tile, so the blast a hit
  * spreads is centred where the shot landed. A block gets no cover
  * (`terrainForFootprint`).
+ *
+ * A charge burning on a tunnel mouth (campaign arc §6.7) is pulled by
+ * hand: only a melee weapon may be aimed at it, and anything else is
+ * refused `charge-needs-melee` before range is judged. Only a bug gets
+ * this far, since the charge is the TDF's (`friendly-target`). A bug
+ * that came up out of the ground this turn is refused
+ * `charge-just-surfaced`: a burrower surfacing beside a charge pulls it
+ * from its next phase, so the watchers get a turn to kill it (the
+ * decision of 2026-09-28; without it no guard can stop a pull from
+ * below, and the charge is a coin flip on the mouths' schedule).
+ *
+ * ```
+ *   charge, weapon not melee        ──► charge-needs-melee
+ *   charge, attacker surfaced this turn ──► charge-just-surfaced
+ *   otherwise                       ──► range and line of sight, as for any target
+ * ```
  */
 export function validateTargeting(
   mission: TacticalState,
@@ -413,6 +431,12 @@ export function validateTargeting(
   }
   const refusal = weaponSystemRefusal(mission, attacker, weapon);
   if (refusal) return err(refusal);
+  if (target.kind === "charge" && !isMelee(weapon.profile)) {
+    return err({ kind: "charge-needs-melee", targetId });
+  }
+  if (target.kind === "charge" && attacker.surfacedOnTurn === mission.turn) {
+    return err({ kind: "charge-just-surfaced", unitId: attackerId, targetId });
+  }
   const index = tileIndexOf(mission.map);
   const targetSize = target.footprint ?? 1;
   const { from, to } = closestTiles(
@@ -681,6 +705,52 @@ function refuseWeapon(
 }
 
 // ===========================================
+// Odds
+// ===========================================
+
+/** What an attack rolls against its target: the hit chance and the damage band. */
+interface AttackOdds {
+  /** Percent. */
+  readonly chance: number;
+  readonly band: readonly [number, number];
+  /**
+   * Nothing to roll: the attack lands for the band's low end and draws
+   * nothing from the stream. Only a tunnel charge's odds are fixed.
+   */
+  readonly fixed: boolean;
+}
+
+/**
+ * The odds a validated attack is rolled on, the one place the preview
+ * and the roll read them, so they cannot disagree. A charge burning on a
+ * tunnel mouth (campaign arc §6.7) is a satchel in a hole: every melee
+ * attack on it lands, and each takes exactly one of its hits
+ * (`meleeHitsToDisarm`), so its odds are fixed — certain and one, with
+ * nothing drawn; everything else is the weapon's formulae against the
+ * target's cover, armour and resistances.
+ *
+ * ```
+ *   target.kind "charge" ──► 100%, [1, 1], fixed
+ *   otherwise            ──► hitChance(weapon, terrain), damageRange(weapon, armour, resist)
+ * ```
+ */
+function attackOdds(
+  target: AttackTarget,
+  weapon: WeaponProfile,
+  terrain: AttackTerrain,
+  tuning: CombatTuning,
+): AttackOdds {
+  if (target.kind === "charge") {
+    return { chance: 100, band: [1, 1], fixed: true };
+  }
+  return {
+    chance: hitChance(weapon, terrain, tuning),
+    band: damageRange(weapon, target.armor, tuning, target.resist),
+    fixed: false,
+  };
+}
+
+// ===========================================
 // Preview
 // ===========================================
 
@@ -724,17 +794,12 @@ export function previewAttack(
         attacker.pos,
       )
     : undefined;
+  const odds = attackOdds(target, weapon.profile, terrain, tuning);
   return ok({
-    hitChance: hitChance(weapon.profile, terrain, tuning),
-    damage: damageRange(
-      weapon.profile,
-      target.armor,
-      tuning,
-      target.resist,
-    ).map((damage) => protectedDamage(mission, target.id, damage)) as [
-      number,
-      number,
-    ],
+    hitChance: odds.chance,
+    damage: odds.band.map((damage) =>
+      protectedDamage(mission, target.id, damage),
+    ) as [number, number],
     distance: terrain.distance,
     cover: terrain.cover,
     flanked: terrain.flanked,
@@ -896,6 +961,10 @@ export function blastDamageRange(
  *   4. per reached tile, chance(effect)        only for a weapon with an effect
  * ```
  *
+ * A melee attack on a tunnel charge (campaign arc §6.7) draws neither 1
+ * nor 2: its odds are fixed (`attackOdds`), it lands for one hit, and
+ * `strikeTunnelCharge` pulls the charge when that was its last.
+ *
  * The target loses the damage (never below zero hit points) and the
  * attacker's action points become `apAfter`: what the attack leaves for
  * a normal shot, unchanged for an overwatch reaction. Emits
@@ -923,10 +992,18 @@ export function rollAttack(
   deps: AttackDeps,
 ): AttackRoll {
   const { attacker, weapon, target, terrain } = checked;
-  const chance = hitChance(weapon.profile, terrain, tuning);
-  const band = damageRange(weapon.profile, target.armor, tuning, target.resist);
-  const hit = ctx.rng.chance(chance / 100);
-  const rawDamage = hit ? ctx.rng.nextInt(band[0], band[1]) : 0;
+  const { chance, band, fixed } = attackOdds(
+    target,
+    weapon.profile,
+    terrain,
+    tuning,
+  );
+  const hit = fixed || ctx.rng.chance(chance / 100);
+  const rawDamage = !hit
+    ? 0
+    : fixed
+      ? band[0]
+      : ctx.rng.nextInt(band[0], band[1]);
   const damage = protectedDamage(mission, target.id, rawDamage);
   const targetHp = Math.max(0, target.hp - damage);
 
@@ -1224,7 +1301,9 @@ function billShot(
 
 /**
  * Takes `damage` off `target`, wherever it lives: a spawner through
- * `damageSpawner`, the one rule for that; a unit by its hit points, with
+ * `damageSpawner`, the one rule for that; a tunnel charge through
+ * `strikeTunnelCharge`, one hit however much was rolled, which pulls it
+ * at none (campaign arc §6.7); a unit by its hit points, with
  * `UnitDied` when they reach zero — or `TurretDestroyed` when the unit
  * is a turret (#1155, `downedEvent`). Zero damage changes nothing.
  */
@@ -1240,6 +1319,9 @@ function applyDamage(
   }
   if (damage <= 0) {
     return { state: mission, events: [] };
+  }
+  if (target.kind === "charge") {
+    return strikeTunnelCharge(mission, target.id, attackerId);
   }
   const hp = Math.max(
     0,

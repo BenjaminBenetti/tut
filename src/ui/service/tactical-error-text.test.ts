@@ -59,6 +59,8 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "out-of-range", distance: 14, range: 10 },
   { kind: "no-line-of-sight", targetId: ID },
   { kind: "target-destroyed", targetId: ID },
+  { kind: "charge-needs-melee", targetId: ID },
+  { kind: "charge-just-surfaced", unitId: ID, targetId: ID },
   { kind: "no-charges", unitId: ID },
   { kind: "no-such-weapon", unitId: ID },
   { kind: "charges-full", unitId: ID },
@@ -481,5 +483,38 @@ describe("namesFor names objectives through OBJECTIVE_PRESENTATION (ADR 0013 §2
     expect(names.spawner("spawner-7")).toBe("probe nest #2");
     expect(names.target("spawner-7")).toBe("probe nest #2");
     expect(names.objective("objective-404")).toBe("that objective");
+  });
+});
+
+describe("namesFor on a tunnel charge (campaign arc §6.7)", () => {
+  it("names each charge by its mouth's place in the objective, burning or pulled, and words the melee refusal", () => {
+    const names = namesFor(
+      {
+        units: [],
+        spawners: [],
+        // Only the objective's order counts: the log agrees with the
+        // tracker's "Tunnel 2", whatever the charge's state.
+        objectives: [
+          {
+            id: "objective-1",
+            kind: "seal-tunnels",
+            mouthIds: ["tunnel-3", "tunnel-1"],
+            complete: false,
+          },
+        ],
+      } as unknown as Parameters<typeof namesFor>[0],
+      undefined,
+    );
+    expect(names.target("tunnel-1-charge")).toBe("the charge on tunnel 2");
+    expect(names.target("tunnel-1-charge-3")).toBe("the charge on tunnel 2");
+    expect(names.target("tunnel-3-charge")).toBe("the charge on tunnel 1");
+    // A mouth the objective does not name has no ordinal to be called by.
+    expect(names.target("tunnel-2-charge")).toBe("that unit");
+    expect(
+      describeRefusal(
+        { kind: "charge-needs-melee", targetId: "tunnel-1-charge-2" },
+        names,
+      ),
+    ).toBe("The charge on tunnel 2 can only be pulled by hand");
   });
 });

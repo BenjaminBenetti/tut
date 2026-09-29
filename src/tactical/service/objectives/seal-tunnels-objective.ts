@@ -14,8 +14,12 @@ import type {
   TacticalState,
 } from "../../model/tactical-state";
 import { TUNNEL_CHARGE_SET } from "../../model/tunnel-charge-set-event";
-import type { TunnelMouth } from "../../model/tunnel-mouth";
-import { isCharged, isSealed } from "../../model/tunnel-mouth";
+import type { TunnelMouth, TunnelMouthId } from "../../model/tunnel-mouth";
+import {
+  isCharged,
+  isSealed,
+  TUNNEL_MOUTH_ID_PREFIX,
+} from "../../model/tunnel-mouth";
 import { TUNNEL_SEALED } from "../../model/tunnel-sealed-event";
 import type { TunnelTuning } from "../../model/tunnel-tuning";
 import type { Unit } from "../../model/unit";
@@ -28,10 +32,13 @@ import type { LiveObjectiveRule } from "./objective-flag-mirror";
 // Types
 // ===========================================
 
-/** What the objective reads from the tunnel tuning: the fuse and its blast. */
+/**
+ * What the objective reads from the tunnel tuning: the fuse, its blast,
+ * and the melee hits that pull a charge.
+ */
 export type SealTunnelsTuning = Pick<
   TunnelTuning,
-  "fuseTurns" | "chargeEquipmentId"
+  "fuseTurns" | "chargeEquipmentId" | "meleeHitsToDisarm"
 >;
 
 /** How the sealing stands, read live from the mission. */
@@ -97,14 +104,67 @@ export function sealProgress(
 }
 
 /**
- * The id a mouth's charge is issued: one per mouth, ever, since a mouth
- * takes one charge and the charge seals it. Derived rather than drawn
- * from the mission's id generator, which an interaction is not handed.
+ * The id the next charge set on a mouth is issued: `<mouth>-charge` for
+ * the first, then `<mouth>-charge-2`, `-3` … for each set after the bugs
+ * pulled one (campaign arc §6.7), so no two charges a mission sees share
+ * an id and a log line about a pulled charge never names the new one.
+ * Derived rather than drawn from the mission's id generator, which an
+ * interaction is not handed.
  *
- * @param mouth - The mouth the charge is set on.
+ * @param mouth - The mouth the charge is set on, and how often it was pulled.
  */
-export function tunnelChargeId(mouth: Pick<TunnelMouth, "id">): string {
-  return `${mouth.id}-charge`;
+export function tunnelChargeId(
+  mouth: Pick<TunnelMouth, "id" | "chargesPulled">,
+): string {
+  const pulled = mouth.chargesPulled ?? 0;
+  return pulled === 0
+    ? `${mouth.id}-charge`
+    : `${mouth.id}-charge-${String(pulled + 1)}`;
+}
+
+/**
+ * Whether `id` is one `tunnelChargeId` issued for any mouth: a tunnel
+ * mouth's id with the charge suffix. A unit, a spawner or a wall
+ * charge's id is not.
+ *
+ * @param id - Any target id.
+ */
+export function isTunnelChargeId(id: string): boolean {
+  const at = id.indexOf("-charge");
+  return (
+    id.startsWith(`${TUNNEL_MOUTH_ID_PREFIX}-`) &&
+    at > 0 &&
+    isTunnelChargeOf(id, id.slice(0, at))
+  );
+}
+
+/**
+ * Whether `chargeId` is one `tunnelChargeId` issued for the mouth
+ * `mouthId`, whether it is burning, went off or was pulled: the log and
+ * the tracker name a charge by its mouth after the charge itself is gone
+ * from `charges`.
+ *
+ * ```
+ *   tunnel-1, "tunnel-1-charge"    ──► true
+ *   tunnel-1, "tunnel-1-charge-3"  ──► true
+ *   tunnel-1, "tunnel-10-charge"   ──► false
+ * ```
+ *
+ * @param chargeId - A `PlacedCharge` id, or any other target id.
+ * @param mouthId - The mouth.
+ */
+export function isTunnelChargeOf(
+  chargeId: string,
+  mouthId: TunnelMouthId,
+): boolean {
+  const first = `${mouthId}-charge`;
+  if (chargeId === first) {
+    return true;
+  }
+  const count = chargeId.startsWith(`${first}-`)
+    ? chargeId.slice(first.length + 1)
+    : "";
+  return /^\d+$/.test(count);
 }
 
 // ===========================================
@@ -118,7 +178,10 @@ export function tunnelChargeId(mouth: Pick<TunnelMouth, "id">): string {
  * it is the breaching charge of #1132 (`tuning.chargeEquipmentId`), set
  * on the mouth's middle tile with a `fuseTurns` fuse: it burns in
  * `TacticalState.charges`, goes off through the detonate step like any
- * other, and `sealBlownMouths` then caves the mouth in.
+ * other, and `sealBlownMouths` then caves the mouth in. Until then a
+ * bug's melee attacks pull it (`meleeHitsToDisarm`, Ben's rule of
+ * 2026-09-28; `strikeTunnelCharge`), and a mouth the bugs pulled a
+ * charge off is open again: this sets a new one, on a full fuse.
  *
  * ```
  *   not seal-tunnels ──► objective-not-interactive
@@ -128,9 +191,9 @@ export function tunnelChargeId(mouth: Pick<TunnelMouth, "id">): string {
  *   nearest open, uncharged mouth > interactRange ──► objective-out-of-reach
  *          │
  *          ▼
- *   PlacedCharge { id: <mouth>-charge, owner: unit, tile: mouth.pos,
+ *   PlacedCharge { id: tunnelChargeId(mouth), owner: unit, tile: mouth.pos,
  *                  detonatesOnTurn: turn + fuseTurns }
- *   mouth.chargeId ← that id
+ *   mouth.chargeId ← that id, mouth.chargeHitsLeft ← meleeHitsToDisarm
  *   TunnelChargeSet { unitId, mouthId, objectiveId, chargeId, detonatesOnTurn }
  * ```
  *
@@ -141,7 +204,7 @@ export function tunnelChargeId(mouth: Pick<TunnelMouth, "id">): string {
  * should not ask a mech-heavy force for a squad it did not bring.
  * The Interact handler bills the action point.
  *
- * @param tuning - The fuse and the charge's equipment.
+ * @param tuning - The fuse, the charge's equipment and the hits that pull it.
  */
 export function createSetTunnelCharge(
   tuning: SealTunnelsTuning,
@@ -194,7 +257,11 @@ export function createSetTunnelCharge(
         charges: [...mission.charges, charge],
         tunnelMouths: (mission.tunnelMouths ?? []).map((candidate) =>
           candidate.id === mouth.id
-            ? { ...candidate, chargeId: charge.id }
+            ? {
+                ...candidate,
+                chargeId: charge.id,
+                chargeHitsLeft: tuning.meleeHitsToDisarm,
+              }
             : candidate,
         ),
       },
@@ -232,9 +299,11 @@ export function createSetTunnelCharge(
  *     otherwise ──► unchanged
  * ```
  *
- * A charge leaves `charges` only by going off, so its absence is the
- * blast. The objective's completion is read live from the mouths; the
- * mission still waits for the force to extract.
+ * A charge leaves `charges` by going off or by being pulled, and a
+ * pulled one takes the mouth's `chargeId` with it (`strikeTunnelCharge`),
+ * so a charged mouth whose charge is gone was blown. The objective's
+ * completion is read live from the mouths; the mission still waits for
+ * the force to extract.
  */
 export const sealBlownMouths: PhaseStep = (mission) => {
   const mouths = mission.tunnelMouths ?? [];
@@ -334,8 +403,9 @@ export const SEAL_TUNNELS_STEP: PhaseStep = (mission, ctx) => {
 
 /**
  * `seal-tunnels` (campaign arc §6.7): set a charge on every tunnel
- * mouth, survive the fuse, then extract, as a clearance does once its
- * nests are down.
+ * mouth, hold it through the fuse — a bug's melee attack pulls a
+ * burning charge, and the mouth then needs another — then extract, as a
+ * clearance does once its nests are down.
  *
  * ```
  *   complete       every mouth it names is sealed
@@ -357,7 +427,7 @@ export const SEAL_TUNNELS_STEP: PhaseStep = (mission, ctx) => {
  * burning when the last squad boards never goes off, because the
  * mission ends with them.
  *
- * @param tuning - The fuse and the charge's equipment.
+ * @param tuning - The fuse, the charge's equipment and the hits that pull it.
  */
 export function createSealTunnelsObjective(
   tuning: SealTunnelsTuning,

@@ -12,6 +12,7 @@ import {
 } from "../../tactical/service/jev-control-service";
 import { chooseBugCommands } from "../../bugs/ai/behaviour-registry";
 import { AlphaBehaviour } from "../../bugs/ai/alpha-behaviour";
+import { ChargeFirstLookup } from "../../bugs/ai/charge-first-behaviour";
 import { viewFor } from "../../tactical/service/mission-view-service";
 import { MECH_ACTION } from "../../tactical/model/mech-action-command";
 import { createMechActionHandler } from "../../tactical/service/mech-action-service";
@@ -456,12 +457,16 @@ export function shippedTacticalHandlers(
   // A crowned alpha plays its species' own behaviour from this registry,
   // with focus fire on top (#1179), so it is registered beside them.
   registry.register(new AlphaBehaviour(registry, speciesOf));
+  // Every bug goes for a burning tunnel charge it can pull this turn
+  // before anything its behaviour would do (campaign arc §6.7, Ben's
+  // rule of 2026-09-28); with no charge burning it is the registry.
+  const behaviours = new ChargeFirstLookup(registry);
   // A named enemy plays its persona's fallback without Jev, in the
   // synchronous bug phase and in a mixed Jev phase alike (ADR 0013 §2.8).
   const personaOf = createPersonaLookup(PERSONAS);
   const bugPhase = createBugPhaseRunner({
     handlers: actions,
-    registry,
+    registry: behaviours,
     speciesOf,
     personaOf,
     combat: COMBAT_TUNING,
@@ -477,7 +482,7 @@ export function shippedTacticalHandlers(
         chooseBugCommands(
           viewFor(mission, "bugs"),
           unitId,
-          registry,
+          behaviours,
           speciesOf,
           { rng: ctx.rng, combat: COMBAT_TUNING },
           personaOf,

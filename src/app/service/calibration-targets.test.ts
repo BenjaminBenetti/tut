@@ -87,6 +87,7 @@ describe("the arc's targets", () => {
       "story:uplink/act-3",
       "story:launch-window/finale",
       "tunnel-sabotage/act-2",
+      "tunnel-sabotage/act-3",
       "wreck-recovery/act-2",
       "wreck-recovery/act-3",
     ]);

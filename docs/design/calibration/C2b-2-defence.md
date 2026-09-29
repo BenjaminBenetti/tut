@@ -27,7 +27,7 @@ records its results is set out in [the README](README.md#how-tuning-packages-rec
 | `GENERATOR_TUNING.maxHp` | 40 | 60 | Under the surge, the expert lost act-3 defences and Uplink with its force nearly whole: a surged wave wrecked a 40 hp generator in one bug phase. |
 | `UPLINK_WAVES` | 5 | 6 | At 5 the new player won 14/16. At 7 the expert lost its generators in 7 runs out of 16. |
 | `LAUNCH_WINDOW_WAVES` | 7 | 8 | At 7 the new player won 12/16 against a target of about 9. |
-| `WAVE_PRESSURE_TUNING.tunnel` | (none) | surge 3, spill 3 | The charges go in by turn 2 and cannot be pulled, so the fight is on the way home. |
+| `WAVE_PRESSURE_TUNING.tunnel` | (none) | surge 3, spill 3; removed in round 2 (§6) | The charges went in by turn 2 and could not be pulled, so the fight was on the way home. Once a bite pulls a burning charge, the fight is at the mouths and the surge took act 2 first. |
 | `WAVE_PRESSURE_TUNING.wreck` | (none) | surge 3, spill 3, first wave a turn sooner | Half the new player's wins were home by turn 7, before the first wave (turn 3) had reached the wreck. |
 | Swarm Tide on a pressed type | overwrote the surge | keeps the larger scale and spill | Without this, Swarm Tide would make a defence easier. |
 
@@ -36,7 +36,7 @@ runs the type's own setup, then `pressEdgeWaves`. Swarm Tide's
 `raiseTide` goes through the same function.
 
 ```
-MISSION_SETUP_RULES["tunnel-sabotage"] = withWavePressure(TUNNEL_SABOTAGE_SETUP, WAVE_PRESSURE_TUNING.tunnel)
+MISSION_SETUP_RULES["wreck-recovery"] = withWavePressure(WRECK_RECOVERY_SETUP, WAVE_PRESSURE_TUNING.wreck)
   setup ──► the type's setup ──► pressEdgeWaves: surge = max(current, pressure) each; nextTurn − turnsSooner
   then the story setup, then the sitreps (Swarm Tide: pressEdgeWaves again, never less)
 ```
@@ -100,12 +100,13 @@ The expert needs 15, and 14 passes as the allowance.
 
   The act-3 force always gets someone aboard. 12 of 16 runs end on
   the stall rule with a unit home, with 3.4 units lost on average.
-  The charges cannot be pulled, so the objective is done by turn 4–5
-  whatever the bugs do.
+  The charges could not be pulled, so the objective was done by turn
+  4–5 whatever the bugs did.
 
   Only a mechanic would move it, not a tuning value. One option is
   bugs pulling a burning charge, which would make the arc's "survive
-  the fuse" a fight. The cell is left out of `TARGETED_CELLS`.
+  the fuse" a fight. The cell was left out of `TARGETED_CELLS`. Ben
+  chose that mechanic on 2026-09-28; round 2 (§6) is its calibration.
 - **`defend-installation/act-1`.** The cell is inside its range, but at
   16/16 it sits above the 14.4 the 90% target asks for. Act-1 waves
   are small (d1–4), and no defence lever separates act 1 from the
@@ -166,3 +167,98 @@ The "before" column is the same command run in a worktree at
   - The pod sweep's output is byte-identical to the base's.
   - The defence sweep passes 5/5.
   - The campaign sweep passes 13/13.
+
+## 6. Round 2: the player defends the charge
+
+Ben's decision (2026-09-28): "Ya let's have the player need to defend
+the charge. Bugs can disarm it with a melee attack." Base `e847af40`
+(int/w1), 32 seeds a cell, `SIM_MATRIX_CELLS=tunnel-sabotage`.
+
+**The rule.** While a charge burns, one melee attack by a bug pulls it
+(`TUNNEL_TUNING.meleeHitsToDisarm: 1`, Ben's number, not tuned). The
+mouth is open and uncharged again, and Interact sets a new charge on a
+full fuse. The objective is unchanged.
+
+- **What a bug attacks: the charge, as an attack target.** Combat
+  already resolves an attack on an `AttackTarget` (a unit or a
+  spawner); a burning charge is a third kind on the mouth's charge
+  tile, the TDF's, with the hits it has left as its hit points. Only a
+  melee weapon may attack it, and every such attack lands: no dice.
+  The generator was the precedent for "an objective the bugs attack",
+  but a generator is a unit with vision and a turn; a charge is not.
+- **Burrowers do not surface and pull in one phase.** A bug that
+  surfaced this bug phase is refused (`charge-just-surfaced`); it
+  pulls from its next. The burrowers come up each open mouth every
+  third turn, so at a three-turn fuse every charge had a fresh
+  burrower under it, and with surface-and-pull allowed no guard could
+  stop it: the expert won 4/16 in each act. The rule is combat's, so
+  the bug AI and Jev are held to it alike.
+- **The event.** `TunnelChargeDisarmed { unitId, mouthId, objectiveId,
+  chargeId, pulled }`, one per seal-tunnels objective naming the
+  mouth, logged in the danger tone as "Swarmer 3 pulled the charge on
+  tunnel 2 · the mouth is open again".
+- **The bug AI.** A bug that can bite a burning charge this turn, where
+  it stands or after a walk, does, nearest first, before anything its
+  species would do (the generator draws a bug that sees it whatever
+  else is nearer; a pull undoes the player's whole turn at a mouth, so
+  it outranks a soldier in reach). A wider draw, walking toward a
+  charge up to two or three turns away when the species would not
+  attack, moved no cell by more than a seed (runs d2, d3) and is not
+  shipped. Jev is offered the same bite.
+- **The players.** The new player sets a charge and moves on, and a
+  pulled mouth is a job again, so it comes back. The expert crews
+  every mouth at once: two guard each burning charge from the ring just
+  outside its blast, two set each open mouth, and the rest of the force
+  takes the open mouth furthest from it. Every tunnel job shoots first
+  at the bugs in sight that could bite its charge in the coming bug
+  phase, and a unit with one in its sights shoots it before setting.
+
+**Cells, 32 seeds.** Before is `e847af40` (charges unpullable, tunnel
+surge 3). The ranges are the ±2σ band for one cell at 32 seeds.
+
+| Cell | Player | Before | Mean lost | After | Mean lost | Range | Verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| tunnel-sabotage/act-2 | new | 23/32 | 4.63 | 27/32 | 3.78 | 20–28 (75%) | in band |
+| tunnel-sabotage/act-2 | expert | 31/32 | 1.75 | 31/32 | 0.63 | ≥ 29 | met |
+| tunnel-sabotage/act-3 | new | 31/32 | 3.72 | **31/32** | 2.31 | 16–26 (65%) | **above** |
+| tunnel-sabotage/act-3 | expert | 32/32 | 1.03 | 32/32 | 0.25 | ≥ 29 | met |
+
+Both cells are now in `TARGETED_CELLS`. The act-3 band's new-player
+verdict is not asserted: `infestation-clearance/act-3` is not
+targeted, so the band is incomplete.
+
+**Levers.** Fuse 3 (the arc's number, kept) and the tunnel row of
+the wave pressure (removed). Every run, new player / expert wins:
+
+| Run | Settings | Act II | Act III |
+| --- | --- | --- | --- |
+| c3 (16 seeds) | fuse 3, surface-and-pull allowed, surge 3 | 0/16 · 4/16 | 1/16 · 4/16 |
+| c3b (16) | fuse 3, surge 3, before the expert took the furthest mouth | 8/16 · 12/16 | 13/16 · 14/16 |
+| c2b (16) | fuse 2, surge 3 | 10/16 · 14/16 | 16/16 · 16/16 |
+| s1 (16) | fuse 3, no surge, spill 3 | 12/16 · 13/16 | 14/16 · 16/16 |
+| f3 (16) | s1, expert's rest to the furthest mouth | 12/16 · 16/16 | 14/16 · 16/16 |
+| **final** | fuse 3, shared waves | **27/32 · 31/32** | **31/32 · 32/32** |
+| q4 | fuse 4 | 16/32 · 30/32 | 28/32 · 32/32 |
+| q4s | fuse 4, no surge, spill 3 | 11/32 · 24/32 | 26/32 · 29/32 |
+| q3s | fuse 3, no surge, spill 3 | 20/32 · 30/32 | 29/32 · 30/32 |
+| w2 | first wave 2 turns sooner | 22/32 · 25/32 | 27/32 · 32/32 |
+| w2d | w2 and the wider draw | 20/32 · 24/32 | 25/32 · 29/32 |
+| fs1 | burrowers from turn 1 | 28/32 · 30/32 | 31/32 · 32/32 |
+
+**Act III is off target, and no lever of this type fixes it.** Every
+fuse and wave lever moved act 2 three to five times as far as act 3.
+Act 3's force (mechs at 119 hp against act 2's 50, squads that cross
+18 tiles in a turn) reaches all three mouths by turn 1–2, and the
+charges blow by turn 3–4: in 6 of 8 traced seeds, nothing bit a
+charge at all. The only press that reached that window, the first
+wave two turns sooner, brought act 3 to 25–27/32 and left the act-2
+expert at 24–25/32, under its pin. A lever for Act III alone (its
+tunnel waves sooner) would need the wave pressure keyed by act as well
+as type, which it is not; that is a decision for Ben.
+
+
+**Renders** (`tools/ui/capture-tunnel-sabotage.mjs`): the briefing
+with its Guard row (`../tunnel-sabotage-briefing.png`), a charge
+burning with its fuse on the tracker (`../tunnel-sabotage-mission.png`),
+and the next turn after a swarmer bit it, the log's pull line and the
+tracker's "charge pulled" (`../tunnel-sabotage-pulled.png`).

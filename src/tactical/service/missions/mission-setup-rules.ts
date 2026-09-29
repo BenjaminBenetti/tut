@@ -36,11 +36,13 @@ import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
  *                                                               core: core + destroy-platform-core, guards, boss
  * ```
  *
- * Defend Installation, Tunnel Sabotage and Wreck Recovery press their
- * edge waves harder than the shared schedule (#1179): each is wrapped
- * in `withWavePressure` with its entry in `WAVE_PRESSURE_TUNING`, so
- * every wave surges (and a wreck's first comes a turn sooner) once the
- * type's own setup has run.
+ * Defend Installation and Wreck Recovery press their edge waves harder
+ * than the shared schedule (#1179): each is wrapped in
+ * `withWavePressure` with its entry in `WAVE_PRESSURE_TUNING`, so every
+ * wave surges (and a wreck's first comes a turn sooner) once the type's
+ * own setup has run. Tunnel Sabotage did until a bug could pull a
+ * burning charge (Ben's rule, 2026-09-28); its pressure is at the
+ * mouths now, on the shared waves.
  *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
  * `MISSION_TYPES` without a setup rule fails to compile. The composition
@@ -60,10 +62,7 @@ export const MISSION_SETUP_RULES: MissionSetupRules = {
   ),
   evacuation: EVACUATION_SETUP,
   "hive-assault": withGreatHiveSetup(HIVE_ASSAULT_SETUP, placeCavernBroods),
-  "tunnel-sabotage": withWavePressure(
-    TUNNEL_SABOTAGE_SETUP,
-    WAVE_PRESSURE_TUNING.tunnel,
-  ),
+  "tunnel-sabotage": TUNNEL_SABOTAGE_SETUP,
   "alpha-hunt": ALPHA_HUNT_SETUP,
   "spore-platform": createSporePlatformSetup(PLATFORM_ASSAULT_TUNING),
 };

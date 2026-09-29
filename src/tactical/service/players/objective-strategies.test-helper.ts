@@ -49,7 +49,10 @@ import {
 //                      never kill one while one is wanted, bar self-defence
 //   rescue-civilians   free each trapped group; freed groups walk home
 //   strip-wreck        squads work the wreck two turns; a worker carries the parts
-//   seal-tunnels       charge every open mouth, stand clear of the fuse
+//   seal-tunnels       charge every open mouth, stand clear of the fuse, and
+//                      come back to one whose charge the bugs pulled; the
+//                      expert guards each charge until it blows
+//                      (expert-objective-strategies)
 //   recover-pod        hold round the pod until the drop lifts it
 //   kill-broodmother   after her marker, her first; the expert posts a
 //                      squad on her way out (kill-broodmother-strategy)
@@ -348,7 +351,10 @@ export const STRIP_WRECK_STRATEGY: ObjectiveStrategy<"strip-wreck"> = {
 /**
  * Seal the tunnel mouths: the force to the nearest open, uncharged
  * mouth; a charged one is left to its fuse (the policy keeps clear of
- * the blast the HUD draws).
+ * the blast the HUD draws) and nobody stays to guard it. A mouth whose
+ * charge a bug pulled (Ben's rule, 2026-09-28) is open and uncharged
+ * again, as the tracker shows, so it is a job again and the force comes
+ * back to set a new one.
  */
 export const SEAL_TUNNELS_STRATEGY: ObjectiveStrategy<"seal-tunnels"> = {
   /** Done once the tracker reads complete or failed. */

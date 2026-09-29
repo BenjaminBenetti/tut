@@ -8,6 +8,11 @@ import type { Unit } from "../model/unit";
 import { isBurrowed } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import { spawnerFootprintSize } from "./footprint-service";
+import {
+  burningTunnelCharges,
+  findBurningTunnelCharge,
+  tunnelChargeAttackTarget,
+} from "./tunnel-charge-service";
 
 // ===========================================
 // Constants
@@ -81,14 +86,18 @@ export function spawnerAttackTarget(spawner: Spawner): AttackTarget {
 // ===========================================
 
 /**
- * The thing `targetId` names, whether it is a unit or an egg spawner, or
- * undefined when the mission holds neither. This is the targeting port
- * the combat rules resolve every target through, so a new kind of target
- * is a new adapter here rather than an edit to `validateTargeting`.
+ * The thing `targetId` names, whether it is a unit, an egg spawner or a
+ * charge burning on a tunnel mouth, or undefined when the mission holds
+ * none of them. This is the targeting port the combat rules resolve
+ * every target through, so a new kind of target is a new adapter here
+ * rather than an edit to `validateTargeting`.
  *
  * Units are searched first: they are the common case, and ids do not
  * collide because units, spawners and objectives are all issued by the
- * mission's one id generator.
+ * mission's one id generator, and a tunnel charge's id is its mouth's
+ * (`tunnel` prefix) with a `-charge` suffix. Only a charge burning on a
+ * mouth is a target (campaign arc §6.7): a breaching charge on a wall
+ * is not, so no other mission gains one.
  *
  * @throws {Error} if a unit references a template the mission lacks,
  *   which is a broken mission rather than an illegal command.
@@ -110,15 +119,20 @@ export function findAttackTarget(
   const spawner = mission.spawners.find(
     (candidate) => candidate.id === targetId,
   );
-  return spawner === undefined ? undefined : spawnerAttackTarget(spawner);
+  if (spawner !== undefined) {
+    return spawnerAttackTarget(spawner);
+  }
+  const charge = findBurningTunnelCharge(mission, targetId);
+  return charge === undefined ? undefined : tunnelChargeAttackTarget(charge);
 }
 
 /**
- * Everything on the map an attacker of `team` could legally aim at: the
- * other side's living units, then its undestroyed egg spawners. The HUD
- * cycles this and the bug AI scores it, so neither has to know that
- * spawners live in their own collection. A unit under the ground
- * (#1179) is not a target, so Tab never cycles onto one.
+ * Everything on the map an attacker of `team` could aim at: the other
+ * side's living units, then its undestroyed egg spawners, then — for a
+ * bug — the charges burning on tunnel mouths (campaign arc §6.7). The
+ * HUD cycles this, so it does not have to know that spawners live in
+ * their own collection. A unit under the ground (#1179) is not a
+ * target, so Tab never cycles onto one.
  */
 export function enemyAttackTargets(
   mission: TacticalState,
@@ -140,6 +154,10 @@ export function enemyAttackTargets(
         targets.push(spawnerAttackTarget(spawner));
       }
     }
+  } else {
+    targets.push(
+      ...burningTunnelCharges(mission).map(tunnelChargeAttackTarget),
+    );
   }
   return targets;
 }

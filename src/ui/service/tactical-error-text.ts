@@ -158,6 +158,16 @@ export function namesFor(
       (objective) =>
         presentations[objective.kind].trackedId?.(objective) === id,
     );
+  /** What an objective calls `id` when it is one of its parts, or undefined. */
+  const partOf = (id: string): string | undefined => {
+    for (const objective of objectives) {
+      const name = presentations[objective.kind].partName?.(objective, id);
+      if (name !== undefined) {
+        return name;
+      }
+    }
+    return undefined;
+  };
   /** The objective at `index` by its kind's name, or the anonymous form. */
   const nameAt = (index: number): string => {
     const objective = objectives[index];
@@ -208,8 +218,10 @@ export function namesFor(
     // overlap, since the mission issues both from one generator. Then
     // anything an objective tracks, by that objective's ordinal -- the
     // tracker is the authority on what a nest is called, so agreeing
-    // with it is the whole requirement (#949, #1072). Only a spawner no
-    // objective tracks falls to its own anonymous wording.
+    // with it is the whole requirement (#949, #1072). Then a part an
+    // objective owns, by that objective's word for it: a bug's attack on
+    // a tunnel charge names the mouth (campaign arc §6.7). Only a
+    // spawner no objective tracks falls to its own anonymous wording.
     target: (id) => {
       if (units.has(id)) {
         return nameUnit(id);
@@ -218,7 +230,9 @@ export function namesFor(
       if (tracked >= 0) {
         return nameAt(tracked);
       }
-      return spawners.has(id) ? ANONYMOUS.spawner : ANONYMOUS.unit;
+      return (
+        partOf(id) ?? (spawners.has(id) ? ANONYMOUS.spawner : ANONYMOUS.unit)
+      );
     },
     charge: (id) => chargeRegisterFor(units.get(id)?.kind ?? "squad"),
     mech: (id) =>
@@ -308,6 +322,13 @@ export function describeRefusal(
       return `No line of sight to ${names.target(error.targetId)}`;
     case "target-destroyed":
       return `${capitalise(names.spawner(error.targetId))} is already destroyed`;
+    case "charge-needs-melee":
+      // Only a bug's refusal (campaign arc §6.7): the player never aims
+      // at their own charge, but a log or a test reads this.
+      return `${capitalise(names.target(error.targetId))} can only be pulled by hand`;
+    case "charge-just-surfaced":
+      // A bug's refusal too: the burrower came up this turn.
+      return `${names.unit(error.unitId)} came up this turn and cannot pull ${names.target(error.targetId)} until the next`;
     case "no-charges":
       // `charges` is the field name; the player sees `ammo` or `heat`
       // on the card and `Reload` or `Vent` on the bar. Offering a

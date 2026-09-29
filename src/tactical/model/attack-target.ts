@@ -6,21 +6,25 @@ import type { Team } from "./unit";
 // Attack target
 // ===========================================
 
-/** What sort of thing is being shot at; resolution writes damage back accordingly. */
-export type AttackTargetKind = "unit" | "spawner";
+/**
+ * What sort of thing is being shot at; resolution writes damage back
+ * accordingly. A `charge` is a charge burning on a tunnel mouth (campaign
+ * arc §6.7), which a bug's melee attack pulls.
+ */
+export type AttackTargetKind = "unit" | "spawner" | "charge";
 
 /**
- * Anything an attack can be aimed at (#426). Units and egg spawners are
- * stored in different collections and carry different stat blocks, but
- * the combat rules only ever ask a target where it stands, whose side it
- * is on, what it has left and what armor a hit must get through — so
- * they depend on this and not on either concretion (ADR 0003 §2.2,
- * dependency inversion).
+ * Anything an attack can be aimed at (#426). Units, egg spawners and
+ * the charges burning on tunnel mouths are stored in different
+ * collections and carry different stat blocks, but the combat rules
+ * only ever ask a target where it stands, whose side it is on, what it
+ * has left and what armor a hit must get through — so they depend on
+ * this and not on any concretion (ADR 0003 §2.2, dependency inversion).
  *
  * ```
- *   Unit    ─ unitAttackTarget ───┐
- *                                 ├──► AttackTarget ──► range, sight, cover,
- *   Spawner ─ spawnerAttackTarget ┘                     hit chance, damage
+ *   Unit    ─ unitAttackTarget ──────────┐
+ *   Spawner ─ spawnerAttackTarget ───────┼──► AttackTarget ──► range, sight, cover,
+ *   tunnel charge ─ tunnelChargeAttackTarget ┘                  hit chance, damage
  * ```
  *
  * A projection, not a store: `id` and `kind` together say where the
@@ -29,7 +33,11 @@ export type AttackTargetKind = "unit" | "spawner";
  */
 export interface AttackTarget {
   readonly kind: AttackTargetKind;
-  /** The unit or spawner id; unique across both, as both come from the same generator. */
+  /**
+   * The unit, spawner or charge id; unique across all three, as units
+   * and spawners come from the same generator and a tunnel charge's id
+   * is its mouth's with a `-charge` suffix.
+   */
   readonly id: string;
   /** What the HUD calls it. */
   readonly name: string;

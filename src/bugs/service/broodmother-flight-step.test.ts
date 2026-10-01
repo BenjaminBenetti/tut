@@ -11,7 +11,7 @@ import {
   broodmotherFlight,
   createBroodmotherFlightStep,
 } from "./broodmother-flight-step";
-import { broodmotherEscaped } from "./broodmother-service";
+import { broodmotherEscaped, broodmotherHp } from "./broodmother-service";
 import { fieldMap, motherMission } from "./broodmother.test-helper";
 
 // ===========================================
@@ -21,7 +21,7 @@ import { fieldMap, motherMission } from "./broodmother.test-helper";
 const SQUAD = unitAt("squad", "infantry", { x: 11, y: 0, z: 11 });
 
 /** Her max hit points at difficulty 1 with no scars. */
-const MAX_HP = 60;
+const MAX_HP = broodmotherHp(1, 0);
 
 /** A 12×12 field with the Broodmother anchored at `anchor` on `hp`. */
 function motherAt(
@@ -114,7 +114,8 @@ describe("broodmotherFlight (#1179, campaign arc §6.8)", () => {
   });
 
   it("reads the threshold from its tuning", () => {
-    const { mission } = motherAt({ x: 4, z: 4 }, 40);
+    // Above the shipped half, under three quarters.
+    const { mission } = motherAt({ x: 4, z: 4 }, Math.floor(MAX_HP * 0.6));
     const tuning = { ...BROODMOTHER_TUNING, fleeAtHpFraction: 0.75 };
     const step = createBroodmotherFlightStep(tuning);
     const applied = step(mission, {
@@ -123,6 +124,65 @@ describe("broodmotherFlight (#1179, campaign arc §6.8)", () => {
     });
     expect(applied.events.map((e) => e.type)).toEqual([BROODMOTHER_FLEEING]);
     expect(broodmotherFlight(mission).events).toEqual([]);
+  });
+
+  it("leaves her one action as her own phase opens once she runs: wounded, she limps (C3b phase 5)", () => {
+    const { mission, mother } = motherAt({ x: 4, z: 4 }, MAX_HP / 2);
+    // The fixture exhibits the case: the bugs' phase, both actions whole.
+    expect(mission.phase).toBe("bugs");
+    expect(mother.ap).toBe(2);
+    const turned = broodmotherFlight(mission);
+    const limping = turned.state.units.find((u) => u.id === mother.id);
+    expect(limping).toMatchObject({ fleeing: true, ap: 1 });
+    // Her next phase, once the refresh has given her both back: still one.
+    const refreshed: TacticalState = {
+      ...turned.state,
+      units: turned.state.units.map((u) =>
+        u.id === mother.id ? { ...u, ap: 2 } : u,
+      ),
+    };
+    const next = broodmotherFlight(refreshed);
+    expect(next.events).toEqual([]);
+    expect(next.state.units.find((u) => u.id === mother.id)?.ap).toBe(1);
+  });
+
+  it("limps only in her own phase, and only once she runs", () => {
+    const players = motherMission(
+      fieldMap(12, 12).build(),
+      [SQUAD],
+      { x: 4, y: 0, z: 4 },
+      { hp: MAX_HP / 2, phase: "player" },
+    );
+    const turned = broodmotherFlight(players.mission);
+    expect(
+      turned.state.units.find((u) => u.id === players.mother.id),
+    ).toMatchObject({ fleeing: true, ap: players.mother.ap });
+    // Whole, in her own phase: her pace is her own.
+    const whole = motherAt({ x: 4, z: 4 }, MAX_HP / 2 + 1).mission;
+    expect(broodmotherFlight(whole).state).toBe(whole);
+  });
+
+  it("reads the limp from its tuning", () => {
+    const { mission, mother } = motherAt({ x: 4, z: 4 }, MAX_HP / 2);
+    // Three actions, so a limp of two leaves her one fewer, not one.
+    const quick: TacticalState = {
+      ...mission,
+      units: mission.units.map((u) =>
+        u.id === mother.id ? { ...u, ap: 3, maxAp: 3 } : u,
+      ),
+    };
+    const step = createBroodmotherFlightStep({
+      ...BROODMOTHER_TUNING,
+      fleeingActions: 2,
+    });
+    const applied = step(quick, {
+      rng: new Mulberry32Rng(1),
+      ids: new SequentialIdGenerator(),
+    });
+    expect(applied.state.units.find((u) => u.id === mother.id)).toMatchObject({
+      fleeing: true,
+      ap: 2,
+    });
   });
 
   it("changes nothing on a mission without a Broodmother, and ignores a dead one", () => {

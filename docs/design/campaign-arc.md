@@ -34,7 +34,7 @@ Mission numbers are targets for an average player. Acts are gated by research, s
 | D3 | Cap the offer board? | **Yes.** At most 3, 4 and 5 open offers in Acts I, II and III. Story and hive offers are pinned on top and do not count against the cap. |
 | D4 | Hive caverns | **Very large caverns that mechs can enter, full of bugs.** Most bugs sleep in chambers and wake on contact or noise (§7.5). |
 | D5 | First-attempt win-rate targets for an average new player | **90% in Act I, 75% in Act II, 65% in Act III, 55% for the finale.** An experienced player must find every act easy (≥ 90%). |
-| D6 | Wreck Recovery | **Keep it.** It pays parts only, gives one attempt, and expires after three days. The chassis and the pilot's rank stay lost. |
+| D6 | Wreck Recovery | **Keep it.** It pays parts only, gives one attempt, and expires after three days. The chassis and the pilot's rank stay lost. It covers a mech lost on a lost or abandoned mission only: one destroyed where the force held the field (won or extracted) is **salvaged** for half its price in credits instead (#1179, GDD §5.7), so no mech pays twice. |
 | D7 | Platform assault fails | **Every city gains +30 infestation** (capped at 100), and a hidden tech node, **Last Hope**, appears. Researching it re-offers the platform assault. A second failure ends the campaign in defeat. The average player reaches the finale at **threat 40–55** so the +30 leaves room to research Last Hope. |
 | D8 | Infantry tech | **Yes.** Infantry get their own research branch. |
 | F1 | Act I mix | **A third each:** Infestation Clearance, Crash Site, Evacuation. Defend Installation sits on top, offered when an installation the player built is threatened. |
@@ -122,10 +122,11 @@ Each new type pays something the others do not, so choosing between offers is a 
 
 - **Objective:** hold at least one generator through every counted wave.
 - **Changes:** from Act II, burrowers can surface inside the perimeter. Uplink and Launch Window are built on this mission.
+- **Waves (#1179):** every counted wave lands 75% larger than a field mission's, rounded up, and may stand up to 2 steps outside its edge zone. The generators have 60 hit points. Uplink sends 6 waves and Launch Window 8.
 
 ### 6.3 Crash Site (Act I, from M2)
 
-- **Objective:** a spore pod came down in open ground. Destroy the pod before it matures at the **end of turn 8**. Maturing releases a large wave and fails the objective. Then extract.
+- **Objective:** a spore pod came down in open ground. Destroy the pod before it matures at the **end of turn 8**, or the **end of turn 5** from difficulty 5: a harder landing ripens sooner ([C2b-1-field](calibration/C2b-1-field.md)). Maturing releases a large wave and fails the objective. Then extract.
 - **Map:** the crater / crash-site archetype (the #662 prototype): open ground, a scorched crater and scattered debris cover.
 - **Eligible:** a region with at least one detected city. Every crash site starts a fresh landing (a new infestation seed of 10) at a city in that region. From Act II, regions with a sensor array are weighted ×2.
 - **Scripted first one:** **First Skyfall**, the second mission of every campaign (d1).
@@ -143,10 +144,11 @@ Each new type pays something the others do not, so choosing between offers is a 
 
 ### 6.5 Hive Assault (Act II)
 
-- **Objective:** enter the cavern, destroy the **hive core** and the spawners in its chambers, then extract at the mouth.
+- **Objective:** enter the cavern, destroy the **hive core**, then get a combat unit aboard a drop ship. The nests in the chambers are optional: they hatch bugs until they are destroyed, and no objective counts them. A Great Hive also has a second drop ship at a **forward extraction point** past halfway down the cavern, usable from the start, so the walk out is about three-eighths of the walk in (§7.5). (Changed in #1179 calibration: the arc asked for the chamber spawners too, and for extraction at the mouth only. The shipped objective is the core alone. The forward point was added in C3a round 3, and is measured in `docs/design/calibration/C3a-hives.md`.)
 - **Map:** a very large mech-passable cavern (§7.5).
 - **Formation:** a region whose mean infestation stays at ≥ 60 for 7 days forms a hive. The first hive is scripted when Act II opens, in the worst region. The offer is pinned and never expires, but the hive **gains a difficulty step every 7 days**.
 - **Engine:** a region with a hive grows faster (`hiveSpreadMultiplier`).
+- **Pressure:** the burrows send **no edge waves**. The pressure is the sleeping broods (§7.5), the core's Hive Guard and the chamber nests, which quicken with difficulty: one bug every 12 bug phases up to d5, one every 4 at d6, and two every 4 from d7. A Great Hive's nests hatch in bigger, rarer clutches at every difficulty: one bug more than a clearance nest and three bug phases longer between hatches, so three bugs every 6 at d8. (Changed in #1179 calibration: one edge wave cost Act II half its wins, so the hive has none; the nests' pace by difficulty is round 2's and the Great Hive's round 3's, measured in `docs/design/calibration/C3a-hives.md`.)
 - **Pays:** the region is liberated. The hive is gone, its cities drop 20, and growth pauses for 10 days. Large TP. The first win recovers the **hive core sample** (§4).
 - **Reuses:** spawners, the Hive Guard, the #447/#760 hive sketch.
 
@@ -155,15 +157,19 @@ Each new type pays something the others do not, so choosing between offers is a 
 - **Objective:** a mech went down. Reach the wreck, have an infantry squad strip it over **two turns**, then extract.
 - **Trigger:** a mech destroyed on a lost or abandoned mission. The offer is pinned, gives one attempt, and expires in 3 days.
 - **Pays:** that mech's parts, back in the inventory. The chassis and the pilot's rank stay lost.
+- **Salvage is the other half (#1179):** a mech destroyed on a mission the force held (won or extracted) leaves no wreck. It is paid back at half its price in credits as the mission resolves (GDD §5.7). One rule, `heldTheField`, decides which a lost mech gets.
 - **Reuses:** the tech carcass harvest (interact over turns).
+- **Waves (#1179):** the crash draws the swarm. The first edge wave comes a turn sooner (turn 2), and every wave lands three times larger, rounded up, standing up to 3 steps outside its edge zone.
 
 ### 6.7 Tunnel Sabotage (Act II, about 5 missions in)
 
-- **Objective:** the bugs are tunnelling toward the next city. Set charges on **three tunnel mouths** (Interact), survive the fuse (**3 turns**), then extract. Burrowers come up through any mouth still open.
+- **Objective:** the bugs are tunnelling toward the next city. Set charges on **three tunnel mouths** (Interact), hold each through its fuse (**3 turns**), then extract. Burrowers come up through any mouth still open.
+- **Defending the charge (Ben, 2026-09-28):** while a charge burns, one melee attack by a bug pulls it (`meleeHitsToDisarm: 1`). The charge never goes off, the mouth is open and uncharged again, and burrowers use it; a squad or mech sets a new charge with Interact, on a full fuse. A bug cannot pull a charge in the bug phase it surfaced, only from its next, so a burrower that comes up beside a charge gives the force one turn to kill it. The bugs go for a burning charge before anything else whenever a bite reaches it this turn, as they go for a generator (§6.3). The tracker shows each mouth as open, burning (turns left), pulled or sealed, and the log names the bug that pulled one.
 - **Eligible:** a city at ≥ 60 whose spread cooldown is nearly over. This makes overworld spread visible and stoppable.
 - **Pays:** that spread is cancelled, and the city cannot spread for 10 days.
 - **Ignored or lost:** the spread happens as normal.
 - **Reuses:** the breaching charge and demolition. **New:** tunnel-mouth map hooks.
+- **Waves (#1179):** in Act II, the shared edge waves. Before the charges could be pulled, every wave landed three times larger and the fight was on the way home; now the fight is at the mouths while the fuses burn, and the surge took Act II first. Act III's force sealed every mouth before a bug could reach one, so a tunnel offered in Act III brings its first edge wave two turns sooner (turn 1 instead of 3), and every wave lands a tenth larger, rounded up, standing up to 1 step outside its edge zone. The press follows the act the offer was made in, not its difficulty: Act II's and Act III's difficulty ranges overlap (§3). Measured in `docs/design/calibration/C2b-2-defence.md`: the new player wins 27/32 in Act II and 20/32 in Act III, the expert 31/32 and 30/32.
 
 ### 6.8 Alpha Hunt (Act II, about 10 missions in)
 
@@ -181,7 +187,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 | **Live Specimen** | I → II | Bring a lurker to 0 HP with the **capture net** (an equipment item) instead of killing it, then extract with it. Winning opens Act II. | Clearance map, new capture action |
 | **Intact Pod** | II → III | A Crash Site where the pod must **survive** to be recovered: defend it until the recovery turn. Winning opens Act III. | Crash Site, generator-style objective |
 | **Uplink** | III start | Defend a tracking array through its counted waves. Winning reveals the three Great Hives and makes Intel III appear. | Defend Installation |
-| **Great Hives ×3** | III | Oversized Hive Assaults on the platform's beacons, one per continent-scale region. Pinned. | Hive Assault |
+| **Great Hives ×3** | III | Oversized Hive Assaults on the platform's beacons, one per continent-scale region. Pinned. A second drop ship waits at a forward extraction point past halfway in (§7.5). | Hive Assault |
 | **Launch Window** | Finale | Defend the launch site. A loss delays the launch 5 days; it does not end the campaign. | Defend Installation |
 | **Spore Platform** | Finale | **Two linked maps** with no repairs or swaps between them. Damage and ammo carry over. The Sovereign waits at the core. Win: **victory**. First loss: D7. Second loss: **defeat**. | Linked missions, new platform archetype |
 
@@ -199,8 +205,9 @@ New archetypes, each passing the ADR 0004 invariants and the property tests:
 ### 7.5 Hive caverns (D4)
 
 - **Large:** bigger than any current preset, with a long footprint. Chambers are linked by tunnels **at least two tiles wide**, so mechs fit everywhere on the main route.
-- **Full of bugs, mostly dormant:** each chamber holds a dormant brood that wakes when a player unit enters the chamber, attacks into it, or makes noise nearby. Only woken bugs act in the bug phase, so the cavern can hold 50+ bugs while about 10–15 act each turn.
+- **Full of bugs, mostly dormant:** each chamber holds a dormant brood in its **heart**, the middle 35% of its radius (at least 3 tiles). The brood wakes when a player unit enters the heart, attacks into it, or makes noise nearby, so a careful force can walk the chamber's rim past it. The broods grow with difficulty: an ordinary cavern sleeps 12–15 bugs at d3–4, 19–43 at d5–6, 34–52 at d7–8 and 69–88 at d9, and a Great Hive 44–60 at d8, so a cavern holds **50+ only at about d8–9**. Only woken bugs act in the bug phase: about 2–7 in a mean turn up to d5, and 12–29 from d7, where the nests quicken (§6.5). (Changed in #1179 calibration: a brood woke on a unit entering the chamber, and every cavern was to hold 50+; measured in `docs/design/calibration/C3a-hives.md`.)
 - **Hive core:** a large destructible objective in the deepest chamber, guarded by Hive Guard.
+- **Great Hive:** 72 × 152, with 8–9 chambers (an ordinary cavern is 64 × 144, with 5–8), and the core at least 90 tiles from the landing zone. It marks a **forward extraction point**: a 4 × 4 zone, the landing zone's size, in the route chamber where a mech's walk to the core is about three-eighths of the landing zone's, outside that chamber's heart and away from the nests. Units can board there from the start of the mission, the same way as at the landing zone. The map shows the point in the landing zone's blue, the briefing has an Extraction row, and the objective tracker ends on "board at the forward point or the landing zone". (Changed in #1179 calibration round 3: the Great Hive was 72 × 184 with 9–11 chambers, slept 52–68 bugs at d8 and had one landing zone, and the new player's walk home ran into the turn cap; `docs/design/calibration/C3a-hives.md`.)
 - **Performance:** the map must render within the SwiftShader budget. Keep per-fragment work bounded and check the bug phase's length.
 
 ## 8. Bestiary
@@ -297,7 +304,7 @@ The #1171 pacing test changes from "the tree is finished at mission 25" to "the 
 
 - **Eligibility:** a sitrep can name the map hooks it needs (`requiredHooks` on its definition). It is offered only on a mission type that places at least one of each. Hardened Clutches needs egg spawners, so a Defend Installation never gets it. Swarm Tide needs edge waves and Dust-off Window needs extraction; both shipped types have them.
 - **Hardened Clutches (M16):** every standing egg spawner has its hit points multiplied by 1.5, rounded up (20 becomes 30). "One extra hatch" is read as **one more bug per hatch** (2 becomes 3), not a second hatch event, so the hatch clock and its draws are unchanged. Spore pods are not touched.
-- **Swarm Tide (M16):** every edge wave is multiplied by 1.5, rounded up (2 becomes 3, 8 becomes 12). The first wave comes one turn sooner (turn 2 instead of 3), so every later wave does too, and a defence keeps its wave count. An edge zone is only four to six tiles, so the extra bugs may stand up to 2 steps outside it.
+- **Swarm Tide (M16):** every edge wave is multiplied by 1.5, rounded up (2 becomes 3, 8 becomes 12). The first wave comes one turn sooner (turn 2 instead of 3), so every later wave does too, and a defence keeps its wave count. An edge zone is only four to six tiles, so the extra bugs may stand up to 2 steps outside it. On a type whose waves already surge (Defend Installation, Wreck Recovery, and Tunnel Sabotage in Act III, #1179), the larger size scale and the larger spill of the two hold.
 - **Dust-off Window (M20):** the drop ship waits through turn 8 + ⌈(width + depth) / 12⌉: turn 16 on a small map, 20 on a medium one and 24 on a large one. A defence cannot be won before its last wave, so there the ship also waits at least 12 turns after that wave. A five-wave defence at a 4-turn interval has its last wave on turn 19, so the ship waits through turn 31. When the ship's last turn ends, every unit still on the map is lost, exactly as if the mission had been abandoned, and the mission ends on whoever boarded. The objective tracker and the turn banner count the turns down. See [`sitrep-dustoff-hud.png`](sitrep-dustoff-hud.png) and [`sitreps-act2-briefing.png`](sitreps-act2-briefing.png).
 - **Act III:** each of the two slots can hold any sitrep the offer can host, so Dust-off Window and Swarm Tide can come together.
 
@@ -311,6 +318,8 @@ The #1171 pacing test changes from "the tree is finished at mission 25" to "the 
 | Strong | 95% won; mostly Intel | Finale reached, and the campaign won |
 | Story-only | 70% won; researches only Intel | Finale not before about mission 30 |
 | Idle | Plays nothing | Defeat, as today |
+
+**Economy probe (#1179):** `src/app/service/campaign-economy-probe.sim.test.ts` plays the Average, the modelled spenders and, over a calibration matrix's runs (`docs/design/calibration/baseline-matrix.runs.tsv`), the matrix's new and expert players, and reports each act's bank, income by ledger line (salvage included) and the units and mechs fielded. With salvage at 0.5 the matrix players' Act III bank is 3.3k (new) and 4.2k (expert) at the median, against 2.8k and 3.7k without; the Average loses mechs only on lost missions, so it gets no salvage and its pins do not move. Salvage does not keep three mechs fielded in Act III at any share up to a full refund: squad re-hire and the Act III refit's price are what bind.
 
 **Tactical calibration (#734):** the mission sweep gets two modelled players:
 

@@ -178,7 +178,7 @@ The Act III armoured swarmer, lurker and brute (§8). They use the same AI as th
 
 ### Spore pod
 
-The Crash Site objective (§6.3): destroy it before it matures at the end of turn 8. It is also the pod to protect in Intact Pod.
+The Crash Site objective (§6.3): destroy it before it matures at the end of turn 8 (turn 5 from difficulty 5). It is also the pod to protect in Intact Pod.
 
 - **Footprint:** 2×2, about 1.25 u tall, tilted and buried nose first. The crater is map terrain from the crater archetype. The model carries only the pod, its roots and a small scorch skirt inside 2×2.
 - **Silhouette:** a charred teardrop husk with glowing seams and a split crown, with root tendrils gripping the ground.

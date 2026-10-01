@@ -47,7 +47,7 @@ const LAUNCH_WINDOW_DEFENCE: StoryDefence = {
  * ```
  *   Briefing · Launch Window
  *   The Great Hives are down and the approach is plotted. …
- *   Objective   Hold the launch site through 7 waves
+ *   Objective   Hold the launch site through 8 waves
  *   Win         The launch
  *   Lost        The launch slips 5 days
  * ```

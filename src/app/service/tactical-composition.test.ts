@@ -59,6 +59,7 @@ import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { BLAST_RESOLVED } from "../../tactical/model/blast-resolved-event";
 import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
 import { BROOD_TUNING } from "../../tactical/data/brood-tuning";
+import { CRASH_SITE_SETUP_TUNING } from "../../tactical/data/crash-site-setup-tuning";
 import { BROOD_WOKE } from "../../tactical/model/brood-woke-event";
 import { BROODMOTHER_ESCAPED } from "../../tactical/model/broodmother-escaped-event";
 import { BROODMOTHER_FLEEING } from "../../tactical/model/broodmother-fleeing-event";
@@ -804,6 +805,14 @@ describe("composeTactical", () => {
     expect(deps.broods?.species).toEqual(Object.values(BUG_SPECIES));
   });
 
+  it("mission-start deps carry the crash site's own pod clock (#1179, C2b-1-field)", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    expect(
+      tactical.missionStartDepsFor(new SequentialIdGenerator()).crashSite,
+    ).toBe(CRASH_SITE_SETUP_TUNING);
+  });
+
   it("mission-start deps carry the shipped mission setup rules", () => {
     const dispatcher = createOverworldCommandDispatcher<GameState>();
     const tactical = composeTactical(dispatcher, CONTENT);
@@ -1356,6 +1365,40 @@ describe("the Broodmother in a live mission (#1179, campaign arc §6.8)", () => 
     // Her escape does not end the mission: the squad still stands.
     expect(state.outcome).toBeUndefined();
     expect(state.phase).toBe("player");
+  });
+
+  it("limps once she runs: one action a bug phase, so one move's walk (C3b phase 5)", () => {
+    // Flat open ground: every step costs a point, so the tiles she
+    // covers are the points she spends. Far from every edge, so a whole
+    // pace would carry her twice as far.
+    const squad = unitAt("squad", "infantry", { x: 2, y: 0, z: 38 });
+    const { mission, mother } = motherMission(
+      fieldMap(40, 40).build(),
+      [squad],
+      { x: 18, y: 0, z: 18 },
+      { hp: broodmotherHp(1, 0) / 2, phase: "player" },
+    );
+    expect(mother.ap * BROODMOTHER.move).toBe(10);
+    const outcome = shippedEndTurn()(mission, endTurn(), {
+      rng: new Mulberry32Rng(5),
+      ids: new SequentialIdGenerator(),
+    });
+    if (!outcome.ok) throw new Error("EndTurn failed");
+    const walked = outcome.value.events
+      .filter((e) => e.type === UNIT_MOVED && e.payload.unitId === mother.id)
+      .reduce(
+        (sum, e) =>
+          e.type === UNIT_MOVED
+            ? sum +
+              Math.abs(e.payload.to.x - e.payload.from.x) +
+              Math.abs(e.payload.to.z - e.payload.from.z)
+            : sum,
+        0,
+      );
+    expect(walked).toBe(BROODMOTHER.move);
+    expect(
+      outcome.value.state.units.find((u) => u.id === mother.id)?.fleeing,
+    ).toBe(true);
   });
 
   it("reacts only to what her side sees: a squad in reach behind a wall leaves her where she stands", () => {

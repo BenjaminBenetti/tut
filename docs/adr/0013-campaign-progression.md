@@ -211,7 +211,7 @@ startTacticalMission
 - `MissionStartDeps.storySetupRules?` defaults to the shipped table; tests substitute their own.
 - `MissionSetupDeps.species?` carries the bug stat blocks a setup may place (`BugUnitSource[]`). The composition passes the shipped species; tactical never imports bugs data.
 - First Skyfall has no entry: the crash site's setup is the whole of it.
-- Live Specimen (`live-specimen-setup.ts`) marks the clearance's destroy-spawner objectives `optional` (§2.3), adds `capture-specimen` for the lurker as the one deciding objective, and stands two lurkers by the nests nearest the deploy zone, on ground infantry can walk to from deploy and off the deploy and extraction tiles. If no nest has room, it uses reachable ground at least 8 from every deploy tile, then any reachable ground off the deploy zone. With nothing reachable, it refuses with `map-recipe`. Killing every lurker does not fail the capture: a clearance's edge waves never stop, so the hunt goes on while a net is left.
+- Live Specimen (`live-specimen-setup.ts`) marks the clearance's destroy-spawner objectives `optional` (§2.3), adds `capture-specimen` for the lurker as the one deciding objective, and stands four lurkers by the nests nearest the deploy zone, one per nest in turn and wrapping round when there are fewer nests, on ground infantry can walk to from deploy and off the deploy and extraction tiles. If no nest has room, it uses reachable ground at least 8 from every deploy tile, then any reachable ground off the deploy zone. With nothing reachable, it refuses with `map-recipe`. Killing every lurker does not fail the capture: a clearance's edge waves never stop, so the hunt goes on while a net is left.
 
 **In the UI** (#1179). `StoryPresentation` (`ui/model/story-presentation.ts`) and `STORY_PRESENTATION` (`ui/service/story/story-presentation.ts`) sit beside the type table. A story adds briefing rows ahead of its type's, may replace the type's description, and has its debrief tagline asked before the type's. The table is `Partial`. The title stays in `STORY_MISSION_TITLES`. A result carries no story id, so a story's tagline recognises its own result by its payload and by the story's record in `CampaignProgress`.
 
@@ -239,11 +239,11 @@ The arc files Launch Window under the finale. The spine plays it as Act III's la
 
 | Rule | Act | `pinWhen` | Offer | `onWon` | `onLost` |
 |---|---|---|---|---|---|
-| `uplink` | `act-3` | none: entering the act is the trigger | d6, tracking array, 5 waves | flag `uplink-won` | retry 5 |
-| `launch-window` | `act-3` | `platform-approach`, `great-hives-destroyed` | d8, launch site, 7 waves | `advance-act` | retry 5 (the launch slips) |
+| `uplink` | `act-3` | none: entering the act is the trigger | d6, tracking array, 6 waves | flag `uplink-won` | retry 5 |
+| `launch-window` | `act-3` | `platform-approach`, `great-hives-destroyed` | d8, launch site, 8 waves | `advance-act` | retry 5 (the launch slips) |
 
-- **Uplink's d6** is one step above the Act III floor: the act's first story fight is not easier than Act II's ending. Its 5 waves are what the director's defence sends at the trigger's floor (region mean 40).
-- **Launch Window's d8** is the finale band's floor. Its 7 waves are a region at 80, one short of the cap.
+- **Uplink's d6** is one step above the Act III floor: the act's first story fight is not easier than Act II's ending. It began at 5 waves, what the director's defence sends at the trigger's floor (region mean 40). Calibration raised it to 6, where the new player wins 10 of 16 and the expert 15 (#1179, [C2b-2](../design/calibration/C2b-2-defence.md)).
+- **Launch Window's d8** is the finale band's floor. It began at 7 waves, a region at 80, one short of the cap. Calibration raised it to the cap, 8, where the new player wins 10 of 16 and the expert all 16 (#1179, [C2b-2](../design/calibration/C2b-2-defence.md)).
 - **Intel III, Platform Approach** (`tech.platform-approach`) is an intel node on the support spoke beside Intel I. It costs 280 TP, needs `uplink-won`, and sets `platform-approach`. `great-hives-destroyed` is in the flag vocabulary for the Great Hives package to set. Until that package lands, nothing sets it, so Launch Window never pins.
 
 **D7, the platform** (`{kind:"platform"}`):

@@ -18,6 +18,7 @@ import {
   extractNow,
   fallbackOrder,
   interactNow,
+  killsSpared,
   netNow,
   standingOrders,
   stepsTo,
@@ -34,10 +35,14 @@ import type { PlayerView } from "./player-view.test-helper";
 // card but the reload. It does what the objective itself asks — plants
 // the charge, frees the group, throws the net the briefing hands it —
 // because the HUD tells it to, and goes home only when the objectives
-// are done or there is nothing left to do.
+// are done or there is nothing left to do. What the objective asks
+// covers the specimen too: it holds a shot that could kill a bug the
+// objective wants alive (`UnitOrder.spare`), and a squad carrying one
+// home walks rather than stops to trade shots (`UnitOrder.courier`).
 //
 //   unit ──► extract? ──► objective action? ──► net? ──► reload?
-//        ──► shoot the nearest ──► step one action toward the goal ──► done
+//        ──► courier? step toward home first
+//        ──► shoot the nearest, bar a spared kill ──► step one action toward the goal ──► done
 
 /** The new player's policy. */
 export function createNewPlayerPolicy(rules: PlayerRules): PlayerPolicy {
@@ -80,7 +85,11 @@ export function createNewPlayerPolicy(rules: PlayerRules): PlayerPolicy {
         netNow(unit, order, view, rules);
       if (action !== undefined) return action;
       if (needsReload(view, unit, rules)) return reload(unit.id);
-      const shot = nearestShot(unit, view, rules);
+      if (order.courier === true) {
+        const home = stepToward(unit, order, view, rules);
+        if (home !== undefined) return home;
+      }
+      const shot = nearestShot(unit, order, view, rules);
       if (shot !== undefined) {
         return attack(unit.id, shot.targetId, shot.weaponId);
       }
@@ -93,15 +102,20 @@ export function createNewPlayerPolicy(rules: PlayerRules): PlayerPolicy {
 // Private
 // ===========================================
 
-/** The shot at the nearest spotted enemy, the likeliest to hit on a tie; none that would hit our own. */
+/**
+ * The shot at the nearest spotted enemy, the likeliest to hit on a tie;
+ * none that would hit our own, and none that could kill a bug the order
+ * spares.
+ */
 function nearestShot(
   unit: Unit,
+  order: UnitOrder,
   view: PlayerView,
   rules: PlayerRules,
 ): ShotOption | undefined {
   let best: ShotOption | undefined;
   for (const option of shotOptions(view, unit, rules)) {
-    if (option.friendlyFire) continue;
+    if (option.friendlyFire || killsSpared(order, option)) continue;
     if (
       best === undefined ||
       option.preview.distance < best.preview.distance ||

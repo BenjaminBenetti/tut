@@ -170,7 +170,7 @@ describe("Act III through the composition root (#1179)", () => {
       pinned: true,
       difficulty: 6,
       act: "act-3",
-      defence: { installation: "tracking-array", generators: 2, waves: 5 },
+      defence: { installation: "tracking-array", generators: 2, waves: 6 },
     });
     if (uplink === undefined) throw new Error("Uplink must pin in Act III");
 
@@ -205,7 +205,7 @@ describe("Act III through the composition root (#1179)", () => {
 });
 
 describe("Uplink on the tactical map (#1179)", () => {
-  it("stands the tracking array up in the sensor array's yard: two generators to hold, five waves", () => {
+  it("stands the tracking array up in the sensor array's yard: two generators to hold, six waves", () => {
     const game = build(STORY_MISSION_RULES);
     startWith(game, (fresh) => ({
       ...fresh,
@@ -243,7 +243,7 @@ describe("Uplink on the tactical map (#1179)", () => {
     expect(
       active.units.filter((unit) => unit.kind === "generator"),
     ).toHaveLength(2);
-    expect(active.edgeSpawn.totalWaves).toBe(5);
+    expect(active.edgeSpawn.totalWaves).toBe(6);
   });
 });
 

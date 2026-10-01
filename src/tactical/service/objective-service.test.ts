@@ -20,7 +20,6 @@ import type {
 } from "../model/tactical-state";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
-import { DEFEND_GENERATORS_OBJECTIVE } from "./objectives/defend-generators-objective";
 import { DESTROY_SPAWNER_OBJECTIVE } from "./objectives/destroy-spawner-objective";
 import { OBJECTIVE_RULES } from "./objectives/objective-rules";
 import { rescueProgress } from "./objectives/rescue-civilians-objective";
@@ -441,7 +440,7 @@ describe("objective rules behind Interact and reach (ADR 0013 §2.3)", () => {
     const found = reachableObjectives(mission, "u", TUNING, {
       ...OBJECTIVE_RULES,
       "defend-generators": {
-        ...DEFEND_GENERATORS_OBJECTIVE,
+        ...OBJECTIVE_RULES["defend-generators"],
         reachable: () => ({ id: "gen-1", pos: at(3, 3) }),
       },
     });

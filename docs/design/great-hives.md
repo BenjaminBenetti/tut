@@ -66,7 +66,7 @@ decorator per table instead, and each decorator lives in its own file:
 
 | Table | Decorator | What it swaps for a Great Hive |
 |---|---|---|
-| `mission-map-rules.ts` | `withGreatHiveMap` | the `great-hive-cavern` archetype at 72 × 184 |
+| `mission-map-rules.ts` | `withGreatHiveMap` | the `great-hive-cavern` archetype at 72 × 152, with a forward extraction point |
 | `mission-setup-rules.ts` | `withGreatHiveSetup` | `GREAT_HIVE_SETUP_TUNING`: core HP, guards and brood sizes |
 | `mission-presentation.ts` | `withGreatHiveOffer` | offer note "Great Hive: Europe"; the type's rows give way to the story's |
 | `mission-offer-rules.ts` | `withGreatHiveRefresh` | the daily refresh keeps the offer while its Great Hive stands, never re-prices it |
@@ -93,13 +93,16 @@ hive's level is the only thing that climbs, and only on a lost assault.
 
 | | Ordinary Hive Assault, d8 | Great Hive, level 0 | per level |
 |---|---|---|---|
-| Cavern | 64 × 144 | **72 × 184** | |
-| Brood chambers | 5–7 | **8–11** | |
-| Core distance (tiles) | 115–118 | **149–156** | |
+| Cavern | 64 × 144 | **72 × 152** (72 × 184 before C3a round 3) | |
+| Brood chambers | 5–7 | **6–8**, of 8–9 chambers (8–11 before round 3) | |
+| Core distance (tiles) | 115–118 | **114–119** (149–156 before round 3) | |
+| Mech's walk, landing zone to core | 120–165 | **130–202** (189–232 before round 3) | |
+| Extraction | the landing zone | the landing zone and a **forward point** past halfway in | |
 | Nests | 2–3 | 3–5 | +0.5 |
-| Core HP | 60 | **200** | +20 |
+| A nest's hatch at d8 | 2 bugs every 4 turns | **3 bugs every 6** (1 every 11 before round 3) | |
+| Core HP | 60 | **150** (200 before C3a) | +20 |
 | Guards | 2 | **6** (packed ring) | +1, max 8 |
-| Brood size (route/side/core) | 13 / 10 / 18 | 8 / 6 / 12 | |
+| Brood size (route/side/core) | 11 / 8 / 11 (13 / 10 / 18 before C3a) | 8 / 6 / 8 (8 / 6 / 12 before C3a) | |
 | Mix | the act's | Act III, armoured variants included | |
 | Reward | 46 TP | **69 TP** (×1.5; ×2.5 before the campaign retune) | |
 
@@ -114,6 +117,98 @@ loaded machine:
 
 72 × 184 gave the most chambers with the core farthest away while
 staying well within the generation budget.
+
+**C3a round 3 made the cavern shorter.** The new player's walk out of
+72 × 184 ran into the 60-turn cap. Ben chose "make the walk home
+shorter. Or perhaps a forward extraction point!", and both shipped.
+The cavern is now 72 × 152 with 8–9 chambers, at least 5 of them on the
+route, and the core at least 90 tiles from the landing zone. Depth
+alone did not fit: at 152 deep, 9–11 chambers ran the route off the
+board. The 24-seed map measurements and the runs are in
+`docs/design/calibration/C3a-hives.md`, "Round 3".
+
+The shorter walk made the Great Hive much easier: on the old slow
+nests the new player won 31 of 32. Its nests now hatch three bugs
+every 6 turns at d8, and the forward point sits at three-eighths of
+the walk from the core rather than half. Over 128 seeds the new player
+wins 62 (55 before round 3), 39 of them clean (31 before), and the
+expert's median falls from 44 turns to 29.
+
+### Forward extraction point
+
+`ForwardExtractionPass` (`mapgen/generator/cavern/`) runs after the
+brood chambers and before connectivity, and only on a tuning with
+`forwardExtraction`, which only the Great Hive has. It marks one
+`forward-extraction` hook in the objectives group: a 4 × 4 level
+square, the landing zone's size, in a route chamber. The pass draws no
+random numbers, so the rest of the cavern is the same with or without
+it.
+
+```
+  landing zone ══ route ══[FWD]══ route ══ core
+                 ◄── toDeploy ──►◄── toCore ──►
+  score = |toCore − 0.375 × whole| + detour + (20 if in the heart)
+```
+
+Distances are a mech's walk on the draft, frozen once. The square is
+prop-free open ground in one route chamber, on one level, off every
+other hook's tiles and more than 4 columns from any nest. A square
+inside the chamber's heart (45% of its radius, at least 4) pays 20
+steps. On 64 seeds every cavern gets a point, 31–85 steps from the
+core: 0.19–0.53 of the landing zone's walk, median 0.37. The route has
+few chambers to choose from, and a nest can push the point further
+out (gh-8's lands at 0.63).
+
+It is usable **from the start**: the mission's extraction tiles are
+the landing zone's, then the forward point's
+(`extractionZoneTiles`), with no new state. The players, Jev's
+requests and the Board action read that one list. A fixed tile list
+is a rule the player can read on the map. The point sits on the route
+the force must walk in any case, so boarding early there only takes a
+unit home.
+
+The garrison keeps off it, as it keeps off the nests.
+
+**A second drop ship stands beside it.** The briefing says one holds
+there, so the board draws it (`resolveForwardDropships`,
+`graphics/service/forward-dropship-resolver.ts`). It is scenery only:
+it blocks no tile, and `mission.extraction` and the rest of the
+mission state are unchanged. It is the landing zone's model and
+layout (`dropshipClearanceFor`): a 5 × 7 hull whose ramp comes down
+on the point, or no more than 3 columns from it.
+
+```
+  rock rock rock rock rock
+  rock ┌─────┐ rock rock          hull: never in rock, on the point,
+  ···· │ hull│ ········            a nest or the heart
+  ···· └──┬──┘ ········
+  ···· ┌──┴─┐  ········            ramp: its foot on the point
+  ···· │ pt │  ········            (gap 0), or up to 3 columns off
+  ···· └────┘  ········
+```
+
+The ship lands where the floor under the hull is bare. Otherwise it
+holds just above the highest thing under it (a one-layer step, a
+slope, a prop), at most a storey up. The lowest berth wins, then the
+nearest ramp, then the most open floor around it. The cavern has no
+roof, so a ship in a chamber needs no shaft.
+
+It blocks nothing, so a squad or a bug can stand under it. Its hull
+takes the wall cutaway: it screen-doors on the rays to any unit the
+player can see under it or behind it, as a wall does
+(`GHOSTED_MODEL_PREFIXES`). When more units are drawn than the
+cutaway has slots, the units under a hull go first. A click on the
+hull offers Board, as a click on the landing ship does
+(`isDropshipTile` reads `isUnderDrawnDropship`). Boarding still needs
+the unit on the point. The landing ship's hull tiles are blocked by
+mapgen, so nothing stands under it, but it takes the same cutaway for
+units behind it.
+
+On gh-1 to gh-40, 36 caverns get a ship: 13 landed, 17 a layer up and
+6 a storey up. Four get none. On gh-8, gh-32 and gh-37 every berth
+that low and that near would cover the heart, and on gh-40 a nest. On
+those four the blue tiles still mark the point. The measurements are
+in `docs/design/calibration/C3a-hives.md`, "The forward drop ship".
 
 **Brood density is lower than an ordinary cavern's.** The cavern has
 more chambers, so the Great Hive broods are smaller (base 4, maximum
@@ -160,6 +255,7 @@ count. Without it, gh-2's crowded core placed only 4 of 6 guards.
   - briefing rows:
     - Target: "Great Hive: Europe"
     - Objective: "Destroy the core; the beacon falls with it"
+    - Extraction: "The forward point, past halfway in, or the landing zone"
     - Liberates
     - Beacons: "Great Hives destroyed: N / 3"
     - Win: "All three: the launch window opens"
@@ -174,6 +270,28 @@ Renders from port 4238:
 - `great-hives-overworld.png`: one fallen Great Hive, grey, and two
   standing
 - `great-hive-briefing.png`
+
+Renders from port 4252 (C3a round 3, re-rendered at `9b5c2bc6` for round 3b;
+the forward point and both zones again for round 3c, with the forward
+drop ship):
+
+- `great-hive-forward-briefing.png`: the briefing with its Extraction
+  row
+- `great-hive-forward-point.png`: the force on the forward point, its
+  drop ship landed beside it with the ramp on the point, the core
+  fallen, and the tracker naming both places to board
+- `great-hive-forward-board.png`: the wheel's Board reads "forward
+  point"
+- `great-hive-both-zones.png`: the whole cavern, with the landing zone
+  by its drop ship at the top right and the forward point by the
+  second drop ship in the middle
+- `great-hive-forward-hull-before.png` and
+  `great-hive-forward-hull-after.png` (gh-38): two squads and two bugs
+  under the forward hull, with a squad and two bugs beside it. Before,
+  the hull hides the four under it; after, it screen-doors around them
+- `great-hive-forward-hull-board.png` (gh-38): a click on the forward
+  hull with a squad on the point, and Board, open, reading "forward
+  point"
 
 **Art:** the core is `bug.hive-core`, reused. A beacon variant of the
 core model was not cheap enough to build here. The beacon reads on the

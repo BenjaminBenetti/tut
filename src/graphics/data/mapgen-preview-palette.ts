@@ -144,6 +144,9 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   [HookKinds.EGG_SPAWNER]: 0x9cff3d,
   [HookKinds.EDGE_SPAWN]: 0xe0453c,
   [HookKinds.EXTRACTION]: 0x7fd1ff,
+  // A second place to board is the same place to the player: the landing
+  // zone's sky blue (#1179).
+  [HookKinds.FORWARD_EXTRACTION]: 0x7fd1ff,
   // A dead thing worth something: bone against the spawner's live green (#1171).
   [HookKinds.TECH_CARCASS]: 0xd9c9a3,
   // Something of ours to hold: TDF amber, apart from the drop-zone green (#1175).

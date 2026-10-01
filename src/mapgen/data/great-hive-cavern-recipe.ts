@@ -9,20 +9,24 @@ import { PassMask } from "../model/pass-mask";
 /**
  * A Great Hive's board (campaign arc §6.9, §7.5): the hive cavern made
  * longer and wider, so the planner has room for more chambers on the
- * route and beside it. 13,248 columns, 44% more than a hive cavern's
- * 9,216; `width + depth` = 256 keeps the whole board inside the tactical
+ * route and beside it. 10,944 columns, 19% more than a hive cavern's
+ * 9,216; `width + depth` = 224 keeps the whole board inside the tactical
  * camera's fit-to-map zoom floor (6 px a tile), as the 64 × 144 cavern
- * is. The size was measured for generation time and bug-phase cost
- * (`docs/design/great-hives.md`).
+ * is (`docs/design/great-hives.md`).
+ *
+ * It was 72 × 184 until #1179 C3a round 3: a mech's walk from the drop
+ * ship to the core was 189–232 steps, and the new player's assaults ran
+ * out of turns on the way home. At 152 deep it is 130–202 (24 maps).
  */
-export const GREAT_HIVE_CAVERN_SIZE: MapDimensions = { width: 72, depth: 184 };
+export const GREAT_HIVE_CAVERN_SIZE: MapDimensions = { width: 72, depth: 152 };
 
 /**
  * Least manhattan distance from the drop ship to the Great Hive's core.
- * The core sits at the far end of the 184-deep board, about 150 tiles
- * from the boarding ramp; 110 fails a core placed in the front half.
+ * The core sits at the far end of the 152-deep board, about 125 tiles
+ * from the boarding ramp; 90 fails a core placed in the front half. It
+ * keeps the share of the depth that 110 was of 184.
  */
-export const GREAT_HIVE_CORE_MIN_DISTANCE = 110;
+export const GREAT_HIVE_CORE_MIN_DISTANCE = 90;
 
 /**
  * What a Great Hive cavern asks the hook pass for: a hive cavern's hooks

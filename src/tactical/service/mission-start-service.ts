@@ -12,6 +12,7 @@ import type { MissionMapRules } from "../../mapgen/model/mission-map-rule";
 import type { MapGenRegistries } from "../../mapgen/model/registries";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { extractionZoneTiles } from "../../mapgen/service/extraction-zones";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
 import { missionToMapRecipe } from "../../mapgen/service/mission-map-recipe-adapter";
 import type { TileIndex } from "../../mapgen/service/tile-index";
@@ -137,7 +138,8 @@ export const GARRISON_RNG_LABEL = "garrison-turrets";
  *                                          (mechs on mech-passable ones first;
  *                                           squads with the campaign's infantry upgrades)
  *   map.hooks.objectives (tech-carcass) ──► carcasses, worth mapParams.techCarcass (#1171)
- *   map.hooks.extraction               ──► extraction tiles
+ *   map.hooks.extraction               ──► extraction tiles, with any
+ *     + forward-extraction objectives       forward point's (a Great Hive's)
  *   mission.bugMix?                    ──► bugMix, the species the spawns roll
  *   setupRules[mission.typeId]         ──► the type's objectives, entities, schedules
  *                                          (a clearance's spawners, a defence's generators)
@@ -333,7 +335,7 @@ export function buildMissionStage<TState extends MissionCampaignState>(
     // Nothing burns until something is fired (#1121).
     effects: [],
     edgeSpawn: { nextTurn: deps.spawnTuning.firstWaveTurn, wave: 0 },
-    extraction: map.hooks.extraction.tiles.map(coordOf),
+    extraction: extractionZoneTiles(map.hooks).map(coordOf),
     extracted: [],
     // The mission does begin on turn 1 in the player phase, so it says so
     // (#573). Every later turn is announced by `turn-service`; without

@@ -82,8 +82,48 @@ function setupDeps(): MissionSetupDeps {
 // ===========================================
 
 describe("TUNNEL_SABOTAGE_SETUP (arc §6.7)", () => {
-  it("is the table's setup for the tunnel sabotage type", () => {
-    expect(MISSION_SETUP_RULES["tunnel-sabotage"]).toBe(TUNNEL_SABOTAGE_SETUP);
+  it.each([
+    ["an Act II offer", { ...OFFER, act: "act-2" as const }],
+    ["an offer saved before acts", OFFER],
+  ])(
+    "is the table's setup for %s on the shared waves: the pressure is at the mouths (Ben's rule, 2026-09-28)",
+    (_, offer) => {
+      const map = fixtureMap();
+      const base = missionWith(map, [unitAt("u", "infantry", at(0, 0))]);
+      const own = TUNNEL_SABOTAGE_SETUP.setup(base, map, offer, setupDeps());
+      const table = MISSION_SETUP_RULES["tunnel-sabotage"].setup(
+        base,
+        map,
+        offer,
+        setupDeps(),
+      );
+      if (!own.ok || !table.ok) throw new Error("setup refused");
+      expect(table.value).toEqual(own.value);
+      expect(table.value.edgeSpawn).toEqual({ nextTurn: 3, wave: 0 });
+    },
+  );
+
+  it("presses an Act III offer's edge waves in the table: the first on turn 1, each a tenth larger, spilling a step (#1179)", () => {
+    const map = fixtureMap();
+    const base = missionWith(map, [unitAt("u", "infantry", at(0, 0))]);
+    const offer: Mission = { ...OFFER, act: "act-3" };
+    const own = TUNNEL_SABOTAGE_SETUP.setup(base, map, offer, setupDeps());
+    const table = MISSION_SETUP_RULES["tunnel-sabotage"].setup(
+      base,
+      map,
+      offer,
+      setupDeps(),
+    );
+    if (!own.ok || !table.ok) throw new Error("setup refused");
+    expect(table.value.edgeSpawn).toEqual({
+      nextTurn: 1,
+      wave: 0,
+      surge: { sizeScale: 1.1, spillRadius: 1 },
+    });
+    // Only the schedule moves: the mouths and the objective are the type's own.
+    expect({ ...table.value, edgeSpawn: own.value.edgeSpawn }).toEqual(
+      own.value,
+    );
   });
 
   it("opens a mouth on every tunnel-mouth hook and names all three in one seal-tunnels objective", () => {

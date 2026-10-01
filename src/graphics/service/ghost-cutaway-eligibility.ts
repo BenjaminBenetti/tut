@@ -6,15 +6,27 @@ import type { ModelAssetId } from "../../content/data/model-ids";
 
 /**
  * Model id prefixes whose batches take the wall cutaway (style guide
- * §12.4): everything a building is made of, and the props that sit on
- * its roof. Selected by model id rather than by category because the
- * `tiles` category carries both a building's slabs and the ground, and
- * the ground must never fade: opening a hole in the map would be worse
- * than the wall it was trying to see past.
+ * §12.4): everything a building is made of, the props that sit on its
+ * roof, and the drop ship (#1179). Selected by model id rather than by
+ * category because the `tiles` category carries both a building's slabs
+ * and the ground, and the ground must never fade: opening a hole in the
+ * map would be worse than the wall it was trying to see past.
+ *
+ * The drop ship is a hull 5 × 7 tiles and 3.5 u tall. A Great Hive's
+ * forward ship is scenery that blocks no tile, so a squad or a bug can
+ * stand under it; a unit can stand behind either ship. The hull gives
+ * way around them as a wall does.
+ *
+ * ```
+ *   camera ──► ╭──────────╮ hull   ◄── fades on the rays to the unit
+ *              │   ◉      │ unit       under it or behind it
+ *   ───────────┴──────────┴──── floor ◄── solid
+ * ```
  */
 export const GHOSTED_MODEL_PREFIXES: readonly string[] = [
   "building.",
   "prop.rooftop-",
+  "tdf.dropship",
 ];
 
 /**
@@ -55,11 +67,11 @@ export const GHOST_SOLID_MODELS: ReadonlySet<ModelAssetId> =
 /**
  * Whether a placed model's batch is given a ghost-cutaway material.
  *
- * Walls, parapets, frontage dressing and rooftop props between the
- * camera and a unit fade (#526); floor slabs, stairs and roofs stay
- * solid so the tiles a unit can move to read through the cutaway and a
- * roof never opens a window onto a solid floor (#1143); ground, terrain,
- * roads and every other model never fades.
+ * Walls, parapets, frontage dressing, rooftop props and the drop ship
+ * between the camera and a unit fade (#526, #1179); floor slabs, stairs
+ * and roofs stay solid so the tiles a unit can move to read through the
+ * cutaway and a roof never opens a window onto a solid floor (#1143);
+ * ground, terrain, roads and every other model never fades.
  *
  * @param modelId - The batch's model id.
  * @returns `true` when the batch should carry the cutaway shader.

@@ -432,7 +432,7 @@ describe("the story from Live Specimen to Act III, through the composition root 
 // ===========================================
 
 describe("Intact Pod through the composition root (#1179)", () => {
-  it("stands the pod up as a unit of ours with recover-pod deciding, and one wave more than a crash site", () => {
+  it("stands the pod up as a unit of ours with recover-pod deciding, and two surging waves more than a crash site", () => {
     const game = build();
     const offer = podPinned(game);
     launch(game, offer);
@@ -455,7 +455,7 @@ describe("Intact Pod through the composition root (#1179)", () => {
         targetId: pod?.id,
         complete: false,
         failed: false,
-        deadlineTurn: 8,
+        deadlineTurn: 10,
         huntedAt: pod?.pos,
       },
     ]);
@@ -463,7 +463,8 @@ describe("Intact Pod through the composition root (#1179)", () => {
     expect(mission.spawners.filter((s) => s.variant === "spore-pod")).toEqual(
       [],
     );
-    expect(mission.edgeSpawn.totalWaves).toBe(3);
+    expect(mission.edgeSpawn.totalWaves).toBe(4);
+    expect(mission.edgeSpawn.surge).toEqual({ sizeScale: 1.5, spillRadius: 2 });
   });
 
   it("sends a bug that sees nothing at the pod, not at the landing zone", () => {
@@ -532,7 +533,7 @@ describe("Intact Pod through the composition root (#1179)", () => {
     );
   });
 
-  it("is won when the drop lifts the pod as turn 9 opens and the force goes home, and the win enters Act III", () => {
+  it("is won when the drop lifts the pod as turn 11 opens and the force goes home, and the win enters Act III", () => {
     const game = build();
     const offer = podPinned(game);
     launch(game, offer);
@@ -540,9 +541,9 @@ describe("Intact Pod through the composition root (#1179)", () => {
     const pod = podOf(active(game));
     if (pod === undefined) throw new Error("the pod must stand");
 
-    // Through turn 8 the pod waits for the drop.
+    // Through turn 10 the pod waits for the drop.
     const recovered: TacticalEvent[] = [];
-    while (active(game).turn < 8) {
+    while (active(game).turn < 10) {
       recovered.push(
         ...endPlayerTurn(game).filter((e) => e.type === POD_RECOVERED),
       );
@@ -550,9 +551,9 @@ describe("Intact Pod through the composition root (#1179)", () => {
     expect(recovered).toEqual([]);
     expect(podOf(active(game))?.id).toBe(pod.id);
 
-    // Turn 8 ends: the drop lifts it as turn 9 opens.
+    // Turn 10 ends: the drop lifts it as turn 11 opens.
     const lifted = endPlayerTurn(game);
-    expect(active(game).turn).toBe(9);
+    expect(active(game).turn).toBe(11);
     expect(lifted.filter((e) => e.type === POD_RECOVERED)).toEqual([
       {
         type: POD_RECOVERED,

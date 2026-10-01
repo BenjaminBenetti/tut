@@ -47,7 +47,12 @@ import {
 const at = (x: number, z: number): TileCoord => ({ x, y: 0, z });
 
 /** Wake tuning for the fixtures: heard from six tiles beyond the edge. */
-const WAKE: BroodWakeTuning = { noiseRadius: 6, heavyArmorPen: 1 };
+const WAKE: BroodWakeTuning = {
+  noiseRadius: 6,
+  heavyArmorPen: 1,
+  zoneShare: 1,
+  minZoneRadius: 1,
+};
 
 const ATTACK_DEPS = fixtureAttackDeps();
 const ATTACK_HANDLER = createAttackHandler(

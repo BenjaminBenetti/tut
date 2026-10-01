@@ -11,6 +11,7 @@ import { equipmentOf } from "../service/equipment-service";
 import { chargesLeft } from "../service/combat-service";
 import { spawnerFootprintTiles } from "../service/footprint-service";
 import { movePerAction } from "../service/movement-service";
+import { burningTunnelCharges } from "../service/tunnel-charge-service";
 import type { JevStatus } from "../model/jev-status";
 
 /** Build a physically filtered rules input. Never hand Jev the raw mission or its event log. */
@@ -65,6 +66,11 @@ export function jevPerception(
       .filter((unit) => unit.team === actor.team)
       .map((unit) => unit.id),
   );
+  // A charge burning on a tunnel mouth is public (campaign arc §6.7):
+  // the mouth is the bugs' own tunnel, and a bug may pull it.
+  const onMouths = new Set(
+    burningTunnelCharges(mission).map((burning) => burning.charge.id),
+  );
   return {
     ...mission,
     map: {
@@ -100,8 +106,8 @@ export function jevPerception(
       visible.has(index.keyOf(carcass.pos)),
     ),
     radars: mission.radars.filter((radar) => radar.team === actor.team),
-    charges: mission.charges.filter((charge) =>
-      friendlyIds.has(charge.ownerId),
+    charges: mission.charges.filter(
+      (charge) => friendlyIds.has(charge.ownerId) || onMouths.has(charge.id),
     ),
     extracted: [],
     log: [],
@@ -120,6 +126,10 @@ export function jevState(
   equipment: EquipmentCatalogue,
   destinations: JevDestinationSources,
 ): Readonly<Record<string, unknown>> {
+  const onMouths = burningTunnelCharges(view);
+  const hostileCharges = new Set(
+    actor.team === "tdf" ? [] : onMouths.map((burning) => burning.charge.id),
+  );
   return {
     entity_prompt: entityPrompt,
     commander_prompt: commanderPrompt,
@@ -169,7 +179,21 @@ export function jevState(
     last_seen: destinations.last_seen,
     radar_contacts: destinations.radar_contacts,
     friendly_radars: view.radars,
-    friendly_charges: view.charges,
+    friendly_charges: view.charges.filter(
+      (charge) => !hostileCharges.has(charge.id),
+    ),
+    // Sent only while a charge burns on a tunnel mouth (campaign arc §6.7).
+    ...(onMouths.length
+      ? {
+          tunnel_charges: onMouths.map(({ mouth, charge }) => ({
+            id: charge.id,
+            mouth_id: mouth.id,
+            position: charge.tile,
+            detonates_on_turn: charge.detonatesOnTurn,
+            hits_to_pull: mouth.chargeHitsLeft ?? 1,
+          })),
+        }
+      : {}),
     visible_carcasses: destinations.visible_carcasses,
     observed_hazards: view.effects,
   };

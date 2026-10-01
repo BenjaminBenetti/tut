@@ -61,6 +61,46 @@ export function dropshipApproachRect(clearance: Rect, facing: Direction): Rect {
   return { x: clearance.x, z: clearance.z, w: 1, d: clearance.d };
 }
 
+/**
+ * The clearance whose boarding patch is the square with its low corner
+ * at `patch`: the inverse of `dropshipBoardingTiles`, for drawing an
+ * aircraft beside a boarding square the generator placed on its own (a
+ * Great Hive's forward extraction point, #1179). Facing north, the hull
+ * lies north of the patch with its ramp on the patch's north edge:
+ *
+ * ```
+ *   · · · · · · ·   ← clearance (margin around hull and patch)
+ *   · H H H H H ·
+ *   · H  hull H ·
+ *   · H H H H H ·   ← ramp
+ *   · P P P P · ·
+ *   · P patch · ·   ← `patch` is the P square's low corner
+ *   · P P P P · ·
+ *   · · · · · · ·
+ * ```
+ *
+ * @param patch - The boarding square's low corner.
+ * @param patch.x - Its lowest column.
+ * @param patch.z - Its lowest row.
+ * @param facing - The way the nose points.
+ */
+export function dropshipClearanceFor(
+  patch: { x: number; z: number },
+  facing: Direction,
+): Rect {
+  const { margin, width, length, boardingSide } = DROPSHIP_SITE_RULES;
+  const vertical = facing === "n" || facing === "s";
+  const across = width + 2 * margin;
+  const inward = 2 * margin + length + boardingSide;
+  const size = { w: vertical ? across : inward, d: vertical ? inward : across };
+  const tiles = dropshipBoardingTiles({ x: 0, z: 0, ...size }, facing, 0);
+  return {
+    x: patch.x - Math.min(...tiles.map((tile) => tile.x)),
+    z: patch.z - Math.min(...tiles.map((tile) => tile.z)),
+    ...size,
+  };
+}
+
 /** Grid-aligned boarding patch touching the rear ramp, outside the full hull. */
 export function dropshipBoardingTiles(
   clearance: Rect,

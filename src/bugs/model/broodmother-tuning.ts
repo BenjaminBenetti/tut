@@ -14,6 +14,7 @@
  *   clutch       one egg spawner beside her as the bug phase of every
  *                turn divisible by clutchInterval opens
  *   flight       hp ≤ maxHp·fleeAtHpFraction ──► fleeing, for good
+ *   limp         fleeing, as her phase opens ──► ap ≤ fleeingActions
  *
  *   keep-distance score of a tile she could end her move on
  *     − threats·threatWeight            visible enemies whose reach covers it
@@ -44,6 +45,12 @@ export interface BroodmotherTuning {
    * the map edge (arc §6.8: half). Once she flees she never turns back.
    */
   readonly fleeAtHpFraction: number;
+  /**
+   * Action points she has in each of her own phases once she flees:
+   * wounded, she limps. A whole number, 1 or more; her `maxAp` or more
+   * leaves her pace alone.
+   */
+  readonly fleeingActions: number;
   /** Penalty per visible enemy whose weapon reach covers a tile. Dominates the others. */
   readonly threatWeight: number;
   /** Reward per tile of clearance beyond the nearest visible enemy's reach, up to `marginCap`. */

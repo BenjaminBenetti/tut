@@ -320,8 +320,9 @@ export const ARMOURED_VARIANT_BASES: Readonly<
  * half health she runs for the map edge, and one that reaches it is
  * gone.
  *
- * `hp` is her difficulty-1 value; the mission that places her scales
- * it with difficulty and scars (`broodmotherHp`). She stands on a 3×3
+ * `hp` is her difficulty-1 value, `BROODMOTHER_TUNING.hpBase` (42 since
+ * the story calibration, #1179); the mission that places her scales it
+ * with difficulty and scars (`broodmotherHp`). She stands on a 3×3
  * block (the modeller's kit): lower than a mech and far wider than a
  * brute, so she fits through no door and walks the streets.
  */
@@ -330,7 +331,7 @@ export const BROODMOTHER: BugSpecies = {
   name: "Broodmother",
   description:
     "A huge ribbed egg sac caged in bone behind a small armoured head. She lays a clutch of eggs every few turns, keeps out of reach, and runs for the edge when she is hurt.",
-  hp: 60,
+  hp: 42,
   armor: 1,
   move: 5,
   ap: 2,

@@ -12,6 +12,7 @@ import {
 } from "../../tactical/service/jev-control-service";
 import { chooseBugCommands } from "../../bugs/ai/behaviour-registry";
 import { AlphaBehaviour } from "../../bugs/ai/alpha-behaviour";
+import { ChargeFirstLookup } from "../../bugs/ai/charge-first-behaviour";
 import { viewFor } from "../../tactical/service/mission-view-service";
 import { MECH_ACTION } from "../../tactical/model/mech-action-command";
 import { createMechActionHandler } from "../../tactical/service/mech-action-service";
@@ -88,6 +89,7 @@ import { GENERATOR_TUNING } from "../../tactical/data/generator-tuning";
 import { GREAT_HIVE_SETUP_TUNING } from "../../tactical/data/great-hive-setup-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../tactical/data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
+import { CRASH_SITE_SETUP_TUNING } from "../../tactical/data/crash-site-setup-tuning";
 import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
 import { TUNNEL_TUNING } from "../../tactical/data/tunnel-tuning";
 import { createTunnelSurfacingStep } from "../../tactical/service/tunnel-mouth-surfacing-service";
@@ -312,6 +314,8 @@ export function composeTactical(
     hiveGuard: BUG_SPECIES["hive-guard"],
     hiveAssault: HIVE_ASSAULT_SETUP_TUNING,
     greatHive: GREAT_HIVE_SETUP_TUNING,
+    // A harder landing's pod ripens sooner (#1179, C2b-1-field).
+    crashSite: CRASH_SITE_SETUP_TUNING,
     setupRules: MISSION_SETUP_RULES,
     // A story mission's own setup on top of its type's, and the bugs a
     // setup may place: Live Specimen's lurkers (#1179).
@@ -453,12 +457,16 @@ export function shippedTacticalHandlers(
   // A crowned alpha plays its species' own behaviour from this registry,
   // with focus fire on top (#1179), so it is registered beside them.
   registry.register(new AlphaBehaviour(registry, speciesOf));
+  // Every bug goes for a burning tunnel charge it can pull this turn
+  // before anything its behaviour would do (campaign arc §6.7, Ben's
+  // rule of 2026-09-28); with no charge burning it is the registry.
+  const behaviours = new ChargeFirstLookup(registry);
   // A named enemy plays its persona's fallback without Jev, in the
   // synchronous bug phase and in a mixed Jev phase alike (ADR 0013 §2.8).
   const personaOf = createPersonaLookup(PERSONAS);
   const bugPhase = createBugPhaseRunner({
     handlers: actions,
-    registry,
+    registry: behaviours,
     speciesOf,
     personaOf,
     combat: COMBAT_TUNING,
@@ -474,7 +482,7 @@ export function shippedTacticalHandlers(
         chooseBugCommands(
           viewFor(mission, "bugs"),
           unitId,
-          registry,
+          behaviours,
           speciesOf,
           { rng: ctx.rng, combat: COMBAT_TUNING },
           personaOf,

@@ -6,9 +6,14 @@ import { FixtureMapBuilder } from "../../../mapgen/service/fixture-map-builder";
 import { ATTACK } from "../../model/attack-command";
 import { MOVE } from "../../model/move-command";
 import { unitAt } from "../tactical-fixtures.test-helper";
+import type { TacticalState } from "../../model/tactical-state";
 import {
   awakeView,
+  BROOD_MARGIN,
+  readBroods,
+  SLEEPER_BERTH,
   sleeperGround,
+  sleepers,
   wakesSleepers,
 } from "./brood-berth.test-helper";
 import { createExpertPlayerPolicy } from "./expert-player-policy.test-helper";
@@ -29,6 +34,25 @@ function flat(a: TileCoord, b: TileCoord): number {
 /** A dormant bug: a member of a sleeping brood. */
 function sleeperAt(id: string, pos: TileCoord) {
   return unitAt(id, "infantry", pos, { team: "bugs", status: ["dormant"] });
+}
+
+/** An open 30×16 floor: room to lose sight of something. */
+function longField() {
+  return new FixtureMapBuilder(30, 16, 3 * STOREY_LAYERS).fillGround().build();
+}
+
+/** `mission` with the side remembering `lastSeen` as where it last saw each bug. */
+function remembering(
+  mission: TacticalState,
+  lastSeen: Readonly<Record<string, TileCoord>>,
+): TacticalState {
+  return {
+    ...mission,
+    vision: {
+      ...mission.vision,
+      tdf: { ...mission.vision.tdf, lastSeen },
+    },
+  };
 }
 
 describe("letting sleeping broods lie", () => {
@@ -105,7 +129,7 @@ describe("letting sleeping broods lie", () => {
   it("walks round a sleeper on its way rather than past it", () => {
     // A long field with the goal at the far end and a sleeper on the
     // straight line to it. The unit sees the sleeper from 8 tiles and
-    // walks off the line, never nearer the sleeper than it stands.
+    // walks off the line, round the sleeper's berth, still gaining.
     const map = new FixtureMapBuilder(30, 16, 3 * STOREY_LAYERS)
       .fillGround()
       .build();
@@ -126,8 +150,9 @@ describe("letting sleeping broods lie", () => {
     expect(command?.type).toBe(MOVE);
     const path = (command?.payload as { path: readonly TileCoord[] }).path;
     for (const tile of path) {
-      expect(flat(tile, sleeper)).toBeGreaterThanOrEqual(flat(start, sleeper));
+      expect(flat(tile, sleeper)).toBeGreaterThan(SLEEPER_BERTH);
     }
+    expect(path[path.length - 1]!.x).toBeGreaterThan(start.x);
   });
 
   it("walks on past a sleeper that lies across the only way", () => {
@@ -155,6 +180,105 @@ describe("letting sleeping broods lie", () => {
     expect(command?.type).toBe(MOVE);
     const path = (command?.payload as { path: readonly TileCoord[] }).path;
     expect(path[path.length - 1]!.x).toBeGreaterThan(start.x);
+  });
+
+  it("remembers a sleeper lost to sight where it last lay, and forgets it once its brood wakes (#1179 C3a)", () => {
+    const out = { x: 24, y: 0, z: 8 };
+    const units = [
+      unitAt("alpha", "infantry", { x: 2, y: 0, z: 8 }),
+      sleeperAt("sleeper", { x: 25, y: 0, z: 8 }),
+      unitAt("runner", "infantry", { x: 25, y: 0, z: 2 }, { team: "bugs" }),
+    ];
+    const lastSeen = { sleeper: out, runner: { x: 25, y: 0, z: 2 } };
+    const view = observe(
+      remembering(lookingMission(units, {}, longField()), lastSeen),
+    );
+    expect(view.enemies).toEqual([]);
+    expect(sleepers(view).map((bug) => [bug.id, bug.pos])).toEqual([
+      ["sleeper", out],
+    ]);
+    expect(wakesSleepers(view, out, out, false)).toBe(true);
+    expect(sleepers(awakeView(view))).toEqual([]);
+
+    const woken = units.map((unit) =>
+      unit.id === "sleeper" ? { ...unit, status: [] } : unit,
+    );
+    const later = observe(
+      remembering(lookingMission(woken, {}, longField()), lastSeen),
+    );
+    expect(sleepers(later)).toEqual([]);
+  });
+
+  it("reads sleepers lying together as one brood, the round of their middle and a margin", () => {
+    const map = longField();
+    const mission = lookingMission(
+      [
+        unitAt("alpha", "infantry", { x: 2, y: 0, z: 8 }),
+        sleeperAt("a", { x: 6, y: 0, z: 4 }),
+        sleeperAt("b", { x: 8, y: 0, z: 4 }),
+        sleeperAt("c", { x: 7, y: 0, z: 7 }),
+        sleeperAt("far", { x: 5, y: 0, z: 14 }),
+      ],
+      {},
+      map,
+    );
+    // Every sleeper in sight, whatever the fixture's sight lines.
+    const view = {
+      ...observe(mission),
+      enemies: mission.units.filter((unit) => unit.team === "bugs"),
+    };
+    const broods = readBroods(view);
+    expect(broods).toHaveLength(2);
+    expect(broods[0]?.centre).toEqual({ x: 7, z: 5 });
+    expect(broods[0]?.radius).toBeCloseTo(2 + BROOD_MARGIN);
+    expect(broods[1]).toEqual({
+      centre: { x: 5, z: 14 },
+      radius: BROOD_MARGIN,
+    });
+  });
+
+  it("in a cavern where broods sleep, walks no further than ground it has seen (#1179 C3a)", () => {
+    // Nothing in sight and the goal far off: the unit walks both actions,
+    // but not past the edge of what the side has explored.
+    const start = { x: 2, y: 0, z: 8 };
+    const plain = lookingMission(
+      [unitAt("alpha", "infantry", start)],
+      {},
+      longField(),
+    );
+    const brooding: TacticalState = {
+      ...plain,
+      broods: [
+        {
+          id: "brood-far",
+          wake: { centre: { x: 28, y: 0, z: 15 }, radius: 3 },
+          memberIds: [],
+        },
+      ],
+    };
+    const order: UnitOrder = {
+      kind: "destroy",
+      goals: [{ x: 28, y: 0, z: 8 }],
+    };
+    /** The view with the side having seen only the tiles up to `x = 4`. */
+    const narrowed = (mission: TacticalState) => {
+      const view = observe(mission);
+      const explored = new Set(
+        mission.map.tiles
+          .filter((tile) => tile.x <= 4)
+          .map((tile) => view.graph.index.keyOf(tile)),
+      );
+      return { ...view, explored };
+    };
+    const lastOf = (mission: TacticalState): TileCoord | undefined => {
+      const view = narrowed(mission);
+      const command = EXPERT.next(view.own[0]!, order, view);
+      expect(command?.type).toBe(MOVE);
+      const path = (command?.payload as { path: readonly TileCoord[] }).path;
+      return path[path.length - 1];
+    };
+    expect(lastOf(brooding)?.x).toBe(4);
+    expect(lastOf(plain)?.x).toBeGreaterThan(4);
   });
 
   it("holds fire that would land among sleepers or be heard by them", () => {

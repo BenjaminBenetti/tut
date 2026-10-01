@@ -108,7 +108,7 @@ describe("UPLINK", () => {
     expect(UPLINK_DIFFICULTY).toBe(6);
     expect(UPLINK_DIFFICULTY).toBeGreaterThanOrEqual(band.min);
     expect(UPLINK_DIFFICULTY).toBeLessThanOrEqual(band.max);
-    expect(UPLINK_WAVES).toBe(5);
+    expect(UPLINK_WAVES).toBe(6);
   });
 
   it("offers a pinned d6 defence of the tracking array at the quietest detected city", () => {
@@ -121,7 +121,7 @@ describe("UPLINK", () => {
       act: "act-3",
       // low (10) is the least infested detected city; no region hives.
       cityId: "low",
-      defence: { installation: "tracking-array", generators: 2, waves: 5 },
+      defence: { installation: "tracking-array", generators: 2, waves: 6 },
     });
   });
 

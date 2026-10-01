@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import { ACTS } from "../../overworld/data/acts";
+import { EXPERT_OBJECTIVE_STRATEGIES } from "../../tactical/service/players/expert-objective-strategies.test-helper";
+import { OBJECTIVE_STRATEGIES } from "../../tactical/service/players/objective-strategies.test-helper";
 import { CALIBRATION_CELLS } from "./calibration-cells.test-helper";
 import {
   composeCalibrationGame,
+  playerFor,
   prepareRun,
 } from "./calibration-run.test-helper";
 
 describe("the calibration runs", () => {
+  it("hand the new player the shared strategies and the expert its own", () => {
+    expect(playerFor("new").strategies).toBe(OBJECTIVE_STRATEGIES);
+    expect(playerFor("expert").strategies).toBe(EXPERT_OBJECTIVE_STRATEGIES);
+  });
+
   it("offer every cell's own mission, at a difficulty its act offers, with a bug mix", () => {
     CALIBRATION_CELLS.forEach((cell, cellIndex) => {
       const prepared = prepareRun(composeCalibrationGame(1), {

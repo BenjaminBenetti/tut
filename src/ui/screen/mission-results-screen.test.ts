@@ -564,6 +564,37 @@ describe("MissionResultsScreen payout prominence", () => {
     );
   });
 
+  it("reads the salvage under the credits when a mech destroyed on a held field paid it (#1179)", () => {
+    const panel = mountWith({
+      mechsDestroyed: ["mech-1"],
+      salvageCredits: 1425,
+    });
+    const line = panel.querySelector<HTMLElement>(
+      '[data-field="rewards"] [data-field="salvage"]',
+    );
+    expect(line?.textContent).toBe("+¢1,425 for 1 destroyed mech");
+    expect(line?.previousElementSibling?.textContent).toBe("Salvage");
+    expect(
+      line?.previousElementSibling?.previousElementSibling?.getAttribute(
+        "data-field",
+      ),
+    ).toBe("credits");
+    root.innerHTML = "";
+    const two = mountWith({
+      mechsDestroyed: ["mech-1", "mech-2"],
+      salvageCredits: 2625,
+    });
+    expect(two.querySelector('[data-field="salvage"]')?.textContent).toBe(
+      "+¢2,625 for 2 destroyed mechs",
+    );
+  });
+
+  it("shows no salvage row when none was paid", () => {
+    const lost = mountWith({ outcome: "lost", mechsDestroyed: ["mech-1"] });
+    expect(lost.querySelector('[data-field="salvage"]')).toBeNull();
+    expect(lost.querySelectorAll('[data-field="rewards"] dt')).toHaveLength(3);
+  });
+
   /** Index of a `data-field` block among the panel's children, in reading order. */
   function orderOf(container: HTMLElement, field: string): number {
     const blocks = [...container.querySelectorAll("[data-field]")];

@@ -88,6 +88,10 @@ import {
   WALL_THICKNESS,
 } from "../data/mapgen-preview-palette";
 import type { ModelAssetId } from "../../content/data/model-ids";
+import {
+  isUnderDrawnDropship,
+  resolveDrawnDropships,
+} from "../service/drawn-dropship-resolver";
 import { mapModelIds, resolveMapModels } from "../service/map-model-resolver";
 import type { ModelPlacement } from "../service/map-model-resolver";
 import type { Disposable } from "../model/disposable";
@@ -1111,7 +1115,8 @@ export class TacticalMapView implements Disposable, TilePicker {
    * nudged a hair along the ray so a hit on a
    * box's side floors into that box, with the level read off the group
    * the mesh hangs on. Undefined when the ray misses the map or lands on
-   * a coordinate with no tile.
+   * a coordinate with no tile, except under a drop ship's hull
+   * (`hullColumnTop`).
    */
   pickTile(
     ndc: Vec2,
@@ -1139,12 +1144,12 @@ export class TacticalMapView implements Disposable, TilePicker {
     const point = hit.point
       .clone()
       .addScaledVector(this.raycaster.ray.direction, PICK_NUDGE);
-    const coord: TileCoord = {
+    const coord = this.hullColumnTop({
       x: Math.floor(point.x),
       y: level,
       z: Math.floor(point.z),
-    };
-    if (!this.index.has(coord)) {
+    });
+    if (coord === undefined) {
       return undefined;
     }
     // #761 still forbids ordinary picks into unhighlighted fog. A move
@@ -1158,6 +1163,34 @@ export class TacticalMapView implements Disposable, TilePicker {
       return undefined;
     }
     return coord;
+  }
+
+  /**
+   * The tile a hit at `coord` picks: `coord` itself when the map has it,
+   * or, under a drawn drop ship's hull, the column's top tile (#1179).
+   *
+   * A hull hangs on its ship's level group, so a hit on it reads that
+   * level. A forward point's ship may hold over a bank or a step, where
+   * the column's ground is on another level; its top tile is the ground
+   * under that part of the hull, so a click anywhere on the ship lands
+   * on a tile of its footprint, as it does on the landing ship's.
+   *
+   * ```
+   *   ╭──────── hull (level 2 group) ────────╮
+   *   │  hit ▼                               │
+   *   ▓▓▓▓▓▓ bank, level 3 ▓▓▓│ floor, level 2
+   *   (no level-2 tile here: the bank's top tile is picked)
+   * ```
+   *
+   * @param coord - The hit, floored to a column, on the mesh's level.
+   * @returns The picked tile, or undefined for no tile.
+   */
+  private hullColumnTop(coord: TileCoord): TileCoord | undefined {
+    if (this.index.has(coord)) return coord;
+    if (!isUnderDrawnDropship(this.map, coord)) return undefined;
+    const column = this.index.column(coord.x, coord.z);
+    const top = column[column.length - 1];
+    return top === undefined ? undefined : { x: top.x, y: top.y, z: top.z };
   }
 
   /**
@@ -1378,12 +1411,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** A box per prop, taller and darker the more cover it gives. */
   private buildProps(): void {
     const batches = new Map<string, Batch>();
-    for (const site of this.map.dropships ?? []) {
-      const boarding = this.map.hooks.deployZones.find(
-        (zone) => zone.id === site.deployZoneId,
-      )?.tiles[0];
-      if (!boarding) continue;
-      const { footprint, level } = site;
+    for (const ship of resolveDrawnDropships(this.map, this.index)) {
+      const { footprint, level, lift } = ship;
       const height = MODEL_MANIFEST["tdf.dropship"].height;
       pushBatch(
         batches,
@@ -1392,13 +1421,14 @@ export class TacticalMapView implements Disposable, TilePicker {
         level,
         boxMatrix(
           footprint.x + footprint.w / 2,
-          tileTop(level) + height / 2,
+          tileTop(level + lift) + height / 2,
           footprint.z + footprint.d / 2,
           footprint.w,
           height,
           footprint.d,
         ),
-        this.index.keyOf(boarding),
+        this.index.keyOf(ship.tile),
+        ship.occupiedTiles?.map((tile) => this.index.keyOf(tile)),
       );
     }
     for (const prop of this.map.props) {
@@ -1629,16 +1659,17 @@ export class TacticalMapView implements Disposable, TilePicker {
       // The marker was map geometry, built here from the generator's
       // hooks and skipped by the fog, so a green slab advertised every
       // egg spawner through the mist from turn one. The mapgen preview
-      // still wants it; a mission does not.
-      if (!this.objectiveMarkers && isObjective(hook, this.map)) {
+      // still wants it; a mission does not. A forward extraction point
+      // (#1179) sits in the objectives group but is somewhere to board,
+      // which the briefing names: it is drawn as the landing zone is.
+      const objective = isObjectiveMarker(hook, this.map);
+      if (!this.objectiveMarkers && objective) {
         continue;
       }
       for (const coord of hook.tiles) {
         const colour = HOOK_COLOURS[hook.kind] ?? FALLBACK_HOOK_COLOUR;
         const lift =
-          MARKER_LIFT +
-          (isObjective(hook, this.map) ? SLAB_HEIGHT : 0) +
-          shelfOf(hook.kind);
+          MARKER_LIFT + (objective ? SLAB_HEIGHT : 0) + shelfOf(hook.kind);
         const matrix = boxMatrix(
           coord.x + 0.5,
           tileTop(coord.y) + lift,
@@ -2018,6 +2049,8 @@ function levelOf(object: Object3D): number | undefined {
  * ```
  *   egg-spawner  the mission objective
  *   extraction   somewhere the player must return to and cannot infer
+ *   forward-     a Great Hive's second place to board (#1179); it never
+ *   extraction   shares a tile with another hook, so its rank is moot
  *   deploy       where the squad already stands, which its units show
  *   edge-spawn   where bugs arrive; useful, never urgent
  * ```
@@ -2034,6 +2067,7 @@ function levelOf(object: Object3D): number | undefined {
 const HOOK_MARKER_PRIORITY: readonly HookKind[] = [
   HookKinds.EGG_SPAWNER,
   HookKinds.EXTRACTION,
+  HookKinds.FORWARD_EXTRACTION,
   HookKinds.DEPLOY,
   HookKinds.EDGE_SPAWN,
 ];
@@ -2053,7 +2087,14 @@ function shelfOf(kind: HookKind): number {
   return (HOOK_MARKER_PRIORITY.length - rank) * HOOK_SHELF_STEP;
 }
 
-/** True when the hook belongs to the objectives group. */
-function isObjective(hook: Hook, map: TacticalMap): boolean {
-  return map.hooks.objectives.includes(hook);
+/**
+ * True when the hook marks an objective, which a mission withholds until
+ * it is seen: one in the objectives group other than a forward
+ * extraction point, a place to board the player is told of (#1179).
+ */
+function isObjectiveMarker(hook: Hook, map: TacticalMap): boolean {
+  return (
+    hook.kind !== HookKinds.FORWARD_EXTRACTION &&
+    map.hooks.objectives.includes(hook)
+  );
 }

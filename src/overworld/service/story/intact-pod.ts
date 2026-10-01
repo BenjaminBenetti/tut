@@ -23,11 +23,12 @@ import { buildStoryOffer } from "./story-offer-builder";
  * difficulties; Act II's band is d3–7).
  *
  * d6, near the band's top: it is the act's ending and a stand, not a
- * raid. At d6 the edges send a wave every second turn (turns 3, 5 and
- * 7 before the drop at the end of turn 8), seven or eight bugs each, and
- * the pod has a crash site's d6 hit points (65). d7 would cap the waves
- * at eight from the first and leave no step between the ending and the
- * Act III missions that follow it.
+ * raid. At d6 the edges send a wave every second turn (turns 3, 5, 7
+ * and 9 before the drop at the end of turn 10), seven or eight bugs
+ * each before Intact Pod's surge (`INTACT_POD_TUNING`), and the pod has
+ * a crash site's d6 hit points (65). d7 would cap the waves at eight
+ * from the first and leave no step between the ending and the Act III
+ * missions that follow it.
  */
 export const INTACT_POD_DIFFICULTY = 6;
 
@@ -52,7 +53,7 @@ export const INTACT_POD_DIFFICULTY = 6;
  *            (+10 at the city, seen) and the crash site's ×1.5 tech points
  *   map      the crash site's crater
  *   setup    the pod made a unit of ours to keep; recover-pod decides, the
- *            drop comes as turn 8 ends (tactical STORY_SETUP_RULES)
+ *            drop comes as turn 10 ends (tactical STORY_SETUP_RULES)
  *   won      the crash site's consequences (the pod gone: the landing is
  *            erased), then advance-act: Act III if its ending (Launch
  *            Window) is built, otherwise the campaign is won

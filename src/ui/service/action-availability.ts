@@ -1,3 +1,4 @@
+import { isUnderDrawnDropship } from "../../graphics/service/drawn-dropship-resolver";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
@@ -165,14 +166,34 @@ export function interactTarget(
 }
 
 /**
- * Whether a tile is part of the drop ship: one of its boarding tiles
+ * Whether a tile is part of a drop ship: one of its boarding tiles
  * (the extraction zone) or a tile under the aircraft itself.
  *
  * Extract is boarding the drop ship rather than a button of its own, so
  * the wheel needs to know when the player has clicked the ship. The map
- * draws the ship as a box over its footprint, and a click on the box
- * lands on the footprint tile beneath it; the extraction zone is the
- * ramp's boarding tiles beside it. Either is "the drop ship" to a player.
+ * draws a ship over each landing zone's footprint and over each forward
+ * extraction point it can fit beside (#1179), and a click on a hull
+ * lands on a footprint tile beneath it; the extraction zone is the
+ * boarding tiles beside it. Either is "the drop ship" to a player.
+ *
+ * A landing zone's site is read off the map, as it always was; a
+ * forward point's ship is read off the ships the scene drew
+ * (`isUnderDrawnDropship`), so the hull the player clicks is the hull
+ * they see:
+ *
+ * ```
+ *   click ──► extraction tile? ──yes──► Board
+ *                 │ no
+ *                 ▼
+ *            landing site? ──yes──► Board
+ *                 │ no
+ *                 ▼
+ *            under a drawn hull? ──yes──► Board
+ *            (a forward point's)
+ * ```
+ *
+ * Only the offer reads the hull; boarding itself still needs the unit
+ * on an extraction tile.
  *
  * @param mission - The mission, for its extraction tiles and map.
  * @param tile - The tile that was clicked.
@@ -185,13 +206,14 @@ export function isDropshipTile(
   if (mission.extraction.some((zone) => sameTile(zone, tile))) {
     return true;
   }
-  return (mission.map.dropships ?? []).some(
+  const landing = (mission.map.dropships ?? []).some(
     (site) =>
       tile.x >= site.footprint.x &&
       tile.x < site.footprint.x + site.footprint.w &&
       tile.z >= site.footprint.z &&
       tile.z < site.footprint.z + site.footprint.d,
   );
+  return landing || isUnderDrawnDropship(mission.map, tile);
 }
 
 // ===========================================

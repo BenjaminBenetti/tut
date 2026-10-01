@@ -232,6 +232,16 @@ describe("MISSION_PRESENTATION", () => {
       "tech-bonus",
     ]);
   });
+
+  it("briefs a harder landing's earlier clock, the one its mission keeps (C2b-1-field)", () => {
+    const crash = MISSION_PRESENTATION["crash-site"];
+    const podRow = (difficulty: number) =>
+      crash
+        .briefingRows({ ...CRASH, difficulty }, CTX)
+        .find((row) => row.field === "pod")?.value;
+    expect(podRow(4)).toBe("Matures at the end of turn 8");
+    expect(podRow(5)).toBe("Matures at the end of turn 5");
+  });
 });
 
 describe("SPORE_PLATFORM_PRESENTATION (arc §6.9)", () => {
@@ -338,7 +348,7 @@ describe("briefingFieldsOf", () => {
     ]);
   });
 
-  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three, the sabotage's five, the hunt's four and the platform's two", () => {
+  it("gives the shipped briefing the defence's two rows, the crash site's three, the wreck's three, the evacuation's four, the assault's three, the sabotage's six, the hunt's four and the platform's two", () => {
     expect(briefingFieldsOf(MISSION_PRESENTATION)).toEqual([
       { field: "installation", label: "Installation" },
       { field: "waves", label: "Bug waves" },
@@ -357,6 +367,7 @@ describe("briefingFieldsOf", () => {
       { field: "tech-multiplier", label: "Tech multiplier" },
       { field: "tunnels", label: "Tunnels" },
       { field: "fuse", label: "Fuse" },
+      { field: "guard", label: "Guard" },
       { field: "spread", label: "Spread due" },
       { field: "if-won", label: "Win" },
       { field: "if-ignored", label: "Ignored" },

@@ -15,7 +15,7 @@ import type {
   UnitOrder,
 } from "./objective-strategy.test-helper";
 import { strategyFor } from "./objective-strategy.test-helper";
-import type { PlayerRules } from "./player-combat.test-helper";
+import type { PlayerRules, ShotOption } from "./player-combat.test-helper";
 import { frontier, lastSighted } from "./player-goals.test-helper";
 import { fieldFor } from "./player-navigation.test-helper";
 import type { PlayerView } from "./player-view.test-helper";
@@ -30,8 +30,9 @@ import { onExtraction } from "./player-view.test-helper";
 // order. The strategies say what the objectives need; the driver asks
 // the policy for one command at a time and applies it.
 //
-//   view ──► planForce(strategies) ──► ForcePlan { jobs, couriers, settled }
+//   view ──► planForce(strategies) ──► ForcePlan { jobs, couriers, walkers, spared, settled }
 //        ──► policy.assign ──► unit ──► UnitOrder
+//        ──► underPlan (the plan's spared bugs ride every order)
 //        ──► policy.next(unit, order) ──► TacticalCommand | done
 
 /** What the objectives need of the force this instant. */
@@ -40,6 +41,10 @@ export interface ForcePlan {
   readonly jobs: readonly Job[];
   /** Units carrying an objective home: they head for the drop ship. */
   readonly couriers: ReadonlySet<UnitId>;
+  /** The couriers whose objective has them walk home rather than trade shots. */
+  readonly walkers: ReadonlySet<UnitId>;
+  /** Bugs in sight an objective wants alive: no order may kill one. */
+  readonly spared: ReadonlySet<UnitId>;
   /** Every deciding objective is settled: only getting home is left. */
   readonly settled: boolean;
 }
@@ -75,11 +80,17 @@ export function planForce(
 ): ForcePlan {
   const jobs: Job[] = [];
   const couriers = new Set<UnitId>();
+  const walkers = new Set<UnitId>();
+  const spared = new Set<UnitId>();
   let settled = true;
   for (const objective of view.mission.objectives) {
     const strategy = strategyFor(strategies, objective);
     for (const id of strategy.couriers?.(objective, view) ?? []) {
       couriers.add(id);
+      if (strategy.couriersWalk === true) walkers.add(id);
+    }
+    for (const id of strategy.spared?.(objective, view) ?? []) {
+      spared.add(id);
     }
   }
   for (const objective of decidingObjectives(view.mission.objectives)) {
@@ -90,7 +101,16 @@ export function planForce(
     settled = false;
     jobs.push(...strategy.jobs(objective, view));
   }
-  return { jobs, couriers, settled };
+  return { jobs, couriers, walkers, spared, settled };
+}
+
+/**
+ * The order a unit acts under, with the plan's force-wide rules on it:
+ * the bugs every objective wants alive, whatever job the unit has. The
+ * order as it was when the plan spares none.
+ */
+export function underPlan(order: UnitOrder, plan: ForcePlan): UnitOrder {
+  return plan.spared.size === 0 ? order : { ...order, spare: [...plan.spared] };
 }
 
 // ===========================================
@@ -148,7 +168,8 @@ export function stepsTo(
 /**
  * The orders every player gives whatever its style: freed civilians and
  * couriers go home, and everyone goes home once the objectives are
- * settled. Returns the orders given and the units still to assign.
+ * settled. A courier whose objective has it walk home is told so.
+ * Returns the orders given and the units still to assign.
  */
 export function standingOrders(
   view: PlayerView,
@@ -157,8 +178,15 @@ export function standingOrders(
   const orders = new Map<UnitId, UnitOrder>();
   const free: Unit[] = [];
   const home = extractOrder(view);
+  const carry: UnitOrder = { ...home, courier: true };
   for (const unit of view.own) {
-    if (!isCombatUnit(unit) || plan.couriers.has(unit.id) || plan.settled) {
+    if (plan.walkers.has(unit.id)) {
+      orders.set(unit.id, carry);
+    } else if (
+      !isCombatUnit(unit) ||
+      plan.couriers.has(unit.id) ||
+      plan.settled
+    ) {
       orders.set(unit.id, home);
     } else {
       free.push(unit);
@@ -236,6 +264,17 @@ export function netNow(
     }
   }
   return undefined;
+}
+
+/**
+ * Whether `shot` could kill a bug the order spares: its damage band
+ * reaches the target's hit points. A shot that can only wound is fair.
+ */
+export function killsSpared(order: UnitOrder, shot: ShotOption): boolean {
+  return (
+    order.spare?.includes(shot.targetId) === true &&
+    shot.preview.damage[1] >= shot.targetHp
+  );
 }
 
 /** The capture nets `unit` still has a throw of. */

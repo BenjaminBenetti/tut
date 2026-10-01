@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
+import type { DefenceTuning } from "../model/defence-tuning";
 import { OBJECTIVE_UPDATED } from "../model/objective-updated-event";
 import type {
   DefendGeneratorsObjective,
@@ -31,6 +32,9 @@ function generatorAt(id: string, x: number, z: number, hp = 40): Unit {
   return { ...unitAt(id, "infantry", at(x, z), { hp }), kind: "generator" };
 }
 
+/** A four-turn hold, short enough to walk through in a test. */
+const HOLD: DefenceTuning = { holdTurns: 4 };
+
 const DEFENCE: DefendGeneratorsObjective = {
   id: "objective-1",
   kind: "defend-generators",
@@ -47,6 +51,7 @@ function defence(options: {
   readonly wave?: number;
   readonly totalWaves?: number;
   readonly objective?: DefendGeneratorsObjective;
+  readonly turn?: number;
 }): TacticalState {
   const [first, second] = options.generatorHp ?? [40, 40];
   const bugs = Array.from({ length: options.bugs ?? 0 }, (_, i) =>
@@ -61,6 +66,7 @@ function defence(options: {
       ...bugs,
     ],
     {
+      ...(options.turn === undefined ? {} : { turn: options.turn }),
       objectives: [options.objective ?? DEFENCE],
       edgeSpawn: {
         nextTurn: 9,
@@ -117,6 +123,29 @@ describe("defendStatus (#1175)", () => {
     ).toBe("open");
   });
 
+  it("reads held once the hold has run out, with bugs still on the map (#1179)", () => {
+    const holding = { ...DEFENCE, holdUntilTurn: 6 };
+    const mission = (turn: number) =>
+      defence({ wave: 3, totalWaves: 3, bugs: 2, turn, objective: holding });
+    expect(defendStatus(mission(5), holding)).toBe("open");
+    expect(defendStatus(mission(6), holding)).toBe("complete");
+    expect(defendStatus(mission(9), holding)).toBe("complete");
+    // A hold never saves a defence that has lost every generator.
+    expect(
+      defendStatus(
+        defence({
+          generatorHp: [0, 0],
+          wave: 3,
+          totalWaves: 3,
+          bugs: 2,
+          turn: 6,
+          objective: holding,
+        }),
+        holding,
+      ),
+    ).toBe("failed");
+  });
+
   it("never completes on a schedule with no wave total", () => {
     expect(defendStatus(defence({ wave: 9 }), DEFENCE)).toBe("open");
   });
@@ -146,8 +175,19 @@ describe("defenceProgress", () => {
       wave: 2,
       totalWaves: 5,
       bugsLeft: 3,
+      holdTurnsLeft: undefined,
       status: "open",
     });
+  });
+
+  it("counts the hold down to zero once it has started (#1179)", () => {
+    const holding = { ...DEFENCE, holdUntilTurn: 6 };
+    const left = (turn: number) =>
+      defenceProgress(
+        defence({ wave: 3, totalWaves: 3, bugs: 1, turn, objective: holding }),
+        holding,
+      ).holdTurnsLeft;
+    expect([left(3), left(5), left(6), left(8)]).toEqual([3, 1, 0, 0]);
   });
 
   it("ignores dead bugs and dead TDF units alike", () => {
@@ -205,7 +245,7 @@ describe("objectiveComplete and objectiveFailed", () => {
 // ===========================================
 
 describe("createDefenceStep", () => {
-  const step = createDefenceStep();
+  const step = createDefenceStep(HOLD);
   const ctx = ctxWith(new Mulberry32Rng(1));
 
   it("leaves an open defence alone, without an event", () => {
@@ -219,7 +259,7 @@ describe("createDefenceStep", () => {
     const mission = defence({ wave: 3, totalWaves: 3 });
     const result = step(mission, ctx);
     expect(result.state.objectives).toEqual([
-      { ...DEFENCE, complete: true, failed: false },
+      { ...DEFENCE, complete: true, failed: false, holdUntilTurn: 5 },
     ]);
     expect(result.events).toEqual([
       {
@@ -260,6 +300,74 @@ describe("createDefenceStep", () => {
     const after = step(revived, ctx);
     expect(after.state).toBe(revived);
     expect(after.events).toEqual([]);
+  });
+
+  it("starts the hold as the last wave lands, never moves it, and holds when it runs out (#1179)", () => {
+    const landed = defence({ wave: 3, totalWaves: 3, bugs: 2, turn: 7 });
+    const started = step(landed, ctx);
+    expect(started.state.objectives).toEqual([
+      { ...DEFENCE, holdUntilTurn: 11 },
+    ]);
+    expect(started.events).toEqual([]);
+    // Three turns on, still open and the hold where it was.
+    const [holding] = started.state.objectives;
+    const later = defence({
+      wave: 3,
+      totalWaves: 3,
+      bugs: 2,
+      turn: 10,
+      objective: holding as DefendGeneratorsObjective,
+    });
+    const still = step(later, ctx);
+    expect(still.state).toBe(later);
+    expect(still.events).toEqual([]);
+    // Turn 11 opens with bugs alive: the hold is up, the defence held.
+    const up = step({ ...later, turn: 11 }, ctx);
+    expect(up.state.objectives).toEqual([
+      { ...DEFENCE, holdUntilTurn: 11, complete: true, failed: false },
+    ]);
+    expect(up.events).toEqual([
+      {
+        type: OBJECTIVE_UPDATED,
+        payload: { objectiveId: "objective-1", complete: true, failed: false },
+      },
+    ]);
+  });
+
+  it("keeps a held defence held when the bugs outliving the hold reach its generators (#1179)", () => {
+    // Held on turn 11 with two bugs about; they wreck both generators
+    // while the force goes home.
+    const held: DefendGeneratorsObjective = {
+      ...DEFENCE,
+      holdUntilTurn: 11,
+      complete: true,
+    };
+    const wrecked = defence({
+      generatorHp: [0, 0],
+      wave: 3,
+      totalWaves: 3,
+      bugs: 2,
+      turn: 12,
+      objective: held,
+    });
+    expect(defendStatus(wrecked, held)).toBe("complete");
+    expect(objectiveComplete(wrecked, held)).toBe(true);
+    expect(objectiveFailed(wrecked, held)).toBe(false);
+    const after = step(wrecked, ctx);
+    expect(after.state).toBe(wrecked);
+    expect(after.events).toEqual([]);
+  });
+
+  it("starts no hold before the last wave, nor on a defence already lost", () => {
+    const early = defence({ wave: 2, totalWaves: 3, bugs: 2 });
+    expect(step(early, ctx).state).toBe(early);
+    const lost = defence({
+      generatorHp: [0, 0],
+      wave: 3,
+      totalWaves: 3,
+      objective: { ...DEFENCE, failed: true },
+    });
+    expect(step(lost, ctx).state).toBe(lost);
   });
 
   it("passes spawner objectives through untouched", () => {

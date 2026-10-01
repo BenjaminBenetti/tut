@@ -1,6 +1,7 @@
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
+import type { Rng } from "../../core/model/rng";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { PropKindIds } from "../../mapgen/data/props";
@@ -16,8 +17,15 @@ import { OBJECTIVE_UPDATED } from "../model/objective-updated-event";
 import { SPAWNER_DAMAGED } from "../model/spawner-damaged-event";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { TacticalContext } from "../model/tactical-handler";
-import type { TacticalState } from "../model/tactical-state";
+import type {
+  SealTunnelsObjective,
+  TacticalState,
+} from "../model/tactical-state";
 import type { Unit } from "../model/unit";
+import { BREACHING_CHARGE } from "../data/equipment";
+import type { PlacedCharge } from "../model/equipment";
+import { TUNNEL_CHARGE_DISARMED } from "../model/tunnel-charge-disarmed-event";
+import type { TunnelMouth } from "../model/tunnel-mouth";
 import { TURRET_TUNING } from "../data/turret-tuning";
 import { CIVILIANS_KILLED } from "../model/civilians-killed-event";
 import { TURRET_DESTROYED } from "../model/turret-destroyed-event";
@@ -2088,5 +2096,229 @@ describe("a burrowed unit is out of every exchange of fire (#1179)", () => {
       ),
     };
     expect(validateTargeting(up, "s", "d", T).ok).toBe(true);
+  });
+});
+
+// ===========================================
+// A charge burning on a tunnel mouth (campaign arc §6.7)
+// ===========================================
+
+describe("a charge burning on a tunnel mouth (Ben's rule, 2026-09-28)", () => {
+  /** The mouth, 2 × 2 at (2, 2), its charge on (2, 2). */
+  const MOUTH: TunnelMouth = {
+    id: "tunnel-1",
+    pos: { x: 2, y: 0, z: 2 },
+    tiles: [
+      { x: 2, y: 0, z: 2 },
+      { x: 3, y: 0, z: 2 },
+      { x: 2, y: 0, z: 3 },
+      { x: 3, y: 0, z: 3 },
+    ],
+    chargeId: "tunnel-1-charge",
+    chargeHitsLeft: 1,
+  };
+  const CHARGE: PlacedCharge = {
+    id: "tunnel-1-charge",
+    ownerId: "s1",
+    equipmentId: BREACHING_CHARGE.id,
+    tile: MOUTH.pos,
+    detonatesOnTurn: 7,
+  };
+  const SEAL: SealTunnelsObjective = {
+    id: "objective-1",
+    kind: "seal-tunnels",
+    mouthIds: [MOUTH.id],
+    complete: false,
+  };
+
+  /**
+   * The bugs' phase: a swarmer (melee) at (1, 2) beside the charge, a
+   * rifle squad at (6, 2), and the charge burning with `hits` left.
+   */
+  function burning(hits = 1, others: Unit[] = []): TacticalState {
+    return mission(
+      [
+        unit("s1", "tdf", "rifle", 6, 2),
+        unit("b1", "bugs", "swarmer", 1, 2),
+        ...others,
+      ],
+      {
+        phase: "bugs",
+        turn: 5,
+        objectives: [SEAL],
+        tunnelMouths: [{ ...MOUTH, chargeHitsLeft: hits }],
+        charges: [CHARGE],
+      },
+    );
+  }
+
+  /** An Rng that fails the test on any draw at all. */
+  const NO_DRAWS: Rng = {
+    next: () => {
+      throw new Error("drew next");
+    },
+    nextInt: () => {
+      throw new Error("drew nextInt");
+    },
+    pick: () => {
+      throw new Error("drew pick");
+    },
+    chance: () => {
+      throw new Error("drew chance");
+    },
+    pickWeighted: () => {
+      throw new Error("drew pickWeighted");
+    },
+    shuffle: () => {
+      throw new Error("drew shuffle");
+    },
+    fork: () => NO_DRAWS,
+    getState: () => ({ algorithm: "none", seed: 0, state: 0 }),
+  };
+
+  it("is pulled by one melee attack: gone from the charges, the mouth open, the bug's turn spent", () => {
+    const pulled = resolveAttack(
+      burning(),
+      attack("b1", CHARGE.id),
+      ctx(1),
+      T,
+      DEPS,
+    );
+    expect(pulled.ok).toBe(true);
+    if (!pulled.ok) return;
+    expect(pulled.value.state.charges).toEqual([]);
+    expect(pulled.value.state.tunnelMouths).toEqual([
+      {
+        id: MOUTH.id,
+        pos: MOUTH.pos,
+        tiles: MOUTH.tiles,
+        chargesPulled: 1,
+      },
+    ]);
+    expect(pulled.value.events).toEqual([
+      {
+        type: ATTACK_RESOLVED,
+        payload: {
+          attackerId: "b1",
+          targetId: CHARGE.id,
+          hit: true,
+          damage: 1,
+          targetHp: 0,
+          weaponRange: 1,
+        },
+      },
+      {
+        type: TUNNEL_CHARGE_DISARMED,
+        payload: {
+          unitId: "b1",
+          mouthId: MOUTH.id,
+          objectiveId: SEAL.id,
+          chargeId: CHARGE.id,
+          pulled: 1,
+        },
+      },
+    ]);
+    expect(pulled.value.state.units.find((u) => u.id === "b1")?.ap).toBe(0);
+  });
+
+  it("lands for certain and draws nothing: a satchel in a hole has nowhere to dodge", () => {
+    const pulled = resolveAttack(
+      burning(),
+      attack("b1", CHARGE.id),
+      { rng: NO_DRAWS, ids: new SequentialIdGenerator() },
+      T,
+      DEPS,
+    );
+    expect(pulled.ok ? pulled.value.state.charges : pulled.error).toEqual([]);
+    const preview = previewAttack(burning(), "b1", CHARGE.id, T);
+    expect(preview.ok ? preview.value : preview.error).toMatchObject({
+      hitChance: 100,
+      damage: [1, 1],
+    });
+  });
+
+  it("takes one hit a melee attack when it takes more, and burns on until the last", () => {
+    const struck = resolveAttack(
+      burning(2),
+      attack("b1", CHARGE.id),
+      ctx(1),
+      T,
+      DEPS,
+    );
+    expect(struck.ok).toBe(true);
+    if (!struck.ok) return;
+    expect(struck.value.state.charges).toEqual([CHARGE]);
+    expect(struck.value.state.tunnelMouths?.[0]).toMatchObject({
+      chargeId: CHARGE.id,
+      chargeHitsLeft: 1,
+    });
+    expect(struck.value.events.map((e) => e.type)).toEqual([ATTACK_RESOLVED]);
+  });
+
+  it("refuses a bug that came up this turn, and lets it pull from its next (the decision of 2026-09-28)", () => {
+    /** The swarmer beside the charge, surfaced on `turn`. */
+    const surfaced = (turn: number): TacticalState => {
+      const m = burning();
+      return {
+        ...m,
+        units: m.units.map((u) =>
+          u.id === "b1" ? { ...u, surfacedOnTurn: turn } : u,
+        ),
+      };
+    };
+    // Turn 5's bug phase: it came up this phase, so the watchers get a
+    // turn to kill it before it can pull.
+    const now = validateTargeting(surfaced(5), "b1", CHARGE.id, T);
+    expect(now.ok ? "ok" : now.error).toEqual({
+      kind: "charge-just-surfaced",
+      unitId: "b1",
+      targetId: CHARGE.id,
+    });
+    expect(
+      resolveAttack(surfaced(5), attack("b1", CHARGE.id), ctx(1), T, DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "charge-just-surfaced" } });
+    // Up since last turn, it pulls; and the rule is the charge's alone:
+    // a squad beside it is bitten as ever.
+    expect(validateTargeting(surfaced(4), "b1", CHARGE.id, T).ok).toBe(true);
+    const squad = unit("s2", "tdf", "rifle", 1, 3);
+    const beside = {
+      ...surfaced(5),
+      units: [...surfaced(5).units, squad],
+    };
+    expect(validateTargeting(beside, "b1", "s2", T).ok).toBe(true);
+  });
+
+  it("refuses anything but a melee attack by a bug, and a charge that is not burning on a mouth", () => {
+    const spitter = unit("b2", "bugs", "rifle", 2, 5);
+    const withSpitter = burning(1, [spitter]);
+    const ranged = validateTargeting(withSpitter, "b2", CHARGE.id, T);
+    expect(ranged.ok ? "ok" : ranged.error).toEqual({
+      kind: "charge-needs-melee",
+      targetId: CHARGE.id,
+    });
+    // The charge is the TDF's own: the squad cannot aim at it.
+    const own = validateTargeting(burning(), "s1", CHARGE.id, T);
+    expect(own.ok ? "ok" : own.error).toEqual({
+      kind: "friendly-target",
+      targetId: CHARGE.id,
+    });
+    // Out of arm's reach, a melee bug is refused as for any target.
+    const far = {
+      ...burning(),
+      units: burning().units.map((u) =>
+        u.id === "b1" ? { ...u, pos: { x: 0, y: 0, z: 5 } } : u,
+      ),
+    };
+    expect(validateTargeting(far, "b1", CHARGE.id, T)).toMatchObject({
+      ok: false,
+      error: { kind: "out-of-range" },
+    });
+    // A breaching charge on a wall is nobody's target, in this mission or any other.
+    const wall = { ...burning(), tunnelMouths: [] };
+    const onWall = validateTargeting(wall, "b1", CHARGE.id, T);
+    expect(onWall.ok ? "ok" : onWall.error).toEqual({
+      kind: "unit-not-on-map",
+      unitId: CHARGE.id,
+    });
   });
 });

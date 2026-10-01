@@ -20,7 +20,6 @@ import {
   twoFloorBuilding,
   unitAt,
 } from "../service/tactical-fixtures.test-helper";
-import { DEFEND_GENERATORS_OBJECTIVE } from "../service/objectives/defend-generators-objective";
 import {
   OBJECTIVE_RULES,
   objectivePhaseSteps,
@@ -624,7 +623,7 @@ describe("jevObjectives (ADR 0013 §2.3)", () => {
     const [, defence] = jevObjectives(objectives(), {
       ...OBJECTIVE_RULES,
       "defend-generators": {
-        ...DEFEND_GENERATORS_OBJECTIVE,
+        ...OBJECTIVE_RULES["defend-generators"],
         destination: () => ({ position: { x: 9, y: 0, z: 9 } }),
       },
     });

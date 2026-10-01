@@ -44,7 +44,7 @@ export const LIVE_SPECIMEN_DIFFICULTY = 3;
  *            (arc D2). None today: asked again tomorrow
  *   offer    an infestation clearance at d3, pinned, stamped act-1
  *   map      the clearance's settlement map
- *   setup    the clearance's nests, made optional; the capture decides; two
+ *   setup    the clearance's nests, made optional; the capture decides; four
  *            lurkers placed by the nests (tactical STORY_SETUP_RULES)
  *   won      the clearance's own consequences, then advance-act: Act II if
  *            its ending (Intact Pod) is built, otherwise the campaign is won

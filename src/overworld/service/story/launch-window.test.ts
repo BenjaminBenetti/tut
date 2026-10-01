@@ -149,7 +149,7 @@ describe("LAUNCH_WINDOW", () => {
       onLost: { kind: "retry", delayDays: STORY_RETRY_DAYS },
     });
     expect(LAUNCH_WINDOW_DIFFICULTY).toBe(8);
-    expect(LAUNCH_WINDOW_WAVES).toBe(7);
+    expect(LAUNCH_WINDOW_WAVES).toBe(8);
   });
 
   it("offers a pinned d8 defence of the launch site that never expires", () => {
@@ -160,7 +160,7 @@ describe("LAUNCH_WINDOW", () => {
       pinned: true,
       difficulty: 8,
       act: "act-3",
-      defence: { installation: "launch-site", generators: 4, waves: 7 },
+      defence: { installation: "launch-site", generators: 4, waves: 8 },
     });
     expect(isMissionExpired(offer, offer.expiresDay + 1000)).toBe(false);
   });

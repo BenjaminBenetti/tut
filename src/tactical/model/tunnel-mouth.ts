@@ -16,12 +16,18 @@ export const TUNNEL_MOUTH_ID_PREFIX = "tunnel";
  * objective entity, not a unit: it takes no hits, blocks nothing — its
  * heaved slabs stand under a third of a tile and give no cover — and
  * never acts. Burrowers come up through it while it is open; a charge
- * set on it collapses it when the fuse burns down.
+ * set on it collapses it when the fuse burns down, unless a bug pulls
+ * it first: a bug's melee attack on the burning charge disarms it
+ * (Ben's rule, 2026-09-28), and the mouth is open and uncharged again.
  *
  * ```
  *   open ──(Interact: set a charge)──► charged ──(fuse burns out)──► sealed
- *    │                                   │
- *    └── burrowers surface ◄─────────────┘        sealed: nothing comes up
+ *    ▲ │                                 │ │
+ *    │ └── burrowers surface ◄───────────┘ │       sealed: nothing comes up
+ *    │                                     │
+ *    └──── pulled ◄──(a bug's melee attack on the charge, meleeHitsToDisarm)
+ *          open again: burrowers still come up, Interact sets a new
+ *          charge on a full fuse
  *
  *   hook tiles (2 × 2, one level)
  *     ├── tiles   every tile it covers; a unit sets the charge from beside any
@@ -40,6 +46,19 @@ export interface TunnelMouth {
    * goes off, as the record of which charge sealed it.
    */
   readonly chargeId?: string;
+  /**
+   * Melee hits the burning charge still takes before it is pulled: the
+   * tunnel tuning's `meleeHitsToDisarm` when it is set, one less for
+   * each hit. Absent while no charge burns; a charge set before the
+   * rule (#1179) reads as one hit from pulled.
+   */
+  readonly chargeHitsLeft?: number;
+  /**
+   * How many charges the bugs have pulled off this mouth. Absent means
+   * none. The tracker reads it to say a mouth was pulled rather than
+   * never charged, and the next charge's id counts from it.
+   */
+  readonly chargesPulled?: number;
   /** The turn it collapsed on. Absent while it is open, charged or not. */
   readonly sealedOnTurn?: number;
 }
@@ -67,4 +86,19 @@ export function isCharged(
   mouth: Pick<TunnelMouth, "chargeId" | "sealedOnTurn">,
 ): boolean {
   return mouth.chargeId !== undefined && !isSealed(mouth);
+}
+
+/**
+ * Whether the bugs pulled the last charge set on the mouth and none has
+ * been set since: open, uncharged, and pulled at least once. What the
+ * tracker calls "pulled" (campaign arc §6.7).
+ *
+ * @param mouth - The mouth to read.
+ */
+export function isPulled(
+  mouth: Pick<TunnelMouth, "chargeId" | "sealedOnTurn" | "chargesPulled">,
+): boolean {
+  return (
+    !isSealed(mouth) && !isCharged(mouth) && (mouth.chargesPulled ?? 0) > 0
+  );
 }

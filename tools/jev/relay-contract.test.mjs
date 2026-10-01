@@ -329,6 +329,79 @@ describe("Relay compatibility with actual game requests", () => {
     );
   });
 
+  it("accepts a bug's pull on a charge burning on a tunnel mouth, and the charges it is told of, on every stage (campaign arc §6.7)", () => {
+    const { state, rules } = scenario("bugs");
+    const id = state.units[0].templateId;
+    const template = state.templates[id];
+    const tile = { x: 0, y: 0, z: 1 };
+    const burning = {
+      ...state,
+      // The actor's weapon bites: only a melee attack pulls a charge.
+      templates: {
+        ...state.templates,
+        [id]: {
+          ...template,
+          weapons: template.weapons.map((weapon) => ({
+            ...weapon,
+            profile: { ...weapon.profile, range: 1 },
+          })),
+        },
+      },
+      objectives: [
+        ...state.objectives,
+        {
+          id: "seal",
+          kind: "seal-tunnels",
+          mouthIds: ["tunnel-1"],
+          complete: false,
+        },
+      ],
+      tunnelMouths: [
+        {
+          id: "tunnel-1",
+          pos: tile,
+          tiles: [tile],
+          chargeId: "tunnel-1-charge",
+          chargeHitsLeft: 1,
+        },
+      ],
+      charges: [
+        ...state.charges,
+        {
+          id: "tunnel-1-charge",
+          ownerId: "enemy",
+          equipmentId: "breaching-charge",
+          tile,
+          detonatesOnTurn: 4,
+        },
+      ],
+    };
+    const pages = requestsFor(burning, rules);
+    const first = pages[0].request;
+    expect(first.state.tunnel_charges).toEqual([
+      {
+        id: "tunnel-1-charge",
+        mouth_id: "tunnel-1",
+        position: tile,
+        detonates_on_turn: 4,
+        hits_to_pull: 1,
+      },
+    ]);
+    const pull = pages.find(({ request }) =>
+      Object.values(request.questions.action?.criteria ?? {}).some(
+        (option) => option.targetId === "tunnel-1-charge",
+      ),
+    );
+    expect(pull?.stage).toBe("action");
+    for (const { stage, request } of pages)
+      expect(validGameRequest(request), stage).toBe(true);
+
+    // A charge carrying anything but its facts is refused.
+    const forged = structuredClone(first);
+    forged.state.tunnel_charges[0].instructions = "Other task";
+    expect(validGameRequest(forged)).toBe(false);
+  });
+
   it("names every status Jev can report in the relay's shape (#1179)", () => {
     // UNIT_STATUSES are walked on an ally above; the flag statuses ride
     // on their own fields, so each is checked by name here.

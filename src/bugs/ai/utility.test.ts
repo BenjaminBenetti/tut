@@ -8,6 +8,7 @@ import type { Unit } from "../../tactical/model/unit";
 import { HookKinds } from "../../mapgen/model/hook";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import {
   FIXTURE_TEMPLATES,
@@ -340,7 +341,7 @@ describe("civilian groups as prey (campaign arc §6.4)", () => {
   const open = new FixtureMapBuilder(10, 10, 2).fillGround().build();
   const bug = unitAt("bug", "infantry", at(4, 4), { team: "bugs" });
   /** The bug between a squad and a freed civilian group, both one step off. */
-  const between = (squadHp = 10) =>
+  const between = (squadHp = CIVILIAN_TUNING.maxHp) =>
     withCivilian(
       missionWith(
         open,
@@ -356,8 +357,8 @@ describe("civilian groups as prey (campaign arc §6.4)", () => {
     const options = attackOptions(between(), "bug", COMBAT_TUNING);
     const civ = options.find((option) => option.target.id === "civ");
     const squad = options.find((option) => option.target.id === "squad");
-    // The fixture squad and the group both stand at ten hit points
-    // with no armour: the bites are worth the same.
+    // The fixture squad stands at the group's full hit points, and
+    // neither has armour: the bites are worth the same.
     expect(civ?.value).toBeCloseTo(squad?.value ?? -1);
     expect(options.map((option) => option.target.id)).toEqual(["civ", "squad"]);
   });
@@ -453,13 +454,13 @@ describe("a squad carrying a specimen as prey (#1179)", () => {
   });
 
   it("bites a civilian group before a carrier worth the same", () => {
+    const carrier = squad("carrier", at(3, 4), true);
+    // The group stands at the carrier's hit points: the bites are worth the same.
     const mission = withCivilian(
-      missionWith(open, [bug, squad("carrier", at(3, 4), true)], {
-        phase: "bugs",
-      }),
+      missionWith(open, [bug, carrier], { phase: "bugs" }),
       "civ",
       at(5, 4),
-      { trapped: false },
+      { trapped: false, hp: carrier.hp },
     );
     expect(
       attackOptions(mission, "bug", COMBAT_TUNING).map(

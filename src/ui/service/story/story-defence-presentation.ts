@@ -57,7 +57,7 @@ export type StoryDefenceEnding = "won" | "pulled-out" | "fell";
 // ===========================================
 
 /**
- * "Hold the tracking array through 5 waves": the facility and the waves
+ * "Hold the tracking array through 6 waves": the facility and the waves
  * the offer froze, or the story's own for an offer that carries no
  * defence (only a hand-edited save has one).
  *

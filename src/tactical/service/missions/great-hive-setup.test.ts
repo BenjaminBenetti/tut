@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { BUG_SPECIES } from "../../../bugs/data/species";
 import { HIVE_ASSAULT } from "../../../content/data/mission-types";
 import { SequentialIdGenerator } from "../../../core/service/sequential-id-generator";
+import type { Hook } from "../../../mapgen/model/hook";
 import { allHooks, HookKinds } from "../../../mapgen/model/hook";
+import { PassMask } from "../../../mapgen/model/pass-mask";
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
 import { generateTacticalMap } from "../../../mapgen/service/generate-tactical-map";
 import { missionToMapRecipe } from "../../../mapgen/service/mission-map-recipe-adapter";
@@ -14,9 +16,12 @@ import { GENERATOR_TUNING } from "../../data/generator-tuning";
 import { GREAT_HIVE_SETUP_TUNING } from "../../data/great-hive-setup-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
+import type { BroodTuning } from "../../model/brood-tuning";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
 import type { TacticalState } from "../../model/tactical-state";
 import { isDormant } from "../../model/unit";
+import { broodSize } from "../brood-placement-service";
+import { hatchInterval } from "../spawn-service";
 import { missionWith, unitAt } from "../tactical-fixtures.test-helper";
 import { templateIdFor } from "../unit-factory";
 import { withGreatHiveSetup } from "./great-hive-setup";
@@ -220,7 +225,8 @@ describe("a Great Hive against an ordinary hive at the same level and seed", () 
         expect(great.chambers, seed).toBeGreaterThan(ordinary.chambers);
         expect(great.nests, seed).toBeGreaterThan(ordinary.nests);
         expect(ordinary.coreHp, seed).toBe(60);
-        expect(great.coreHp, seed).toBe(200);
+        // 150, not 200: the expert's Great Hive in about 40 turns (#1179 C3a).
+        expect(great.coreHp, seed).toBe(150);
         expect(ordinary.guards, seed).toBe(2);
         expect(great.guards, seed).toBe(6);
         expect(great.sleepers, seed).toBeGreaterThan(0);
@@ -230,14 +236,60 @@ describe("a Great Hive against an ordinary hive at the same level and seed", () 
   );
 
   it(
-    "grows by level: a twice-repelled Great Hive has 240 hp and eight guards",
+    "grows by level: a twice-repelled Great Hive has 190 hp and eight guards",
     () => {
       const mission = assault(2, true);
       const map = cavernFor(mission);
       const great = census(setUp(map, mission), map);
-      expect(great.coreHp).toBe(240);
+      expect(great.coreHp).toBe(190);
       expect(great.guards).toBe(8);
     },
     CAVERN_TIMEOUT_MS,
   );
+
+  it(
+    "hatches three bugs every 6 bug phases at d8, where an ordinary hive's hatch two every 4 (#1179 C3a round 3)",
+    () => {
+      const pace = (great: boolean) => {
+        const mission = assault(0, great);
+        const state = setUp(cavernFor(mission), mission);
+        return state.spawners
+          .filter((spawner) => spawner.variant !== "hive-core")
+          .map((nest) => [nest.hatchBonus, nest.timer, nest.hatchInterval]);
+      };
+      const interval = hatchInterval(8, SPAWN_TUNING);
+      const great = pace(true);
+      const ordinary = pace(false);
+
+      expect(great.length).toBeGreaterThan(0);
+      expect(ordinary.length).toBeGreaterThan(0);
+      // Three bugs every 6 bug phases against two every 4.
+      expect(interval).toBe(3);
+      expect(SPAWN_TUNING.hatchCount).toBe(2);
+      expect(new Set(great.map((row) => JSON.stringify(row)))).toEqual(
+        new Set([JSON.stringify([1, interval + 3, interval + 3])]),
+      );
+      expect(new Set(ordinary.map((row) => JSON.stringify(row)))).toEqual(
+        new Set([JSON.stringify([undefined, interval + 1, interval + 1])]),
+      );
+      expect(GREAT_HIVE_SETUP_TUNING.assault.nestPaceByDifficulty).toEqual([]);
+    },
+    CAVERN_TIMEOUT_MS,
+  );
+
+  it("pins its d8 broods thinner than an ordinary cavern's (#1179 C3a)", () => {
+    const chamber = (role: string): Hook => ({
+      id: "h",
+      kind: HookKinds.BROOD_CHAMBER,
+      tiles: [{ x: 0, y: 0, z: 0 }],
+      requiredPass: PassMask.ALL,
+      meta: { role, radius: 10, chamberId: "chamber-1", depth: 2 },
+    });
+    const sizes = (tuning: BroodTuning): number[] =>
+      ["route", "side", "core"].map((role) =>
+        broodSize(chamber(role), 8, tuning),
+      );
+    expect(sizes(GREAT_HIVE_SETUP_TUNING.broods)).toEqual([8, 6, 8]);
+    expect(sizes(BROOD_TUNING)).toEqual([11, 8, 11]);
+  });
 });

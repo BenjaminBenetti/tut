@@ -13,6 +13,8 @@ import type { EquipmentId } from "./equipment";
  *   Interact beside an open mouth on turn T
  *     ──► PlacedCharge { equipmentId: chargeEquipmentId, detonatesOnTurn: T + fuseTurns }
  *     ──► goes off as turn T + fuseTurns opens; the mouth is sealed
+ *     ──► unless meleeHitsToDisarm bug melee attacks land on it first:
+ *         pulled, the mouth open and uncharged again
  *
  *   bug phase of turn t, mouth i (hook order), open:
  *     t ≥ firstSurfaceTurn + i  ∧  (t − firstSurfaceTurn − i) mod surfaceEvery = 0
@@ -27,6 +29,12 @@ export interface TunnelTuning {
    * the damage, radius and demolition force the collapse deals.
    */
   readonly chargeEquipmentId: EquipmentId;
+  /**
+   * Melee attacks by bugs that pull a burning charge off its mouth
+   * (Ben's rule, 2026-09-28: one). Each lands for certain: a satchel in
+   * a hole has nowhere to dodge to. Positive integer.
+   */
+  readonly meleeHitsToDisarm: number;
   /** The first turn whose bug phase a mouth may surface a burrower in. Positive integer. */
   readonly firstSurfaceTurn: number;
   /**

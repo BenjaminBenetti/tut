@@ -46,8 +46,13 @@ export const INTACT_POD_SOURCE_ID = "spore-pod";
  *     the objective        ──► recover-pod, same id, deadlineTurn = recoveryTurn,
  *                              huntedAt = the pod's tile
  *   edgeSpawn.totalWaves += extraWaves
+ *   edgeSpawn.surge       = waveSurge: every wave larger, spilling off its zone
  *   no destroy-pod to replace ──► refused (map-recipe)
  * ```
+ *
+ * The surge is Swarm Tide's mechanism (campaign arc §11) with the
+ * story's own numbers: the pod draws the swarm. A Swarm Tide sitrep on
+ * the offer is set up after the story and puts its own surge in place.
  *
  * A `generator`-kind unit is what the swarm already hunts (#1175): the
  * lurker, brute, spitter and burrower keep every generator they see
@@ -57,13 +62,13 @@ export const INTACT_POD_SOURCE_ID = "spore-pod";
  * as they treat a generator: autonomous, never the force, never a
  * casualty.
  *
- * @param tuning - The recovery turn, the extra waves and the pod's make.
+ * @param tuning - The recovery turn, the extra waves, their surge and the pod's make.
  * @returns The rule, for `STORY_SETUP_RULES["intact-pod"]`.
  */
 export function createIntactPodSetup(tuning: IntactPodTuning): StorySetupRule {
   return {
     storyId: "intact-pod",
-    /** The pod to burn becomes the pod to keep, and the edges keep coming until the drop. */
+    /** The pod to burn becomes the pod to keep, and the edges keep coming, surging, until the drop. */
     setup(state, map, mission, deps) {
       const burns = state.objectives.filter(
         (objective): objective is DestroyPodObjective =>
@@ -86,6 +91,7 @@ export function createIntactPodSetup(tuning: IntactPodTuning): StorySetupRule {
         edgeSpawn: {
           ...next.edgeSpawn,
           totalWaves: waves + tuning.extraWaves,
+          surge: tuning.waveSurge,
         },
       });
     },

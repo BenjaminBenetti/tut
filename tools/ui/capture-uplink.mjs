@@ -168,7 +168,7 @@ try {
   );
   await expect(
     details.locator('[data-field="detail-story-objective"]'),
-  ).toHaveText("Hold the tracking array through 5 waves");
+  ).toHaveText("Hold the tracking array through 6 waves");
   await expect(details.locator('[data-field="detail-story-win"]')).toHaveText(
     "The platform's beacons are revealed",
   );

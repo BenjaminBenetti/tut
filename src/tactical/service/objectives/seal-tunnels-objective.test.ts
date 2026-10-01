@@ -20,6 +20,7 @@ import { TUNNEL_CHARGE_SET } from "../../model/tunnel-charge-set-event";
 import type { TunnelMouth } from "../../model/tunnel-mouth";
 import { TUNNEL_SEALED } from "../../model/tunnel-sealed-event";
 import type { Unit } from "../../model/unit";
+import { strikeTunnelCharge } from "../tunnel-charge-service";
 import { createEquipmentCatalogue } from "../../repository/equipment-catalogue";
 import type { EquipmentDeps } from "../equipment-service";
 import { createDetonateStep } from "../equipment-service";
@@ -47,6 +48,8 @@ import {
 import {
   createSealTunnelsObjective,
   createSetTunnelCharge,
+  isTunnelChargeId,
+  isTunnelChargeOf,
   SEAL_TUNNELS_STEP,
   sealBlownMouths,
   sealProgress,
@@ -57,10 +60,11 @@ import {
 // Fixtures
 // ===========================================
 
-/** The arc's fuse, written out: a tuning change to it must fail here. */
+/** The arc's fuse and Ben's one hit, written out: a tuning change to them must fail here. */
 const TUNING = {
   fuseTurns: 3,
   chargeEquipmentId: BREACHING_CHARGE.id,
+  meleeHitsToDisarm: 1,
 } as const;
 
 const RULES = createSealTunnelsObjective(TUNING);
@@ -175,6 +179,10 @@ describe("seal-tunnels in the tables (arc §6.7)", () => {
     expect(TUNNEL_TUNING.fuseTurns).toBe(3);
     expect(TUNNEL_TUNING.chargeEquipmentId).toBe(BREACHING_CHARGE.id);
   });
+
+  it("pulls a charge with one melee attack: Ben's rule (2026-09-28), not a calibration knob", () => {
+    expect(TUNNEL_TUNING.meleeHitsToDisarm).toBe(1);
+  });
 });
 
 // ===========================================
@@ -199,6 +207,8 @@ describe("createSetTunnelCharge through Interact", () => {
       undefined,
       undefined,
     ]);
+    // The charge takes the tuning's melee hits before the bugs pull it.
+    expect(set.state.tunnelMouths?.[0]?.chargeHitsLeft).toBe(1);
     expect(set.events).toEqual([
       {
         type: TUNNEL_CHARGE_SET,
@@ -332,6 +342,105 @@ describe("the fuse through live EndTurns (arc §6.7)", () => {
       sealedOnTurn: setOn + 3,
     });
     expect(state.charges).toEqual([]);
+  });
+});
+
+// ===========================================
+// A pulled charge (Ben's rule, 2026-09-28)
+// ===========================================
+
+describe("a mouth the bugs pulled a charge off", () => {
+  it("never caves in on the pulled charge's turn: the fuse is gone and the mouth stays open", () => {
+    const set = accepted(
+      interactWith(mission(), interact("s", OBJECTIVE.id), CTX),
+    );
+    const setOn = set.state.turn;
+    const pulled = strikeTunnelCharge(set.state, "tunnel-1-charge", "b");
+    let state: TacticalState = {
+      ...pulled.state,
+      units: pulled.state.units.map((u) => ({ ...u, pos: at(7, 0) })),
+    };
+    const ctx = ctxWith(riggedRng(true));
+    const seen: string[] = [];
+    while (state.turn < setOn + 5) {
+      const ended = accepted(END_TURN(state, endTurn(), ctx));
+      state = ended.state;
+      seen.push(...ended.events.map((e) => e.type));
+    }
+    expect(seen).not.toContain(CHARGE_DETONATED);
+    expect(seen).not.toContain(TUNNEL_SEALED);
+    expect(state.tunnelMouths?.[0]).toEqual({
+      ...MOUTHS[0],
+      chargesPulled: 1,
+    });
+    expect(objectiveComplete(state, OBJECTIVE)).toBe(false);
+  });
+
+  it("takes a new charge through Interact: a new id, a full fuse and the hits again", () => {
+    const start: TacticalState = {
+      ...mission(undefined, [
+        { ...mouthAt("tunnel-1", 1, 5), chargesPulled: 1 },
+        ...MOUTHS.slice(1),
+      ]),
+      turn: 5,
+    };
+    const set = accepted(interactWith(start, interact("s", OBJECTIVE.id), CTX));
+    expect(set.state.charges).toEqual([
+      {
+        id: "tunnel-1-charge-2",
+        ownerId: "s",
+        equipmentId: BREACHING_CHARGE.id,
+        tile: at(1, 5),
+        detonatesOnTurn: 8,
+      },
+    ]);
+    expect(set.state.tunnelMouths?.[0]).toMatchObject({
+      chargeId: "tunnel-1-charge-2",
+      chargeHitsLeft: 1,
+      chargesPulled: 1,
+    });
+    expect(set.events).toEqual([
+      expect.objectContaining({
+        type: TUNNEL_CHARGE_SET,
+        payload: expect.objectContaining({
+          chargeId: "tunnel-1-charge-2",
+          detonatesOnTurn: 8,
+        }) as unknown,
+      }),
+    ]);
+  });
+
+  it("issues each charge on a mouth its own id, counting the pulls", () => {
+    const mouth = mouthAt("tunnel-2", 5, 5);
+    expect(tunnelChargeId(mouth)).toBe("tunnel-2-charge");
+    expect(tunnelChargeId({ ...mouth, chargesPulled: 1 })).toBe(
+      "tunnel-2-charge-2",
+    );
+    expect(tunnelChargeId({ ...mouth, chargesPulled: 2 })).toBe(
+      "tunnel-2-charge-3",
+    );
+  });
+
+  it("knows each id it issued a mouth, and no other mouth's", () => {
+    const mouth = mouthAt("tunnel-1", 5, 5);
+    for (const pulled of [0, 1, 9]) {
+      const id = tunnelChargeId({ ...mouth, chargesPulled: pulled });
+      expect(isTunnelChargeOf(id, "tunnel-1")).toBe(true);
+      expect(isTunnelChargeOf(id, "tunnel-2")).toBe(false);
+    }
+    expect(isTunnelChargeOf("tunnel-10-charge", "tunnel-1")).toBe(false);
+    expect(isTunnelChargeOf("tunnel-1-charge-x", "tunnel-1")).toBe(false);
+    expect(isTunnelChargeOf("tunnel-1-charge-", "tunnel-1")).toBe(false);
+    expect(isTunnelChargeOf("unit-4", "tunnel-1")).toBe(false);
+  });
+
+  it("tells a tunnel charge's id from any other target's", () => {
+    expect(isTunnelChargeId("tunnel-1-charge")).toBe(true);
+    expect(isTunnelChargeId("tunnel-3-charge-4")).toBe(true);
+    expect(isTunnelChargeId("tunnel-1")).toBe(false);
+    expect(isTunnelChargeId("unit-7")).toBe(false);
+    expect(isTunnelChargeId("charge-2")).toBe(false);
+    expect(isTunnelChargeId("tunnel-1-charge-x")).toBe(false);
   });
 });
 

@@ -404,7 +404,7 @@ export class MissionResultsScreen implements Screen {
   }
 
   /**
-   * Credits and infestation change.
+   * Credits, any salvage, tech points and infestation change.
    *
    * `promoted` gives it size and the winning green — deliberately **not**
    * the alarm's channel. A destroyed mech speaks with a red left border
@@ -429,30 +429,33 @@ export class MissionResultsScreen implements Screen {
       : "tut-kv";
     rewards.dataset.field = "rewards";
     rewards.dataset.promoted = promoted ? "true" : "false";
-    for (const [label, field, value] of [
+    const salvage = this.salvageLine(result);
+    const rows: (readonly [string, string, string])[] = [
       ["Credits", "credits", formatCredits(result.creditsAwarded)],
+      ...(salvage === undefined
+        ? []
+        : [["Salvage", "salvage", salvage] as const]),
       ["Tech points", "tech-points", this.techPointsLine(result)],
       [
         "Infestation",
         "infestation-delta",
         `${result.infestationDelta > 0 ? "+" : ""}${formatWhole(result.infestationDelta)}`,
       ],
-    ] as const) {
+    ];
+    for (const [label, field, value] of rows) {
       const term = doc.createElement("dt");
       term.className = "tut-label";
       term.textContent = label;
       const detail = doc.createElement("dd");
       // Size says "this matters"; colour says whether it is good news.
-      // Credits are a payment and always good. Infestation is not: a
-      // mission can cost nothing and still leave the city worse, and a
-      // rise shouted in the winning green would be the screen lying
-      // pleasantly. So the sign picks the colour.
+      // Credits, salvage and tech are a payment and always good.
+      // Infestation is not: a mission can cost nothing and still leave
+      // the city worse, and a rise shouted in the winning green would be
+      // the screen lying pleasantly. So the sign picks the colour.
       const valence =
-        field === "credits" ||
-        field === "tech-points" ||
-        result.infestationDelta <= 0
-          ? "good"
-          : "bad";
+        field === "infestation-delta" && result.infestationDelta > 0
+          ? "bad"
+          : "good";
       detail.className = promoted
         ? `tut-mono tut-mission-results__payout-value tut-mission-results__payout-value--${valence}`
         : "tut-mono";
@@ -461,6 +464,29 @@ export class MissionResultsScreen implements Screen {
       rewards.append(term, detail);
     }
     return rewards;
+  }
+
+  /**
+   * The salvage line (GDD §5.7, #1179): what the mechs destroyed on a
+   * field the force held were paid back for, apart from the mission's
+   * credits. Undefined when none was paid, as on a lost mission, whose
+   * wrecks wait for Wreck Recovery instead, so the row is left out.
+   *
+   * ```
+   *   +¢1,425 for 1 destroyed mech
+   *   +¢2,625 for 2 destroyed mechs
+   * ```
+   *
+   * @param result - The mission that just ended.
+   * @returns The line, or undefined when no salvage was paid.
+   */
+  private salvageLine(result: MissionResult): string | undefined {
+    const credits = result.salvageCredits;
+    if (credits === undefined || credits <= 0) {
+      return undefined;
+    }
+    const mechs = result.mechsDestroyed.length;
+    return `+${formatCredits(credits)} for ${formatWhole(mechs)} destroyed ${mechs === 1 ? "mech" : "mechs"}`;
   }
 
   /**

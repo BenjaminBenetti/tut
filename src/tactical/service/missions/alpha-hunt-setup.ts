@@ -44,10 +44,11 @@ import { standEggSpawners } from "./infestation-clearance-setup";
  * `BROODMOTHER_TUNING`):
  *
  * - **Edges.** She walks 5 tiles an action and has two, so 10 tiles a
- *   bug phase at most. From 12 tiles in, a Broodmother who turns to
- *   flee on her very first bug phase still needs a second one to leave:
- *   the squad always gets a player turn between her turning and her
- *   escape.
+ *   bug phase at most, and once she runs she limps on one
+ *   (`BROODMOTHER_TUNING.fleeingActions`), 5 tiles. From 12 tiles in, a
+ *   Broodmother who turns to flee on her very first bug phase still
+ *   needs two more to leave: the squad always gets two player turns
+ *   between her turning and her escape.
  * - **Deploy.** 12 is her `standOff`, the distance she keeps from where
  *   the swarm last saw the squad, and past a carbine's 8 plus a squad's
  *   first move: the hunt starts with finding her, not with a volley

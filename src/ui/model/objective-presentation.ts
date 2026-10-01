@@ -72,14 +72,38 @@ export interface ObjectiveCountdown {
 
 /**
  * A countdown a kind keeps on its own row, beside any deadline: a
- * tunnel charge's fuse, "Tunnel 2 blows in 3 turns" (arc §6.7). Built
- * with `countdownAt`, so it counts, words and pulses as a deadline does;
- * `role` names its line's `data-role`, so a spec can tell a fuse from a
- * deadline.
+ * defence's hold, "Hold ends in 3 turns". Built with `countdownAt`, so
+ * it counts, words and pulses as a deadline does; `role` names its
+ * line's `data-role`, so a spec can tell it from a deadline.
  */
 export interface ObjectiveRowCountdown extends ObjectiveCountdown {
-  /** `data-role` of the countdown's line: "fuse". */
+  /** `data-role` of the countdown's line: "hold". */
   readonly role: string;
+}
+
+/**
+ * A line a kind keeps on its own row, one per part of the objective:
+ * each tunnel mouth's state (arc §6.7, Ben's rule of 2026-09-28). The
+ * tone says how it is drawn:
+ *
+ * ```
+ *   timer   Tunnel 2 blows in 3 turns     a countdown, as a deadline:
+ *                                         `urgent` pulses it
+ *   alert   Tunnel 3 charge pulled        in the danger colour: act on it
+ *   quiet   Tunnel 1 sealed               a dim fact
+ * ```
+ */
+export interface ObjectiveRowLine {
+  /** The sentence. */
+  readonly text: string;
+  /** `data-role` of the line: "fuse" for a burning charge. */
+  readonly role: string;
+  /** How the line is drawn. */
+  readonly tone: "timer" | "alert" | "quiet";
+  /** True when a timer line pulses: the countdown's last turns. */
+  readonly urgent?: boolean;
+  /** `data-*` entries for the line, keyed as `dataset` keys. */
+  readonly data?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -109,10 +133,15 @@ export interface ObjectiveRow {
   readonly detail?: ObjectiveRowDetail;
   /**
    * The row's own countdowns, one line each under the label after any
-   * deadline: each burning tunnel charge's fuse (arc §6.7). Absent or
-   * empty, the row shows none.
+   * deadline: a defence's hold. Absent or empty, the row shows none.
    */
   readonly countdowns?: readonly ObjectiveRowCountdown[];
+  /**
+   * The row's own lines, under the label after its countdowns: each
+   * tunnel mouth's state, a fuse among them (arc §6.7). Absent or
+   * empty, the row shows none.
+   */
+  readonly lines?: readonly ObjectiveRowLine[];
   /**
    * Whether the row reads the objective done, for a kind whose
    * completion is live rather than recorded: a wreck's parts are home
@@ -138,7 +167,8 @@ export interface ObjectiveRow {
  *     ├ row        ──► objective tracker
  *     ├ name       ──► event log and refusals ("spawner 2", "the bank")
  *     ├ progress   ──► the HUD's live reading, handed back to `row`
- *     └ trackedId  ──► a refusal naming the target by the objective
+ *     ├ trackedId  ──► a refusal naming the target by the objective
+ *     └ partName   ──► a line naming something the objective owns
  * ```
  *
  * `P` is the kind's own reading. The HUD takes it with `progress` and
@@ -173,6 +203,16 @@ export interface ObjectivePresentation<
    * that id instead of the objective's (a spawner in `target-destroyed`).
    */
   trackedId?(objective: ObjectiveOfKind<K>): string;
+  /**
+   * The name of something the objective owns that an event can carry
+   * the id of, other than its tracked entity: a tunnel mouth's charge
+   * ("the charge on tunnel 2"), which a bug attacks and pulls. Undefined
+   * when `id` is not one of its parts.
+   *
+   * @param objective - The objective.
+   * @param id - The id an event or a refusal carries.
+   */
+  partName?(objective: ObjectiveOfKind<K>, id: string): string | undefined;
   /**
    * What happens when the objective's deadline passes, as the subject
    * and verb of its countdown: "Pod matures" reads "Pod matures in 3

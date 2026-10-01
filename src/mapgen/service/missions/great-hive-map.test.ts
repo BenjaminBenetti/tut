@@ -156,9 +156,19 @@ describe("Great Hive caverns generate", () => {
         expect(count(HookKinds.EGG_SPAWNER), seed).toBe(
           hiveNestCount(level, GREAT_HIVE_NEST_TUNING),
         );
-        expect(count(HookKinds.BROOD_CHAMBER), seed).toBeGreaterThanOrEqual(7);
+        // 8–9 chambers less the mouth, and less any side chamber the
+        // planner found no room for (#1179 C3a round 3: was 9–11).
+        expect(count(HookKinds.BROOD_CHAMBER), seed).toBeGreaterThanOrEqual(6);
         expect(count(HookKinds.DEPLOY), seed).toBe(1);
         expect(count(HookKinds.EXTRACTION), seed).toBe(1);
+        // A second place to board, the landing zone's size (#1179).
+        expect(count(HookKinds.FORWARD_EXTRACTION), seed).toBe(1);
+        expect(
+          map.hooks.objectives.find(
+            (hook) => hook.kind === HookKinds.FORWARD_EXTRACTION,
+          )?.tiles,
+          seed,
+        ).toHaveLength(map.hooks.extraction.tiles.length);
       }
     },
     SWEEP_TIMEOUT_MS,

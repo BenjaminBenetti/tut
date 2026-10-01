@@ -2,9 +2,9 @@ import type { TextureSource } from "../model/texture-source";
 import type { UnitMotion } from "../model/unit-motion";
 import type { LayerFocus } from "../model/layer-focus";
 import type { Camera, Object3D } from "three";
-import { Box3, Group, Raycaster, Vector2 } from "three";
+import { Box3, Group, Raycaster, Vector2, Vector3 } from "three";
 
-import type { Vec2, Vec3 } from "../../core/model/grid";
+import type { Rect, Vec2, Vec3 } from "../../core/model/grid";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision } from "../../tactical/model/tactical-state";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -30,7 +30,8 @@ import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
 import type { GhostSubject, GhostUniforms } from "./ghost-cutaway";
-import { createGhostUniforms } from "./ghost-cutaway";
+import { createGhostUniforms, MAX_GHOSTS } from "./ghost-cutaway";
+import { resolveDrawnDropships } from "./drawn-dropship-resolver";
 import { TacticalMapView, tileTop } from "../view/tactical-map-view";
 import { TileEffectView } from "../view/tile-effect-view";
 import { UnitMesh } from "../view/unit-mesh";
@@ -207,6 +208,10 @@ export class TacticalSceneBuilder
   private readonly mapView: TacticalMapView;
   /** Cutaway uniforms every ghosted wall material shares (#526). */
   private readonly ghostUniforms: GhostUniforms;
+  /** The drawn drop ships' footprints; the units under them are ghosted first (#1179). */
+  private readonly hulls: readonly Rect[];
+  /** Scratch for a unit object's world position. */
+  private readonly feet = new Vector3();
   private readonly models: ModelLoader;
   private readonly radarView: RadarView;
   /** White diamonds over the objectives the player cannot see (#1173). */
@@ -299,6 +304,9 @@ export class TacticalSceneBuilder
       objectiveMarkers: options.objectiveMarkers ?? false,
       textures: options.textures,
     });
+    this.hulls = resolveDrawnDropships(options.map).map(
+      (ship) => ship.footprint,
+    );
     this.unitsGroup = new Group();
     this.unitsGroup.name = "units";
     this.spawnersGroup = new Group();
@@ -335,13 +343,25 @@ export class TacticalSceneBuilder
    * the mission: the renderer only builds objects for units the player
    * may see, so ghosting can never cut a wall away around something
    * vision rules hide (ADR 0006).
+   *
+   * The cutaway has `MAX_GHOSTS` slots, filled in this order. While the
+   * units fit, the order is the order they were drawn in, so no slot
+   * changes hands. When they outnumber the slots, the units under a
+   * drawn drop ship's hull go first (#1179): a hull covers everything
+   * under it, where a wall only hides what is behind it.
+   *
+   * ```
+   *   drawn:   a  b  H1 c  d  e  f  H2 g   (H = under a hull)
+   *   ≤ 8:     a  b  H1 c  d  e  f  H2      as drawn
+   *   > 8:     H1 H2 a  b  c  d  e  f │ g   hulls first, g has no slot
+   * ```
    */
   ghostTargets(): readonly GhostSubject[] {
     // An arrival waiting hidden for its walk is not yet the player's to
     // see, so no wall opens around it (#1116). Each comes with its
     // footprint and measured height, which are what the rays leave from
     // (#1134); a unit whose model is still loading is a point.
-    return this.unitsGroup.children
+    const subjects = this.unitsGroup.children
       .filter((object) => object.visible)
       .map((object) => {
         const unitId = object.name.replace(/^unit:/, "");
@@ -351,6 +371,14 @@ export class TacticalSceneBuilder
           height: this.heights.get(unitId) ?? 0,
         };
       });
+    if (subjects.length <= MAX_GHOSTS || this.hulls.length === 0) {
+      return subjects;
+    }
+    const covered = subjects.filter((subject) => this.underHull(subject));
+    return [
+      ...covered,
+      ...subjects.filter((subject) => !covered.includes(subject)),
+    ];
   }
 
   /** The cutaway uniforms, for the frame controller that updates them. */
@@ -949,6 +977,26 @@ export class TacticalSceneBuilder
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * Whether a drawn unit stands under a drawn drop ship's hull: its
+   * footprint, around where it is drawn (walking or not), overlaps a
+   * ship's (#1179).
+   *
+   * @param subject - The unit's object and footprint.
+   * @returns True when any of the unit is under a hull.
+   */
+  private underHull(subject: GhostSubject): boolean {
+    const feet = subject.object.getWorldPosition(this.feet);
+    const half = subject.halfWidth;
+    return this.hulls.some(
+      (hull) =>
+        feet.x + half > hull.x &&
+        feet.x - half < hull.x + hull.w &&
+        feet.z + half > hull.z &&
+        feet.z - half < hull.z + hull.d,
+    );
+  }
 
   /**
    * Draws a drop line under every unit the cut has left unsupported, and

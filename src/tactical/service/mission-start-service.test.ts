@@ -34,6 +34,7 @@ import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../data/hive-assault-setup-tuning";
 import { CIVILIAN_TUNING } from "../data/civilian-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
+import { WAVE_PRESSURE_TUNING } from "../data/wave-pressure-tuning";
 import { err, ok } from "../../core/model/result";
 import type { MissionSetupRule } from "../model/mission-setup-rule";
 import type { TacticalState } from "../model/tactical-state";
@@ -45,6 +46,7 @@ import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission, tileAdmits } from "./mission-start-service";
 import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 import { MISSION_SETUP_RULES } from "./missions/mission-setup-rules";
+import { jevDestinations } from "../ai/jev-destinations";
 
 // ===========================================
 // Fixtures
@@ -304,6 +306,49 @@ describe("startTacticalMission", () => {
       }
     },
   );
+
+  it("boards from the landing zone and a forward extraction point both, Jev's requests included (#1179)", () => {
+    const source = capacityFixture(MAX_DEPLOYED_UNITS);
+    const forward = [
+      { x: 6, y: 0, z: 0 },
+      { x: 7, y: 0, z: 0 },
+    ];
+    const map: TacticalMap = {
+      ...source,
+      hooks: {
+        ...source.hooks,
+        objectives: [
+          ...source.hooks.objectives,
+          {
+            id: "hook-forward",
+            kind: HookKinds.FORWARD_EXTRACTION,
+            tiles: forward,
+            requiredPass: PassMask.ALL,
+          },
+        ],
+      },
+    };
+    const { state, mission, deployment } = capacityCampaign(1);
+    const generate = vi
+      .spyOn(mapGeneration, "generateTacticalMap")
+      .mockReturnValue(map);
+    try {
+      const tactical = unwrap(
+        startTacticalMission(state, mission.id, deployment, deps()),
+      ).activeMission!;
+      // The landing zone's tiles first, then the forward point's.
+      expect(tactical.extraction).toEqual([
+        ...source.hooks.extraction.tiles,
+        ...forward,
+      ]);
+      const actor = tactical.units[0]!;
+      expect(jevDestinations(tactical, tactical, actor).extraction).toEqual(
+        tactical.extraction,
+      );
+    } finally {
+      generate.mockRestore();
+    }
+  });
 
   it("stores a tactical state on the campaign with the mission's map and clock at the first player turn", () => {
     const { state, mission, deployment } = campaign();
@@ -749,6 +794,10 @@ describe("startTacticalMission on a defence (#1175)", () => {
     ]);
     expect(tactical.spawners).toEqual([]);
     expect(tactical.edgeSpawn.totalWaves).toBe(5);
+    // Every counted wave lands larger than the shared size (#1179).
+    expect(tactical.edgeSpawn.surge).toEqual(
+      WAVE_PRESSURE_TUNING.defence.surge,
+    );
     // The installation itself stands on the map: a building of the
     // installation's kind, so the player defends something they built.
     expect(tactical.map.recipe.params.site).toBe("repellent-dispersal");
@@ -761,6 +810,7 @@ describe("startTacticalMission on a defence (#1175)", () => {
     ).activeMission;
     if (!tactical) throw new Error("no mission");
     expect(tactical.edgeSpawn.totalWaves).toBeUndefined();
+    expect(tactical.edgeSpawn.surge).toBeUndefined();
     expect(tactical.units.some((unit) => unit.kind === "generator")).toBe(
       false,
     );

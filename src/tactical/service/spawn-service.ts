@@ -99,6 +99,7 @@ export function createPodBurstStep(deps: SpawnDeps): PhaseStep {
  *                                        one weighted species roll per bug
  *                                        (by bugMix, else hatchWeight),
  *                                        BugsSpawned { source: "spawner" }, timer ← interval
+ *                                        (the spawner's own, else the tuning's)
  * ```
  *
  * Draws from `ctx.rng.fork("spawn:hatch")`, spawners in `spawners`
@@ -160,7 +161,8 @@ export function hatch(
     }
     spawners.push({
       ...spawner,
-      timer: hatchInterval(mission.difficulty, deps.tuning),
+      timer:
+        spawner.hatchInterval ?? hatchInterval(mission.difficulty, deps.tuning),
     });
   }
   return { state: { ...state, spawners }, events };

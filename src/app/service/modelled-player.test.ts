@@ -11,8 +11,12 @@ import {
   SWEEP_NOW,
   SWEEP_RESULTS,
 } from "./campaign-sweep.test-helper";
-import type { ResearchView } from "./modelled-player.test-helper";
+import type {
+  CasualtyScale,
+  ResearchView,
+} from "./modelled-player.test-helper";
 import {
+  AUTO_RESOLVE_CASUALTIES,
   CAMPAIGN_SWEEP_TUNING,
   chooseOffer,
   deploymentFor,
@@ -21,7 +25,9 @@ import {
   nextResearch,
   playsOn,
   resultContextFor,
+  rollCasualties,
   rollOutcome,
+  scaledLosses,
 } from "./modelled-player.test-helper";
 
 // ===========================================
@@ -225,6 +231,101 @@ describe("ModelledMissionResolver casualties", () => {
     for (const id of ["average", "strong", "story-only"] as const) {
       expect(CAMPAIGN_SWEEP_TUNING.players[id].mechLoss).toBe(0.3);
     }
+  });
+});
+
+describe("rollCasualties (#1179)", () => {
+  const fresh = composeSweepGame(
+    CAMPAIGN_SWEEP_TUNING.players.average,
+  ).createCampaign({ seed: 3, createdAt: SWEEP_NOW });
+  const roster = {
+    squads: fresh.roster.squads,
+    mechs: [
+      ...fresh.roster.mechs,
+      { ...fresh.roster.mechs[0]!, id: "mech-worn", damage: 95 },
+    ],
+  };
+  const everyone = {
+    missionId: "mission-1",
+    squadIds: roster.squads.map((squad) => squad.id),
+    mechIds: roster.mechs.map((mech) => mech.id),
+  };
+  const flat = (chance: number, damage: number): CasualtyScale => ({
+    casualtyChance: { won: chance, extracted: chance, lost: chance },
+    mechDestructionChance: { won: chance, extracted: chance, lost: chance },
+    mechDamage: {
+      won: { min: damage, max: damage },
+      extracted: { min: damage, max: damage },
+      lost: { min: damage, max: damage },
+    },
+  });
+
+  it("loses every soldier and every mech at a chance of one: every squad wiped, every mech destroyed", () => {
+    const rolled = rollCasualties(
+      "lost",
+      everyone,
+      roster,
+      flat(1, 0),
+      new Mulberry32Rng(5),
+    );
+    expect(rolled.squadsWiped).toEqual(everyone.squadIds);
+    expect(rolled.squadCasualties.map((each) => each.losses)).toEqual([
+      5, 5, 5, 5,
+    ]);
+    expect(rolled.mechsDestroyed).toEqual(everyone.mechIds);
+    expect(rolled.mechDamage.map((each) => each.damage)).toEqual([100, 5]);
+  });
+
+  it("at a chance of zero loses no soldier, and each mech takes the outcome's damage, a worn one to the end of its hull", () => {
+    const rolled = rollCasualties(
+      "won",
+      everyone,
+      roster,
+      flat(0, 7),
+      new Mulberry32Rng(5),
+    );
+    expect(rolled.squadCasualties).toEqual([]);
+    expect(rolled.squadsWiped).toEqual([]);
+    expect(rolled.mechDamage.map((each) => each.damage)).toEqual([7, 5]);
+    expect(rolled.mechsDestroyed).toEqual(["mech-worn"]);
+  });
+
+  it("on the auto-resolver's scale loses about its share of soldiers per outcome", () => {
+    const rng = new Mulberry32Rng(17);
+    const lossesOn = (outcome: "won" | "lost"): number => {
+      let lost = 0;
+      for (let i = 0; i < 400; i++) {
+        lost += rollCasualties(
+          outcome,
+          { ...everyone, mechIds: [] },
+          roster,
+          AUTO_RESOLVE_CASUALTIES,
+          rng,
+        ).squadCasualties.reduce((sum, each) => sum + each.losses, 0);
+      }
+      return lost / (400 * 20);
+    };
+    expect(lossesOn("won")).toBeGreaterThan(0.06);
+    expect(lossesOn("won")).toBeLessThan(0.1);
+    expect(lossesOn("lost")).toBeGreaterThan(0.46);
+    expect(lossesOn("lost")).toBeLessThan(0.54);
+  });
+
+  it("is what the resolver reports for a player with a scale, after the outcome's draw", () => {
+    const average = CAMPAIGN_SWEEP_TUNING.players.average;
+    const offer = realOffers()[0]!;
+    const player = { ...average, losses: scaledLosses(flat(1, 0)) };
+    const resolved = new ModelledMissionResolver(
+      player,
+      resultContextFor(player, SWEEP_RESULTS),
+    ).resolve(
+      offer,
+      { ...everyone, missionId: offer.id },
+      { ...roster, city: undefined as never },
+      new Mulberry32Rng(5),
+    );
+    expect(resolved.squadsWiped).toEqual(everyone.squadIds);
+    expect(resolved.mechsDestroyed).toEqual(everyone.mechIds);
   });
 });
 

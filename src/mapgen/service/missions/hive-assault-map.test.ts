@@ -193,6 +193,8 @@ describe("hive assault caverns generate at every nest count", () => {
           expect(count(HookKinds.TECH_CARCASS), seed).toBe(1);
           expect(count(HookKinds.DEPLOY), seed).toBe(1);
           expect(count(HookKinds.EXTRACTION), seed).toBe(1);
+          // Only a Great Hive has a forward extraction point (#1179).
+          expect(count(HookKinds.FORWARD_EXTRACTION), seed).toBe(0);
         }
       },
       SWEEP_TIMEOUT_MS,

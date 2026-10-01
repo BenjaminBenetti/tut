@@ -1,9 +1,13 @@
 import { manhattanDistance } from "../../../core/service/grid-math";
 import type { TileCoord } from "../../../mapgen/model/tile-coord";
-import type { ObjectiveKind } from "../../model/objective-rules";
+import type {
+  ObjectiveKind,
+  ObjectiveOfKind,
+} from "../../model/objective-rules";
 import { isCharged } from "../../model/tunnel-mouth";
 import type { Objective, TacticalState } from "../../model/tactical-state";
 import type { Unit } from "../../model/unit";
+import { unitFootprintTiles } from "../footprint-service";
 import { defenceProgress } from "../objectives/defend-generators-objective";
 import {
   objectiveComplete,
@@ -25,6 +29,11 @@ import {
   sweep,
 } from "./player-goals.test-helper";
 import type { PlayerView } from "./player-view.test-helper";
+import { KILL_BROODMOTHER_STRATEGY } from "./kill-broodmother-strategy.test-helper";
+import {
+  BOARD_CORE_STRATEGY,
+  DESTROY_PLATFORM_CORE_STRATEGY,
+} from "./spore-platform-strategies.test-helper";
 
 // ===========================================
 // One strategy per objective kind (#1179, campaign arc §12)
@@ -36,15 +45,19 @@ import type { PlayerView } from "./player-view.test-helper";
 //   destroy-pod        the same, against the pod's clock
 //   destroy-hive-core  find it at the back of the cavern, then the same
 //   defend-generators  hold round the generators; hunt the last bugs
-//   capture-specimen   find the species, wear it down, net it, carry it home
+//   capture-specimen   find the species, wear it down, net it, walk it home;
+//                      never kill one while one is wanted, bar self-defence
 //   rescue-civilians   free each trapped group; freed groups walk home
 //   strip-wreck        squads work the wreck two turns; a worker carries the parts
-//   seal-tunnels       charge every open mouth, stand clear of the fuse
+//   seal-tunnels       charge every open mouth, stand clear of the fuse, and
+//                      come back to one whose charge the bugs pulled; the
+//                      expert guards each charge until it blows
+//                      (expert-objective-strategies)
 //   recover-pod        hold round the pod until the drop lifts it
-//
-// Alpha Hunt (kill-broodmother) and Spore Platform (board-core,
-// destroy-platform-core) have no real strategy yet: their table entries
-// are stubs that kill everything, then extract.
+//   kill-broodmother   after her marker, her first; the expert posts a
+//                      squad on her way out (kill-broodmother-strategy)
+//   board-core         to the hatch and through it (spore-platform-strategies)
+//   destroy-platform-core  the core's blip at full pace, the core first
 
 /** Field steps from a guarded thing within which a guard holds. */
 const GUARD_RADIUS = 3;
@@ -114,26 +127,41 @@ export const DESTROY_POD_STRATEGY: ObjectiveStrategy<"destroy-pod"> = {
 /**
  * Bring down the hive core: its blip waits until the core is seen, so
  * until then the force heads for the back of the cavern, where the
- * briefing says it sits. At full pace, even in contact, and with the
- * core in its sights a unit fires on the core before the bugs: the
- * waves, the nests and the broods only add bugs the longer it takes,
- * and the cavern is a long walk there and back.
+ * briefing says it sits, and once it has seen the back with no core in
+ * it, for the unexplored ground nearest the back. At full pace, even in
+ * contact, and with the core in its sights a unit fires on the core
+ * before the bugs: the waves, the nests and the broods only add bugs
+ * the longer it takes, and the cavern is a long walk there and back:
+ * longer home than the driver's stall patience, so a unit getting
+ * nearer home is progress.
+ *
+ * ```
+ *   core seen ──► wreck it
+ *   else      ──► back of the cavern, the tiles not yet explored
+ *             ──► all explored: the frontier nearest the back
+ * ```
  */
 export const DESTROY_HIVE_CORE_STRATEGY: ObjectiveStrategy<"destroy-hive-core"> =
   {
+    longWalkHome: true,
     /** Done, as far as the fight goes, the moment the core falls; then home. */
     settled(objective, view) {
       return objective.complete || objectiveFailed(view.mission, objective);
     },
-    /** To the core once seen, fire on it first; the back of the map before; urgent. */
+    /** To the core once seen, fire on it first; the unseen back of the map before; urgent. */
     jobs(objective, view) {
       const jobs = wreckJobs(objective, view, true, true);
       if (jobs.length > 0) {
         return jobs;
       }
-      return [
-        { order: { kind: "explore", goals: backOfMap(view), urgent: true } },
-      ];
+      const back = backOfMap(view);
+      const unseen = back.filter(
+        (tile) => !view.explored.has(view.graph.index.keyOf(tile)),
+      );
+      const goals = unseen.length > 0 ? unseen : frontier(view, back);
+      return goals.length === 0
+        ? []
+        : [{ order: { kind: "explore", goals, urgent: true } }];
     },
   };
 
@@ -143,8 +171,12 @@ export const DESTROY_HIVE_CORE_STRATEGY: ObjectiveStrategy<"destroy-hive-core"> 
 
 /**
  * Hold the generators through every wave: the force stands round the
- * running generators; once the tracker says every wave has landed and
- * nothing is in sight, it goes after the last bugs where they were seen.
+ * running generators. Once the last wave is in, the tracker counts the
+ * hold down (#1179), and the defence is held when it runs out whether or
+ * not a bug is left, so the force stays on the generators until then: a
+ * search would only leave them to the bugs still about. A defence with
+ * no hold running and the tracker still counting bugs is the one case
+ * where the force goes after the last bugs where they were seen.
  */
 export const DEFEND_GENERATORS_STRATEGY: ObjectiveStrategy<"defend-generators"> =
   {
@@ -153,10 +185,11 @@ export const DEFEND_GENERATORS_STRATEGY: ObjectiveStrategy<"defend-generators"> 
       return closed(objective, view.mission);
     },
     /**
-     * Guard the generators, the ones under attack first; after the last
-     * wave, with no generator under attack and the tracker still counting
-     * bugs, go and find them: what is in sight, the last contact, the
-     * unexplored ground, then whatever is out of sight.
+     * Guard the generators, the ones under attack first. After the last
+     * wave, with no hold counting down (#1179), no generator under attack
+     * and the tracker still counting bugs, go and find them: what is in
+     * sight, the last contact, the unexplored ground, then whatever is
+     * out of sight.
      */
     jobs(objective, view) {
       const generators = view.mission.units.filter(
@@ -172,7 +205,13 @@ export const DEFEND_GENERATORS_STRATEGY: ObjectiveStrategy<"defend-generators"> 
             manhattanDistance(enemy.pos, generator.pos) <= THREAT_RADIUS,
         ),
       );
-      if (lastWave && threatened.length === 0 && progress.bugsLeft > 0) {
+      const holding = (progress.holdTurnsLeft ?? 0) > 0;
+      if (
+        lastWave &&
+        !holding &&
+        threatened.length === 0 &&
+        progress.bugsLeft > 0
+      ) {
         const goals = straggler(
           view,
           generators.map((unit) => unit.pos),
@@ -312,7 +351,10 @@ export const STRIP_WRECK_STRATEGY: ObjectiveStrategy<"strip-wreck"> = {
 /**
  * Seal the tunnel mouths: the force to the nearest open, uncharged
  * mouth; a charged one is left to its fuse (the policy keeps clear of
- * the blast the HUD draws).
+ * the blast the HUD draws) and nobody stays to guard it. A mouth whose
+ * charge a bug pulled (Ben's rule, 2026-09-28) is open and uncharged
+ * again, as the tracker shows, so it is a job again and the force comes
+ * back to set a new one.
  */
 export const SEAL_TUNNELS_STRATEGY: ObjectiveStrategy<"seal-tunnels"> = {
   /** Done once the tracker reads complete or failed. */
@@ -339,16 +381,21 @@ export const SEAL_TUNNELS_STRATEGY: ObjectiveStrategy<"seal-tunnels"> = {
  * Take a specimen alive: once one of the species is in sight, the force
  * closes on it to wear it down and net it; until then it heads for the
  * other objectives' blips (where the bugs are) or the unexplored ground.
- * A carrier takes it home (the courier rule).
+ * While one is still wanted, every bug of the species in sight is
+ * spared: no unit fires a shot that could kill it, unless it stands in
+ * reach of a unit of ours (it is attacking). A carrier walks it home
+ * (the courier rule) rather than stopping to trade shots.
+ *
+ * ```
+ *   wanted ∧ in sight ∧ nobody of ours in its reach ──► spared
+ *   a squad carries one ──► settled, nothing spared, the carrier walks home
+ * ```
  */
 export const CAPTURE_SPECIMEN_STRATEGY: ObjectiveStrategy<"capture-specimen"> =
   {
     /** Done with the hunt once a squad carries one, or it can no longer be done. */
     settled(objective, view) {
-      return (
-        closed(objective, view.mission) ||
-        carriers(view, objective.species).length > 0
-      );
+      return wantedNoMore(objective, view);
     },
     /** After the species when seen; else toward the nests and the fog. */
     jobs(objective, view) {
@@ -389,62 +436,19 @@ export const CAPTURE_SPECIMEN_STRATEGY: ObjectiveStrategy<"capture-specimen"> =
     couriers(objective, view) {
       return carriers(view, objective.species).map((unit) => unit.id);
     },
-  };
-
-// ===========================================
-// Stubs for kinds without a real strategy yet
-// ===========================================
-
-/**
- * STUB — "kill everything, then extract". For an objective kind with
- * no real strategy yet (Alpha Hunt, Spore Platform, #1179): walk to
- * whatever the HUD blips for it, otherwise after what is in sight, where
- * bugs were last seen, then the unexplored ground; done once the flags
- * say so or nothing is left to find. Replace with a real strategy when
- * the kind is calibrated.
- */
-export function killEverythingStub(): ObjectiveStrategy {
-  return {
-    /** Done once flagged, or once nothing is seen, remembered or blipped. */
-    settled(objective, view) {
-      if (objective.complete || objective.failed === true) {
-        return true;
+    couriersWalk: true,
+    /** The species in sight while one is still wanted, bar a bug with one of ours in its reach. */
+    spared(objective, view) {
+      if (wantedNoMore(objective, view)) {
+        return [];
       }
-      return (
-        view.enemies.length === 0 &&
-        lastSighted(view).length === 0 &&
-        (view.places.get(objective.id) ?? []).length === 0 &&
-        frontier(view).length === 0
-      );
-    },
-    /** Blips first, then the enemy, then the fog. */
-    jobs(objective, view) {
-      const places = view.places.get(objective.id) ?? [];
-      if (places.length > 0) {
-        return [
-          { order: { kind: "destroy", goals: places, interact: objective.id } },
-        ];
-      }
-      const enemies = view.enemies.map((unit) => unit.pos);
-      const leads = enemies.length > 0 ? enemies : lastSighted(view);
-      const goals = leads.length > 0 ? leads : frontier(view);
-      return goals.length > 0 ? [{ order: { kind: "hunt", goals } }] : [];
+      return view.enemies
+        .filter(
+          (bug) => bug.sourceId === objective.species && !attacking(view, bug),
+        )
+        .map((bug) => bug.id);
     },
   };
-}
-
-/** STUB: Alpha Hunt (arc §6.10) — kill everything, then extract; see `killEverythingStub`. */
-export const ALPHA_HUNT_STRATEGY_STUB: ObjectiveStrategy = killEverythingStub();
-
-/** STUB: Spore Platform (arc §6.11) — kill everything, then extract; see `killEverythingStub`. */
-export const SPORE_PLATFORM_STRATEGY_STUB: ObjectiveStrategy =
-  killEverythingStub();
-
-/** The kinds a stub stands in for, for the report and the tests. */
-export const STUBBED_OBJECTIVE_KINDS: readonly string[] = [
-  "alpha-hunt",
-  "spore-platform",
-];
 
 // ===========================================
 // The table
@@ -461,9 +465,9 @@ export const OBJECTIVE_STRATEGIES: ObjectiveStrategies = {
   "destroy-hive-core": DESTROY_HIVE_CORE_STRATEGY,
   "seal-tunnels": SEAL_TUNNELS_STRATEGY,
   "recover-pod": RECOVER_POD_STRATEGY,
-  "kill-broodmother": ALPHA_HUNT_STRATEGY_STUB,
-  "board-core": SPORE_PLATFORM_STRATEGY_STUB,
-  "destroy-platform-core": SPORE_PLATFORM_STRATEGY_STUB,
+  "kill-broodmother": KILL_BROODMOTHER_STRATEGY,
+  "board-core": BOARD_CORE_STRATEGY,
+  "destroy-platform-core": DESTROY_PLATFORM_CORE_STRATEGY,
 };
 
 // ===========================================
@@ -476,6 +480,36 @@ function closed(objective: Objective, mission: TacticalState): boolean {
     objective.complete ||
     objectiveComplete(mission, objective) ||
     objectiveFailed(mission, objective)
+  );
+}
+
+/** Whether the capture needs nothing more: closed, or a squad already carries one. */
+function wantedNoMore(
+  objective: ObjectiveOfKind<"capture-specimen">,
+  view: PlayerView,
+): boolean {
+  return (
+    closed(objective, view.mission) ||
+    carriers(view, objective.species).length > 0
+  );
+}
+
+/**
+ * Whether `bug` is attacking: a unit of ours stands within its weapon's
+ * reach, block to block, as its codex card reads (a lurker's bite: the
+ * next tile).
+ */
+function attacking(view: PlayerView, bug: Unit): boolean {
+  const template = view.mission.templates[bug.templateId];
+  const reach = Math.max(
+    1,
+    ...(template?.weapons ?? []).map((weapon) => weapon.profile.range),
+  );
+  const block = unitFootprintTiles(view.mission, bug);
+  return view.force.some((unit) =>
+    unitFootprintTiles(view.mission, unit).some((tile) =>
+      block.some((own) => manhattanDistance(own, tile) <= reach),
+    ),
   );
 }
 

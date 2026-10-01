@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
-import { hudMission } from "../view/mission-hud.test-helper";
+import { resolveDrawnDropships } from "../../graphics/service/drawn-dropship-resolver";
+import {
+  FORWARD_POINT_TILES,
+  forwardPointMission,
+  hudMission,
+} from "../view/mission-hud.test-helper";
 import {
   actionRefusal,
   canExtract,
@@ -157,5 +162,28 @@ describe("isDropshipTile", () => {
     // Clearance is not the ship.
     expect(isDropshipTile(mission, { x: 5, y: 0, z: 2 })).toBe(false);
     expect(isDropshipTile(mission, { x: 3, y: 0, z: 3 })).toBe(false);
+  });
+
+  it("is also the tiles under a forward point's drawn ship (#1179)", () => {
+    const mission = forwardPointMission();
+    const ships = resolveDrawnDropships(mission.map);
+    expect(ships).toHaveLength(1);
+    const { x, z, w, d } = ships[0]!.footprint;
+    for (let dz = 0; dz < d; dz++) {
+      for (let dx = 0; dx < w; dx++) {
+        expect(
+          isDropshipTile(mission, { x: x + dx, y: 0, z: z + dz }),
+          `${x + dx},${z + dz}`,
+        ).toBe(true);
+      }
+    }
+    // The point is the boarding zone, as before.
+    for (const tile of FORWARD_POINT_TILES) {
+      expect(isDropshipTile(mission, tile)).toBe(true);
+    }
+    // Past the hull is not the ship.
+    expect(isDropshipTile(mission, { x: x - 1, y: 0, z })).toBe(false);
+    expect(isDropshipTile(mission, { x: x + w, y: 0, z })).toBe(false);
+    expect(isDropshipTile(mission, { x: 1, y: 0, z: 1 })).toBe(false);
   });
 });

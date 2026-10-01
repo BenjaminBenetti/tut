@@ -103,4 +103,46 @@ export interface HiveCavernTuning {
   readonly broodClearRadius: number;
   /** Radius kept clear of props around a tunnel's mouth into a chamber. */
   readonly tunnelClearRadius: number;
+
+  /**
+   * Where a second drop ship takes the force aboard, on the route past
+   * halfway in (#1179 C3a round 3). Absent (the ordinary hive cavern)
+   * the force boards at the mouth alone.
+   */
+  readonly forwardExtraction?: ForwardExtractionTuning;
+}
+
+/**
+ * A forward extraction point's place and size (#1179 C3a round 3),
+ * placed by `ForwardExtractionPass`. Distances are the flat walk: steps
+ * over open ground on the spine's level.
+ *
+ * ```
+ *   landing zone ─────────────── whole ───────────────► core
+ *                        [FWD] ◄─ coreShare × whole ──►
+ * ```
+ */
+export interface ForwardExtractionTuning {
+  /** Share of the landing zone's walk to the core left between the point and the core. */
+  readonly coreShare: number;
+  /** Side of the square zone, in tiles. */
+  readonly size: number;
+  /**
+   * Least distance (Euclidean) from the chamber's brood tile to any tile
+   * of the zone, as a share of the chamber's radius, for the zone to lie
+   * outside the heart where the brood sleeps (a brood wakes within 35%
+   * of the radius, rounded, and never under 3)...
+   */
+  readonly heartClearanceShare: number;
+  /** ...and never less than this many tiles. */
+  readonly minHeartClearance: number;
+  /**
+   * Steps added to the score of a square inside that clearance: the
+   * zone lies outside a sleeping brood unless that would put it this
+   * many steps further off the target (a small chamber has no room
+   * outside its heart).
+   */
+  readonly heartPenalty: number;
+  /** Columns (Chebyshev) kept between the zone and an egg spawner's tile. */
+  readonly nestClearance: number;
 }

@@ -33,6 +33,7 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { COMBAT_TUNING } from "../data/combat-tuning";
+import { DEFENCE_TUNING } from "../data/defence-tuning";
 import { GARRISON_TUNING } from "../data/garrison-tuning";
 import { GENERATOR_TUNING } from "../data/generator-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../data/hive-assault-setup-tuning";
@@ -116,7 +117,7 @@ function rules(): TacticalHandlers {
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),
-        createDefenceStep(),
+        createDefenceStep(DEFENCE_TUNING),
       ],
       createBugPhaseRunner({
         handlers: actions,

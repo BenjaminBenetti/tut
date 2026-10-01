@@ -6,10 +6,16 @@ import type { Rng } from "../../../core/model/rng";
 import { ECONOMY_TUNING } from "../../../economy/data/economy-tuning";
 import { LedgerTransactionService } from "../../../economy/service/transaction-service";
 import { TechPointTreasury } from "../../../economy/service/tech-point-service";
+import { MECH_RATING_TUNING } from "../../../roster/data/mech-rating-tuning";
+import { MECH_SALVAGE_TUNING } from "../../../roster/data/mech-salvage-tuning";
+import { STARTER_PARTS } from "../../../roster/data/parts";
 import { ROSTER_TUNING } from "../../../roster/data/roster-tuning";
+import { UPGRADE_TUNING } from "../../../roster/data/upgrade-tuning";
 import { SQUAD_TYPES } from "../../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../../roster/repository/squad-type-catalogue";
+import { StaticPartCatalogue } from "../../../roster/repository/static-part-catalogue";
+import { LoadoutMechPricing } from "../../../roster/service/loadout-mech-pricing";
 import type { GameState } from "../../../save/model/game-state";
 import { createNewGame } from "../../../save/service/new-game-service";
 import { ACTS } from "../../data/acts";
@@ -166,6 +172,14 @@ class Campaign {
         hiveTuning: HIVE_TUNING,
         nemesisLore: NEMESIS_LORE,
         story: { rules: STORY_MISSION_RULES, spine: STORY_SPINE },
+        salvage: {
+          pricing: new LoadoutMechPricing(
+            new StaticPartCatalogue(STARTER_PARTS),
+            MECH_RATING_TUNING,
+            UPGRADE_TUNING,
+          ),
+          tuning: MECH_SALVAGE_TUNING,
+        },
       }),
     );
   }

@@ -35,6 +35,7 @@ import type {
   TacticalUpdateHooks,
 } from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
+import { boardingTrackOf } from "../service/boarding-track";
 import { stageTrackOf } from "../service/stage-track";
 import { stageTransitionOf } from "../service/stage-transition";
 import { namesFor, refusalText } from "../service/tactical-error-text";
@@ -505,7 +506,12 @@ export class TacticalScreen implements Screen {
       state === undefined ? undefined : missionCityName(state),
     );
     this.hud.setCampaign(state);
-    this.hud.setStages(stageTrackOf(mission, state, this.deps.missionTypes));
+    // A linked mission's stages, else a Great Hive's two places to board
+    // (#1179): either names the tracker's last step.
+    this.hud.setStages(
+      stageTrackOf(mission, state, this.deps.missionTypes) ??
+        boardingTrackOf(mission),
+    );
     const paced =
       mission !== undefined &&
       this.deps.sceneHost !== undefined &&

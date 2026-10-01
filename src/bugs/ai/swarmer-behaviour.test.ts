@@ -4,6 +4,7 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { CIVILIAN_TUNING } from "../../tactical/data/civilian-tuning";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
@@ -174,10 +175,12 @@ describe("SwarmerBehaviour", () => {
 
   it("bites a civilian group, trapped or not, before the squad beside it (campaign arc §6.4)", () => {
     for (const trapped of [true, false]) {
+      // A full squad stands at the group's hit points: the weight decides.
+      const squad = unitAt("squad-1", "infantry", at(4, 4), {
+        hp: CIVILIAN_TUNING.maxHp,
+      });
       const people = withCivilian(
-        missionWith(openField(8), [unitAt("squad-1", "infantry", at(4, 4))], {
-          phase: "bugs",
-        }),
+        missionWith(openField(8), [squad], { phase: "bugs" }),
         "civ-1",
         at(4, 2),
         { trapped },

@@ -59,7 +59,7 @@ describe("tunnel sabotage presentation (arc §6.7)", () => {
     expect(TUNNEL_SABOTAGE_PRESENTATION.icon).toBe("tunnel");
   });
 
-  it("briefs the task, the fuse, the spread's day, and what a win or a pass does to the city", () => {
+  it("briefs the task, the fuse, that a bite pulls a charge, the spread's day, and what a win or a pass does to the city", () => {
     expect(
       TUNNEL_SABOTAGE_PRESENTATION.briefingRows(SABOTAGE, ctxOn(4)),
     ).toEqual([
@@ -69,6 +69,11 @@ describe("tunnel sabotage presentation (arc §6.7)", () => {
         value: "Seal 3 tunnel mouths, then extract",
       },
       { field: "fuse", label: "Fuse", value: "Charges burn for 3 turns" },
+      {
+        field: "guard",
+        label: "Guard",
+        value: "Hold each mouth: a bug's bite pulls a burning charge",
+      },
       { field: "spread", label: "Spread due", value: "In 2 days" },
       {
         field: "if-won",
@@ -88,13 +93,13 @@ describe("tunnel sabotage presentation (arc §6.7)", () => {
     expect(spread(6)).toBe("Today");
   });
 
-  it("briefs only the task and the fuse for an offer that lost its record", () => {
+  it("briefs only the task, the fuse and the guard for an offer that lost its record", () => {
     const { tunnelSabotage: _dropped, ...bare } = SABOTAGE;
     expect(
       TUNNEL_SABOTAGE_PRESENTATION.briefingRows(bare, ctxOn(4)).map(
         (row) => row.field,
       ),
-    ).toEqual(["tunnels", "fuse"]);
+    ).toEqual(["tunnels", "fuse", "guard"]);
   });
 
   it("says how many mouths were sealed and whether the spread is held", () => {

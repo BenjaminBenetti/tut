@@ -33,6 +33,7 @@ import { GENERATOR_TUNING } from "../../data/generator-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
 import { UNIT_TUNING } from "../../data/unit-tuning";
+import { WAVE_PRESSURE_TUNING } from "../../data/wave-pressure-tuning";
 import type { MissionSetupDeps } from "../../model/mission-setup-rule";
 import type { MissionStartDeps } from "../mission-start-service";
 import { startTacticalMission } from "../mission-start-service";
@@ -41,6 +42,7 @@ import {
   openField,
   unitAt,
 } from "../tactical-fixtures.test-helper";
+import { pressEdgeWaves } from "../edge-wave-pressure-service";
 import { MISSION_SETUP_RULES } from "./mission-setup-rules";
 import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
 
@@ -114,8 +116,26 @@ function setupDeps(): MissionSetupDeps {
 // ===========================================
 
 describe("WRECK_RECOVERY_SETUP", () => {
-  it("is the table's setup for the wreck type", () => {
-    expect(MISSION_SETUP_RULES["wreck-recovery"]).toBe(WRECK_RECOVERY_SETUP);
+  it("is the table's setup for the wreck type, its edge waves pressed (#1179)", () => {
+    const map = fixtureMap();
+    const base = missionWith(map, [unitAt("u", "infantry", at(0, 0))]);
+    const own = WRECK_RECOVERY_SETUP.setup(base, map, recovery(), setupDeps());
+    const table = MISSION_SETUP_RULES["wreck-recovery"].setup(
+      base,
+      map,
+      recovery(),
+      setupDeps(),
+    );
+    if (!own.ok || !table.ok) throw new Error("setup refused");
+    expect(table.value).toEqual(
+      pressEdgeWaves(own.value, WAVE_PRESSURE_TUNING.wreck),
+    );
+    // The crash has drawn the swarm: the first wave a turn sooner.
+    expect(table.value.edgeSpawn).toMatchObject({
+      nextTurn:
+        base.edgeSpawn.nextTurn - WAVE_PRESSURE_TUNING.wreck.turnsSooner,
+      surge: WAVE_PRESSURE_TUNING.wreck.surge,
+    });
   });
 
   it("lays the lost mech across the wreck hook with one strip-wreck objective, the nests with none", () => {

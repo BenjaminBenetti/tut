@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { HookKinds } from "../../mapgen/model/hook";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
@@ -404,6 +405,40 @@ describe("actionWheel on a tile", () => {
       detail: "drop ship",
     });
     expect(onZone.items[1]?.disabled).toBeUndefined();
+  });
+
+  it("names the forward point on Board for a unit standing in a Great Hive's (#1179)", () => {
+    const mission = hudMission();
+    const forward = { x: 1, y: 0, z: 1 };
+    const withForward: TacticalState = {
+      ...mission,
+      map: {
+        ...mission.map,
+        hooks: {
+          ...mission.map.hooks,
+          objectives: [
+            ...mission.map.hooks.objectives,
+            {
+              id: "hook-forward",
+              kind: HookKinds.FORWARD_EXTRACTION,
+              tiles: [forward],
+              requiredPass: 3,
+            },
+          ],
+        },
+      },
+      extraction: [...mission.extraction, forward],
+    };
+    const onForward = actionWheel(
+      { kind: "tile", tile: forward },
+      contextFor(withForward, "s1"),
+    );
+    expect(onForward.items.find((item) => item.id === "extract")).toMatchObject(
+      { label: "Board", detail: "forward point" },
+    );
+    expect(
+      onForward.items.find((item) => item.id === "extract")?.disabled,
+    ).toBeUndefined();
   });
 });
 

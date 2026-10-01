@@ -19,7 +19,9 @@ import type { PlayerView } from "./player-view.test-helper";
 // to the table, and the compiler insists on it.
 //
 //   Objective ──► strategy.settled ──► done with it (extract when all are)
-//             └─► strategy.jobs    ──► [ Job { order, crew, who } ]
+//             ├─► strategy.jobs    ──► [ Job { order, crew, who } ]
+//             ├─► strategy.couriers ─► units carrying it home
+//             └─► strategy.spared  ──► bugs no order may kill
 //                                          │
 //                              policy.assign ──► unit ──► UnitOrder
 //                              policy.next   ──► unit + order ──► command
@@ -40,8 +42,14 @@ export interface UnitOrder {
   readonly goals: readonly TileCoord[];
   /** The objective to Interact with once it is in reach. */
   readonly interact?: ObjectiveId;
-  /** A spawner the order may shoot at while it stands in sight. */
+  /** A spawner, or a named bug (the Broodmother), the order may shoot at while it is in sight. */
   readonly targetId?: string;
+  /**
+   * Bugs in sight the order shoots before any other, in this order: the
+   * first a unit has a shot at is its target. They can reach what the
+   * force holds (a burning tunnel charge) this bug phase.
+   */
+  readonly priority?: readonly UnitId[];
   /** Units of ours the order keeps close to. */
   readonly protect?: readonly UnitId[];
   /** Field steps from the goals within which the unit holds instead of closing further. */
@@ -56,6 +64,17 @@ export interface UnitOrder {
    * that never stop).
    */
   readonly focus?: boolean;
+  /**
+   * Bugs in sight the force wants alive (a specimen still to net): the
+   * unit holds any shot, grenade or reaction that could kill one.
+   */
+  readonly spare?: readonly UnitId[];
+  /**
+   * The unit carries the objective home (a netted specimen): it walks
+   * rather than stops to trade shots, and fires only once no step gets
+   * it nearer home.
+   */
+  readonly courier?: boolean;
 }
 
 /** Which units a job can use. */
@@ -90,6 +109,26 @@ export interface ObjectiveStrategy<K extends ObjectiveKind = ObjectiveKind> {
    * whatever else is going on. Absent: nobody does.
    */
   couriers?(objective: ObjectiveOfKind<K>, view: PlayerView): readonly UnitId[];
+  /**
+   * True when this objective's couriers walk home rather than stop to
+   * trade shots on the way (a squad carrying a netted specimen): their
+   * home order says so (`UnitOrder.courier`). Absent: they fight their
+   * way home like anyone else.
+   */
+  readonly couriersWalk?: boolean;
+  /**
+   * The bugs in sight the objective wants alive, as the HUD shows them:
+   * no unit of ours fires a shot that could kill one (`UnitOrder.spare`).
+   * Absent: none.
+   */
+  spared?(objective: ObjectiveOfKind<K>, view: PlayerView): readonly UnitId[];
+  /**
+   * True when the walk home, once the objective is settled, is longer
+   * than the driver's stall patience (a hive's cavern): a turn in which
+   * a unit got nearer the drop ship then counts as getting somewhere.
+   * Absent: only a unit getting out does.
+   */
+  readonly longWalkHome?: boolean;
 }
 
 /**

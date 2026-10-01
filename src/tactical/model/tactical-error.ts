@@ -96,6 +96,21 @@ export type TacticalError =
     }
   | { readonly kind: "no-line-of-sight"; readonly targetId: string }
   | { readonly kind: "target-destroyed"; readonly targetId: string }
+  /**
+   * A charge burning on a tunnel mouth is pulled by hand (campaign arc
+   * §6.7): a weapon that is not melee cannot be aimed at it.
+   */
+  | { readonly kind: "charge-needs-melee"; readonly targetId: string }
+  /**
+   * A bug that came up out of the ground this turn cannot pull a tunnel
+   * charge until its next phase (campaign arc §6.7), so the watchers
+   * get a turn to kill a burrower that surfaces beside one.
+   */
+  | {
+      readonly kind: "charge-just-surfaced";
+      readonly unitId: string;
+      readonly targetId: string;
+    }
   | { readonly kind: "no-charges"; readonly unitId: string }
   | { readonly kind: "no-such-weapon"; readonly unitId: string }
   | { readonly kind: "no-area-weapon"; readonly unitId: string }
@@ -290,6 +305,10 @@ export function describeTacticalError(error: TacticalError): string {
       return `No line of sight to "${error.targetId}"`;
     case "target-destroyed":
       return `Egg spawner "${error.targetId}" is already destroyed`;
+    case "charge-needs-melee":
+      return `Charge "${error.targetId}" can only be pulled with a melee attack`;
+    case "charge-just-surfaced":
+      return `Unit "${error.unitId}" came up this turn and cannot pull charge "${error.targetId}" until its next`;
     case "no-charges":
       return `Unit "${error.unitId}" is out of charges; reload or vent first`;
     case "no-such-weapon":
@@ -365,9 +384,9 @@ export function describeTacticalError(error: TacticalError): string {
     case "cannot-carry":
       return `Unit "${error.unitId}" cannot carry a specimen; only an infantry squad can`;
     case "not-in-extraction-zone":
-      return `Unit "${error.unitId}" is not standing in the extraction zone`;
+      return `Unit "${error.unitId}" is not standing in an extraction zone`;
     case "not-extractable":
-      return `Unit "${error.unitId}" cannot leave through the extraction zone`;
+      return `Unit "${error.unitId}" cannot leave through an extraction zone`;
     case "mission-not-over":
       return `Mission "${error.missionId}" is still being fought`;
     case "stage-pending":
@@ -432,6 +451,8 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "out-of-range": true,
   "no-line-of-sight": true,
   "target-destroyed": true,
+  "charge-needs-melee": true,
+  "charge-just-surfaced": true,
   "no-charges": true,
   "no-such-weapon": true,
   "no-area-weapon": true,

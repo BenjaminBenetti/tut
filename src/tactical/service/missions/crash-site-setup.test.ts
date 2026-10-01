@@ -6,6 +6,7 @@ import { HookKinds } from "../../../mapgen/model/hook";
 import { PassMask } from "../../../mapgen/model/pass-mask";
 import type { Mission } from "../../../overworld/model/mission";
 import { CIVILIAN_TUNING } from "../../data/civilian-tuning";
+import { CRASH_SITE_SETUP_TUNING } from "../../data/crash-site-setup-tuning";
 import { GENERATOR_TUNING } from "../../data/generator-tuning";
 import { HIVE_ASSAULT_SETUP_TUNING } from "../../data/hive-assault-setup-tuning";
 import { SPAWN_TUNING } from "../../data/spawn-tuning";
@@ -15,7 +16,7 @@ import {
   openField,
   unitAt,
 } from "../tactical-fixtures.test-helper";
-import { CRASH_SITE_SETUP } from "./crash-site-setup";
+import { CRASH_SITE_SETUP, crashPodMaturityTurn } from "./crash-site-setup";
 import { MISSION_SETUP_RULES } from "./mission-setup-rules";
 import { placeSporePod } from "./spore-pod-setup";
 
@@ -100,6 +101,53 @@ describe("CRASH_SITE_SETUP (campaign arc §6.3)", () => {
     // What the pod placer does, and nothing else of it.
     const podded = placeSporePod(state, map, CRASH, deps());
     expect({ ...setUp.value, edgeSpawn: podded.edgeSpawn }).toEqual(podded);
+  });
+
+  it("ripens a harder landing's pod at the end of turn 5, from d5 (C2b-1-field)", () => {
+    const map = crater();
+    const state = missionWith(map, []);
+    const shipped = { ...deps(), crashSite: CRASH_SITE_SETUP_TUNING };
+    const deadlineAt = (difficulty: number): number | undefined => {
+      const setUp = CRASH_SITE_SETUP.setup(
+        state,
+        map,
+        { ...CRASH, difficulty },
+        { ...shipped, ids: new SequentialIdGenerator() },
+      );
+      if (!setUp.ok) throw new Error(setUp.error.kind);
+      const pod = setUp.value.objectives.find((o) => o.kind === "destroy-pod");
+      return pod?.kind === "destroy-pod" ? pod.deadlineTurn : undefined;
+    };
+    expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(deadlineAt)).toEqual([
+      8, 8, 8, 8, 5, 5, 5, 5, 5, 5,
+    ]);
+    // Without the crash site's own clock, every pod keeps the shared one.
+    const bare = CRASH_SITE_SETUP.setup(
+      state,
+      map,
+      { ...CRASH, difficulty: 9 },
+      deps(),
+    );
+    if (!bare.ok) throw new Error(bare.error.kind);
+    expect(bare.value.objectives).toEqual([
+      expect.objectContaining({ kind: "destroy-pod", deadlineTurn: 8 }),
+    ]);
+  });
+
+  it("reads the crash clock the briefing reads, never later than the shared one", () => {
+    expect(crashPodMaturityTurn(4, SPAWN_TUNING, CRASH_SITE_SETUP_TUNING)).toBe(
+      8,
+    );
+    expect(crashPodMaturityTurn(5, SPAWN_TUNING, CRASH_SITE_SETUP_TUNING)).toBe(
+      5,
+    );
+    expect(crashPodMaturityTurn(9, SPAWN_TUNING, undefined)).toBe(8);
+    expect(
+      crashPodMaturityTurn(9, SPAWN_TUNING, {
+        earlyMaturityFromDifficulty: 5,
+        earlyMaturityTurn: 12,
+      }),
+    ).toBe(8);
   });
 
   it("lets the edges send two waves and then fall quiet", () => {

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { MissionResult } from "./mission-result";
-import { MISSION_OUTCOMES, isMissionOutcome } from "./mission-result";
+import {
+  MISSION_OUTCOMES,
+  heldTheField,
+  isMissionOutcome,
+} from "./mission-result";
 
 const SAMPLE: MissionResult = {
   missionId: "mission-4",
@@ -31,6 +35,10 @@ describe("MissionOutcome", () => {
     expect(isMissionOutcome("")).toBe(false);
     expect(isMissionOutcome("Won")).toBe(false);
     expect(isMissionOutcome("aborted")).toBe(false);
+  });
+
+  it("holds the field on every outcome but a loss", () => {
+    expect(MISSION_OUTCOMES.filter(heldTheField)).toEqual(["won", "extracted"]);
   });
 });
 

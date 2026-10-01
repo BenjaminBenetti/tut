@@ -490,10 +490,12 @@ Round 2 of #1179 fixed the weaknesses the first baseline showed:
   get round it, such as in a corridor, leads the way home instead of
   blocking it.
 - **Hive caverns.** Dormant bugs are neither contact nor targets. The
-  expert walks round a sleeping brood where the cavern allows, and keeps
-  loud guns quiet near one. It walks the cavern at full pace, even in
+  expert remembers where it saw sleepers, reads each brood's round off
+  them, walks round it where the cavern allows, and keeps loud guns
+  quiet near one. In a cavern where broods sleep it walks no further
+  than ground it has seen. It walks the cavern at full pace, even in
   contact, and fires on the core before any bug it cannot kill
-  (`brood-berth.test-helper.ts`).
+  (`brood-berth.test-helper.ts`, C3a in `C3a-hives.md`).
 
 ## Known limits
 
@@ -505,7 +507,11 @@ Round 2 of #1179 fixed the weaknesses the first baseline showed:
   can outlast the search. On Launch Window both players share that
   search, so the cell barely tells them apart.
 
-## Why the hive cells sit at 0%
+## Why the hive cells sat at 0%
+
+C3a calibrated the hives after this baseline: see `C3a-hives.md` for
+the diagnosis, the levers and the cells now. The section below is the
+round-2 record.
 
 Hive Assault act-2 and the Great Hive are on the campaign spine, and
 both players win neither. The expert was given the hive habits above,
@@ -580,45 +586,108 @@ ran all 8.
 
 ## The committed baseline
 
-Measured on 2026-09-27 at 16 seeds, from commit `09d4e63a`, with the
-filled forces above. The run took 738 s on 8 workers. The band pins
-all hold. **Two cell pins fail**, `evacuation/act-1` and
-`evacuation/act-2` (see "The pins that fail"), so the run exits 1. The
-targets are measured but not asserted, because `TARGETED_CELLS` is
-empty.
+The final rebaseline of #1179, measured on 2026-09-29 at 16 seeds on
+commit `30f0a2f3`, with every tuning package in: C2b-1 (field), C2b-2
+(defences, wrecks, and tunnels with the defended charge and its Act III
+press), C3a (hives, rounds 2 and 3) and C3b (story, phases 3 and 5).
+The run took 284 s on 8 workers. **Every pin holds and every targeted
+assertion passes**, so the run exits 0. `TARGETED_CELLS` lists every
+cell.
 
-| Cell | New target (band) | New | Expert target | Expert | `expert_target` | Pin |
-| --- | --- | --- | --- | --- | --- | --- |
-| `infestation-clearance/act-1` | 90% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `infestation-clearance/act-2` | 75% | 12/16 (75%) | 90% | 16/16 (100%) | met | clear |
-| `infestation-clearance/act-3` | 65% | 11/16 (69%) | 90% | 14/16 (88%) | allowance | clear |
-| `crash-site/act-1` | 90% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `crash-site/act-2` | 75% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `crash-site/act-3` | 65% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `evacuation/act-1` | 90% | 14/16 (88%) | 90% | 10/16 (63%) | short | **fail** |
-| `evacuation/act-2` | 75% | 8/16 (50%) | 90% | 6/16 (38%) | short | **fail** |
-| `evacuation/act-3` | 65% | 7/16 (44%) | 90% | 7/16 (44%) | short | clear |
-| `defend-installation/act-1` | 90% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `defend-installation/act-2` | 75% | 15/16 (94%) | 90% | 16/16 (100%) | met | clear |
-| `defend-installation/act-3` | 65% | 14/16 (88%) | 90% | 16/16 (100%) | met | clear |
-| `tunnel-sabotage/act-2` | 75% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `tunnel-sabotage/act-3` | 65% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `wreck-recovery/act-2` | 75% | 14/16 (88%) | 90% | 16/16 (100%) | met | clear |
-| `wreck-recovery/act-3` | 65% | 16/16 (100%) | 90% | 15/16 (94%) | met | allowance |
-| `hive-assault/act-2` | 75% | 0/16 (0%) | 90% | 2/16 (13%) | short | clear |
-| `hive-assault/act-3` | 65% | 0/16 (0%) | 90% | 5/16 (31%) | short | clear |
-| `story:first-skyfall/act-1` | 90% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `story:live-specimen/act-1` | 90% | 6/16 (38%) | 90% | 13/16 (81%) | short | clear |
-| `story:intact-pod/act-2` | 75% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `story:uplink/act-3` | 65% | 16/16 (100%) | 90% | 16/16 (100%) | met | clear |
-| `story:great-hive/act-3` | 65% | 0/16 (0%) | 90% | 0/16 (0%) | short | clear |
-| `story:launch-window/finale` | 55% | 9/16 (56%) | 90% | 10/16 (63%) | short | clear |
+Against the previous rebaseline (`df0ab1d9`, see "Earlier baselines")
+only the two Tunnel Sabotage cells moved; every other run is
+byte-identical apart from its timings.
+
+"Was" is the pre-tuning baseline (`09d4e63a`, see "Earlier baselines").
+Alpha Hunt and the Spore Platform joined the matrix after it.
+
+| Cell | New target (band) | New | Was | Expert | Was | `expert_target` | Pin |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `infestation-clearance/act-1` | 90% | 16/16 (100%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
+| `infestation-clearance/act-2` | 75% | 12/16 (75%) | 12/16 | 16/16 (100%) | 16/16 | met | clear |
+| `infestation-clearance/act-3` | 65% | 11/16 (69%) | 11/16 | 14/16 (88%) | 14/16 | allowance | clear |
+| `crash-site/act-1` | 90% | 16/16 (100%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
+| `crash-site/act-2` | 75% | 14/16 (88%) | 16/16 | 15/16 (94%) | 16/16 | met | clear |
+| `crash-site/act-3` | 65% | 11/16 (69%) | 16/16 | 14/16 (88%) | 16/16 | allowance | clear |
+| `evacuation/act-1` | 90% | 14/16 (88%) | 14/16 | 16/16 (100%) | 10/16 | met | clear |
+| `evacuation/act-2` | 75% | 11/16 (69%) | 8/16 | 16/16 (100%) | 6/16 | met | clear |
+| `evacuation/act-3` | 65% | 11/16 (69%) | 7/16 | 15/16 (94%) | 7/16 | met | clear |
+| `defend-installation/act-1` | 90% | 16/16 (100%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
+| `defend-installation/act-2` | 75% | 12/16 (75%) | 15/16 | 16/16 (100%) | 16/16 | met | clear |
+| `defend-installation/act-3` | 65% | 10/16 (62%) | 14/16 | 15/16 (94%) | 16/16 | met | clear |
+| `tunnel-sabotage/act-2` | 75% | 13/16 (81%) | 16/16 | 15/16 (94%) | 16/16 | met | clear |
+| `tunnel-sabotage/act-3` | 65% | 11/16 (69%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
+| `wreck-recovery/act-2` | 75% | 11/16 (69%) | 14/16 | 15/16 (94%) | 16/16 | met | clear |
+| `wreck-recovery/act-3` | 65% | 14/16 (88%) | 16/16 | 14/16 (88%) | 15/16 | allowance | clear |
+| `hive-assault/act-2` | 75% | 12/16 (75%) | 0/16 | 16/16 (100%) | 2/16 | met | clear |
+| `hive-assault/act-3` | 65% | 11/16 (69%) | 0/16 | 16/16 (100%) | 5/16 | met | clear |
+| `story:first-skyfall/act-1` | 90% | 16/16 (100%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
+| `story:live-specimen/act-1` | 90% | 13/16 (81%) | 6/16 | 16/16 (100%) | 13/16 | met | clear |
+| `story:intact-pod/act-2` | 75% | 11/16 (69%) | 16/16 | 16/16 (100%) | 16/16 | met | clear |
+| `story:uplink/act-3` | 65% | 10/16 (62%) | 16/16 | 15/16 (94%) | 16/16 | met | clear |
+| `story:great-hive/act-3` | 65% | 5/16 (31%) | 0/16 | 15/16 (94%) | 0/16 | met | clear |
+| `story:launch-window/finale` | 55% | 10/16 (62%) | 9/16 | 16/16 (100%) | 10/16 | met | clear |
+| `alpha-hunt/act-2` | 75% | 14/16 (88%) | – | 16/16 (100%) | – | met | clear |
+| `alpha-hunt/act-3` | 65% | 13/16 (81%) | – | 16/16 (100%) | – | met | clear |
+| `story:spore-platform/finale` | 55% | 10/16 (62%) | – | 16/16 (100%) | – | met | clear |
 
 The decision-gap row: on the new player's dice, the expert wins
-`story:live-specimen/act-1` 15/16, against 13/16 on its own dice and
-the new player's 6/16. The gap there is decisions, not luck.
+`story:live-specimen/act-1` 16/16, against the new player's 13/16.
 
 Per band, wins over runs (`baseline-matrix.bands.tsv`):
+
+| Band | New target | New | New verdict | Expert | Expert cells met | Expert over new |
+| --- | --- | --- | --- | --- | --- | --- |
+| act-1 | 90% ± 6.1 | 91/96 (94.8%) | on | 96/96 (100.0%) | 6 of 6 | holds |
+| act-2 | 75% ± 7.2 | 110/144 (76.4%) | on | 141/144 (97.9%) | 9 of 9 | holds |
+| act-3 | 65% ± 7.5 | 107/160 (66.9%) | on | 150/160 (93.8%) | 7 of 10 | holds |
+| finale | 55% ± 17.6 | 20/32 (62.5%) | on | 32/32 (100.0%) | 2 of 2 | holds |
+
+Every band reads `on` for the new player, and the expert meets its
+floor in every cell or is within the one-seed allowance in three
+(`infestation-clearance/act-3`, `crash-site/act-3`,
+`wreck-recovery/act-3`, each 14/16).
+
+### Still off target
+
+A band is judged on its pooled wins, so single cells may sit away from
+the band's target. The furthest:
+
+| Cell | New | Band target | Why it stands |
+| --- | --- | --- | --- |
+| `story:great-hive/act-3` | 5/16 (31%) | 65% | These 16 seeds sit low. Over 128 seeds the new player wins 62 (48%); see C3a-hives.md, "Round 3b". |
+| `wreck-recovery/act-3` | 14/16 (88%) | 65% | Both players sit at the edge; the expert is at its allowance. |
+| `alpha-hunt/act-3` | 13/16 (81%) | 65% | The limp (C3b phase 5) is set by the Act II expert. |
+
+### Losses and turns
+
+Wins are calibrated; the cost of winning is not. Mean units lost a run,
+of 8 deployed (new / expert): hives 3.9–5.3 / 3.8–3.9, the Great Hive
+7.3 / 4.6, defences 1.4–5.6 / 0.5–2.4, Evacuation 2.9–5.4 / 1.5–1.7,
+crash sites 0.2–0.4 / 0.1–0.2. The economy model (C7) reads these per
+run from `baseline-matrix.runs.tsv`. Its phase 2 found that replacing
+them costs more than a campaign's income. Phase 3 added mech salvage
+(half a destroyed mech's price back on a held field), which does not
+change that: re-hiring squads and the Act III refit are what bind (see
+the #1179 PR).
+
+### Earlier baselines
+
+**The first final rebaseline** (16 seeds, `df0ab1d9`) is in git at the
+feature commit `6af6d477`:
+`git show 6af6d477:docs/design/calibration/baseline-matrix.tsv`. It
+predates the defended tunnel charge: `tunnel-sabotage/act-2` read 11/16
+new and 16/16 expert, and `tunnel-sabotage/act-3` 16/16 for both, left
+out of `TARGETED_CELLS` because the bugs could not pull a set charge.
+Per band, the new player's rate was Act I 94.8%, Act II 75.0%, Act III
+70.0% and the finale 62.5%.
+
+**The pre-tuning baseline** (16 seeds, `09d4e63a`, the filled forces) is
+in git at `df0ab1d9`:
+`git show df0ab1d9:docs/design/calibration/baseline-matrix.tsv`. Two cell
+pins failed (`evacuation/act-1` and `evacuation/act-2`: the expert pulled
+a hurt force out while the new player won by stall; C2b-1 fixed both),
+and the hive cells sat at 0%. Per band:
 
 | Band | New target | New | New verdict | Expert target | Expert | Expert cells met | Expert over new |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -626,106 +695,6 @@ Per band, wins over runs (`baseline-matrix.bands.tsv`):
 | act-2 | 75% ± 7.7 | 97/128 (75.8%) | on | 90% a cell | 104/128 (81.3%) | 6 of 8 | holds |
 | act-3 | 65% ± 7.9 | 96/144 (66.7%) | on | 90% a cell | 105/144 (72.9%) | 5 of 9 | holds |
 | finale | 55% ± 24.9 | 9/16 (56.3%) | on | 90% a cell | 10/16 (62.5%) | 0 of 1 | holds |
-
-The expert meets its target in 15 of the 24 cells, is one seed short in
-1, and is `short` in 8. Every band reads `on` for the new player, but
-only on average. Act I pools five cells at 88–100% with Live Specimen at
-38%. Act II pools Hive Assault at 0% with three cells at 100%. Act III
-has two cells at 0% (the hives) and four at 100%.
-
-**What the fill changed.** Act III and the finale kept their forces,
-and their 320 runs have the same outcomes as the mid-act baseline's,
-run for run. Acts I and II went from five units to eight. Their cells,
-mid-act to filled:
-
-| Cell | New, mid-act | New, filled | Expert, mid-act | Expert, filled |
-| --- | --- | --- | --- | --- |
-| `infestation-clearance/act-1` | 12/16 | 16/16 | 16/16 | 16/16 |
-| `crash-site/act-1` | 15/16 | 16/16 | 16/16 | 16/16 |
-| `evacuation/act-1` | 8/16 | 14/16 | 10/16 | 10/16 |
-| `defend-installation/act-1` | 16/16 | 16/16 | 14/16 | 16/16 |
-| `story:first-skyfall/act-1` | 16/16 | 16/16 | 16/16 | 16/16 |
-| `story:live-specimen/act-1` | 6/16 | 6/16 | 12/16 | 13/16 |
-| `infestation-clearance/act-2` | 10/16 | 12/16 | 10/16 | 16/16 |
-| `crash-site/act-2` | 16/16 | 16/16 | 16/16 | 16/16 |
-| `evacuation/act-2` | 4/16 | 8/16 | 7/16 | 6/16 |
-| `defend-installation/act-2` | 10/16 | 15/16 | 12/16 | 16/16 |
-| `tunnel-sabotage/act-2` | 12/16 | 16/16 | 14/16 | 16/16 |
-| `wreck-recovery/act-2` | 14/16 | 14/16 | 16/16 | 16/16 |
-| `hive-assault/act-2` | 0/16 | 0/16 | 0/16 | 2/16 |
-| `story:intact-pod/act-2` | 16/16 | 16/16 | 16/16 | 16/16 |
-
-The new player's Act I rate rose from 76.0% to 87.5% and its Act II
-rate from 64.1% to 75.8%; both bands were `low` and are now `on`.
-
-### Furthest from target
-
-**The new player**, a cell's rate against its band's target. The target
-is judged on the pooled band, but these cells move the band most:
-
-| Direction | Cell | New | Target | Off by |
-| --- | --- | --- | --- | --- |
-| below | `hive-assault/act-2` | 0% | 75% | −75 |
-| below | `hive-assault/act-3`, `story:great-hive/act-3` | 0% | 65% | −65 |
-| below | `story:live-specimen/act-1` | 38% | 90% | −52 |
-| below | `evacuation/act-2` | 50% | 75% | −25 |
-| below | `evacuation/act-3` | 44% | 65% | −21 |
-| above | `crash-site/act-3`, `tunnel-sabotage/act-3`, `wreck-recovery/act-3`, `story:uplink/act-3` | 100% | 65% | +35 |
-| above | `crash-site/act-2`, `tunnel-sabotage/act-2`, `story:intact-pod/act-2` | 100% | 75% | +25 |
-| above | `defend-installation/act-3` | 88% | 65% | +23 |
-| above | `defend-installation/act-2` | 94% | 75% | +19 |
-
-**The expert**, against its floor of 90% in every cell:
-
-| Direction | Cell | Expert | Off by |
-| --- | --- | --- | --- |
-| below | `story:great-hive/act-3` | 0% | −90 |
-| below | `hive-assault/act-2` | 13% | −77 |
-| below | `hive-assault/act-3` | 31% | −59 |
-| below | `evacuation/act-2` | 38% | −52 |
-| below | `evacuation/act-3` | 44% | −46 |
-| below | `evacuation/act-1`, `story:launch-window/finale` | 63% | −27 |
-| below | `story:live-specimen/act-1` | 81% | −9 |
-| above | fourteen cells at 16/16 | 100% | +10 |
-
-The hive cells are the Hive Assault and Great Hive package's (see
-"Why the hive cells sit at 0%").
-
-### The pins that fail
-
-`calibration-pins.test-helper.ts` is unchanged, with an allowance of
-one seed. Neither player was changed. The assertion stops at the first
-failing cell, so the run's log names only `evacuation/act-1`; the
-`pin` column names both.
-
-**`evacuation/act-1`, expert 10/16 against 14/16.**
-
-- The new player won 5 of its 14 by stall (seeds 1, 6, 7, 13 and 15):
-  the job done and nobody getting out for 10 turns, so the run is
-  abandoned, which the rules record as won because the job is done and
-  someone is aboard. It lost 4 to 7 of its 8 units in those runs.
-- The expert extracted on 4 seeds (3, 10, 14 and 15), which is not a
-  win, lost seed 0 at the turn cap and seed 6 by stall.
-
-**`evacuation/act-2`, expert 6/16 against 8/16.**
-
-- The new player won 5 of its 8 by stall (seeds 0, 1, 3, 5 and 12).
-- The expert extracted on 10 seeds (2, 4, 5, 6, 9, 10, 11, 13, 14 and
-  15). It failed this pin on the mission-15/35 forces too (4/16 against
-  7/16), and cleared it on the mid-act forces (7/16 against 4/16).
-
-On both cells the expert pulls a hurt force out, and the new player
-stays until the job is done at any cost. The Evacuation package owns
-these cells.
-
-`defend-installation/act-1`, the pin that failed on the mid-act forces
-(expert 14/16 against 16/16), clears: both players win 16/16.
-
-At 16 seeds the noise on the difference between two players who are
-equally good at 50% is √(2 × 16 × ½ × ½) ≈ 2.8 wins, so a one-seed
-allowance catches noise more often than it did at 8 seeds (2.0).
-
-### Earlier baselines
 
 **The mid-act forces** (16 seeds, `4e5487d6`) are in git at `47c3c06f`.
 Acts I and II fielded five units. Per band, the new player's rate

@@ -26,6 +26,7 @@ import {
   broodSize,
   placeCavernBroods,
   placeDormantBrood,
+  wakeRadius,
 } from "./brood-placement-service";
 import { withinWakeZone } from "./brood-wake-service";
 import { unitFootprintTiles } from "./footprint-service";
@@ -125,7 +126,7 @@ function radiusOf(hook: Hook): number {
 
 describe("placeCavernBroods on real hive caverns", () => {
   it(
-    "stands one sleeping brood per brood-chamber hook, every bug inside its chamber's radius, on free standable ground (property over seeds)",
+    "stands one sleeping brood per brood-chamber hook, every bug inside its wake zone, a share of the chamber, on free standable ground (property over seeds)",
     () => {
       for (const seed of SEEDS) {
         const map = cavern(seed);
@@ -160,8 +161,10 @@ describe("placeCavernBroods on real hive caverns", () => {
               y: hook.tiles[0]?.y,
               z: hook.tiles[0]?.z,
             },
-            radius: radiusOf(hook),
+            radius: wakeRadius(hook, BROOD_TUNING.wake),
           });
+          // The zone is the chamber's heart, not the whole chamber (#1179 C3a).
+          expect(brood.wake.radius).toBeLessThan(radiusOf(hook));
           expect(brood.memberIds.length, `${seed}: ${brood.id}`).toBe(
             broodSize(hook, 5, BROOD_TUNING),
           );
@@ -197,12 +200,18 @@ describe("placeCavernBroods on real hive caverns", () => {
   );
 
   it(
-    "fills a brood to size from its spare tiles when bugs already hold half the chamber",
+    "fills a brood to size from its spare tiles when bugs already hold half its wake zone",
     () => {
       const map = cavern(SEEDS[3]);
       const hook = chamberHooks(map)[0];
       if (hook === undefined) throw new Error("cavern without chambers");
-      const floor = broodPositions(map, hook, 10_000, new Mulberry32Rng(7));
+      const floor = broodPositions(
+        map,
+        hook,
+        10_000,
+        new Mulberry32Rng(7),
+        BROOD_TUNING.wake,
+      );
       const squatters = floor
         .filter((_, i) => i % 2 === 0)
         .map((tile, i) =>
@@ -300,17 +309,50 @@ describe("broodSize", () => {
   });
 
   it("scales by difficulty and by the chamber's role, within the clamp", () => {
-    // (9 + 0.5 × 4) = 11, × 0.75 = 8.25, × 1.5 = 16.5 (rounds half up).
-    expect(broodSize(hook("route"), 4, BROOD_TUNING)).toBe(11);
-    expect(broodSize(hook("side"), 4, BROOD_TUNING)).toBe(8);
-    expect(broodSize(hook("core"), 4, BROOD_TUNING)).toBe(17);
+    // (−5 + 2 × 7) = 9, × 0.75 = 6.75 (rounds to 7), × 1 = 9.
+    expect(broodSize(hook("route"), 7, BROOD_TUNING)).toBe(9);
+    expect(broodSize(hook("side"), 7, BROOD_TUNING)).toBe(7);
+    expect(broodSize(hook("core"), 7, BROOD_TUNING)).toBe(9);
+    expect(
+      broodSize(hook("core"), 7, {
+        ...BROOD_TUNING,
+        roleScale: { ...BROOD_TUNING.roleScale, core: 1.5 },
+      }),
+    ).toBe(14);
     expect(broodSize(hook("route"), 100, BROOD_TUNING)).toBe(
       BROOD_TUNING.maxSize,
     );
-    expect(broodSize(hook("side"), 0, { ...BROOD_TUNING, baseSize: 1 })).toBe(
-      BROOD_TUNING.minSize,
+    expect(broodSize(hook("side"), 0, BROOD_TUNING)).toBe(BROOD_TUNING.minSize);
+    expect(broodSize(hook("unknown"), 7, BROOD_TUNING)).toBe(9);
+  });
+
+  it("pins the hive broods (#1179 C3a): the floor through Act II, a real brood by Act III", () => {
+    // Act II runs d3–d7, Act III d5–d9 (route and core chambers, then side).
+    const sizes = (role: string): number[] =>
+      [3, 4, 5, 6, 7, 8, 9].map((d) => broodSize(hook(role), d, BROOD_TUNING));
+    expect(sizes("route")).toEqual([3, 3, 5, 7, 9, 11, 13]);
+    expect(sizes("core")).toEqual([3, 3, 5, 7, 9, 11, 13]);
+    expect(sizes("side")).toEqual([3, 3, 4, 5, 7, 8, 10]);
+  });
+});
+
+describe("wakeRadius", () => {
+  const hook = (radius: number): Hook => ({
+    id: "h",
+    kind: HookKinds.BROOD_CHAMBER,
+    tiles: [at(0, 0)],
+    requiredPass: PassMask.ALL,
+    meta: { role: "route", radius, chamberId: "chamber-1", depth: 2 },
+  });
+
+  it("is the tuning's share of the chamber, never under its least radius", () => {
+    // 0.35 of a 12-tile chamber is 4.2 → 4; of 6 tiles is 2.1 → the floor 3.
+    expect(wakeRadius(hook(12), BROOD_TUNING.wake)).toBe(4);
+    expect(wakeRadius(hook(20), BROOD_TUNING.wake)).toBe(7);
+    expect(wakeRadius(hook(6), BROOD_TUNING.wake)).toBe(3);
+    expect(wakeRadius(hook(12), { ...BROOD_TUNING.wake, zoneShare: 1 })).toBe(
+      12,
     );
-    expect(broodSize(hook("unknown"), 0, BROOD_TUNING)).toBe(9);
   });
 });
 

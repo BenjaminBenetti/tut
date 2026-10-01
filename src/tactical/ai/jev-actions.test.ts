@@ -40,6 +40,8 @@ import {
 import { createMechActionHandler } from "../service/mech-action-service";
 import { createJevActHandler } from "../service/jev-control-service";
 import { bugUnit } from "../service/unit-factory";
+import { BREACHING_CHARGE } from "../data/equipment";
+import type { SealTunnelsObjective } from "../model/tactical-state";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 
 const rules = {
@@ -167,6 +169,110 @@ describe("Jev capability discovery", () => {
     expect(offers([bite, { ...bite, id: "claw", name: "Claw" }])).toBe(false);
     expect(offers([bite, spit])).toBe(true);
     expect(offers([spit])).toBe(true);
+  });
+  it("offers a Jev bug its bite, and only its bite, on a charge burning on a tunnel mouth, and tells it the charge is there (campaign arc §6.7)", () => {
+    const seal: SealTunnelsObjective = {
+      id: "seal",
+      kind: "seal-tunnels",
+      mouthIds: ["tunnel-1"],
+      complete: false,
+    };
+    const base = missionWith(
+      openField().build(),
+      [
+        unitAt("self", "infantry", { x: 1, y: 0, z: 1 }, { team: "bugs" }),
+        // In the spit's reach, out of the bite's.
+        unitAt("guard", "infantry", { x: 4, y: 0, z: 1 }, { team: "tdf" }),
+      ],
+      { phase: "bugs", objectives: [seal] },
+    );
+    const weapon = base.templates[base.units[0]!.templateId]!.weapons[0]!;
+    const bite = {
+      ...weapon,
+      id: "bite",
+      name: "Bite",
+      profile: { ...weapon.profile, range: 1 },
+    };
+    const spit = {
+      ...weapon,
+      id: "spit",
+      name: "Spit",
+      profile: { ...weapon.profile, range: 4 },
+    };
+    const tile = { x: 1, y: 0, z: 2 };
+    const burning = (mission: TacticalState): TacticalState => ({
+      ...mission,
+      tunnelMouths: [
+        {
+          id: "tunnel-1",
+          pos: tile,
+          tiles: [tile],
+          chargeId: "tunnel-1-charge",
+          chargeHitsLeft: 1,
+        },
+      ],
+      charges: [
+        {
+          id: "tunnel-1-charge",
+          ownerId: "guard",
+          equipmentId: BREACHING_CHARGE.id,
+          tile,
+          detonatesOnTurn: 4,
+        },
+      ],
+    });
+    const mission = burning(fitted(base, { weapons: [bite, spit] }));
+    /** The attack candidates aimed at the charge. */
+    const pullsIn = (candidates: readonly JevCandidate[]) =>
+      candidates.filter(
+        (candidate) =>
+          candidate.command?.type === "tactical:attack" &&
+          candidate.command.payload.targetId === "tunnel-1-charge",
+      );
+    const snapshot = captureJev(mission, "self", rules);
+    const pulls = pullsIn(snapshot.candidates);
+    expect(pulls.map((pull) => pull.command?.payload)).toEqual([
+      { attackerId: "self", targetId: "tunnel-1-charge", weaponId: "bite" },
+    ]);
+    expect(details(pulls[0]!)).toMatchObject({
+      hit_chance_percent: 100,
+      damage_range: [1, 1],
+    });
+    /** The purpose the attack action type of `weaponId` states. */
+    const purposeOf = (weaponId: string): string | undefined =>
+      snapshot.candidates.find(
+        (candidate) => candidate.actionType?.id === `attack:${weaponId}`,
+      )?.actionType?.purpose;
+    expect(purposeOf("bite")).toContain("pull a charge burning");
+    expect(purposeOf("spit")).not.toContain("charge");
+    expect(snapshot.state.tunnel_charges).toEqual([
+      {
+        id: "tunnel-1-charge",
+        mouth_id: "tunnel-1",
+        position: tile,
+        detonates_on_turn: 4,
+        hits_to_pull: 1,
+      },
+    ]);
+    // The TDF's charge, so the bug is not told it is its own.
+    expect(snapshot.state.friendly_charges).toEqual([]);
+
+    // A TDF actor is never offered its own charge, and is told it burns.
+    const guard = captureJev({ ...mission, phase: "player" }, "guard", rules);
+    expect(pullsIn(guard.candidates)).toEqual([]);
+    expect(guard.state.friendly_charges).toHaveLength(1);
+    expect(guard.state.tunnel_charges).toHaveLength(1);
+
+    // With no charge burning, nothing of it reaches the request.
+    const cold = captureJev(
+      fitted(base, { weapons: [bite, spit] }),
+      "self",
+      rules,
+    );
+    expect(cold.state).not.toHaveProperty("tunnel_charges");
+    expect(
+      cold.candidates.some((c) => c.actionType?.purpose?.includes("charge")),
+    ).toBe(false);
   });
   it.each<Team>(["tdf", "bugs"])(
     "discovers newly named weapons and every usable item kind on %s loadouts",

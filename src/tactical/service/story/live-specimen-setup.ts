@@ -24,11 +24,13 @@ import { placeBugAtFirst } from "../placed-bug-service";
 export const LIVE_SPECIMEN_SPECIES: BugSpeciesId = "lurker";
 
 /**
- * Lurkers placed at the start, one per nest, nearest nest first. Two,
- * so a lurker killed by a stray shot before it could be netted is not
- * the end of the hunt; the rolled mix hatches more on top.
+ * Lurkers placed at the start, one per nest, nearest nest first,
+ * wrapping round to the nearest again when there are fewer nests. Four
+ * (#1179, C3b): with two, a first campaign that shoots what it sees
+ * too often ran out of lurkers to net before one stood beside a squad;
+ * the rolled mix hatches more on top.
  */
-export const LIVE_SPECIMEN_PLACED_LURKERS = 2;
+export const LIVE_SPECIMEN_PLACED_LURKERS = 4;
 
 /**
  * How far, in Manhattan tiles, the fallback keeps a lurker from every

@@ -3,6 +3,9 @@ import {
   PRIMARY_WEAPON_ID,
 } from "../../tactical/model/unit-weapon";
 import { PropKindIds } from "../../mapgen/data/props";
+import { HookKinds } from "../../mapgen/model/hook";
+import { PassMask } from "../../mapgen/model/pass-mask";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
@@ -141,4 +144,24 @@ export function hudMission(
   return overrides.vision === undefined
     ? withVision({ state: base, events: [] }).state
     : base;
+}
+
+/** The forward point in `forwardPointMission`: 4 × 4 tiles from (13, 13). */
+export const FORWARD_POINT_TILES: readonly TileCoord[] = Array.from(
+  { length: 16 },
+  (_, i) => ({ x: 13 + (i % 4), y: 0, z: 13 + Math.floor(i / 4) }),
+);
+
+/**
+ * `hudMission` on a 30 × 30 field with a Great Hive's forward extraction
+ * point in its middle, which is the extraction zone; the scene draws its
+ * drop ship beside it (#1179). The units stand where `hudMission` puts
+ * them, well clear of the point.
+ */
+export function forwardPointMission(): TacticalState {
+  const map = new FixtureMapBuilder(30, 30, 4)
+    .fillGround()
+    .objective(HookKinds.FORWARD_EXTRACTION, FORWARD_POINT_TILES, PassMask.ALL)
+    .build();
+  return hudMission({ map, extraction: FORWARD_POINT_TILES });
 }

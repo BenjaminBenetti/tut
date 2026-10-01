@@ -61,6 +61,12 @@ describe("takesGhostCutaway", () => {
     }
   });
 
+  it("ghosts the drop ship, whose hull stands over and in front of the units beside it (#1179)", () => {
+    // One model for the landing zone's ship and each forward point's, so
+    // both are drawn from the same batch and both fade.
+    expect(takesGhostCutaway("tdf.dropship")).toBe(true);
+  });
+
   it("never ghosts ground, terrain, roads, ramps, foundations or street props", () => {
     for (const id of [
       SURFACE_MODELS[SurfaceIds.GRASS],

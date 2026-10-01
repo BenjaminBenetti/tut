@@ -51,13 +51,55 @@ export const EXPERT_TARGET_ALLOWANCE = 1;
 
 /**
  * The cells whose targets are asserted, as `SIM_MATRIX_CELLS` filters
- * (a cell id, or a prefix of one). Empty at the baseline: the targets
- * are measured and reported, not asserted. A tuning package adds its
- * own cells' filters when its tuning lands, which unskips the expert's
- * assertion on them; a band's new-player assertion runs once every cell
- * of the band is listed.
+ * (a cell id, or a prefix of one). Empty at the baseline, where the
+ * targets were measured and reported, not asserted. A tuning package
+ * adds its own cells' filters when its tuning lands, which unskips the
+ * expert's assertion on them; a band's new-player assertion runs once
+ * every cell of the band is listed.
+ *
+ * ```
+ *   hive-assault                  both Hive Assault cells (#1179 C3a, round 2)
+ *   story:great-hive              the Great Hive (#1179 C3a, round 3)
+ *   infestation-clearance/act-2   (#1179 C2b-1-field)
+ *   crash-site/act-3              (#1179 C2b-1-field)
+ *   evacuation/act-1…3            the three Evacuation cells (#1179 C2b-1-field)
+ *   story:live-specimen/act-1     Live Specimen (#1179 C3b, phase 3)
+ *   story:intact-pod/act-2        Intact Pod (#1179 C3b)
+ *   alpha-hunt                    both Alpha Hunt cells (#1179 C3b)
+ *   story:spore-platform/finale   the Spore Platform (#1179 C3b)
+ *   defend-installation/act-1…3   the three defences (#1179 C2b-2)
+ *   story:uplink/act-3            Uplink (#1179 C2b-2)
+ *   story:launch-window/finale    Launch Window (#1179 C2b-2)
+ *   tunnel-sabotage/act-2, act-3  both Tunnel Sabotage cells, the charge pullable (#1179 C2b-2)
+ *   wreck-recovery/act-2, act-3   both Wreck Recovery cells (#1179 C2b-2)
+ * ```
+ *
+ * Each package's cells are tuned in its own page under
+ * `docs/design/calibration/`: `C2b-1-field.md`, `C2b-2-defence.md`,
+ * `C3a-hives.md` and `C3b-story.md`.
  */
-export const TARGETED_CELLS: readonly string[] = [];
+export const TARGETED_CELLS: readonly string[] = [
+  "hive-assault",
+  "story:great-hive",
+  "infestation-clearance/act-2",
+  "crash-site/act-3",
+  "evacuation/act-1",
+  "evacuation/act-2",
+  "evacuation/act-3",
+  "story:live-specimen/act-1",
+  "story:intact-pod/act-2",
+  "alpha-hunt",
+  "story:spore-platform/finale",
+  "defend-installation/act-1",
+  "defend-installation/act-2",
+  "defend-installation/act-3",
+  "story:uplink/act-3",
+  "story:launch-window/finale",
+  "tunnel-sabotage/act-2",
+  "tunnel-sabotage/act-3",
+  "wreck-recovery/act-2",
+  "wreck-recovery/act-3",
+];
 
 // ===========================================
 // Types

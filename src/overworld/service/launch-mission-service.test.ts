@@ -9,7 +9,13 @@ import {
 } from "../../economy/model/economy-event";
 import { TechPointTreasury } from "../../economy/service/tech-point-service";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
+import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { MECH_SALVAGE_TUNING } from "../../roster/data/mech-salvage-tuning";
+import { STARTER_PARTS } from "../../roster/data/parts";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
+import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
+import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
+import { LoadoutMechPricing } from "../../roster/service/loadout-mech-pricing";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import type { Mech } from "../../roster/model/mech";
 import {
@@ -53,6 +59,11 @@ import type { LaunchMissionDeps } from "./launch-mission-service";
 import { MISSION_CONSEQUENCE_RULES } from "./missions/mission-consequence-rules";
 import { MAX_DEPLOYED_UNITS } from "../model/deployment";
 import { AUTO_RESOLVE_TUNING } from "../data/auto-resolve-tuning";
+import { AutoResolveMissionResolver } from "./auto-resolve-mission-resolver";
+import { MISSION_OUTCOMES } from "../model/mission-result";
+import { SQUAD_TYPES } from "../../roster/data/squad-types";
+import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
+import { LoadoutMechRater } from "../../roster/service/loadout-mech-rater";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { leaveBehind } from "../../tactical/service/left-behind-service";
 import {
@@ -210,6 +221,13 @@ const LOSS: MissionResult = {
   infestationDelta: 5,
 };
 
+/** The shipped pricing: the starter mech the fixtures field is worth ¢2,850. */
+const PRICING = new LoadoutMechPricing(
+  new StaticPartCatalogue(STARTER_PARTS),
+  MECH_RATING_TUNING,
+  UPGRADE_TUNING,
+);
+
 /** Returns a fixed result and records what it was asked. */
 class StubResolver implements MissionResolver {
   readonly calls: {
@@ -245,6 +263,7 @@ function deps(
     hiveTuning: HIVE_TUNING,
     story: { rules, spine: STORY_SPINE },
     nemesisLore: NEMESIS_LORE,
+    salvage: { pricing: PRICING, tuning: MECH_SALVAGE_TUNING },
   };
 }
 
@@ -1019,6 +1038,117 @@ describe("createLaunchMissionHandler — wrecks (arc §6.6)", () => {
     );
     expect(next.roster.partStock).toBeUndefined();
     expect(next.overworld.wrecks).toBeUndefined();
+  });
+});
+
+describe("createLaunchMissionHandler — salvage (GDD §5.7, #1179)", () => {
+  /** The starter mech's price at the shipped share: floor(0.5 × 2,850). */
+  const SALVAGE = Math.floor(
+    MECH_SALVAGE_TUNING.fraction * PRICING.priceOf(STARTER_LOADOUT),
+  );
+
+  /** A win that cost the squad its mech. */
+  const COSTLY_WIN: MissionResult = {
+    ...WIN,
+    mechsDestroyed: ["mech-1"],
+    mechDamage: [{ mechId: "mech-1", damage: 80, kills: 2 }],
+  };
+
+  /** Launches the fixture mission with `resolver`, failing on a refusal. */
+  function launchWith(resolver: MissionResolver, seed = 7) {
+    const applied = createLaunchMissionHandler<CampaignState>(deps(resolver))(
+      campaign(),
+      launchMission("mission-1", DEPLOYMENT),
+      context(seed),
+    );
+    if (!applied.ok) throw new Error(applied.error.message);
+    return applied.value;
+  }
+
+  it("pays a share of a mech destroyed on a won mission as salvage, after the reward, and says so on the result", () => {
+    expect(SALVAGE).toBe(1425);
+    const { state, events } = launchWith(new StubResolver(COSTLY_WIN));
+    expect(state.economy.credits).toBe(1000 + 900 + SALVAGE);
+    expect(state.economy.ledger).toMatchObject([
+      { kind: "reward", ref: "mission-1", amount: 900, day: DAY },
+      { kind: "salvage", ref: "mission-1", amount: SALVAGE, day: DAY },
+    ]);
+    const settled = { ...COSTLY_WIN, salvageCredits: SALVAGE };
+    expect(state.overworld.lastMissionResult).toEqual(settled);
+    expect(events[0]).toEqual({
+      type: MISSION_RESOLVED,
+      payload: { result: settled },
+    });
+    expect(events.filter((e) => e.type === CREDITS_CHANGED)).toHaveLength(2);
+    // Held field: the mech was paid for in credits, so it leaves no wreck.
+    expect(state.overworld.wrecks).toBeUndefined();
+  });
+
+  it("pays it on an extraction, which also held the field", () => {
+    const { state } = launchWith(
+      new StubResolver({ ...COSTLY_WIN, outcome: "extracted" }),
+    );
+    expect(state.economy.ledger.filter((t) => t.kind === "salvage")).toEqual([
+      expect.objectContaining({ amount: SALVAGE }),
+    ]);
+  });
+
+  it("leaves a lost mission's mech to Wreck Recovery: a wreck, and no salvage", () => {
+    const { state } = launchWith(new StubResolver(LOSS));
+    expect(state.economy.ledger).toEqual([]);
+    expect(state.overworld.lastMissionResult).toBe(LOSS);
+    expect(state.overworld.wrecks?.map((w) => w.mechId)).toEqual(["mech-1"]);
+  });
+
+  it("pays for every destroyed mech exactly once, as salvage or as a wreck, whatever the outcome", () => {
+    for (const outcome of MISSION_OUTCOMES) {
+      const { state } = launchWith(
+        new StubResolver({ ...COSTLY_WIN, outcome }),
+      );
+      const salvaged = state.economy.ledger.filter(
+        (t) => t.kind === "salvage",
+      ).length;
+      const wrecked = state.overworld.wrecks?.length ?? 0;
+      expect(salvaged + wrecked, outcome).toBe(1);
+    }
+  });
+
+  it("pays the auto-resolver's losses the same way: its result goes through the same door", () => {
+    // Every mech the auto-resolver fields is destroyed, whatever it rolls.
+    const resolver = new AutoResolveMissionResolver({
+      squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+      mechRater: new LoadoutMechRater(
+        new StaticPartCatalogue(STARTER_PARTS),
+        MECH_RATING_TUNING,
+        UPGRADE_TUNING,
+      ),
+      tuning: {
+        ...AUTO_RESOLVE_TUNING,
+        mechDestructionChance: { won: 1, extracted: 1, lost: 1 },
+      },
+    });
+    const outcomes = new Set<string>();
+    for (let seed = 1; seed <= 12; seed++) {
+      const { state } = launchWith(resolver, seed);
+      const result = state.overworld.lastMissionResult;
+      if (result === undefined) throw new Error("no result");
+      outcomes.add(result.outcome);
+      expect(result.mechsDestroyed).toEqual(["mech-1"]);
+      const salvage = state.economy.ledger.filter((t) => t.kind === "salvage");
+      if (result.outcome === "lost") {
+        expect(salvage, `seed ${String(seed)}`).toEqual([]);
+        expect(result.salvageCredits).toBeUndefined();
+      } else {
+        expect(
+          salvage.map((t) => t.amount),
+          `seed ${String(seed)}`,
+        ).toEqual([SALVAGE]);
+        expect(result.salvageCredits).toBe(SALVAGE);
+      }
+    }
+    // The seeds must reach a held field and a lost one, or this proves half.
+    expect(outcomes.has("lost")).toBe(true);
+    expect([...outcomes].some((each) => each !== "lost")).toBe(true);
   });
 });
 

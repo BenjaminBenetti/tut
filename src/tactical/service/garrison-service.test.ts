@@ -121,6 +121,37 @@ describe("garrisonCandidates", () => {
     expect(has(0, 6)).toBe(false);
   });
 
+  it("keeps off a forward extraction point's tiles (#1179)", () => {
+    const forward = [at(10, 10), at(11, 10)];
+    const base = field();
+    const mission: TacticalState = {
+      ...base,
+      map: {
+        ...base.map,
+        hooks: {
+          ...base.map.hooks,
+          objectives: [
+            ...base.map.hooks.objectives,
+            {
+              id: "hook-forward",
+              kind: HookKinds.FORWARD_EXTRACTION,
+              tiles: forward,
+              requiredPass: 3,
+            },
+          ],
+        },
+      },
+    };
+    const on = (tiles: readonly TileCoord[], x: number, z: number) =>
+      tiles.some((tile) => tile.x === x && tile.z === z);
+    expect(on(garrisonCandidates(base, GARRISON_TUNING), 10, 10)).toBe(true);
+    const candidates = garrisonCandidates(mission, GARRISON_TUNING);
+    for (const tile of forward) {
+      expect(on(candidates, tile.x, tile.z)).toBe(false);
+    }
+    expect(on(candidates, 12, 10)).toBe(true);
+  });
+
   it("drops ground the deploy zone cannot walk to, and counts a destroyed nest as no longer in the way", () => {
     const builder = new FixtureMapBuilder(20, 20, 2)
       .fillGround()

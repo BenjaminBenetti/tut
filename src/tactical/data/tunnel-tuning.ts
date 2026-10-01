@@ -11,7 +11,14 @@ import { BREACHING_CHARGE } from "./equipment";
  *
  * - **Fuse 3 turns**, the arc's number: the charge set on turn T goes
  *   off as turn T+3 opens, so the force holds the mouth, or at least
- *   the ground near it, through three bug phases.
+ *   the ground near it, through three bug phases. Measured against a
+ *   pullable charge (C2b-2-defence.md, 32 seeds a cell): at 3 the new
+ *   player wins 27/32 in act 2 and 31/32 in act 3, the expert 31 and
+ *   32; at 4 the new player's act 2 fell to 16/32 while act 3 held
+ *   28/32, and at 2 act 3 was 16/16 at 16 seeds.
+ * - **One melee attack pulls a charge**, Ben's rule (2026-09-28): the
+ *   player has to hold the mouth until it blows, not set it and walk
+ *   away. It is the rule, not a knob to calibrate with.
  * - **The breaching charge's blast** (#1132): 20 damage, radius 3,
  *   demolition force 3. The arc says the mission reuses it, and a mouth
  *   collapsing hurts whoever stands beside it as a breach would.
@@ -35,6 +42,7 @@ import { BREACHING_CHARGE } from "./equipment";
 export const TUNNEL_TUNING: TunnelTuning = {
   fuseTurns: 3,
   chargeEquipmentId: BREACHING_CHARGE.id,
+  meleeHitsToDisarm: 1,
   firstSurfaceTurn: 2,
   surfaceEvery: 3,
 };

@@ -292,8 +292,25 @@ describe("the Spore Platform's core, reached through the hatch (arc §6.9)", () 
     const guards = core.units.filter(
       (unit) => core.templates[unit.templateId]?.name === "Hive Guard",
     );
-    expect(posts.length).toBeGreaterThan(0);
-    expect(guards).toHaveLength(posts.length);
+    expect(posts.length).toBeGreaterThan(PLATFORM_ASSAULT_TUNING.guards);
+    // The first posts are manned, one Hive Guard on each, and no more.
+    expect(guards).toHaveLength(PLATFORM_ASSAULT_TUNING.guards);
+    expect(guards.map((unit) => key(unit.pos))).toEqual(
+      posts
+        .slice(0, PLATFORM_ASSAULT_TUNING.guards)
+        .map((hook) => key(hook.tiles[0] ?? { x: -1, y: -1, z: -1 })),
+    );
+    // The first wall pods are nests; the rest stay dormant.
+    const pods = core.map.hooks.objectives.filter(
+      (hook) => hook.kind === HookKinds.EGG_SPAWNER,
+    );
+    expect(pods.length).toBeGreaterThan(PLATFORM_ASSAULT_TUNING.wallNests);
+    const nests = core.spawners.filter((s) => s.variant !== "platform-core");
+    expect(nests.map((s) => key(s.pos))).toEqual(
+      pods
+        .slice(0, PLATFORM_ASSAULT_TUNING.wallNests)
+        .map((hook) => key(hook.tiles[0] ?? { x: -1, y: -1, z: -1 })),
+    );
 
     expect(calls).toHaveLength(1);
     expect(calls[0]?.core).toEqual(spawnerMiddleTile(coreSpawner));

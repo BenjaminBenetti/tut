@@ -3,14 +3,19 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { DIRECTIONS } from "../../core/model/direction";
 import { rectContains } from "../../core/service/grid-math";
+import { SurfaceIds } from "../../mapgen/data/surfaces";
+import { HookKinds } from "../../mapgen/model/hook";
 import { PassMask } from "../../mapgen/model/pass-mask";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import {
   dropshipBoardingTiles,
   dropshipFootprint,
 } from "../../mapgen/service/dropship-site-layout";
 import { MODEL_MANIFEST } from "../data/model-manifest";
+import { tileTop } from "../view/tactical-map-view";
 import { resolveDropshipModels } from "./dropship-model-resolver";
+import { resolveForwardDropships } from "./forward-dropship-resolver";
 import { resolveMapModels, mapModelIds } from "./map-model-resolver";
 
 /** Reads the authored contact nodes from the real GLB; no geometry is fabricated for this check. */
@@ -110,4 +115,45 @@ describe("dropship scene mapping", () => {
       expect(MODEL_MANIFEST[model!.modelId].footprint).toEqual({ w: 5, d: 7 });
     },
   );
+
+  it("sets a forward point's ship on its berth, held its lift above the floor (#1179)", () => {
+    // A passage the point's width with banks a layer up: the ship
+    // cannot land, so it holds a layer up over the bank.
+    const point: TileCoord[] = [];
+    for (let z = 10; z < 14; z++) {
+      for (let x = 10; x < 14; x++) point.push({ x, y: 2, z });
+    }
+    const builder = new FixtureMapBuilder(24, 24, 6).fillGround(2);
+    for (let z = 0; z < 24; z++) {
+      for (let x = 0; x < 24; x++) {
+        if (x >= 10 && x < 14) continue;
+        builder
+          .removeTile({ x, y: 2, z })
+          .tile({ x, y: 3, z }, SurfaceIds.ROCK);
+      }
+    }
+    const map = builder
+      .deploy([{ x: 11, y: 2, z: 20 }])
+      .objective(HookKinds.FORWARD_EXTRACTION, point, PassMask.ALL)
+      .build();
+    const [ship] = resolveForwardDropships(map);
+    expect(ship).toBeDefined();
+    expect(ship!.lift).toBe(1);
+    const models = resolveDropshipModels(map);
+    expect(models).toEqual([
+      {
+        modelId: "tdf.dropship",
+        level: 2,
+        position: {
+          x: ship!.footprint.x + ship!.footprint.w / 2,
+          y: tileTop(3),
+          z: ship!.footprint.z + ship!.footprint.d / 2,
+        },
+        turns: { s: 0, w: 1, n: 2, e: 3 }[ship!.facing],
+        tile: point[0],
+        occupiedTiles: ship!.occupiedTiles,
+      },
+    ]);
+    expect(mapModelIds(resolveMapModels(map))).toContain("tdf.dropship");
+  });
 });

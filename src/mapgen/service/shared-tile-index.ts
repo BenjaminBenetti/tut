@@ -26,7 +26,7 @@ const INDEXES = new WeakMap<TileGridSource, IndexedGrid>();
 
 /**
  * The `TileIndex` over `source`, built the first time any rule asks for
- * it and shared by every rule after (#1179). Indexing a 72×184 cavern
+ * it and shared by every rule after (#1179). Indexing a Great Hive cavern
  * costs a few milliseconds, and the tactical rules used to pay it at
  * every call: once per overwatch check on every step a bug took, once
  * per shot a behaviour priced, once per vision recompute. Sharing the

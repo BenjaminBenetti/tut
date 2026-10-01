@@ -8,20 +8,23 @@ import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-stor
 import type { GameState } from "../../save/model/game-state";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
+import { advanceStage } from "../../tactical/model/advance-stage-command";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { startMission } from "../../tactical/model/start-mission-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
-import { isCombatUnit } from "../../tactical/model/unit";
+import { isCombatUnit, isStandingForce } from "../../tactical/model/unit";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { EXPERT_OBJECTIVE_STRATEGIES } from "../../tactical/service/players/expert-objective-strategies.test-helper";
 import { createExpertPlayerPolicy } from "../../tactical/service/players/expert-player-policy.test-helper";
 import { createNewPlayerPolicy } from "../../tactical/service/players/new-player-policy.test-helper";
 import { OBJECTIVE_STRATEGIES } from "../../tactical/service/players/objective-strategies.test-helper";
 import type { PlayerRules } from "../../tactical/service/players/player-combat.test-helper";
 import type {
   CommandApplier,
+  StageAdvance,
   TacticalPlayer,
 } from "../../tactical/service/players/tactical-player.test-helper";
 import { playMission } from "../../tactical/service/players/tactical-player.test-helper";
@@ -55,6 +58,10 @@ import { composeGame } from "./game-composition";
 //        ──► StartMission(everyone) ──► meta.rng := luck(seed, player)
 //        ──► playMission(player, dispatcher.process) ──► RunResult
 //
+// A linked mission (the Spore Platform) goes on from a won stage with
+// the dispatcher's own AdvanceStage, in the same campaign, so the
+// survivors carry their damage and ammunition to the next map.
+//
 // The map and the bugs' opening come from the offer, so both players
 // meet the same mission on the same seed. The dice of every command
 // after the start are forked from `meta.rng`, which the run replaces
@@ -74,15 +81,22 @@ export type PlayerId = "new" | "expert";
 /** Every player id, in report order. */
 export const PLAYER_IDS: readonly PlayerId[] = ["new", "expert"];
 
-/** The modelled player called `id`. */
+/**
+ * The modelled player called `id`: its policy, and the strategies it
+ * reads the objectives with — the shared table for the new player, the
+ * expert's own (the shared one with its rescue laid over it) for the
+ * expert.
+ */
 export function playerFor(id: PlayerId): TacticalPlayer {
-  return {
-    policy:
-      id === "new"
-        ? createNewPlayerPolicy(CALIBRATION_RULES)
-        : createExpertPlayerPolicy(CALIBRATION_RULES),
-    strategies: OBJECTIVE_STRATEGIES,
-  };
+  return id === "new"
+    ? {
+        policy: createNewPlayerPolicy(CALIBRATION_RULES),
+        strategies: OBJECTIVE_STRATEGIES,
+      }
+    : {
+        policy: createExpertPlayerPolicy(CALIBRATION_RULES),
+        strategies: EXPERT_OBJECTIVE_STRATEGIES,
+      };
 }
 
 /** Turns a mission gets before the force abandons it. */
@@ -184,11 +198,13 @@ export function playRun(spec: RunSpec): RunResult {
   const began = performance.now();
   const { game, cell, campaign, opening } = startRun(spec);
   const meter = createMeter();
+  const session = calibrationSession(game, campaign, meter);
   const play = playMission(
     opening,
     playerFor(spec.player),
-    calibrationApplier(game, campaign, meter),
+    session.apply,
     CALIBRATION_TURN_CAP,
+    session.advance,
   );
   const outcome = play.mission.outcome;
   if (outcome === undefined) {
@@ -319,18 +335,27 @@ export function createMeter(): RunMeter {
   return { bugPhaseMs: [], shots: 0, hits: 0 };
 }
 
+/** The rules a run is played with: its tactical commands, and a linked mission's next stage. */
+export interface CalibrationSession {
+  readonly apply: CommandApplier;
+  readonly advance: StageAdvance;
+}
+
 /**
  * Applies tactical commands through the shipped dispatcher, starting
  * from `state` (the campaign around the mission), timing each EndTurn
- * and counting the force's shots from the events.
+ * and counting the force's shots from the events; and advances a
+ * linked mission over the same campaign, dispatching AdvanceStage from
+ * wherever the last command left it, so the next map starts where the
+ * last one ended.
  */
-export function calibrationApplier(
+export function calibrationSession(
   game: GameComposition,
   state: GameState,
   meter: RunMeter,
-): CommandApplier {
+): CalibrationSession {
   let campaign = state;
-  return (
+  const apply = (
     mission: TacticalState,
     command: TacticalCommand,
   ): Result<TacticalState, string> => {
@@ -356,6 +381,18 @@ export function calibrationApplier(
     const next = campaign.activeMission;
     return next === undefined ? err("no-active-mission") : ok(next);
   };
+  const advance = (mission: TacticalState): Result<TacticalState, string> => {
+    const before = { ...campaign, activeMission: mission };
+    const applied = game.dispatcher.process(
+      before,
+      advanceStage(mission.missionId),
+    );
+    if (!applied.ok) return err(applied.error.code);
+    campaign = applied.value.state;
+    const next = campaign.activeMission;
+    return next === undefined ? err("no-active-mission") : ok(next);
+  };
+  return { apply, advance };
 }
 
 // ===========================================
@@ -367,7 +404,12 @@ function luckSeed(campaignSeed: number, luck: PlayerId): number {
   return hashSeed(`calibration-luck:${String(campaignSeed)}:${luck}`);
 }
 
-/** Squads and mechs deployed at the opening that did not extract. */
+/**
+ * Squads and mechs deployed at the opening that did not come through:
+ * neither extracted nor, on a mission won on the spot (the platform
+ * core), still standing. A survivor carried to a later stage keeps its
+ * id, so the opening's force is read against the last map.
+ */
 function lossesOf(
   opening: TacticalState,
   end: TacticalState,
@@ -375,7 +417,11 @@ function lossesOf(
   const deployed = opening.units.filter(
     (u) => u.team === "tdf" && isCombatUnit(u),
   );
-  const out = new Set(end.extracted.map((u: Unit) => u.id));
+  const out = new Set(
+    [...end.extracted, ...end.units.filter(isStandingForce)].map(
+      (u: Unit) => u.id,
+    ),
+  );
   const lost = deployed.filter((u) => !out.has(u.id));
   return {
     units: lost.length,

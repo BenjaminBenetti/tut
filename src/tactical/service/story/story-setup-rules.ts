@@ -16,7 +16,7 @@ import { LIVE_SPECIMEN_SETUP } from "./live-specimen-setup";
  * ```
  *   first-skyfall  ──► (none: the crash site's setup is the whole of it)
  *   live-specimen  ──► live-specimen-setup.ts   the capture decides, the nests are
- *                                               optional, two lurkers by the nests
+ *                                               optional, four lurkers by the nests
  *   intact-pod     ──► intact-pod-setup.ts      the pod to burn becomes a pod of
  *                                               ours to keep until the drop
  * ```

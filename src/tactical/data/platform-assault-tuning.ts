@@ -18,8 +18,24 @@ import type { PlatformAssaultTuning } from "../model/platform-assault-tuning";
  * - **Escort share: 0.15**, the finale's 15 that the bestiary leaves out
  *   of its 85 rolled (arc §8, footnote): of the core's hatchlings and
  *   duct waves, 15 in 100 are the Sovereign's escort species.
+ * - **Two wall nests of the chamber's four, three guards on its four
+ *   posts** (calibrated on the filled finale force,
+ *   `docs/design/calibration/C3b-story.md`). With every pod a nest the
+ *   hatchlings never stopped: a new player, who shoots whatever is
+ *   nearest and never a nest, was still trading shots at the turn cap
+ *   in 14 of 16 assaults and won 2. Two nests leave gaps in the stream
+ *   for the squad to reach the core; the empty post opens one flank.
+ *   The new player wins 20 of 32 (arc D5's 55 %, at 16 seeds 10), the
+ *   expert all 32.
+ *
+ * ```
+ *   core chamber   wall pods  ● ● ○ ○   (● a nest, ○ dormant dressing)
+ *                  posts      G G G ·   (either side of the dais)
+ * ```
  */
 export const PLATFORM_ASSAULT_TUNING: PlatformAssaultTuning = {
   coreHp: 200,
   escortShare: 0.15,
+  wallNests: 2,
+  guards: 3,
 };

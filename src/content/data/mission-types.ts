@@ -232,8 +232,9 @@ export const HIVE_ASSAULT: MissionType = {
 
 /**
  * A city at the spread threshold is tunnelling toward its neighbour
- * (arc §6.7): set a charge on each of the three tunnel mouths, survive
- * the three-turn fuses, then extract. A win holds the city's spread for
+ * (arc §6.7): set a charge on each of the three tunnel mouths, hold
+ * each through its three-turn fuse (a bug's bite pulls a burning
+ * charge, Ben's rule of 2026-09-28), then extract. A win holds the city's spread for
  * 10 days; the overworld's offer and consequence rules say how.
  *
  * Numbers against the clearance, the arc's "ordinary" scale: the same
@@ -253,7 +254,7 @@ export const TUNNEL_SABOTAGE: MissionType = {
   id: "tunnel-sabotage",
   name: "Tunnel Sabotage",
   description:
-    "The swarm is tunnelling toward the next city. Set a charge on each of the three tunnel mouths, hold while the fuses burn, then extract.",
+    "The swarm is tunnelling toward the next city. Set a charge on each of the three tunnel mouths and hold each until it blows: a bug's bite pulls a burning charge. Then extract.",
   difficultyBand: { min: 1, max: 10 },
   rewardPerDifficulty: 300,
   techRewardBase: 5,

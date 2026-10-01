@@ -1,4 +1,5 @@
 import { PLATFORM_ASSAULT_TUNING } from "../../data/platform-assault-tuning";
+import { WAVE_PRESSURE_TUNING } from "../../data/wave-pressure-tuning";
 import type { MissionSetupRules } from "../../model/mission-setup-rule";
 import { ALPHA_HUNT_SETUP } from "./alpha-hunt-setup";
 import { CRASH_SITE_SETUP } from "./crash-site-setup";
@@ -10,6 +11,7 @@ import { HIVE_ASSAULT_SETUP } from "./hive-assault-setup";
 import { INFESTATION_CLEARANCE_SETUP } from "./infestation-clearance-setup";
 import { TUNNEL_SABOTAGE_SETUP } from "./tunnel-sabotage-setup";
 import { createSporePlatformSetup } from "./spore-platform-setup";
+import { withWavePressure } from "./wave-pressure-setup";
 import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
 
 // ===========================================
@@ -34,6 +36,16 @@ import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
  *                                                               core: core + destroy-platform-core, guards, boss
  * ```
  *
+ * Defend Installation and Wreck Recovery press their edge waves harder
+ * than the shared schedule (#1179): each is wrapped in
+ * `withWavePressure` with its entry in `WAVE_PRESSURE_TUNING`, so every
+ * wave surges (and a wreck's first comes a turn sooner) once the type's
+ * own setup has run. Tunnel Sabotage is wrapped the same way, but its
+ * entry lands on Act III offers only (`onlyInAct`): since a bug could
+ * pull a burning charge (Ben's rule, 2026-09-28) Act II's pressure is
+ * at the mouths, on the shared waves, and Act III's first wave comes
+ * two turns sooner as well.
+ *
  * A `Record` over the closed `MissionTypeId` union, so a type added to
  * `MISSION_TYPES` without a setup rule fails to compile. The composition
  * root passes it through `MissionStartDeps.setupRules`; tests substitute
@@ -41,12 +53,21 @@ import { WRECK_RECOVERY_SETUP } from "./wreck-recovery-setup";
  */
 export const MISSION_SETUP_RULES: MissionSetupRules = {
   "infestation-clearance": INFESTATION_CLEARANCE_SETUP,
-  "defend-installation": DEFEND_INSTALLATION_SETUP,
+  "defend-installation": withWavePressure(
+    DEFEND_INSTALLATION_SETUP,
+    WAVE_PRESSURE_TUNING.defence,
+  ),
   "crash-site": CRASH_SITE_SETUP,
-  "wreck-recovery": WRECK_RECOVERY_SETUP,
+  "wreck-recovery": withWavePressure(
+    WRECK_RECOVERY_SETUP,
+    WAVE_PRESSURE_TUNING.wreck,
+  ),
   evacuation: EVACUATION_SETUP,
   "hive-assault": withGreatHiveSetup(HIVE_ASSAULT_SETUP, placeCavernBroods),
-  "tunnel-sabotage": TUNNEL_SABOTAGE_SETUP,
+  "tunnel-sabotage": withWavePressure(
+    TUNNEL_SABOTAGE_SETUP,
+    WAVE_PRESSURE_TUNING.tunnels,
+  ),
   "alpha-hunt": ALPHA_HUNT_SETUP,
   "spore-platform": createSporePlatformSetup(PLATFORM_ASSAULT_TUNING),
 };

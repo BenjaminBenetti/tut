@@ -13,8 +13,10 @@ import type {
   ObjectivePresentation,
   ObjectiveRow,
   ObjectiveRowContext,
+  ObjectiveRowCountdown,
 } from "../../model/objective-presentation";
 import { formatWhole } from "../format";
+import { countdownText, DEADLINE_URGENT_TURNS } from "./turn-countdown";
 
 // ===========================================
 // Constants
@@ -26,6 +28,9 @@ const STATUS_ICONS: Readonly<Record<DefendStatus, IconId>> = {
   failed: "warning",
   open: "defend",
 };
+
+/** `data-role` of the hold's countdown line. */
+const HOLD_ROLE = "hold";
 
 /** The label's verb per status. */
 const STATUS_VERBS: Readonly<Record<DefendStatus, string>> = {
@@ -41,11 +46,14 @@ const STATUS_VERBS: Readonly<Record<DefendStatus, string>> = {
 /**
  * Hold the installation's generators (#1175). Named for what it holds,
  * with its progress line under the label: "2 / 3 generators · wave 3 /
- * 5" is wider than the rail leaves beside a label.
+ * 5" is wider than the rail leaves beside a label. Once the last wave
+ * is in, the hold counts down under it (#1179): the defence is held
+ * when it runs out, or sooner if the bugs left are killed.
  *
  * ```
  *   ⛨ Defend the sensor array
  *     2 / 3 generators · wave 5 / 5 · 4 bugs left
+ *     Hold ends in 3 turns
  * ```
  */
 export const DEFEND_GENERATORS_PRESENTATION: ObjectivePresentation<
@@ -80,10 +88,10 @@ function liveProgress(
 
 /**
  * The installation by name, generators standing over total, the wave
- * count, and once the last wave is in, how many bugs are left to kill.
- * Failed reads as such, so the player knows the objective is gone
- * before the debrief. Without a reading the row falls back to the
- * stored flags and shows no numbers.
+ * count, and once the last wave is in, how many bugs are left to kill
+ * and how long the hold still runs. Failed reads as such, so the player
+ * knows the objective is gone before the debrief. Without a reading the
+ * row falls back to the stored flags and shows no numbers.
  */
 function defenceRow(
   objective: DefendGeneratorsObjective,
@@ -93,6 +101,10 @@ function defenceRow(
   const status: DefendStatus =
     progress?.status ??
     (objective.failed ? "failed" : objective.complete ? "complete" : "open");
+  const hold =
+    progress === undefined || status !== "open"
+      ? undefined
+      : holdLine(progress.holdTurnsLeft);
   return {
     icon: STATUS_ICONS[status],
     label: `${STATUS_VERBS[status]} ${installationName(objective)}`,
@@ -106,6 +118,29 @@ function defenceRow(
             role: "defence-progress",
           },
         }),
+    ...(hold === undefined ? {} : { countdowns: [hold] }),
+  };
+}
+
+/**
+ * The hold's countdown to the end of the turn it runs out on, worded
+ * and pulsing as every countdown on the tracker does: 3 turns left
+ * reads "Hold ends in 3 turns", the last "Hold ends at the end of this
+ * turn". None before the hold has started or once it has run out.
+ *
+ * @param turnsLeft - `DefenceProgress.holdTurnsLeft`.
+ */
+function holdLine(
+  turnsLeft: number | undefined,
+): ObjectiveRowCountdown | undefined {
+  if (turnsLeft === undefined || turnsLeft < 1) {
+    return undefined;
+  }
+  return {
+    text: countdownText("Hold ends", turnsLeft),
+    turnsLeft,
+    urgent: turnsLeft <= DEADLINE_URGENT_TURNS,
+    role: HOLD_ROLE,
   };
 }
 

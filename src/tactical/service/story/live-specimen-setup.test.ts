@@ -175,7 +175,7 @@ describe("LIVE_SPECIMEN_SETUP (campaign arc §6.9, #1179)", () => {
       "intact-pod",
     ]);
     expect(LIVE_SPECIMEN_SPECIES).toBe("lurker");
-    expect(LIVE_SPECIMEN_PLACED_LURKERS).toBe(2);
+    expect(LIVE_SPECIMEN_PLACED_LURKERS).toBe(4);
   });
 
   it("keeps the nests as optional objectives and makes the capture of a lurker the one that decides", () => {
@@ -213,17 +213,29 @@ describe("LIVE_SPECIMEN_SETUP (campaign arc §6.9, #1179)", () => {
     ]);
   });
 
-  it("stands a lurker by each nest, nearest the landing first, on ground the squad can walk to", () => {
+  it("stands a lurker by each nest in turn, nearest the landing first, on ground the squad can walk to", () => {
     const { typed, story } = setUp(field());
     if (!story.ok) throw new Error(story.error.kind);
     const lurkers = placed(typed, story.value);
     expect(lurkers).toHaveLength(LIVE_SPECIMEN_PLACED_LURKERS);
-    expect(lurkers.map((unit) => unit.sourceId)).toEqual(["lurker", "lurker"]);
-    expect(lurkers.map((unit) => unit.id)).toEqual(["unit-1", "unit-2"]);
-    expect(lurkers.map((unit) => unit.hp)).toEqual([LURKER.hp, LURKER.hp]);
+    expect(lurkers.map((unit) => unit.sourceId)).toEqual([
+      "lurker",
+      "lurker",
+      "lurker",
+      "lurker",
+    ]);
+    expect(lurkers.map((unit) => unit.id)).toEqual([
+      "unit-1",
+      "unit-2",
+      "unit-3",
+      "unit-4",
+    ]);
+    expect(lurkers.every((unit) => unit.hp === LURKER.hp)).toBe(true);
+    // Two nests, four lurkers: the third and fourth wrap round to the
+    // nearest nest again.
     const nests = typed.spawners;
     lurkers.forEach((lurker, den) => {
-      const nest = nests[den];
+      const nest = nests[den % nests.length];
       if (nest === undefined) throw new Error("fixture has two nests");
       expect(manhattanDistance(lurker.pos, nest.pos)).toBeLessThanOrEqual(
         nest.hatchRadius,
@@ -242,7 +254,7 @@ describe("LIVE_SPECIMEN_SETUP (campaign arc §6.9, #1179)", () => {
     const { typed, story } = setUp(map);
     if (!story.ok) throw new Error(story.error.kind);
     const lurkers = placed(typed, story.value);
-    expect(lurkers).toHaveLength(2);
+    expect(lurkers).toHaveLength(LIVE_SPECIMEN_PLACED_LURKERS);
     for (const lurker of lurkers) {
       expect(manhattanDistance(lurker.pos, at(10, 10))).toBeLessThanOrEqual(
         typed.spawners[0]?.hatchRadius ?? 0,
@@ -270,7 +282,7 @@ describe("LIVE_SPECIMEN_SETUP (campaign arc §6.9, #1179)", () => {
     const { typed, story } = setUp(map);
     if (!story.ok) throw new Error(story.error.kind);
     const lurkers = placed(typed, story.value);
-    expect(lurkers).toHaveLength(2);
+    expect(lurkers).toHaveLength(LIVE_SPECIMEN_PLACED_LURKERS);
     const banned = new Set([...landing, ...EXTRACTION].map(keyOf));
     for (const lurker of lurkers) {
       expect(banned.has(keyOf(lurker.pos))).toBe(false);

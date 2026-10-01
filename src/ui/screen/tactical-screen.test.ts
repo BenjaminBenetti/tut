@@ -7,6 +7,8 @@ import { SequentialIdGenerator } from "../../core/service/sequential-id-generato
 import { SimpleEventBus } from "../../core/service/simple-event-bus";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
+import { HookKinds } from "../../mapgen/model/hook";
+import { PassMask } from "../../mapgen/model/pass-mask";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
@@ -60,6 +62,7 @@ import type {
   TacticalUpdateHooks,
 } from "../model/tactical-scene-host";
 import { campaignOnDay, missionAt } from "../view/mission-fixtures.test-helper";
+import { FORWARD_CLOSING_STEP } from "../service/boarding-track";
 import { TacticalScreen } from "./tactical-screen";
 import { describeTacticalError } from "../../tactical/model/tactical-error";
 
@@ -1292,6 +1295,86 @@ describe("TacticalScreen between a linked mission's stages (#1179)", () => {
     expect(stages()).toEqual(["The hull:cleared", "The core:current"]);
     store.replace(state);
     expect(stages()).toEqual([]);
+  });
+});
+
+// ===========================================
+// A forward extraction point (#1179)
+// ===========================================
+
+/**
+ * `state` with a forward extraction point on its mission's map: a
+ * Great Hive's second drop ship, on the first landing tile's column.
+ */
+function withForwardPoint(state: GameState): GameState {
+  const mission = state.activeMission;
+  if (!mission) throw new Error("fixture needs a mission");
+  const hooks = mission.map.hooks;
+  const forward = {
+    id: "hook-forward",
+    kind: HookKinds.FORWARD_EXTRACTION,
+    tiles: hooks.extraction.tiles.slice(0, 1),
+    requiredPass: PassMask.ALL,
+  };
+  return {
+    ...state,
+    activeMission: {
+      ...mission,
+      map: {
+        ...mission.map,
+        hooks: { ...hooks, objectives: [...hooks.objectives, forward] },
+      },
+    },
+  };
+}
+
+/** `state` with every objective of its mission met: the force only has to board. */
+function objectivesMet(state: GameState): GameState {
+  const mission = state.activeMission;
+  if (!mission) throw new Error("fixture needs a mission");
+  return {
+    ...state,
+    activeMission: {
+      ...mission,
+      objectives: mission.objectives.map((objective) => ({
+        ...objective,
+        complete: true,
+      })),
+    },
+  };
+}
+
+describe("TacticalScreen on a map with a forward extraction point (#1179)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  /** The tracker's summary line. */
+  const summary = () =>
+    root.querySelector<HTMLElement>(
+      '#objectives [data-field="objective-summary"]',
+    )?.textContent ?? "";
+
+  it("closes the tracker on boarding at either point, and only there", () => {
+    const state = objectivesMet(inMission());
+    const store = new FakeStore(withForwardPoint(state));
+    const { router } = fakeRouter();
+    new TacticalScreen({
+      router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      missionTypes: MISSION_TYPES,
+      sceneHost: new FakeHost(),
+    }).mount(root);
+    expect(summary()).toContain(FORWARD_CLOSING_STEP);
+    store.replace(state);
+    expect(summary()).toContain("board the drop ship");
+    expect(summary()).not.toContain(FORWARD_CLOSING_STEP);
   });
 });
 

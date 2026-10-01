@@ -10,7 +10,11 @@ import type { ReachabilitySnapshot } from "../../mapgen/service/hatch-space";
 import { snapshotMap } from "../../mapgen/service/hatch-space";
 import type { Brood, BroodId, BroodWakeZone } from "../model/brood";
 import { DEFAULT_BROOD_RADIUS } from "../model/brood";
-import type { BroodSetupDeps, BroodTuning } from "../model/brood-tuning";
+import type {
+  BroodSetupDeps,
+  BroodTuning,
+  BroodWakeTuning,
+} from "../model/brood-tuning";
 import type { BugUnitSource } from "../model/bug-unit-source";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
@@ -156,14 +160,16 @@ export function placeDormantBrood(
  *                                            ──► rng.shuffle, first count
  * ```
  *
- * The radius is the hook's `meta.radius` (`DEFAULT_BROOD_RADIUS` when
- * absent). Units are not known here; `placeBugsAt` skips a tile a unit
- * or spawner turns out to hold.
+ * The radius is the brood's wake-zone radius (`wakeRadius`), or the
+ * hook's whole `meta.radius` (`DEFAULT_BROOD_RADIUS` when absent) when
+ * no wake tuning is given. Units are not known here; `placeBugsAt` skips
+ * a tile a unit or spawner turns out to hold.
  *
  * @param map - The generated map.
  * @param hook - A `brood-chamber` hook.
  * @param count - How many tiles at most.
  * @param rng - The stream the order is drawn from (one shuffle).
+ * @param wake - The wake tuning whose zone the tiles lie in; absent, the whole chamber.
  * @returns Distinct tiles, fewer than `count` when the chamber is small.
  */
 export function broodPositions(
@@ -171,9 +177,19 @@ export function broodPositions(
   hook: Hook,
   count: number,
   rng: Rng,
+  wake?: BroodWakeTuning,
 ): TileCoord[] {
   const snapshot = snapshotMap(map);
-  return chamberTiles(snapshot, hook, hookTileKeys(map, snapshot), count, rng);
+  const radius =
+    wake === undefined ? chamberRadiusOf(hook) : wakeRadius(hook, wake);
+  return chamberTiles(
+    snapshot,
+    hook,
+    radius,
+    hookTileKeys(map, snapshot),
+    count,
+    rng,
+  );
 }
 
 // ===========================================
@@ -194,7 +210,7 @@ export function broodPositions(
  *     species ~ state.bugMix, else tuning.defaultMix   (hookRng "species", one pick per bug)
  *     tiles   = broodPositions(size × slack)            (hookRng "positions")
  *     placeDormantBrood per species, in first-rolled order,
- *       id brood-<chamberId>, wake { hook tile, meta.radius }, label "<compass> chamber"
+ *       id brood-<chamberId>, wake { hook tile, wakeRadius }, label "<compass> chamber"
  * ```
  *
  * Seeded from the mission, so the same mission always sleeps the same
@@ -235,16 +251,18 @@ export function placeCavernBroods(
     if (slots.length === 0) {
       continue;
     }
+    const radius = wakeRadius(hook, content.tuning.wake);
     const candidates = chamberTiles(
       snapshot,
       hook,
+      radius,
       reserved,
       size * BROOD_CANDIDATE_SLACK,
       hookRng.fork("positions"),
     );
     const brood = {
       broodId: broodIdOf(hook),
-      wake: { centre: firstTile(hook), radius: broodRadiusOf(hook) },
+      wake: { centre: firstTile(hook), radius },
       label: chamberLabel(hook, map),
     };
     let cursor = 0;
@@ -288,6 +306,25 @@ export function broodSize(
   return Math.min(tuning.maxSize, Math.max(tuning.minSize, raw));
 }
 
+/**
+ * How far a chamber's brood wakes from, and sleeps within: the tuning's
+ * share of the chamber's radius, never under its least radius.
+ *
+ * ```
+ *   max(minZoneRadius, round(meta.radius × zoneShare))
+ * ```
+ *
+ * @param hook - The `brood-chamber` hook; its `meta.radius` is the chamber's.
+ * @param wake - The wake tuning.
+ * @returns The wake zone's radius in tiles.
+ */
+export function wakeRadius(hook: Hook, wake: BroodWakeTuning): number {
+  return Math.max(
+    wake.minZoneRadius,
+    Math.round(chamberRadiusOf(hook) * wake.zoneShare),
+  );
+}
+
 // ===========================================
 // Helpers
 // ===========================================
@@ -299,7 +336,7 @@ function broodIdOf(hook: Hook): BroodId {
 }
 
 /** The hook's `meta.radius`, or `DEFAULT_BROOD_RADIUS` when it is missing or not positive. */
-function broodRadiusOf(hook: Hook): number {
+function chamberRadiusOf(hook: Hook): number {
   const radius = hook.meta?.radius;
   return typeof radius === "number" && radius > 0
     ? radius
@@ -322,10 +359,11 @@ function hookTileKeys(
   return keys;
 }
 
-/** The chamber's free standable tiles (see `broodPositions`), shuffled, the first `count`. */
+/** The free standable tiles within `radius` of the chamber's hook (see `broodPositions`), shuffled, the first `count`. */
 function chamberTiles(
   snapshot: ReachabilitySnapshot,
   hook: Hook,
+  radius: number,
   reserved: ReadonlySet<number>,
   count: number,
   rng: Rng,
@@ -336,7 +374,7 @@ function chamberTiles(
   if (start === undefined || !reach.canOccupy(start, PassMask.INFANTRY)) {
     return [];
   }
-  const zone = { centre: origin, radius: broodRadiusOf(hook) };
+  const zone = { centre: origin, radius };
   const seen = new Set<number>([index.keyOf(start)]);
   const queue = [start];
   // Pushing while iterating is the queue: array iterators see appended tiles.

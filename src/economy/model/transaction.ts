@@ -12,6 +12,7 @@
  * | `purchase`      | −            | buying a squad, part, chassis, deployable |
  * | `sale`          | +            | selling a part                            |
  * | `reward`        | +            | mission payout                            |
+ * | `salvage`       | +            | a mech destroyed on a held field (#1179)  |
  * | `stipend`       | +            | per-day income scaled by unfested Earth   |
  * | `upkeep`        | −            | per-day deployable running cost           |
  * | `repair`        | −            | fixing a damaged mech                     |
@@ -22,6 +23,7 @@ export type TransactionKind =
   | "purchase"
   | "sale"
   | "reward"
+  | "salvage"
   | "stipend"
   | "upkeep"
   | "repair"
@@ -38,6 +40,7 @@ export const TRANSACTION_KINDS = [
   "purchase",
   "sale",
   "reward",
+  "salvage",
   "stipend",
   "upkeep",
   "repair",

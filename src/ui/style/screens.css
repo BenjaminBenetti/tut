@@ -1829,6 +1829,11 @@
   color: var(--ui-warn);
 }
 
+/* A row line to act on: a tunnel charge the bugs pulled (arc §6.7). */
+.tut-hud__objectives .tut-objective-alert {
+  color: var(--ui-danger);
+}
+
 .tut-deadline[data-urgent="true"] {
   color: var(--ui-danger);
   animation: tut-deadline-pulse 1.2s ease-in-out infinite;

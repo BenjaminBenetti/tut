@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import type { MissionTypeId } from "../../content/model/mission-type-id";
+import { MISSION_TYPE_IDS } from "../../content/model/mission-type-id";
 import type { StoryMissionId } from "../../content/model/story-mission-id";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/advance-day-command";
@@ -74,7 +76,7 @@ function infestationOf(state: GameState, cityId: string): number {
  * state the instant win left: the reading this feature must never get
  * wrong is a "won" result the rule takes for a failure.
  */
-const READ_AS_WON: Readonly<Record<string, (won: Won) => void>> = {
+const READ_AS_WON: Readonly<Record<MissionTypeId, (won: Won) => void>> = {
   "infestation-clearance": ({ offer, before, after }) => {
     expect(infestationOf(after, offer.cityId)).toBeLessThan(
       infestationOf(before, offer.cityId),
@@ -195,16 +197,16 @@ describe("the instant win through the shipped composition (#1235)", () => {
       expect(after.overworld.progress.missionsWon).toBe(
         before.overworld.progress.missionsWon + 1,
       );
-      READ_AS_WON[offer.typeId]?.({ offer, before, after, result });
+      READ_AS_WON[offer.typeId]({ offer, before, after, result });
       if (offer.storyId !== undefined) {
         expect(after.overworld.progress.storyWon).toContain(offer.storyId);
       }
     });
   });
 
-  it("covers every mission type with a reading", () => {
+  it("wins at least one offer of every mission type, so every reading runs", () => {
     const types = new Set(CALIBRATION_CELLS.map((cell) => cell.mission));
-    for (const typeId of Object.keys(READ_AS_WON)) {
+    for (const typeId of MISSION_TYPE_IDS) {
       expect(
         types.has(typeId) || types.has(`story:${typeId}`),
         `${typeId} has a cell`,

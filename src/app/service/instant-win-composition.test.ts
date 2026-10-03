@@ -16,6 +16,8 @@ import { creditsFor } from "../../overworld/service/mission-reward-service";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
 import type { GameState } from "../../save/model/game-state";
 import { winMissionInstantly } from "../../tactical/model/win-mission-instantly-command";
+import { debriefTaglineFor } from "../../ui/service/missions/mission-presentation";
+import { storyDebriefTaglineFor } from "../../ui/service/story/story-presentation";
 import { CALIBRATION_CELLS } from "./calibration-cells.test-helper";
 import { prepareRun } from "./calibration-run.test-helper";
 import { SWEEP_RESULTS } from "./campaign-sweep.test-helper";
@@ -144,6 +146,31 @@ const READ_AS_WON: Readonly<Record<MissionTypeId, (won: Won) => void>> = {
   },
 };
 
+/**
+ * What the debrief says after each cell's instant win, keyed by the
+ * cell's mission: the line its story or type presentation picks for a
+ * win, or null where none has one and the outcome's own line stands
+ * (a clearance; the Spore Platform, whose line reads the objectives a
+ * played assault records). Every cell must have an entry.
+ */
+const DEBRIEF_SAYS_WON: Readonly<Record<string, RegExp | null>> = {
+  "infestation-clearance": null,
+  "crash-site": /spore pod is wreckage .* full rewards/,
+  evacuation: /^Every civilian group in .* is aboard/,
+  "defend-installation": /held through every wave/,
+  "tunnel-sabotage": /^Every tunnel mouth under .* is sealed/,
+  "wreck-recovery": /^The wreck was stripped/,
+  "hive-assault": /^The hive core is destroyed/,
+  "alpha-hunt": /^The Broodmother is dead/,
+  "story:first-skyfall": /spore pod is wreckage .* full rewards/,
+  "story:live-specimen": /home alive, in the net/,
+  "story:intact-pod": /^The drop ship lifted the pod with \d+ hp left/,
+  "story:uplink": /held through every wave and locked onto/,
+  "story:great-hive": /^The hive core is destroyed/,
+  "story:launch-window": /the launch is away/,
+  "story:spore-platform": null,
+};
+
 /** Every story mission the spine runs, in the order the campaign meets them. */
 const STORY_SPINE_IDS: readonly StoryMissionId[] = [
   "first-skyfall",
@@ -166,7 +193,7 @@ const WALK_DAY_CAP = 200;
 describe("the instant win through the shipped composition (#1235)", () => {
   describe.each(
     CALIBRATION_CELLS.map((cell, cellIndex) => ({ cell, cellIndex })),
-  )("$cell.id", ({ cellIndex }) => {
+  )("$cell.id", ({ cell, cellIndex }) => {
     it("is won with nobody lost, and the consequence rule reads it as a win", () => {
       const game = composeDevGame();
       const prepared = prepareRun(game, {
@@ -200,6 +227,34 @@ describe("the instant win through the shipped composition (#1235)", () => {
       READ_AS_WON[offer.typeId]({ offer, before, after, result });
       if (offer.storyId !== undefined) {
         expect(after.overworld.progress.storyWon).toContain(offer.storyId);
+      }
+    });
+
+    it("is debriefed as the win", () => {
+      const game = composeDevGame();
+      const prepared = prepareRun(game, {
+        cellIndex,
+        seedIndex: 0,
+        player: "new",
+        luck: "new",
+      });
+      const after = apply(
+        game,
+        prepared.state,
+        winMissionInstantly(prepared.missionId),
+      );
+      const result = after.overworld.lastMissionResult;
+      if (result === undefined) throw new Error("the win was recorded");
+      const ctx = { state: after };
+      const line =
+        storyDebriefTaglineFor(result, ctx) ?? debriefTaglineFor(result, ctx);
+      const expected = DEBRIEF_SAYS_WON[cell.mission];
+
+      if (expected === undefined) throw new Error(`no entry for ${cell.id}`);
+      if (expected === null) {
+        expect(line).toBeUndefined();
+      } else {
+        expect(line).toMatch(expected);
       }
     });
   });

@@ -214,6 +214,52 @@ describe("MissionDetailsView", () => {
       ?.click();
     expect(onPlanDeployment).toHaveBeenCalledTimes(1);
   });
+
+  it("has no Win instantly button unless its owner handles one: a production briefing (#1235)", () => {
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment: vi.fn() },
+    );
+    view.mount(root);
+    const mission = missionAt("mission-1", "cairo", 7);
+    view.update(campaignOnDay(4, [mission]), mission);
+
+    expect(root.querySelector('[data-action="win-instantly"]')).toBeNull();
+    expect(root.textContent).not.toMatch(/win instantly/i);
+  });
+
+  it("in a dev build puts Win instantly (dev) beside Plan deployment and reports the shown mission (#1235)", () => {
+    const onPlanDeployment = vi.fn();
+    const onWinInstantly = vi.fn();
+    const view = new MissionDetailsView(
+      { missionTypes: MISSION_TYPES },
+      { onPlanDeployment, onWinInstantly },
+    );
+    view.mount(root);
+    const mission = missionAt("mission-1", "cairo", 7);
+    view.update(campaignOnDay(4, [mission]), mission);
+    const plan = root.querySelector('[data-action="plan-deployment"]');
+    const win = root.querySelector<HTMLButtonElement>(
+      '[data-action="win-instantly"]',
+    );
+
+    expect(win?.textContent).toBe("Win instantly (dev)");
+    expect(win?.type).toBe("button");
+    expect(plan?.nextElementSibling).toBe(win);
+    win?.click();
+    expect(onWinInstantly).toHaveBeenCalledWith("mission-1");
+    expect(onPlanDeployment).not.toHaveBeenCalled();
+
+    view.update(campaignOnDay(4, []), undefined);
+    win?.click();
+    expect(onWinInstantly).toHaveBeenCalledTimes(1);
+
+    view.update(campaignOnDay(4, [mission]), mission);
+    view.unmount();
+    win?.click();
+    expect(onWinInstantly).toHaveBeenCalledTimes(1);
+    expect(root.querySelector('[data-action="win-instantly"]')).toBeNull();
+  });
 });
 
 describe("MissionDetailsView on a defence (#1175)", () => {

@@ -68,7 +68,10 @@ export function createWinMissionInstantlyHandler<
     const active = state.activeMission;
     if (active !== undefined) {
       return err(
-        tacticalRefusal({ kind: "mission-active", missionId: active.missionId }),
+        tacticalRefusal({
+          kind: "mission-active",
+          missionId: active.missionId,
+        }),
       );
     }
     const { missionId } = command.payload;

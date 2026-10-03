@@ -15,9 +15,9 @@ import type { MissionResult } from "./mission-result";
  * rule, the story and the debrief read a clean win of the mission's own
  * kind rather than a bare outcome.
  *
- * `speciesKilled` names only the species the win itself required
- * killing (an Alpha Hunt's Broodmother); the resolver adds the offer's
- * bug mix to it.
+ * `speciesKilled` names only the species the map places rather than
+ * rolls and a clean win kills (an Alpha Hunt's Broodmother, a hive
+ * core's Hive Guards); the resolver adds the offer's bug mix to it.
  *
  * ```
  *   crash site   { podDestroyed: true }

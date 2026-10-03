@@ -48,7 +48,7 @@ export interface InstantWinDeps {
  *   parts              partsFor ("won"): the offer's parts
  *   the map's report   reports.stories[storyId] ?? reports.types[typeId]
  *   speciesKilled      the offer's bug mix, plus what the report says the
- *                      win killed (an Alpha Hunt's Broodmother)
+ *                      win killed (an Alpha Hunt's Broodmother, a core's guards)
  * ```
  *
  * It pays the win itself and nothing optional: no tech carcass is
@@ -84,12 +84,12 @@ export class InstantWinMissionResolver implements MissionResolver {
   /** `mission`, won cleanly. See the class doc for every field. */
   resolve(mission: Mission): MissionResult {
     const { rewards } = this.deps;
-    const { speciesKilled: required = [], ...fields } = reportOf(
+    const { speciesKilled: placed = [], ...fields } = reportOf(
       mission,
       this.deps.reports,
     );
     const parts = partsFor("won", mission);
-    const killed = speciesKilled(mission, required);
+    const killed = speciesKilled(mission, placed);
     return {
       missionId: mission.id,
       cityId: mission.cityId,
@@ -118,22 +118,23 @@ function reportOf(
   reports: InstantWinReports,
 ): InstantWinReport {
   const story =
-    mission.storyId === undefined ? undefined : reports.stories[mission.storyId];
+    mission.storyId === undefined
+      ? undefined
+      : reports.stories[mission.storyId];
   return (story ?? reports.types[mission.typeId])(mission);
 }
 
 /**
  * Every species a clean win killed, each once, in `BUG_SPECIES_IDS`
  * order: the ones the offer's frozen mix rolls, which the swarm on the
- * map was made of, and the `required` ones the win could not be had
- * without.
+ * map was made of, and the `placed` ones the report names.
  */
 function speciesKilled(
   mission: Mission,
-  required: readonly BugSpeciesId[],
+  placed: readonly BugSpeciesId[],
 ): readonly BugSpeciesId[] {
   return BUG_SPECIES_IDS.filter(
     (species) =>
-      (mission.bugMix?.[species] ?? 0) > 0 || required.includes(species),
+      (mission.bugMix?.[species] ?? 0) > 0 || placed.includes(species),
   );
 }

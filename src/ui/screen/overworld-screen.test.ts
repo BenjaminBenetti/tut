@@ -51,6 +51,10 @@ import type { CityPickSource } from "../model/city-pick-source";
 import type { InstallationPickSource } from "../model/installation-pick-source";
 import type { ScreenAnchor } from "../view/radial-menu-view";
 import { OverworldSelectionState } from "../service/overworld-selection-state";
+import {
+  WIN_MISSION_INSTANTLY,
+  winMissionInstantly,
+} from "../../tactical/model/win-mission-instantly-command";
 import { OverworldScreen } from "./overworld-screen";
 
 type NavigateMock = Mock<(id: ScreenId) => void>;
@@ -182,6 +186,16 @@ class FakeStore implements CampaignStore {
         economy: {
           ...this.state.economy,
           credits: this.state.economy.credits + 10,
+        },
+      };
+    } else if (command.type === WIN_MISSION_INSTANTLY) {
+      this.state = {
+        ...this.state,
+        overworld: {
+          ...this.state.overworld,
+          missions: this.state.overworld.missions.filter(
+            (m) => m.id !== command.payload.missionId,
+          ),
         },
       };
     } else {
@@ -726,6 +740,64 @@ describe("OverworldScreen", () => {
       regionId: "middle-east",
       cityId: "cairo",
       missionId: "mission-1",
+    });
+  });
+
+  describe("Win instantly (dev), #1235", () => {
+    const winButton = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>(
+        '[data-role="mission-details"] [data-action="win-instantly"]',
+      );
+
+    it("is not in the briefing without the dev flag", () => {
+      for (const instantWin of [undefined, false]) {
+        document.body.innerHTML = "";
+        root = document.createElement("div");
+        document.body.appendChild(root);
+        new OverworldScreen({
+          ...depsFor(new FakeStore(withMissions(4, MISSIONS))),
+          ...(instantWin === undefined ? {} : { instantWin }),
+        }).mount(root);
+        rows()[0]?.click();
+
+        expect(
+          root.querySelector<HTMLElement>('[data-role="mission-details"]')
+            ?.hidden,
+        ).toBe(false);
+        expect(winButton()).toBeNull();
+      }
+    });
+
+    it("in a dev build wins the shown mission through the store and opens its debrief", () => {
+      const { router, navigate } = fakeRouter();
+      const store = new FakeStore(withMissions(4, MISSIONS));
+      new OverworldScreen({
+        ...depsFor(store, router),
+        instantWin: true,
+      }).mount(root);
+      rows()[0]?.click();
+      winButton()?.click();
+
+      expect(store.dispatched.at(-1)).toEqual(winMissionInstantly("mission-1"));
+      expect(navigate).toHaveBeenCalledWith("mission-results");
+      expect(navigate).not.toHaveBeenCalledWith("deployment");
+    });
+
+    it("reports a refusal in the bar and stays on the overworld", () => {
+      const { router, navigate } = fakeRouter();
+      const store = new FakeStore(withMissions(4, MISSIONS));
+      new OverworldScreen({
+        ...depsFor(store, router),
+        instantWin: true,
+      }).mount(root);
+      rows()[0]?.click();
+      store.fail = true;
+      winButton()?.click();
+
+      const status = root.querySelector<HTMLElement>('[data-role="status"]');
+      expect(status?.hidden).toBe(false);
+      expect(status?.textContent).toContain("ended");
+      expect(navigate).not.toHaveBeenCalled();
     });
   });
 

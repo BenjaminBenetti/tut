@@ -24,16 +24,21 @@ import { LIVE_SPECIMEN_SPECIES } from "./story/live-specimen-setup";
  *   crash-site             podDestroyed: true                          the landing erased; First Skyfall too
  *   wreck-recovery         wreck { stripped, every turn worked }
  *   evacuation             every civilian group aboard                 the per-group pay, the city saved
- *   hive-assault           hiveCoreDestroyed: true                     the region liberated; a Great Hive too
+ *   hive-assault           hiveCoreDestroyed, its Hive Guards killed   the region liberated; a Great Hive too
  *   tunnel-sabotage        every tunnel mouth sealed                   the spread held
  *   alpha-hunt             broodmotherKilled, not escaped, and killed  the region held, a nemesis ended;
  *                                                                      the Broodmother sighting too
- *   spore-platform         every stage won, in order
+ *   spore-platform         every stage won, in order, the core's Hive Guards killed
  *
  *   story replacing its type's report:
  *   live-specimen          specimenCaptured: the species its setup stands (a lurker)
  *   intact-pod             podRecovered, with the pod's full hit points; never podDestroyed
  * ```
+ *
+ * The species a map places rather than rolls, and a clean win kills, are
+ * named too (a hunt's Broodmother, a core's Hive Guards), as the campaign
+ * sweep's modelled win names them, so the autopsies they open appear as
+ * they would after a played win.
  *
  * Here rather than in the overworld because these are the tactical
  * layer's facts: how many tunnel mouths a sabotage map has, how tough
@@ -67,7 +72,10 @@ export const INSTANT_WIN_REPORTS: InstantWinReports = {
             civiliansRescued: mission.evacuation.groups,
             civiliansTotal: mission.evacuation.groups,
           },
-    "hive-assault": () => ({ hiveCoreDestroyed: true }),
+    "hive-assault": () => ({
+      hiveCoreDestroyed: true,
+      speciesKilled: ["hive-guard"],
+    }),
     "tunnel-sabotage": () => ({
       tunnelsSealed: TUNNEL_MOUTH_COUNT,
       tunnelsTotal: TUNNEL_MOUTH_COUNT,
@@ -79,6 +87,7 @@ export const INSTANT_WIN_REPORTS: InstantWinReports = {
     }),
     "spore-platform": (mission) => ({
       stages: stagesWon(MISSION_TYPES[mission.typeId].stages?.length ?? 1),
+      speciesKilled: ["hive-guard"],
     }),
   },
   stories: {

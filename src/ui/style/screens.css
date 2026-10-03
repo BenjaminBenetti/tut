@@ -564,9 +564,13 @@
 }
 
 /* Win instantly (dev), beside Plan deployment in dev builds only (#1235):
-   outlined in the warning colour so it never reads as a game control. */
+   outlined in the warning colour so it never reads as a game control, and
+   compact so the two fit one row of the 336 px side panel. */
 .tut-mission-details .tut-mission-details__dev {
   margin-left: var(--space-2);
+  padding: 0 var(--space-3);
+  font-size: 11px;
+  vertical-align: top;
   background: var(--ui-warn);
   color: var(--ui-warn);
 }

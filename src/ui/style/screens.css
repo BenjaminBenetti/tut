@@ -563,6 +563,14 @@
   margin-top: var(--space-3);
 }
 
+/* Win instantly (dev), beside Plan deployment in dev builds only (#1235):
+   outlined in the warning colour so it never reads as a game control. */
+.tut-mission-details .tut-mission-details__dev {
+  margin-left: var(--space-2);
+  background: var(--ui-warn);
+  color: var(--ui-warn);
+}
+
 .tut-missions__row .tut-data {
   white-space: nowrap;
 }

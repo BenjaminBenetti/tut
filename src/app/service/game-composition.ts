@@ -28,13 +28,17 @@ import { DataEventTypeCatalogue } from "../../overworld/repository/event-type-ca
 import { createAdvanceDayHandler } from "../../overworld/service/advance-day-service";
 import { AutoResolveMissionResolver } from "../../overworld/service/auto-resolve-mission-resolver";
 import { createDeploymentAssessor } from "../../overworld/service/deployment-assessment-service";
+import { InstantWinMissionResolver } from "../../overworld/service/instant-win-mission-resolver";
+import type { LaunchMissionDeps } from "../../overworld/service/launch-mission-service";
 import { createLaunchMissionHandler } from "../../overworld/service/launch-mission-service";
 import { LAUNCH_MISSION } from "../../overworld/model/launch-mission-command";
 import type { MissionResolver } from "../../overworld/model/mission-resolver";
 import { registerAdvanceStage } from "../../tactical/service/advance-stage-handler";
 import { registerFinishMission } from "../../tactical/service/finish-mission-handler";
 import { createGarrisonStartOptions } from "../../tactical/service/garrison-start-options";
+import { INSTANT_WIN_REPORTS } from "../../tactical/service/instant-win-reports";
 import { registerStartMission } from "../../tactical/service/start-mission-handler";
+import { registerWinMissionInstantly } from "../../tactical/service/win-mission-instantly-handler";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import { registerEventCommands } from "../../overworld/service/event-command-handlers";
@@ -146,8 +150,9 @@ export interface GameCompositionDeps {
   /**
    * Whether this is a dev build (#1136): the bootstrap passes
    * `import.meta.env.DEV`, tests pass what they mean to test. It turns
-   * on the tactical development tools — the `PlaceUnit` handler and the
-   * debug menu — and nothing else; absent means a production build.
+   * on the development tools — the tactical `PlaceUnit` handler and
+   * debug menu, the tech tree's Free TP, and the briefing's instant win
+   * (#1235) — and nothing else; absent means a production build.
    */
   readonly devTools?: boolean;
   /**
@@ -230,6 +235,12 @@ export interface GameComposition {
    */
   readonly techDevTools: TechDevTools | undefined;
   /**
+   * True in a dev build (#1235): the briefing offers Win instantly (dev),
+   * which dispatches `WinMissionInstantly`. False otherwise, and then the
+   * briefing renders no such button and the command is refused.
+   */
+  readonly instantWin: boolean;
+  /**
    * The campaign's conditions as the tech tree sees them (ADR 0013
    * §2.7): which flags are set, including a `killed:<species>` flag per
    * species killed, so which nodes are hidden. The unlock handler was
@@ -267,11 +278,16 @@ export interface GameComposition {
  * ```
  *   StartMission  ──► TacticalMissionResolver.beginMission ──► activeMission
  *   FinishMission ──► LaunchMission ──► resolver ──► MissionResult, slot cleared
+ *   WinMissionInstantly (dev builds) ──► LaunchMission ──► InstantWinMissionResolver
  *
  *   resolver = TacticalMissionResolver          (the shipped game)
  *            | AutoResolveMissionResolver       (?autoResolve=1, for QA)
  *            | deps.resolver                    (injected: the campaign sweep)
  * ```
+ *
+ * The instant win (#1235) is the same launch handler over its own
+ * resolver, so it pays, settles and moves the story exactly as a win on
+ * the map does; it never replaces `resolver` for any other launch.
  *
  * The lifecycle goes on last because the M2 resolver reads the finished
  * mission out of the campaign the session's store is holding. Anything
@@ -391,8 +407,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
           tuning: AUTO_RESOLVE_TUNING,
         })
       : tacticalResolver);
-  const launch = createLaunchMissionHandler<GameState>({
-    resolver,
+  const launchDeps: Omit<LaunchMissionDeps, "resolver"> = {
     rosterTuning: content.rosterTuning,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
     techPoints,
@@ -409,6 +424,10 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
       ),
       tuning: MECH_SALVAGE_TUNING,
     },
+  };
+  const launch = createLaunchMissionHandler<GameState>({
+    ...launchDeps,
+    resolver,
   });
   dispatcher.register(LAUNCH_MISSION, launch);
   registerStartMission(dispatcher, {
@@ -418,6 +437,18 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   registerFinishMission(dispatcher, { launch });
   // A linked mission's Continue between stages (ADR 0013 amendment).
   registerAdvanceStage(dispatcher, { advancer: tacticalResolver });
+  // The briefing's instant win (#1235): registered in every build,
+  // refusing outside a dev one, and resolving only its own launches.
+  registerWinMissionInstantly(dispatcher, {
+    launch: createLaunchMissionHandler<GameState>({
+      ...launchDeps,
+      resolver: new InstantWinMissionResolver({
+        rewards: AUTO_RESOLVE_TUNING,
+        reports: INSTANT_WIN_REPORTS,
+      }),
+    }),
+    enabled: deps.devTools === true,
+  });
 
   return {
     saves,
@@ -432,6 +463,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     autoResolve,
     devTools: tactical.devTools,
     techDevTools: deps.devTools === true ? TECH_DEV_TOOLS : undefined,
+    instantWin: deps.devTools === true,
     techConditionsOf,
   };
 }

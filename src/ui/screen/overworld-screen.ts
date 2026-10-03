@@ -13,6 +13,7 @@ import { resolveEvent } from "../../overworld/model/resolve-event-command";
 import { upgradeDeployable } from "../../overworld/model/upgrade-deployable-command";
 import type { MissionTypeCatalogue } from "../../overworld/model/mission-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
+import { winMissionInstantly } from "../../tactical/model/win-mission-instantly-command";
 import type { CityPickSource } from "../model/city-pick-source";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { InstallationPickSource } from "../model/installation-pick-source";
@@ -68,6 +69,12 @@ export interface OverworldScreenDeps {
   readonly cityPicks?: CityPickSource;
   /** Pointer picks on installations and where their models are, for the installation wheel (#1155); absent in unit tests. */
   readonly installationPicks?: InstallationPickSource;
+  /**
+   * True in a dev build (#1235): the briefing shows Win instantly (dev)
+   * beside Plan deployment. The bootstrap passes the composition's
+   * `instantWin`; absent or false shows no such button.
+   */
+  readonly instantWin?: boolean;
 }
 
 /** What the one wheel is open at: a city's marker or an installation's model. */
@@ -135,6 +142,8 @@ interface WheelSpec {
  *   wheel Decommission   ──► store.dispatch(decommissionDeployable(id))
  *   wheel Region entry   ──► regionPanel.focus()
  *   [Plan deployment]    ──► selection.selectMission + router.navigate("deployment")
+ *   [Win instantly (dev)] ──► store.dispatch(winMissionInstantly(id))
+ *                            ──ok──► router.navigate("mission-results")   dev builds only
  *   state.overworld.outcome set ──► router.navigate("game-over")  (next microtask)
  * ```
  *
@@ -228,6 +237,13 @@ export class OverworldScreen implements Screen {
         onPlanDeployment: (missionId) => {
           this.planDeployment(missionId);
         },
+        ...(deps.instantWin === true
+          ? {
+              onWinInstantly: (missionId: MissionId): void => {
+                this.winInstantly(missionId);
+              },
+            }
+          : {}),
       },
     );
     this.deployables = new DeployablesView(
@@ -383,6 +399,29 @@ export class OverworldScreen implements Screen {
     }
     this.deps.selection.selectMission(mission.id, mission.cityId);
     this.deps.router.navigate("deployment");
+  }
+
+  /**
+   * The dev build's instant win (#1235): settles the offer as won and
+   * opens its debrief, as an auto-resolved launch from the deployment
+   * screen does. A mission no longer on offer, or any refusal, is
+   * reported in the bar instead.
+   */
+  private winInstantly(missionId: MissionId): void {
+    const store: CampaignStore | undefined = this.deps.session.store;
+    const offered = this.deps.session.state?.overworld.missions.some(
+      (m) => m.id === missionId,
+    );
+    if (!store || offered !== true) {
+      this.topBar.showStatus("That mission is no longer on offer.");
+      return;
+    }
+    const result = store.dispatch(winMissionInstantly(missionId));
+    if (!result.ok) {
+      this.topBar.showStatus(result.error.message);
+      return;
+    }
+    this.deps.router.navigate("mission-results");
   }
 
   // ===========================================

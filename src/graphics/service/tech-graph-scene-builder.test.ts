@@ -13,9 +13,15 @@ import type { ModelAssetId } from "../../content/data/model-ids";
 import {
   conditionalTechCatalogue,
   FX_FIELD_NOTES,
+  FX_HEAVY_WEAPONS,
   FX_JUMP_JETS,
   FX_PHEROMONE_ANALYSIS,
   FX_POD_TELEMETRY,
+  FX_SPRINT_FRAME,
+  FX_SQUAD_ARMOUR,
+  HIVE_CORE_SAMPLE,
+  SPORE_SAMPLE,
+  withFlags,
 } from "../../tech/data/conditional-tech-tree.test-helper";
 import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
@@ -28,6 +34,8 @@ import type { ModelLoader } from "../model/model-loader";
 import { MODULE_MODEL_NAME } from "./tech-node-model-source";
 import {
   DEFAULT_CORE_MODEL,
+  PEDESTAL_RADIUS,
+  STORY_CROWN_NAME,
   TechGraphSceneBuilder,
   TURNTABLE_RATE,
 } from "./tech-graph-scene-builder";
@@ -200,6 +208,96 @@ describe("TechGraphSceneBuilder", () => {
     expect(builder.getSelected()).toBe("tech.jump-jets");
     builder.setSelected(undefined);
     expect(halo?.visible).toBe(false);
+    builder.dispose();
+  });
+
+  it("crowns every story node's pedestal in gold dashes, whatever its status, and no other node (#1237)", () => {
+    const layout = layoutTechGraph(
+      conditionalTechCatalogue(),
+      withFlags(SPORE_SAMPLE, HIVE_CORE_SAMPLE),
+    );
+    const builder = new TechGraphSceneBuilder({
+      layout,
+      models: new FakeModelLoader(),
+    });
+    const crownOf = (id: TechNodeId): Object3D | undefined =>
+      builder.root
+        .getObjectByName(`node:${id}`)
+        ?.getObjectByName(STORY_CROWN_NAME);
+    for (const id of [
+      FX_JUMP_JETS,
+      FX_SPRINT_FRAME,
+      FX_SQUAD_ARMOUR,
+      FX_HEAVY_WEAPONS,
+    ]) {
+      expect(builder.root.getObjectByName(`node:${id}`), id).toBeDefined();
+      expect(crownOf(id), id).toBeUndefined();
+    }
+    const statuses: TechNodeStatus[] = [
+      "locked",
+      "unaffordable",
+      "available",
+      "unlocked",
+    ];
+    for (const id of [
+      FX_PHEROMONE_ANALYSIS,
+      FX_POD_TELEMETRY,
+      FX_FIELD_NOTES,
+    ]) {
+      const crown = crownOf(id);
+      expect(crown, id).toBeDefined();
+      // Dashes, not a ring: every segment leaves a gap before the next,
+      // and they all lie outside the selection halo.
+      const dashes = crown?.children ?? [];
+      expect(dashes.length, id).toBeGreaterThanOrEqual(8);
+      for (const dash of dashes) {
+        if (
+          !(dash instanceof Mesh) ||
+          !(dash.geometry instanceof RingGeometry)
+        ) {
+          throw new Error(`${id}: a crown dash is not a ring segment`);
+        }
+        const { innerRadius, thetaLength } = dash.geometry.parameters;
+        expect(thetaLength).toBeLessThan((Math.PI * 2) / dashes.length);
+        expect(innerRadius).toBeGreaterThan(PEDESTAL_RADIUS + 0.22);
+      }
+      for (const status of statuses) {
+        builder.setStatuses(new Map([[id, status]]));
+        expect(crown?.visible, `${id} ${status}`).toBe(true);
+      }
+    }
+    builder.dispose();
+  });
+
+  it("crowns exactly the shipped Intel projects and Last Hope once their flags are in hand", () => {
+    const layout = layoutTechGraph(
+      new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES)),
+      withFlags(
+        "spore-sample",
+        "hive-core-sample",
+        "uplink-won",
+        "platform-failed",
+      ),
+    );
+    const builder = new TechGraphSceneBuilder({
+      layout,
+      models: new FakeModelLoader(),
+    });
+    const crowned = layout.nodes
+      .filter((node) =>
+        builder.root
+          .getObjectByName(`node:${node.id}`)
+          ?.getObjectByName(STORY_CROWN_NAME),
+      )
+      .map((node) => node.id);
+    expect(crowned.sort()).toEqual(
+      [
+        "tech.last-hope",
+        "tech.pheromone-analysis",
+        "tech.platform-approach",
+        "tech.pod-telemetry",
+      ].sort(),
+    );
     builder.dispose();
   });
 

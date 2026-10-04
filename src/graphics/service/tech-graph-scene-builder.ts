@@ -17,10 +17,12 @@ import type { Camera, Object3D } from "three";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { TechFamilyId, TechNodeId } from "../../tech/model/tech-node";
+import { isStoryTechNode } from "../../tech/model/tech-node-kind-traits";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
 import type {
   TechGraphEdge,
   TechGraphLayout,
+  TechGraphNodePlacement,
 } from "../../ui/model/tech-graph-layout";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { ModelLoader } from "../model/model-loader";
@@ -115,6 +117,31 @@ const STATUS_LOOK: Readonly<
 
 /** How much brighter a hovered ring glows. */
 const HOVER_GLOW_BONUS = 0.6;
+
+/**
+ * Story research (#1237) stands inside a crown of gold dashes on the
+ * ground, outside the selection halo: dashes rather than a solid ring,
+ * so it reads by shape as well as colour beside the status rim. The
+ * colour is `--ui-story`, which is the warn gold. Its outer edge stays
+ * under half the tier 3 spacing (3), so two story neighbours never touch.
+ *
+ * ```
+ *        ╲  ─  ╱        STORY_CROWN_SEGMENTS dashes, each filling
+ *      ─  ( ● )  ─      STORY_CROWN_DASH of its arc, from
+ *        ╱  ─  ╲        STORY_CROWN_INNER to STORY_CROWN_OUTER
+ *      crown  rim+halo
+ * ```
+ */
+const STORY_COLOUR = WARN_COLOUR;
+const STORY_CROWN_INNER = PEDESTAL_RADIUS + 0.3;
+const STORY_CROWN_OUTER = PEDESTAL_RADIUS + 0.44;
+const STORY_CROWN_SEGMENTS = 12;
+/** The fraction of each segment's arc the dash fills; the rest is the gap. */
+const STORY_CROWN_DASH = 0.55;
+const STORY_CROWN_GLOW = 0.8;
+
+/** The name the crown's group goes by under its node, for tests and the inspector. */
+export const STORY_CROWN_NAME = "story-crown";
 
 // ===========================================
 // TechGraphSceneBuilder
@@ -358,15 +385,20 @@ export class TechGraphSceneBuilder {
     }
 
     for (const placement of this.layout.nodes) {
-      const view = this.createNode(placement.id, placement.x, placement.z);
+      const view = this.createNode(placement);
       this.nodes.set(placement.id, view);
       this.pickToNode.set(view.pick, placement.id);
       this.root.add(view.root);
     }
   }
 
-  /** One pedestal: base, lit rim ring, a halo for selection, the turntable and the pick solid. */
-  private createNode(id: TechNodeId, x: number, z: number): NodeView {
+  /**
+   * One pedestal: base, lit rim ring, a halo for selection, the turntable
+   * and the pick solid, and a story crown round it when the node's kind
+   * advances the story.
+   */
+  private createNode(placement: TechGraphNodePlacement): NodeView {
+    const { id, x, z } = placement;
     const root = new Group();
     root.name = `node:${id}`;
     root.position.set(x, 0, z);
@@ -419,6 +451,9 @@ export class TechGraphSceneBuilder {
     pick.visible = false;
 
     root.add(base, rim, halo, turntable, pick);
+    if (isStoryTechNode(placement)) {
+      root.add(storyCrown());
+    }
     return { id, root, turntable, ring, halo, pick, status: "locked" };
   }
 
@@ -493,6 +528,38 @@ function plinth(radius: number, height: number, tint: number): Group {
   edge.position.y = height + 0.005;
   group.add(body, edge);
   return group;
+}
+
+/**
+ * The story crown: `STORY_CROWN_SEGMENTS` gold dashes on the ground in a
+ * ring round the pedestal, sharing one geometry and one material. It
+ * ignores status, so a story node wears it locked, affordable or done.
+ */
+function storyCrown(): Group {
+  const crown = new Group();
+  crown.name = STORY_CROWN_NAME;
+  const arc = (Math.PI * 2) / STORY_CROWN_SEGMENTS;
+  const geometry = new RingGeometry(
+    STORY_CROWN_INNER,
+    STORY_CROWN_OUTER,
+    6,
+    1,
+    0,
+    arc * STORY_CROWN_DASH,
+  );
+  const material = new MeshStandardMaterial({
+    color: STORY_COLOUR,
+    emissive: STORY_COLOUR,
+    emissiveIntensity: STORY_CROWN_GLOW,
+  });
+  for (let index = 0; index < STORY_CROWN_SEGMENTS; index++) {
+    const dash = new Mesh(geometry, material);
+    dash.rotation.x = -Math.PI / 2;
+    dash.rotation.z = index * arc;
+    dash.position.y = 0.012;
+    crown.add(dash);
+  }
+  return crown;
 }
 
 /** Scales `model` so its longest side is `extent`, centred and grounded. */

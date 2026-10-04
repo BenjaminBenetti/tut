@@ -62,6 +62,7 @@ import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import { TechTreeScreen } from "../../ui/screen/tech-tree-screen";
 import { TECH_EFFECT_LABELS } from "../../ui/data/tech-effect-labels";
+import { TECH_STORY_NOTES } from "../../ui/data/tech-story-notes";
 import { offerWithdrawnNotice } from "../../ui/service/offer-withdrawn-text";
 import { researchRevealedNotice } from "../../ui/service/research-notice-text";
 import { DomTechGraphHost } from "./tech-graph-host";
@@ -308,6 +309,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             conditionsOf: game.techConditionsOf,
             squadTypes: game.content.squadTypes,
             effectLabels: TECH_EFFECT_LABELS,
+            storyNotes: TECH_STORY_NOTES,
             speciesOf: createSpeciesLookup(BUG_SPECIES),
             graph: new DomTechGraphHost({
               baseUrl: import.meta.env.BASE_URL,

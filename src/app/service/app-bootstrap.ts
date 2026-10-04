@@ -241,6 +241,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             mapViewport,
             cityPicks,
             installationPicks,
+            instantWin: game.instantWin,
           }),
       ],
       [

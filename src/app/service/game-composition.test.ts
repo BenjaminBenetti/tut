@@ -17,6 +17,7 @@ import { finishMission } from "../../tactical/model/finish-mission-command";
 import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
 import { startMission } from "../../tactical/model/start-mission-command";
+import { winMissionInstantly } from "../../tactical/model/win-mission-instantly-command";
 import { GARRISON_TURRET_SOURCE_ID } from "../../tactical/model/turret";
 import type { Mission } from "../../overworld/model/mission";
 import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
@@ -958,5 +959,114 @@ describe("composeGame", () => {
     expect(imported.ok).toBe(true);
     if (!imported.ok) return;
     expect("debug" in imported.value.meta).toBe(false);
+  });
+});
+
+describe("the dev build's instant win (#1235)", () => {
+  /** The shipped game, a dev build when `devTools`, over an injected resolver that records what it resolves. */
+  function compose(devTools: boolean | undefined): {
+    game: GameComposition;
+    resolved: string[];
+  } {
+    const resolved: string[] = [];
+    const game = composeGame({
+      storage: new MemoryKeyValueStore(),
+      clock: { now: () => NOW },
+      newSeed: () => 7,
+      onAutosaveFailure: () => undefined,
+      resolver: {
+        resolve: (mission) => {
+          resolved.push(mission.id);
+          return {
+            missionId: mission.id,
+            cityId: mission.cityId,
+            outcome: "lost",
+            squadCasualties: [],
+            squadsWiped: [],
+            mechsDestroyed: [],
+            mechDamage: [],
+            creditsAwarded: 0,
+            techPointsAwarded: 0,
+            infestationDelta: 0,
+          };
+        },
+      },
+      ...(devTools === undefined ? {} : { devTools }),
+    });
+    return { game, resolved };
+  }
+
+  it("is off in a production build: no button flag, and the command is refused as debug-disabled", () => {
+    for (const devTools of [undefined, false]) {
+      const { game } = compose(devTools);
+      const { mission } = campaignWithMission(game);
+      const before = game.session.state;
+
+      expect(game.instantWin).toBe(false);
+      const result = game.session.store?.dispatch(
+        winMissionInstantly(mission.id),
+      );
+      expect(result?.ok).toBe(false);
+      if (!result || result.ok) return;
+      expect(result.error.code).toBe("debug-disabled");
+      expect(game.session.state).toBe(before);
+    }
+  });
+
+  it("in a dev build wins the offer through the store: paid, removed, the whole force home, and autosaved", () => {
+    const { game, resolved } = compose(true);
+    const { mission } = campaignWithMission(game);
+    const before = game.session.state;
+    if (before === undefined) throw new Error("the campaign started");
+
+    expect(game.instantWin).toBe(true);
+    const result = game.session.store?.dispatch(
+      winMissionInstantly(mission.id),
+    );
+    expect(result?.ok).toBe(true);
+    if (!result?.ok) return;
+    expect(result.value.events[0]?.type).toBe(MISSION_RESOLVED);
+    const after = game.session.state;
+    const report = after?.overworld.lastMissionResult;
+    expect(report?.missionId).toBe(mission.id);
+    expect(report?.outcome).toBe("won");
+    expect(report?.squadCasualties).toEqual([]);
+    expect(report?.mechsDestroyed).toEqual([]);
+    expect(after?.overworld.missions).toEqual([]);
+    expect(after?.economy.credits).toBe(
+      before.economy.credits + (report?.creditsAwarded ?? 0),
+    );
+    expect(report?.creditsAwarded).toBeGreaterThan(0);
+    expect(after?.roster.squads.map((s) => [s.id, s.strength])).toEqual(
+      before.roster.squads.map((s) => [s.id, s.strength]),
+    );
+    expect(after?.roster.squads.map((s) => s.missionsSurvived)).toEqual(
+      before.roster.squads.map((s) => s.missionsSurvived + 1),
+    );
+    expect(after?.roster.mechs.map((m) => [m.id, m.damage])).toEqual(
+      before.roster.mechs.map((m) => [m.id, m.damage]),
+    );
+    expect(after?.overworld.progress.missionsWon).toBe(
+      before.overworld.progress.missionsWon + 1,
+    );
+    expect(resolved).toEqual([]);
+    const loaded = game.saves.loadGame(AUTOSAVE_SLOT_ID);
+    expect(loaded.ok && loaded.value.overworld.lastMissionResult).toEqual(
+      report,
+    );
+  });
+
+  it("resolves only its own launch: LaunchMission keeps the campaign's resolver", () => {
+    const { game, resolved } = compose(true);
+    const { mission, deployment } = campaignWithMission(game);
+
+    const result = game.session.store?.dispatch(
+      launchMission(mission.id, deployment),
+    );
+    expect(result?.ok).toBe(true);
+    expect(resolved).toEqual([mission.id]);
+    expect(game.session.state?.overworld.lastMissionResult?.outcome).toBe(
+      "lost",
+    );
   });
 });

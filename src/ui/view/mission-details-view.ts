@@ -37,6 +37,12 @@ import { SitrepTagsView } from "./sitrep-tags-view";
 export interface MissionDetailsViewHandlers {
   /** The player pressed Plan deployment for the shown mission. */
   readonly onPlanDeployment: (missionId: MissionId) => void;
+  /**
+   * The tester pressed Win instantly (dev) for the shown mission (#1235).
+   * The button exists only when this is given, and the owner gives it
+   * only in a dev build: a production briefing has no such button.
+   */
+  readonly onWinInstantly?: (missionId: MissionId) => void;
 }
 
 /** What the panel needs to name and describe things. */
@@ -101,6 +107,10 @@ interface Slot {
  * penalty, and the Plan deployment button. Hidden when nothing is
  * selected; values are rewritten in place, never rebuilt.
  *
+ * In a dev build a Win instantly (dev) button sits beside Plan
+ * deployment (#1235): the owner passes `onWinInstantly` only then, and
+ * the button is built only when it does.
+ *
  * Between the shared rows sit the rows mission types add (ADR 0013
  * §2.3). Every type's slots are built once at mount; a mission shows
  * the ones its type fills and the rest stay hidden, so a clearance keeps
@@ -126,6 +136,7 @@ interface Slot {
  *   ── story rows (StoryPresentation.briefingRows) ──
  *   ── type rows (MissionPresentation.briefingRows) ──
  *   Days left · Biome · Settlement · Map size · Ignore penalty
+ *   [Plan deployment] [Win instantly (dev), dev builds only]
  * ```
  */
 export class MissionDetailsView {
@@ -142,6 +153,8 @@ export class MissionDetailsView {
   private title: HTMLElement | undefined;
   private description: HTMLElement | undefined;
   private plan: HTMLButtonElement | undefined;
+  /** Win instantly (dev); undefined unless the owner handles it (#1235). */
+  private winInstantly: HTMLButtonElement | undefined;
   private readonly values = new Map<Field, HTMLElement>();
   /** The rows mission types add, keyed by their field. */
   private readonly typeSlots = new Map<string, Slot>();
@@ -151,6 +164,7 @@ export class MissionDetailsView {
   private penaltySlot: Slot | undefined;
   private shown: MissionId | undefined;
   private onPlan: (() => void) | undefined;
+  private onWin: (() => void) | undefined;
 
   // ===========================================
   // Constructor
@@ -159,7 +173,8 @@ export class MissionDetailsView {
   /**
    * @param deps - Catalogue for naming and describing mission types, and
    *   the rows each type adds.
-   * @param handlers - Callback for the Plan deployment button.
+   * @param handlers - Callbacks for the Plan deployment button and, in a
+   *   dev build, the Win instantly (dev) button.
    */
   constructor(
     deps: MissionDetailsViewDeps,
@@ -219,6 +234,7 @@ export class MissionDetailsView {
     section.append(title, description);
     this.sitrepTags.mount(section);
     section.append(grid, plan);
+    this.mountWinInstantly(section);
     parent.appendChild(section);
 
     this.onPlan = (): void => {
@@ -299,10 +315,13 @@ export class MissionDetailsView {
     this.root.hidden = false;
   }
 
-  /** Removes the section and its listener. */
+  /** Removes the section and its listeners. */
   unmount(): void {
     if (this.plan && this.onPlan) {
       this.plan.removeEventListener("click", this.onPlan);
+    }
+    if (this.winInstantly && this.onWin) {
+      this.winInstantly.removeEventListener("click", this.onWin);
     }
     this.sitrepTags.unmount();
     this.root?.remove();
@@ -310,12 +329,45 @@ export class MissionDetailsView {
     this.title = undefined;
     this.description = undefined;
     this.plan = undefined;
+    this.winInstantly = undefined;
     this.values.clear();
     this.typeSlots.clear();
     this.storySlots.clear();
     this.penaltySlot = undefined;
     this.shown = undefined;
     this.onPlan = undefined;
+    this.onWin = undefined;
+  }
+
+  // ===========================================
+  // Private
+  // ===========================================
+
+  /**
+   * Appends Win instantly (dev) after Plan deployment when the owner
+   * handles it (#1235), and nothing otherwise. Its click reports the
+   * shown mission, as Plan deployment's does.
+   */
+  private mountWinInstantly(section: HTMLElement): void {
+    const onWinInstantly = this.handlers.onWinInstantly;
+    if (onWinInstantly === undefined) {
+      return;
+    }
+    const button = section.ownerDocument.createElement("button");
+    button.type = "button";
+    button.className = "tut-btn tut-mission-details__dev";
+    button.dataset.action = "win-instantly";
+    button.textContent = "Win instantly (dev)";
+    button.title =
+      "Development build only: settle this mission as won, with nobody lost";
+    section.append(button);
+    this.onWin = (): void => {
+      if (this.shown !== undefined) {
+        onWinInstantly(this.shown);
+      }
+    };
+    button.addEventListener("click", this.onWin);
+    this.winInstantly = button;
   }
 }
 

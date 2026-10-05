@@ -64,7 +64,7 @@ export function withStoryMaps(
     recipe(mission: Mission, type: MissionType): MissionMapPlan {
       const story =
         mission.storyId === undefined ? undefined : stories[mission.storyId];
-      return story !== undefined && story.typeId === ordinary.typeId
+      return story?.typeId === ordinary.typeId
         ? story.recipe(mission, type)
         : ordinary.recipe(mission, type);
     },

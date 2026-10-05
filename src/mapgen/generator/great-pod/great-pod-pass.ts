@@ -16,7 +16,10 @@ import type { PropKindId, Rotation } from "../../model/prop";
 import type { ColumnCoord } from "../../model/road";
 import type { SurfaceId } from "../../model/surface";
 import { isOpenGround } from "../../service/draft-queries";
-import { joinCarapaceCells, turnDirection } from "../infestation/carapace-outline";
+import {
+  joinCarapaceCells,
+  turnDirection,
+} from "../infestation/carapace-outline";
 import { GREAT_POD_SITE_ID } from "./great-pod-site-pass";
 
 // ===========================================
@@ -97,7 +100,9 @@ export class GreatPodPass implements GenerationPass {
       ...raiseMembrane(draft, pod, rng.fork("membrane")),
     ];
     const debris = strewApron(draft, pod, this.tuning, rng.fork("debris"));
-    const index = draft.sites.findIndex((site) => site.id === GREAT_POD_SITE_ID);
+    const index = draft.sites.findIndex(
+      (site) => site.id === GREAT_POD_SITE_ID,
+    );
     const site = draft.sites[index];
     if (site !== undefined) {
       draft.sites[index] = { ...site, structureIds: walls };
@@ -117,8 +122,14 @@ export class GreatPodPass implements GenerationPass {
 /** Removes every prop with a tile on the disc; returns how many. */
 function clearDisc(draft: MapDraft, pod: GreatPodLayout): number {
   const disc = new Set(
-    [...pod.apron, ...pod.hull, ...pod.seams, ...pod.membrane, ...pod.ribs, ...pod.floor]
-      .map((column) => key(column)),
+    [
+      ...pod.apron,
+      ...pod.hull,
+      ...pod.seams,
+      ...pod.membrane,
+      ...pod.ribs,
+      ...pod.floor,
+    ].map((column) => key(column)),
   );
   const doomed = draft.props.filter((prop) =>
     (prop.occupiedTiles ?? [prop.tile]).some((tile) => disc.has(key(tile))),
@@ -226,7 +237,8 @@ function strewApron(
       continue;
     }
     if (!rng.chance(tuning.debrisDensity / 100)) continue;
-    const kind = DEBRIS[rng.nextInt(0, DEBRIS.length - 1)] ?? PropKindIds.BOULDER;
+    const kind =
+      DEBRIS[rng.nextInt(0, DEBRIS.length - 1)] ?? PropKindIds.BOULDER;
     draft.addProp(kind, draft.groundCoord(column.x, column.z));
     placed++;
   }
@@ -253,7 +265,9 @@ function straightRotation(
     Math.abs(dz) >= Math.abs(dx) ? (dz < 0 ? "n" : "s") : dx < 0 ? "w" : "e";
   const along = ROTATIONS.filter((turns) =>
     ["w", "e"].every((port) =>
-      joins.length < 2 ? true : joins.includes(turnDirection(port as Direction, turns)),
+      joins.length < 2
+        ? true
+        : joins.includes(turnDirection(port as Direction, turns)),
     ),
   );
   return (

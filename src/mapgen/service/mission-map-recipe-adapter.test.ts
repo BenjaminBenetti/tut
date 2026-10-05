@@ -562,10 +562,14 @@ describe("missionToMapRecipe for a crash site (arc §6.3, §6.9)", () => {
       const distance = Math.min(
         ...map.hooks.deployZones
           .flatMap((zone) => zone.tiles)
-          .flatMap((tile) => core.tiles.map((at) => manhattanDistance(tile, at))),
+          .flatMap((tile) =>
+            core.tiles.map((at) => manhattanDistance(tile, at)),
+          ),
       );
       // Outside the hull, and no more than three marches away.
-      expect(distance, seed).toBeGreaterThanOrEqual(GREAT_POD_TUNING.hullRadius);
+      expect(distance, seed).toBeGreaterThanOrEqual(
+        GREAT_POD_TUNING.hullRadius,
+      );
       expect(distance, seed).toBeLessThanOrEqual(24);
       expect(
         map.hooks.objectives.some((h) => h.kind === HookKinds.SPORE_POD),

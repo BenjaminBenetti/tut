@@ -66,10 +66,14 @@ describe("GREAT_POD_MAP_RULE", () => {
       expect(recipe.params.size).toBe("small");
       const map = generateTacticalMap(recipe);
       const kinds = allHooks(map.hooks).map((hook) => hook.kind);
-      expect(kinds.filter((kind) => kind === HookKinds.GREAT_POD_CORE)).toHaveLength(1);
+      expect(
+        kinds.filter((kind) => kind === HookKinds.GREAT_POD_CORE),
+      ).toHaveLength(1);
       expect(kinds).not.toContain(HookKinds.SPORE_POD);
       expect(kinds).not.toContain(HookKinds.EGG_SPAWNER);
-      expect(kinds.filter((kind) => kind === HookKinds.BROOD_CHAMBER)).toHaveLength(5);
+      expect(
+        kinds.filter((kind) => kind === HookKinds.BROOD_CHAMBER),
+      ).toHaveLength(5);
     },
     TIMEOUT_MS,
   );
@@ -83,7 +87,9 @@ describe("GREAT_POD_MAP_RULE", () => {
       });
       const map = generateTacticalMap(recipe);
       expect(
-        allHooks(map.hooks).filter((hook) => hook.kind === HookKinds.TECH_CARCASS),
+        allHooks(map.hooks).filter(
+          (hook) => hook.kind === HookKinds.TECH_CARCASS,
+        ),
       ).toHaveLength(1);
     },
     TIMEOUT_MS,

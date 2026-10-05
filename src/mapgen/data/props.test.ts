@@ -51,7 +51,10 @@ describe("prop definitions", () => {
       // A full-height wall: no shot, no step, no sight through it.
       expect(piece.blocksLos, piece.id).toBe(true);
       expect(piece.cover, piece.id).toBe(CoverLevel.HIGH);
-      expect(piece.footprint ?? { w: 1, d: 1 }, piece.id).toEqual({ w: 1, d: 1 });
+      expect(piece.footprint ?? { w: 1, d: 1 }, piece.id).toEqual({
+        w: 1,
+        d: 1,
+      });
       expect(piece.placements, piece.id).toEqual(["site"]);
     }
     // A rocket (force 2) opens any piece; a grenade or an autocannon

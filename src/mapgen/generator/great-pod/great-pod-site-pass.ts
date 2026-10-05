@@ -111,8 +111,10 @@ function pickCentre(
 ): ColumnCoord {
   const sideways = rng.nextInt(-tuning.jitter, tuning.jitter);
   const landing = draft.dropships[0];
-  const clampX = (x: number): number => clampInto(x, draft.width, discRadius, tuning);
-  const clampZ = (z: number): number => clampInto(z, draft.depth, discRadius, tuning);
+  const clampX = (x: number): number =>
+    clampInto(x, draft.width, discRadius, tuning);
+  const clampZ = (z: number): number =>
+    clampInto(z, draft.depth, discRadius, tuning);
   if (landing === undefined) {
     return {
       x: clampX(Math.floor(draft.width / 2) + sideways),
@@ -125,13 +127,25 @@ function pickCentre(
   const reach = tuning.landingGap + discRadius;
   switch (facing) {
     case "n":
-      return { x: clampX(middleX + sideways), z: clampZ(clearance.z + clearance.d + reach) };
+      return {
+        x: clampX(middleX + sideways),
+        z: clampZ(clearance.z + clearance.d + reach),
+      };
     case "s":
-      return { x: clampX(middleX + sideways), z: clampZ(clearance.z - 1 - reach) };
+      return {
+        x: clampX(middleX + sideways),
+        z: clampZ(clearance.z - 1 - reach),
+      };
     case "w":
-      return { x: clampX(clearance.x + clearance.w + reach), z: clampZ(middleZ + sideways) };
+      return {
+        x: clampX(clearance.x + clearance.w + reach),
+        z: clampZ(middleZ + sideways),
+      };
     case "e":
-      return { x: clampX(clearance.x - 1 - reach), z: clampZ(middleZ + sideways) };
+      return {
+        x: clampX(clearance.x - 1 - reach),
+        z: clampZ(middleZ + sideways),
+      };
   }
 }
 

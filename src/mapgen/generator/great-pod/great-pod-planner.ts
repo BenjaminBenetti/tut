@@ -177,19 +177,17 @@ function chambersOf(
   tuning: GreatPodTuning,
 ): readonly GreatPodChamber[] {
   const middle = Math.round((tuning.membraneRadius + tuning.hullRadius) / 2);
-  const outer = OUTER_CHAMBERS.map(
-    (chamber): GreatPodChamber => ({
-      id: `pod-${chamber.name}`,
-      role: (axis === "ns" ? chamber.dx === 0 : chamber.dz === 0)
-        ? "route"
-        : "side",
-      centre: {
-        x: centre.x + chamber.dx * middle,
-        z: centre.z + chamber.dz * middle,
-      },
-      radius: tuning.chamberRadius,
-    }),
-  );
+  const outer = OUTER_CHAMBERS.map((chamber): GreatPodChamber => ({
+    id: `pod-${chamber.name}`,
+    role: (axis === "ns" ? chamber.dx === 0 : chamber.dz === 0)
+      ? "route"
+      : "side",
+    centre: {
+      x: centre.x + chamber.dx * middle,
+      z: centre.z + chamber.dz * middle,
+    },
+    radius: tuning.chamberRadius,
+  }));
   return [
     {
       id: "pod-core",

@@ -81,7 +81,11 @@ export interface GreatPodLayout {
   /** Every floor column inside the hull, the core's included. */
   readonly floor: readonly ColumnCoord[];
   /** The core's square by its lowest corner, and its side. */
-  readonly core: { readonly x: number; readonly z: number; readonly size: number };
+  readonly core: {
+    readonly x: number;
+    readonly z: number;
+    readonly size: number;
+  };
   /** Levelled ground between the hull and the disc's edge. */
   readonly apron: readonly ColumnCoord[];
   /** Apron columns next to the hull, kept clear for a breach party. */

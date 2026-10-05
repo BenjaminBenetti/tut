@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { GREAT_POD_TUNING } from "../../data/great-pod-tuning";
-import type { GreatPodAxis, GreatPodLayout } from "../../model/great-pod-layout";
+import type {
+  GreatPodAxis,
+  GreatPodLayout,
+} from "../../model/great-pod-layout";
 import type { ColumnCoord } from "../../model/road";
 import { planGreatPod } from "./great-pod-planner";
 
@@ -49,9 +52,7 @@ function flood(
   from: ColumnCoord,
   opened: readonly ColumnCoord[] = [],
 ): Set<string> {
-  const open = new Set(
-    [...layout.floor, ...layout.apron, ...opened].map(key),
-  );
+  const open = new Set([...layout.floor, ...layout.apron, ...opened].map(key));
   const seen = new Set<string>([key(from)]);
   const queue: ColumnCoord[] = [from];
   for (const column of queue) {
@@ -151,8 +152,7 @@ describe("planGreatPod", () => {
       const along = (column: ColumnCoord): number =>
         axis === "ns" ? column.z - CENTRE.z : column.x - CENTRE.x;
       const ends = layout.seams.filter(
-        (column) =>
-          Math.abs(along(column)) === GREAT_POD_TUNING.hullRadius,
+        (column) => Math.abs(along(column)) === GREAT_POD_TUNING.hullRadius,
       );
       expect(ends).toHaveLength(6);
       expect(layout.mouths.length).toBe(6);
@@ -199,7 +199,10 @@ describe("planGreatPod", () => {
         [1, 1],
       ].every(([dx, dz]) => open.has(key({ x: x + dx!, z: z + dz! })));
     // A 2×2 block flood from just inside the north seam.
-    const start = { x: CENTRE.x - 1, z: CENTRE.z - GREAT_POD_TUNING.hullRadius };
+    const start = {
+      x: CENTRE.x - 1,
+      z: CENTRE.z - GREAT_POD_TUNING.hullRadius,
+    };
     expect(fits(start.x, start.z)).toBe(true);
     const seen = new Set([key(start)]);
     const queue = [start];
@@ -235,7 +238,9 @@ describe("planGreatPod", () => {
 
   it("names the axis chambers route and the others side, round a core chamber", () => {
     const roles = (axis: GreatPodAxis): Record<string, string> =>
-      Object.fromEntries(plan(axis).chambers.map((room) => [room.id, room.role]));
+      Object.fromEntries(
+        plan(axis).chambers.map((room) => [room.id, room.role]),
+      );
     expect(roles("ns")).toEqual({
       "pod-core": "core",
       "pod-north": "route",

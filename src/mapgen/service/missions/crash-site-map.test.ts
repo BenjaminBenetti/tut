@@ -60,7 +60,11 @@ describe("CRASH_SITE_MAP_RULE", () => {
   });
 
   it("sends First Skyfall to the great pod (#1238)", () => {
-    const skyfall = { ...MISSION, storyId: "first-skyfall", pinned: true } as const;
+    const skyfall = {
+      ...MISSION,
+      storyId: "first-skyfall",
+      pinned: true,
+    } as const;
     expect(MISSION_MAP_RULES["crash-site"].recipe(skyfall, CRASH_SITE)).toEqual(
       GREAT_POD_MAP_RULE.recipe(skyfall, CRASH_SITE),
     );

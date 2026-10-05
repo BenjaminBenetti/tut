@@ -6,6 +6,7 @@ import {
   MeshStandardMaterial,
   ShaderMaterial,
 } from "three";
+import type { Object3D } from "three";
 import { describe, expect, it } from "vitest";
 
 import { NODE_MODEL_EXTENT } from "../service/tech-node-model-source";
@@ -20,11 +21,15 @@ import {
 
 const GOLD = 0xf0c63c;
 
+/** Narrows a scene object to a mesh with three's default type arguments. */
+function isMesh(object: Object3D | undefined): object is Mesh {
+  return object instanceof Mesh;
+}
+
 /** The beacon's light shafts: every mesh but the gem. */
 function shaftsOf(beacon: TechStoryBeacon): Mesh[] {
   return beacon.object.children.filter(
-    (child): child is Mesh =>
-      child instanceof Mesh && child.name !== STORY_GEM_NAME,
+    (child): child is Mesh => isMesh(child) && child.name !== STORY_GEM_NAME,
   );
 }
 
@@ -34,10 +39,7 @@ function gemOf(beacon: TechStoryBeacon): {
   material: MeshStandardMaterial;
 } {
   const gem = beacon.object.getObjectByName(STORY_GEM_NAME);
-  if (
-    !(gem instanceof Mesh) ||
-    !(gem.material instanceof MeshStandardMaterial)
-  ) {
+  if (!isMesh(gem) || !(gem.material instanceof MeshStandardMaterial)) {
     throw new Error("the beacon has no lit gem");
   }
   return { gem, material: gem.material };

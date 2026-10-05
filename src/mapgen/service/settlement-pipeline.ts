@@ -25,6 +25,7 @@ import type { GenerationPass } from "../model/generation-pass";
 import type { MapArchetype } from "../model/map-recipe";
 import type { MapGenRegistries } from "../model/registries";
 import { createGreatHiveCavernPasses } from "./great-hive-cavern-pipeline";
+import { createGreatPodPasses } from "./great-pod-pipeline";
 import { createHiveCavernPasses } from "./hive-cavern-pipeline";
 import {
   createSporePlatformCorePasses,
@@ -119,6 +120,7 @@ const PASSES_BY_ARCHETYPE: Readonly<
   "spore-platform-hull": createSporePlatformHullPasses,
   "spore-platform-core": createSporePlatformCorePasses,
   "great-hive-cavern": createGreatHiveCavernPasses,
+  "great-pod": (): GenerationPass[] => createGreatPodPasses(),
 };
 
 // ===========================================

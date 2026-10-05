@@ -158,6 +158,9 @@ export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   // in `bug-chitin-tan`, the colour of the egg ribs waiting there (#1179).
   [HookKinds.HIVE_CORE]: 0xe23dff,
   [HookKinds.BROOD_CHAMBER]: 0xb88b58,
+  // The great pod's core (#1238) is a spore pod grown huge: the pod's
+  // spore violet, not the hive's magenta, so the two cores read apart.
+  [HookKinds.GREAT_POD_CORE]: 0xc15bff,
   // People to fetch: a warm white, apart from the generators' amber and
   // the carcass's bone, so a sheltering group reads as not ours to fight.
   [HookKinds.CIVILIAN]: 0xfff1d6,

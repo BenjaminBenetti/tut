@@ -8,6 +8,7 @@ import { ExtractionPlacer } from "./extraction-placer";
 import { GeneratorPlacer } from "./generator-placer";
 import { SporePodPlacer } from "./spore-pod-placer";
 import { HiveCorePlacer } from "./hive-core-placer";
+import { GreatPodCorePlacer } from "./great-pod-core-placer";
 import { PlatformPadPlacer } from "./platform-pad-placer";
 import { TechCarcassPlacer } from "./tech-carcass-placer";
 import { TunnelMouthPlacer } from "./tunnel-mouth-placer";
@@ -31,6 +32,7 @@ export const DEFAULT_HOOK_PLACERS: readonly HookPlacer[] = [
   new GeneratorPlacer(),
   new SporePodPlacer(),
   new HiveCorePlacer(),
+  new GreatPodCorePlacer(),
   new CivilianPlacer(),
   new WreckPlacer(),
   new TunnelMouthPlacer(),

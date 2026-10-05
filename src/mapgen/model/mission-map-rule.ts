@@ -40,8 +40,9 @@ import type {
  * ```
  *
  * `hookPlacement` lets one mission move a kind's hooks nearer or farther
- * than the kind's defaults, for every requirement of that kind: First
- * Skyfall brings its spore pod in close to the drop zone. The adapter
+ * than the kind's defaults, for every requirement of that kind (First
+ * Skyfall once brought its spore pod in close to the drop zone this way,
+ * before #1238 gave it a great pod of its own). The adapter
  * lays it over `HOOK_KIND_DEFAULTS[kind]` and then fits the minimum to
  * the board as it does the default.
  */

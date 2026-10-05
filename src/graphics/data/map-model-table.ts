@@ -166,6 +166,12 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
   [PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS]:
     "building.carapace-spine-buttress",
 
+  // The great pod's hull (#1238): `building.` ids, so a unit behind or
+  // inside the hull sees it through the ghost cutaway as it sees a wall.
+  [PropKindIds.GREAT_POD_HULL_PLATE]: "building.great-pod-hull-plate",
+  [PropKindIds.GREAT_POD_HULL_CURVE]: "building.great-pod-hull-curve",
+  [PropKindIds.GREAT_POD_HULL_SEAM]: "building.great-pod-hull-seam",
+
   [PropKindIds.INFESTED_SHELTER]: "prop.bus-stop-infested",
   [PropKindIds.INFESTED_NEST]: "prop.infested-nest",
   [PropKindIds.INFESTED_HIVE]: "prop.infested-hive-spire",

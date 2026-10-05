@@ -42,12 +42,14 @@ export class DropshipSitePass implements GenerationPass {
 
   /**
    * Settlements reserve after roads; the crash-site prototype reserves
-   * after its crater. `facings` narrows the edges searched — a hive
-   * cavern lands only at its mouth (#1179) — and is applied after the
-   * edge shuffle, so the default draws exactly what it always has.
+   * after its crater; a great pod's landing (#1238) reserves straight
+   * after the water, before the pod is placed from it. `facings` narrows
+   * the edges searched — a hive cavern lands only at its mouth (#1179) —
+   * and is applied after the edge shuffle, so the default draws exactly
+   * what it always has.
    */
   constructor(
-    after: "roads" | "elevation" = "roads",
+    after: "roads" | "elevation" | "water" = "roads",
     facings: readonly Direction[] = DIRECTIONS,
   ) {
     this.requires = ["heightmap", "water", after];

@@ -8,6 +8,7 @@ import { HIVE_ASSAULT_MAP_RULE } from "./hive-assault-map";
 import { INFESTATION_CLEARANCE_MAP_RULE } from "./infestation-clearance-map";
 import { TUNNEL_SABOTAGE_MAP_RULE } from "./tunnel-sabotage-map";
 import { SPORE_PLATFORM_MAP_RULE } from "./spore-platform-map";
+import { withStoryMaps } from "./story-map-rules";
 import { WRECK_RECOVERY_MAP_RULE } from "./wreck-recovery-map";
 
 // ===========================================
@@ -23,7 +24,8 @@ import { WRECK_RECOVERY_MAP_RULE } from "./wreck-recovery-map";
  * ```
  *   infestation-clearance ─► infestation-clearance-map.ts   settlement
  *   defend-installation   ─► defend-installation-map.ts     settlement + site + generators
- *   crash-site            ─► crash-site-map.ts              crater; First Skyfall's pod near deploy
+ *   crash-site            ─► crash-site-map.ts              crater, the pod on its floor
+ *                           great-pod-map.ts (first-skyfall) the pod came down whole: breach it
  *   wreck-recovery        ─► wreck-recovery-map.ts          settlement + a chassis-sized wreck
  *   evacuation            ─► evacuation-map.ts              settlement + one civilian hook per group
  *   hive-assault          ─► hive-assault-map.ts            hive cavern, own board and hooks, nests by level
@@ -36,7 +38,7 @@ import { WRECK_RECOVERY_MAP_RULE } from "./wreck-recovery-map";
 export const MISSION_MAP_RULES: MissionMapRules = {
   "infestation-clearance": INFESTATION_CLEARANCE_MAP_RULE,
   "defend-installation": DEFEND_INSTALLATION_MAP_RULE,
-  "crash-site": CRASH_SITE_MAP_RULE,
+  "crash-site": withStoryMaps(CRASH_SITE_MAP_RULE),
   "wreck-recovery": WRECK_RECOVERY_MAP_RULE,
   evacuation: EVACUATION_MAP_RULE,
   "hive-assault": withGreatHiveMap(HIVE_ASSAULT_MAP_RULE),

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { CRASH_SITE } from "../../../content/data/mission-types";
 import type { Mission } from "../../../overworld/model/mission";
-import { HookKinds } from "../../model/hook";
-import { CRASH_SITE_MAP_RULE, SCRIPTED_POD_PLACEMENT } from "./crash-site-map";
+import { CRASH_SITE_MAP_RULE } from "./crash-site-map";
+import { GREAT_POD_MAP_RULE } from "./great-pod-map";
 import { MISSION_MAP_RULES } from "./mission-map-rules";
 
 // ===========================================
@@ -35,9 +35,14 @@ const MISSION: Mission = {
 // ===========================================
 
 describe("CRASH_SITE_MAP_RULE", () => {
-  it("is the crash site's entry in the shipped table", () => {
-    expect(MISSION_MAP_RULES["crash-site"]).toBe(CRASH_SITE_MAP_RULE);
+  it("is the crash site's entry in the shipped table, behind the story decorator", () => {
+    const entry = MISSION_MAP_RULES["crash-site"];
+    expect(entry.typeId).toBe("crash-site");
     expect(CRASH_SITE_MAP_RULE.typeId).toBe("crash-site");
+    // An ordinary offer is planned exactly as the type's own rule plans it.
+    expect(entry.recipe(MISSION, CRASH_SITE)).toEqual(
+      CRASH_SITE_MAP_RULE.recipe(MISSION, CRASH_SITE),
+    );
   });
 
   it("fights a drawn crash site in the crater with nothing beyond the type's own hooks", () => {
@@ -45,29 +50,22 @@ describe("CRASH_SITE_MAP_RULE", () => {
       archetype: "crash-site",
       extraHooks: [],
     });
-    // A story crash site that is not First Skyfall places its pod as any other.
+    // A story crash site with no map of its own places its pod as any other.
     expect(
-      CRASH_SITE_MAP_RULE.recipe(
+      MISSION_MAP_RULES["crash-site"].recipe(
         { ...MISSION, storyId: "intact-pod" },
         CRASH_SITE,
       ),
     ).toEqual({ archetype: "crash-site", extraHooks: [] });
   });
 
-  it("brings First Skyfall's pod in close to the drop zone (arc §6.9)", () => {
-    expect(SCRIPTED_POD_PLACEMENT).toEqual({
-      minDistanceFromDeploy: 6,
-      maxNearestDistanceFromDeploy: 14,
-    });
+  it("sends First Skyfall to the great pod (#1238)", () => {
+    const skyfall = { ...MISSION, storyId: "first-skyfall", pinned: true } as const;
+    expect(MISSION_MAP_RULES["crash-site"].recipe(skyfall, CRASH_SITE)).toEqual(
+      GREAT_POD_MAP_RULE.recipe(skyfall, CRASH_SITE),
+    );
     expect(
-      CRASH_SITE_MAP_RULE.recipe(
-        { ...MISSION, storyId: "first-skyfall", pinned: true },
-        CRASH_SITE,
-      ),
-    ).toEqual({
-      archetype: "crash-site",
-      extraHooks: [],
-      hookPlacement: { [HookKinds.SPORE_POD]: SCRIPTED_POD_PLACEMENT },
-    });
+      MISSION_MAP_RULES["crash-site"].recipe(skyfall, CRASH_SITE).archetype,
+    ).toBe("great-pod");
   });
 });

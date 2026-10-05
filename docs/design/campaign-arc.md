@@ -129,7 +129,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 - **Objective:** a spore pod came down in open ground. Destroy the pod before it matures at the **end of turn 8**, or the **end of turn 5** from difficulty 5: a harder landing ripens sooner ([C2b-1-field](calibration/C2b-1-field.md)). Maturing releases a large wave and fails the objective. Then extract.
 - **Map:** the crater / crash-site archetype (the #662 prototype): open ground, a scorched crater and scattered debris cover.
 - **Eligible:** a region with at least one detected city. Every crash site starts a fresh landing (a new infestation seed of 10) at a city in that region. From Act II, regions with a sensor array are weighted ×2.
-- **Scripted first one:** **First Skyfall**, the second mission of every campaign (d1).
+- **Scripted first one:** **First Skyfall**, the second mission of every campaign (d1). Its pod is a great pod, breached and entered rather than shot from the open (§6.9, #1238).
 - **Pays:** high TP (a TP reward ×1.5), the landing erased (the seeded city goes back to its pre-landing value), and the first win's **spore sample** (§4).
 - **Ignored or lost:** the landing takes root as a normal infestation (+15 on the city).
 - **New:** an objective timer (turn limit) and a pod objective unit.
@@ -183,7 +183,7 @@ Each new type pays something the others do not, so choosing between offers is a 
 
 | Mission | Act | Summary | Built on |
 |---|---|---|---|
-| **First Skyfall** | I, M2 | The first Crash Site, d1, with a scripted pod landing near the start | Crash Site |
+| **First Skyfall** | I, M2 | The first Crash Site, d1. The pod came down whole as a **great pod** (#1238): a hull 17 tiles across with no way in, landed near the start. Breach the hull with demolition (rockets and charges open a plate; grenades and mech guns open the glowing seams in line with the inner mouths), fight through the chambers' sleeping broods and destroy the 80 hp core before it ripens at the end of turn 12. Ripening bursts a wave and fails the objective. Then extract. See [first-skyfall-great-pod](calibration/first-skyfall-great-pod.md). | Crash Site, great pod map and setup |
 | **Live Specimen** | I → II | Bring a lurker to 0 HP with the **capture net** (an equipment item) instead of killing it, then extract with it. Winning opens Act II. | Clearance map, new capture action |
 | **Intact Pod** | II → III | A Crash Site where the pod must **survive** to be recovered: defend it until the recovery turn. Winning opens Act III. | Crash Site, generator-style objective |
 | **Uplink** | III start | Defend a tracking array through its counted waves. Winning reveals the three Great Hives and makes Intel III appear. | Defend Installation |

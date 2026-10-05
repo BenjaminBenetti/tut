@@ -34,6 +34,8 @@ import {
   sleeperGround,
   wakesSleepers,
 } from "./brood-berth.test-helper";
+import type { BreachStyle } from "./player-breach.test-helper";
+import { breachNext, jobSteps } from "./player-breach.test-helper";
 import { dangerKeys, vantagePoints } from "./player-goals.test-helper";
 import type { MoveOption, Reach } from "./player-navigation.test-helper";
 import {
@@ -77,8 +79,10 @@ import type { PlayerView } from "./player-view.test-helper";
 //        ──► focused target, bar a likely kill? ──► kill shot / best shot,
 //            at the order's first priority bug in the sights, if any
 //        ──► reload? ──► the nest in sight? ──► jump?
-//        ──► move to cover toward the goal ──► overwatch, bar a gun
-//            whose reaction could kill the specimen it hunts
+//        ──► move to cover toward the goal
+//        ──► goal behind walls? open the way (`player-breach`, #1238)
+//        ──► overwatch, bar a gun whose reaction could kill the
+//            specimen it hunts
 //
 // Bugs asleep in a hive's chambers are neither contact nor targets: the
 // expert walks round them where the cavern allows, keeps its loud guns
@@ -115,6 +119,29 @@ const ESCORT_DETOUR = 4;
 /** Candidate tiles checked for a firing line after a move. */
 const FIRING_LINE_CHECKS = 10;
 
+/**
+ * The expert's reading of a wall (#1238): what opening it takes. A wall
+ * of force 1 (the great pod's glowing seam) falls to anyone's grenade or
+ * a mech's gun, an action from any of nine units; a wall of force 2 (a
+ * plate, the membrane) only to the rocket squad's one rocket, which
+ * ends its turn and wants a reload after, and to nothing at all once
+ * that squad is down. So a seam is two steps' worth and a plate twelve,
+ * a turn's walk for the force: it walks round to the seam in line with
+ * a mouth, one breach to the core, rather than blow two walls on the
+ * near side. It throws grenades at a wall as readily as at bugs, and
+ * takes the shot that brings the most wall down, not the likeliest to
+ * land: a one-tile hole is a doorway one body blocks, and the mechs
+ * queue behind the squad standing in it.
+ */
+export const EXPERT_BREACH: BreachStyle = {
+  id: "expert",
+  /** Two steps for a seam, twelve for anything harder. */
+  wallSteps: (force) => (force <= 1 ? 2 : 12),
+  throws: true,
+  /** The most wall expected down: a hole the force walks through abreast. */
+  shotValue: (hitChance, opened) => hitChance * opened,
+};
+
 /** The expert player's policy. */
 export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
   return {
@@ -141,7 +168,7 @@ export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
       }
       // Crew-limited jobs first (escorts), nearest unit each, while the
       // main job keeps at least two.
-      const main = mainJob(view, plan, fighting);
+      const main = mainJob(view, plan, fighting, rules);
       for (const job of plan.jobs) {
         if (job.crew === undefined || job === main) continue;
         for (let slot = 0; slot < job.crew; slot++) {
@@ -150,6 +177,7 @@ export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
             view,
             fighting.filter((unit) => canTake(unit, job)),
             job.order,
+            rules,
           );
           if (pick === undefined) break;
           orders.set(pick.id, job.order);
@@ -163,7 +191,10 @@ export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
         }
         const own = plan.jobs
           .filter((job) => job.crew === undefined && canTake(unit, job))
-          .map((job) => ({ job, steps: stepsTo(view, unit, job.order.goals) }))
+          .map((job) => ({
+            job,
+            steps: jobSteps(view, unit, job.order, rules, EXPERT_BREACH),
+          }))
           .sort((a, b) => a.steps - b.steps)[0];
         orders.set(unit.id, own?.job.order ?? fallbackOrder(view));
       }
@@ -245,7 +276,8 @@ export function createExpertPlayerPolicy(rules: PlayerRules): PlayerPolicy {
       }
       const step =
         jumpToward(unit, order, view, seen) ??
-        advance(unit, order, view, rules, seen);
+        advance(unit, order, view, rules, seen) ??
+        breachNext(unit, order, view, rules, EXPERT_BREACH);
       if (step !== undefined) return step;
       if (shot !== undefined) return shoot(shot);
       return watch(unit, order, view, rules);
@@ -445,6 +477,7 @@ function mainJob(
   view: PlayerView,
   plan: ForcePlan,
   units: readonly Unit[],
+  rules: PlayerRules,
 ): ForcePlan["jobs"][number] | undefined {
   let best: ForcePlan["jobs"][number] | undefined;
   let bestSteps = Number.POSITIVE_INFINITY;
@@ -453,7 +486,9 @@ function mainJob(
     const crew = units.filter((unit) => canTake(unit, job));
     if (crew.length === 0) continue;
     const steps = Math.min(
-      ...crew.map((unit) => stepsTo(view, unit, job.order.goals)),
+      ...crew.map((unit) =>
+        jobSteps(view, unit, job.order, rules, EXPERT_BREACH),
+      ),
     );
     if (steps < bestSteps) {
       best = job;
@@ -463,16 +498,17 @@ function mainJob(
   return best;
 }
 
-/** The unit nearest the order's goals. */
+/** The unit nearest the order's goals, walls priced as the expert prices them. */
 function nearest(
   view: PlayerView,
   units: readonly Unit[],
   order: UnitOrder,
+  rules: PlayerRules,
 ): Unit | undefined {
   let best: Unit | undefined;
   let bestSteps = Number.POSITIVE_INFINITY;
   for (const unit of units) {
-    const steps = stepsTo(view, unit, order.goals);
+    const steps = jobSteps(view, unit, order, rules, EXPERT_BREACH);
     if (steps < bestSteps) {
       best = unit;
       bestSteps = steps;

@@ -4,6 +4,7 @@ import type { TileCoord } from "../../../mapgen/model/tile-coord";
 import type { AttackPreview } from "../../model/attack-preview";
 import type { EquipmentId } from "../../model/equipment";
 import type { ObjectiveTuning } from "../../model/objective-tuning";
+import type { StructureCatalogue } from "../../model/structure-catalogue";
 import type { Unit, UnitId } from "../../model/unit";
 import type { WeaponId } from "../../model/unit-weapon";
 import { previewAttack, weaponOptions } from "../combat-service";
@@ -35,6 +36,12 @@ import type { PlayerView } from "./player-view.test-helper";
 /** The rules a modelled player reads its numbers from. Ports, never data modules. */
 export interface PlayerRules extends EquipmentRules {
   readonly objective: ObjectiveTuning;
+  /**
+   * What each wall takes to bring down, for a player opening a way to
+   * goals behind walls (#1238, `player-breach.test-helper.ts`). Absent,
+   * the player breaches nothing.
+   */
+  readonly structures?: StructureCatalogue;
 }
 
 /** One shot the wheel would offer, priced. */

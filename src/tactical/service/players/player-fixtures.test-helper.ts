@@ -1,4 +1,5 @@
 import type { TacticalMap } from "../../../mapgen/model/tactical-map";
+import { createDefaultRegistries } from "../../../mapgen/service/default-registries";
 import type { TileCoord } from "../../../mapgen/model/tile-coord";
 import { COMBAT_TUNING } from "../../data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../data/objective-tuning";
@@ -12,6 +13,7 @@ import type { Unit } from "../../model/unit";
 import { SHIPPED_EQUIPMENT } from "../../repository/equipment-catalogue";
 import type { MissionOptions } from "../tactical-fixtures.test-helper";
 import { missionWith, openField } from "../tactical-fixtures.test-helper";
+import { registryStructureCatalogue } from "../structure-catalogue";
 import { initialVision } from "../vision-service";
 import type { PlayerRules } from "./player-combat.test-helper";
 
@@ -24,6 +26,7 @@ export const FIXTURE_PLAYER_RULES: PlayerRules = {
   catalogue: SHIPPED_EQUIPMENT,
   combat: COMBAT_TUNING,
   objective: OBJECTIVE_TUNING,
+  structures: registryStructureCatalogue(createDefaultRegistries()),
 };
 
 /** The drop ship of the open field: its south-west corner. */

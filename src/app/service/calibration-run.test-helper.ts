@@ -2,6 +2,7 @@ import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
+import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
@@ -17,6 +18,7 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import { isCombatUnit, isStandingForce } from "../../tactical/model/unit";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { registryStructureCatalogue } from "../../tactical/service/structure-catalogue";
 import { EXPERT_OBJECTIVE_STRATEGIES } from "../../tactical/service/players/expert-objective-strategies.test-helper";
 import { createExpertPlayerPolicy } from "../../tactical/service/players/expert-player-policy.test-helper";
 import { createNewPlayerPolicy } from "../../tactical/service/players/new-player-policy.test-helper";
@@ -68,11 +70,16 @@ import { composeGame } from "./game-composition";
 // with the luck stream: each player rolls its own (`luck` = its id),
 // and the decision-gap cell hands the expert the new player's.
 
-/** The shipped rules the modelled players read. */
+/**
+ * The shipped rules the modelled players read: the structures from the
+ * shipped registries, as the composition root builds them, so a player
+ * prices a wall by what brings it down (#1238).
+ */
 export const CALIBRATION_RULES: PlayerRules = {
   catalogue: SHIPPED_EQUIPMENT,
   combat: COMBAT_TUNING,
   objective: OBJECTIVE_TUNING,
+  structures: registryStructureCatalogue(createDefaultRegistries()),
 };
 
 /** The two players. */

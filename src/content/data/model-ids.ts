@@ -159,6 +159,10 @@ export const MODEL_IDS = [
   "bug.spore-pod-mature",
   "bug.hive-core",
   "bug.hive-core-damaged",
+  // First Skyfall great pod core (#1238): the spore pod scaled up to 3x3.
+  "bug.great-pod-core",
+  "bug.great-pod-core-ripe",
+  "bug.great-pod-core-damaged",
   "bug.tech-carcass",
   "prop.barrier-concrete",
   "prop.bench",
@@ -402,6 +406,10 @@ export const MODEL_IDS = [
   "building.carapace-wall-end",
   "building.carapace-wall-broken",
   "building.carapace-spine-buttress",
+  // First Skyfall great pod hull (#1238): armour faces -Y, flesh faces +Y.
+  "building.great-pod-hull-plate",
+  "building.great-pod-hull-curve",
+  "building.great-pod-hull-seam",
   "prop.tree-oak-dead",
   "prop.tree-pine-dead",
   "prop.tree-palm-dead",

@@ -18,6 +18,10 @@ in its own frame (axis along +Z, `s` from 0 at the buried base to 1 at
 the tip), then tilted and cut at the ground. Follow
 docs/design/concepts/campaign/spore-pod.png and
 docs/design/kits/campaign-bestiary.md#spore-pod.
+
+The husk's proportions are a `PodShape`. The spore pod uses `SPORE_POD`;
+great_pod_parts.py grows the same husk into Skyfall's great pod core
+with more staves and denser plates, reusing the pieces below.
 """
 
 from __future__ import annotations
@@ -26,6 +30,7 @@ import math
 import os
 import random
 import sys
+from dataclasses import dataclass
 
 from mathutils import Matrix, Vector
 
@@ -38,24 +43,36 @@ from bpy_kit import cut_below, socket  # noqa: E402
 # Proportions
 # ===========================================
 
-#: Husk length along its axis and widest radius, before `finish` scales it.
-LENGTH = 1.62
-RADIUS = 0.5
-#: How far the base sits under the ground along the axis.
-BURY = 0.3
-#: Staves round the husk; the gap between two is a glowing seam.
-STAVES = 7
-SEAM = 0.04
-#: How far the staves spiral round the axis from base to tip, in radians.
-TWIST = 0.45
-#: Plates are this thick, as a share of the husk's radius.
-SHELL = 0.16
+
+@dataclass(frozen=True)
+class PodShape:
+    """A pod husk's proportions in its own frame, before `finish` scales it."""
+
+    #: Husk length along its axis and widest radius.
+    length: float = 1.62
+    radius: float = 0.5
+    #: How far the base sits under the ground along the axis.
+    bury: float = 0.3
+    #: Staves round the husk; the gap between two is a glowing seam.
+    staves: int = 7
+    seam: float = 0.04
+    #: How far the staves spiral round the axis from base to tip, in radians.
+    twist: float = 0.45
+    #: Plates are this thick, as a share of the husk's radius.
+    shell: float = 0.16
+    #: A plate's grid: columns across its stave, rows per unit of axis length.
+    plate_columns: int = 3
+    plate_rows: float = 5.0
+    #: The mature pod's exposed core.
+    orb: float = 0.3
+
+
+#: The crash site's spore pod.
+SPORE_POD = PodShape()
 #: The finished model's height and its widest extent (one tile, and a
 #: little over: the pod is the whole mission and should read as large).
 HEIGHT = 1.25
 SPREAD = 1.34
-#: The mature pod's exposed core, before `finish` scales it.
-ORB = 0.3
 
 
 # ===========================================
@@ -63,24 +80,24 @@ ORB = 0.3
 # ===========================================
 
 
-def radius_at(s: float) -> float:
+def radius_at(s: float, shape: PodShape = SPORE_POD) -> float:
     """The husk's radius at `s` along its axis: a narrow buried nose, a fat
     belly, and an ogive taper to the tip."""
     if s <= 0.45:
-        return RADIUS * (0.42 + 0.58 * math.sin(0.5 * math.pi * s / 0.45))
+        return shape.radius * (0.42 + 0.58 * math.sin(0.5 * math.pi * s / 0.45))
     t = min(1.0, (s - 0.45) / 0.55)
-    return RADIUS * max(0.0, 1 - t ** 1.6) ** 0.85
+    return shape.radius * max(0.0, 1 - t ** 1.6) ** 0.85
 
 
-def local_point(s: float, theta: float, scale: float = 1.0) -> Vector:
+def local_point(s: float, theta: float, scale: float = 1.0, shape: PodShape = SPORE_POD) -> Vector:
     """A point on (or inside, with `scale` < 1) the husk in the pod's own frame.
 
     `theta` 0 faces the front (-Y) and grows towards +X; the staves
-    spiral by `TWIST` from base to tip.
+    spiral by the shape's `twist` from base to tip.
     """
-    r = radius_at(s) * scale
-    a = theta + TWIST * s
-    return Vector((math.sin(a) * r, -math.cos(a) * r, s * LENGTH - BURY))
+    r = radius_at(s, shape) * scale
+    a = theta + shape.twist * s
+    return Vector((math.sin(a) * r, -math.cos(a) * r, s * shape.length - shape.bury))
 
 
 def tilt_matrix(lean: float, back: float) -> Matrix:
@@ -98,7 +115,7 @@ def lerp(pair, u: float) -> float:
 # ===========================================
 
 
-def plate(name, frame, thetas, lower, upper, token, rng, hinge=None):
+def plate(name, frame, thetas, lower, upper, token, rng, hinge=None, shape: PodShape = SPORE_POD):
     """One cracked chitin plate: a thick curved patch of the husk, closed.
 
     `thetas` spans the stave; `lower` and `upper` are the crack lines as
@@ -106,8 +123,8 @@ def plate(name, frame, thetas, lower, upper, token, rng, hinge=None):
     `hinge` (s, angle) swings everything above that ring outwards, which
     is how the mature pod's staves split into petals.
     """
-    nu = 3
-    nv = max(2, round((sum(upper) - sum(lower)) / 2 * LENGTH * 5))
+    nu = shape.plate_columns
+    nv = max(2, round((sum(upper) - sum(lower)) / 2 * shape.length * shape.plate_rows))
     outer, inner = [], []
     for j in range(nv + 1):
         for i in range(nu + 1):
@@ -115,24 +132,24 @@ def plate(name, frame, thetas, lower, upper, token, rng, hinge=None):
             s = lerp((lerp(lower, u), lerp(upper, u)), j / nv)
             theta = lerp(thetas, u)
             bulge = 1.0 + 0.05 * math.sin(math.pi * u) + rng.uniform(-0.025, 0.035)
-            outer.append(local_point(s, theta, bulge))
-            inner.append(local_point(s, theta, 1.0 - SHELL))
+            outer.append(local_point(s, theta, bulge, shape))
+            inner.append(local_point(s, theta, 1.0 - shape.shell, shape))
     if hinge is not None:
         mid = lerp(thetas, 0.5)
-        outer = [swing(p, hinge, mid) for p in outer]
-        inner = [swing(p, hinge, mid) for p in inner]
+        outer = [swing(p, hinge, mid, shape) for p in outer]
+        inner = [swing(p, hinge, mid, shape) for p in inner]
     return patch(name, frame, outer, inner, nu, nv, token)
 
 
-def swing(point: Vector, hinge, theta: float) -> Vector:
+def swing(point: Vector, hinge, theta: float, shape: PodShape = SPORE_POD) -> Vector:
     """Rotates a point above the hinge ring outwards about the ring's tangent."""
     s_hinge, angle = hinge
-    z_hinge = s_hinge * LENGTH - BURY
+    z_hinge = s_hinge * shape.length - shape.bury
     if point.z <= z_hinge + 1e-6:
         return point
-    a = theta + TWIST * s_hinge
+    a = theta + shape.twist * s_hinge
     radial = Vector((math.sin(a), -math.cos(a), 0.0))
-    pivot = radial * radius_at(s_hinge) + Vector((0.0, 0.0, z_hinge))
+    pivot = radial * radius_at(s_hinge, shape) + Vector((0.0, 0.0, z_hinge))
     axis = Vector((0.0, 0.0, 1.0)).cross(radial).normalized()
     return pivot + Matrix.Rotation(angle, 3, axis) @ (point - pivot)
 
@@ -160,30 +177,30 @@ def patch(name, frame, outer, inner, nu, nv, token):
     return mesh(name, vertices, faces, token, smooth=False)
 
 
-def rim_along(name, frame, thetas, line, rng, hinge=None):
+def rim_along(name, frame, thetas, line, rng, hinge=None, shape: PodShape = SPORE_POD):
     """A toasted-tan rim along part of a plate's cracked lower edge, as on
     the concept's larger plates."""
     start = rng.uniform(0.0, 0.3)
     points = []
     for i in range(4):
         u = start + (0.7 - 0.05) * i / 3
-        p = local_point(lerp(line, u) + 0.01, lerp(thetas, u), 1.05)
+        p = local_point(lerp(line, u) + 0.01, lerp(thetas, u), 1.05, shape)
         if hinge is not None:
-            p = swing(p, hinge, lerp(thetas, 0.5))
+            p = swing(p, hinge, lerp(thetas, 0.5), shape)
         points.append(tuple(frame @ p))
     sweep(name, points, [0.012, 0.017, 0.017, 0.011], token="bug-chitin-tan", sides=5, smooth=False)
 
 
-def seam_gap(s: float) -> float:
+def seam_gap(s: float, shape: PodShape = SPORE_POD) -> float:
     """Half the seam's angular width at `s`, so seams stay one width up the taper."""
-    return min(0.2, 0.5 * SEAM / max(radius_at(s), 0.05))
+    return min(0.2, 0.5 * shape.seam / max(radius_at(s, shape), 0.05))
 
 
-def husk(frame, rng, mature: bool) -> None:
+def husk(frame, rng, mature: bool, shape: PodShape = SPORE_POD) -> None:
     """The staves: cracked plates round the axis, with the crown split at the front."""
-    step = math.tau / STAVES
-    for k in range(STAVES):
-        front = k in (0, STAVES - 1)
+    step = math.tau / shape.staves
+    for k in range(shape.staves):
+        front = k in (0, shape.staves - 1)
         if mature:
             top = 0.95 - 0.04 * (k % 2)
             cracks = [(0.0, 0.0), (0.3, 0.3), (top, top)]
@@ -200,19 +217,21 @@ def husk(frame, rng, mature: bool) -> None:
         for n in range(len(cracks) - 1):
             lower = tuple(c + (0.012 if n else 0.0) for c in cracks[n])
             upper = tuple(c - 0.012 for c in cracks[n + 1])
-            gap = seam_gap((sum(lower) + sum(upper)) / 4)
+            gap = seam_gap((sum(lower) + sum(upper)) / 4, shape)
             thetas = ((k - 0.5) * step + gap, (k + 0.5) * step - gap)
             token = "bug-chitin-dark" if (k + n) % 2 else "bug-chitin-black"
-            piece = plate(f"plate{k}_{n}", frame, thetas, lower, upper, token, rng, hinge=hinge)
+            piece = plate(f"plate{k}_{n}", frame, thetas, lower, upper, token, rng, hinge=hinge,
+                          shape=shape)
             cut_below(piece)
             if mature and n == len(cracks) - 2:
                 # The petal's inner face, lit from the core.
                 inset = (thetas[0] + gap * 0.6, thetas[1] - gap * 0.6)
                 lining = plate(f"lining{k}", frame, inset, tuple(c + 0.02 for c in lower),
-                               tuple(c - 0.04 for c in upper), "bug-flesh-light", rng, hinge=hinge)
+                               tuple(c - 0.04 for c in upper), "bug-flesh-light", rng, hinge=hinge,
+                               shape=shape)
                 shrink(lining, frame, 0.93)
             if n > 0 and rng.random() < 0.7:
-                rim_along(f"rim{k}_{n}", frame, thetas, lower, rng, hinge=hinge)
+                rim_along(f"rim{k}_{n}", frame, thetas, lower, rng, hinge=hinge, shape=shape)
 
 
 def shrink(ob, frame, factor: float) -> None:
@@ -232,16 +251,16 @@ def shrink(ob, frame, factor: float) -> None:
 # ===========================================
 
 
-def core(frame, mature: bool) -> None:
+def core(frame, mature: bool, shape: PodShape = SPORE_POD) -> None:
     """The living interior: magenta light behind the seams, a membrane in the crown."""
     if mature:
         # Split wide open: one bright orb, veined, held in the petals' cup.
         centre = Vector((0.0, 0.0, 0.62))
-        bead("core_orb", tuple(frame @ centre), ORB, "bug-bio-magenta",
+        bead("core_orb", tuple(frame @ centre), shape.orb, "bug-bio-magenta",
              scale=(1, 1, 1.1), segments=20, rings=14)
         samples = (0.02, 0.2, 0.34)
-        body = sweep("core_body", [tuple(frame @ local_point(s, 0.0, 0.0)) for s in samples],
-                     [radius_at(s) * 0.86 for s in samples], token="bug-flesh", sides=14)[0]
+        body = sweep("core_body", [tuple(frame @ local_point(s, 0.0, 0.0, shape)) for s in samples],
+                     [radius_at(s, shape) * 0.86 for s in samples], token="bug-flesh", sides=14)[0]
         cut_below(body)
         # Russet veins across the orb, from its crown down its sides.
         for i in range(5):
@@ -252,33 +271,33 @@ def core(frame, mature: bool) -> None:
                 heading = a + 0.22 * j
                 arc.append(centre + Vector((math.sin(heading) * math.sin(polar),
                                             -math.cos(heading) * math.sin(polar),
-                                            math.cos(polar) * 1.1)) * (ORB * 1.02))
+                                            math.cos(polar) * 1.1)) * (shape.orb * 1.02))
             sweep(f"orb_vein{i}", [tuple(frame @ p) for p in arc], [0.012, 0.014, 0.012, 0.008],
                   token="bug-flesh", sides=5)
         return
     samples = [0.0, 0.1, 0.22, 0.34, 0.48, 0.6, 0.7]
-    body = sweep("core_body", [tuple(frame @ local_point(s, 0.0, 0.0)) for s in samples],
-                 [radius_at(s) * 0.9 for s in samples], token="bug-bio-magenta", sides=14)[0]
+    body = sweep("core_body", [tuple(frame @ local_point(s, 0.0, 0.0, shape)) for s in samples],
+                 [radius_at(s, shape) * 0.9 for s in samples], token="bug-bio-magenta", sides=14)[0]
     cut_below(body)
     crown = [0.62, 0.72, 0.8, 0.87, 0.92]
-    sweep("crown_membrane", [tuple(frame @ local_point(s, 0.0, 0.0)) for s in crown],
-          [radius_at(s) * 0.92 for s in crown], token="bug-flesh", sides=12)
+    sweep("crown_membrane", [tuple(frame @ local_point(s, 0.0, 0.0, shape)) for s in crown],
+          [radius_at(s, shape) * 0.92 for s in crown], token="bug-flesh", sides=12)
     # The concept's split: russet flesh with thin green veins and a magenta slit.
     for i, (a, rise) in enumerate([(-0.3, 0.12), (0.0, 0.14), (0.25, 0.1)]):
-        vein = [local_point(0.7 + rise * j / 3, a + 0.08 * j * (1 if i % 2 else -1), 0.935)
+        vein = [local_point(0.7 + rise * j / 3, a + 0.08 * j * (1 if i % 2 else -1), 0.935, shape)
                 for j in range(4)]
         sweep(f"crown_vein{i}", [tuple(frame @ p) for p in vein], [0.005, 0.006, 0.005, 0.003],
               token="bug-bio-green", sides=5)
-    slit = [local_point(s, -0.42, 0.925) for s in (0.64, 0.7, 0.76, 0.82)]
+    slit = [local_point(s, -0.42, 0.925, shape) for s in (0.64, 0.7, 0.76, 0.82)]
     sweep("crown_slit", [tuple(frame @ p) for p in slit], [0.02, 0.035, 0.03, 0.012],
           [0.02, 0.03, 0.028, 0.012], token="bug-bio-magenta", sides=6)
 
 
-def roots(frame, rng, count: int = 9) -> None:
+def roots(frame, rng, count: int = 9, shape: PodShape = SPORE_POD) -> None:
     """Fleshy tendrils from the husk's buried base out across the skirt."""
     for k in range(count):
         a = k * math.tau / count + rng.uniform(-0.18, 0.18)
-        start = frame @ local_point(0.3, a, 0.9)
+        start = frame @ local_point(0.3, a, 0.9, shape)
         start.z = max(start.z, 0.14)
         out = Vector((math.sin(a), -math.cos(a), 0.0))
         reach = 0.58 + rng.uniform(0.0, 0.07)

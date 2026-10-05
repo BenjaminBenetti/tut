@@ -210,7 +210,8 @@ export function broodPositions(
  *     species ~ state.bugMix, else tuning.defaultMix   (hookRng "species", one pick per bug)
  *     tiles   = broodPositions(size × slack)            (hookRng "positions")
  *     placeDormantBrood per species, in first-rolled order,
- *       id brood-<chamberId>, wake { hook tile, wakeRadius }, label "<compass> chamber"
+ *       id brood-<chamberId>, wake { hook tile, wakeRadius },
+ *       label meta.label, else "<compass> chamber"
  * ```
  *
  * Seeded from the mission, so the same mission always sleeps the same
@@ -454,12 +455,18 @@ function groupBySpecies(
 }
 
 /**
- * Where the chamber lies from the map's centre, for the log: a compass
- * point (north is −z, east is +x) or "central", then the kind of
- * chamber — `"east chamber"`, `"north-west side chamber"`, and
- * `"core chamber"` for the deepest, which needs no direction.
+ * Where the chamber lies, for the log: the hook's own `meta.label` when
+ * the generator named it (the great pod's `"pod's north chamber"`,
+ * #1238), else a compass point from the map's centre (north is −z, east
+ * is +x) or "central", then the kind of chamber — `"east chamber"`,
+ * `"north-west side chamber"`, and `"core chamber"` for the deepest,
+ * which needs no direction.
  */
 function chamberLabel(hook: Hook, map: TacticalMap): string {
+  const named = hook.meta?.label;
+  if (typeof named === "string" && named.length > 0) {
+    return named;
+  }
   const role = hook.meta?.role;
   if (role === "core") {
     return "core chamber";

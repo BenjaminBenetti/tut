@@ -1,5 +1,7 @@
 import type { StorySetupRules } from "../../model/story-setup-rule";
+import { GREAT_POD_SETUP_TUNING } from "../../data/great-pod-setup-tuning";
 import { INTACT_POD_TUNING } from "../../data/intact-pod-tuning";
+import { createGreatPodStorySetup } from "./great-pod-story-setup";
 import { createIntactPodSetup } from "./intact-pod-setup";
 import { LIVE_SPECIMEN_SETUP } from "./live-specimen-setup";
 
@@ -14,7 +16,8 @@ import { LIVE_SPECIMEN_SETUP } from "./live-specimen-setup";
  * `mission.storyId` right after the type's `MISSION_SETUP_RULES` entry.
  *
  * ```
- *   first-skyfall  ──► (none: the crash site's setup is the whole of it)
+ *   first-skyfall  ──► great-pod-story-setup.ts  the pod came down whole: its core,
+ *                                               its clock and its chambers' broods
  *   live-specimen  ──► live-specimen-setup.ts   the capture decides, the nests are
  *                                               optional, four lurkers by the nests
  *   intact-pod     ──► intact-pod-setup.ts      the pod to burn becomes a pod of
@@ -26,6 +29,10 @@ import { LIVE_SPECIMEN_SETUP } from "./live-specimen-setup";
  * through `MissionStartDeps.storySetupRules`; tests substitute their own.
  */
 export const STORY_SETUP_RULES: StorySetupRules = {
+  "first-skyfall": createGreatPodStorySetup(
+    "first-skyfall",
+    GREAT_POD_SETUP_TUNING,
+  ),
   "live-specimen": LIVE_SPECIMEN_SETUP,
   "intact-pod": createIntactPodSetup(INTACT_POD_TUNING),
 };

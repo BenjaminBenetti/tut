@@ -1,4 +1,8 @@
 import type { ObjectiveRules } from "../../model/objective-rules";
+import {
+  spawnerVariantOf,
+  type SpawnerVariant,
+} from "../../model/spawner-variant";
 import { SPORE_POD_MATURED } from "../../model/spore-pod-matured-event";
 import type { TacticalApplied } from "../../model/tactical-event";
 import type {
@@ -15,6 +19,13 @@ import {
 } from "./wreck-objectives";
 
 // ===========================================
+// Constants
+// ===========================================
+
+/** The variant whose maturing event names none, as it always has. */
+const SPORE_POD_VARIANT: SpawnerVariant = "spore-pod";
+
+// ===========================================
 // Maturing
 // ===========================================
 
@@ -28,7 +39,8 @@ import {
  *
  * ```
  *   pod standing ──► { hp: 0, destroyed, matured, burstPending }
- *                    SporePodMatured { spawnerId, objectiveId }
+ *                    SporePodMatured { spawnerId, objectiveId,
+ *                                      variant unless a spore pod }
  *   pod gone     ──► unchanged, no events
  * ```
  *
@@ -44,6 +56,7 @@ export function maturePod(
   if (pod === undefined || pod.destroyed) {
     return { state: mission, events: [] };
   }
+  const variant = spawnerVariantOf(pod);
   const matured: Spawner = {
     ...pod,
     hp: 0,
@@ -61,7 +74,11 @@ export function maturePod(
     events: [
       {
         type: SPORE_POD_MATURED,
-        payload: { spawnerId: pod.id, objectiveId: objective.id },
+        payload: {
+          spawnerId: pod.id,
+          objectiveId: objective.id,
+          ...(variant === SPORE_POD_VARIANT ? {} : { variant }),
+        },
       },
     ],
   };

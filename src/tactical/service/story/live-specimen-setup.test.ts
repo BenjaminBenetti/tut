@@ -168,9 +168,10 @@ describe("LIVE_SPECIMEN_SETUP (campaign arc §6.9, #1179)", () => {
   it("is Live Specimen's entry in the shipped story table, beside Intact Pod's", () => {
     expect(STORY_SETUP_RULES["live-specimen"]).toBe(LIVE_SPECIMEN_SETUP);
     expect(LIVE_SPECIMEN_SETUP.storyId).toBe("live-specimen");
-    // First Skyfall is its crash site's setup alone; Intact Pod (#1179)
+    // First Skyfall stands its great pod (#1238); Intact Pod (#1179)
     // turns its crash site's pod into one to keep.
     expect(Object.keys(STORY_SETUP_RULES)).toEqual([
+      "first-skyfall",
       "live-specimen",
       "intact-pod",
     ]);

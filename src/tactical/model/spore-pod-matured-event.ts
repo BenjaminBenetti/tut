@@ -1,4 +1,5 @@
 import type { DomainEvent } from "../../core/model/domain-event";
+import type { SpawnerVariant } from "./spawner-variant";
 import type { ObjectiveId, SpawnerId } from "./tactical-state";
 
 // ===========================================
@@ -10,10 +11,16 @@ export const SPORE_POD_MATURED = "tactical:spore-pod-matured";
 
 /** Payload of `SporePodMatured`. */
 export interface SporePodMaturedPayload {
-  /** The pod, a `spore-pod` spawner, now gone. */
+  /** The pod, a `spore-pod` or `great-pod-core` spawner, now gone. */
   readonly spawnerId: SpawnerId;
   /** The `destroy-pod` objective its maturing failed. */
   readonly objectiveId: ObjectiveId;
+  /**
+   * What matured, when it is not a spore pod: a great pod's core
+   * (#1238). Absent for a spore pod, so its events read exactly as they
+   * did before great pods.
+   */
+  readonly variant?: SpawnerVariant;
 }
 
 /**

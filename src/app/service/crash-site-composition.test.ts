@@ -72,9 +72,11 @@ function infestationAt(state: GameState, cityId: string): number {
 
 /**
  * Starts `offer` with the whole starter squad list, then stands one squad
- * beside the pod: the scripted map brings it within 14 of the drop zone,
- * which is two turns' walk, not a rule. Everything after is the shipped
- * path.
+ * beside the great pod's core (#1238), inside the hull: getting there
+ * takes a breach and a walk, which the modelled players play, not a
+ * rule. The core is a 3×3 anchored at its lowest corner, so the tile
+ * three east of the anchor is the core chamber's floor beside it.
+ * Everything after is the shipped path.
  */
 function startBesidePod(game: GameComposition, offer: Mission): string {
   const squads = live(game).roster.squads.map((s) => s.id);
@@ -88,14 +90,14 @@ function startBesidePod(game: GameComposition, offer: Mission): string {
   expect(started?.ok).toBe(true);
   const state = live(game);
   const active = state.activeMission;
-  const pod = active?.spawners.find((s) => s.variant === "spore-pod");
+  const pod = active?.spawners.find((s) => s.variant === "great-pod-core");
   const unit = active?.units.find((u) => u.team === "tdf");
   if (!active || !pod || !unit) throw new Error("no pod or no squad");
   game.session.replace({
     ...state,
     activeMission: {
       ...active,
-      units: [{ ...unit, pos: { ...pod.pos, x: pod.pos.x + 1 }, ap: 2 }],
+      units: [{ ...unit, pos: { ...pod.pos, x: pod.pos.x + 3 }, ap: 2 }],
     },
   });
   return unit.id;
@@ -107,7 +109,7 @@ function wreckPod(game: GameComposition, unitId: string): void {
     (o) => o.kind === "destroy-pod",
   )?.id;
   if (objectiveId === undefined) throw new Error("no destroy-pod objective");
-  for (let guard = 0; guard < 20; guard++) {
+  for (let guard = 0; guard < 40; guard++) {
     const state = live(game);
     const active = state.activeMission;
     if (!active || active.objectives.every((o) => o.complete)) return;
@@ -151,7 +153,7 @@ function boardAndFinish(game: GameComposition, unitId: string, offer: Mission) {
 // ===========================================
 
 describe("First Skyfall through the composition root (#1179)", () => {
-  it("pins after mission one, lands, plays on the crater, and a win erases the landing and recovers the sample", () => {
+  it("pins after mission one, lands, plays at the great pod, and a win erases the landing and recovers the sample", () => {
     const game = build();
     afterMissionOne(game);
     const day = live(game).overworld.day;
@@ -187,28 +189,32 @@ describe("First Skyfall through the composition root (#1179)", () => {
       },
     });
 
-    // Started: the crater, the pod close to deploy on its clock, and
-    // two edge waves.
+    // Started: the great pod (#1238), its core a short march from the
+    // drop on the crash site's clock plus the hull's turns, and two edge
+    // waves.
     const unitId = startBesidePod(game, offer);
     const active = live(game).activeMission;
     if (!active) throw new Error("no active mission");
-    expect(active.map.recipe.params.archetype).toBe("crash-site");
+    expect(active.map.recipe.params.archetype).toBe("great-pod");
     expect(active.objectives).toEqual([
       expect.objectContaining({
         kind: "destroy-pod",
-        deadlineTurn: SPAWN_TUNING.podMaturityTurn,
+        deadlineTurn: SPAWN_TUNING.podMaturityTurn + 4,
         complete: false,
+        greatPod: true,
       }),
     ]);
     expect(SPAWN_TUNING.podMaturityTurn).toBe(8);
     expect(active.edgeSpawn.totalWaves).toBe(2);
-    const pod = active.map.hooks.objectives.find((h) => h.kind === "spore-pod");
+    const pod = active.map.hooks.objectives.find(
+      (h) => h.kind === "great-pod-core",
+    );
     const deploy = active.map.hooks.deployZones.flatMap((z) => z.tiles);
     const podTile = pod?.tiles[0];
     if (podTile === undefined) throw new Error("no pod hook");
     expect(
       Math.min(...deploy.map((t) => manhattanDistance(t, podTile))),
-    ).toBeLessThanOrEqual(14);
+    ).toBeLessThanOrEqual(24);
 
     // Wreck the pod, board, finish.
     wreckPod(game, unitId);

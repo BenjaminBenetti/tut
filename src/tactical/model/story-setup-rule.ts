@@ -25,8 +25,7 @@ import type { TacticalState } from "./tactical-state";
  *                                                          capture and its lurkers
  * ```
  *
- * A story mission without an entry (First Skyfall) is its type's setup
- * alone. Pure and deterministic, like `MissionSetupRule`: ids come from
+ * A story mission without an entry is its type's setup alone. Pure and deterministic, like `MissionSetupRule`: ids come from
  * `deps.ids` in the order the rule asks for them.
  */
 export interface StorySetupRule {

@@ -83,6 +83,44 @@ describe("DESTROY_POD_PRESENTATION", () => {
     });
   });
 
+  it("calls a great pod's target the pod's core, which ripens (#1238)", () => {
+    const core: Spawner = {
+      ...POD,
+      variant: "great-pod-core",
+      hp: 80,
+      maxHp: 80,
+    };
+    const objective: DestroyPodObjective = {
+      ...OBJECTIVE,
+      targetId: core.id,
+      deadlineTurn: 12,
+      greatPod: true,
+    };
+    expect(DESTROY_POD_PRESENTATION.name(objective, 1)).toBe("the pod's core");
+    expect(DESTROY_POD_PRESENTATION.deadlinePhrase?.(objective)).toBe(
+      "Core ripens",
+    );
+    expect(rowFor(objective, core)).toEqual({
+      icon: "egg",
+      label: "Destroy the pod's core",
+      data: { targetId: core.id },
+      layout: "inline",
+      detail: { text: "80 hp" },
+    });
+    expect(
+      rowFor(
+        { ...objective, complete: true },
+        { ...core, hp: 0, destroyed: true },
+      ).label,
+    ).toBe("Destroyed the pod's core");
+    expect(
+      rowFor(
+        { ...objective, failed: true },
+        { ...core, hp: 0, destroyed: true, matured: true },
+      ).label,
+    ).toBe("Too late: the pod's core ripened");
+  });
+
   it("uses glyphs the manifest has", () => {
     for (const icon of ["egg", "check", "warning"]) {
       expect(Object.keys(ICON_MANIFEST)).toContain(icon);

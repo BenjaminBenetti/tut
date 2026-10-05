@@ -39,7 +39,10 @@ describe("Launch Window's briefing (#1179)", () => {
     expect(
       storyBriefingFieldsOf(STORY_PRESENTATION).map((field) => field.field),
     ).toEqual([
+      // First Skyfall's (#1238), the first story, opens the slots.
       "story-objective",
+      "story-core",
+      "story-hull",
       "story-win",
       "story-kit",
       "story-lost",

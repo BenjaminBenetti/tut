@@ -2,7 +2,11 @@ import {
   DEFAULT_CHARGE_DELAY_TURNS,
   isDeployable,
 } from "../../tactical/model/equipment";
-import { SPAWNER_VARIANT_TRAITS } from "../../tactical/model/spawner-variant";
+import { PropKindIds } from "../../mapgen/data/props";
+import {
+  SPAWNER_VARIANT_TRAITS,
+  type SpawnerVariant,
+} from "../../tactical/model/spawner-variant";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { TUNNEL_TUNING } from "../../tactical/data/tunnel-tuning";
 import { isTunnelChargeId } from "../../tactical/service/objectives/seal-tunnels-objective";
@@ -163,10 +167,22 @@ export function describeEvent(
       };
     }
     case "tactical:structure-destroyed": {
+      const structure = event.payload.structure;
+      // A great pod's hull (#1238) is a way in, not rubble.
+      if (
+        structure.kind === "prop" &&
+        HULL_PROP_KINDS.has(structure.propKind)
+      ) {
+        return {
+          text: `${nameOf(event.payload.unitId)} breached the pod's hull`,
+          icon: "warning",
+          tone: "accent",
+        };
+      }
       const what =
-        event.payload.structure.kind === "prop"
-          ? structureName(event.payload.structure.propKind)
-          : wallName(event.payload.structure.wallKind);
+        structure.kind === "prop"
+          ? structureName(structure.propKind)
+          : wallName(structure.wallKind);
       return {
         text: `${nameOf(event.payload.unitId)} brought down ${what}`,
         icon: "warning",
@@ -417,14 +433,20 @@ export function describeEvent(
       // (campaign arc §6.3) says so itself, since the race was the point.
       return event.payload.destroyed && event.payload.variant !== undefined
         ? {
-            text: `${SPAWNER_VARIANT_TRAITS[event.payload.variant].name} destroyed`,
+            text:
+              DESTROYED_LINES[event.payload.variant] ??
+              `${SPAWNER_VARIANT_TRAITS[event.payload.variant].name} destroyed`,
             icon: "check",
             tone: "ok",
           }
         : undefined;
     case "tactical:spore-pod-matured":
       return {
-        text: `${SPAWNER_VARIANT_TRAITS["spore-pod"].name} matured`,
+        text:
+          event.payload.variant === undefined
+            ? `${SPAWNER_VARIANT_TRAITS["spore-pod"].name} matured`
+            : (RIPENED_LINES[event.payload.variant] ??
+              `${SPAWNER_VARIANT_TRAITS[event.payload.variant].name} matured`),
         icon: "warning",
         tone: "danger",
       };
@@ -731,6 +753,30 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return undefined;
   }
 }
+
+// ===========================================
+// The great pod's lines (#1238)
+// ===========================================
+
+/** The great pod's hull: a piece of it falling is a breach. */
+const HULL_PROP_KINDS: ReadonlySet<string> = new Set([
+  PropKindIds.GREAT_POD_HULL_PLATE,
+  PropKindIds.GREAT_POD_HULL_CURVE,
+  PropKindIds.GREAT_POD_HULL_SEAM,
+]);
+
+/**
+ * A wreck's line where `<name> destroyed` does not say enough: a great
+ * pod's core down means the job is done and the drop ship is next.
+ */
+const DESTROYED_LINES: Partial<Record<SpawnerVariant, string>> = {
+  "great-pod-core": "Pod core destroyed: get to the drop ship",
+};
+
+/** A clock run out where `<name> matured` is the wrong word. */
+const RIPENED_LINES: Partial<Record<SpawnerVariant, string>> = {
+  "great-pod-core": "The pod's core ripened and burst",
+};
 
 /** "a car", "a fence": the prop kind id read as words with an article. */
 function structureName(kind: string): string {

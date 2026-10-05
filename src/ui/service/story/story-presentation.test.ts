@@ -7,6 +7,7 @@ import {
   campaignOnDay,
   missionAt,
 } from "../../view/mission-fixtures.test-helper";
+import { FIRST_SKYFALL_PRESENTATION } from "./first-skyfall-presentation";
 import { LIVE_SPECIMEN_PRESENTATION } from "./live-specimen-presentation";
 import {
   STORY_PRESENTATION,
@@ -27,13 +28,6 @@ const SPECIMEN = {
   storyId: "live-specimen" as const,
   pinned: true,
   act: "act-1" as const,
-};
-
-const SKYFALL = {
-  ...missionAt("mission-3", "lagos", 7, 1),
-  typeId: "crash-site" as const,
-  storyId: "first-skyfall" as const,
-  pinned: true,
 };
 
 /** A campaign on day 4 whose story progress is overridden by `story`. */
@@ -85,12 +79,15 @@ const MISSED = [
 // ===========================================
 
 describe("STORY_PRESENTATION (ADR 0013 §2.5)", () => {
-  it("has Live Specimen and nothing for First Skyfall, whose crash site says it all", () => {
+  it("has Live Specimen and First Skyfall, whose great pod the crash site's rows do not describe (#1238)", () => {
     expect(STORY_PRESENTATION["live-specimen"]).toBe(
       LIVE_SPECIMEN_PRESENTATION,
     );
     expect(LIVE_SPECIMEN_PRESENTATION.storyId).toBe("live-specimen");
-    expect(STORY_PRESENTATION["first-skyfall"]).toBeUndefined();
+    expect(STORY_PRESENTATION["first-skyfall"]).toBe(
+      FIRST_SKYFALL_PRESENTATION,
+    );
+    expect(FIRST_SKYFALL_PRESENTATION.storyId).toBe("first-skyfall");
   });
 
   it("builds every story's fields once, in story order", () => {
@@ -140,8 +137,8 @@ describe("Live Specimen's briefing (#1179)", () => {
     );
   });
 
-  it("adds nothing to a mission that is not a story's, or whose story has no presentation", () => {
-    for (const mission of [CLEARANCE, SKYFALL]) {
+  it("adds nothing to a mission that is not a story's", () => {
+    for (const mission of [CLEARANCE]) {
       expect(
         storyBriefingRowsOf(mission, { state: campaign() }, STORY_PRESENTATION),
       ).toEqual([]);

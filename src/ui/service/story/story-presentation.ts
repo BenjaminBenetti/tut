@@ -7,6 +7,7 @@ import type {
   MissionPresentationContext,
 } from "../../model/mission-presentation";
 import type { StoryPresentationCatalogue } from "../../model/story-presentation";
+import { FIRST_SKYFALL_PRESENTATION } from "./first-skyfall-presentation";
 import { GREAT_HIVE_PRESENTATION } from "./great-hive-presentation";
 import { INTACT_POD_PRESENTATION } from "./intact-pod-presentation";
 import { LAUNCH_WINDOW_PRESENTATION } from "./launch-window-presentation";
@@ -24,7 +25,8 @@ import { UPLINK_PRESENTATION } from "./uplink-presentation";
  * one adds its module and one line here.
  *
  * ```
- *   first-skyfall  ──► (none: the crash site's presentation says it all)
+ *   first-skyfall  ──► first-skyfall-presentation.ts   (the great pod's core
+ *                      and hull; replaces the crash site's pod row, #1238)
  *   live-specimen  ──► live-specimen-presentation.ts
  *   uplink         ──► uplink-presentation.ts          } story defences, sharing
  *   great-hive     ──► great-hive-presentation.ts
@@ -36,6 +38,7 @@ import { UPLINK_PRESENTATION } from "./uplink-presentation";
  * ```
  */
 export const STORY_PRESENTATION: StoryPresentationCatalogue = {
+  "first-skyfall": FIRST_SKYFALL_PRESENTATION,
   "live-specimen": LIVE_SPECIMEN_PRESENTATION,
   uplink: UPLINK_PRESENTATION,
   "great-hive": GREAT_HIVE_PRESENTATION,

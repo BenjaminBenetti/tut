@@ -2740,6 +2740,8 @@
  * without the colour, which matters beside the warn-gold Unaffordable
  * badge. Before the status rules, so the unlocked and available left
  * bars still show; selection keeps the frame and rings it in info blue.
+ * The screen places the label 1.3× larger (`STORY_LABEL_SCALE`), and it
+ * sits over its neighbours where they overlap.
  *
  *   ╔══════════════════╗
  *   ║   [◆ STORY]      ║   tag: story fill, dark text
@@ -2748,6 +2750,7 @@
  *   ╚══════════════════╝
  */
 .tut-tech-tree__node[data-story="true"] {
+  z-index: 1;
   border: 3px double var(--ui-story);
   background: color-mix(
     in srgb,
@@ -2778,7 +2781,7 @@
   background: var(--ui-story);
   color: var(--ui-accent-text);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.5;
   letter-spacing: 0.12em;

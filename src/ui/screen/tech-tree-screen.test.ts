@@ -945,6 +945,56 @@ describe("TechTreeScreen story nodes (#1237)", () => {
     expect(q("#tech-tree-detail").dataset.story).toBeUndefined();
   });
 
+  it("draws a story node's label 1.3 times an ordinary one's size at every zoom, so the tag reads from the start", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(holding(250)), root, {
+      graph,
+      conditionsOf: () => EVERY_STORY_FLAG,
+    });
+    const scaleOf = (id: string): number => {
+      const match = /scale\(([\d.]+)\)/.exec(label(id).style.transform);
+      if (!match?.[1]) throw new Error(`${id} has no scale`);
+      return Number(match[1]);
+    };
+    // 24 is the host's starting zoom, where ordinary labels sit at their floor.
+    for (const zoom of [10, 24, 40, 64, 128]) {
+      graph.listener?.framed({
+        nodes: [
+          { id: "tech.pheromone-analysis", x: 100, y: 100 },
+          { id: "tech.last-hope", x: 300, y: 100 },
+          { id: "tech.jump-jets", x: 500, y: 100 },
+        ],
+        families: [{ id: "support", x: 200, y: 50 }],
+        zoom,
+      });
+      const ordinary = scaleOf("tech.jump-jets");
+      expect(scaleOf("tech.pheromone-analysis"), `zoom ${zoom}`).toBeCloseTo(
+        ordinary * 1.3,
+        2,
+      );
+      expect(scaleOf("tech.last-hope"), `zoom ${zoom}`).toBeCloseTo(
+        ordinary * 1.3,
+        2,
+      );
+      // Family plinths keep the ordinary scale.
+      expect(
+        q('[data-family="support"]').style.transform,
+        `zoom ${zoom}`,
+      ).toContain(`scale(${ordinary.toFixed(3)})`);
+    }
+    // Ordinary labels sit at their 0.7 floor when the web first opens.
+    graph.listener?.framed({
+      nodes: [
+        { id: "tech.pheromone-analysis", x: 100, y: 100 },
+        { id: "tech.jump-jets", x: 500, y: 100 },
+      ],
+      families: [],
+      zoom: 24,
+    });
+    expect(scaleOf("tech.jump-jets")).toBeCloseTo(0.7, 3);
+    expect(scaleOf("tech.pheromone-analysis")).toBeCloseTo(0.91, 3);
+  });
+
   it("falls back to a plain story line without notes", () => {
     const graph = new FakeGraphHost();
     mountWith(new RealStore(holding(250)), root, {

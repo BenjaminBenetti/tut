@@ -1,10 +1,16 @@
 import {
+  Box3,
   BoxGeometry,
   Group,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   OrthographicCamera,
+  PerspectiveCamera,
+  Raycaster,
   RingGeometry,
+  Vector2,
+  Vector3,
 } from "three";
 import type { Object3D } from "three";
 import { describe, expect, it } from "vitest";
@@ -27,13 +33,21 @@ import { TECH_FAMILIES } from "../../tech/data/tech-families";
 import { TECH_NODES } from "../../tech/data/tech-tree";
 import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import type { TechNodeId } from "../../tech/model/tech-node";
+import { isStoryTechNode } from "../../tech/model/tech-node-kind-traits";
 import { StaticTechCatalogue } from "../../tech/repository/static-tech-catalogue";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
 import { layoutTechGraph } from "../../ui/service/tech-graph-layout";
 import type { ModelLoader } from "../model/model-loader";
+import {
+  STORY_BEACON_HEIGHT,
+  STORY_BEACON_NAME,
+  STORY_GEM_NAME,
+  STORY_GEM_RATE,
+} from "../view/tech-story-beacon";
 import { MODULE_MODEL_NAME } from "./tech-node-model-source";
 import {
   DEFAULT_CORE_MODEL,
+  PEDESTAL_HEIGHT,
   PEDESTAL_RADIUS,
   STORY_CROWN_NAME,
   TechGraphSceneBuilder,
@@ -298,6 +312,143 @@ describe("TechGraphSceneBuilder", () => {
         "tech.pod-telemetry",
       ].sort(),
     );
+    builder.dispose();
+  });
+
+  it("raises a gold beacon over every story pedestal and no other, dimmed only once researched (#1237)", () => {
+    const layout = layoutTechGraph(
+      conditionalTechCatalogue(),
+      withFlags(SPORE_SAMPLE, HIVE_CORE_SAMPLE),
+    );
+    const builder = new TechGraphSceneBuilder({
+      layout,
+      models: new FakeModelLoader(),
+    });
+    const beaconOf = (id: TechNodeId): Object3D | undefined =>
+      builder.root
+        .getObjectByName(`node:${id}`)
+        ?.getObjectByName(STORY_BEACON_NAME);
+    /** The shafts' opacity: 1 at full brightness, lower when dimmed. */
+    const brightnessOf = (beacon: Object3D): number[] =>
+      beacon.children.flatMap((child) =>
+        child instanceof Mesh && child.material instanceof MeshBasicMaterial
+          ? [child.material.opacity]
+          : [],
+      );
+    for (const id of [
+      FX_JUMP_JETS,
+      FX_SPRINT_FRAME,
+      FX_SQUAD_ARMOUR,
+      FX_HEAVY_WEAPONS,
+    ]) {
+      expect(beaconOf(id), id).toBeUndefined();
+    }
+    for (const id of [
+      FX_PHEROMONE_ANALYSIS,
+      FX_POD_TELEMETRY,
+      FX_FIELD_NOTES,
+    ]) {
+      const beacon = beaconOf(id);
+      if (beacon === undefined) {
+        throw new Error(`${id} has no beacon`);
+      }
+      // On the pedestal top, rising past twice the pick solid's top.
+      expect(beacon.position.y, id).toBe(PEDESTAL_HEIGHT);
+      builder.root.updateMatrixWorld(true);
+      const pick = builder.root.getObjectByName(`pick:${id}`);
+      if (pick === undefined) {
+        throw new Error(`${id} has no pick solid`);
+      }
+      const top = new Box3().setFromObject(beacon).max.y;
+      expect(top, id).toBeCloseTo(PEDESTAL_HEIGHT + STORY_BEACON_HEIGHT, 5);
+      expect(top, id).toBeGreaterThan(2 * new Box3().setFromObject(pick).max.y);
+      const shafts = brightnessOf(beacon);
+      expect(shafts.length, id).toBeGreaterThanOrEqual(1);
+      for (const status of ["locked", "unaffordable", "available"] as const) {
+        builder.setStatuses(new Map([[id, status]]));
+        expect(beacon.visible, `${id} ${status}`).toBe(true);
+        expect(brightnessOf(beacon), `${id} ${status}`).toEqual(
+          shafts.map(() => 1),
+        );
+      }
+      builder.setStatuses(new Map([[id, "unlocked"]]));
+      expect(beacon.visible, `${id} unlocked`).toBe(true);
+      for (const opacity of brightnessOf(beacon)) {
+        expect(opacity, `${id} unlocked`).toBeGreaterThan(0);
+        expect(opacity, `${id} unlocked`).toBeLessThan(1);
+      }
+      // Hover and selection leave the dimming alone.
+      builder.setHovered(id);
+      builder.setSelected(id);
+      expect(brightnessOf(beacon)[0]).toBeLessThan(1);
+      builder.setHovered(undefined);
+      builder.setSelected(undefined);
+
+      const gem = beacon.getObjectByName(STORY_GEM_NAME);
+      const before = gem?.rotation.y ?? 0;
+      builder.turntables.update(1);
+      expect(gem?.rotation.y, id).toBeCloseTo(before + STORY_GEM_RATE, 5);
+    }
+    builder.dispose();
+  });
+
+  it("picks the node behind a story beacon when the pointer passes through its shaft (#1237)", () => {
+    const layout = layoutTechGraph(
+      new StaticTechCatalogue(TECH_NODES, Object.values(TECH_FAMILIES)),
+      withFlags("spore-sample"),
+    );
+    const builder = new TechGraphSceneBuilder({
+      layout,
+      models: new FakeModelLoader(),
+    });
+    const story = layout.nodes.find(
+      (node) => node.id === "tech.pheromone-analysis",
+    );
+    if (story === undefined) {
+      throw new Error("Pheromone Analysis is not laid out");
+    }
+    // The ordinary node nearest the story node: the one most likely to
+    // sit behind its shaft on screen.
+    const behind = layout.nodes
+      .filter((node) => !isStoryTechNode(node))
+      .map((node) => ({
+        node,
+        distance: Math.hypot(node.x - story.x, node.z - story.z),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0]?.node;
+    if (behind === undefined) {
+      throw new Error("no ordinary node to pick");
+    }
+    // A camera looking down through the shaft, high over the story
+    // node, at the ordinary node's model.
+    const through = new Vector3(story.x, 5, story.z);
+    const target = new Vector3(behind.x, 1, behind.z);
+    const camera = new PerspectiveCamera(30, 1, 0.1, 500);
+    camera.position
+      .copy(through)
+      .addScaledVector(through.clone().sub(target).normalize(), 40);
+    camera.lookAt(target);
+    camera.updateMatrixWorld();
+
+    // The case is in the fixture: this ray meets the shaft before it
+    // meets the ordinary node's pick solid.
+    builder.root.updateMatrixWorld(true);
+    const ray = new Raycaster();
+    ray.setFromCamera(new Vector2(0, 0), camera);
+    const beacon = builder.root
+      .getObjectByName(`node:${story.id}`)
+      ?.getObjectByName(STORY_BEACON_NAME);
+    const pick = builder.root.getObjectByName(`pick:${behind.id}`);
+    if (beacon === undefined || pick === undefined) {
+      throw new Error("the beacon or the pick solid is missing");
+    }
+    const shaftHit = ray.intersectObject(beacon, true)[0];
+    const pickHit = ray.intersectObject(pick, false)[0];
+    expect(shaftHit).toBeDefined();
+    expect(pickHit).toBeDefined();
+    expect(shaftHit?.distance ?? Infinity).toBeLessThan(pickHit?.distance ?? 0);
+
+    expect(builder.pick({ x: 0, y: 0 }, camera)).toBe(behind.id);
     builder.dispose();
   });
 

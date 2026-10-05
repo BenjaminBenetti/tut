@@ -82,6 +82,8 @@ interface NodeLabel {
   readonly node: TechNode;
   readonly root: HTMLElement;
   readonly badge: HTMLElement;
+  /** True when the node's kind advances the story: the label is drawn larger. */
+  readonly story: boolean;
 }
 
 /** The detail panel's live pieces. */
@@ -142,6 +144,19 @@ const CONTROLS_HINT = "W A S D pan · Q E rotate · wheel zoom · click a part";
 const LABEL_FULL_ZOOM = 64;
 const LABEL_MIN_SCALE = 0.7;
 
+/**
+ * A story node's label is drawn this much larger than an ordinary one
+ * at every zoom (#1237), so it stands out from the overview and its
+ * "◆ STORY" tag is legible at the starting zoom, where ordinary labels
+ * sit at `LABEL_MIN_SCALE`.
+ *
+ * ```
+ *   zoom 24 (start)   ordinary 0.70   story 0.91
+ *   zoom 64 and in    ordinary 1.00   story 1.30
+ * ```
+ */
+const STORY_LABEL_SCALE = 1.3;
+
 // ===========================================
 // TechTreeScreen
 // ===========================================
@@ -174,8 +189,9 @@ const LABEL_MIN_SCALE = 0.7;
  * A node whose kind advances the story (`isStoryTechNode`: the Intel
  * projects and Last Hope) carries `data-story="true"` and a "Story" tag
  * on its label in every status, which the stylesheet frames in the
- * story colour, and the detail panel says what researching it opens
- * (`techStoryText` over `storyNotes`, #1237).
+ * story colour; the label is placed `STORY_LABEL_SCALE` times larger
+ * than an ordinary one, and the detail panel says what researching it
+ * opens (`techStoryText` over `storyNotes`, #1237).
  *
  * ```
  *   label                        detail panel
@@ -460,18 +476,25 @@ export class TechTreeScreen implements Screen {
     badge.textContent = STATUS_LABELS[status];
   }
 
-  /** Moves every label onto its pedestal or plinth for this frame, scaled with the zoom. */
+  /**
+   * Moves every label onto its pedestal or plinth for this frame, scaled
+   * with the zoom; a story node's label `STORY_LABEL_SCALE` times larger.
+   */
   private place(frame: TechGraphFrame): void {
     const scale = Math.min(
       1,
       Math.max(LABEL_MIN_SCALE, frame.zoom / LABEL_FULL_ZOOM),
     );
-    const transform = (x: number, y: number): string =>
-      `translate(-50%, 0) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+    const transform = (x: number, y: number, by = scale): string =>
+      `translate(-50%, 0) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${by.toFixed(3)})`;
     for (const anchor of frame.nodes) {
       const label = this.labels.get(anchor.id);
       if (label) {
-        label.root.style.transform = transform(anchor.x, anchor.y);
+        label.root.style.transform = transform(
+          anchor.x,
+          anchor.y,
+          label.story ? scale * STORY_LABEL_SCALE : scale,
+        );
       }
     }
     for (const anchor of frame.families) {
@@ -674,7 +697,7 @@ export class TechTreeScreen implements Screen {
       },
       this.labelDisposers,
     );
-    this.labels.set(node.id, { node, root: label, badge });
+    this.labels.set(node.id, { node, root: label, badge, story });
     return label;
   }
 

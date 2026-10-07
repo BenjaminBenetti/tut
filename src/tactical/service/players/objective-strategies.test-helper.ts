@@ -112,15 +112,22 @@ export const DESTROY_SPAWNER_STRATEGY: ObjectiveStrategy<"destroy-spawner"> = {
   },
 };
 
-/** Wreck the crash site's pod before it ripens: a spawner on a clock. */
+/**
+ * Wreck the crash site's pod before it ripens: a spawner on a clock. A
+ * great pod's core (#1238) stands inside a hull with no way in, so its
+ * order breaches: the force opens the way before it walks it.
+ */
 export const DESTROY_POD_STRATEGY: ObjectiveStrategy<"destroy-pod"> = {
   /** Done once the pod is down, or ripened. */
   settled(objective, view) {
     return closed(objective, view.mission);
   },
-  /** The whole force to the pod, against its clock. */
+  /** The whole force to the pod, against its clock; through the hull for a great pod. */
   jobs(objective, view) {
-    return wreckJobs(objective, view, true);
+    const jobs = wreckJobs(objective, view, true);
+    return objective.greatPod === true
+      ? jobs.map((job) => ({ ...job, order: { ...job.order, breach: true } }))
+      : jobs;
   },
 };
 

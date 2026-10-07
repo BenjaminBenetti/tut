@@ -32,6 +32,9 @@ import type { PassMask } from "./pass-mask";
  *   seed behind the Sovereign's dais.
  * - `great-hive-cavern`: a Great Hive's board (campaign arc §6.9), the
  *   hive cavern's passes on a bigger board with more chambers.
+ * - `great-pod`: a crash site whose pod came down whole (#1238): open
+ *   ground and debris round a sealed pod of hull plates, chambers and a
+ *   core, breached by demolition. First Skyfall's map rule selects it.
  */
 export type MapArchetype =
   | "settlement"
@@ -39,7 +42,8 @@ export type MapArchetype =
   | "hive-cavern"
   | "spore-platform-hull"
   | "spore-platform-core"
-  | "great-hive-cavern";
+  | "great-hive-cavern"
+  | "great-pod";
 
 /**
  * Every archetype, in a fixed order: what the parameter resolver accepts
@@ -52,6 +56,7 @@ export const MAP_ARCHETYPES: readonly MapArchetype[] = [
   "spore-platform-hull",
   "spore-platform-core",
   "great-hive-cavern",
+  "great-pod",
 ];
 
 /**

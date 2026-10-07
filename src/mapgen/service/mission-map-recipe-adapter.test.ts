@@ -8,9 +8,10 @@ import {
 import type { MissionType } from "../../content/model/mission-type";
 import { manhattanDistance } from "../../core/service/grid-math";
 import type { Mission } from "../../overworld/model/mission";
+import { GREAT_POD_MISSION_HOOKS } from "../data/great-pod-recipe";
+import { GREAT_POD_TUNING } from "../data/great-pod-tuning";
 import { CRASH_SITE_MISSION_HOOKS } from "../data/hook-requirements";
 import { HookKinds } from "../model/hook";
-import type { MapRecipe } from "../model/map-recipe";
 import type {
   MissionMapRule,
   MissionMapRules,
@@ -538,43 +539,42 @@ describe("missionToMapRecipe for a crash site (arc §6.3, §6.9)", () => {
     expect(recipe.params.hooks).toEqual(CRASH_SITE_MISSION_HOOKS);
   });
 
-  it("brings First Skyfall's pod to between 6 and 14 of the drop zone, and nothing else", () => {
-    const drawn = unwrap(missionToMapRecipe(crash(false), CRASH_SITE));
+  it("fights First Skyfall at the great pod, on the mission's own board (#1238)", () => {
     const scripted = unwrap(missionToMapRecipe(crash(true), CRASH_SITE));
-    const pod = (recipe: MapRecipe) =>
-      recipe.params.hooks.find((h) => h.kind === HookKinds.SPORE_POD);
-    expect(pod(scripted)).toEqual({
-      kind: HookKinds.SPORE_POD,
-      count: 1,
-      requiredPass: PassMask.ALL,
-      minDistanceFromDeploy: 6,
-      maxNearestDistanceFromDeploy: 14,
-    });
-    expect(
-      scripted.params.hooks.filter((h) => h.kind !== HookKinds.SPORE_POD),
-    ).toEqual(drawn.params.hooks.filter((h) => h.kind !== HookKinds.SPORE_POD));
+    expect(scripted.params.archetype).toBe("great-pod");
+    expect(scripted.params.size).toBe("small");
+    expect(scripted.params.hooks).toEqual(GREAT_POD_MISSION_HOOKS);
     expect(JSON.parse(JSON.stringify(scripted))).toEqual(scripted);
   });
 
-  it("builds First Skyfall's crater with the pod within reach of the drop zone", () => {
+  it("builds First Skyfall's great pod with its core sealed in, a short march from the drop zone", () => {
     for (const seed of ["skyfall-1", "skyfall-2", "skyfall-3"]) {
       const recipe = unwrap(missionToMapRecipe(crash(true, seed), CRASH_SITE));
       const map = generateTacticalMap(recipe, { registries });
       expect(validateTacticalMap(map, registries), seed).toEqual([]);
-      const pod = map.hooks.objectives.find(
-        (h) => h.kind === HookKinds.SPORE_POD,
+      const core = map.hooks.objectives.find(
+        (h) => h.kind === HookKinds.GREAT_POD_CORE,
       );
-      const at = pod?.tiles[0];
-      if (at === undefined) {
-        throw new Error(`${seed}: no pod`);
+      if (core === undefined) {
+        throw new Error(`${seed}: no core`);
       }
+      expect(core.requiredPass, seed).toBe(PassMask.NONE);
       const distance = Math.min(
         ...map.hooks.deployZones
           .flatMap((zone) => zone.tiles)
-          .map((tile) => manhattanDistance(tile, at)),
+          .flatMap((tile) =>
+            core.tiles.map((at) => manhattanDistance(tile, at)),
+          ),
       );
-      expect(distance, seed).toBeGreaterThanOrEqual(6);
-      expect(distance, seed).toBeLessThanOrEqual(14);
+      // Outside the hull, and no more than three marches away.
+      expect(distance, seed).toBeGreaterThanOrEqual(
+        GREAT_POD_TUNING.hullRadius,
+      );
+      expect(distance, seed).toBeLessThanOrEqual(24);
+      expect(
+        map.hooks.objectives.some((h) => h.kind === HookKinds.SPORE_POD),
+        seed,
+      ).toBe(false);
     }
   });
 });

@@ -12,6 +12,7 @@ import {
   COVERED_OBJECTIVE_KINDS,
   DEFEND_GENERATORS_STRATEGY,
   DESTROY_HIVE_CORE_STRATEGY,
+  DESTROY_POD_STRATEGY,
   SEAL_TUNNELS_STRATEGY,
 } from "./objective-strategies.test-helper";
 import {
@@ -206,6 +207,41 @@ describe("the defence strategy", () => {
     expect(DEFEND_GENERATORS_STRATEGY.jobs(defence, view)).toEqual([
       { order: { kind: "hunt", goals: [{ x: 7, y: 0, z: 0 }] } },
     ]);
+  });
+});
+
+describe("the pod strategy (#1238)", () => {
+  /** A crash site's pod objective, a great pod's when `greatPod`. */
+  function podJobs(greatPod: boolean) {
+    const objective = {
+      id: "o1",
+      kind: "destroy-pod",
+      targetId: "pod",
+      complete: false,
+      deadlineTurn: 12,
+      ...(greatPod ? { greatPod: true as const } : {}),
+    } as const;
+    const view = observe(
+      lookingMission([unitAt("alpha", "infantry", { x: 1, y: 0, z: 1 })], {
+        objectives: [objective],
+      }),
+    );
+    const places = new Map([["o1", [{ x: 5, y: 0, z: 5 }]]]);
+    return DESTROY_POD_STRATEGY.jobs(objective, { ...view, places });
+  }
+
+  it("breaches to a great pod's core, and walks to a spore pod as before", () => {
+    expect(podJobs(true).map((job) => job.order)).toEqual([
+      {
+        kind: "destroy",
+        goals: [{ x: 5, y: 0, z: 5 }],
+        interact: "o1",
+        targetId: "pod",
+        urgent: true,
+        breach: true,
+      },
+    ]);
+    expect(podJobs(false).map((job) => job.order.breach)).toEqual([undefined]);
   });
 });
 

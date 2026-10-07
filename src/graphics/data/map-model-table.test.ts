@@ -127,9 +127,11 @@ describe("map model table", () => {
     expect(propModel("statue")).toBeUndefined();
   });
 
-  it("matches carapace sight volumes to exported shell heights", () => {
-    for (const definition of PROP_DEFINITIONS.filter((prop) =>
-      prop.id.startsWith("infested-carapace-"),
+  it("matches carapace and great pod hull sight volumes to exported shell heights", () => {
+    for (const definition of PROP_DEFINITIONS.filter(
+      (prop) =>
+        prop.id.startsWith("infested-carapace-") ||
+        prop.id.startsWith("great-pod-hull-"),
     )) {
       const model = MODEL_MANIFEST[propModel(definition.id)!];
       if (definition.blocksLos) {
@@ -143,8 +145,11 @@ describe("map model table", () => {
   });
 
   it("uses the authored facility footprints at their actual size", () => {
-    for (const definition of PROP_DEFINITIONS.filter((prop) =>
-      prop.placements.includes("site"),
+    // The installation's facilities; the great pod's hull is a site prop
+    // too (#1238), but a wall to breach, not a facility to defend.
+    for (const definition of PROP_DEFINITIONS.filter(
+      (prop) =>
+        prop.placements.includes("site") && prop.id.startsWith("installation-"),
     )) {
       const model = MODEL_MANIFEST[propModel(definition.id)!];
       expect(definition.footprint, definition.id).toEqual(model.footprint);
@@ -168,6 +173,9 @@ describe("map model table", () => {
       PropKindIds.INFESTED_CARAPACE_WALL_END,
       PropKindIds.INFESTED_CARAPACE_WALL_BROKEN,
       PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS,
+      PropKindIds.GREAT_POD_HULL_PLATE,
+      PropKindIds.GREAT_POD_HULL_CURVE,
+      PropKindIds.GREAT_POD_HULL_SEAM,
     ]);
     for (const [kind, id] of Object.entries(PROP_MODELS)) {
       expect(MODEL_MANIFEST[id].category, kind).toBe(

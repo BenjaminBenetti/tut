@@ -98,6 +98,16 @@ describe("takesGhostCutaway", () => {
     }
   });
 
+  it("fades the great pod's hull, so a unit behind it or inside it stays in view and clickable (#1238)", () => {
+    for (const kind of [
+      PropKindIds.GREAT_POD_HULL_PLATE,
+      PropKindIds.GREAT_POD_HULL_CURVE,
+      PropKindIds.GREAT_POD_HULL_SEAM,
+    ]) {
+      expect(takesGhostCutaway(PROP_MODELS[kind]), kind).toBe(true);
+    }
+  });
+
   it("names only registered building models as solid, so a renamed slab cannot slip back into the cutaway", () => {
     for (const id of GHOST_SOLID_MODELS) {
       expect(MODEL_MANIFEST[id], `${id} registered`).toBeDefined();

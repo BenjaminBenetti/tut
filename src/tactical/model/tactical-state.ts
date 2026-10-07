@@ -182,7 +182,8 @@ export interface DestroySpawnerObjective extends ObjectiveBase {
 
 /**
  * Wreck the crash site's spore pod before it matures (campaign arc
- * §6.3): complete when the pod is destroyed, failed when it matures.
+ * §6.3), or a great pod's core before it ripens (#1238): complete when
+ * the pod is destroyed, failed when it matures.
  * The pod matures once `deadlineTurn` has ended, bursting into a wave.
  *
  * ```
@@ -192,10 +193,19 @@ export interface DestroySpawnerObjective extends ObjectiveBase {
  */
 export interface DestroyPodObjective extends ObjectiveBase {
   readonly kind: "destroy-pod";
-  /** The spore pod (a `spore-pod` spawner) this objective tracks. */
+  /**
+   * The pod this objective tracks: a `spore-pod` spawner, or a great
+   * pod's `great-pod-core` (#1238).
+   */
   readonly targetId: SpawnerId;
   /** Always set: a pod ripens on a clock. */
   readonly deadlineTurn: number;
+  /**
+   * True when the target is a great pod's core (#1238), sealed inside
+   * the pod's hull: the tracker and the log call it the pod's core and
+   * say it ripens. Absent on a crash site's spore pod.
+   */
+  readonly greatPod?: true;
 }
 
 /**

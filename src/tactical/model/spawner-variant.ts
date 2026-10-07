@@ -20,10 +20,18 @@
  *   platform-core the Spore Platform's seed (campaign arc §6.9): a 3×3
  *                 mass on the core chamber's pad that never hatches and
  *                 that nothing walks through; destroying it wins the finale
+ *   great-pod-core the great pod's heart (#1238): a 3×3 mass sealed in
+ *                 the middle of a pod that came down whole; it never
+ *                 hatches and nothing walks through it, and like a spore
+ *                 pod it ripens on the crash site's clock, bursting
  * ```
  */
 export type SpawnerVariant =
-  "egg-spawner" | "spore-pod" | "hive-core" | "platform-core";
+  | "egg-spawner"
+  | "spore-pod"
+  | "hive-core"
+  | "platform-core"
+  | "great-pod-core";
 
 /** The variant a spawner without one is: every spawner saved before pods existed. */
 export const DEFAULT_SPAWNER_VARIANT: SpawnerVariant = "egg-spawner";
@@ -73,6 +81,16 @@ export const SPAWNER_VARIANT_TRAITS: Readonly<
   "platform-core": {
     name: "Platform core",
     armor: 2,
+    hatches: false,
+    footprint: 3,
+    solid: true,
+  },
+  // The great pod's heart (#1238): the hive core's hide, so a rifle hit
+  // loses a point to it and a rocket's or a mech's barely notices, on
+  // the 3×3 the pod's plan leaves at its middle.
+  "great-pod-core": {
+    name: "Pod core",
+    armor: 1,
     hatches: false,
     footprint: 3,
     solid: true,

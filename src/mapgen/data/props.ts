@@ -19,6 +19,10 @@ export const PropKindIds = {
   INSTALLATION_BATTERY: "installation-battery",
   INSTALLATION_BANK: "installation-bank",
 
+  /** The great pod's hull (#1238): a straight plate, a corner, a soft seam. */
+  GREAT_POD_HULL_PLATE: "great-pod-hull-plate",
+  GREAT_POD_HULL_CURVE: "great-pod-hull-curve",
+  GREAT_POD_HULL_SEAM: "great-pod-hull-seam",
   INFESTED_NEST: "infested-nest",
   INFESTED_HIVE: "infested-hive",
   INFESTED_CARAPACE_WALL_RIDGE: "infested-carapace-wall-ridge",
@@ -218,6 +222,23 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     sightHeight: id === PropKindIds.INFESTED_CARAPACE_SPINE_BUTTRESS ? 4 : 3,
     demolition: 2,
     placements: ["infestation"],
+  })),
+  // The great pod's hull (#1238): taller than a carapace wall, and as
+  // hard, so only a rocket or a breaching charge (force 2+) opens a
+  // plate; the seams in line with the inner mouths give to force 1, so a
+  // grenade, an autocannon or a missile pod opens them too.
+  ...[
+    PropKindIds.GREAT_POD_HULL_PLATE,
+    PropKindIds.GREAT_POD_HULL_CURVE,
+    PropKindIds.GREAT_POD_HULL_SEAM,
+  ].map((id): PropDefinition => ({
+    id,
+    footprint: { w: 1, d: 1 },
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    sightHeight: 4,
+    demolition: id === PropKindIds.GREAT_POD_HULL_SEAM ? 1 : 2,
+    placements: ["site"],
   })),
   {
     id: PropKindIds.INFESTED_CARAPACE_WALL_BROKEN,

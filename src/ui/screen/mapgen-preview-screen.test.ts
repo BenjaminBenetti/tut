@@ -124,6 +124,7 @@ describe("MapgenPreviewScreen", () => {
       "spore-platform-hull",
       "spore-platform-core",
       "great-hive-cavern",
+      "great-pod",
     ]);
     expect(control.value).toBe("settlement");
     expect(control.closest("label")?.textContent).toContain("Crash site");

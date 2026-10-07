@@ -9,6 +9,8 @@ import {
   needsReload,
   shotOptions,
 } from "./player-combat.test-helper";
+import type { BreachStyle } from "./player-breach.test-helper";
+import { breachNext, jobSteps } from "./player-breach.test-helper";
 import { dangerKeys } from "./player-goals.test-helper";
 import type { MoveOption } from "./player-navigation.test-helper";
 import { fieldFor, moveTo, reachNow } from "./player-navigation.test-helper";
@@ -21,7 +23,6 @@ import {
   killsSpared,
   netNow,
   standingOrders,
-  stepsTo,
 } from "./player-policy.test-helper";
 import type { PlayerView } from "./player-view.test-helper";
 
@@ -42,7 +43,29 @@ import type { PlayerView } from "./player-view.test-helper";
 //
 //   unit ──► extract? ──► objective action? ──► net? ──► reload?
 //        ──► courier? step toward home first
-//        ──► shoot the nearest, bar a spared kill ──► step one action toward the goal ──► done
+//        ──► shoot the nearest, bar a spared kill
+//        ──► goal behind walls? open the way (`player-breach`)
+//        ──► step one action toward the goal ──► done
+//
+// A goal behind walls (the great pod's core, #1238) it reaches the
+// straight way: the briefing says rockets open a plate, so every wall
+// is the same price to it, and it blows through the nearest ones with
+// the guns that can, a wall at a time.
+
+/**
+ * The new player's reading of a wall: every wall it could open costs
+ * the same few steps, whatever opening it takes. It opens walls with
+ * its guns only, its grenades being for bugs, and takes the shot most
+ * likely to land.
+ */
+export const NEW_PLAYER_BREACH: BreachStyle = {
+  id: "new",
+  /** Four steps for any wall: the walk it saves is all it weighs. */
+  wallSteps: () => 4,
+  throws: false,
+  /** The likeliest shot to land; how wide a hole it leaves is not weighed. */
+  shotValue: (hitChance) => hitChance,
+};
 
 /** The new player's policy. */
 export function createNewPlayerPolicy(rules: PlayerRules): PlayerPolicy {
@@ -57,7 +80,13 @@ export function createNewPlayerPolicy(rules: PlayerRules): PlayerPolicy {
         let bestSteps = Number.POSITIVE_INFINITY;
         for (const job of jobs) {
           if (!canTake(unit, job)) continue;
-          const steps = stepsTo(view, unit, job.order.goals);
+          const steps = jobSteps(
+            view,
+            unit,
+            job.order,
+            rules,
+            NEW_PLAYER_BREACH,
+          );
           if (steps < bestSteps) {
             best = job.order;
             bestSteps = steps;
@@ -93,7 +122,10 @@ export function createNewPlayerPolicy(rules: PlayerRules): PlayerPolicy {
       if (shot !== undefined) {
         return attack(unit.id, shot.targetId, shot.weaponId);
       }
-      return stepToward(unit, order, view, rules);
+      return (
+        breachNext(unit, order, view, rules, NEW_PLAYER_BREACH) ??
+        stepToward(unit, order, view, rules)
+      );
     },
   };
 }

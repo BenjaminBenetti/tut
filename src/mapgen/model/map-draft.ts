@@ -1,4 +1,5 @@
 import type { CraterSite } from "./crater-site";
+import type { GreatPodLayout } from "./great-pod-layout";
 import type { MissionSitePlacement } from "./mission-site";
 import type { InfestationPlan } from "./infestation-plan";
 import type { CavernLayout } from "./cavern-layout";
@@ -109,6 +110,8 @@ export class MapDraft {
   cavern?: CavernLayout;
   /** Deck, routes and pads of a spore platform stage (#1179). Absent on other archetypes. */
   platform?: PlatformLayout;
+  /** Hull, chambers and core of a great pod (#1238). Absent on other archetypes. */
+  greatPod?: GreatPodLayout;
   /** The production site pass ran; missing sites must not silently become legacy blobs. */
   requiresDropships = false;
   readonly hooks: DraftHooks = {

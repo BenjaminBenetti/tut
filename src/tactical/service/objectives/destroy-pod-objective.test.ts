@@ -44,7 +44,7 @@ import {
   unitAt,
 } from "../tactical-fixtures.test-helper";
 import { createEndTurnHandler, DEFAULT_PHASE_STEPS } from "../turn-service";
-import { DESTROY_POD_OBJECTIVE } from "./destroy-pod-objective";
+import { DESTROY_POD_OBJECTIVE, maturePod } from "./destroy-pod-objective";
 import { createObjectiveDeadlineStep } from "./objective-deadline-step";
 import {
   objectiveComplete,
@@ -321,6 +321,35 @@ describe("the pod matures when turn 8 ends", () => {
       );
       expect(bug.ap).toBe(0);
     }
+  });
+
+  it("names what matured only when it is not a spore pod: a great pod's core (#1238)", () => {
+    const spore = maturePod(OBJECTIVE, missionOn(8, "bugs"));
+    expect(spore.events).toEqual([
+      {
+        type: SPORE_POD_MATURED,
+        payload: { spawnerId: POD.id, objectiveId: OBJECTIVE.id },
+      },
+    ]);
+    const core = maturePod(
+      { ...OBJECTIVE, greatPod: true },
+      missionOn(12, "bugs", { pod: { variant: "great-pod-core" } }),
+    );
+    expect(core.events).toEqual([
+      {
+        type: SPORE_POD_MATURED,
+        payload: {
+          spawnerId: POD.id,
+          objectiveId: OBJECTIVE.id,
+          variant: "great-pod-core",
+        },
+      },
+    ]);
+    expect(podOf(core.state)).toMatchObject({
+      destroyed: true,
+      matured: true,
+      burstPending: true,
+    });
   });
 
   it("reads a matured pod as failed by the kind's own rule, flag or no flag", () => {

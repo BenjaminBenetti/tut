@@ -36,9 +36,16 @@ export const HookKinds = {
    */
   HIVE_CORE: "hive-core",
   /**
+   * The core of a great pod (#1238): exactly one, the 3×3 square at the
+   * middle of the pod, sealed inside its hull until a weapon breaches
+   * it, so its `requiredPass` is `NONE`. Meta `{ footprint }`.
+   */
+  GREAT_POD_CORE: "great-pod-core",
+  /**
    * One per chamber of a hive cavern other than its mouth (#1179): the
    * chamber's floor centre, where dormant broods wait. Meta
-   * `{ chamberId, radius, depth }`.
+   * `{ chamberId, radius, depth }`. A great pod (#1238) has one per
+   * chamber too, sealed like its core: meta `{ chamberId, role, radius }`.
    */
   BROOD_CHAMBER: "brood-chamber",
   /**

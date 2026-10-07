@@ -75,6 +75,12 @@ export interface UnitOrder {
    * it nearer home.
    */
   readonly courier?: boolean;
+  /**
+   * The goals stand behind walls the force can bring down (the great
+   * pod's hull, #1238): while no walk reaches them, the unit opens the
+   * way rather than looks for another job (`player-breach.test-helper.ts`).
+   */
+  readonly breach?: boolean;
 }
 
 /** Which units a job can use. */

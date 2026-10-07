@@ -1134,6 +1134,78 @@ describe("event vocabulary for the spore pod (campaign arc §6.3)", () => {
   });
 });
 
+describe("event vocabulary for the great pod (#1238)", () => {
+  const names = { ...NAMES, unit: () => "Delta" };
+  const fell = (structure: unknown) =>
+    describeEvent(
+      {
+        type: "tactical:structure-destroyed",
+        payload: { unitId: "u1", tile: { x: 3, y: 0, z: 4 }, structure },
+      } as never,
+      names,
+    );
+
+  it("calls a hull piece's fall a breach, and anything else still rubble", () => {
+    for (const propKind of [
+      "great-pod-hull-plate",
+      "great-pod-hull-curve",
+      "great-pod-hull-seam",
+    ]) {
+      expect(fell({ kind: "prop", propKind }), propKind).toMatchObject({
+        text: "Delta breached the pod's hull",
+        icon: "warning",
+        tone: "accent",
+      });
+    }
+    expect(
+      fell({ kind: "prop", propKind: "infested-carapace-wall" })?.text,
+    ).toBe("Delta brought down an infested carapace wall");
+    expect(fell({ kind: "wall", wallKind: "full" })?.text).toBe(
+      "Delta brought down a wall",
+    );
+  });
+
+  it("says the core is down and the drop ship is next, or that it ripened", () => {
+    expect(
+      describeEvent(
+        {
+          type: "tactical:spawner-damaged",
+          payload: {
+            spawnerId: "spawner-1",
+            unitId: "u1",
+            damage: 12,
+            hp: 0,
+            destroyed: true,
+            variant: "great-pod-core",
+          },
+        } as never,
+        names,
+      ),
+    ).toMatchObject({
+      text: "Pod core destroyed: get to the drop ship",
+      icon: "check",
+      tone: "ok",
+    });
+    expect(
+      describeEvent(
+        {
+          type: "tactical:spore-pod-matured",
+          payload: {
+            spawnerId: "spawner-1",
+            objectiveId: "objective-1",
+            variant: "great-pod-core",
+          },
+        } as never,
+        names,
+      ),
+    ).toMatchObject({
+      text: "The pod's core ripened and burst",
+      icon: "warning",
+      tone: "danger",
+    });
+  });
+});
+
 describe("the Broodmother on the HUD (#1179, campaign arc §6.8)", () => {
   const names = { ...NAMES, unit: () => "Broodmother" };
   const clutch = {

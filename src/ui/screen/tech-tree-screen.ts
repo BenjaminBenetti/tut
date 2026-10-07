@@ -11,6 +11,7 @@ import { NO_TECH_CONDITIONS } from "../../tech/model/tech-conditions";
 import type { TechDevTools } from "../../tech/model/tech-dev-tools";
 import type { TechEffect } from "../../tech/model/tech-effect";
 import type { TechNode, TechNodeId } from "../../tech/model/tech-node";
+import { isStoryTechNode } from "../../tech/model/tech-node-kind-traits";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
 import {
   isTechNodeHidden,
@@ -23,11 +24,13 @@ import type { ScreenRouter } from "../model/screen-router";
 import type { TechGraphFrame, TechGraphHost } from "../model/tech-graph-host";
 import type { TechEffectLabels } from "../model/tech-effect-labels";
 import type { TechGraphLayout } from "../model/tech-graph-layout";
+import type { TechStoryNotes } from "../model/tech-story-notes";
 import { formatTechPoints, formatWhole } from "../service/format";
 import { describeTechEffect } from "../service/tech-effect-describer";
 import { layoutTechGraph } from "../service/tech-graph-layout";
 import type { TechNodeKindSources } from "../service/tech-node-kind-text";
 import { techNodeKindText } from "../service/tech-node-kind-text";
+import { techStoryText } from "../service/tech-story-text";
 
 // ===========================================
 // Types
@@ -58,6 +61,11 @@ export interface TechTreeScreenDeps {
    */
   readonly speciesOf?: TechNodeKindSources["speciesOf"];
   /**
+   * What each story flag opens, for a story node's "Story: opens …" line
+   * (#1237); absent, a story node says only that it moves the campaign on.
+   */
+  readonly storyNotes?: TechStoryNotes;
+  /**
    * Draws the graph in three (#1171); absent in unit tests that only
    * check the DOM, and then the labels are built but never placed.
    */
@@ -74,6 +82,8 @@ interface NodeLabel {
   readonly node: TechNode;
   readonly root: HTMLElement;
   readonly badge: HTMLElement;
+  /** True when the node's kind advances the story: the label is drawn larger. */
+  readonly story: boolean;
 }
 
 /** The detail panel's live pieces. */
@@ -86,6 +96,7 @@ interface DetailPanel {
   readonly name: HTMLElement;
   readonly cost: HTMLElement;
   readonly badge: HTMLElement;
+  readonly story: HTMLElement;
   readonly description: HTMLElement;
   readonly unlocks: HTMLElement;
   readonly reason: HTMLElement;
@@ -114,6 +125,13 @@ const STATUS_TONES: Readonly<Record<TechNodeStatus, string>> = {
   hidden: "",
 };
 
+/**
+ * The word on a story node's label tag (#1237). The tag's filled shape
+ * and its glyph (drawn by the stylesheet) say "story" as well as its
+ * colour does, so it never rests on colour alone.
+ */
+const STORY_TAG = "Story";
+
 /** What the stage says under the graph. */
 const CONTROLS_HINT = "W A S D pan · Q E rotate · wheel zoom · click a part";
 
@@ -125,6 +143,19 @@ const CONTROLS_HINT = "W A S D pan · Q E rotate · wheel zoom · click a part";
  */
 const LABEL_FULL_ZOOM = 64;
 const LABEL_MIN_SCALE = 0.7;
+
+/**
+ * A story node's label is drawn this much larger than an ordinary one
+ * at every zoom (#1237), so it stands out from the overview and its
+ * "◆ STORY" tag is legible at the starting zoom, where ordinary labels
+ * sit at `LABEL_MIN_SCALE`.
+ *
+ * ```
+ *   zoom 24 (start)   ordinary 0.70   story 0.91
+ *   zoom 64 and in    ordinary 1.00   story 1.30
+ * ```
+ */
+const STORY_LABEL_SCALE = 1.3;
 
 // ===========================================
 // TechTreeScreen
@@ -153,6 +184,22 @@ const LABEL_MIN_SCALE = 0.7;
  *   host.picked(id) / label click ──► select(id) ──► host.setSelected · detail render
  *   [Unlock] ──► store.dispatch(unlockTech(id)) ──► store change ──► render(state)
  *   host.framed(frame) ──► every label's transform
+ * ```
+ *
+ * A node whose kind advances the story (`isStoryTechNode`: the Intel
+ * projects and Last Hope) carries `data-story="true"` and a "Story" tag
+ * on its label in every status, which the stylesheet frames in the
+ * story colour; the label is placed `STORY_LABEL_SCALE` times larger
+ * than an ordinary one, and the detail panel says what researching it
+ * opens (`techStoryText` over `storyNotes`, #1237).
+ *
+ * ```
+ *   label                        detail panel
+ *   ╔═════════════════════╗      SUPPORT
+ *   ║ [◆ STORY]           ║      Pheromone Analysis           80 TP
+ *   ║ Pheromone Analysis  ║      [Available]
+ *   ║ 80 TP  [AVAILABLE]  ║      ‖ ◆ Story: opens Live Specimen, the
+ *   ╚═════════════════════╝      ‖   mission that ends Act I.
  * ```
  *
  * Only the nodes the campaign has discovered are drawn (ADR 0013
@@ -348,9 +395,14 @@ export class TechTreeScreen implements Screen {
     if (!node) {
       delete detail.root.dataset.selectedNode;
       delete detail.root.dataset.status;
+      delete detail.root.dataset.story;
       return;
     }
     detail.root.dataset.selectedNode = node.id;
+    const story = techStoryText(node, this.deps.storyNotes ?? {});
+    detail.root.dataset.story = String(story !== undefined);
+    detail.story.textContent = story ?? "";
+    detail.story.hidden = story === undefined;
     detail.family.textContent =
       this.deps.tech.listFamilies().find((f) => f.id === node.family)?.name ??
       node.family;
@@ -424,18 +476,25 @@ export class TechTreeScreen implements Screen {
     badge.textContent = STATUS_LABELS[status];
   }
 
-  /** Moves every label onto its pedestal or plinth for this frame, scaled with the zoom. */
+  /**
+   * Moves every label onto its pedestal or plinth for this frame, scaled
+   * with the zoom; a story node's label `STORY_LABEL_SCALE` times larger.
+   */
   private place(frame: TechGraphFrame): void {
     const scale = Math.min(
       1,
       Math.max(LABEL_MIN_SCALE, frame.zoom / LABEL_FULL_ZOOM),
     );
-    const transform = (x: number, y: number): string =>
-      `translate(-50%, 0) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+    const transform = (x: number, y: number, by = scale): string =>
+      `translate(-50%, 0) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${by.toFixed(3)})`;
     for (const anchor of frame.nodes) {
       const label = this.labels.get(anchor.id);
       if (label) {
-        label.root.style.transform = transform(anchor.x, anchor.y);
+        label.root.style.transform = transform(
+          anchor.x,
+          anchor.y,
+          label.story ? scale * STORY_LABEL_SCALE : scale,
+        );
       }
     }
     for (const anchor of frame.families) {
@@ -600,7 +659,10 @@ export class TechTreeScreen implements Screen {
     layer.replaceChildren(...labels);
   }
 
-  /** One node's floating label: name, cost and status; a click selects it. */
+  /**
+   * One node's floating label: name, cost and status, and a "Story" tag
+   * over them on a node whose kind advances the story; a click selects it.
+   */
   private createLabel(doc: Document, node: TechNode): HTMLElement {
     const label = doc.createElement("button");
     label.type = "button";
@@ -608,6 +670,11 @@ export class TechTreeScreen implements Screen {
     label.dataset.node = node.id;
     label.dataset.status = "locked";
     label.dataset.selected = "false";
+    const story = isStoryTechNode(node);
+    label.dataset.story = String(story);
+    if (story) {
+      label.appendChild(this.createStoryTag(doc));
+    }
     const name = doc.createElement("span");
     name.className = "tut-tech-tree__node-name";
     name.dataset.field = "name";
@@ -630,8 +697,17 @@ export class TechTreeScreen implements Screen {
       },
       this.labelDisposers,
     );
-    this.labels.set(node.id, { node, root: label, badge });
+    this.labels.set(node.id, { node, root: label, badge, story });
     return label;
+  }
+
+  /** The story tag: a filled chip reading "Story", its glyph drawn by the stylesheet. */
+  private createStoryTag(doc: Document): HTMLElement {
+    const tag = doc.createElement("span");
+    tag.className = "tut-tech-tree__story";
+    tag.dataset.role = "story";
+    tag.textContent = STORY_TAG;
+    return tag;
   }
 
   /**
@@ -663,7 +739,10 @@ export class TechTreeScreen implements Screen {
     return item;
   }
 
-  /** The detail panel: what the selected node is, unlocks and costs, and Unlock. */
+  /**
+   * The detail panel: what the selected node is, what researching it
+   * opens when it is story, what it unlocks and costs, and Unlock.
+   */
   private createDetail(doc: Document): HTMLElement {
     const panel = doc.createElement("aside");
     panel.id = "tech-tree-detail";
@@ -696,6 +775,10 @@ export class TechTreeScreen implements Screen {
     const badge = doc.createElement("span");
     badge.className = "tut-badge";
     badge.dataset.role = "status";
+    const story = doc.createElement("p");
+    story.className = "tut-tech-tree__story-note";
+    story.dataset.field = "story";
+    story.hidden = true;
     const description = doc.createElement("p");
     description.className = "tut-tech-tree__detail-note";
     description.dataset.field = "description";
@@ -725,6 +808,7 @@ export class TechTreeScreen implements Screen {
       kind,
       head,
       badge,
+      story,
       description,
       unlocksTitle,
       unlocks,
@@ -741,6 +825,7 @@ export class TechTreeScreen implements Screen {
       name,
       cost,
       badge,
+      story,
       description,
       unlocks,
       reason,

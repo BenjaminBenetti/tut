@@ -17,13 +17,16 @@ import type { Camera, Object3D } from "three";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { TechFamilyId, TechNodeId } from "../../tech/model/tech-node";
+import { isStoryTechNode } from "../../tech/model/tech-node-kind-traits";
 import type { TechNodeStatus } from "../../tech/service/tech-status-service";
 import type {
   TechGraphEdge,
   TechGraphLayout,
+  TechGraphNodePlacement,
 } from "../../ui/model/tech-graph-layout";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { ModelLoader } from "../model/model-loader";
+import { TechStoryBeacon } from "../view/tech-story-beacon";
 import { TechNodeModelSource } from "./tech-node-model-source";
 
 // ===========================================
@@ -48,6 +51,8 @@ interface NodeView {
   readonly ring: MeshStandardMaterial;
   readonly halo: Mesh;
   readonly pick: Mesh;
+  /** The gold shaft over a story node's pedestal; none on other nodes. */
+  readonly beacon: TechStoryBeacon | undefined;
   status: TechNodeStatus;
 }
 
@@ -116,6 +121,33 @@ const STATUS_LOOK: Readonly<
 /** How much brighter a hovered ring glows. */
 const HOVER_GLOW_BONUS = 0.6;
 
+/**
+ * Story research (#1237) stands inside a crown of gold dashes on the
+ * ground, outside the selection halo: dashes rather than a solid ring,
+ * so it reads by shape as well as colour beside the status rim. The
+ * colour is `--ui-story`, which is the warn gold. Its outer edge stays
+ * under half the tier 3 spacing (3), so two story neighbours never touch.
+ * A `TechStoryBeacon` rises over the pedestal in the same gold, so the
+ * node shows from across the whole web.
+ *
+ * ```
+ *        ╲  ─  ╱        STORY_CROWN_SEGMENTS dashes, each filling
+ *      ─  ( ● )  ─      STORY_CROWN_DASH of its arc, from
+ *        ╱  ─  ╲        STORY_CROWN_INNER to STORY_CROWN_OUTER
+ *      crown  rim+halo
+ * ```
+ */
+const STORY_COLOUR = WARN_COLOUR;
+const STORY_CROWN_INNER = PEDESTAL_RADIUS + 0.3;
+const STORY_CROWN_OUTER = PEDESTAL_RADIUS + 0.44;
+const STORY_CROWN_SEGMENTS = 12;
+/** The fraction of each segment's arc the dash fills; the rest is the gap. */
+const STORY_CROWN_DASH = 0.55;
+const STORY_CROWN_GLOW = 0.8;
+
+/** The name the crown's group goes by under its node, for tests and the inspector. */
+export const STORY_CROWN_NAME = "story-crown";
+
 // ===========================================
 // TechGraphSceneBuilder
 // ===========================================
@@ -125,12 +157,14 @@ const HOVER_GLOW_BONUS = 0.6;
  * part's model turning on it, a hexagonal plinth per family, the core
  * at the origin, link beams on the ground between them and a faint
  * grid for depth. Rings and beams are tinted by node status; hover and
- * selection light a ring further and raise a halo.
+ * selection light a ring further and raise a halo. A story node also
+ * wears a gold crown and a gold beacon (#1237), the beacon dimmed once
+ * the node is researched.
  *
  * ```
  *   layout ──► build()       pedestals, plinths, beams, pick solids, grid   (sync)
  *          ──► loadModels()  part models onto the turntables, core model   (async)
- *   statuses ──► setStatuses()  ring + beam tints
+ *   statuses ──► setStatuses()  ring + beam tints, story beacons dimmed when unlocked
  *   pointer  ──► pick(ndc, camera) ──► node id           (raycast on pick solids)
  * ```
  *
@@ -144,7 +178,7 @@ export class TechGraphSceneBuilder {
 
   /** Add this to the scene. Everything the builder creates lives under it. */
   readonly root = new Group();
-  /** Tick this every frame; it turns the models. */
+  /** Tick this every frame; it turns the models and the story gems. */
   readonly turntables: FrameUpdatable;
   private readonly layout: TechGraphLayout;
   private readonly models: TechNodeModelSource;
@@ -184,6 +218,7 @@ export class TechGraphSceneBuilder {
         const turn = TURNTABLE_RATE * deltaSeconds;
         for (const node of this.nodes.values()) {
           node.turntable.rotation.y += turn;
+          node.beacon?.update(deltaSeconds);
         }
         this.coreTurntable.rotation.y += turn * 0.5;
       },
@@ -358,15 +393,21 @@ export class TechGraphSceneBuilder {
     }
 
     for (const placement of this.layout.nodes) {
-      const view = this.createNode(placement.id, placement.x, placement.z);
+      const view = this.createNode(placement);
       this.nodes.set(placement.id, view);
       this.pickToNode.set(view.pick, placement.id);
       this.root.add(view.root);
     }
   }
 
-  /** One pedestal: base, lit rim ring, a halo for selection, the turntable and the pick solid. */
-  private createNode(id: TechNodeId, x: number, z: number): NodeView {
+  /**
+   * One pedestal: base, lit rim ring, a halo for selection, the turntable
+   * and the pick solid; and, when the node's kind advances the story, a
+   * crown round it and a beacon over it. The beacon is never a pick
+   * solid, so a click through its shaft reaches the node behind.
+   */
+  private createNode(placement: TechGraphNodePlacement): NodeView {
+    const { id, x, z } = placement;
     const root = new Group();
     root.name = `node:${id}`;
     root.position.set(x, 0, z);
@@ -419,7 +460,13 @@ export class TechGraphSceneBuilder {
     pick.visible = false;
 
     root.add(base, rim, halo, turntable, pick);
-    return { id, root, turntable, ring, halo, pick, status: "locked" };
+    let beacon: TechStoryBeacon | undefined;
+    if (isStoryTechNode(placement)) {
+      beacon = new TechStoryBeacon(STORY_COLOUR);
+      beacon.object.position.y = PEDESTAL_HEIGHT;
+      root.add(storyCrown(), beacon.object);
+    }
+    return { id, root, turntable, ring, halo, pick, beacon, status: "locked" };
   }
 
   /** One link: a thin beam on the ground from `edge.from` to `edge.to`. */
@@ -456,7 +503,10 @@ export class TechGraphSceneBuilder {
     }
   }
 
-  /** Ring tint and glow from status, hover and selection; halo from selection. */
+  /**
+   * Ring tint and glow from status, hover and selection; halo from
+   * selection; a story beacon dimmed once its research is done.
+   */
   private applyLook(node: NodeView): void {
     const look = STATUS_LOOK[node.status];
     node.ring.color.setHex(look.colour);
@@ -464,6 +514,7 @@ export class TechGraphSceneBuilder {
     node.ring.emissiveIntensity =
       look.glow + (this.hovered === node.id ? HOVER_GLOW_BONUS : 0);
     node.halo.visible = this.selected === node.id;
+    node.beacon?.setDimmed(node.status === "unlocked");
   }
 }
 
@@ -493,6 +544,38 @@ function plinth(radius: number, height: number, tint: number): Group {
   edge.position.y = height + 0.005;
   group.add(body, edge);
   return group;
+}
+
+/**
+ * The story crown: `STORY_CROWN_SEGMENTS` gold dashes on the ground in a
+ * ring round the pedestal, sharing one geometry and one material. It
+ * ignores status, so a story node wears it locked, affordable or done.
+ */
+function storyCrown(): Group {
+  const crown = new Group();
+  crown.name = STORY_CROWN_NAME;
+  const arc = (Math.PI * 2) / STORY_CROWN_SEGMENTS;
+  const geometry = new RingGeometry(
+    STORY_CROWN_INNER,
+    STORY_CROWN_OUTER,
+    6,
+    1,
+    0,
+    arc * STORY_CROWN_DASH,
+  );
+  const material = new MeshStandardMaterial({
+    color: STORY_COLOUR,
+    emissive: STORY_COLOUR,
+    emissiveIntensity: STORY_CROWN_GLOW,
+  });
+  for (let index = 0; index < STORY_CROWN_SEGMENTS; index++) {
+    const dash = new Mesh(geometry, material);
+    dash.rotation.x = -Math.PI / 2;
+    dash.rotation.z = index * arc;
+    dash.position.y = 0.012;
+    crown.add(dash);
+  }
+  return crown;
 }
 
 /** Scales `model` so its longest side is `extent`, centred and grounded. */

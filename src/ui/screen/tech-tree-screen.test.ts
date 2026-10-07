@@ -35,7 +35,9 @@ import {
   FX_JUMP_JETS,
   FX_PHEROMONE_ANALYSIS,
   FX_POD_TELEMETRY,
+  FX_SPRINT_FRAME,
   FX_SQUAD_ARMOUR,
+  HIVE_CORE_SAMPLE,
   SPORE_SAMPLE,
   withFlags,
 } from "../../tech/data/conditional-tech-tree.test-helper";
@@ -57,8 +59,11 @@ import type {
   TechGraphListener,
 } from "../model/tech-graph-host";
 import { TECH_EFFECT_LABELS } from "../data/tech-effect-labels";
+import { TECH_STORY_NOTES } from "../data/tech-story-notes";
 import type { TechEffectLabels } from "../model/tech-effect-labels";
 import type { TechGraphLayout } from "../model/tech-graph-layout";
+import type { TechStoryNotes } from "../model/tech-story-notes";
+import { TECH_STORY_FALLBACK } from "../service/tech-story-text";
 import { TechTreeScreen } from "./tech-tree-screen";
 
 type NavigateMock = Mock<(id: ScreenId) => void>;
@@ -238,6 +243,7 @@ function mountWith(
     tech?: TechCatalogue;
     conditionsOf?: (state: GameState) => TechConditions;
     effectLabels?: TechEffectLabels;
+    storyNotes?: TechStoryNotes;
     squadTypes?: SquadTypeCatalogue;
     speciesOf?: (speciesId: string) => { readonly name: string } | undefined;
   } = {},
@@ -800,5 +806,203 @@ describe("TechTreeScreen with hidden and conditional nodes", () => {
     q('#tech-tree-detail [data-action="unlock"]').click();
     expect(store.getState().tech.unlocked).toEqual([FX_JUMP_JETS]);
     expect(graph.attaches).toBe(1);
+  });
+});
+
+describe("TechTreeScreen story nodes (#1237)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const CONDITIONAL = conditionalTechCatalogue();
+  /** The fixture's story nodes: two intel nodes and a story node. */
+  const FX_STORY = [FX_PHEROMONE_ANALYSIS, FX_POD_TELEMETRY, FX_FIELD_NOTES];
+  /** Every other fixture node: parts and infantry. */
+  const FX_OTHER = [
+    FX_JUMP_JETS,
+    FX_SPRINT_FRAME,
+    FX_SQUAD_ARMOUR,
+    FX_HEAVY_WEAPONS,
+  ];
+  /** The shipped story nodes, all four, by id. */
+  const SHIPPED_STORY = [
+    "tech.pheromone-analysis",
+    "tech.platform-approach",
+    "tech.last-hope",
+    "tech.pod-telemetry",
+  ];
+  /** Every flag that hides a shipped story node. */
+  const EVERY_STORY_FLAG = withFlags(
+    "spore-sample",
+    "hive-core-sample",
+    "uplink-won",
+    "platform-failed",
+  );
+
+  /** A fresh campaign holding `techPoints`. */
+  const holding = (techPoints: number): GameState => {
+    const base = newGame();
+    return {
+      ...base,
+      economy: { ...base.economy, techPoints },
+      tech: { unlocked: [] },
+    };
+  };
+
+  const q = <T extends HTMLElement>(selector: string): T => {
+    const el = root.querySelector<T>(selector);
+    if (!el) throw new Error(`missing ${selector}`);
+    return el;
+  };
+  const label = (nodeId: string): HTMLElement => q(`[data-node="${nodeId}"]`);
+  const tagOf = (nodeId: string): HTMLElement | null =>
+    label(nodeId).querySelector<HTMLElement>('[data-role="story"]');
+  const storyLine = (): HTMLElement =>
+    q('#tech-tree-detail [data-field="story"]');
+
+  it("tags every story node's label, and no other, through every status it passes", () => {
+    const conditionsOf = () => withFlags(SPORE_SAMPLE, HIVE_CORE_SAMPLE);
+    const store = new RealStore(holding(200), {
+      tech: CONDITIONAL,
+      conditionsOf,
+    });
+    mountWith(store, root, { tech: CONDITIONAL, conditionsOf });
+    const seen = new Set<string>();
+    const check = (): void => {
+      for (const id of FX_STORY) {
+        expect(label(id).dataset.story, id).toBe("true");
+        expect(tagOf(id)?.textContent, id).toBe("Story");
+        // The tag leads the label, ahead of the name.
+        expect(label(id).firstElementChild, id).toBe(tagOf(id));
+        seen.add(label(id).dataset.status ?? "");
+      }
+      for (const id of FX_OTHER) {
+        expect(label(id).dataset.story, id).toBe("false");
+        expect(tagOf(id), id).toBeNull();
+      }
+    };
+    // 200 TP: Pheromone Analysis (180) and Field Notes (25) available,
+    // Pod Telemetry locked behind Pheromone Analysis.
+    check();
+    label(FX_FIELD_NOTES).click();
+    q('#tech-tree-detail [data-action="unlock"]').click();
+    // 175 TP: Field Notes done, Pheromone Analysis out of reach.
+    check();
+    expect([...seen].sort()).toEqual([
+      "available",
+      "locked",
+      "unaffordable",
+      "unlocked",
+    ]);
+  });
+
+  it("tags the four shipped story nodes once their flags are in hand, read off their kind", () => {
+    mountWith(new RealStore(holding(250)), root, {
+      conditionsOf: () => EVERY_STORY_FLAG,
+    });
+    const tagged = [
+      ...root.querySelectorAll<HTMLElement>('[data-node][data-story="true"]'),
+    ].map((el) => el.dataset.node);
+    expect(tagged.sort()).toEqual([...SHIPPED_STORY].sort());
+    for (const id of SHIPPED_STORY) {
+      expect(tagOf(id)?.textContent, id).toBe("Story");
+    }
+  });
+
+  it("says in the detail panel what researching a story node opens, and nothing for any other node", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(holding(250)), root, {
+      graph,
+      conditionsOf: () => EVERY_STORY_FLAG,
+      storyNotes: TECH_STORY_NOTES,
+    });
+    const said = (id: string): string | null => {
+      graph.listener?.picked(id);
+      return storyLine().hidden ? null : storyLine().textContent;
+    };
+    expect(said("tech.pheromone-analysis")).toBe(
+      "Story: opens Live Specimen, the mission that ends Act I.",
+    );
+    expect(q("#tech-tree-detail").dataset.story).toBe("true");
+    expect(said("tech.pod-telemetry")).toBe(
+      "Story: opens Intact Pod, the mission that ends Act II.",
+    );
+    expect(said("tech.platform-approach")).toBe(
+      "Story: opens Launch Window, the mission that ends Act III, once all three Great Hives have fallen.",
+    );
+    expect(said("tech.last-hope")).toBe(
+      "Story: opens the Spore Platform again for one last assault; a second defeat ends the campaign.",
+    );
+    // A part node has no story line, and the panel drops the mark.
+    expect(said("tech.jump-jets")).toBeNull();
+    expect(q("#tech-tree-detail").dataset.story).toBe("false");
+    // Clearing the selection clears it too.
+    graph.listener?.picked(undefined);
+    expect(q("#tech-tree-detail").dataset.story).toBeUndefined();
+  });
+
+  it("draws a story node's label 1.3 times an ordinary one's size at every zoom, so the tag reads from the start", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(holding(250)), root, {
+      graph,
+      conditionsOf: () => EVERY_STORY_FLAG,
+    });
+    const scaleOf = (id: string): number => {
+      const match = /scale\(([\d.]+)\)/.exec(label(id).style.transform);
+      if (!match?.[1]) throw new Error(`${id} has no scale`);
+      return Number(match[1]);
+    };
+    // 24 is the host's starting zoom, where ordinary labels sit at their floor.
+    for (const zoom of [10, 24, 40, 64, 128]) {
+      graph.listener?.framed({
+        nodes: [
+          { id: "tech.pheromone-analysis", x: 100, y: 100 },
+          { id: "tech.last-hope", x: 300, y: 100 },
+          { id: "tech.jump-jets", x: 500, y: 100 },
+        ],
+        families: [{ id: "support", x: 200, y: 50 }],
+        zoom,
+      });
+      const ordinary = scaleOf("tech.jump-jets");
+      expect(scaleOf("tech.pheromone-analysis"), `zoom ${zoom}`).toBeCloseTo(
+        ordinary * 1.3,
+        2,
+      );
+      expect(scaleOf("tech.last-hope"), `zoom ${zoom}`).toBeCloseTo(
+        ordinary * 1.3,
+        2,
+      );
+      // Family plinths keep the ordinary scale.
+      expect(
+        q('[data-family="support"]').style.transform,
+        `zoom ${zoom}`,
+      ).toContain(`scale(${ordinary.toFixed(3)})`);
+    }
+    // Ordinary labels sit at their 0.7 floor when the web first opens.
+    graph.listener?.framed({
+      nodes: [
+        { id: "tech.pheromone-analysis", x: 100, y: 100 },
+        { id: "tech.jump-jets", x: 500, y: 100 },
+      ],
+      families: [],
+      zoom: 24,
+    });
+    expect(scaleOf("tech.jump-jets")).toBeCloseTo(0.7, 3);
+    expect(scaleOf("tech.pheromone-analysis")).toBeCloseTo(0.91, 3);
+  });
+
+  it("falls back to a plain story line without notes", () => {
+    const graph = new FakeGraphHost();
+    mountWith(new RealStore(holding(250)), root, {
+      graph,
+      conditionsOf: () => EVERY_STORY_FLAG,
+    });
+    graph.listener?.picked("tech.pheromone-analysis");
+    expect(storyLine().hidden).toBe(false);
+    expect(storyLine().textContent).toBe(TECH_STORY_FALLBACK);
   });
 });

@@ -28,6 +28,9 @@
   --ui-warn: #f0c63c;
   --ui-danger: #e0453c;
   --ui-bug: #9cff3d;
+  /* Story research (#1237): the warn gold by another name, the colour the
+     offer board's story tag already wears, so story needs no new hue. */
+  --ui-story: var(--ui-warn);
 
   --font-mono:
     ui-monospace, "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas,

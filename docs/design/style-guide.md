@@ -229,6 +229,7 @@ see [the interior kit](kits/building-interiors.md).
 | `ui-warn` | `#F0C63C` | Caution, low ammo, heat |
 | `ui-danger` | `#E0453C` | Damage, loss, permadeath |
 | `ui-bug` | `#9CFF3D` | Infestation and threat readouts. Same as `bug-bio-green`. |
+| `ui-story` | = `ui-warn` | Story research on the tech tree (#1237). An alias, not a new hue: the gold the offer board's story tag already wears. It always comes with a shape (a double frame, a filled ◆ STORY tag, dashes round the pedestal), so story never rests on colour alone. |
 
 Contrast: all text on `ui-panel` meets WCAG AA (`ui-text-dim` on `ui-panel` is 6.3:1).
 
